@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Sequence
 
 from napari_plugin_engine.dist import standard_metadata
-from napari_plugin_engine.exceptions import PluginError
 from qtpy.QtCore import (
     QEvent,
     QObject,
@@ -47,7 +46,6 @@ from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
 from ..qthreading import create_worker
 from ..widgets.qt_eliding_label import ElidingLabel
-from .qt_plugin_report import QtPluginErrReporter
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
 
@@ -268,42 +266,21 @@ class PluginListItem(QFrame):
         plugin_name: str = None,
         parent: QWidget = None,
         enabled: bool = True,
+        installed: bool = False,
     ):
         super().__init__(parent)
-        self.setup_ui(enabled)
-        if plugin_name:
-            self.plugin_name.setText(plugin_name)
-            self.package_name.setText(f"{package_name} {version}")
-            self.summary.setText(summary)
-            self.package_author.setText(author)
+        self.setup_ui()
+        self.plugin_name.setText(package_name)
+        self.package_name.setText(version)
+        self.summary.setText(summary)
+        self.package_author.setText(author)
+        self.enabled_checkbox.hide()
+
+        if installed:
             self.action_button.setText(trans._("uninstall"))
             self.action_button.setObjectName("remove_button")
-            self.enabled_checkbox.setChecked(enabled)
-            if PluginError.get(plugin_name=plugin_name):
-
-                def _show_error():
-                    rep = QtPluginErrReporter(
-                        parent=self._get_dialog(), initial_plugin=plugin_name
-                    )
-                    rep.setWindowFlags(Qt.Sheet)
-                    close = QPushButton(trans._("close"), rep)
-                    rep.layout.addWidget(close)
-                    rep.plugin_combo.hide()
-                    close.clicked.connect(rep.close)
-                    rep.open()
-
-                self.error_indicator.clicked.connect(_show_error)
-                self.error_indicator.show()
-                self.summary.setIndent(18)
-            else:
-                self.summary.setIndent(38)
         else:
-            self.plugin_name.setText(package_name)
-            self.package_name.setText(version)
-            self.summary.setText(summary)
-            self.package_author.setText(author)
             self.action_button.setText(trans._("install"))
-            self.enabled_checkbox.hide()
             self.action_button.setObjectName("install_button")
 
     def _get_dialog(self) -> QDialog:
@@ -411,7 +388,11 @@ class QPluginList(QListWidget):
 
     @Slot(ProjectInfo)
     def addItem(
-        self, project_info: ProjectInfo, plugin_name=None, enabled=True
+        self,
+        project_info: ProjectInfo,
+        installed=False,
+        plugin_name=None,
+        enabled=True,
     ):
         # don't add duplicates
         if (
@@ -431,9 +412,10 @@ class QPluginList(QListWidget):
             parent=self,
             plugin_name=plugin_name,
             enabled=enabled,
+            installed=installed,
         )
         item.widget = widg
-        action_name = 'uninstall' if plugin_name else 'install'
+        action_name = 'uninstall' if installed else 'install'
         widg.action_button.clicked.connect(
             lambda: self.handle_action(item, project_info.name, action_name)
         )
@@ -506,7 +488,6 @@ class QtPluginDialog(QDialog):
     def refresh(self):
         self.installed_list.clear()
         self.available_list.clear()
-        self.plugin_sorter.refresh()
 
         # fetch installed
         from ...plugins import plugin_manager
@@ -518,6 +499,9 @@ class QtPluginDialog(QDialog):
         for plugin_name, mod_name, distname in plugin_manager.iter_available():
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
+                continue
+
+            if distname in already_installed:
                 continue
 
             if distname:
@@ -535,9 +519,16 @@ class QtPluginDialog(QDialog):
                     meta.get('author', ''),
                     meta.get('license', ''),
                 ),
-                plugin_name=plugin_name,
-                enabled=plugin_name in plugin_manager.plugins,
+                installed=True
+                # plugin_name=plugin_name,
+                # enabled=plugin_name in plugin_manager.plugins,
             )
+        self.installed_label.setText(
+            trans._(
+                "Installed Plugins ({amount})", amount=len(already_installed)
+            )
+        )
+        # self.v_splitter.setSizes([70 * self.installed_list.count(), 10, 10])
 
         # fetch available plugins
         self.worker = create_worker(iter_napari_plugin_info)
