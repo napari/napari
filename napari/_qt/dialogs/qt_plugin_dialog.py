@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Sequence
+from typing import Literal, Sequence
 
 from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
@@ -40,19 +40,23 @@ from ..widgets.qt_eliding_label import ElidingLabel
 from ..widgets.qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_report import QtPluginErrReporter
 
+InstallerTypes = Literal['pip', 'conda', 'mamba']
+
 
 # TODO: add error icon and handle pip install errors
 # TODO: add queue to handle clicks when already processing
 class Installer:
-    def __init__(self, output_widget: QTextEdit = None):
+    def __init__(
+        self,
+        output_widget: QTextEdit = None,
+        installer: InstallerTypes = "pip",
+    ):
         from ...plugins import plugin_manager
 
         # To be used when conda is fully supported
-        # self._use_conda = _is_installed_with_conda()
-        self._use_conda = False
         self._conda_env_path = None
 
-        if self._use_conda and (Path(sys.prefix) / "conda-meta").is_dir():
+        if installer != "pip" and (Path(sys.prefix) / "conda-meta").is_dir():
             self._conda_env_path = sys.prefix
 
         # create install process
@@ -92,16 +96,21 @@ class Installer:
             text = self.process.readAllStandardOutput().data().decode()
             self._output_widget.append(text)
 
-    def install(self, pkg_list: Sequence[str]):
-        if self._use_conda:
+    def install(
+        self,
+        pkg_list: Sequence[str],
+        installer: InstallerTypes = "pip",
+        channels: Sequence[str] = ("conda-forge",),
+    ):
+        if installer != "pip":
             cmd = [
                 'install',
-                '-c',
-                'conda-forge',
                 '-y',
                 '--prefix',
                 self._conda_env_path,
             ]
+            for channel in channels:
+                cmd.extend(["-c", channel])
         else:
             cmd = ['-m', 'pip', 'install', '--upgrade']
 
@@ -115,22 +124,28 @@ class Installer:
                 '--prefix',
                 user_plugin_dir(),
             ]
-        print(' '.join(cmd + list(pkg_list)))
+
         self.process.setArguments(cmd + list(pkg_list))
         if self._output_widget:
             self._output_widget.clear()
         self.process.start()
 
-    def uninstall(self, pkg_list: Sequence[str]):
-        if self._use_conda:
+    def uninstall(
+        self,
+        pkg_list: Sequence[str],
+        installer: InstallerTypes = "pip",
+        channels: Sequence[str] = ("conda-forge",),
+    ):
+        if installer != "pip":
             args = [
                 'remove',
                 '-y',
                 '--prefix',
                 self._conda_env_path,
-                '-c',
-                'conda-forge',
             ]
+
+            for channel in channels:
+                args.extend(["-c", channel])
         else:
             args = ['-m', 'pip', 'uninstall', '-y']
 
