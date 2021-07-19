@@ -220,8 +220,7 @@ class BaseNapariSettings(BaseSettings, EventedModel, ManagerMixin):
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
-        use_enum_values = True
-        validate_all = True
+        use_enum_values = False  # override eventedmodel
         _env_settings: Optional[SettingsSourceCallable] = None
 
         @classmethod

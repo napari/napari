@@ -31,7 +31,6 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.settings import get_settings
-from ..utils.settings._constants import LoopMode
 from ..utils.translations import trans
 from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -651,12 +650,8 @@ class Window:
         settings = get_settings()
 
         for widget in self.qt_viewer.dims.slider_widgets:
-            widget.__class__.fps.fset(
-                widget, settings.application.playback_fps
-            )
-            widget.__class__.loop_mode.fset(
-                widget, LoopMode(settings.application.playback_mode)
-            )
+            setattr(widget, 'fps', settings.application.playback_fps)
+            setattr(widget, 'loop_mode', settings.application.playback_mode)
 
     def _reset_preference_states(self):
         # resetting plugin states in plugin manager
