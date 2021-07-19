@@ -1003,7 +1003,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         return self._transforms[1:3].simplified
 
-    def vector_world_to_data(self, vector) -> tuple:
+    def _world_to_data_ray(self, vector) -> tuple:
         """Convert a vector defining an orientation from world coordinates to data coordinates.
         For example, this would be used to convert the view ray.
 
@@ -1073,7 +1073,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
             # get the view direction in data coords (only displayed dims)
             view_dir_world = view_direction
-            view_dir = np.asarray(self.vector_world_to_data(view_dir_world))[
+            view_dir = np.asarray(self._world_to_data_ray(view_dir_world))[
                 dims_displayed_mask
             ]
 
