@@ -790,7 +790,11 @@ class QtViewer(QSplitter):
 
     def _process_mouse_event(self, mouse_callbacks, event):
         """Add properties to the mouse event before passing the event to the
-        napari events system. Called whenever mouse pressed in canvas.
+        napari events system. Called whenever the mouse moves or is clicked.
+        As such, care should be taken to reduce the overhead in this function.
+        In future work, we should consider limiting the frequency at which
+        it is called.
+
         This method adds following:
             position: the position of the click in world coordinates.
             view_direction: a unit vector giving the direction of the camera in
