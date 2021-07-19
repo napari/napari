@@ -1148,7 +1148,7 @@ def test_cursor_ray_3d():
     # click is transformed: (value - translation) / scale
     # axis 1: click at 27 in world coords -> (27 - 5) / 2 = 11
     # axis 2: click at 10 in world coords -> (10 - 5) / 1 = 5
-    start_point, end_point = labels._cursor_ray(
+    start_point, end_point = labels.get_ray_endpoints(
         mouse_event_1.position,
         mouse_event_1.view_direction,
         mouse_event_1.dims_displayed,
@@ -1164,7 +1164,7 @@ def test_cursor_ray_3d():
         dims_displayed=[1, 2, 3],
         view_direction=[0, 1, 0, 0],
     )
-    start_point, end_point = labels._cursor_ray(
+    start_point, end_point = labels.get_ray_endpoints(
         mouse_event_2.position,
         mouse_event_2.view_direction,
         mouse_event_2.dims_displayed,
@@ -1181,7 +1181,7 @@ def test_cursor_ray_3d():
         view_direction=[0, 1, 0, 0],
     )
     labels._slice_dims([0, 0, 0, 0], ndisplay=3)
-    start_point, end_point = labels._cursor_ray(
+    start_point, end_point = labels.get_ray_endpoints(
         mouse_event_3.position,
         mouse_event_3.view_direction,
         mouse_event_3.dims_displayed,
@@ -1209,7 +1209,7 @@ def test_cursor_ray_3d_rolled():
     # set the slice to one with data and the view to 3D
     labels._slice_dims([0, 0, 0, 1], ndisplay=3)
 
-    start_point, end_point = labels._cursor_ray(
+    start_point, end_point = labels.get_ray_endpoints(
         mouse_event_1.position,
         mouse_event_1.view_direction,
         mouse_event_1.dims_displayed,
@@ -1237,7 +1237,7 @@ def test_cursor_ray_3d_transposed():
     # set the slice to one with data and the view to 3D
     labels._slice_dims([0, 0, 0, 1], ndisplay=3)
 
-    start_point, end_point = labels._cursor_ray(
+    start_point, end_point = labels.get_ray_endpoints(
         mouse_event_1.position,
         mouse_event_1.view_direction,
         mouse_event_1.dims_displayed,

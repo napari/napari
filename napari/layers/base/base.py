@@ -1030,7 +1030,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed_mask].T
 
-    def _cursor_ray(
+    def get_ray_endpoints(
         self,
         position: List[float],
         view_direction: np.ndarray,
