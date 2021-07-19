@@ -38,7 +38,6 @@ from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
 from ..qthreading import create_worker
 from ..widgets.qt_eliding_label import ElidingLabel
-from ..widgets.qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_report import QtPluginErrReporter
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
@@ -412,7 +411,6 @@ class QtPluginDialog(QDialog):
         else:
             self.show_status_btn.setChecked(False)
         self.refresh()
-        self.plugin_sorter.refresh()
 
     def refresh(self):
         self.installed_list.clear()
@@ -471,9 +469,6 @@ class QtPluginDialog(QDialog):
         self.v_splitter = QSplitter(self.h_splitter)
         self.v_splitter.setOrientation(Qt.Vertical)
         self.v_splitter.setMinimumWidth(500)
-        self.plugin_sorter = QtPluginSorter(parent=self.h_splitter)
-        self.plugin_sorter.layout().setContentsMargins(2, 0, 0, 0)
-        self.plugin_sorter.hide()
 
         installed = QWidget(self.v_splitter)
         lay = QVBoxLayout(installed)
@@ -539,7 +534,6 @@ class QtPluginDialog(QDialog):
 
         self.show_status_btn = QPushButton(trans._("Show Status"), self)
         self.show_status_btn.setFixedWidth(100)
-        self.show_sorter_btn = QPushButton(trans._("<< Show Sorter"), self)
         self.close_btn = QPushButton(trans._("Close"), self)
         self.close_btn.clicked.connect(self.accept)
         buttonBox.addWidget(self.show_status_btn)
@@ -548,7 +542,6 @@ class QtPluginDialog(QDialog):
         buttonBox.addWidget(self.direct_entry_btn)
         buttonBox.addWidget(self.process_error_indicator)
         buttonBox.addSpacing(60)
-        buttonBox.addWidget(self.show_sorter_btn)
         buttonBox.addWidget(self.close_btn)
         buttonBox.setContentsMargins(0, 0, 4, 0)
         vlay_1.addLayout(buttonBox)
@@ -556,10 +549,6 @@ class QtPluginDialog(QDialog):
         self.show_status_btn.setCheckable(True)
         self.show_status_btn.setChecked(False)
         self.show_status_btn.toggled.connect(self._toggle_status)
-
-        self.show_sorter_btn.setCheckable(True)
-        self.show_sorter_btn.setChecked(False)
-        self.show_sorter_btn.toggled.connect(self._toggle_sorter)
 
         self.v_splitter.setStretchFactor(1, 2)
         self.h_splitter.setStretchFactor(0, 2)
@@ -584,14 +573,6 @@ class QtPluginDialog(QDialog):
                 self.direct_entry_edit.setText(files[0])
                 return True
         return super().eventFilter(watched, event)
-
-    def _toggle_sorter(self, show):
-        if show:
-            self.show_sorter_btn.setText(trans._(">> Hide Sorter"))
-            self.plugin_sorter.show()
-        else:
-            self.show_sorter_btn.setText(trans._("<< Show Sorter"))
-            self.plugin_sorter.hide()
 
     def _toggle_status(self, show):
         if show:
