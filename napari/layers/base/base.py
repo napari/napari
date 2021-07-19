@@ -1030,20 +1030,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed_mask].T
 
-    def get_ray_endpoints(
+    def get_ray_intersections(
         self,
         position: List[float],
         view_direction: np.ndarray,
         dims_displayed: List[int],
     ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
-        """Get the start and end point for the ray extending from the cursor through the data
+        """Get the start and end point for the ray extending
+        from a point through the data bounding box.
 
         Parameters
         ----------
         position :
-            the position of the click in world coordinates
+            the position of the point in nD world coordinates
         view_direction : np.ndarray
-            a unit vector giving the direction of the camera in world coordinates
+            a unit vector giving the direction of the ray in nD world coordinates
         dims_displayed :
             a list of the dimensions currently being displayed in the viewer.
 
