@@ -55,7 +55,8 @@ InstallerTypes = Literal['pip', 'conda', 'mamba']
 
 # TODO: add error icon and handle pip install errors
 class Installer(QObject):
-    finished = Signal()
+    started = Signal()
+    finished = Signal(int)
 
     def __init__(
         self,
@@ -64,21 +65,31 @@ class Installer(QObject):
     ):
         super().__init__()
         self._queue = []
+        self._processes = []
+        self._exit_code = 0
         self._conda_env_path = None
 
         if installer != "pip" and (Path(sys.prefix) / "conda-meta").is_dir():
             self._conda_env_path = sys.prefix
 
         # create install process
-        self._output_widget = None
-        self.process = QProcess()
-        if installer != "pip":
-            self.process.setProgram(installer)
-        else:
-            self.process.setProgram(sys.executable)
+        self._output_widget = output_widget
+        self.process = None
 
-        self.process.setProcessChannelMode(QProcess.MergedChannels)
-        self.process.readyReadStandardOutput.connect(self._on_stdout_ready)
+    def _create_process(
+        self,
+        installer: InstallerTypes = "pip",
+    ):
+        process = QProcess()
+        if installer != "pip":
+            process.setProgram(installer)
+        else:
+            process.setProgram(sys.executable)
+
+        process.setProcessChannelMode(QProcess.MergedChannels)
+        process.readyReadStandardOutput.connect(
+            lambda process=process: self._on_stdout_ready(process)
+        )
 
         # setup process path
         env = QProcessEnvironment()
@@ -90,30 +101,46 @@ class Installer(QObject):
         env.insert(
             "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
         )
-        self.process.setProcessEnvironment(env)
-        self.process.finished.connect(self._handle_action)
-        self.set_output_widget(output_widget)
+        process.setProcessEnvironment(env)
+        self._processes.append(process)
+        self.set_output_widget(self._output_widget)
+        process.finished.connect(
+            lambda ec, es: self._on_process_finished(process, ec, es)
+        )
+        return process
 
     def set_output_widget(self, output_widget: QTextEdit):
         if output_widget:
             self._output_widget = output_widget
-            self.process.setParent(output_widget)
+            # self.process.setParent(output_widget)
 
-    def _on_stdout_ready(self):
+    def _on_process_finished(self, process, exit_code, exit_status):
+        if exit_code != 0:
+            self._exit_code = 0
+
+        if process in self._processes:
+            self._processes.remove(process)
+            process.terminate()
+
+        self._handle_action()
+
+    def _on_stdout_ready(self, process):
         if self._output_widget:
-            text = self.process.readAllStandardOutput().data().decode()
+            text = process.readAllStandardOutput().data().decode()
             self._output_widget.append(text)
 
     def _handle_action(self):
         if self._queue:
             func = self._queue.pop()
+            self.started.emit()
             func()
-        else:
+
+        if not self._processes:
             from ...plugins import plugin_manager
 
             plugin_manager.discover()
             plugin_manager.prune()
-            self.finished.emit()
+            self.finished.emit(self._exit_code)
 
     def install(
         self,
@@ -155,11 +182,12 @@ class Installer(QObject):
                 user_plugin_dir(),
             ]
 
-        self.process.setArguments(cmd + list(pkg_list))
+        process = self._create_process(installer)
+        process.setArguments(cmd + list(pkg_list))
         if self._output_widget and self._queue:
             self._output_widget.clear()
 
-        self.process.start()
+        process.start()
 
     def uninstall(
         self,
@@ -191,11 +219,12 @@ class Installer(QObject):
         else:
             args = ['-m', 'pip', 'uninstall', '-y']
 
-        self.process.setArguments(args + list(pkg_list))
+        process = self._create_process(installer)
+        process.setArguments(args + list(pkg_list))
         if self._output_widget and self._queue:
             self._output_widget.clear()
 
-        self.process.start()
+        process.start()
 
         for pkg in pkg_list:
             plugin_manager.unregister(pkg)
@@ -424,11 +453,9 @@ class QPluginList(QListWidget):
         self._remove_list.append((pkg_name, item))
 
         if action_name == "install":
-            print("install", action_name, pkg_name)
             widget.set_busy(trans._("installing..."))
             method([pkg_name])
         elif action_name == "uninstall":
-            print("uninstall", action_name, pkg_name)
             widget.set_busy(trans._("uninstalling..."))
             method([pkg_name])
 
@@ -467,25 +494,25 @@ class QtPluginDialog(QDialog):
         self.installer = Installer()
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
-        self.installer.process.started.connect(self._on_installer_start)
-        self.installer.process.finished.connect(self._on_installer_done)
-        self.installer.finished.connect(lambda: self.refresh(force=True))
-        self.refresh(force=True)
+        self.installer.started.connect(self._on_installer_start)
+        self.installer.finished.connect(self._on_installer_done)
+        self.refresh()
 
     def _on_installer_start(self):
         self.working_indicator.show()
         self.process_error_indicator.hide()
 
-    def _on_installer_done(self, exit_code, exit_status):
+    def _on_installer_done(self, exit_code):
         self.working_indicator.hide()
         if exit_code:
             self.process_error_indicator.show()
 
-    def refresh(self, force=False):
-        if force:
-            self.installed_list.clear()
-            self.available_list.clear()
-            self.plugin_sorter.refresh()
+        self.refresh()
+
+    def refresh(self):
+        self.installed_list.clear()
+        self.available_list.clear()
+        self.plugin_sorter.refresh()
 
         # fetch installed
         from ...plugins import plugin_manager
