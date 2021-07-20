@@ -151,7 +151,7 @@ class PropertyManager:
         else:
             manager = cls()
         lens = [len(v) for v in manager.values.values()]
-        if expected_len is None:
+        if expected_len is None and len(lens) > 0:
             expected_len = lens[0]
         if any(v != expected_len for v in lens):
             raise ValueError(

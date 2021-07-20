@@ -21,7 +21,7 @@ from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import validate_properties
+from ..utils.property_manager import PropertyManager
 from ._labels_constants import LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -415,7 +415,7 @@ class Labels(_ImageBase):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return self._properties
+        return self._properties.values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -427,15 +427,17 @@ class Labels(_ImageBase):
     @classmethod
     def _prepare_properties(
         cls, properties: Optional[Dict[str, Array]]
-    ) -> Tuple[Dict[str, np.ndarray], Dict[int, int]]:
-        properties = validate_properties(properties)
+    ) -> Tuple[PropertyManager, Dict[int, int]]:
+        manager = PropertyManager.from_layer_kwargs(properties=properties)
         label_index = {}
-        if 'index' in properties:
-            label_index = {i: k for k, i in enumerate(properties['index'])}
-        elif len(properties) > 0:
-            max_len = max(len(x) for x in properties.values())
+        if 'index' in manager.dict():
+            label_index = {
+                i: k for k, i in enumerate(manager.get('index').values)
+            }
+        elif len(manager.dict()) > 0:
+            max_len = max(len(x) for x in manager.values.values())
             label_index = {i: i for i in range(max_len)}
-        return properties, label_index
+        return manager, label_index
 
     @property
     def color(self):
@@ -1213,7 +1215,7 @@ class Labels(_ImageBase):
         idx = self._label_index[label_value]
         return [
             f'{k}: {v[idx]}'
-            for k, v in self._properties.items()
+            for k, v in self.properties.items()
             if k != 'index'
             and len(v) > idx
             and v[idx] is not None
