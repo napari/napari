@@ -5,6 +5,7 @@ from ._icons import (
     _register_napari_resources,
     _unregister_napari_resources,
     compile_qt_svgs,
+    register_napari_themes,
 )
 from ._svg import QColoredSVGIcon
 
@@ -14,6 +15,7 @@ __all__ = [
     '_register_napari_resources',
     '_unregister_napari_resources',
     'compile_qt_svgs',
+    'register_napari_themes',
 ]
 
 STYLE_PATH = (Path(__file__).parent / 'styles').resolve()

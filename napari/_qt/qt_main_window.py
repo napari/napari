@@ -452,6 +452,20 @@ class Window:
         if show:
             self.show()
 
+    def _setup_existing_themes(self):
+        """This function is only executed once at the startup of napari
+        to connect events to themes that have not been connected yet."""
+        from napari._qt.qt_resources import register_napari_themes
+
+        for theme in _themes.values():
+            self._connect_theme(theme)
+
+        # make sure settings are up-to-date
+        rebuild_theme_settings()
+        # register icon resources - this will regenerate icons to make sure that
+        # plugin icons are also present
+        register_napari_themes()
+
     def _remove_plugins_theme(self, event=None):
         """Remove plugin theme."""
         from ..utils.theme import unregister_theme
@@ -480,14 +494,8 @@ class Window:
             )
 
         # unregister all themes that were provided by the plugins
-        for theme_name in plugin_manager._theme_data[plugin_name].keys():
+        for theme_name in plugin_manager._theme_data[plugin_name]:
             unregister_theme(theme_name)
-
-    def _setup_existing_themes(self):
-        """This function is only executed once at the startup of napari
-        to connect events to themes that have not been connected yet."""
-        for theme in _themes.values():
-            self._connect_theme(theme)
 
     def _add_theme(self, event):
         """Add new theme and connect events."""
@@ -559,7 +567,7 @@ class Window:
         )
 
         _unregister_napari_resources()
-        _register_napari_resources(False, force_rebuild=True)
+        _register_napari_resources(True, force_rebuild=True)
         self._update_theme()
 
     def _add_menubar(self):

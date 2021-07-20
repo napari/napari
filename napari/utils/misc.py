@@ -8,12 +8,14 @@ import os
 import re
 import sys
 from enum import Enum, EnumMeta
-from os import PathLike, fspath, path
+from os import PathLike, fspath
+from os import path as os_path
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Iterable,
     Optional,
     Sequence,
     Type,
@@ -29,7 +31,7 @@ if TYPE_CHECKING:
     import packaging.version
 
 
-ROOT_DIR = path.dirname(path.dirname(__file__))
+ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
 try:
     from importlib import metadata as importlib_metadata
@@ -66,8 +68,8 @@ def running_as_bundled_app() -> bool:
 
 def bundle_bin_dir() -> Optional[str]:
     """Return path to briefcase app_packages/bin if it exists."""
-    bin = path.join(path.dirname(sys.exec_prefix), 'app_packages', 'bin')
-    if path.isdir(bin):
+    bin = os_path.join(os_path.dirname(sys.exec_prefix), 'app_packages', 'bin')
+    if os_path.isdir(bin):
         return bin
 
 
@@ -313,7 +315,7 @@ def abspath_or_url(relpath: T) -> T:
         urlp = urlparse(relpath)
         if urlp.scheme and urlp.netloc:
             return relpath
-        return path.abspath(path.expanduser(relpath))
+        return os_path.abspath(os_path.expanduser(relpath))
 
     raise TypeError(
         trans._(
@@ -448,11 +450,11 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     return operator.eq
 
 
-def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
+def dir_hash(
+    path: Union[str, Path], include_paths=True, ignore_hidden=True
+) -> str:
     """Compute the hash of a directory, based on structure and contents."""
     import hashlib
-
-    hashfunc = hashlib.md5
 
     if not Path(path).is_dir():
         raise TypeError(
@@ -463,21 +465,42 @@ def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
             )
         )
 
-    _hash = hashfunc()
+    hash_func = hashlib.md5
+    _hash = hash_func()
     for root, _, files in os.walk(path):
         for fname in sorted(files):
             if fname.startswith(".") and ignore_hidden:
                 continue
-            # update the hash with the file contents
-            file = Path(root) / fname
-            _hash.update(file.read_bytes())
-
-            if include_paths:
-                # update the hash with the filename
-                fparts = file.relative_to(path).parts
-                _hash.update(''.join(fparts).encode())
-
+            _file_hash(_hash, Path(root) / fname, path, include_paths)
     return _hash.hexdigest()
+
+
+def paths_hash(
+    paths: Iterable[Union[str, Path]],
+    include_paths: bool = True,
+    ignore_hidden: bool = True,
+) -> str:
+    """Compute the hash of list of paths."""
+    import hashlib
+
+    hash_func = hashlib.md5
+    _hash = hash_func()
+    for file_path in sorted(paths):
+        file_path = Path(file_path)
+        if ignore_hidden and str(file_path.stem).startswith("."):
+            continue
+        _file_hash(_hash, file_path, file_path.parent, include_paths)
+    return _hash.hexdigest()
+
+
+def _file_hash(_hash, file: Path, path: Path, include_paths: bool = True):
+    """Update hash with based on file contents and optionally relative path."""
+    _hash.update(file.read_bytes())
+
+    if include_paths:
+        # update the hash with the filename
+        fparts = file.relative_to(path).parts
+        _hash.update(''.join(fparts).encode())
 
 
 def _combine_signatures(

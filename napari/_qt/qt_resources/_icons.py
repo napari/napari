@@ -338,10 +338,10 @@ def _compile_napari_resources(
 
 
 def _get_resources_path() -> Tuple[str, Path]:
-    from ...resources._icons import ICON_PATH
-    from ...utils.misc import dir_hash
+    from ...resources._icons import ICONS
+    from ...utils.misc import paths_hash
 
-    icon_hash = dir_hash(ICON_PATH)  # get hash of icons folder contents
+    icon_hash = paths_hash(ICONS.values())
     key = f'_qt_resources_{qtpy.API_NAME}_{qtpy.QT_VERSION}_{icon_hash}'
     key = key.replace(".", "_")
     save_path = Path(__file__).parent / f"{key}.py"
@@ -403,7 +403,7 @@ def _unregister_napari_resources():
             qCleanupResources()  # try cleaning up resources
 
 
-def register_napari_theme():
+def register_napari_themes():
     """Register theme."""
     _unregister_napari_resources()
     _register_napari_resources(False, force_rebuild=True)
