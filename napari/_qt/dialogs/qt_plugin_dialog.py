@@ -112,7 +112,6 @@ class Installer(QObject):
     def set_output_widget(self, output_widget: QTextEdit):
         if output_widget:
             self._output_widget = output_widget
-            # self.process.setParent(output_widget)
 
     def _on_process_finished(self, process, exit_code, exit_status):
         if exit_code != 0:
@@ -435,11 +434,7 @@ class QPluginList(QListWidget):
             enabled=enabled,
         )
         item.widget = widg
-        # method = getattr(
-        #     self.installer, 'uninstall' if plugin_name else 'install'
-        # )
         action_name = 'uninstall' if plugin_name else 'install'
-        # widg.action_button.clicked.connect(lambda: method([project_info.name]))
         widg.action_button.clicked.connect(
             lambda: self.handle_action(item, project_info.name, action_name)
         )
