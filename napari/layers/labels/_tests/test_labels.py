@@ -1,5 +1,7 @@
 import itertools
+from dataclasses import dataclass
 from tempfile import TemporaryDirectory
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -974,3 +976,257 @@ def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
 
     np.testing.assert_array_equal(labels.scale, (1, 2, 1, 1))
     np.testing.assert_array_equal(labels.translate, (0, 5, 5, 5))
+
+
+@dataclass
+class MouseEvent:
+    # mock mouse event class
+    pos: List[int]
+    position: List[int]
+    dims_point: List[int]
+    dims_displayed: List[int]
+    view_direction: List[int]
+
+
+def test_get_value_ray_3d():
+    """Test using _get_value_ray to interrogate labels in 3D"""
+    # make a mock mouse event
+    mouse_event = MouseEvent(
+        pos=[25, 25],
+        position=[10, 5, 5],
+        dims_point=[1, 0, 0, 0],
+        dims_displayed=[1, 2, 3],
+        view_direction=[1, 0, 0],
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
+
+    # set the dims to the slice with labels
+    labels._slice_dims([1, 0, 0, 0], ndisplay=3)
+
+    value = labels._get_value_ray(
+        start_point=np.array([1, 0, 5, 5]),
+        end_point=np.array([1, 20, 5, 5]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value == 1
+
+    # check with a ray that only goes through background
+    value = labels._get_value_ray(
+        start_point=np.array([1, 0, 15, 15]),
+        end_point=np.array([1, 20, 15, 15]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value is None
+
+    # set the dims to a slice without labels
+    labels._slice_dims([0, 0, 0, 0], ndisplay=3)
+
+    value = labels._get_value_ray(
+        start_point=np.array([0, 0, 5, 5]),
+        end_point=np.array([0, 20, 5, 5]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value is None
+
+
+def test_get_value_ray_3d_rolled():
+    """Test using _get_value_ray to interrogate labels in 3D
+    with the dimensions rolled.
+    """
+    # make a mock mouse event
+    mouse_event = MouseEvent(
+        pos=[25, 25],
+        position=[10, 5, 5, 1],
+        dims_point=[0, 0, 0, 1],
+        dims_displayed=[0, 1, 2],
+        view_direction=[1, 0, 0, 0],
+    )
+    data = np.zeros((20, 20, 20, 5), dtype=int)
+    data[0:10, 0:10, 0:10, 1] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
+
+    # set the dims to the slice with labels
+    labels._slice_dims((0, 0, 0, 1), ndisplay=3, order=(3, 0, 1, 2))
+    labels.set_view_slice()
+
+    value = labels._get_value_ray(
+        start_point=np.array([0, 5, 5, 1]),
+        end_point=np.array([20, 5, 5, 1]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value == 1
+
+
+def test_get_value_ray_3d_transposed():
+    """Test using _get_value_ray to interrogate labels in 3D
+    with the dimensions trasposed.
+    """
+    # make a mock mouse event
+    mouse_event = MouseEvent(
+        pos=[25, 25],
+        position=[10, 5, 5, 1],
+        dims_point=[0, 0, 0, 1],
+        dims_displayed=[1, 3, 2],
+        view_direction=[1, 0, 0, 0],
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(0, 5, 5, 5))
+
+    # set the dims to the slice with labels
+    labels._slice_dims((1, 0, 0, 0), ndisplay=3, order=(0, 1, 3, 2))
+    labels.set_view_slice()
+
+    value = labels._get_value_ray(
+        start_point=np.array([1, 0, 5, 5]),
+        end_point=np.array([1, 20, 5, 5]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value == 1
+
+
+def test_get_value_ray_2d():
+    """_get_value_ray currently only returns None in 2D
+    (i.e., it shouldn't be used for 2D).
+    """
+    # make a mock mouse event
+    mouse_event = MouseEvent(
+        pos=[25, 25],
+        position=[5, 5],
+        dims_point=[1, 10, 0, 0],
+        dims_displayed=[2, 3],
+        view_direction=[1, 0, 0],
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
+
+    # set the dims to the slice with labels, but 2D
+    labels._slice_dims([1, 10, 0, 0], ndisplay=2)
+
+    value = labels._get_value_ray(
+        start_point=np.empty([]),
+        end_point=np.empty([]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value is None
+
+
+def test_cursor_ray_3d():
+    # make a mock mouse event
+    mouse_event_1 = MouseEvent(
+        pos=[25, 25],
+        position=[1, 10, 27, 10],
+        dims_point=[1, 0, 0, 0],
+        dims_displayed=[1, 2, 3],
+        view_direction=[0, 1, 0, 0],
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    labels = Labels(data, scale=(1, 1, 2, 1), translate=(5, 5, 5))
+
+    # set the slice to one with data and the view to 3D
+    labels._slice_dims([1, 0, 0, 0], ndisplay=3)
+
+    # axis 0 : [0, 20], bounding box extents along view axis, [1, 0, 0]
+    # click is transformed: (value - translation) / scale
+    # axis 1: click at 27 in world coords -> (27 - 5) / 2 = 11
+    # axis 2: click at 10 in world coords -> (10 - 5) / 1 = 5
+    start_point, end_point = labels.get_ray_intersections(
+        mouse_event_1.position,
+        mouse_event_1.view_direction,
+        mouse_event_1.dims_displayed,
+    )
+    np.testing.assert_allclose(start_point, [1, 0, 11, 5])
+    np.testing.assert_allclose(end_point, [1, 19, 11, 5])
+
+    # click in the background
+    mouse_event_2 = MouseEvent(
+        pos=[25, 25],
+        position=[1, 10, 65, 10],
+        dims_point=[1, 0, 0, 0],
+        dims_displayed=[1, 2, 3],
+        view_direction=[0, 1, 0, 0],
+    )
+    start_point, end_point = labels.get_ray_intersections(
+        mouse_event_2.position,
+        mouse_event_2.view_direction,
+        mouse_event_2.dims_displayed,
+    )
+    assert start_point is None
+    assert end_point is None
+
+    # click in a slice with no labels
+    mouse_event_3 = MouseEvent(
+        pos=[25, 25],
+        position=[0, 10, 27, 10],
+        dims_point=[0, 0, 0, 0],
+        dims_displayed=[1, 2, 3],
+        view_direction=[0, 1, 0, 0],
+    )
+    labels._slice_dims([0, 0, 0, 0], ndisplay=3)
+    start_point, end_point = labels.get_ray_intersections(
+        mouse_event_3.position,
+        mouse_event_3.view_direction,
+        mouse_event_3.dims_displayed,
+    )
+    np.testing.assert_allclose(start_point, [0, 0, 11, 5])
+    np.testing.assert_allclose(end_point, [0, 19, 11, 5])
+
+
+def test_cursor_ray_3d_rolled():
+    """Test that the cursor works when the displayed
+    viewer axes have been rolled
+    """
+    # make a mock mouse event
+    mouse_event_1 = MouseEvent(
+        pos=[25, 25],
+        position=[10, 27, 10, 1],
+        dims_point=[0, 0, 0, 1],
+        dims_displayed=[0, 1, 2],
+        view_direction=[1, 0, 0, 0],
+    )
+    data = np.zeros((20, 20, 20, 5), dtype=int)
+    data[0:10, 0:10, 0:10, 1] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
+
+    # set the slice to one with data and the view to 3D
+    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+
+    start_point, end_point = labels.get_ray_intersections(
+        mouse_event_1.position,
+        mouse_event_1.view_direction,
+        mouse_event_1.dims_displayed,
+    )
+    np.testing.assert_allclose(start_point, [0, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [19, 11, 5, 1])
+
+
+def test_cursor_ray_3d_transposed():
+    """Test that the cursor works when the displayed
+    viewer axes have been transposed
+    """
+    # make a mock mouse event
+    mouse_event_1 = MouseEvent(
+        pos=[25, 25],
+        position=[10, 27, 10, 1],
+        dims_point=[0, 0, 0, 1],
+        dims_displayed=[0, 2, 1],
+        view_direction=[1, 0, 0, 0],
+    )
+    data = np.zeros((20, 20, 20, 5), dtype=int)
+    data[0:10, 0:10, 0:10, 1] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
+
+    # set the slice to one with data and the view to 3D
+    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+
+    start_point, end_point = labels.get_ray_intersections(
+        mouse_event_1.position,
+        mouse_event_1.view_direction,
+        mouse_event_1.dims_displayed,
+    )
+    np.testing.assert_allclose(start_point, [0, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [19, 11, 5, 1])
