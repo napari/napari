@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -791,6 +791,30 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # Convert the ChunkRequest to SliceData and use it.
             data = self._SliceDataClass.from_request(self, request)
             self._on_data_loaded(data, sync=False)
+
+    def _get_value_3d(
+        self,
+        start_position: np.ndarray,
+        end_position: np.ndarray,
+        dims_displayed: List[int],
+    ):
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_position : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_position : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        """
+        return self._get_value(start_position)
 
 
 class Image(_ImageBase):

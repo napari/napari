@@ -1260,6 +1260,9 @@ class Points(Layer):
 
         return selection
 
+    def _get_value_3d(self, **kwargs):
+        pass
+
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view

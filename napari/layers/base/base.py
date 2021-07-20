@@ -977,7 +977,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         raise NotImplementedError()
 
-    def get_value(self, position, *, world=False):
+    def get_value(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world=False,
+    ):
         """Value of the data at a position.
 
         If the layer is not visible, return None.
@@ -998,13 +1005,56 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if self.visible:
             if world:
                 position = self.world_to_data(position)
-            value = self._get_value(position=tuple(position))
+            if dims_displayed is not None:
+                if (len(dims_displayed) == 2) or dims_displayed is None:
+                    value = self._get_value(position=tuple(position))
+
+                elif len(dims_displayed) == 3:
+                    start_pos, end_pos = self.get_ray_intersections(
+                        position=position,
+                        view_direction=view_direction,
+                        dims_displayed=dims_displayed,
+                    )
+                    value = self._get_value_3d(
+                        start_position=start_pos,
+                        end_position=end_pos,
+                        dims_displayed=dims_displayed,
+                    )
+            else:
+                value = self._get_value(position)
+
         else:
             value = None
         # This should be removed as soon as possible, it is still
         # used in Points and Shapes.
         self._value = value
         return value
+
+    @abstractmethod
+    def _get_value_3d(
+        self,
+        start_position: np.ndarray,
+        end_position: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Union[float, int]:
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_position : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_position : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+
+        """
+        raise NotImplementedError()
 
     @contextmanager
     def block_update_properties(self):
@@ -1257,7 +1307,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         coordinates = self.world_to_data(self._position)
         return [coordinates[i] for i in self._dims_displayed]
 
-    def get_status(self, position, *, world=False):
+    def get_status(
+        self,
+        position: np.ndarray,
+        *,
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+        world=False,
+    ):
         """
         Status message of the data at a coordinate position.
 
@@ -1274,7 +1331,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        value = self.get_value(position, world=world)
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
         return generate_layer_status(self.name, position, value)
 
     def _get_tooltip_text(self, position, *, world=False):

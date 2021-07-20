@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 from ..utils.events import EventedModel
 from ._viewer_constants import CursorStyle
@@ -34,3 +34,4 @@ class Cursor(EventedModel):
     scaled: bool = True
     size: int = 1
     style: CursorStyle = CursorStyle.STANDARD
+    _view_direction: Optional[Tuple[float, ...]] = None

@@ -38,7 +38,6 @@ _REV_SHAPE_HELP = {
     trans._('hold <space> to pan/zoom, drag to erase a label'): {Mode.ERASE},
 }
 
-
 # This avoid duplicating the trans._ help messages above
 # as some modes have the same help.
 # while most tooling will recognise identical messages,
@@ -890,6 +889,8 @@ class Labels(_ImageBase):
             The first non-zero value encountered along the ray. If none
             was encountered or the viewer is in 2D mode, None is returned.
         """
+        if start_point is None or end_point is None:
+            return None
         if len(dims_displayed) == 3:
             # only use get_value_ray on 3D for now
             # we use dims_displayed because the image slice
@@ -914,6 +915,15 @@ class Labels(_ImageBase):
                 return values[nonzero_indices[0]]
 
         return None
+
+    def _get_value_3d(
+        self, start_position, end_position, dims_displayed
+    ) -> Optional[int]:
+        return self._get_value_ray(
+            start_point=start_position,
+            end_point=end_position,
+            dims_displayed=dims_displayed,
+        )
 
     def _reset_history(self, event=None):
         self._undo_history = deque()
@@ -1153,7 +1163,14 @@ class Labels(_ImageBase):
         if refresh is True:
             self.refresh()
 
-    def get_status(self, position=None, *, world=False):
+    def get_status(
+        self,
+        position=None,
+        *,
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+        world: bool = False,
+    ) -> str:
         """Status message of the data at a coordinate position.
 
         Parameters
@@ -1169,7 +1186,12 @@ class Labels(_ImageBase):
         msg : string
             String containing a message that can be used as a status update.
         """
-        msg = super().get_status(position, world=world)
+        msg = super().get_status(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
 
         # if this labels layer has properties
         properties = self._get_properties(position, world)
