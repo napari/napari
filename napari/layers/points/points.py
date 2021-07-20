@@ -1261,7 +1261,24 @@ class Points(Layer):
         return selection
 
     def _get_value_3d(self, **kwargs):
-        pass
+        """Get the layer data value along a ray. Currently, this just
+        returns None. We will implement this in future work.
+
+        Parameters
+        ----------
+        start_position : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_position : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        """
+        return None
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""

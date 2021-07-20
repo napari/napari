@@ -2391,6 +2391,26 @@ class Shapes(Layer):
 
         return value
 
+    def _get_value_3d(self, **kwargs):
+        """Get the layer data value along a ray. Currently, this just
+        returns None. We will implement this in future work.
+
+        Parameters
+        ----------
+        start_position : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_position : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        """
+        return None
+
     def move_to_front(self):
         """Moves selected objects to be displayed in front of all others."""
         if len(self.selected_data) == 0:
