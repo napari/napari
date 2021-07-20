@@ -6,7 +6,7 @@ from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.layer_utils import validate_properties
+from ..utils.property_manager import Property, PropertyManager
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -141,15 +141,21 @@ class TrackManager:
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return self._properties
+        return self._properties.values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-        properties = validate_properties(properties, len(self.data))
-        if 'track_id' not in properties:
-            properties['track_id'] = self.track_ids
-        self._properties = {k: v[self._order] for k, v in properties.items()}
+        self._properties = PropertyManager.from_layer_kwargs(
+            properties=properties,
+            expected_len=len(self.data),
+        )
+        if 'track_id' not in self._properties.dict():
+            self._properties.add(
+                Property.from_values('track_id', self.track_ids)
+            )
+        for prop in self._properties.dict().values():
+            prop.values = prop.values[self._order]
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:

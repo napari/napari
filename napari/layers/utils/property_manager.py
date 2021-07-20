@@ -77,6 +77,9 @@ class PropertyManager:
     def get(self, name):
         return self._properties[name]
 
+    def add(self, prop):
+        self._properties[prop.name] = prop
+
     def resize(self, size):
         for prop in self._properties.values():
             prop.resize(size)
