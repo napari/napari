@@ -1,8 +1,17 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSlider
+from qtpy.QtWidgets import (
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QSpinBox,
+)
 
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
+from ...utils.settings import get_settings
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 
@@ -143,6 +152,14 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
+
+        self.gridViewButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.gridViewButton.customContextMenuRequested.connect(
+            self.open_grid_popup
+        )
+        # look here for button!!!  Need to copy the customcontext stuff you see below to try to get the
+        # menu to open. need to change your function at bottom to just be about the pop up and put the
+        # button back in place.  see the ndisplay button for example on how to do it.
         action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
@@ -194,6 +211,76 @@ class QtViewerButtons(QFrame):
         pop = QtPopup(self)
         pop.frame.setLayout(layout)
         pop.show_above_mouse()
+
+    def open_grid_popup(self):
+        """Toggle grid button
+
+        the button also owns the QtModalPopup that controls the toggle grid mode settings.
+        """
+        settings = get_settings()
+        # build popup modal form
+
+        popup = QtPopup(self)
+        form_layout = QFormLayout()
+        popup.frame.setLayout(form_layout)
+
+        grid_stride = QSpinBox(popup)
+        grid_stride.setObjectName("griddStrideBox")
+        grid_stride.setAlignment(Qt.AlignCenter)
+        grid_stride.setValue(settings.application.grid_stride)
+        # grid_stride.setValue(self.grid_stride)
+        # if hasattr(fpsspin, 'setStepType'):
+        #     # this was introduced in Qt 5.12.  Totally optional, just nice.
+        #     fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+        grid_stride.setMaximum(20)
+        grid_stride.setMinimum(-20)
+        form_layout.insertRow(
+            0,
+            QLabel(trans._('Grid Stride:'), parent=popup),
+            grid_stride,
+        )
+        self.grid_stride_box = grid_stride
+
+        wh_values = list(range(-1, 10))
+        wh_values = wh_values.pop(1)
+
+        grid_width = QSpinBox(popup)
+        grid_width.setObjectName("griddWidthBox")
+        grid_width.setAlignment(Qt.AlignCenter)
+        grid_width.setMaximum(20)
+        grid_width.setMinimum(-1)
+        grid_width.setValue(settings.application.grid_width)
+        # grid_width.setValue(self.grid_width)
+        # if hasattr(fpsspin, 'setStepType'):
+        #     # this was introduced in Qt 5.12.  Totally optional, just nice.
+        #     fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+
+        form_layout.insertRow(
+            1,
+            QLabel(trans._('Grid Width:'), parent=popup),
+            grid_width,
+        )
+        self.grid_width_box = grid_width
+
+        grid_height = QSpinBox(popup)
+        grid_height.setObjectName("gdStrideBox")
+        grid_height.setAlignment(Qt.AlignCenter)
+        grid_height.setMaximum(20)
+        grid_height.setMinimum(-20)
+        grid_height.setValue(settings.application.grid_height)
+        # grid_height.setValue(self.grid_height)
+        # if hasattr(fpsspin, 'setStepType'):
+        #     # this was introduced in Qt 5.12.  Totally optional, just nice.
+        #     fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+
+        form_layout.insertRow(
+            2,
+            QLabel(trans._('Grid Height:'), parent=popup),
+            grid_height,
+        )
+        self.grid_height_box = grid_height
+
+        popup.show_above_mouse()
 
 
 class QtDeleteButton(QPushButton):
