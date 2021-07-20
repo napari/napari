@@ -1,6 +1,6 @@
 import warnings
 from collections import deque
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -15,6 +15,7 @@ from ...utils.colormaps import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.events.event import WarningEmitter
+from ...utils.geometry import clamp_point_to_bounding_box
 from ...utils.translations import trans
 from ..base import no_op
 from ..image._image_utils import guess_multiscale
@@ -867,6 +868,52 @@ class Labels(_ImageBase):
             val = self._raw_to_displayed(np.array([label]))
             col = self.colormap.map(val)[0]
         return col
+
+    def _get_value_ray(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+
+        Returns
+        -------
+        value : Optional[int]
+            The first non-zero value encountered along the ray. If none
+            was encountered or the viewer is in 2D mode, None is returned.
+        """
+        if len(dims_displayed) == 3:
+            # only use get_value_ray on 3D for now
+            # we use dims_displayed because the image slice
+            # has its dimensions  in th same order as the vispy
+            # Volume
+            start_point = start_point[dims_displayed]
+            end_point = end_point[dims_displayed]
+            sample_ray = end_point - start_point
+            length_sample_vector = np.linalg.norm(sample_ray)
+            n_points = int(2 * length_sample_vector)
+            sample_points = np.linspace(
+                start_point, end_point, n_points, endpoint=True
+            )
+            im_slice = self._slice.image.raw
+            clamped = clamp_point_to_bounding_box(
+                sample_points, self._display_bounding_box(dims_displayed)
+            ).astype(int)
+            values = im_slice[tuple(clamped.T)]
+            nonzero_indices = np.flatnonzero(values)
+            if len(nonzero_indices > 0):
+                # if a nonzer0 value was found, return the first one
+                return values[nonzero_indices[0]]
+
+        return None
 
     def _reset_history(self, event=None):
         self._undo_history = deque()
