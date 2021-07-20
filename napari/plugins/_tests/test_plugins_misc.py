@@ -36,11 +36,13 @@ def test_plugin_events(napari_plugin_manager):
     tnpm: NapariPluginManager = napari_plugin_manager
 
     register_events = []
+    unregistering_events = []
     unregister_events = []
     enable_events = []
     disable_events = []
 
     tnpm.events.registered.connect(lambda e: register_events.append(e))
+    tnpm.events.unregistering.connect(lambda e: unregistering_events.append(e))
     tnpm.events.unregistered.connect(lambda e: unregister_events.append(e))
     tnpm.events.enabled.connect(lambda e: enable_events.append(e))
     tnpm.events.disabled.connect(lambda e: disable_events.append(e))
@@ -56,7 +58,9 @@ def test_plugin_events(napari_plugin_manager):
     assert not disable_events
 
     tnpm.unregister(Plugin)
+    assert len(unregistering_events) == 1
     assert len(unregister_events) == 1
+    assert unregistering_events[0].value == 'Plugin'
     assert unregister_events[0].value == 'Plugin'
 
     tnpm.set_blocked('Plugin')

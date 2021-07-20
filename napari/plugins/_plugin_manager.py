@@ -46,6 +46,8 @@ class NapariPluginManager(PluginManager):
     ------
     registered (value: str)
         Emitted after plugin named `value` has been registered.
+    unregistering (value: str)
+        Emitted before plugin named `value` is unregistered.
     unregistered (value: str)
         Emitted after plugin named `value` has been unregistered.
     enabled (value: str)
@@ -62,6 +64,7 @@ class NapariPluginManager(PluginManager):
         self.events = EmitterGroup(
             source=self,
             registered=None,
+            unregistering=None,
             unregistered=None,
             enabled=None,
             disabled=None,
@@ -108,6 +111,8 @@ class NapariPluginManager(PluginManager):
             _name = name_or_object
         else:
             _name = self.get_name(name_or_object)
+
+        self.events.unregistering(value=_name)
 
         plugin = super().unregister(name_or_object)
 
