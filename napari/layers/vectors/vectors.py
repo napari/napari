@@ -12,7 +12,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import get_current_properties, prepare_properties
+from ..utils.property_manager import PropertyManager
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 
 
@@ -202,8 +202,10 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._properties, self._property_choices = prepare_properties(
-            properties, property_choices, num_data=len(self.data)
+        self._properties = PropertyManager.from_layer_kwargs(
+            properties=properties,
+            property_choices=property_choices,
+            expected_len=len(self.data),
         )
 
         self._edge = ColorManager._from_layer_kwargs(
@@ -212,9 +214,9 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self._properties
+            properties=self.properties
             if self._data.size > 0
-            else self._property_choices,
+            else self.property_choices,
         )
 
         # Data containing vectors in the currently viewed slice
@@ -252,6 +254,7 @@ class Vectors(Layer):
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
+                self._properties.resize(n_vectors)
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the
                     # extra ones
@@ -260,23 +263,10 @@ class Vectors(Layer):
                             np.arange(n_vectors, len(self._edge.colors))
                         )
 
-                    for k in self.properties:
-                        self.properties[k] = self.properties[k][:n_vectors]
-
                 elif n_vectors > previous_n_vectors:
                     # If there are now more points, add the size and colors of the
                     # new ones
                     adding = n_vectors - previous_n_vectors
-
-                    for k in self.properties:
-                        new_property = np.repeat(
-                            self.properties[k][-1], adding, axis=0
-                        )
-                        self.properties[k] = np.concatenate(
-                            (self.properties[k], new_property), axis=0
-                        )
-
-                    # add new colors
                     self._edge._add(n_colors=adding)
 
         self._update_dims()
@@ -286,16 +276,17 @@ class Vectors(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return self._properties
+        return self._properties.values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties, self._property_choices = prepare_properties(
-            properties, self._property_choices, num_data=len(self.data)
+        self._properties = PropertyManager.from_layer_kwargs(
+            properties=properties,
+            expected_len=len(self.data),
         )
 
         if self._edge.color_properties is not None:
-            if self._edge.color_properties.name not in self._properties:
+            if self._edge.color_properties.name not in self.properties:
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
@@ -310,13 +301,13 @@ class Vectors(Layer):
                 self._edge.color_properties = {
                     'name': edge_color_name,
                     'values': properties[edge_color_name],
-                    'current_value': self._properties[edge_color_name][-1],
+                    'current_value': self.properties[edge_color_name][-1],
                 }
         self.events.properties()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_choices
+        return self._properties.choices
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -337,7 +328,7 @@ class Vectors(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
-                'property_choices': self._property_choices,
+                'property_choices': self.property_choices,
             }
         )
         return state
@@ -414,14 +405,11 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
-        current_properties = get_current_properties(
-            self._properties, self._property_choices, len(self.data)
-        )
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
             properties=self.properties,
-            current_properties=current_properties,
+            current_properties=self._properties.default_values,
         )
         self.events.edge_color()
 
@@ -467,16 +455,11 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    current_properties = get_current_properties(
-                        self._properties,
-                        self._property_choices,
-                        len(self.data),
-                    )
                     self._edge.color_properties = {
                         'name': color_property,
                         'values': self.properties[color_property],
                         'current_value': np.squeeze(
-                            current_properties[color_property]
+                            self._properties.default_values[color_property]
                         ),
                     }
                     warnings.warn(

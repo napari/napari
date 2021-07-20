@@ -56,7 +56,7 @@ def test_empty_vectors_with_property_choices():
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
-    np.testing.assert_equal(layer._property_choices, property_choices)
+    np.testing.assert_equal(layer.property_choices, property_choices)
 
 
 def test_empty_layer_with_edge_colormap():
