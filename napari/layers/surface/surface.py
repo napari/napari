@@ -1,4 +1,5 @@
 import warnings
+from typing import List
 
 import numpy as np
 
@@ -410,5 +411,29 @@ class Surface(IntensityVisualizationMixin, Layer):
         -------
         value : None
             Value of the data at the coord.
+        """
+        return None
+
+    def _get_value_3d(
+        self,
+        start_position: np.ndarray,
+        end_position: np.ndarray,
+        dims_displayed: List[int],
+    ):
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_position : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_position : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
         """
         return None

@@ -814,7 +814,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         value
             The data value along the supplied ray.
         """
-        return self._get_value(start_position)
+        return None
 
 
 class Image(_ImageBase):
