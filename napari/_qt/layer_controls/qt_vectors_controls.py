@@ -220,10 +220,10 @@ class QtVectorsControls(QtLayerControls):
         -------
         property_values : np.ndarray
             array of all of the union of the property names (keys)
-            in Vectors.properties and Vectors._property_choices
+            in Vectors.properties and Vectors.property_choices
 
         """
-        property_choices = [*self.layer._property_choices]
+        property_choices = [*self.layer.property_choices]
         properties = [*self.layer.properties]
         property_values = np.union1d(property_choices, properties)
 
