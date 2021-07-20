@@ -824,6 +824,11 @@ class VolumeVisual(Visual):
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program['texture2D_LUT'] = (
+            self.cmap.texture_lut()
+            if (hasattr(self.cmap, 'texture_lut'))
+            else None
+        )
         self.update()
 
     @property
