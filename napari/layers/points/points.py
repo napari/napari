@@ -14,11 +14,11 @@ from ...utils.colormaps.standardize_color import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..base import Layer
+from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import get_current_properties, prepare_properties
+from ..utils.property_manager import PropertyManager
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -26,7 +26,6 @@ from ._points_utils import create_box, fix_data_points, points_to_squares
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -207,8 +206,6 @@ class Points(Layer):
 
     Notes
     -----
-    _property_choices : dict {str: array (N,)}
-        Possible values for the properties in Points.properties.
     _view_data : array (M, 2)
         2D coordinates of points in the currently viewed slice.
     _view_size : array (M, )
@@ -293,7 +290,6 @@ class Points(Layer):
             edge_color=Event,
             current_edge_color=Event,
             properties=Event,
-            current_properties=Event,
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
@@ -304,9 +300,10 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        # Save the properties
-        self._properties, self._property_choices = prepare_properties(
-            properties, property_choices, len(self.data), save_choices=True
+        self._properties = PropertyManager.from_layer_kwargs(
+            properties=properties,
+            property_choices=property_choices,
+            expected_len=len(data),
         )
 
         # make the text
@@ -367,9 +364,9 @@ class Points(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self._properties
+            properties=self._properties.values
             if self._data.size > 0
-            else self._property_choices,
+            else self._properties.choices,
         )
         self._face = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -377,16 +374,12 @@ class Points(Layer):
             continuous_colormap=face_colormap,
             contrast_limits=face_contrast_limits,
             categorical_colormap=face_color_cycle,
-            properties=self._properties
+            properties=self._properties.values
             if self._data.size > 0
-            else self._property_choices,
+            else self._properties.choices,
         )
 
         self.size = size
-
-        self.current_properties = get_current_properties(
-            self._properties, self._property_choices, len(self.data)
-        )
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -418,11 +411,7 @@ class Points(Layer):
                                 np.arange(len(data), len(self._face.colors))
                             )
                         self._size = self._size[: len(data)]
-
-                        for k in self.properties:
-                            self.properties[k] = self.properties[k][
-                                : len(data)
-                            ]
+                        self._properties.resize(len(data))
 
                     elif len(data) > cur_npoints:
                         # If there are now more points, add the size and colors of the
@@ -439,13 +428,7 @@ class Points(Layer):
                             )
                         size = np.repeat([new_size], adding, axis=0)
 
-                        for k in self.properties:
-                            new_property = np.repeat(
-                                self.current_properties[k], adding, axis=0
-                            )
-                            self.properties[k] = np.concatenate(
-                                (self.properties[k], new_property), axis=0
-                            )
+                        self._properties.resize(len(data))
 
                         # add new colors
                         self._edge._add(n_colors=adding)
@@ -472,19 +455,17 @@ class Points(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_choices
+        return self._properties.choices
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
-        return self._properties
+        return self._properties.values
 
     @staticmethod
-    def _update_color_manager(
-        color_manager, properties, current_properties, name
-    ):
+    def _update_color_manager(color_manager, properties, name):
         if color_manager.color_properties is not None:
-            if color_manager.color_properties.name not in properties:
+            if color_manager.color_properties.name not in properties.dict():
                 color_manager.color_mode = ColorMode.DIRECT
                 color_manager.color_properties = None
                 warnings.warn(
@@ -497,35 +478,29 @@ class Points(Layer):
                 )
             else:
                 color_name = color_manager.color_properties.name
+                property = properties.get(color_name)
                 color_manager.color_properties = {
                     'name': color_name,
-                    'values': properties[color_name],
-                    'current_value': current_properties[color_name],
+                    'values': property.values,
+                    'current_value': property.default_value,
                 }
 
     @properties.setter
     def properties(
         self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
-        self._properties, self._property_choices = prepare_properties(
-            properties, self._property_choices, len(self.data)
+        self._properties = PropertyManager.from_layer_kwargs(
+            properties=properties, expected_len=len(self._data)
         )
-        # Updating current_properties can modify properties, so block to avoid
-        # infinite recursion when explicitly setting the properties.
-        with self.block_update_properties():
-            self.current_properties = get_current_properties(
-                self._properties, self._property_choices, len(self.data)
-            )
+
         self._update_color_manager(
             self._face,
             self._properties,
-            self._current_properties,
             "face_color",
         )
         self._update_color_manager(
             self._edge,
             self._properties,
-            self._current_properties,
             "edge_color",
         )
 
@@ -536,25 +511,23 @@ class Points(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        return self._current_properties
+        return self._properties.default_values
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = current_properties
-
-        if (
+        update_values = (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode != Mode.ADD
-        ):
-            props = self.properties
-            for k in props:
-                props[k][list(self.selected_data)] = current_properties[k]
-            self.properties = props
+        )
+        for name, value in current_properties.items():
+            prop = self._properties.get(name)
+            prop.default_value = value
+            if update_values:
+                prop.values[list(self.selected_data)] = value
 
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
-        self.events.current_properties()
 
     @property
     def text(self) -> TextManager:
@@ -958,8 +931,8 @@ class Points(Layer):
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
-                'properties': self.properties,
-                'property_choices': self._property_choices,
+                'properties': self._properties.values,
+                'property_choices': self._properties.choices,
                 'text': self.text.dict(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
@@ -1008,9 +981,13 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_size = size
 
-        properties = {
-            k: np.unique(v[index], axis=0) for k, v in self.properties.items()
-        }
+        properties = {}
+        for k, v in self.properties.items():
+            # pandas uses `object` as dtype for strings by default, which
+            # combined with the axis argument breaks np.unique
+            axis = 0 if v.ndim > 1 else None
+            properties[k] = np.unique(v[index], axis=axis)
+
         n_unique_properties = np.array([len(v) for v in properties.values()])
         if np.all(n_unique_properties == 1):
             with self.block_update_properties():
@@ -1053,56 +1030,41 @@ class Points(Layer):
         """
         return str(self._mode)
 
+    _drag_modes = {Mode.ADD: add, Mode.SELECT: select, Mode.PAN_ZOOM: no_op}
+
+    _move_modes = {
+        Mode.ADD: no_op,
+        Mode.SELECT: highlight,
+        Mode.PAN_ZOOM: no_op,
+    }
+    _cursor_modes = {
+        Mode.ADD: 'pointing',
+        Mode.SELECT: 'standard',
+        Mode.PAN_ZOOM: 'standard',
+    }
+
     @mode.setter
     def mode(self, mode):
-        mode = Mode(mode)
-
-        if not self.editable:
-            mode = Mode.PAN_ZOOM
-
-        if mode == self._mode:
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
             return
+        assert mode is not None, mode
         old_mode = self._mode
 
-        if old_mode == Mode.ADD:
-            self.mouse_drag_callbacks.remove(add)
-        elif old_mode == Mode.SELECT:
-            # add mouse drag and move callbacks
-            self.mouse_drag_callbacks.remove(select)
-            self.mouse_move_callbacks.remove(highlight)
-
         if mode == Mode.ADD:
-            self.cursor = 'pointing'
-            self.interactive = True
-            self.help = trans._('hold <space> to pan/zoom')
             self.selected_data = set()
-            self._set_highlight()
-            self.mouse_drag_callbacks.append(add)
-        elif mode == Mode.SELECT:
-            self.cursor = 'standard'
-            self.interactive = False
-            self.help = trans._('hold <space> to pan/zoom')
-            # add mouse drag and move callbacks
-            self.mouse_drag_callbacks.append(select)
-            self.mouse_move_callbacks.append(highlight)
-        elif mode == Mode.PAN_ZOOM:
-            self.cursor = 'standard'
             self.interactive = True
+
+        if mode == Mode.PAN_ZOOM:
             self.help = ''
+            self.interactive = True
         else:
-            raise ValueError(
-                trans._(
-                    "Mode not recognized",
-                    deferred=True,
-                )
-            )
+            self.help = trans._('hold <space> to pan/zoom')
 
         if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()
 
-        self._mode = mode
         self._set_highlight()
-
         self.events.mode(mode=mode)
 
     @property
@@ -1462,11 +1424,12 @@ class Points(Layer):
                 properties=self._clipboard['properties'],
             )
 
-            for k in self.properties:
-                self.properties[k] = np.concatenate(
-                    (self.properties[k], self._clipboard['properties'][k]),
-                    axis=0,
+            for name in self._clipboard['properties']:
+                prop = self._properties.get(name)
+                prop.values = np.concatenate(
+                    (prop.values, self._clipboard['properties'][name]), axis=0
                 )
+
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
