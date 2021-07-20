@@ -122,3 +122,38 @@ def switch_erase(layer):
 
     # on key release
     layer.mode = previous_mode
+
+
+@Labels.bind_key('1')
+def change_to_erase(layer):
+    layer.mode = Mode.ERASE
+
+
+@Labels.bind_key('2')
+def change_to_fill(layer):
+    layer.mode = Mode.FILL
+
+
+@Labels.bind_key('3')
+def change_to_paint(layer):
+    layer.mode = Mode.PAINT
+
+
+@Labels.bind_key('4')
+def change_to_pick(layer):
+    layer.mode = Mode.PICK
+
+
+@Labels.bind_key('5')
+def change_to_pan_zoom(layer):
+    layer.mode = Mode.PAN_ZOOM
+
+
+@Labels.bind_key('-')
+def decrement_label(layer):
+    layer.selected_label -= 1
+
+
+@Labels.bind_key('=')
+def increment_label(layer):
+    layer.selected_label += 1
