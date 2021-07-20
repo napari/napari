@@ -9,6 +9,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+from .._vispy.utils import get_view_direction_in_scene_coordinates
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
@@ -740,8 +741,8 @@ class QtViewer(QSplitter):
             of the viewer.
         """
         nd = self.viewer.dims.ndisplay
-        transform = self.view.camera.transform.inverse
-        mapped_position = transform.map(list(position))[:nd]
+        transform = self.view.scene.transform
+        mapped_position = transform.imap(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
 
         position_world = list(self.viewer.dims.point)
@@ -773,7 +774,21 @@ class QtViewer(QSplitter):
         self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
     def _process_mouse_event(self, mouse_callbacks, event):
-        """Called whenever mouse pressed in canvas.
+        """Add properties to the mouse event before passing the event to the
+        napari events system. Called whenever the mouse moves or is clicked.
+        As such, care should be taken to reduce the overhead in this function.
+        In future work, we should consider limiting the frequency at which
+        it is called.
+
+        This method adds following:
+            position: the position of the click in world coordinates.
+            view_direction: a unit vector giving the direction of the camera in
+                world coordinates.
+            dims_displayed: a list of the dimensions currently being displayed
+                in the viewer. This comes from viewer.dims.displayed.
+            dims_point: the indices for the data in view in world coordinates.
+                This comes from viewer.dims.point
+
         Parameters
         ----------
         mouse_callbacks : function
@@ -789,6 +804,17 @@ class QtViewer(QSplitter):
 
         # Add the cursor position to the event
         event.position = self.viewer.cursor.position
+
+        # Add the view ray to the event
+        event.view_direction = get_view_direction_in_scene_coordinates(
+            self.view, self.viewer.dims.point, self.viewer.dims.displayed
+        )
+
+        # Add the displayed dimensions to the event
+        event.dims_displayed = list(self.viewer.dims.displayed)
+
+        # Add the current dims indices
+        event.dims_point = list(self.viewer.dims.point)
 
         # Put a read only wrapper on the event
         event = ReadOnlyWrapper(event)

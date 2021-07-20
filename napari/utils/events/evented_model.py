@@ -216,3 +216,23 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return True
         else:
             return self.dict() == other
+
+    @contextmanager
+    def enums_as_values(self, as_values: bool = True):
+        """Temporarily override how enums are retrieved.
+
+        Parameters
+        ----------
+        as_values : bool, optional
+            Whether enums should be shown as values (or as enum objects),
+            by default `True`
+        """
+        before = getattr(self.Config, 'use_enum_values', None)
+        self.Config.use_enum_values = as_values
+        try:
+            yield
+        finally:
+            if before:
+                self.Config.use_enum_values = before
+            else:
+                delattr(self.Config, 'use_enum_values')
