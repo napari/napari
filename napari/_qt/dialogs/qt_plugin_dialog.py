@@ -23,6 +23,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from typing_extensions import Literal
 
 import napari.resources
 
@@ -40,18 +41,33 @@ from ..widgets.qt_eliding_label import ElidingLabel
 from ..widgets.qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_report import QtPluginErrReporter
 
+InstallerTypes = Literal['pip', 'conda', 'mamba']
+
+
 # TODO: add error icon and handle pip install errors
-
-
 # TODO: add queue to handle clicks when already processing
 class Installer:
-    def __init__(self, output_widget: QTextEdit = None):
+    def __init__(
+        self,
+        output_widget: QTextEdit = None,
+        installer: InstallerTypes = "pip",
+    ):
         from ...plugins import plugin_manager
+
+        # To be used when conda is fully supported
+        self._conda_env_path = None
+
+        if installer != "pip" and (Path(sys.prefix) / "conda-meta").is_dir():
+            self._conda_env_path = sys.prefix
 
         # create install process
         self._output_widget = None
         self.process = QProcess()
-        self.process.setProgram(sys.executable)
+        if installer != "pip":
+            self.process.setProgram(installer)
+        else:
+            self.process.setProgram(sys.executable)
+
         self.process.setProcessChannelMode(QProcess.MergedChannels)
         self.process.readyReadStandardOutput.connect(self._on_stdout_ready)
         # setup process path
@@ -79,28 +95,94 @@ class Installer:
             text = self.process.readAllStandardOutput().data().decode()
             self._output_widget.append(text)
 
-    def install(self, pkg_list: Sequence[str]):
-        cmd = ['-m', 'pip', 'install', '--upgrade']
-        if running_as_bundled_app() and sys.platform.startswith('linux'):
+    def install(
+        self,
+        pkg_list: Sequence[str],
+        installer: InstallerTypes = "pip",
+        channels: Sequence[str] = ("conda-forge",),
+    ):
+        if installer != "pip":
+            cmd = [
+                'install',
+                '-y',
+                '--prefix',
+                self._conda_env_path,
+            ]
+            for channel in channels:
+                cmd.extend(["-c", channel])
+        else:
+            cmd = ['-m', 'pip', 'install', '--upgrade']
+
+        if (
+            running_as_bundled_app()
+            and sys.platform.startswith('linux')
+            and not self._use_conda
+        ):
             cmd += [
                 '--no-warn-script-location',
                 '--prefix',
                 user_plugin_dir(),
             ]
+
         self.process.setArguments(cmd + list(pkg_list))
         if self._output_widget:
             self._output_widget.clear()
         self.process.start()
 
-    def uninstall(self, pkg_list: Sequence[str]):
-        args = ['-m', 'pip', 'uninstall', '-y']
+    def uninstall(
+        self,
+        pkg_list: Sequence[str],
+        installer: InstallerTypes = "pip",
+        channels: Sequence[str] = ("conda-forge",),
+    ):
+        if installer != "pip":
+            args = [
+                'remove',
+                '-y',
+                '--prefix',
+                self._conda_env_path,
+            ]
+
+            for channel in channels:
+                args.extend(["-c", channel])
+        else:
+            args = ['-m', 'pip', 'uninstall', '-y']
+
         self.process.setArguments(args + list(pkg_list))
         if self._output_widget:
             self._output_widget.clear()
+
         self.process.start()
 
         for pkg in pkg_list:
             plugin_manager.unregister(pkg)
+
+    @staticmethod
+    def _is_installed_with_conda():
+        """
+        Check if conda was used to install qt and napari.
+        """
+        from qtpy import QT_VERSION
+
+        from ..._version import version_tuple
+
+        parts = [str(part) for part in version_tuple[:3]]
+        napari_version_string = f"napari-{'.'.join(parts)}-"
+        qt_version_string = f"qt-{QT_VERSION}-"
+        conda_meta_path = Path(sys.prefix) / "conda-meta"
+        if conda_meta_path.is_dir():
+            for file in conda_meta_path.iterdir():
+                fname = file.parts[-1]
+                if fname.startswith(napari_version_string) and fname.endswith(
+                    ".json"
+                ):
+                    return True
+                elif fname.startswith(qt_version_string) and fname.endswith(
+                    ".json"
+                ):
+                    return True
+            else:
+                return False
 
 
 class PluginListItem(QFrame):

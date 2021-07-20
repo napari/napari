@@ -9,6 +9,7 @@ from pydantic import BaseSettings, Field, ValidationError
 from pydantic.env_settings import SettingsSourceCallable
 from typing_extensions import TypedDict
 
+from ...utils.settings._constants import LoopMode
 from ...utils.shortcuts import default_shortcuts
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
@@ -219,8 +220,7 @@ class BaseNapariSettings(BaseSettings, EventedModel, ManagerMixin):
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
-        use_enum_values = True
-        validate_all = True
+        use_enum_values = False  # override eventedmodel
         _env_settings: Optional[SettingsSourceCallable] = None
 
         @classmethod
@@ -399,6 +399,18 @@ class ApplicationSettings(BaseNapariSettings):
         description=trans._(
             "Last saved list of saved folders. This setting is managed by the application."
         ),
+    )
+
+    playback_fps: int = Field(
+        10,
+        title=trans._("Playback frames per second"),
+        description=trans._("Playback speed in frames per second."),
+    )
+
+    playback_mode: LoopMode = Field(
+        LoopMode.LOOP,
+        title=trans._("Playback loop mode"),
+        description=trans._("Loop mode for playback."),
     )
 
     class Config:

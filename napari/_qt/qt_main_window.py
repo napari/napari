@@ -638,10 +638,20 @@ class Window:
 
             self._qt_window._preferences_dialog = win
             win.valueChanged.connect(self._reset_preference_states)
+            win.updatedValues.connect(self._update_player_settings)
             win.closed.connect(self._on_preferences_closed)
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
+
+    def _update_player_settings(self):
+        """Keep player settings up to date with settings values."""
+
+        settings = get_settings()
+
+        for widget in self.qt_viewer.dims.slider_widgets:
+            setattr(widget, 'fps', settings.application.playback_fps)
+            setattr(widget, 'loop_mode', settings.application.playback_mode)
 
     def _reset_preference_states(self):
         # resetting plugin states in plugin manager
@@ -920,17 +930,6 @@ class Window:
             lambda e: QtAbout.showAbout(self.qt_viewer, self._qt_window)
         )
         self.help_menu.addAction(about_action)
-
-        about_key_bindings = QAction(
-            trans._("Show Key Bindings"), self._qt_window
-        )
-        about_key_bindings.setShortcut("Ctrl+Alt+/")
-        about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
-        about_key_bindings.setStatusTip(trans._('key_bindings'))
-        about_key_bindings.triggered.connect(
-            self.qt_viewer.show_key_bindings_dialog
-        )
-        self.help_menu.addAction(about_key_bindings)
 
     def _toggle_activity_dock(self, event):
         is_currently_visible = self._qt_window._activity_dialog.isVisible()

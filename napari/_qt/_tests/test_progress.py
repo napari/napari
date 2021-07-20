@@ -151,6 +151,10 @@ def test_progress_update(make_napari_viewer):
     pbr.close()
 
 
+@pytest.mark.skipif(
+    not SHOW,
+    reason='viewer needs to be shown to test indicator',
+)
 def test_progress_indicator(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
     activity_dialog = viewer.window.qt_viewer.window()._activity_dialog
