@@ -1364,10 +1364,7 @@ class Points(Layer):
                 self._edge._remove(indices_to_remove=index)
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
-            for k in self.properties:
-                self.properties[k] = np.delete(
-                    self.properties[k], index, axis=0
-                )
+            self._properties.remove(index)
             self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None

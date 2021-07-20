@@ -35,6 +35,9 @@ class Property(EventedModel):
                 self.values, [self.default_value] * (size - num_values)
             )
 
+    def remove(self, indices):
+        self.values = np.delete(self.values, indices, axis=0)
+
     @classmethod
     def from_values(cls, name, values):
         values = np.asarray(values)
@@ -78,6 +81,10 @@ class PropertyManager:
         for prop in self._properties.values():
             prop.resize(size)
 
+    def remove(self, indices):
+        for prop in self._properties.values():
+            prop.remove(indices)
+
     @property
     def values(self):
         return {prop.name: prop.values for prop in self._properties.values()}
@@ -89,7 +96,8 @@ class PropertyManager:
     @property
     def default_values(self):
         return {
-            prop.name: prop.default_value for prop in self._properties.values()
+            prop.name: np.atleast_1d(prop.default_value)
+            for prop in self._properties.values()
         }
 
     @default_values.setter
