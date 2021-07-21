@@ -1089,3 +1089,49 @@ def number_of_shapes(data):
         n_shapes = len(data)
 
     return n_shapes
+
+
+def validate_num_vertices(data, valid_vertices, shape_type):
+    """Raises error if not all shapes have num vertices in valid_vertices.
+
+    Parameters
+    ----------
+    data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+        List of shape data, where each element is either an (N, D) array of the
+        N vertices of a shape in D dimensions or a tuple containing an array of
+        the N vertices and the shape_type string. When a shape_type is present,
+        it overrides keyword arg shape_type. Can be an 3-dimensional array
+        if each shape has the same number of vertices.
+    valid_vertices : Tuple(int)
+        Valid number of vertices for
+    shape_type : str
+        Type of shape being validated (for detailed error message)
+
+    Raises
+    ------
+    ValueError
+        Raised if a shape is found with invalid number of vertices
+    """
+    n_shapes = number_of_shapes(data)
+
+    if n_shapes == 1:
+        # could be a 3D ndarray of shape (1, n vertices, D)
+        if isinstance(data, np.ndarray):
+            # squeeze to get rid of singleton dimension
+            data = np.squeeze(data)
+        if len(data) not in valid_vertices:
+            raise ValueError(
+                trans._(
+                    f"{shape_type.capitalize()} {data} has {len(data)} vertices, not one of {valid_vertices}.",
+                    deferred=True,
+                )
+            )
+    else:
+        for shpe in data:
+            if len(shpe) not in valid_vertices:
+                raise ValueError(
+                    trans._(
+                        f"{shape_type.capitalize()} {shpe} has {len(shpe)} vertices, not one of {valid_vertices}.",
+                        deferred=True,
+                    )
+                )

@@ -345,8 +345,8 @@ def test_data_setter_with_text(properties):
 
 @pytest.mark.parametrize(
     "shape",
-    # single & multiple four corner rectangles
     [
+        # single & multiple four corner rectangles
         (1, 4, 2),
         (10, 4, 2),
         # single & multiple two corner rectangles
@@ -381,13 +381,12 @@ def test_add_rectangles_raises_errors():
     """Test input validation for add_rectangles method"""
     layer = Shapes()
 
-    # not the right number of vertices
     np.random.seed(0)
-    # single rectangle
+    # single rectangle, 3 vertices
     data = 20 * np.random.random((1, 3, 2))
     with pytest.raises(ValueError):
         layer.add_rectangles(data)
-    # multiple rectangles
+    # multiple rectangles, 5 vertices
     data = 20 * np.random.random((5, 5, 2))
     with pytest.raises(ValueError):
         layer.add_rectangles(data)
@@ -485,48 +484,54 @@ def test_3D_rectangles():
     assert np.all([s == 'rectangle' for s in layer.shape_type])
 
 
-def test_ellipses():
-    """Test instantiating Shapes layer with a random 2D ellipses."""
-    # Test a single four corner ellipses
-    shape = (1, 4, 2)
+@pytest.mark.parametrize(
+    "shape",
+    [
+        # single & multiple four corner ellipses
+        (1, 4, 2),
+        (10, 4, 2),
+        # single & multiple center, radii ellipses
+        (1, 2, 2),
+        (10, 2, 2),
+    ],
+)
+def test_ellipses(shape):
+    """Test instantiating Shapes layer with random 2D ellipses."""
+
+    # Test instantiating with data
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='ellipse')
     assert layer.nshapes == shape[0]
-    assert np.all(layer.data[0] == data[0])
+    # 4 corner bounding box passed, assert vertices the same
+    if shape[1] == 4:
+        assert np.all([layer.data[i] == data[i] for i in range(layer.nshapes)])
+    # (center, radii) passed, assert 4 vertices in layer
+    else:
+        assert [len(rect) == 4 for rect in layer.data]
     assert layer.ndim == shape[2]
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
-    # Test multiple four corner ellipses
-    shape = (10, 4, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data, shape_type='ellipse')
-    assert layer.nshapes == shape[0]
-    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
-    assert layer.ndim == shape[2]
-    assert np.all([s == 'ellipse' for s in layer.shape_type])
+    # Test adding via add_ellipses method
+    layer2 = Shapes()
+    layer2.add_ellipses(data)
+    assert np.allclose(layer2.data, layer.data)
+    assert np.all([s == 'ellipse' for s in layer2.shape_type])
 
-    # Test a single ellipse center radii, which gets converted into four
-    # corner ellipse
-    shape = (1, 2, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data, shape_type='ellipse')
-    assert layer.nshapes == 1
-    assert len(layer.data[0]) == 4
-    assert layer.ndim == shape[2]
-    assert np.all([s == 'ellipse' for s in layer.shape_type])
 
-    # Test multiple center radii ellipses
-    shape = (10, 2, 2)
+def test_add_ellipses_raises_error():
+    """Test input validation for add_ellipses method"""
+    layer = Shapes()
+
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data, shape_type='ellipse')
-    assert layer.nshapes == shape[0]
-    assert np.all([len(ld) == 4 for ld in layer.data])
-    assert layer.ndim == shape[2]
-    assert np.all([s == 'ellipse' for s in layer.shape_type])
+    # single ellipse, 3 vertices
+    data = 20 * np.random.random((1, 3, 2))
+    with pytest.raises(ValueError):
+        layer.add_ellipses(data)
+    # multiple ellipses, 5 vertices
+    data = 20 * np.random.random((5, 5, 2))
+    with pytest.raises(ValueError):
+        layer.add_ellipses(data)
 
 
 def test_ellipses_with_shape_type():

@@ -53,6 +53,7 @@ from ._shapes_utils import (
     get_default_shape_type,
     get_shape_ndim,
     number_of_shapes,
+    validate_num_vertices,
 )
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -1616,33 +1617,68 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
-        n_shapes = number_of_shapes(data)
-        # this should be one rectangle with 2 or 4 vertices
-        if n_shapes == 1:
-            # could be a 3D ndarray of shape (1, n vertices, D)
-            if hasattr(data, 'shape') and len(data.shape) == 3:
-                data = data[0]
-            if len(data) != 2 and len(data) != 4:
-                raise ValueError(
-                    trans._(
-                        f"Rectangle {data} has {len(data)} vertices, not 2 or 4.",
-                        deferred=True,
-                    )
-                )
-        # multiple rectangles, each element should have 2 or 4 vertices
-        else:
-            for rect in data:
-                if len(rect) != 2 and len(rect) != 4:
-                    raise ValueError(
-                        trans._(
-                            f"Rectangle {rect} has {len(rect)} vertices, not 2 or 4.",
-                            deferred=True,
-                        )
-                    )
+        # rectangles can have either 4 vertices or (top left, bottom right)
+        valid_vertices_per_shape = (2, 4)
+        validate_num_vertices(data, valid_vertices_per_shape, 'rectangle')
 
         self.add(
             data,
             shape_type='rectangle',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
+    def add_ellipses(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add ellipses to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of ellipse data where each element is a (4, D) array of 4 vertices
+            in D dimensions representing a bounding box, or a (2, D) array of
+            center position and radii magnitudes in D dimensions.
+            Can be a 3-dimensional array.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+
+        valid_elem_per_shape = (2, 4)
+        validate_num_vertices(data, valid_elem_per_shape, 'ellipse')
+
+        self.add(
+            data,
+            shape_type='ellipse',
             edge_width=edge_width,
             edge_color=edge_color,
             face_color=face_color,
