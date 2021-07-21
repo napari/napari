@@ -3,6 +3,7 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import inspect
+import os
 import sys
 import time
 import warnings
@@ -85,6 +86,9 @@ class _QtMainWindow(QMainWindow):
         self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
         self._window_size = None
+        self._window_pos = None
+        self._old_size = None
+        self._positions = []
 
         self._activity_dialog = ActivityDialog()
         self._status_bar = self.statusBar()
@@ -180,7 +184,11 @@ class _QtMainWindow(QMainWindow):
         else:
             window_maximized = self.isMaximized()
 
-        window_position = (self.x(), self.y())
+        if self._window_pos is None:
+            window_position = (self.x(), self.y())
+        else:
+            window_position = self._window_pos
+
         preferences_dialog_size = (
             self._preferences_dialog_size.width(),
             self._preferences_dialog_size.height(),
@@ -291,16 +299,26 @@ class _QtMainWindow(QMainWindow):
             self._ev = QEventLoop()
             self._ev.exec()
 
+    def changeEvent(self, event):
+        """Handle window state changes."""
+        if event.type() == QEvent.WindowStateChange:
+            condition = self.isMaximized() if os.name == "nt" else self.isFullScreen()
+            if condition:
+                self._window_pos = self._positions[-2]
+                self._window_size = (self._old_size.width(), self._old_size.height())
+            else:
+                self._old_size = None
+                self._window_pos = None
+                self._window_size = None
+                self._positions = []
+
+        super().changeEvent(event)
+
     def resizeEvent(self, event):
         """Override to handle original size before maximizing."""
-        screen = QGuiApplication.screenAt(
-            self.mapToGlobal(QPoint(self.height() / 2, self.width() / 2))
-        )
-        if event.size() == screen.size():
-            old_size = event.oldSize()
-            self._window_size = (old_size.width(), old_size.height())
-        else:
-            self._window_size = None
+        self._old_size = event.oldSize()
+        self._positions.append((self.x(), self.y()))
+        self._positions = self._positions[-3:]
 
         super().resizeEvent(event)
 
@@ -311,6 +329,7 @@ class _QtMainWindow(QMainWindow):
         """
         if self._ev and self._ev.isRunning():
             self._ev.quit()
+
         # Close any floating dockwidgets
         for dock in self.findChildren(QtViewerDockWidget):
             if dock.isFloating():
