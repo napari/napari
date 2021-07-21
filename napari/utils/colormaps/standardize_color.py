@@ -24,7 +24,7 @@ import warnings
 from typing import Any, Callable, Dict, Sequence
 
 import numpy as np
-from vispy.color import ColorArray, get_color_dict, get_color_names
+from vispy.color import ColorArray, get_color_dict
 from vispy.color.color_array import _string_to_rgb
 
 from ..translations import trans
@@ -404,23 +404,6 @@ def _create_hex_to_name_dict():
     hex_to_name = {f"{v.lower()}ff": k for k, v in colordict.items()}
     hex_to_name["#00000000"] = "transparent"
     return hex_to_name
-
-
-def get_color_namelist():
-    """A wrapper around vispy's get_color_names designed to add a
-    "transparent" (alpha = 0) color to it.
-
-    Once https://github.com/vispy/vispy/pull/1794 is merged this
-    function is no longer necessary.
-
-    Returns
-    -------
-    color_dict : list
-        A list of all valid vispy color names plus "transparent".
-    """
-    names = get_color_names()
-    names.append('transparent')
-    return names
 
 
 hex_to_name = _create_hex_to_name_dict()

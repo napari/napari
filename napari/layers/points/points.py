@@ -6,11 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.colormaps.standardize_color import (
-    get_color_namelist,
-    hex_to_name,
-    rgb_to_hex,
-)
+from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
@@ -294,8 +290,6 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
         )
-
-        self._colors = get_color_namelist()
 
         # Save the point coordinates
         self._data = np.asarray(data)
