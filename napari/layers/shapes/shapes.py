@@ -1574,6 +1574,81 @@ class Shapes(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
+    def add_rectangles(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add rectangles to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of rectangle data where each element is a (4, D) array of 4 vertices
+            in D dimensions, or a (2, D) array of 2 vertices in D dimensions, where
+            the vertices are top-left and bottom-right corners.
+            Can be a 3-dimensional array.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+        n_shapes = number_of_shapes(data)
+        # this should be one rectangle with 2 or 4 vertices
+        if n_shapes == 1:
+            # could be a 3D ndarray of shape (1, n vertices, D)
+            if hasattr(data, 'shape') and len(data.shape) == 3:
+                data = data[0]
+            if len(data) != 2 and len(data) != 4:
+                raise ValueError(
+                    trans._(
+                        f"Data {data} does not define a valid rectangle",
+                        deferred=True,
+                    )
+                )
+        # multiple rectangles, each element should have 2 or 4 vertices
+        else:
+            for rect in data:
+                if len(rect) != 2 and len(rect) != 4:
+                    raise ValueError(
+                        trans._(
+                            f"Data {data} contains items which do not define a valid rectangle",
+                            deferred=True,
+                        )
+                    )
+
+        self.add(
+            data,
+            shape_type='rectangle',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
     def add(
         self,
         data,

@@ -343,45 +343,54 @@ def test_data_setter_with_text(properties):
     assert len(layer.text.values) == n_new_shapes_2
 
 
-def test_rectangles():
+@pytest.mark.parametrize(
+    "shape",
+    # single & multiple four corner rectangles
+    [
+        (1, 4, 2),
+        (10, 4, 2),
+        # single & multiple two corner rectangles
+        (1, 2, 2),
+        (10, 2, 2),
+    ],
+)
+def test_rectangles(shape):
     """Test instantiating Shapes layer with a random 2D rectangles."""
-    # Test a single four corner rectangle
-    shape = (1, 4, 2)
+    # Test instantiating with data
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
-    assert np.all(layer.data[0] == data[0])
+    # 4 corner rectangle(s) passed, assert vertices the same
+    if shape[1] == 4:
+        assert np.all([layer.data[i] == data[i] for i in range(layer.nshapes)])
+    # 2 corner rectangle(s) passed, assert 4 vertices in layer
+    else:
+        assert [len(rect) == 4 for rect in layer.data]
     assert layer.ndim == shape[2]
     assert np.all([s == 'rectangle' for s in layer.shape_type])
 
-    # Test multiple four corner rectangles
-    shape = (10, 4, 2)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data)
-    assert layer.nshapes == shape[0]
-    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
-    assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_type])
+    # Test adding via add_rectangles method
+    layer2 = Shapes()
+    layer2.add_rectangles(data)
+    assert np.allclose(layer2.data, layer.data)
+    assert np.all([s == 'rectangle' for s in layer2.shape_type])
 
-    # Test a single two corner rectangle, which gets converted into four
-    # corner rectangle
-    shape = (1, 2, 2)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data)
-    assert layer.nshapes == 1
-    assert len(layer.data[0]) == 4
-    assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
-    # Test multiple two corner rectangles
-    shape = (10, 2, 2)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data)
-    assert layer.nshapes == shape[0]
-    assert np.all([len(ld) == 4 for ld in layer.data])
-    assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_type])
+def test_add_rectangles_raises_errors():
+    """Test input validation for add_rectangles method"""
+    layer = Shapes()
+
+    # not the right number of vertices
+    np.random.seed(0)
+    # single rectangle
+    data = 20 * np.random.random((1, 3, 2))
+    with pytest.raises(ValueError):
+        layer.add_rectangles(data)
+    # multiple rectangles
+    data = 20 * np.random.random((5, 5, 2))
+    with pytest.raises(ValueError):
+        layer.add_rectangles(data)
 
 
 def test_rectangles_with_shape_type():
