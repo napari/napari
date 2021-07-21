@@ -1036,7 +1036,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._value = value
         return value
 
-    @abstractmethod
     def _get_value_3d(
         self,
         start_position: np.ndarray,
@@ -1060,7 +1059,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             The data value along the supplied ray.
 
         """
-        raise NotImplementedError()
+        return None
 
     @contextmanager
     def block_update_properties(self):
