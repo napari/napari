@@ -97,6 +97,12 @@ class ColorManager(EventedModel):
         else:
             return transform_color(v)[0]
 
+    @validator('color_properties', pre=True, always=True)
+    def _coerce_color_properties(cls, v):
+        if v is None or (isinstance(v, dict) and len(v) == 0):
+            return None
+        return v
+
     @root_validator()
     def _validate_colors(cls, values):
         color_mode = values['color_mode']

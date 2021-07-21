@@ -8,20 +8,6 @@ def test_property_manager_empty():
     assert len(manager._properties) == 0
 
 
-# def test_property_manager_from_property_arrays_plain():
-#    property_arrays = {
-#            'class': ['sky', 'person', 'building', 'person'],
-#            'confidence': [0.2, 0.5, 1, 0.8],
-#    }
-#
-#    manager = PropertyManager(properties=property_arrays)
-#
-#    np.testing.assert_array_equal(manager.properties['class'].values, property_arrays['class'])
-#    np.testing.assert_array_equal(manager.properties['confidence'].values, property_arrays['confidence'])
-#    assert manager.properties['class'].default_value == 'person'
-#    assert manager.properties['confidence'].default_value == 0.8
-
-
 def test_property_manager_from_property_list():
     property_list = [
         Property.from_values('class', ['sky', 'person', 'building', 'person']),

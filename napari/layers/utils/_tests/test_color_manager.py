@@ -78,29 +78,30 @@ def test_invalid_categorical_colormap():
         )
 
 
-# c_prop_dict = {
-#    'name': 'point_type',
-#    'values': np.array(['A', 'B', 'C']),
-#    'current_value': np.array(['C']),
-# }
-# c_prop_obj = ColorProperties(**c_prop_dict)
-#
-#
-# @pytest.mark.parametrize(
-#    'c_props,expected',
-#    [
-#        (None, None),
-#        ({}, None),
-#        (c_prop_obj, c_prop_obj),
-#        (c_prop_dict, c_prop_obj),
-#    ],
-# )
-# def test_color_properties_coercion(c_props, expected):
-#    colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
-#    cm = ColorManager(
-#        colors=colors, color_properties=c_props, color_mode='direct'
-#    )
-#    assert cm.color_properties == expected
+c_prop_dict = {
+    'name': 'point_type',
+    'values': np.array(['A', 'B', 'C', 'B']),
+    'choices': np.array(['A', 'B', 'C']),
+    'default_value': np.array(['C']),
+}
+c_prop_obj = Property(**c_prop_dict)
+
+
+@pytest.mark.parametrize(
+    'c_props,expected',
+    [
+        (None, None),
+        ({}, None),
+        (c_prop_obj, c_prop_obj),
+        (c_prop_dict, c_prop_obj),
+    ],
+)
+def test_color_properties_coercion(c_props, expected):
+    colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
+    cm = ColorManager(
+        colors=colors, color_properties=c_props, color_mode='direct'
+    )
+    assert cm.color_properties == expected
 
 
 wrong_type = ('prop_1', np.array([1, 2, 3]))
