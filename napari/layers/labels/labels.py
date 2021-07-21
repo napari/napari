@@ -882,6 +882,8 @@ class Labels(_ImageBase):
             (n,) array containing the start point of the ray in data coordinates.
         end_point : np.ndarray
             (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
 
         Returns
         -------
@@ -917,8 +919,28 @@ class Labels(_ImageBase):
         return None
 
     def _get_value_3d(
-        self, start_position, end_position, dims_displayed
+        self,
+        start_position: np.ndarray,
+        end_position: np.ndarray,
+        dims_displayed: List[int],
     ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
+
+        Returns
+        -------
+        value : Optional[int]
+            The first non-zero value encountered along the ray. If none
+            was encountered or the viewer is in 2D mode, None is returned.
+        """
         return self._get_value_ray(
             start_point=start_position,
             end_point=end_position,
@@ -1165,10 +1187,10 @@ class Labels(_ImageBase):
 
     def get_status(
         self,
-        position=None,
+        position,
         *,
-        view_direction: np.ndarray,
-        dims_displayed: List[int],
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
         world: bool = False,
     ) -> str:
         """Status message of the data at a coordinate position.
@@ -1177,6 +1199,12 @@ class Labels(_ImageBase):
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.
