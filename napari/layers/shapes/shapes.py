@@ -1625,7 +1625,7 @@ class Shapes(Layer):
             if len(data) != 2 and len(data) != 4:
                 raise ValueError(
                     trans._(
-                        f"Data {data} does not define a valid rectangle",
+                        f"Rectangle {data} has {len(data)} vertices, not 2 or 4.",
                         deferred=True,
                     )
                 )
@@ -1635,7 +1635,7 @@ class Shapes(Layer):
                 if len(rect) != 2 and len(rect) != 4:
                     raise ValueError(
                         trans._(
-                            f"Data {data} contains items which do not define a valid rectangle",
+                            f"Rectangle {rect} has {len(rect)} vertices, not 2 or 4.",
                             deferred=True,
                         )
                     )
