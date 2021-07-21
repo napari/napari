@@ -657,7 +657,7 @@ class Labels(_ImageBase):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.multiscale or self._ndisplay == 3:
+            if self.multiscale:
                 self.editable = False
             else:
                 self.editable = True

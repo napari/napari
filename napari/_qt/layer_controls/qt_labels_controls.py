@@ -526,11 +526,22 @@ class QtLabelsControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method.
         """
+        widget_list = ['pick_button', 'paint_button', 'fill_button']
+        widgets_to_toggle = {
+            (2, True): widget_list,
+            (2, False): widget_list,
+            (3, True): widget_list[0:1],
+            (3, False): widget_list,
+        }
+
         disable_with_opacity(
             self,
-            ['pick_button', 'paint_button', 'fill_button'],
+            widgets_to_toggle[(self.layer._ndisplay, self.layer.editable)],
             self.layer.editable,
         )
+
+        if self.layer.editable and self.layer._ndisplay == 3:
+            disable_with_opacity(self, widget_list[1:], False)
 
     def _on_rendering_change(self, event):
         """Receive layer model rendering change event and update dropdown menu.
@@ -560,6 +571,8 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.renderComboBox.show()
             self.renderLabel.show()
+
+        self._on_editable_change()
 
 
 class QtColorBox(QWidget):
