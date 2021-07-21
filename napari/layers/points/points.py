@@ -364,9 +364,7 @@ class Points(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self._properties.values
-            if self._data.size > 0
-            else self._properties.choices,
+            properties=self._properties,
         )
         self._face = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -374,9 +372,7 @@ class Points(Layer):
             continuous_colormap=face_colormap,
             contrast_limits=face_contrast_limits,
             categorical_colormap=face_color_cycle,
-            properties=self._properties.values
-            if self._data.size > 0
-            else self._properties.choices,
+            properties=self._properties,
         )
 
         self.size = size
@@ -465,7 +461,8 @@ class Points(Layer):
     @staticmethod
     def _update_color_manager(color_manager, properties, name):
         if color_manager.color_properties is not None:
-            if color_manager.color_properties.name not in properties.dict():
+            color_name = color_manager.color_properties.name
+            if color_name not in properties.dict():
                 color_manager.color_mode = ColorMode.DIRECT
                 color_manager.color_properties = None
                 warnings.warn(
@@ -477,13 +474,8 @@ class Points(Layer):
                     RuntimeWarning,
                 )
             else:
-                color_name = color_manager.color_properties.name
-                property = properties.get(color_name)
-                color_manager.color_properties = {
-                    'name': color_name,
-                    'values': property.values,
-                    'current_value': property.default_value,
-                }
+                # TODO: ideally this would not be necessary.
+                color_manager.color_properties = properties.get(color_name)
 
     @properties.setter
     def properties(
@@ -657,8 +649,7 @@ class Points(Layer):
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
-            properties=self.properties,
-            current_properties=self.current_properties,
+            properties=self._properties,
         )
         self.events.edge_color()
 
@@ -748,8 +739,7 @@ class Points(Layer):
         self._face._set_color(
             color=face_color,
             n_colors=len(self.data),
-            properties=self.properties,
-            current_properties=self.current_properties,
+            properties=self._properties,
         )
         self.events.face_color()
 
@@ -857,13 +847,9 @@ class Points(Layer):
             if color_property == '':
                 if self.properties:
                     new_color_property = next(iter(self.properties))
-                    color_manager.color_properties = {
-                        'name': new_color_property,
-                        'values': self.properties[new_color_property],
-                        'current_value': np.squeeze(
-                            self.current_properties[new_color_property]
-                        ),
-                    }
+                    color_manager.color_properties = self._properties.get(
+                        new_color_property
+                    )
                     warnings.warn(
                         trans._(
                             '_{attribute}_color_property was not set, setting to: {new_color_property}',
@@ -907,8 +893,8 @@ class Points(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        self._edge._refresh_colors(self.properties, update_color_mapping)
-        self._face._refresh_colors(self.properties, update_color_mapping)
+        self._edge._refresh_colors(self._properties, update_color_mapping)
+        self._face._refresh_colors(self._properties, update_color_mapping)
 
     def _get_state(self):
         """Get dictionary of layer state.

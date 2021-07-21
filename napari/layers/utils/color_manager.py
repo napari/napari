@@ -1,6 +1,5 @@
 from copy import deepcopy
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import root_validator, validator
@@ -24,81 +23,7 @@ from .color_transformations import (
     transform_color,
     transform_color_with_defaults,
 )
-
-
-@dataclass
-class ColorProperties:
-    """The property values that are used for setting colors in ColorMode.COLORMAP
-    and ColorMode.CYCLE.
-
-    Attributes
-    ----------
-    name : str
-        The name of the property being used.
-    values : np.ndarray
-        The array containing the property values.
-    current_value : Optional[Any]
-        the value for the next item to be added.
-    """
-
-    name: str
-    values: np.ndarray
-    current_value: Optional[Any] = None
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
-
-    @classmethod
-    def validate_type(cls, val):
-        if val is None:
-            color_properties = val
-        elif isinstance(val, dict):
-            if len(val) == 0:
-                color_properties = None
-            else:
-                try:
-                    # ensure the values are a numpy array
-                    val['values'] = np.asarray(val['values'])
-                    color_properties = cls(**val)
-                except ValueError:
-                    raise ValueError(
-                        trans._(
-                            'color_properties dictionary should have keys: name, values, and optionally current_value',
-                            deferred=True,
-                        )
-                    )
-
-        elif isinstance(val, cls):
-            color_properties = val
-        else:
-            raise TypeError(
-                trans._(
-                    'color_properties should be None, a dict, or ColorProperties object',
-                    deferred=True,
-                )
-            )
-
-        return color_properties
-
-    def _json_encode(self):
-        return {
-            'name': self.name,
-            'values': self.values.tolist(),
-            'current_value': self.current_value,
-        }
-
-    def __eq__(self, other):
-        if isinstance(other, ColorProperties):
-            name_eq = self.name == other.name
-            values_eq = np.array_equal(self.values, other.values)
-            current_value_eq = np.array_equal(
-                self.current_value, other.current_value
-            )
-
-            return np.all([name_eq, values_eq, current_value_eq])
-        else:
-            return False
+from .property_manager import Property, PropertyManager
 
 
 class ColorManager(EventedModel):
@@ -117,9 +42,9 @@ class ColorManager(EventedModel):
         ColorMode.CYCLE: colors are set vie the categorical_colormap appied to the
                          color_properties. This should be used for categorical
                          properties only.
-     color_properties : Optional[ColorProperties]
+     color_properties : Optional[Property]
         The property values that are used for setting colors in ColorMode.COLORMAP
-        and ColorMode.CYCLE. The ColorProperties dataclass has 3 fields: name,
+        and ColorMode.CYCLE. The Property dataclass has 3 fields: name,
         values, and current_value. name (str) is the name of the property being used.
         values (np.ndarray) is an array containing the property values.
         current_value contains the value for the next item to be added. color_properties
@@ -143,16 +68,14 @@ class ColorManager(EventedModel):
         The colors in a Nx4 color array, where N is the number of colors.
     """
 
-    # fields
     current_color: Optional[Array[float, (4,)]] = None
     color_mode: ColorMode = ColorMode.DIRECT
-    color_properties: Optional[ColorProperties] = None
+    color_properties: Optional[Property] = None
     continuous_colormap: Colormap = 'viridis'
     contrast_limits: Optional[Tuple[float, float]] = None
     categorical_colormap: CategoricalColormap = [0, 0, 0, 1]
     colors: Array[float, (-1, 4)] = []
 
-    # validators
     @validator('continuous_colormap', pre=True)
     def _ensure_continuous_colormap(cls, v):
         coerced_colormap = ensure_colormap(v)
@@ -186,14 +109,8 @@ class ColorManager(EventedModel):
 
         # FIXME Local variable 'colors' might be referenced before assignment
 
-        # set the current color to the last color/property value
-        # if it wasn't already set
         if values['current_color'] is None and len(colors) > 0:
             values['current_color'] = colors[-1]
-            if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
-                property_values = values['color_properties']
-                property_values.current_value = property_values.values[-1]
-                values['color_properties'] = property_values
 
         values['colors'] = colors
         return values
@@ -202,8 +119,7 @@ class ColorManager(EventedModel):
         self,
         color: ColorType,
         n_colors: int,
-        properties: Dict[str, np.ndarray],
-        current_properties: Dict[str, np.ndarray],
+        properties: PropertyManager,
     ):
         """Set a color property. This is convenience function
 
@@ -213,20 +129,14 @@ class ColorManager(EventedModel):
             The value for setting edge or face_color
         n_colors : int
             The number of colors that needs to be set. Typically len(data).
-        properties : Dict[str, np.ndarray]
+        properties : PropertyManager
             The layer property values
-        current_properties : Dict[str, np.ndarray]
-            The layer current property values
         """
         # if the provided color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
-        if is_color_mapped(color, properties):
-            self.color_properties = ColorProperties(
-                name=color,
-                values=properties[color],
-                current_value=np.squeeze(current_properties[color]),
-            )
-            if guess_continuous(properties[color]):
+        if is_color_mapped(color, properties.dict()):
+            self.color_properties = properties.get(color)
+            if guess_continuous(self.color_properties.values):
                 self.color_mode = ColorMode.COLORMAP
             else:
                 self.color_mode = ColorMode.CYCLE
@@ -245,7 +155,7 @@ class ColorManager(EventedModel):
 
     def _refresh_colors(
         self,
-        properties: Dict[str, np.ndarray],
+        properties: PropertyManager,
         update_color_mapping: bool = False,
     ):
         """Calculate and update colors if using a cycle or color map
@@ -263,15 +173,7 @@ class ColorManager(EventedModel):
            Default value is False.
         """
         if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
-            property_name = self.color_properties.name
-            current_value = self.color_properties.current_value
-            property_values = properties[property_name]
-            self.color_properties = ColorProperties(
-                name=property_name,
-                values=property_values,
-                current_value=current_value,
-            )
-
+            self.color_properties = properties.get(self.color_properties.name)
             if update_color_mapping is True:
                 self.contrast_limits = None
             self.events.color_properties()
@@ -312,17 +214,14 @@ class ColorManager(EventedModel):
         else:
             # add the new value color_properties
             color_property_name = self.color_properties.name
-            current_value = self.color_properties.current_value
             if color is None:
-                color = current_value
+                color = self.color_properties.default_value
             new_color_property_values = np.concatenate(
                 (self.color_properties.values, np.repeat(color, n_colors)),
                 axis=0,
             )
-            self.color_properties = ColorProperties(
-                name=color_property_name,
-                values=new_color_property_values,
-                current_value=current_value,
+            self.color_properties = Property.from_values(
+                color_property_name, new_color_property_values
             )
 
             if update_clims and self.color_mode == ColorMode.COLORMAP:
@@ -340,16 +239,9 @@ class ColorManager(EventedModel):
             if self.color_mode == ColorMode.DIRECT:
                 self.colors = np.delete(self.colors, selected_indices, axis=0)
             else:
-                # remove the color_properties
-                color_property_name = self.color_properties.name
-                current_value = self.color_properties.current_value
-                new_color_property_values = np.delete(
-                    self.color_properties.values, selected_indices
-                )
-                self.color_properties = ColorProperties(
-                    name=color_property_name,
-                    values=new_color_property_values,
-                    current_value=current_value,
+                self.color_properties = Property.from_values(
+                    self.color_properties.name,
+                    np.delete(self.color_properties.values, selected_indices),
                 )
 
     def _paste(self, colors: np.ndarray, properties: Dict[str, np.ndarray]):
@@ -373,19 +265,11 @@ class ColorManager(EventedModel):
                 (self.colors, transform_color(colors))
             )
         else:
-            color_property_name = self.color_properties.name
-            current_value = self.color_properties.current_value
             old_properties = self.color_properties.values
-            values_to_add = properties[color_property_name]
-            new_color_property_values = np.concatenate(
-                (old_properties, values_to_add),
-                axis=0,
-            )
-
-            self.color_properties = ColorProperties(
-                name=color_property_name,
-                values=new_color_property_values,
-                current_value=current_value,
+            new_properties = properties[self.color_properties.name]
+            self.color_properties = Property.from_values(
+                self.color_properties.name,
+                np.concatenate((old_properties, new_properties), axis=0),
             )
 
     def _update_current_properties(
@@ -402,21 +286,15 @@ class ColorManager(EventedModel):
             The new current property values
         """
         if self.color_properties is not None:
-            current_property_name = self.color_properties.name
-            current_property_values = self.color_properties.values
-            if current_property_name in current_properties:
+            property_name = self.color_properties.name
+            if property_name in current_properties:
                 new_current_value = np.squeeze(
-                    current_properties[current_property_name]
+                    current_properties[property_name]
                 )
-                if new_current_value != self.color_properties.current_value:
-                    self.color_properties = ColorProperties(
-                        name=current_property_name,
-                        values=current_property_values,
-                        current_value=new_current_value,
-                    )
+                self.color_properties.default_value = new_current_value
 
     def _update_current_color(
-        self, current_color: np.ndarray, update_indices: list = []
+        self, current_color: np.ndarray, update_indices: Optional[list] = None
     ):
         """Update the current color and update the colors if requested.
 
@@ -432,6 +310,8 @@ class ColorManager(EventedModel):
             If the ColorManager is not in DIRECT mode, updating the values
             will change the mode to DIRECT.
         """
+        if update_indices is None:
+            update_indices = []
         self.current_color = transform_color(current_color)[0]
         if len(update_indices) > 0:
             self.color_mode = ColorMode.DIRECT
@@ -443,7 +323,7 @@ class ColorManager(EventedModel):
     def _from_layer_kwargs(
         cls,
         colors: Union[dict, str, np.ndarray],
-        properties: Dict[str, np.ndarray],
+        properties: PropertyManager,
         n_colors: Optional[int] = None,
         continuous_colormap: Optional[Union[str, Colormap]] = None,
         contrast_limits: Optional[Tuple[float, float]] = None,
@@ -458,7 +338,9 @@ class ColorManager(EventedModel):
         function to coerce possible inputs into ColorManager kwargs
 
         """
-        properties = {k: np.asarray(v) for k, v in properties.items()}
+        color_values = colors
+        color_properties = None
+
         if isinstance(colors, dict):
             # if the kwargs are passed as a dictionary, unpack them
             color_values = colors.get('colors', None)
@@ -474,14 +356,8 @@ class ColorManager(EventedModel):
             )
 
             if isinstance(color_properties, str):
-                # if the color properties were given as a property name,
-                # coerce into ColorProperties
                 try:
-                    prop_values = properties[color_properties]
-                    prop_name = color_properties
-                    color_properties = ColorProperties(
-                        name=prop_name, values=prop_values
-                    )
+                    color_properties = properties.get(color_properties)
                 except KeyError:
                     raise KeyError(
                         trans._(
@@ -489,9 +365,6 @@ class ColorManager(EventedModel):
                             deferred=True,
                         )
                     )
-        else:
-            color_values = colors
-            color_properties = None
 
         if categorical_colormap is None:
             categorical_colormap = deepcopy(default_color_cycle)
@@ -505,19 +378,8 @@ class ColorManager(EventedModel):
         }
 
         if color_properties is None:
-            if is_color_mapped(color_values, properties):
-                if n_colors == 0:
-                    color_properties = ColorProperties(
-                        name=color_values,
-                        values=np.empty(
-                            0, dtype=properties[color_values].dtype
-                        ),
-                        current_value=properties[color_values][0],
-                    )
-                else:
-                    color_properties = ColorProperties(
-                        name=color_values, values=properties[color_values]
-                    )
+            if is_color_mapped(color_values, properties.dict()):
+                color_properties = properties.get(color_values)
                 if color_mode is None:
                     if guess_continuous(color_properties.values):
                         color_mode = ColorMode.COLORMAP

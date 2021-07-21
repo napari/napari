@@ -113,7 +113,7 @@ def _validate_colormap_mode(
             )
     else:
         colors = np.empty((0, 4))
-        current_prop_value = values['color_properties'].current_value
+        current_prop_value = values['color_properties'].default_value
         if current_prop_value is not None:
             values['current_color'] = cmap.map(current_prop_value)[0]
 
@@ -144,7 +144,7 @@ def _validate_cycle_mode(
     cmap = values['categorical_colormap']
     if len(color_properties) == 0:
         colors = np.empty((0, 4))
-        current_prop_value = values['color_properties'].current_value
+        current_prop_value = values['color_properties'].default_value
         if current_prop_value is not None:
             values['current_color'] = cmap.map(current_prop_value)[0]
     else:

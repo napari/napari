@@ -3,6 +3,7 @@ from typing import Any
 import numpy as np
 
 from ...utils.events import EventedModel
+from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 
 
@@ -22,8 +23,8 @@ class Property(EventedModel):
     """
 
     name: str
-    values: np.ndarray
-    choices: np.ndarray
+    values: Array
+    choices: Array
     default_value: Any
 
     def resize(self, size):

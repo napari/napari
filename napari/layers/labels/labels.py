@@ -505,7 +505,7 @@ class Labels(_ImageBase):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
-                'properties': self._properties,
+                'properties': self._properties.dict(),
                 'rendering': self.rendering,
                 'seed': self.seed,
                 'data': self.data,

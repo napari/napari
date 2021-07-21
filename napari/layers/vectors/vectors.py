@@ -214,9 +214,7 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self.properties
-            if self._data.size > 0
-            else self.property_choices,
+            properties=self._properties,
         )
 
         # Data containing vectors in the currently viewed slice
@@ -408,8 +406,7 @@ class Vectors(Layer):
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
-            properties=self.properties,
-            current_properties=self._properties.default_values,
+            properties=self._properties,
         )
         self.events.edge_color()
 
@@ -427,7 +424,7 @@ class Vectors(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        self._edge._refresh_colors(self.properties, update_color_mapping)
+        self._edge._refresh_colors(self._properties, update_color_mapping)
 
     @property
     def edge_color_mode(self) -> ColorMode:
@@ -455,13 +452,9 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    self._edge.color_properties = {
-                        'name': color_property,
-                        'values': self.properties[color_property],
-                        'current_value': np.squeeze(
-                            self._properties.default_values[color_property]
-                        ),
-                    }
+                    self._edge.color_properties = self._properties.get(
+                        color_property
+                    )
                     warnings.warn(
                         trans._(
                             'edge_color property was not set, setting to: {color_property}',

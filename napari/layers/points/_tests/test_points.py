@@ -9,7 +9,7 @@ from vispy.color import get_colormap
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
-from napari.layers.utils.color_manager import ColorProperties
+from napari.layers.utils.property_manager import Property
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -532,11 +532,9 @@ def test_adding_properties(attribute):
 
     # removing a property that was the _*_color_property should give a warning
     color_manager = getattr(layer, f'_{attribute}')
-    color_manager.color_properties = {
-        'name': 'point_type',
-        'values': np.empty(0),
-        'current_value': 'A',
-    }
+    color_manager.color_properties = Property.from_choices(
+        'point_type', ['A', 'B']
+    )
     properties_2 = {
         'not_point_type': _make_cycled_properties(['A', 'B'], shape[0])
     }
@@ -1582,9 +1580,7 @@ def test_set_face_color_mode_after_set_properties():
     first_property_key, first_property_values = next(
         iter(points.properties.items())
     )
-    expected_properties = ColorProperties(
-        name=first_property_key,
-        values=first_property_values,
-        current_value=first_property_values[-1],
+    expected_properties = Property.from_values(
+        first_property_key, first_property_values
     )
     assert points._face.color_properties == expected_properties
