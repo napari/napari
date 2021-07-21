@@ -20,7 +20,7 @@ def test_default_themes():
 def test_get_theme():
     theme = get_theme('dark')
     assert isinstance(theme, dict)
-    assert theme['folder'] == 'dark'
+    assert theme['name'] == 'dark'
 
     # get theme in the old-style dict format
     theme = get_theme("dark")

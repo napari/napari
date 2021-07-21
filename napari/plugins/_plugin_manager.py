@@ -1,6 +1,6 @@
-import collections.abc
 import importlib
 import sys
+import warnings
 from functools import partial
 from pathlib import Path
 from types import FunctionType
@@ -12,7 +12,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )
@@ -28,7 +27,7 @@ from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from ..utils.settings import get_settings
-from ..utils.theme import Theme, register_theme
+from ..utils.theme import Theme, register_theme, unregister_theme
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -116,7 +115,11 @@ class NapariPluginManager(PluginManager):
 
         plugin = super().unregister(name_or_object)
 
-        # remove widgets, sample data
+        # unregister any theme that was associated with the
+        # unregistered plugin
+        self.unregister_theme_colors(_name)
+
+        # remove widgets, sample data, theme data
         for _dict in (
             self._dock_widgets,
             self._sample_data,
@@ -299,7 +302,7 @@ class NapariPluginManager(PluginManager):
 
     def register_theme_colors(
         self,
-        data: Sequence[Dict[str, Union[str, Tuple, List]]],
+        data: Dict[str, Dict[str, Union[str, Tuple, List]]],
         hookimpl: HookImplementation,
     ):
         """Register theme data dict returned by `napari_provide_theme`.
@@ -309,9 +312,9 @@ class NapariPluginManager(PluginManager):
         """
         plugin_name = hookimpl.plugin_name
         hook_name = '`napari_provide_theme`'
-        if not isinstance(data, collections.abc.Sequence):
+        if not isinstance(data, Dict):
             warn_message = trans._(
-                'Plugin {plugin_name!r} provided a non-iterable object to {hook_name!r}: data ignored',
+                'Plugin {plugin_name!r} provided a non-dict object to {hook_name!r}: data ignored',
                 deferred=True,
                 plugin_name=plugin_name,
                 hook_name=hook_name,
@@ -320,9 +323,8 @@ class NapariPluginManager(PluginManager):
             return
 
         _data = {}
-        for theme_colors in data:
+        for theme_name, theme_colors in data.items():
             try:
-                theme_name = theme_colors["folder"]  # name of the theme
                 theme = Theme.parse_obj(theme_colors)
                 register_theme(theme_name, theme)
                 _data[theme_name] = theme
@@ -341,6 +343,33 @@ class NapariPluginManager(PluginManager):
         if plugin_name not in self._theme_data:
             self._theme_data[plugin_name] = {}
         self._theme_data[plugin_name].update(_data)
+
+    def unregister_theme_colors(self, plugin_name: str):
+        """Unregister theme data from napari."""
+        if plugin_name not in self._theme_data:
+            return
+
+        # unregister all themes that were provided by the plugins
+        for theme_name in self._theme_data[plugin_name]:
+            unregister_theme(theme_name)
+
+        # since its possible that disabled/removed plugin was providing the
+        # current theme, we check for this explicitly and if this the case,
+        # theme is automatically changed to default `dark` theme
+        settings = get_settings()
+        current_theme = settings.appearance.theme
+        if current_theme in self._theme_data[plugin_name]:
+            settings.appearance.theme = "dark"
+            warnings.warn(
+                message=trans._(
+                    "The current theme {current_theme!r} was provided by the"
+                    " plugin {plugin_name!r} which was disabled or removed."
+                    " Switched theme to the default.",
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    current_theme=current_theme,
+                )
+            )
 
     def iter_themes(self) -> Iterator[Tuple[str, Theme]]:
         """Return theme_name : theme_colors mapping."""

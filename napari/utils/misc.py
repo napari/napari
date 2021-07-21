@@ -453,7 +453,24 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
 def dir_hash(
     path: Union[str, Path], include_paths=True, ignore_hidden=True
 ) -> str:
-    """Compute the hash of a directory, based on structure and contents."""
+    """Compute the hash of a directory, based on structure and contents.
+
+    Parameters
+    ----------
+    path : Union[str, Path]
+        Source path which will be used to select all files (and files in subdirectories)
+        to compute the hexadecimal digest.
+    include_paths : bool
+        If ``True``, the hash will also include the ``file`` parts.
+    ignore_hidden : bool
+        If ``True``, hidden files (starting with ``.``) will be ignored when
+        computing the hash.
+
+    Returns
+    -------
+    hash : str
+        Hexadecimal digest of all files in the provided path.
+    """
     import hashlib
 
     if not Path(path).is_dir():
@@ -480,7 +497,23 @@ def paths_hash(
     include_paths: bool = True,
     ignore_hidden: bool = True,
 ) -> str:
-    """Compute the hash of list of paths."""
+    """Compute the hash of list of paths.
+
+    Parameters
+    ----------
+    paths : Iterable[Union[str, Path]]
+        An iterable of paths to files which will be used when computing the hash.
+    include_paths : bool
+        If ``True``, the hash will also include the ``file`` parts.
+    ignore_hidden : bool
+        If ``True``, hidden files (starting with ``.``) will be ignored when
+        computing the hash.
+
+    Returns
+    -------
+    hash : str
+        Hexadecimal digest of the contents of provided files.
+    """
     import hashlib
 
     hash_func = hashlib.md5
@@ -494,7 +527,18 @@ def paths_hash(
 
 
 def _file_hash(_hash, file: Path, path: Path, include_paths: bool = True):
-    """Update hash with based on file contents and optionally relative path."""
+    """Update hash with based on file contents and optionally relative path.
+
+    Parameters
+    ----------
+    _hash: :
+    file: Path
+        Path to the source file which will be used to compute the hash.
+    path : Path
+        Path to the base directory of the `file`. This can be usually obtained by using `file.parent`.
+    include_paths: bool
+        If ``True``, the hash will also include the ``file`` parts.
+    """
     _hash.update(file.read_bytes())
 
     if include_paths:

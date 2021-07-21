@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import List, Optional
 
@@ -55,6 +56,8 @@ def get_stylesheet(
     if theme:
         from ...utils.theme import get_theme, template
 
-        return template(stylesheet, **get_theme(theme))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            return template(stylesheet, **get_theme(theme))
 
     return stylesheet

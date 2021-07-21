@@ -36,7 +36,7 @@ For more general background on the plugin hook calling mechanism, see the
 from __future__ import annotations
 
 from types import FunctionType
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from napari_plugin_engine import napari_hook_specification
 
@@ -499,7 +499,7 @@ def napari_experimental_provide_dock_widget() -> Union[
 
 
 @napari_hook_specification(historic=True)
-def napari_provide_theme() -> Sequence[Dict[str, Union[str, Tuple, List]]]:
+def napari_provide_theme() -> Dict[str, Dict[str, Union[str, Tuple, List]]]:
     """Provide GUI with a set of colors used through napari. This hook allows you to
     provide additional color schemes so you can accomplish your desired styling.
 
@@ -513,17 +513,17 @@ def napari_provide_theme() -> Sequence[Dict[str, Union[str, Tuple, List]]]:
 
     Returns
     -------
-    themes : Sequence[Dict[str, Union[str, Tuple, List]]
+    themes : Dict[str, Dict[str, Union[str, Tuple, List]]
         Sequence of dictionaries containing new color schemes to be used by napari.
         You can replace existing themes by using the same names.
 
     Examples
     --------
-    >>> def get_new_theme() -> Sequence[Dict[str, Union[str, Tuple, List]]:
+    >>> def get_new_theme() -> Dict[str, Dict[str, Union[str, Tuple, List]]:
     ...     # specify theme(s) that should be added to napari
-    ...     themes = [
-    ...         {
-    ...             "folder": "super_dark",
+    ...     themes = {
+    ...         "super_dark": {
+    ...             "name": "super_dark",
     ...             "background": "rgb(12, 12, 12)",
     ...             "foreground": "rgb(65, 72, 81)",
     ...             "primary": "rgb(90, 98, 108)",
@@ -537,7 +537,7 @@ def napari_provide_theme() -> Sequence[Dict[str, Union[str, Tuple, List]]]:
     ...             "console": "rgb(0, 0, 0)",
     ...             "canvas": "black",
     ...         }
-    ...     ]
+    ...     }
     ...     return themes
     >>>
     >>> @napari_hook_implementation

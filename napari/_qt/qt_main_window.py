@@ -31,7 +31,7 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.settings import get_settings
-from ..utils.theme import _themes, rebuild_theme_settings
+from ..utils.theme import _themes
 from ..utils.translations import trans
 from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -42,7 +42,7 @@ from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
-from .qt_resources import get_stylesheet
+from .qt_resources import get_stylesheet, register_napari_themes
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_viewer_dock_widget import (
@@ -425,12 +425,10 @@ class Window:
 
         plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
-        plugin_manager.events.disabled.connect(self._remove_plugins_theme)
         plugin_manager.events.registered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
-        plugin_manager.events.unregistered.connect(self._remove_plugins_theme)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -438,9 +436,8 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
 
         _themes.events.added.connect(self._add_theme)
-        _themes.events.added.connect(rebuild_theme_settings)
+        _themes.events.added.connect(register_napari_themes)
         _themes.events.removed.connect(self._remove_theme)
-        _themes.events.removed.connect(rebuild_theme_settings)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -455,47 +452,12 @@ class Window:
     def _setup_existing_themes(self):
         """This function is only executed once at the startup of napari
         to connect events to themes that have not been connected yet."""
-        from napari._qt.qt_resources import register_napari_themes
-
         for theme in _themes.values():
             self._connect_theme(theme)
 
-        # make sure settings are up-to-date
-        rebuild_theme_settings()
-        # register icon resources - this will regenerate icons to make sure that
-        # plugin icons are also present
-        register_napari_themes()
-
-    def _remove_plugins_theme(self, event=None):
-        """Remove plugin theme."""
-        from ..utils.theme import unregister_theme
-
-        plugin_name = event.value
-
-        # since its possible that disabled/removed plugin was providing the
-        # current theme, we check for this explicitly and if this the case,
-        # theme is automatically changed to default `dark` theme
-        settings = get_settings()
-        current_theme = settings.appearance.theme
-        if (
-            settings.appearance.theme
-            in plugin_manager._theme_data[plugin_name]
-        ):
-            self.qt_viewer.viewer.theme = "dark"
-            warnings.warn(
-                message=trans._(
-                    "The current theme {current_theme!r} was provided by the"
-                    " plugin {plugin_name!r} which was disabled or removed."
-                    " Switched theme to the default.",
-                    deferred=True,
-                    plugin_name=plugin_name,
-                    current_theme=current_theme,
-                )
-            )
-
-        # unregister all themes that were provided by the plugins
-        for theme_name in plugin_manager._theme_data[plugin_name]:
-            unregister_theme(theme_name)
+        # # register icon resources - this will regenerate icons to make sure that
+        # # plugin icons are also present
+        # register_napari_themes()
 
     def _add_theme(self, event):
         """Add new theme and connect events."""

@@ -1,6 +1,7 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
 import re
+import warnings
 from ast import literal_eval
 from typing import Union
 
@@ -25,7 +26,7 @@ class Theme(EventedModel):
 
     Attributes
     ----------
-    folder : str
+    name : str
         Name of the virtual folder where icons will be saved to.
     syntax_style : str
         Name of the console style.
@@ -50,7 +51,7 @@ class Theme(EventedModel):
         Color used to highlight Qt widget.
     """
 
-    folder: str
+    name: str
     syntax_style: str
     canvas: Color
     console: Color
@@ -73,47 +74,6 @@ class Theme(EventedModel):
             f" {', '.join(STYLE_MAP)}"
         )
         return value
-
-
-_themes = EventedDict(
-    {
-        'dark': Theme(
-            **{
-                'folder': 'dark',
-                'background': 'rgb(38, 41, 48)',
-                'foreground': 'rgb(65, 72, 81)',
-                'primary': 'rgb(90, 98, 108)',
-                'secondary': 'rgb(134, 142, 147)',
-                'highlight': 'rgb(106, 115, 128)',
-                'text': 'rgb(240, 241, 242)',
-                'icon': 'rgb(209, 210, 212)',
-                'warning': 'rgb(153, 18, 31)',
-                'current': 'rgb(0, 122, 204)',
-                'syntax_style': 'native',
-                'console': 'rgb(0, 0, 0)',
-                'canvas': 'black',
-            }
-        ),
-        'light': Theme(
-            **{
-                'folder': 'light',
-                'background': 'rgb(239, 235, 233)',
-                'foreground': 'rgb(214, 208, 206)',
-                'primary': 'rgb(188, 184, 181)',
-                'secondary': 'rgb(150, 146, 144)',
-                'highlight': 'rgb(163, 158, 156)',
-                'text': 'rgb(59, 58, 57)',
-                'icon': 'rgb(107, 105, 103)',
-                'warning': 'rgb(255, 18, 31)',
-                'current': 'rgb(253, 240, 148)',
-                'syntax_style': 'default',
-                'console': 'rgb(255, 255, 255)',
-                'canvas': 'white',
-            }
-        ),
-    },
-    basetype=Theme,
-)
 
 
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
@@ -223,18 +183,14 @@ def get_theme(name, as_dict=True):
         theme = _themes[name]
         _theme = theme.copy()
         if as_dict:
-            # warnings.warn(
-            #     trans._(
-            #         "themes were recently updated to use evented model with"
-            #         " Pydantic's" color type rather than the `rgb(XX, YY, ZZ)`"
-            #         " value. You can get the old style color by calling
-            #         " `color.as_rgb()`. Please update your codebase to reflect"
-            #         " this change",
-            #         deferred=True,
-            #     ),
-            #     category=FutureWarning,
-            #     stacklevel=2,
-            # )
+            warnings.warn(
+                trans._(
+                    "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`. You can get the old color by calling `color.as_rgb()`. The `as_dict=True` option will be removed in 0.X.X",
+                    deferred=True,
+                ),
+                category=FutureWarning,
+                stacklevel=2,
+            )
             _theme = _theme.dict()
             _theme = {
                 k: v if not isinstance(v, Color) else v.as_rgb()
@@ -306,3 +262,46 @@ def rebuild_theme_settings(event=None):
 
     settings = get_settings()
     settings.appearance.refresh_themes()
+
+
+_themes = EventedDict(
+    {
+        'dark': Theme(
+            **{
+                'name': 'dark',
+                'background': 'rgb(38, 41, 48)',
+                'foreground': 'rgb(65, 72, 81)',
+                'primary': 'rgb(90, 98, 108)',
+                'secondary': 'rgb(134, 142, 147)',
+                'highlight': 'rgb(106, 115, 128)',
+                'text': 'rgb(240, 241, 242)',
+                'icon': 'rgb(209, 210, 212)',
+                'warning': 'rgb(153, 18, 31)',
+                'current': 'rgb(0, 122, 204)',
+                'syntax_style': 'native',
+                'console': 'rgb(0, 0, 0)',
+                'canvas': 'black',
+            }
+        ),
+        'light': Theme(
+            **{
+                'name': 'light',
+                'background': 'rgb(239, 235, 233)',
+                'foreground': 'rgb(214, 208, 206)',
+                'primary': 'rgb(188, 184, 181)',
+                'secondary': 'rgb(150, 146, 144)',
+                'highlight': 'rgb(163, 158, 156)',
+                'text': 'rgb(59, 58, 57)',
+                'icon': 'rgb(107, 105, 103)',
+                'warning': 'rgb(255, 18, 31)',
+                'current': 'rgb(253, 240, 148)',
+                'syntax_style': 'default',
+                'console': 'rgb(255, 255, 255)',
+                'canvas': 'white',
+            }
+        ),
+    },
+    basetype=Theme,
+)
+_themes.events.added.connect(rebuild_theme_settings)
+_themes.events.removed.connect(rebuild_theme_settings)

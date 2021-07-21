@@ -403,7 +403,7 @@ def _unregister_napari_resources():
             qCleanupResources()  # try cleaning up resources
 
 
-def register_napari_themes():
+def register_napari_themes(event=None):
     """Register theme."""
     _unregister_napari_resources()
     _register_napari_resources(False, force_rebuild=True)
