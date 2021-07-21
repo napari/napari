@@ -1165,9 +1165,9 @@ class Labels(_ImageBase):
 
     def get_status(
         self,
-        position=None,
+        position,
         *,
-        view_direction: np.ndarray,
+        view_direction: np.ndarray = None,
         dims_displayed: List[int],
         world: bool = False,
     ) -> str:
