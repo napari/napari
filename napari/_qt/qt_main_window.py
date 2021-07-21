@@ -9,7 +9,7 @@ import warnings
 from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
-from qtpy.QtGui import QIcon, QKeySequence
+from qtpy.QtGui import QGuiApplication, QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
     QApplication,
@@ -84,6 +84,7 @@ class _QtMainWindow(QMainWindow):
         self._maximized_flag = False
         self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
+        self._window_size = None
 
         self._activity_dialog = ActivityDialog()
         self._status_bar = self.statusBar()
@@ -167,7 +168,11 @@ class _QtMainWindow(QMainWindow):
 
         Symmetric to the 'set_window_settings' setter.
         """
-        window_size = (self.width(), self.height())
+        if self._window_size is None:
+            window_size = (self.width(), self.height())
+        else:
+            window_size = self._window_size
+
         window_fullscreen = self.isFullScreen()
 
         if window_fullscreen:
@@ -285,6 +290,19 @@ class _QtMainWindow(QMainWindow):
         if block:
             self._ev = QEventLoop()
             self._ev.exec()
+
+    def resizeEvent(self, event):
+        """Override to handle original size before maximizing."""
+        screen = QGuiApplication.screenAt(
+            self.mapToGlobal(QPoint(self.height() / 2, self.width() / 2))
+        )
+        if event.size() == screen.size():
+            old_size = event.oldSize()
+            self._window_size = (old_size.width(), old_size.height())
+        else:
+            self._window_size = None
+
+        super().resizeEvent(event)
 
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
