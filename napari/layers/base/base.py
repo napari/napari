@@ -1318,7 +1318,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         position: np.ndarray,
         *,
         view_direction: Optional[np.ndarray] = None,
-        dims_displayed: Optional[List[int]],
+        dims_displayed: Optional[List[int]] = None,
         world=False,
     ):
         """
