@@ -1,6 +1,6 @@
 import warnings
 from collections import deque
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -15,7 +15,9 @@ from ...utils.colormaps import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.events.event import WarningEmitter
+from ...utils.geometry import clamp_point_to_bounding_box
 from ...utils.translations import trans
+from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
@@ -23,6 +25,28 @@ from ..utils.layer_utils import validate_properties
 from ._labels_constants import LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
+
+_REV_SHAPE_HELP = {
+    trans._('enter paint or fill mode to edit labels'): {Mode.PAN_ZOOM},
+    trans._('hold <space> to pan/zoom, click to pick a label'): {
+        Mode.PICK,
+        Mode.FILL,
+    },
+    trans._(
+        'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
+    ): {Mode.PAINT},
+    trans._('hold <space> to pan/zoom, drag to erase a label'): {Mode.ERASE},
+}
+
+
+# This avoid duplicating the trans._ help messages above
+# as some modes have the same help.
+# while most tooling will recognise identical messages,
+# this can lead to human error.
+_FWD_SHAPE_HELP = {}
+for t, modes in _REV_SHAPE_HELP.items():
+    for m in modes:
+        _FWD_SHAPE_HELP[m] = t
 
 
 class Labels(_ImageBase):
@@ -580,59 +604,39 @@ class Labels(_ImageBase):
         """
         return str(self._mode)
 
+    _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.PICK: pick,
+        Mode.PAINT: draw,
+        Mode.FILL: draw,
+        Mode.ERASE: draw,
+    }
+
+    _move_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.PICK: no_op,
+        Mode.PAINT: no_op,
+        Mode.FILL: no_op,
+        Mode.ERASE: no_op,
+    }
+    _cursor_modes = {
+        Mode.PAN_ZOOM: 'standard',
+        Mode.PICK: 'cross',
+        Mode.PAINT: 'circle',
+        Mode.FILL: 'cross',
+        Mode.ERASE: 'circle',
+    }
+
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-        mode = Mode(mode)
-
-        if not self.editable:
-            mode = Mode.PAN_ZOOM
-
-        if mode == self._mode:
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
             return
 
-        if self._mode == Mode.PICK:
-            self.mouse_drag_callbacks.remove(pick)
-        elif self._mode in [Mode.PAINT, Mode.FILL, Mode.ERASE]:
-            self.mouse_drag_callbacks.remove(draw)
+        self.help = _FWD_SHAPE_HELP[mode]
 
-        if mode == Mode.PAN_ZOOM:
-            self.cursor = 'standard'
-            self.interactive = True
-            self.help = trans._('enter paint or fill mode to edit labels')
-        elif mode == Mode.PICK:
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, click to pick a label'
-            )
-            self.mouse_drag_callbacks.append(pick)
-        elif mode == Mode.PAINT:
-            self.cursor = 'circle'
+        if mode in (Mode.PAINT, Mode.ERASE):
             self.cursor_size = self._calculate_cursor_size()
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
-            )
-            self.mouse_drag_callbacks.append(draw)
-        elif mode == Mode.FILL:
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, click to fill a label'
-            )
-            self.mouse_drag_callbacks.append(draw)
-        elif mode == Mode.ERASE:
-            self.cursor = 'circle'
-            self.cursor_size = self._calculate_cursor_size()
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, drag to erase a label'
-            )
-            self.mouse_drag_callbacks.append(draw)
-        else:
-            raise ValueError(trans._("Mode not recognized"))
-
-        self._mode = mode
 
         self.events.mode(mode=mode)
         self.refresh()
@@ -864,6 +868,52 @@ class Labels(_ImageBase):
             val = self._raw_to_displayed(np.array([label]))
             col = self.colormap.map(val)[0]
         return col
+
+    def _get_value_ray(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+
+        Returns
+        -------
+        value : Optional[int]
+            The first non-zero value encountered along the ray. If none
+            was encountered or the viewer is in 2D mode, None is returned.
+        """
+        if len(dims_displayed) == 3:
+            # only use get_value_ray on 3D for now
+            # we use dims_displayed because the image slice
+            # has its dimensions  in th same order as the vispy
+            # Volume
+            start_point = start_point[dims_displayed]
+            end_point = end_point[dims_displayed]
+            sample_ray = end_point - start_point
+            length_sample_vector = np.linalg.norm(sample_ray)
+            n_points = int(2 * length_sample_vector)
+            sample_points = np.linspace(
+                start_point, end_point, n_points, endpoint=True
+            )
+            im_slice = self._slice.image.raw
+            clamped = clamp_point_to_bounding_box(
+                sample_points, self._display_bounding_box(dims_displayed)
+            ).astype(int)
+            values = im_slice[tuple(clamped.T)]
+            nonzero_indices = np.flatnonzero(values)
+            if len(nonzero_indices > 0):
+                # if a nonzer0 value was found, return the first one
+                return values[nonzero_indices[0]]
+
+        return None
 
     def _reset_history(self, event=None):
         self._undo_history = deque()

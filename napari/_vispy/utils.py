@@ -1,3 +1,8 @@
+from typing import Tuple
+
+import numpy as np
+from vispy.scene.widgets.viewbox import ViewBox
+
 from ..layers import (
     Image,
     Labels,
@@ -63,3 +68,59 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
             dtype=type(layer),
         )
     )
+
+
+def get_view_direction_in_scene_coordinates(
+    view: ViewBox,
+    dims_point: Tuple[int],
+    dims_displayed: Tuple[int],
+) -> np.ndarray:
+    """calculate the unit vector pointing in the direction of the view
+
+    Adapted From:
+    https://stackoverflow.com/questions/37877592/
+        get-view-direction-relative-to-scene-in-vispy/37882984
+
+    Parameters
+    ----------
+    view : vispy.scene.widgets.viewbox.ViewBox
+        The vispy view box object to get the view direction from.
+    dims_point : Tuple[int]
+        The indices for each dimension in the current view.
+        This is typically from viewer.dims.point.
+    dims_displayed : Tuple[int]
+        The indices of the dims displayed in the viewer.
+        This is typically from viewer.dims.displayed.
+
+    Returns
+    -------
+    view_vector : np.ndarray
+        Unit vector in the direction of the view in scene coordinates.
+        Axes are ordered zyx.
+    """
+    tform = view.scene.transform
+    w, h = view.canvas.size
+
+    # get a point at the center of the canvas
+    # (homogeneous screen coords)
+    screen_center = np.array([w / 2, h / 2, 0, 1])
+
+    # find a point just in front of the center point
+    # transform both to world coords and find the vector
+    d1 = np.array([0, 0, 1, 0])
+    point_in_front_of_screen_center = screen_center + d1
+    p1 = tform.imap(point_in_front_of_screen_center)
+    p0 = tform.imap(screen_center)
+    d2 = p1 - p0
+
+    # in 3D world coordinates
+    d3 = d2[0:3]
+    d4 = d3 / np.linalg.norm(d3)
+
+    # data are ordered xyz on vispy Volume
+    d4 = d4[[2, 1, 0]]
+    view_dir_world = list(dims_point)
+    for i, d in enumerate(dims_displayed):
+        view_dir_world[d] = d4[i]
+
+    return view_dir_world

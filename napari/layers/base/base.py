@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -11,6 +13,10 @@ from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
+from ...utils.geometry import (
+    find_front_back_face,
+    intersect_ray_with_axis_aligned_bounding_box_3d,
+)
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
@@ -27,6 +33,28 @@ from ..utils.layer_utils import (
 from ._base_constants import Blending
 
 Extent = namedtuple('Extent', 'data world step')
+
+
+def no_op(layer: Layer, event: Event) -> None:
+    """
+    A convenient no-op event for the layer mouse binding.
+
+    This makes it easier to handle many cases by inserting this as
+    as place holder
+
+    Parameters
+    ----------
+    layer : Layer
+        Current layer on which this will be bound as a callback
+    event : Event
+        event that triggered this mouse callback.
+
+    Returns
+    -------
+    None
+
+    """
+    return None
 
 
 @_mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -291,6 +319,53 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def __repr__(self):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+
+    def _mode_setter_helper(self, mode, Modeclass):
+        """
+        Helper to manage callbacks in multiple layers
+
+        Parameters
+        ----------
+        mode : Modeclass | str
+            New mode for the current layer.
+        Modeclass : Enum
+            Enum for the current class representing the modes it can takes,
+            this is usually specific on each subclass.
+
+        Returns
+        -------
+        tuple (new Mode, mode changed)
+
+        """
+        mode = Modeclass(mode)
+        assert mode is not None
+        if not self.editable:
+            mode = Modeclass.PAN_ZOOM
+        if mode == self._mode:
+            return mode, False
+        if mode.value not in Modeclass.keys():
+            raise ValueError(
+                trans._(
+                    "Mode not recognized: {mode}", deferred=True, mode=mode
+                )
+            )
+        old_mode = self._mode
+        self._mode = mode
+
+        for callback_list, mode_dict in [
+            (self.mouse_drag_callbacks, self._drag_modes),
+            (self.mouse_move_callbacks, self._move_modes),
+        ]:
+            if mode_dict[old_mode] in callback_list:
+                callback_list.remove(mode_dict[old_mode])
+            callback_list.append(mode_dict[mode])
+        self.cursor = self._cursor_modes[mode]
+
+        if mode == Modeclass.PAN_ZOOM:
+            self.interactive = True
+        else:
+            self.interactive = False
+        return mode, True
 
     @classmethod
     def _basename(cls):
@@ -1002,6 +1077,120 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         return self._transforms[1:3].simplified
 
+    def _world_to_data_ray(self, vector) -> tuple:
+        """Convert a vector defining an orientation from world coordinates to data coordinates.
+        For example, this would be used to convert the view ray.
+
+        Parameters
+        ----------
+        vector : tuple, list, 1D array
+            A vector in world coordinates.
+        dims_displayed: List[int]
+            The indices of the displayed dimensions. This is used to slice the
+            affine transform parameters.
+
+        Returns
+        -------
+        tuple
+            Vector in data coordinates.
+        """
+        p1 = np.asarray(self.world_to_data(vector))
+        p0 = np.asarray(self.world_to_data(np.zeros_like(vector)))
+        normalized_vector = (p1 - p0) / np.linalg.norm(p1 - p0)
+
+        return tuple(normalized_vector)
+
+    def _display_bounding_box(self, dims_displayed_mask: np.ndarray):
+        """An axis aligned (self._ndisplay, 2) bounding box around the data"""
+        return self._extent_data[:, dims_displayed_mask].T
+
+    def get_ray_intersections(
+        self,
+        position: List[float],
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+        """Get the start and end point for the ray extending
+        from a point through the data bounding box.
+
+        Parameters
+        ----------
+        position :
+            the position of the point in nD world coordinates
+        view_direction : np.ndarray
+            a unit vector giving the direction of the ray in nD world coordinates
+        dims_displayed :
+            a list of the dimensions currently being displayed in the viewer.
+
+        Returns
+        -------
+        start_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point closest to the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            an emtpy numpy array is returned (i.e., np.empty([]).
+        end_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point farthest from the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            an emtpy numpy array is returned (i.e., np.empty([]).
+        """
+        if len(dims_displayed) == 3:
+            # create a mask to select the in view dimensions
+            dims_displayed = dims_displayed
+            dims_displayed_mask = np.zeros_like(position, dtype=bool)
+            dims_displayed_mask[dims_displayed] = True
+
+            # create the bounding box in data coordinates
+            bbox = self._display_bounding_box(dims_displayed_mask)
+
+            # get the view direction in data coords (only displayed dims)
+            view_dir_world = view_direction
+            view_dir = np.asarray(self._world_to_data_ray(view_dir_world))[
+                dims_displayed_mask
+            ]
+
+            # Get the clicked point in data coords (only displayed dims)
+            click_pos_data = np.asarray(self.world_to_data(position))[
+                dims_displayed_mask
+            ]
+
+            # Determine the front and back faces
+            front_face_normal, back_face_normal = find_front_back_face(
+                click_pos_data, bbox, view_dir
+            )
+
+            # Get the locations in the plane where the ray intersects
+            if front_face_normal is not None and back_face_normal is not None:
+                start_point_disp_dims = (
+                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                        click_pos_data, view_dir, bbox, front_face_normal
+                    )
+                )
+                end_point_disp_dims = (
+                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                        click_pos_data, view_dir, bbox, back_face_normal
+                    )
+                )
+
+                # add the coordinates for the axes not displayed
+                start_point = np.asarray(position)
+                start_point[dims_displayed_mask] = start_point_disp_dims
+                end_point = np.asarray(position)
+                end_point[dims_displayed_mask] = end_point_disp_dims
+
+            else:
+                # if the click doesn't intersect the data bounding box,
+                # return None
+                start_point = None
+                end_point = None
+
+            return start_point, end_point
+        else:
+            return None, None
+
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.
         For layer multiscale determining if a new resolution level or tile is
@@ -1145,7 +1334,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @classmethod
     def create(
         cls, data, meta: dict = None, layer_type: Optional[str] = None
-    ) -> 'Layer':
+    ) -> Layer:
         """Create layer from `data` of type `layer_type`.
 
         Primarily intended for usage by reader plugin hooks and creating a
