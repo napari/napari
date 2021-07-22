@@ -1619,7 +1619,9 @@ class Shapes(Layer):
         """
         # rectangles can have either 4 vertices or (top left, bottom right)
         valid_vertices_per_shape = (2, 4)
-        validate_num_vertices(data, valid_vertices_per_shape, 'rectangle')
+        validate_num_vertices(
+            data, 'rectangle', valid_vertices=valid_vertices_per_shape
+        )
 
         self.add(
             data,
@@ -1674,11 +1676,176 @@ class Shapes(Layer):
         """
 
         valid_elem_per_shape = (2, 4)
-        validate_num_vertices(data, valid_elem_per_shape, 'ellipse')
+        validate_num_vertices(
+            data, 'ellipse', valid_vertices=valid_elem_per_shape
+        )
 
         self.add(
             data,
             shape_type='ellipse',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
+    def add_polygons(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add polygons to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of polygon data where each element is a (V, D) array of V vertices
+            in D dimensions representing a polygon. Can be a 3-dimensional array if
+            polygons have same number of vertices.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+
+        min_vertices = 3
+        validate_num_vertices(data, 'polygon', min_vertices=min_vertices)
+
+        self.add(
+            data,
+            shape_type='polygon',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
+    def add_lines(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add lines to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of line data where each element is a (2, D) array of 2 vertices
+            in D dimensions representing a line. Can be a 3-dimensional array.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+
+        valid_vertices_per_line = (2,)
+        validate_num_vertices(
+            data, 'line', valid_vertices=valid_vertices_per_line
+        )
+
+        self.add(
+            data,
+            shape_type='line',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
+    def add_paths(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add paths to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of path data where each element is a (V, D) array of V vertices
+            in D dimensions representing a path. Can be a 3-dimensional array
+            if all paths have same number of vertices.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+
+        min_vertices_per_path = 2
+        validate_num_vertices(data, 'path', min_vertices=min_vertices_per_path)
+
+        self.add(
+            data,
+            shape_type='path',
             edge_width=edge_width,
             edge_color=edge_color,
             face_color=face_color,

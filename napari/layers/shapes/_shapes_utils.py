@@ -1091,47 +1091,46 @@ def number_of_shapes(data):
     return n_shapes
 
 
-def validate_num_vertices(data, valid_vertices, shape_type):
-    """Raises error if not all shapes have num vertices in valid_vertices.
+def validate_num_vertices(
+    data, shape_type, min_vertices=None, valid_vertices=None
+):
+    """Raises error if a shape in data has invalid number of vertices.
+
+    Checks whether all shapes in data have a valid number of vertices
+    for the given shape type and vertex information. Rectangles and
+    ellipses can have either 2 or 4 vertices per shape,
+    lines can have only 2, while paths and polygons have a minimum
+    number of vertices, but no maximum.
+
+    One of valid_vertices or min_vertices must be passed to the
+    function.
 
     Parameters
     ----------
     data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
         List of shape data, where each element is either an (N, D) array of the
         N vertices of a shape in D dimensions or a tuple containing an array of
-        the N vertices and the shape_type string. When a shape_type is present,
-        it overrides keyword arg shape_type. Can be an 3-dimensional array
+        the N vertices and the shape_type string. Can be an 3-dimensional array
         if each shape has the same number of vertices.
-    valid_vertices : Tuple(int)
-        Valid number of vertices for
     shape_type : str
         Type of shape being validated (for detailed error message)
+    min_vertices : int or None
+        Minimum number of vertices for the shape type, by default None
+    valid_vertices : Tuple(int) or None
+        Valid number of vertices for the shape type in data, by default None
 
     Raises
     ------
     ValueError
         Raised if a shape is found with invalid number of vertices
     """
-    n_shapes = number_of_shapes(data)
-
-    if n_shapes == 1:
-        # could be a 3D ndarray of shape (1, n vertices, D)
-        if isinstance(data, np.ndarray):
-            # squeeze to get rid of singleton dimension
-            data = np.squeeze(data)
-        if len(data) not in valid_vertices:
+    for shpe in data:
+        if (valid_vertices and len(shpe) not in valid_vertices) or (
+            min_vertices and len(shpe) < min_vertices
+        ):
             raise ValueError(
                 trans._(
-                    f"{shape_type.capitalize()} {data} has {len(data)} vertices, not one of {valid_vertices}.",
+                    f"{shape_type.capitalize()} {shpe} has invalid number of vertices: {len(shpe)}.",
                     deferred=True,
                 )
             )
-    else:
-        for shpe in data:
-            if len(shpe) not in valid_vertices:
-                raise ValueError(
-                    trans._(
-                        f"{shape_type.capitalize()} {shpe} has {len(shpe)} vertices, not one of {valid_vertices}.",
-                        deferred=True,
-                    )
-                )

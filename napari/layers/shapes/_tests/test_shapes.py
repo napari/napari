@@ -373,6 +373,7 @@ def test_rectangles(shape):
     # Test adding via add_rectangles method
     layer2 = Shapes()
     layer2.add_rectangles(data)
+    assert layer.nshapes == layer2.nshapes
     assert np.allclose(layer2.data, layer.data)
     assert np.all([s == 'rectangle' for s in layer2.shape_type])
 
@@ -483,6 +484,15 @@ def test_3D_rectangles():
     assert layer.ndim == 3
     assert np.all([s == 'rectangle' for s in layer.shape_type])
 
+    # test adding with add_rectangles
+    layer2 = Shapes()
+    layer2.add_rectangles(data)
+    assert layer2.nshapes == layer.nshapes
+    assert np.all(
+        [np.all(ld == ld2) for ld, ld2 in zip(layer.data, layer2.data)]
+    )
+    assert np.all([s == 'rectangle' for s in layer2.shape_type])
+
 
 @pytest.mark.parametrize(
     "shape",
@@ -515,6 +525,7 @@ def test_ellipses(shape):
     # Test adding via add_ellipses method
     layer2 = Shapes()
     layer2.add_ellipses(data)
+    assert layer.nshapes == layer2.nshapes
     assert np.allclose(layer2.data, layer.data)
     assert np.all([s == 'ellipse' for s in layer2.shape_type])
 
@@ -620,6 +631,16 @@ def test_4D_ellispse():
     assert layer.ndim == 4
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
+    # test adding via add_ellipses
+    layer2 = Shapes()
+    layer2.add_ellipses(data)
+    assert layer.nshapes == layer2.nshapes
+    assert np.all(
+        [np.all(ld == ld2) for ld, ld2 in zip(layer.data, layer2.data)]
+    )
+    assert layer.ndim == 4
+    assert np.all([s == 'ellipse' for s in layer2.shape_type])
+
 
 def test_ellipses_roundtrip():
     """Test a full roundtrip with ellipss data."""
@@ -631,20 +652,11 @@ def test_ellipses_roundtrip():
     assert np.all([nd == d for nd, d in zip(new_layer.data, layer.data)])
 
 
-def test_lines():
+@pytest.mark.parametrize('shape', [(1, 2, 2), (10, 2, 2)])
+def test_lines(shape):
     """Test instantiating Shapes layer with a random 2D lines."""
-    # Test a single two end point line
-    shape = (1, 2, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data, shape_type='line')
-    assert layer.nshapes == shape[0]
-    assert np.all(layer.data[0] == data[0])
-    assert layer.ndim == shape[2]
-    assert np.all([s == 'line' for s in layer.shape_type])
 
-    # Test multiple lines
-    shape = (10, 2, 2)
+    # Test instantiating with data
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='line')
@@ -652,6 +664,31 @@ def test_lines():
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == shape[2]
     assert np.all([s == 'line' for s in layer.shape_type])
+
+    # Test adding using add_lines
+    layer2 = Shapes()
+    layer2.add_lines(data)
+    assert layer.nshapes == layer2.nshapes
+    assert np.allclose(layer2.data, layer.data)
+    assert np.all([s == 'line' for s in layer2.shape_type])
+
+
+def test_add_lines_raises_error():
+    """Test adding lines with incorrect vertices raise error"""
+
+    # single line
+    shape = (1, 3, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes()
+    with pytest.raises(ValueError):
+        layer.add_lines(data)
+
+    # multiple lines
+    data = [
+        20 * np.random.random((np.random.randint(3, 10), 2)) for _ in range(10)
+    ]
+    with pytest.raises(ValueError):
+        layer.add_lines(data)
 
 
 def test_lines_with_shape_type():
@@ -700,27 +737,51 @@ def test_lines_roundtrip():
     assert np.all([nd == d for nd, d in zip(new_layer.data, layer.data)])
 
 
-def test_paths():
-    """Test instantiating Shapes layer with a random 2D paths."""
-    # Test a single path with 6 points
-    shape = (1, 6, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data, shape_type='path')
-    assert layer.nshapes == shape[0]
-    assert np.all(layer.data[0] == data[0])
-    assert layer.ndim == shape[2]
-    assert np.all([s == 'path' for s in layer.shape_type])
-
-    # Test multiple paths with different numbers of points
-    data = [
-        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+@pytest.mark.parametrize(
+    "shape",
+    [
+        # single path, six points
+        (6, 2),
     ]
+    + [
+        # multiple 2D paths with different numbers of points
+        (np.random.randint(2, 12), 2)
+        for _ in range(10)
+    ],
+)
+def test_paths(shape):
+    """Test instantiating Shapes layer with random 2D paths."""
+
+    # Test instantiating with data
+    data = [20 * np.random.random(shape)]
     layer = Shapes(data, shape_type='path')
     assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == 2
     assert np.all([s == 'path' for s in layer.shape_type])
+
+    # Test adding to layer via add_paths
+    layer2 = Shapes()
+    layer2.add_paths(data)
+    assert layer.nshapes == layer2.nshapes
+    assert np.allclose(layer2.data, layer.data)
+    assert np.all([s == 'path' for s in layer2.shape_type])
+
+
+def test_add_paths_raises_error():
+    """Test adding paths with incorrect vertices raise error"""
+
+    # single path
+    shape = (1, 1, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes()
+    with pytest.raises(ValueError):
+        layer.add_paths(data)
+
+    # multiple paths
+    data = 20 * np.random.random((10, 1, 2))
+    with pytest.raises(ValueError):
+        layer.add_paths(data)
 
 
 def test_paths_with_shape_type():
@@ -769,27 +830,52 @@ def test_paths_roundtrip():
     )
 
 
-def test_polygons():
-    """Test instantiating Shapes layer with a random 2D polygons."""
-    # Test a single polygon with 6 points
-    shape = (1, 6, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data, shape_type='polygon')
-    assert layer.nshapes == shape[0]
-    assert np.all(layer.data[0] == data[0])
-    assert layer.ndim == shape[2]
-    assert np.all([s == 'polygon' for s in layer.shape_type])
-
-    # Test multiple polygons with different numbers of points
-    data = [
-        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+@pytest.mark.parametrize(
+    "shape",
+    [
+        # single 2D polygon, six points
+        (6, 2),
     ]
+    + [
+        # multiple 2D polygons with different numbers of points
+        (np.random.randint(3, 12), 2)
+        for _ in range(10)
+    ],
+)
+def test_polygons(shape):
+    """Test instantiating Shapes layer with a random 2D polygons."""
+
+    # Test instantiating with data
+    data = [20 * np.random.random(shape)]
     layer = Shapes(data, shape_type='polygon')
     assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == 2
     assert np.all([s == 'polygon' for s in layer.shape_type])
+
+    # Test adding via add_polygons
+    layer2 = Shapes()
+    layer2.add_polygons(data)
+    assert layer.nshapes == layer2.nshapes
+    assert np.allclose(layer2.data, layer.data)
+    assert np.all([s == 'polygon' for s in layer2.shape_type])
+
+
+def test_add_polygons_raises_error():
+    """Test input validation for add_polygons method"""
+    layer = Shapes()
+
+    np.random.seed(0)
+    # single polygon, 2 vertices
+    data = 20 * np.random.random((1, 2, 2))
+    with pytest.raises(ValueError):
+        layer.add_polygons(data)
+    # multiple polygons, only some with 2 vertices
+    data = [20 * np.random.random((5, 2)) for _ in range(5)] + [
+        20 * np.random.random((2, 2)) for _ in range(2)
+    ]
+    with pytest.raises(ValueError):
+        layer.add_polygons(data)
 
 
 def test_polygons_with_shape_type():
