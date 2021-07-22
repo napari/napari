@@ -160,12 +160,12 @@ def test_properties_dataframe():
     np.testing.assert_equal(layer.properties, properties)
 
 
-def test_empty_layer_with_text_properties():
+def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
     text_kwargs = {'text': 'shape_type', 'color': 'red'}
     layer = Shapes(
-        properties=default_properties,
+        property_choices=default_properties,
         text=text_kwargs,
     )
     assert layer.text._mode == TextMode.PROPERTY
@@ -182,7 +182,7 @@ def test_empty_layer_with_text_formatted():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
     layer = Shapes(
-        properties=default_properties,
+        property_choices=default_properties,
         text='shape_type: {shape_type:.2f}',
     )
     assert layer.text._mode == TextMode.FORMATTED
@@ -272,6 +272,16 @@ def test_text_error(properties):
     # try adding text as the wrong type
     with pytest.raises(TypeError):
         Shapes(data, properties=copy(properties), text=123)
+
+
+def test_select_properties_object_dtype():
+    """selecting points when they have a property of object dtype should not fail"""
+    # pandas uses object as dtype for strings by default
+    properties = pd.DataFrame({'color': ['red', 'green']})
+    pl = Shapes(np.ones((2, 2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
 
 
 def test_refresh_text():
@@ -1395,7 +1405,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
     default_properties = {'shape_type': np.array(['A'])}
     color_cycle = ['red', 'blue']
     shapes_kwargs = {
-        'properties': default_properties,
+        'property_choices': default_properties,
         f'{attribute}_color': 'shape_type',
         f'{attribute}_color_cycle': color_cycle,
     }

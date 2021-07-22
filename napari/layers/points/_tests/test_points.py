@@ -674,6 +674,16 @@ def test_text_error(properties):
         Points(data, properties=copy(properties), text=123)
 
 
+def test_select_properties_object_dtype():
+    """selecting points when they have a property of object dtype should not fail"""
+    # pandas uses object as dtype for strings by default
+    properties = pd.DataFrame({'color': ['red', 'green']})
+    pl = Points(np.ones((2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
+
+
 def test_refresh_text():
     """Test refreshing the text after setting new properties"""
     shape = (10, 2)
@@ -1550,50 +1560,6 @@ def test_update_none():
     layer.data = [(1, 2, 3), (1, 3, 2)]
     assert layer.ndim == 3
     assert layer.data.size == 6
-
-
-def test_prepare_properties():
-    layer = Points([(1, 2, 3), (1, 3, 2)])
-    properties, choices = layer._prepare_properties({"aa": [1, 2]})
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 2])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-    assert layer._prepare_properties({}) == ({}, {})
-    assert layer._prepare_properties({}, {}) == ({}, {})
-    properties, choices = layer._prepare_properties({}, {"aa": [1, 2]})
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [None, None])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-    properties, choices = layer._prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2]}
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-    properties, choices = layer._prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2], "bb": [7, 6]}
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-    properties, choices = layer._prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2], "bb": [7, 6]}, save_choices=True
-    )
-    assert list(properties.keys()) == ["aa", "bb"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert np.array_equal(properties["bb"], [None, None])
-    assert list(choices.keys()) == ["aa", "bb"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-    assert np.array_equal(choices["bb"], [6, 7])
-
-    layer = Points([(1, 2, 3), (1, 3, 2), (1, 3, 3)])
-    properties, choices = layer._prepare_properties({"aa": [1, 2, 1]})
-    assert np.array_equal(properties["aa"], [1, 2, 1])
-    assert np.array_equal(choices["aa"], [1, 2])
 
 
 def test_set_face_color_mode_after_set_properties():

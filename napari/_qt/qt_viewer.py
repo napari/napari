@@ -9,6 +9,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+from .._vispy.utils import get_view_direction_in_scene_coordinates
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
@@ -31,11 +32,9 @@ from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
-from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
-from .widgets.qt_activity_dock import QtActivityDock
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
@@ -121,7 +120,6 @@ class QtViewer(QSplitter):
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
-        self._key_bindings_dialog = None
         self._console = None
 
         layerList = QWidget()
@@ -132,9 +130,6 @@ class QtViewer(QSplitter):
         layerListLayout.addWidget(self.viewerButtons)
         layerListLayout.setContentsMargins(8, 4, 8, 6)
         layerList.setLayout(layerListLayout)
-
-        activityDock = QtActivityDock()
-        activityDock.setObjectName('activityDock')
 
         self.dockLayerList = QtViewerDockWidget(
             self,
@@ -151,14 +146,6 @@ class QtViewer(QSplitter):
             area='left',
             allowed_areas=['left', 'right'],
             object_name='layer controls',
-        )
-        self.activityDock = QtViewerDockWidget(
-            self,
-            activityDock,
-            name=trans._('activity dock'),
-            area='right',
-            allowed_areas=['right', 'bottom'],
-            object_name='activity dock',
         )
         self.dockConsole = QtViewerDockWidget(
             self,
@@ -177,8 +164,6 @@ class QtViewer(QSplitter):
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
-
-        self.activityDock.setVisible(False)
 
         # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
@@ -400,10 +385,6 @@ class QtViewer(QSplitter):
             if self.viewer.layers.selection.active is None
             else [self.viewer.layers.selection.active, self.viewer]
         )
-
-        # If a QtAboutKeyBindings exists, update its text.
-        if self._key_bindings_dialog is not None:
-            self._key_bindings_dialog.update_active_layer()
 
     def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
@@ -743,17 +724,6 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def show_key_bindings_dialog(self, event=None):
-        if self._key_bindings_dialog is None:
-            self._key_bindings_dialog = QtAboutKeyBindings(
-                self.viewer, self._key_map_handler, parent=self
-            )
-        # make sure the dialog is shown
-        self._key_bindings_dialog.show()
-        # make sure the the dialog gets focus
-        self._key_bindings_dialog.raise_()  # for macOS
-        self._key_bindings_dialog.activateWindow()  # for Windows
-
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
 
@@ -769,8 +739,8 @@ class QtViewer(QSplitter):
             of the viewer.
         """
         nd = self.viewer.dims.ndisplay
-        transform = self.view.camera.transform.inverse
-        mapped_position = transform.map(list(position))[:nd]
+        transform = self.view.scene.transform
+        mapped_position = transform.imap(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
 
         position_world = list(self.viewer.dims.point)
@@ -802,7 +772,21 @@ class QtViewer(QSplitter):
         self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
     def _process_mouse_event(self, mouse_callbacks, event):
-        """Called whenever mouse pressed in canvas.
+        """Add properties to the mouse event before passing the event to the
+        napari events system. Called whenever the mouse moves or is clicked.
+        As such, care should be taken to reduce the overhead in this function.
+        In future work, we should consider limiting the frequency at which
+        it is called.
+
+        This method adds following:
+            position: the position of the click in world coordinates.
+            view_direction: a unit vector giving the direction of the camera in
+                world coordinates.
+            dims_displayed: a list of the dimensions currently being displayed
+                in the viewer. This comes from viewer.dims.displayed.
+            dims_point: the indices for the data in view in world coordinates.
+                This comes from viewer.dims.point
+
         Parameters
         ----------
         mouse_callbacks : function
@@ -818,6 +802,17 @@ class QtViewer(QSplitter):
 
         # Add the cursor position to the event
         event.position = self.viewer.cursor.position
+
+        # Add the view ray to the event
+        event.view_direction = get_view_direction_in_scene_coordinates(
+            self.view, self.viewer.dims.point, self.viewer.dims.displayed
+        )
+
+        # Add the displayed dimensions to the event
+        event.dims_displayed = list(self.viewer.dims.displayed)
+
+        # Add the current dims indices
+        event.dims_point = list(self.viewer.dims.point)
 
         # Put a read only wrapper on the event
         event = ReadOnlyWrapper(event)

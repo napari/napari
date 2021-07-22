@@ -8,33 +8,6 @@ from ...utils.translations import trans
 from ..utils.layer_utils import segment_normal
 
 
-def inside_triangles(triangles):
-    """Checks which triangles contain the origin
-
-    Parameters
-    ----------
-    triangles : (N, 3, 2) array
-        Array of N triangles that should be checked
-
-    Returns
-    -------
-    inside : (N,) array of bool
-        Array with `True` values for trinagles containing the origin
-    """
-
-    AB = triangles[:, 1, :] - triangles[:, 0, :]
-    AC = triangles[:, 2, :] - triangles[:, 0, :]
-    BC = triangles[:, 2, :] - triangles[:, 1, :]
-
-    s_AB = -AB[:, 0] * triangles[:, 0, 1] + AB[:, 1] * triangles[:, 0, 0] >= 0
-    s_AC = -AC[:, 0] * triangles[:, 0, 1] + AC[:, 1] * triangles[:, 0, 0] >= 0
-    s_BC = -BC[:, 0] * triangles[:, 1, 1] + BC[:, 1] * triangles[:, 1, 0] >= 0
-
-    inside = np.all(np.array([s_AB != s_AC, s_AB == s_BC]), axis=0)
-
-    return inside
-
-
 def inside_boxes(boxes):
     """Checks which boxes contain the origin. Boxes need not be axis aligned
 
@@ -1015,7 +988,9 @@ def extract_shape_type(data, shape_type=None):
 
 
 def get_default_shape_type(current_type):
-    """Returns current shape type if current_type is one shape, else "polygon".
+    """If all shapes in current_type are of identical shape type,
+       return this shape type, else "polygon" as lowest common
+       denominator type.
 
     Parameters
     ----------
@@ -1027,10 +1002,13 @@ def get_default_shape_type(current_type):
     default_type : str
         default shape type
     """
+    default = "polygon"
+    if not current_type:
+        return default
     first_type = current_type[0]
     if all(shape_type == first_type for shape_type in current_type):
         return first_type
-    return "rectangle"
+    return default
 
 
 def get_shape_ndim(data):

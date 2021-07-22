@@ -1,13 +1,14 @@
 from typing import TYPE_CHECKING
 
-from .components import ViewerModel
-from .utils import config
+from .components.viewer_model import ViewerModel
+from .utils import _magicgui, config
 
 if TYPE_CHECKING:
     # helpful for IDE support
     from ._qt.qt_main_window import Window
 
 
+@_magicgui.register_type(bind=_magicgui.find_viewer_ancestor)
 class Viewer(ViewerModel):
     """Napari ndarray viewer.
 

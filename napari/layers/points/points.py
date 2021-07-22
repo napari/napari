@@ -12,12 +12,13 @@ from ...utils.colormaps.standardize_color import (
     rgb_to_hex,
 )
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..base import Layer
+from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import get_current_properties, prepare_properties
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -25,7 +26,6 @@ from ._points_utils import create_box, fix_data_points, points_to_squares
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -43,6 +43,8 @@ class Points(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     text : str, dict
         Text to be displayed with the points. If text is set to a key in properties,
         the value of that property will be displayed. Multiple properties can be
@@ -118,8 +120,6 @@ class Points(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    property_choices : dict {str: array (N,)}
-        possible values for each property.
 
     Attributes
     ----------
@@ -208,7 +208,6 @@ class Points(Layer):
     -----
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Points.properties.
-        If properties is not provided, it will be {} (empty dictionary).
     _view_data : array (M, 2)
         2D coordinates of points in the currently viewed slice.
     _view_size : array (M, )
@@ -305,18 +304,8 @@ class Points(Layer):
         self._data = np.asarray(data)
 
         # Save the properties
-        if self.data.size == 0 and properties:
-            warnings.warn(
-                trans._(
-                    "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            property_choices = properties
-            properties = {}
-        self._properties, self._property_choices = self._prepare_properties(
-            properties, property_choices, save_choices=True
+        self._properties, self._property_choices = prepare_properties(
+            properties, property_choices, len(self.data), save_choices=True
         )
 
         # make the text
@@ -355,7 +344,6 @@ class Points(Layer):
         self._value = None
         self._value_stored = None
         self._mode = Mode.PAN_ZOOM
-        self._mode_history = self._mode
         self._status = self.mode
         self._highlight_index = []
         self._highlight_box = None
@@ -379,7 +367,7 @@ class Points(Layer):
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
             properties=self._properties
-            if self._data.size
+            if self._data.size > 0
             else self._property_choices,
         )
         self._face = ColorManager._from_layer_kwargs(
@@ -389,29 +377,18 @@ class Points(Layer):
             contrast_limits=face_contrast_limits,
             categorical_colormap=face_color_cycle,
             properties=self._properties
-            if self._data.size
+            if self._data.size > 0
             else self._property_choices,
         )
 
         self.size = size
 
-        self._update_current_properties()
+        self.current_properties = get_current_properties(
+            self._properties, self._property_choices, len(self.data)
+        )
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-
-    def _update_current_properties(self):
-        if len(self._data) > 0:
-            self.current_properties = {
-                k: np.asarray([v[-1]]) for k, v in self.properties.items()
-            }
-        elif len(self._data) == 0 and self.properties:
-            self.current_properties = {
-                k: np.asarray([v[0]])
-                for k, v in self._property_choices.items()
-            }
-        else:
-            self.current_properties = {}
 
     @property
     def data(self) -> np.ndarray:
@@ -527,15 +504,17 @@ class Points(Layer):
 
     @properties.setter
     def properties(
-        self, properties: Union[Dict[str, np.ndarray], 'DataFrame', None]
+        self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
-        self._properties, self._property_choices = self._prepare_properties(
-            properties, self._property_choices
+        self._properties, self._property_choices = prepare_properties(
+            properties, self._property_choices, len(self.data)
         )
         # Updating current_properties can modify properties, so block to avoid
         # infinite recursion when explicitly setting the properties.
         with self.block_update_properties():
-            self._update_current_properties()
+            self.current_properties = get_current_properties(
+                self._properties, self._property_choices, len(self.data)
+            )
         self._update_color_manager(
             self._face,
             self._properties,
@@ -552,62 +531,6 @@ class Points(Layer):
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
-
-    def _prepare_properties(
-        self,
-        properties: Union[
-            Dict[str, Union[np.ndarray, list]], 'DataFrame', None
-        ],
-        property_choices: Dict[str, Union[np.ndarray, list]] = None,
-        save_choices: bool = False,
-    ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-        """Return properties in a normalized dict-of-columns format.
-
-        Parameters
-        ----------
-        properties : Union[dict, DataFrame]
-            properties to be transformed
-        property_choices : Dict[str, np.ndarray]
-            previous choices
-        save_choices : bool
-            preserve property choices that are not available in input columns.
-
-        Returns
-        -------
-        properties (dict):
-            properties dictionary
-        """
-        if property_choices is None:
-            property_choices = {}
-        if properties is None:
-            properties = {}
-        if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
-
-        new_choices = {
-            k: np.unique(np.concatenate((v, property_choices.get(k, []))))
-            for k, v in properties.items()
-        }
-        if not new_choices:
-            # case of set empty properties when have available choices list
-            new_choices = {
-                k: np.unique(v) for k, v in property_choices.items()
-            }
-        if not properties and new_choices:
-            if self._data.size:
-                properties = {
-                    k: [None] * self._data.shape[0] for k in new_choices
-                }
-            else:
-                properties = {
-                    k: np.empty(0, v.dtype) for k, v in new_choices.items()
-                }
-        if save_choices:
-            for k, v in property_choices.items():
-                if k not in new_choices:
-                    new_choices[k] = np.unique(v)
-                    properties[k] = [None] * self._data.shape[0]
-        return self._validate_properties(properties), new_choices
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
@@ -631,24 +554,6 @@ class Points(Layer):
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
-
-    def _validate_properties(
-        self, properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validates the type and size of the properties"""
-        for k, v in properties.items():
-            if len(v) != len(self.data):
-                raise ValueError(
-                    trans._(
-                        'the number of properties must equal the number of points',
-                        deferred=True,
-                    )
-                )
-            # ensure the property values are a numpy array
-            if type(v) != np.ndarray:
-                properties[k] = np.asarray(v)
-
-        return properties
 
     @property
     def text(self) -> TextManager:
@@ -1102,9 +1007,13 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_size = size
 
-        properties = {
-            k: np.unique(v[index], axis=0) for k, v in self.properties.items()
-        }
+        properties = {}
+        for k, v in self.properties.items():
+            # pandas uses `object` as dtype for strings by default, which
+            # combined with the axis argument breaks np.unique
+            axis = 0 if v.ndim > 1 else None
+            properties[k] = np.unique(v[index], axis=axis)
+
         n_unique_properties = np.array([len(v) for v in properties.values()])
         if np.all(n_unique_properties == 1):
             with self.block_update_properties():
@@ -1147,56 +1056,41 @@ class Points(Layer):
         """
         return str(self._mode)
 
+    _drag_modes = {Mode.ADD: add, Mode.SELECT: select, Mode.PAN_ZOOM: no_op}
+
+    _move_modes = {
+        Mode.ADD: no_op,
+        Mode.SELECT: highlight,
+        Mode.PAN_ZOOM: no_op,
+    }
+    _cursor_modes = {
+        Mode.ADD: 'pointing',
+        Mode.SELECT: 'standard',
+        Mode.PAN_ZOOM: 'standard',
+    }
+
     @mode.setter
     def mode(self, mode):
-        mode = Mode(mode)
-
-        if not self.editable:
-            mode = Mode.PAN_ZOOM
-
-        if mode == self._mode:
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
             return
+        assert mode is not None, mode
         old_mode = self._mode
 
-        if old_mode == Mode.ADD:
-            self.mouse_drag_callbacks.remove(add)
-        elif old_mode == Mode.SELECT:
-            # add mouse drag and move callbacks
-            self.mouse_drag_callbacks.remove(select)
-            self.mouse_move_callbacks.remove(highlight)
-
         if mode == Mode.ADD:
-            self.cursor = 'pointing'
-            self.interactive = True
-            self.help = trans._('hold <space> to pan/zoom')
             self.selected_data = set()
-            self._set_highlight()
-            self.mouse_drag_callbacks.append(add)
-        elif mode == Mode.SELECT:
-            self.cursor = 'standard'
-            self.interactive = False
-            self.help = trans._('hold <space> to pan/zoom')
-            # add mouse drag and move callbacks
-            self.mouse_drag_callbacks.append(select)
-            self.mouse_move_callbacks.append(highlight)
-        elif mode == Mode.PAN_ZOOM:
-            self.cursor = 'standard'
             self.interactive = True
+
+        if mode == Mode.PAN_ZOOM:
             self.help = ''
+            self.interactive = True
         else:
-            raise ValueError(
-                trans._(
-                    "Mode not recognized",
-                    deferred=True,
-                )
-            )
+            self.help = trans._('hold <space> to pan/zoom')
 
         if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()
 
-        self._mode = mode
         self._set_highlight()
-
         self.events.mode(mode=mode)
 
     @property
@@ -1528,6 +1422,7 @@ class Points(Layer):
                 self.data[np.ix_(index, disp)] + shift
             )
             self.refresh()
+        self.events.data(value=self.data)
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""

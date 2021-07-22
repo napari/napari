@@ -2250,6 +2250,7 @@ SKIP_WORDS = {
     'napari/utils/transforms/transform_utils.py': [],
     'napari/utils/transforms/transforms.py': [
         'Affine',
+        'CompositeAffine',
         'ScaleTranslate',
         'Transform',
         'TransformChain',
