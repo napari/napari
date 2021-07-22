@@ -1011,12 +1011,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if self.visible:
             if world:
                 position = self.world_to_data(position)
-                view_direction = self._world_to_data_ray(list(view_direction))
             if dims_displayed is not None:
                 if (len(dims_displayed) == 2) or dims_displayed is None:
                     value = self._get_value(position=tuple(position))
 
                 elif len(dims_displayed) == 3:
+                    view_direction = self._world_to_data_ray(
+                        list(view_direction)
+                    )
                     start_pos, end_pos = self.get_ray_intersections(
                         position=position,
                         view_direction=view_direction,
