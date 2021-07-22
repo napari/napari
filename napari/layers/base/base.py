@@ -1174,9 +1174,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Parameters
         ----------
         position :
-            the position of the point in nD world coordinates
+            the position of the point in nD coordinates. World vs. data
+            is set by the world keyword argument.
         view_direction : np.ndarray
-            a unit vector giving the direction of the ray in nD world coordinates
+            a unit vector giving the direction of the ray in nD coordinates.
+            World vs. data is set by the world keyword argument.
         dims_displayed :
             a list of the dimensions currently being displayed in the viewer.
         world : bool
