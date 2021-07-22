@@ -1016,10 +1016,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     value = self._get_value(position=tuple(position))
 
                 elif len(dims_displayed) == 3:
+                    view_direction = self._world_to_data_ray(
+                        list(view_direction)
+                    )
                     start_pos, end_pos = self.get_ray_intersections(
                         position=position,
                         view_direction=view_direction,
                         dims_displayed=dims_displayed,
+                        world=False,
                     )
                     value = self._get_value_3d(
                         start_position=start_pos,
@@ -1164,6 +1168,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         position: List[float],
         view_direction: np.ndarray,
         dims_displayed: List[int],
+        world: bool = True,
     ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
         """Get the start and end point for the ray extending
         from a point through the data bounding box.
@@ -1171,11 +1176,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Parameters
         ----------
         position :
-            the position of the point in nD world coordinates
+            the position of the point in nD coordinates. World vs. data
+            is set by the world keyword argument.
         view_direction : np.ndarray
-            a unit vector giving the direction of the ray in nD world coordinates
+            a unit vector giving the direction of the ray in nD coordinates.
+            World vs. data is set by the world keyword argument.
         dims_displayed :
             a list of the dimensions currently being displayed in the viewer.
+        world : bool
+            True if the provided coordinates are in world coordinates.
+            Default value is True.
 
         Returns
         -------
@@ -1202,15 +1212,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             bbox = self._display_bounding_box(dims_displayed_mask)
 
             # get the view direction in data coords (only displayed dims)
-            view_dir_world = view_direction
-            view_dir = np.asarray(self._world_to_data_ray(view_dir_world))[
-                dims_displayed_mask
-            ]
+            if world is True:
+                view_dir = np.asarray(self._world_to_data_ray(view_direction))[
+                    dims_displayed_mask
+                ]
+            else:
+                view_dir = np.asarray(view_direction)
 
             # Get the clicked point in data coords (only displayed dims)
-            click_pos_data = np.asarray(self.world_to_data(position))[
-                dims_displayed_mask
-            ]
+            if world is True:
+                click_pos_data = np.asarray(self.world_to_data(position))[
+                    dims_displayed_mask
+                ]
+            else:
+                click_pos_data = np.asarray(position)[dims_displayed_mask]
 
             # Determine the front and back faces
             front_face_normal, back_face_normal = find_front_back_face(

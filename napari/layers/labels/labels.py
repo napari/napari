@@ -16,6 +16,7 @@ from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import clamp_point_to_bounding_box
+from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
 from ..base import no_op
 from ..image._image_utils import guess_multiscale
@@ -1214,12 +1215,13 @@ class Labels(_ImageBase):
         msg : string
             String containing a message that can be used as a status update.
         """
-        msg = super().get_status(
+        value = self.get_value(
             position,
             view_direction=view_direction,
             dims_displayed=dims_displayed,
             world=world,
         )
+        msg = generate_layer_status(self.name, position, value)
 
         # if this labels layer has properties
         properties = self._get_properties(position, world)

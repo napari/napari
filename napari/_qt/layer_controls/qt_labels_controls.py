@@ -526,7 +526,12 @@ class QtLabelsControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method.
         """
-        widget_list = ['pick_button', 'paint_button', 'fill_button']
+        widget_list = [
+            'pick_button',
+            'paint_button',
+            'fill_button',
+            'erase_button',
+        ]
         widgets_to_toggle = {
             (2, True): widget_list,
             (2, False): widget_list,
