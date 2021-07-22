@@ -33,12 +33,25 @@ class PluginsSettings(EventedModel):
             "Sort plugins for each action in the order to be called.",
         ),
     )
-
     disabled_plugins: Set[str] = Field(
         set(),
         title=trans._("Disabled plugins"),
         description=trans._(
             "Plugins to disable on application start.",
+        ),
+    )
+    extension2reader: Dict[str, str] = Field(
+        default_factory=dict,
+        title=trans._('Reader plugin extension association.'),
+        description=trans._(
+            'Assign file extensions to specific reader plugins'
+        ),
+    )
+    extension2writer: Dict[str, str] = Field(
+        default_factory=dict,
+        title=trans._('Writer plugin extension association.'),
+        description=trans._(
+            'Assign file extensions to specific writer plugins'
         ),
     )
 
@@ -52,4 +65,9 @@ class PluginsSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'disabled_plugins']
+        preferences_exclude = [
+            'schema_version',
+            'disabled_plugins',
+            'extension2reader',
+            'extension2writer',
+        ]
