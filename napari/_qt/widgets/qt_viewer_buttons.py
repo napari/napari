@@ -1,4 +1,4 @@
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
@@ -271,40 +271,38 @@ class QtViewerButtons(QFrame):
 
         help_layout = QGridLayout()
 
-        help_symbol = QLabel(self)
-        help_symbol.setObjectName(
-            "help_label"
-        )  # need to change with proper symbol
-        help_symbol.setToolTip('Testing tool tip-yay, its here!!!')
-
-        self.shape_help_msg = QLabel(
-            trans._(
-                'Number of rows and columns in the grid. A value of -1 for either or both of will be used the row and column numbers will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride.'
-            )
+        shape_help_msg = trans._(
+            'Number of rows and columns in the grid. A value of -1 for either or '
+            + 'both of will be used the row and column numbers will trigger an '
+            + 'auto calculation of the necessary grid shape to appropriately fill '
+            + 'all the layers at the appropriate stride.'
         )
 
-        #         QString toolTip = QString("<FONT COLOR=black>");
-        # toolTip += ("I am the very model of a modern major general, I've information vegetable animal and mineral, I know the kinges of England and I quote the fights historical from Marathon to Waterloo in order categorical...");
-        # toolTip += QString("</FONT>");
-        # widget->setToolTip(sToolTip);
+        stride_help_msg = trans._(
+            'Number of layers to place in each grid square before moving on to '
+            + 'the next square. The default ordering is to place the most visible '
+            + 'layer in the top left corner of the grid. A negative stride will '
+            + 'cause the order in which the layers are placed in the grid to be '
+            + 'reversed.'
+        )
 
-        txt = f"<FONT> {self.shape_help_msg.text()}</FONT>"
-        print(txt)
-        self.shape_help_msg.setWordWrap(True)
-        help_symbol2 = QLabel(self)
-        help_symbol2.setObjectName(
-            "help_label"
-        )  # need to change with proper symbol
-        help_symbol2.setToolTip(txt)
-        # help_symbol2.setToolTip('Testing tool tip-yay, its here!!!')
-        # help_symbol2.setStyleSheet("background-color: rgba(0, 0, 0, 0);")
-        # help_symbol2.clicked.connect(self._show_help_message)
+        # The following is needed in order to make the tooltip wrap the text.
+        shape_help_txt = f"<FONT> {shape_help_msg}</FONT>"
+        stride_help_txt = f"<FONT> {stride_help_msg}</FONT>"
 
-        blank = QLabel(self)
+        shape_help_symbol = QLabel(self)
+        shape_help_symbol.setObjectName("help_label")
+        shape_help_symbol.setToolTip(shape_help_txt)
 
-        help_layout.addWidget(help_symbol, 0, 0)
+        stride_help_symbol = QLabel(self)
+        stride_help_symbol.setObjectName("help_label")
+        stride_help_symbol.setToolTip(stride_help_txt)
+
+        blank = QLabel(self)  # helps with spacing.
+
+        help_layout.addWidget(stride_help_symbol, 0, 0)
         help_layout.addWidget(blank, 2, 0)
-        help_layout.addWidget(help_symbol2, 3, 0)
+        help_layout.addWidget(shape_help_symbol, 3, 0)
 
         layout = QHBoxLayout()
         layout.addLayout(form_layout)
@@ -312,34 +310,15 @@ class QtViewerButtons(QFrame):
         popup.frame.setLayout(layout)
         popup.show_above_mouse()
 
-    def _show_help_message(self):
-        from napari._qt.widgets.qt_keyboard_settings import KeyBindWarnPopup
-
-        # delta_y = 105
-        # delta_x = 10
-        # # global_point = self.mapToGlobal(
-        #     QPoint(
-        #         self.
-        #         self._table.columnViewportPosition(self._shortcut_col)
-        #         + delta_x,
-        #         self._table.rowViewportPosition(row) + delta_y,
-        #     )
-        # )
-
-        dlg = KeyBindWarnPopup(
-            text=self.shape_help_msg,
+        # adjust placement of shape help symbol
+        delta_x = 0
+        delta_y = -15
+        shape_pos = (
+            shape_help_symbol.x() + delta_x,
+            shape_help_symbol.y() + delta_y,
         )
-        # self._warn_dialog.move(global_point)
 
-        # Styling adjustments.
-        dlg.resize(400, dlg.sizeHint().height())
-
-        # dlg._message.resize(
-        #     200, dlg._message.sizeHint().height()
-        # )
-
-        dlg.exec_()
-        print('pushed!')
+        shape_help_symbol.move(QPoint(*shape_pos))
 
     def _update_grid_width(self, value):
         self.viewer.grid.shape = (self.viewer.grid.shape[0], value)
