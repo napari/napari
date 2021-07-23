@@ -12,6 +12,8 @@ def get_widget_state(schema, state=None):
     return state
 
 
+
+
 def get_schema_type(schema: dict) -> str:
     return schema['type']
 
@@ -117,6 +119,20 @@ class WidgetBuilder:
         widget_variant = ui_schema.get('ui:widget', default_variant)
         widget_cls = self.widget_map[schema_type][widget_variant]
         widget = widget_cls(schema, ui_schema, self)
+
+        # need to set boundaries for some widgets before the state
+        if 'minimum' in schema:
+            try:
+                widget._setMinimum(schema['minimum'])
+            except AttributeError:
+                pass # pass if no setMinimum function
+
+        if 'maximum' in schema:
+            try:
+                widget._setMaximum(schema['maximum'])
+            except AttributeError:
+                pass # pass if no setMaximum function
+
         default_state = get_widget_state(schema, state)
         if default_state is not None:
             widget.state = default_state
@@ -124,5 +140,6 @@ class WidgetBuilder:
         if description:
             widget.setDescription(description)
             widget.setToolTip(description)
+
 
         return widget

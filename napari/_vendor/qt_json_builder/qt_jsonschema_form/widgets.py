@@ -176,7 +176,14 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
 
     @state.setter
     def state(self, state: int):
+
         self.setValue(state)
+
+    def _setMinimum(self, value: int):
+        self.setMinimum(value)
+
+    def _setMaximum(self, value: int):
+        self.setMaximum(value)
 
     def configure(self):
         self.valueChanged.connect(self.on_changed.emit)
@@ -198,6 +205,7 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
         super().__init__(
             schema, ui_schema, widget_builder, orientation=QtCore.Qt.Horizontal
         )
+
 
     @state_property
     def state(self) -> int:
@@ -563,6 +571,12 @@ class HighlightSizePreviewWidget(SchemaWidgetMixin, QtHighlightSizePreviewWidget
 
     def setDescription(self, description: str):
         self._description.setText(description)
+
+    def _setMaximum(self, value: int):
+        self.setMaximum(value)
+
+    def _setMinimum(self, value: int):
+        self.setMinimum(value)
 
     @state.setter
     def state(self, state: int):

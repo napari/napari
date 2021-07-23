@@ -413,9 +413,17 @@ class ApplicationSettings(BaseNapariSettings):
         description=trans._("Loop mode for playback."),
     )
 
+    grid_stride: int = Field(
+        1,
+        title=trans._("Grid Stride"),
+        description=trans._("Number of layers to place in each grid square."),
+        ge=-20,
+        le=20,
+    )
+
     grid_width: int = Field(
         -1,
-        title=trans._("Grid width"),
+        title=trans._("Grid Width"),
         description=trans._("Number of columns in the grid."),
         ge=-1,
         le=20,
@@ -423,17 +431,9 @@ class ApplicationSettings(BaseNapariSettings):
 
     grid_height: int = Field(
         -1,
-        title=trans._("Grid height"),
+        title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),
         ge=-1,
-        le=20,
-    )
-
-    grid_stride: int = Field(
-        1,
-        title=trans._("Grid stride"),
-        description=trans._("Number of layers to place in each grid square."),
-        ge=-20,
         le=20,
     )
 
@@ -460,9 +460,6 @@ class ApplicationSettings(BaseNapariSettings):
             "open_history",
             "save_history",
             "ipy_interactive",
-            "grid_stride",
-            "grid_height",
-            "grid_width",
         ]
 
 

@@ -2,6 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -11,7 +12,6 @@ from qtpy.QtWidgets import (
 
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
-from ...utils.settings import get_settings
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 
@@ -110,6 +110,8 @@ class QtViewerButtons(QFrame):
 
         self.viewer = viewer
         action_manager.context['viewer'] = viewer
+
+        # self._set_grid_options()
 
         def active_layer():
             if len(self.viewer.layers.selection) == 1:
@@ -213,27 +215,20 @@ class QtViewerButtons(QFrame):
         pop.show_above_mouse()
 
     def open_grid_popup(self):
-        """Toggle grid button
+        """Open grid options pop up."""
 
-        the button also owns the QtModalPopup that controls the toggle grid mode settings.
-        """
-        settings = get_settings()
-        # build popup modal form
+        # layouts
 
         popup = QtPopup(self)
         form_layout = QFormLayout()
-        popup.frame.setLayout(form_layout)
 
         grid_stride = QSpinBox(popup)
         grid_stride.setObjectName("griddStrideBox")
         grid_stride.setAlignment(Qt.AlignCenter)
-        grid_stride.setValue(settings.application.grid_stride)
-        # grid_stride.setValue(self.grid_stride)
-        # if hasattr(fpsspin, 'setStepType'):
-        #     # this was introduced in Qt 5.12.  Totally optional, just nice.
-        #     fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
         grid_stride.setMaximum(20)
         grid_stride.setMinimum(-20)
+        grid_stride.setValue(self.viewer.grid.stride)
+        grid_stride.valueChanged.connect(self._update_grid_stride)
         form_layout.insertRow(
             0,
             QLabel(trans._('Grid Stride:'), parent=popup),
@@ -249,11 +244,8 @@ class QtViewerButtons(QFrame):
         grid_width.setAlignment(Qt.AlignCenter)
         grid_width.setMaximum(20)
         grid_width.setMinimum(-1)
-        grid_width.setValue(settings.application.grid_width)
-        # grid_width.setValue(self.grid_width)
-        # if hasattr(fpsspin, 'setStepType'):
-        #     # this was introduced in Qt 5.12.  Totally optional, just nice.
-        #     fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+        grid_width.setValue(self.viewer.grid.shape[1])
+        grid_width.valueChanged.connect(self._update_grid_width)
 
         form_layout.insertRow(
             1,
@@ -267,11 +259,8 @@ class QtViewerButtons(QFrame):
         grid_height.setAlignment(Qt.AlignCenter)
         grid_height.setMaximum(20)
         grid_height.setMinimum(-20)
-        grid_height.setValue(settings.application.grid_height)
-        # grid_height.setValue(self.grid_height)
-        # if hasattr(fpsspin, 'setStepType'):
-        #     # this was introduced in Qt 5.12.  Totally optional, just nice.
-        #     fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+        grid_height.setValue(self.viewer.grid.shape[0])
+        grid_height.valueChanged.connect(self._update_grid_height)
 
         form_layout.insertRow(
             2,
@@ -280,7 +269,86 @@ class QtViewerButtons(QFrame):
         )
         self.grid_height_box = grid_height
 
+        help_layout = QGridLayout()
+
+        help_symbol = QLabel(self)
+        help_symbol.setObjectName(
+            "help_label"
+        )  # need to change with proper symbol
+        help_symbol.setToolTip('Testing tool tip-yay, its here!!!')
+
+        self.shape_help_msg = QLabel(
+            trans._(
+                'Number of rows and columns in the grid. A value of -1 for either or both of will be used the row and column numbers will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride.'
+            )
+        )
+
+        #         QString toolTip = QString("<FONT COLOR=black>");
+        # toolTip += ("I am the very model of a modern major general, I've information vegetable animal and mineral, I know the kinges of England and I quote the fights historical from Marathon to Waterloo in order categorical...");
+        # toolTip += QString("</FONT>");
+        # widget->setToolTip(sToolTip);
+
+        txt = f"<FONT> {self.shape_help_msg.text()}</FONT>"
+        print(txt)
+        self.shape_help_msg.setWordWrap(True)
+        help_symbol2 = QLabel(self)
+        help_symbol2.setObjectName(
+            "help_label"
+        )  # need to change with proper symbol
+        help_symbol2.setToolTip(txt)
+        # help_symbol2.setToolTip('Testing tool tip-yay, its here!!!')
+        # help_symbol2.setStyleSheet("background-color: rgba(0, 0, 0, 0);")
+        # help_symbol2.clicked.connect(self._show_help_message)
+
+        blank = QLabel(self)
+
+        help_layout.addWidget(help_symbol, 0, 0)
+        help_layout.addWidget(blank, 2, 0)
+        help_layout.addWidget(help_symbol2, 3, 0)
+
+        layout = QHBoxLayout()
+        layout.addLayout(form_layout)
+        layout.addLayout(help_layout)
+        popup.frame.setLayout(layout)
         popup.show_above_mouse()
+
+    def _show_help_message(self):
+        from napari._qt.widgets.qt_keyboard_settings import KeyBindWarnPopup
+
+        # delta_y = 105
+        # delta_x = 10
+        # # global_point = self.mapToGlobal(
+        #     QPoint(
+        #         self.
+        #         self._table.columnViewportPosition(self._shortcut_col)
+        #         + delta_x,
+        #         self._table.rowViewportPosition(row) + delta_y,
+        #     )
+        # )
+
+        dlg = KeyBindWarnPopup(
+            text=self.shape_help_msg,
+        )
+        # self._warn_dialog.move(global_point)
+
+        # Styling adjustments.
+        dlg.resize(400, dlg.sizeHint().height())
+
+        # dlg._message.resize(
+        #     200, dlg._message.sizeHint().height()
+        # )
+
+        dlg.exec_()
+        print('pushed!')
+
+    def _update_grid_width(self, value):
+        self.viewer.grid.shape = (self.viewer.grid.shape[0], value)
+
+    def _update_grid_stride(self, value):
+        self.viewer.grid.stride = value
+
+    def _update_grid_height(self, value):
+        self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
 
 
 class QtDeleteButton(QPushButton):
