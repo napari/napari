@@ -2,12 +2,12 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QSlider,
     QSpinBox,
+    QVBoxLayout,
 )
 
 from ...utils.action_manager import action_manager
@@ -111,8 +111,6 @@ class QtViewerButtons(QFrame):
         self.viewer = viewer
         action_manager.context['viewer'] = viewer
 
-        # self._set_grid_options()
-
         def active_layer():
             if len(self.viewer.layers.selection) == 1:
                 return next(iter(self.viewer.layers.selection))
@@ -157,11 +155,9 @@ class QtViewerButtons(QFrame):
 
         self.gridViewButton.setContextMenuPolicy(Qt.CustomContextMenu)
         self.gridViewButton.customContextMenuRequested.connect(
-            self.open_grid_popup
+            self._open_grid_popup
         )
-        # look here for button!!!  Need to copy the customcontext stuff you see below to try to get the
-        # menu to open. need to change your function at bottom to just be about the pop up and put the
-        # button back in place.  see the ndisplay button for example on how to do it.
+
         action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
@@ -214,62 +210,17 @@ class QtViewerButtons(QFrame):
         pop.frame.setLayout(layout)
         pop.show_above_mouse()
 
-    def open_grid_popup(self):
-        """Open grid options pop up."""
+    def _open_grid_popup(self):
+        """Open grid options pop up widget."""
 
-        # layouts
-
+        # widgets
         popup = QtPopup(self)
-        form_layout = QFormLayout()
-
         grid_stride = QSpinBox(popup)
-        grid_stride.setObjectName("griddStrideBox")
-        grid_stride.setAlignment(Qt.AlignCenter)
-        grid_stride.setMaximum(20)
-        grid_stride.setMinimum(-20)
-        grid_stride.setValue(self.viewer.grid.stride)
-        grid_stride.valueChanged.connect(self._update_grid_stride)
-        form_layout.insertRow(
-            0,
-            QLabel(trans._('Grid Stride:'), parent=popup),
-            grid_stride,
-        )
-        self.grid_stride_box = grid_stride
-
-        wh_values = list(range(-1, 10))
-        wh_values = wh_values.pop(1)
-
         grid_width = QSpinBox(popup)
-        grid_width.setObjectName("griddWidthBox")
-        grid_width.setAlignment(Qt.AlignCenter)
-        grid_width.setMaximum(20)
-        grid_width.setMinimum(-1)
-        grid_width.setValue(self.viewer.grid.shape[1])
-        grid_width.valueChanged.connect(self._update_grid_width)
-
-        form_layout.insertRow(
-            1,
-            QLabel(trans._('Grid Width:'), parent=popup),
-            grid_width,
-        )
-        self.grid_width_box = grid_width
-
         grid_height = QSpinBox(popup)
-        grid_height.setObjectName("gdStrideBox")
-        grid_height.setAlignment(Qt.AlignCenter)
-        grid_height.setMaximum(20)
-        grid_height.setMinimum(-20)
-        grid_height.setValue(self.viewer.grid.shape[0])
-        grid_height.valueChanged.connect(self._update_grid_height)
-
-        form_layout.insertRow(
-            2,
-            QLabel(trans._('Grid Height:'), parent=popup),
-            grid_height,
-        )
-        self.grid_height_box = grid_height
-
-        help_layout = QGridLayout()
+        shape_help_symbol = QLabel(self)
+        stride_help_symbol = QLabel(self)
+        blank = QLabel(self)  # helps with placing help symbols.
 
         shape_help_msg = trans._(
             'Number of rows and columns in the grid. A value of -1 for either or '
@@ -286,47 +237,97 @@ class QtViewerButtons(QFrame):
             + 'reversed.'
         )
 
+        # set up
+        wh_values = list(range(-1, 10))
+        wh_values = wh_values.pop(1)
+        grid_stride.setObjectName("griddStrideBox")
+        grid_stride.setAlignment(Qt.AlignCenter)
+        grid_stride.setMaximum(20)
+        grid_stride.setMinimum(-20)
+        grid_stride.setValue(self.viewer.grid.stride)
+        grid_stride.valueChanged.connect(self._update_grid_stride)
+        self.grid_stride_box = grid_stride
+
+        grid_width.setObjectName("griddWidthBox")
+        grid_width.setAlignment(Qt.AlignCenter)
+        grid_width.setMaximum(20)
+        grid_width.setMinimum(-1)
+        grid_width.setValue(self.viewer.grid.shape[1])
+        grid_width.valueChanged.connect(self._update_grid_width)
+        self.grid_width_box = grid_width
+
+        grid_height.setObjectName("gdStrideBox")
+        grid_height.setAlignment(Qt.AlignCenter)
+        grid_height.setMaximum(20)
+        grid_height.setMinimum(-20)
+        grid_height.setValue(self.viewer.grid.shape[0])
+        grid_height.valueChanged.connect(self._update_grid_height)
+        self.grid_height_box = grid_height
+
         # The following is needed in order to make the tooltip wrap the text.
         shape_help_txt = f"<FONT> {shape_help_msg}</FONT>"
         stride_help_txt = f"<FONT> {stride_help_msg}</FONT>"
 
-        shape_help_symbol = QLabel(self)
         shape_help_symbol.setObjectName("help_label")
         shape_help_symbol.setToolTip(shape_help_txt)
 
-        stride_help_symbol = QLabel(self)
         stride_help_symbol.setObjectName("help_label")
         stride_help_symbol.setToolTip(stride_help_txt)
 
-        blank = QLabel(self)  # helps with spacing.
+        # layout
+        form_layout = QFormLayout()
 
-        help_layout.addWidget(stride_help_symbol, 0, 0)
-        help_layout.addWidget(blank, 2, 0)
-        help_layout.addWidget(shape_help_symbol, 3, 0)
+        form_layout.insertRow(
+            0,
+            QLabel(trans._('Grid Stride:'), parent=popup),
+            grid_stride,
+        )
+
+        form_layout.insertRow(
+            1,
+            QLabel(trans._('Grid Width:'), parent=popup),
+            grid_width,
+        )
+
+        form_layout.insertRow(
+            2,
+            QLabel(trans._('Grid Height:'), parent=popup),
+            grid_height,
+        )
+
+        help_layout = QVBoxLayout()
+        help_layout.addWidget(stride_help_symbol)
+        help_layout.addWidget(blank)
+        help_layout.addWidget(shape_help_symbol)
 
         layout = QHBoxLayout()
         layout.addLayout(form_layout)
         layout.addLayout(help_layout)
+
         popup.frame.setLayout(layout)
+
         popup.show_above_mouse()
 
-        # adjust placement of shape help symbol
+        # adjust placement of shape help symbol.  Must be done last
+        # in order for this movement to happen.
         delta_x = 0
         delta_y = -15
         shape_pos = (
             shape_help_symbol.x() + delta_x,
             shape_help_symbol.y() + delta_y,
         )
-
         shape_help_symbol.move(QPoint(*shape_pos))
 
     def _update_grid_width(self, value):
+        """Update the width value in grid shape."""
         self.viewer.grid.shape = (self.viewer.grid.shape[0], value)
 
     def _update_grid_stride(self, value):
+        """Update stride in grid settings."""
         self.viewer.grid.stride = value
 
     def _update_grid_height(self, value):
+        """Update height value in grid shape."""
         self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
 
 
