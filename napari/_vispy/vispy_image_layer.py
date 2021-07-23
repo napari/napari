@@ -15,7 +15,9 @@ class ImageLayerNode:
     def __init__(self, custom_node: Node = None):
         self._custom_node = custom_node
         self._image_node = ImageNode(None, method='auto')
-        self._volume_node = VolumeNode(np.zeros((1, 1, 1)), clim=[0, 1])
+        self._volume_node = VolumeNode(
+            np.zeros((1, 1, 1), dtype=np.float32), clim=[0, 1]
+        )
 
     def get_node(self, ndisplay: int) -> Node:
 

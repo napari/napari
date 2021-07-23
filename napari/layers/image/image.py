@@ -218,6 +218,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             ndim = len(init_shape)
 
+        # Cast 3D images in float64 to float32
+        if ndim == 3 and data.dtype == np.float64:
+            data = data.astype(np.float32)
+
         super().__init__(
             data,
             ndim,
