@@ -632,7 +632,7 @@ def test_4D_ellispse():
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
     # test adding via add_ellipses
-    layer2 = Shapes()
+    layer2 = Shapes(ndim=4)
     layer2.add_ellipses(data)
     assert layer.nshapes == layer2.nshapes
     assert np.all(
