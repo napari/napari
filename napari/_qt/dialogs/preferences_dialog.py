@@ -302,13 +302,9 @@ class PreferencesDialog(QDialog):
         # need to make sure that if async_ is an environment setting, that we don't
         # enable it here.
 
-        # TODO:
-        # settings = get_settings()
-        # if (
-        #     settings._env_settings['experimental'].get('async_', None)
-        #     is not None
-        # ):
-        #     disable = True
+        env_settings = get_settings().env_settings().get('experimental', {})
+        if env_settings.get('async_') not in (None, '0'):
+            disable = True
 
         idx = list(values.keys()).index('async_')
         form_layout = form.widget.layout()

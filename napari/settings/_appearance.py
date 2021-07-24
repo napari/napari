@@ -20,6 +20,7 @@ class AppearanceSettings(EventedModel):
         "dark",
         title=trans._("Theme"),
         description=trans._("Select the user interface theme."),
+        env="napari_theme",
     )
 
     highlight_thickness: int = Field(

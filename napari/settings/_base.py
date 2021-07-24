@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
 
 from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.error_wrappers import display_errors
@@ -20,7 +20,7 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing import AbstractSet, Any, Union
 
-    from pydantic.env_settings import SettingsSourceCallable
+    from pydantic.env_settings import EnvSettingsSource, SettingsSourceCallable
 
     from ..utils.events import Event
 
@@ -173,9 +173,16 @@ class EventedConfigFileSettings(EventedSettings):
             with open(path, 'w') as target:
                 dump(data, target)
 
+    def env_settings(self) -> Dict[str, Any]:
+        """Get a dict of fields that were provided as environment vars."""
+        env_settings = getattr(self.__config__, '_env_settings', {})
+        if callable(env_settings):
+            env_settings = env_settings(self)
+        return env_settings
+
     class Config:
         # If True: validation errors in a config file will raise an exception
-        # otherwise they will warn to the loggerÏ
+        # otherwise they will warn to the logger
         strict_config_check: bool = False
         sources: Sequence[str] = []
         _env_settings: SettingsSourceCallable
@@ -184,7 +191,7 @@ class EventedConfigFileSettings(EventedSettings):
         def customise_sources(
             cls,
             init_settings: SettingsSourceCallable,
-            env_settings: SettingsSourceCallable,
+            env_settings: EnvSettingsSource,
             file_secret_settings: SettingsSourceCallable,
         ) -> Tuple[SettingsSourceCallable, ...]:
             """customise the way data is loaded.
@@ -199,11 +206,10 @@ class EventedConfigFileSettings(EventedSettings):
             Priority is given to sources earlier in the list.  You can resort
             the return list to change the priority of sources.
             """
-            nested_eset = nested_env_settings(env_settings)
-            cls._env_settings = nested_eset
+            cls._env_settings = nested_env_settings(env_settings)
             return (
                 init_settings,
-                nested_eset,
+                cls._env_settings,
                 config_file_settings_source,
                 file_secret_settings,
             )
@@ -212,18 +218,27 @@ class EventedConfigFileSettings(EventedSettings):
 # Utility functions
 
 
-def nested_env_settings(super_eset=None) -> SettingsSourceCallable:
+def nested_env_settings(
+    super_eset: EnvSettingsSource,
+) -> SettingsSourceCallable:
     """Wraps the pydantic EnvSettingsSource to support nested env vars.
 
-    for example:
+    currently only supports one level of nesting.
+
+    Examples
+    --------
     `NAPARI_APPEARANCE_THEME=light`
     will parse to:
     {'appearance': {'theme': 'light'}}
 
-    currently only supports one level of nesting
+    If a submodel has a field that explicitly declares an `env`... that will
+    also be found.  For example, 'ExperimentalSettings.async_' directly
+    declares `env='napari_async'`... so NAPARI_ASYNC is accessible without
+    nesting as well.
     """
 
     def _inner(settings: BaseSettings) -> Dict[str, Any]:
+        # first call the original implementation
         d = super_eset(settings)
 
         if settings.__config__.case_sensitive:
@@ -231,18 +246,34 @@ def nested_env_settings(super_eset=None) -> SettingsSourceCallable:
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
-        for name, field in settings.__fields__.items():
+        # now iterate through all subfields looking for nested env vars
+        # For example:
+        # NapariSettings has a Config.env_prefix of 'napari_'
+        # so every field in the NapariSettings.Application subfield will be
+        # available at 'napari_application_fieldname'
+        for field in settings.__fields__.values():
             if not isinstance(field.type_, type(BaseModel)):
                 continue  # pragma: no cover
+            field_type = cast(BaseModel, field.type_)
             for env_name in field.field_info.extra['env_names']:
-                for sf in field.type_.__fields__:
-                    env_val = env_vars.get(f'{env_name}_{sf.lower()}')
-                    if env_val is not None:
-                        break
+                for subf in field_type.__fields__.values():
+                    # first check if subfield directly declares an "env"
+                    # (for example: ExperimentalSettings.async_)
+                    for e in subf.field_info.extra.get('env_names', []):
+                        env_val = env_vars.get(e.lower())
+                        if env_val is not None:
+                            break
+                    # otherwise, look for the standard nested env var
+                    else:
+                        env_val = env_vars.get(f'{env_name}_{subf.name}')
+                        if env_val is not None:
+                            break
+
+                # if we found an env var, store it and return it
                 if env_val is not None:
                     if field.alias not in d:
                         d[field.alias] = {}
-                    d[field.alias][sf] = env_val
+                    d[field.alias][subf.name] = env_val
         return d
 
     return _inner
@@ -267,8 +298,12 @@ def config_file_settings_source(settings: BaseSettings) -> Dict[str, Any]:
     dict
         *validated* values for the model.
     """
-    # config path is the primary config file (the one to save to)
+    # _config_path is the primary config file on the model (the one to save to)
     config_path = getattr(settings, '_config_path', None)
+
+    default_cfg = type(settings).__private_attributes__.get('_config_path')
+    default_cfg = getattr(default_cfg, 'default', None)
+
     # if the config has a `sources` list, read those too and merge.
     sources = list(getattr(settings.__config__, 'sources', []))
     if config_path:
@@ -281,12 +316,18 @@ def config_file_settings_source(settings: BaseSettings) -> Dict[str, Any]:
         if not path:
             continue  # pragma: no cover
         _path = Path(path).expanduser().resolve()
+
+        # if the requested config path does not exist, move on to the next
         if not _path.is_file():
-            _logger.warning(
-                trans._(
-                    "Requested config path is not a file: {path}", path=_path
+            # if it wasn't the `_config_path` stated in the BaseModel itself,
+            # we warn, since this would have been user provided.
+            if _path != default_cfg:
+                _logger.warning(
+                    trans._(
+                        "Requested config path is not a file: {path}",
+                        path=_path,
+                    )
                 )
-            )
             continue
 
         load = _get_io_func_for_path(_path, 'load')
