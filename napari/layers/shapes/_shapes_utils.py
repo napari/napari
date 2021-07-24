@@ -1124,6 +1124,11 @@ def validate_num_vertices(
     ValueError
         Raised if a shape is found with invalid number of vertices
     """
+    n_shapes = number_of_shapes(data)
+    # single array of vertices
+    if n_shapes == 1 and len(np.array(data).shape) == 2:
+        # wrap in extra dimension so we can iterate through shape not vertices
+        data = [data]
     for shape in data:
         if (valid_vertices and len(shape) not in valid_vertices) or (
             min_vertices and len(shape) < min_vertices
