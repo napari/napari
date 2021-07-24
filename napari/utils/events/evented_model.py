@@ -235,12 +235,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             Whether enums should be shown as values (or as enum objects),
             by default `True`
         """
-        before = getattr(self.Config, 'use_enum_values', None)
+        null = object()
+        before = getattr(self.Config, 'use_enum_values', null)
         self.Config.use_enum_values = as_values
         try:
             yield
         finally:
-            if before:
+            if before is not null:
                 self.Config.use_enum_values = before
             else:
                 delattr(self.Config, 'use_enum_values')
