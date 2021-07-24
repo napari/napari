@@ -40,14 +40,3 @@ class NapariSettings(EventedConfigFileSettings):
 
     def __repr__(self):
         return str(self)
-
-    # TODO: remove legacy function
-    def schemas(self) -> dict:
-        """Return the json schema for each of the settings model."""
-        return {
-            name: {
-                "json_schema": field.type_.schema_json(),
-                "model": getattr(self, name),
-            }
-            for name, field in self.__fields__.items()
-        }

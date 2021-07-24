@@ -136,12 +136,6 @@ def test_settings_reset(test_settings):
     assert test_settings.appearance.theme == "dark"
 
 
-def test_settings_schemas(test_settings):
-    for _, data in test_settings.schemas().items():
-        assert "json_schema" in data
-        assert "model" in data
-
-
 def test_settings_model(test_settings):
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be string
