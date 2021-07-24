@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from .components.viewer_model import ViewerModel
 from .utils import _magicgui, config
@@ -123,3 +123,12 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
+
+    @classmethod
+    def current(cls) -> Optional['Viewer']:
+        try:
+            from ._qt.qt_main_window import _QtMainWindow
+        except ImportError:
+            return None
+        curwin = _QtMainWindow.current()
+        return curwin.viewer if curwin else None

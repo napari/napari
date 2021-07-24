@@ -100,42 +100,25 @@ class QtViewerButtons(QFrame):
         super().__init__()
 
         self.viewer = viewer
-        action_manager.context['viewer'] = viewer
-
-        def active_layer():
-            if len(self.viewer.layers.selection) == 1:
-                return next(iter(self.viewer.layers.selection))
-            else:
-                return None
-
-        action_manager.context['layer'] = active_layer
-
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',
-            trans._(
-                "Open IPython terminal",
-            ),
+            trans._("Open IPython terminal"),
+            bind='napari:toggle_console_visibility',
         )
         self.consoleButton.setProperty('expanded', False)
-        self.rollDimsButton = QtViewerPushButton(
-            self.viewer,
-            'roll',
-        )
 
-        action_manager.bind_button('napari:roll_axes', self.rollDimsButton)
+        self.rollDimsButton = QtViewerPushButton(
+            self.viewer, 'roll', bind='napari:roll_axes'
+        )
 
         self.transposeDimsButton = QtViewerPushButton(
-            self.viewer,
-            'transpose',
+            self.viewer, 'transpose', bind='napari:transpose_axes'
         )
 
-        action_manager.bind_button(
-            'napari:transpose_axes', self.transposeDimsButton
+        self.resetViewButton = QtViewerPushButton(
+            self.viewer, 'home', bind='napari:reset_view'
         )
-
-        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
-        action_manager.bind_button('napari:reset_view', self.resetViewButton)
 
         self.gridViewButton = QtStateButton(
             'grid_view_button',
@@ -284,7 +267,9 @@ class QtViewerPushButton(QPushButton):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer, button_name, tooltip=None, slot=None):
+    def __init__(
+        self, viewer, button_name, tooltip=None, slot=None, *, bind=None
+    ):
         super().__init__()
 
         self.viewer = viewer
@@ -292,6 +277,8 @@ class QtViewerPushButton(QPushButton):
         self.setProperty('mode', button_name)
         if slot is not None:
             self.clicked.connect(slot)
+        if bind is not None:
+            action_manager.bind_button(bind, self)
 
 
 class QtStateButton(QtViewerPushButton):

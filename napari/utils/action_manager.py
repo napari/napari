@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from inspect import signature
 from typing import TYPE_CHECKING, Callable, Dict, List, Set, Tuple, Union
 
 from .interactions import Shortcut
@@ -16,45 +15,11 @@ if TYPE_CHECKING:
     from napari.qt import QtStateButton
 
 
-def call_with_context(function, context):
-    """
-    call function `function` with the corresponding value taken from context
-
-    This is use in the action manager to pass the rights instances to the actions,
-    without having the need for them to take a **kwarg, and is mostly needed when
-    triggering actions via buttons, or to record.
-
-    If we went a declarative way to trigger action we cannot refer to instances
-    or objects that must be passed to the action, or at least this is
-    problematic.
-
-    We circumvent this by having a context (dictionary of str:instance) in
-    the action manager, and anything can tell the action manager "this is the
-    current instance a key". When an action is triggered; we inspect the
-    signature look at which instances it may need and pass this as parameters.
-    """
-
-    context_keys = [
-        k
-        for k, v in signature(function).parameters.items()
-        if v.kind not in (v.VAR_POSITIONAL, v.VAR_KEYWORD)
-    ]
-    ctx = {k: v for k, v in context.items() if k in context_keys}
-    return function(**ctx)
-
-
 @dataclass
 class Action:
     command: Callable
     description: str
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
-
-    def callable(self, context):
-        if not hasattr(self, '_command_with_context'):
-            self._command_with_context = lambda: call_with_context(
-                self.command, context
-            )
-        return self._command_with_context
 
 
 class ButtonWrapper:
@@ -70,7 +35,7 @@ class ButtonWrapper:
     changed.
     """
 
-    def __init__(self, button, extra_tooltip_text):
+    def __init__(self, button: QPushButton, extra_tooltip_text: str):
         """
         wrapper around button to disconnect an action only
         if it has been connected before.
@@ -83,42 +48,16 @@ class ButtonWrapper:
         return self._button.setToolTip(value + ' ' + self._extra_tooltip_text)
 
     def clicked_maybe_connect(self, callback):
-        if callback is not self._connected:
-            if self._connected is not None:
-                self._button.clicked.disconnect(self._connected)
-            self._button.clicked.connect(callback)
-            self._connected = callback
-        else:
-            # do nothing it's the same callback.
-            pass
+        from contextlib import suppress
+
+        from qtpy.QtCore import Qt
+
+        with suppress(TypeError):
+            self._button.clicked.connect(callback, Qt.UniqueConnection)
 
     @property
     def destroyed(self):
         return self._button.destroyed
-
-
-class Context:
-    def __init__(self):
-        self._attr = {}
-        self._callables = {}
-
-    def __getitem__(self, key):
-        if key in self._attr:
-            return self._attr[key]
-        elif key in self._callables:
-            return self._callables[key]()
-
-    def items(self):
-        for k, v in self._attr.items():
-            yield k, v
-        for k, v in self._callables.items():
-            yield k, v()
-
-    def __setitem__(self, key, value):
-        if callable(value):
-            self._callables[key] = value
-        else:
-            self._attr[key] = value
 
 
 class ActionManager:
@@ -133,23 +72,6 @@ class ActionManager:
     In most cases this should also allow to bind non existing shortcuts,
     actions, buttons, in which case they will be bound only once the actions are
     registered.
-
-    For actions that need access to a global element (a viewer, a plugin, ... ),
-    you want to give this item a unique name, and add it to the action manager
-    `context` object.
-
-    >>> action_manager.context['number'] = 1
-    ... action_manager.context['qtv'] = viewer.qt_viewer
-
-    >>> def callback(qtv, number):
-    ...     qtv.dims[number] +=1
-
-    >>> action_manager.register_action('bump one', callback,
-    ...     'Add one to dims',
-    ...     None)
-
-    The callback signature is going to be inspected and required globals passed
-    in.
     """
 
     _actions: Dict[str, Action]
@@ -161,7 +83,6 @@ class ActionManager:
             str, Set[Tuple(Union[QPushButton, QtStateButton], str)]
         ] = defaultdict(lambda: set())
         self._shortcuts: Dict[str, set[str]] = defaultdict(lambda: set())
-        self.context = Context()  # Dict[str, Any] = {}
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
 
@@ -235,7 +156,9 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
-    def _update_buttons(self, buttons, tooltip: str, callback):
+    def _update_buttons(
+        self, buttons: Set[ButtonWrapper], tooltip: str, callback
+    ):
         for button in buttons:
             # test if only tooltip makes crash
             button.setToolTip(tooltip)
@@ -268,12 +191,10 @@ class ActionManager:
         else:
             shortcut_str = ''
 
-        callable_ = self._actions[name].callable(self.context)
-        if self._tooltip_include_action_name:
-            append = '[' + name + ']'
-        else:
-            append = ''
-        self._update_buttons(buttons, desc + shortcut_str + append, callable_)
+        append = f'[{name}]' if self._tooltip_include_action_name else ''
+        self._update_buttons(
+            buttons, desc + shortcut_str + append, self._actions[name].command
+        )
 
     def _update_shortcut_bindings(self, name: str):
         """

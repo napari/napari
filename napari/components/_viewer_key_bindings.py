@@ -1,3 +1,5 @@
+from functools import wraps
+
 from ..utils.action_manager import action_manager
 from ..utils.settings import get_settings
 from ..utils.theme import available_themes
@@ -14,14 +16,23 @@ def register_viewer_action(description):
     """
 
     def _inner(func):
-        name = 'napari:' + func.__name__
+        # convert these functions to argument-free functions
+        # that act on the current viewer
+        @wraps(func)
+        def _func():
+            from ..viewer import Viewer
+
+            v = Viewer.current()
+            if v is not None:
+                return func(v)
+
         action_manager.register_action(
-            name=name,
-            command=func,
+            name='napari:' + func.__name__,
+            command=_func,
             description=description,
             keymapprovider=ViewerModel,
         )
-        return func
+        return _func
 
     return _inner
 
@@ -42,10 +53,12 @@ reset_scroll_progress.__doc__ = trans._("Reset dims scroll progress")
 
 @register_viewer_action(trans._("Toggle ndisplay."))
 def toggle_ndisplay(viewer):
-    if viewer.dims.ndisplay == 3:
-        viewer.dims.ndisplay = 2
-    else:
-        viewer.dims.ndisplay = 3
+    viewer.dims.ndisplay = 2 if viewer.dims.ndisplay == 3 else 3
+
+
+@register_viewer_action(trans._("Show/Hide IPython console"))
+def toggle_console_visibility(viewer):
+    viewer.window.qt_viewer.toggle_console_visibility()
 
 
 # Making this an action makes vispy really unhappy during the tests
@@ -102,7 +115,7 @@ def roll_axes(viewer):
 @register_viewer_action(
     trans._(
         "Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."
-    ),
+    )
 )
 def transpose_axes(viewer):
     viewer.dims._transpose()

@@ -68,6 +68,7 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self.qt_viewer = qt_viewer
+        self.viewer = qt_viewer.viewer
 
         self._quit_app = False
         self.setWindowIcon(QIcon(self._window_icon))
@@ -79,7 +80,7 @@ class _QtMainWindow(QMainWindow):
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
 
-        self.setWindowTitle(qt_viewer.viewer.title)
+        self.setWindowTitle(self.viewer.title)
 
         self._maximized_flag = False
         self._preferences_dialog = None
@@ -96,10 +97,10 @@ class _QtMainWindow(QMainWindow):
             plugin_manager.set_call_order(settings.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
-        self.qt_viewer.viewer.tooltip.events.text.connect(self.update_tooltip)
+        self.viewer.tooltip.events.text.connect(self.update_tooltip)
 
     def update_tooltip(self, event):
-        if self.qt_viewer.viewer.tooltip.visible:
+        if self.viewer.tooltip.visible:
             self.qt_viewer.setToolTip(event.value)
         else:
             self.qt_viewer.setToolTip("")
