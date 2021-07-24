@@ -226,7 +226,8 @@ class QtViewerButtons(QFrame):
             'Number of rows and columns in the grid. A value of -1 for either or '
             + 'both of will be used the row and column numbers will trigger an '
             + 'auto calculation of the necessary grid shape to appropriately fill '
-            + 'all the layers at the appropriate stride.'
+            + 'all the layers at the appropriate stride. '
+            + '0 is not a valid entry.'
         )
 
         stride_help_msg = trans._(
@@ -234,33 +235,43 @@ class QtViewerButtons(QFrame):
             + 'the next square. The default ordering is to place the most visible '
             + 'layer in the top left corner of the grid. A negative stride will '
             + 'cause the order in which the layers are placed in the grid to be '
-            + 'reversed.'
+            + 'reversed. '
+            + '0 is not a valid entry.'
         )
 
         # set up
         wh_values = list(range(-1, 10))
         wh_values = wh_values.pop(1)
-        grid_stride.setObjectName("griddStrideBox")
+        grid_stride.setObjectName("gridStrideBox")
         grid_stride.setAlignment(Qt.AlignCenter)
         grid_stride.setMaximum(20)
         grid_stride.setMinimum(-20)
         grid_stride.setValue(self.viewer.grid.stride)
+        self.last_stride_value = (
+            self.viewer.grid.stride
+        )  # needed for skipping 0
         grid_stride.valueChanged.connect(self._update_grid_stride)
         self.grid_stride_box = grid_stride
 
-        grid_width.setObjectName("griddWidthBox")
+        grid_width.setObjectName("gridWidthBox")
         grid_width.setAlignment(Qt.AlignCenter)
         grid_width.setMaximum(20)
         grid_width.setMinimum(-1)
         grid_width.setValue(self.viewer.grid.shape[1])
+        self.last_width_value = self.viewer.grid.shape[
+            1
+        ]  # needed for skipping 0
         grid_width.valueChanged.connect(self._update_grid_width)
         self.grid_width_box = grid_width
 
-        grid_height.setObjectName("gdStrideBox")
+        grid_height.setObjectName("gridStrideBox")
         grid_height.setAlignment(Qt.AlignCenter)
         grid_height.setMaximum(20)
-        grid_height.setMinimum(-20)
+        grid_height.setMinimum(-1)
         grid_height.setValue(self.viewer.grid.shape[0])
+        self.last_height_value = self.viewer.grid.shape[
+            0
+        ]  # needed for skipping 0
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height
 
@@ -279,19 +290,19 @@ class QtViewerButtons(QFrame):
 
         form_layout.insertRow(
             0,
-            QLabel(trans._('Grid Stride:'), parent=popup),
+            QLabel(trans._('Grid stride:'), parent=popup),
             grid_stride,
         )
 
         form_layout.insertRow(
             1,
-            QLabel(trans._('Grid Width:'), parent=popup),
+            QLabel(trans._('Grid width:'), parent=popup),
             grid_width,
         )
 
         form_layout.insertRow(
             2,
-            QLabel(trans._('Grid Height:'), parent=popup),
+            QLabel(trans._('Grid height:'), parent=popup),
             grid_height,
         )
 
@@ -319,16 +330,88 @@ class QtViewerButtons(QFrame):
         shape_help_symbol.move(QPoint(*shape_pos))
 
     def _update_grid_width(self, value):
-        """Update the width value in grid shape."""
+        """Update the width value in grid shape.
+
+        Parameter
+        ---------
+        value: int
+            New grid width value.
+        """
+
+        # need to skip 0
+        if value == 0:
+            value = self._skip_zero(value, self.last_width_value)
+            self.grid_width_box.setValue(value)
+
+        self.last_width_value = value
         self.viewer.grid.shape = (self.viewer.grid.shape[0], value)
 
     def _update_grid_stride(self, value):
-        """Update stride in grid settings."""
+        """Update stride in grid settings.
+
+        Parameter
+        ---------
+        value: int
+            New grid stride value.
+        """
+
+        # need to skip 0
+        if value == 0:
+            value = self._skip_zero(value, self.last_stride_value)
+            self.grid_stride_box.setValue(value)
+
+        self.last_stride_value = value
+
         self.viewer.grid.stride = value
 
     def _update_grid_height(self, value):
-        """Update height value in grid shape."""
+        """Update height value in grid shape.
+
+        Parameter
+        ---------
+        value: int
+            New grid height value.
+        """
+
+        # need to skip 0
+        if value == 0:
+            value = self._skip_zero(value, self.last_height_value)
+            self.grid_height_box.setValue(value)
+
+        self.last_height_value = value
         self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
+
+    def _skip_zero(self, value, last_value):
+        """Helper function to help skip zero on the QSpinbox.
+           This method will return the next value instead of zero.
+           In the even that a user enters a value, the QSpinbox will
+           be reset to the previous value.
+
+        Parameters
+        ----------
+        value: int
+            New value set on QSpinBox.
+        last_value: int
+            Record of previous value on QSpinBox.
+
+        Returns
+        -------
+        value: int
+            Final value to set on QSpinBox.
+
+        """
+
+        if last_value == 1:
+            # going from positive to negative
+            value = -1
+        elif last_value == -1:
+            # going from negative to positive
+            value = 1
+        else:
+            # user must have typed.  change back to old value
+            value = last_value
+
+        return value
 
 
 class QtDeleteButton(QPushButton):

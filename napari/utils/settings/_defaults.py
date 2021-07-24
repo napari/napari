@@ -419,6 +419,7 @@ class ApplicationSettings(BaseNapariSettings):
         description=trans._("Number of layers to place in each grid square."),
         ge=-20,
         le=20,
+        remove=0,  # Remove 0 from list
     )
 
     grid_width: int = Field(
@@ -427,6 +428,7 @@ class ApplicationSettings(BaseNapariSettings):
         description=trans._("Number of columns in the grid."),
         ge=-1,
         le=20,
+        remove=0,  # Remove 0 from list
     )
 
     grid_height: int = Field(
@@ -435,6 +437,7 @@ class ApplicationSettings(BaseNapariSettings):
         description=trans._("Number of rows in the grid."),
         ge=-1,
         le=20,
+        remove=0,  # Remove 0 from list
     )
 
     class Config:

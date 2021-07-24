@@ -170,6 +170,19 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
 
 
 class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
+
+    def __init__(
+        self,
+        schema: dict,
+        ui_schema: dict,
+        widget_builder: 'WidgetBuilder',  # noqa: F821
+    ):
+        super().__init__(schema, ui_schema, widget_builder)
+
+        self.remove_value = None
+        self._last_value = None
+        self.valueChanged.connect(self._check_value)
+
     @state_property
     def state(self) -> int:
         return self.value()
@@ -179,20 +192,58 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
 
         self.setValue(state)
 
+        # last value is needed in the event that a value is removed.
+        if self._last_value is None:
+            self._last_value = state
+
     def _setMinimum(self, value: int):
         self.setMinimum(value)
 
     def _setMaximum(self, value: int):
         self.setMaximum(value)
 
+    def _set_remove_val(self, value: int):
+        self.remove_value = value
+    
+    def _check_value(self, value):
+        """Will remove a value from the spinbox if there is one. 
+            Then emits signal as usual.
+
+        Parameter
+        ---------
+        value: int
+            Value to be removed from QSpinbox.
+        """
+
+        if self.remove_value is not None:
+            # Value not allowed on spinbox
+            if value == self.remove_value:
+                #this value cannot be set.  need to move on to next value.
+                if value == self._last_value - 1:
+                    #going to smaller values
+                    value = self._last_value - 2
+                elif value == self._last_value + 1:
+                    # going to larger values
+                    value = self._last_value + 2
+                else:
+                    # need to reset to old value
+                    value = self._last_value
+
+            self._last_value = value
+            self.state = value
+
+        self.on_changed.emit(self.state)
+
     def configure(self):
-        self.valueChanged.connect(self.on_changed.emit)
+        
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
     def setDescription(self, description: str):
         self.description = description
+
+   
 
 
 class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
