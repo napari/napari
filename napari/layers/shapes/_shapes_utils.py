@@ -1124,13 +1124,13 @@ def validate_num_vertices(
     ValueError
         Raised if a shape is found with invalid number of vertices
     """
-    for shpe in data:
-        if (valid_vertices and len(shpe) not in valid_vertices) or (
-            min_vertices and len(shpe) < min_vertices
+    for shape in data:
+        if (valid_vertices and len(shape) not in valid_vertices) or (
+            min_vertices and len(shape) < min_vertices
         ):
             raise ValueError(
                 trans._(
-                    f"{shape_type.capitalize()} {shpe} has invalid number of vertices: {len(shpe)}.",
+                    f"{shape_type} {shape} has invalid number of vertices: {len(shape)}.",
                     deferred=True,
                 )
             )
