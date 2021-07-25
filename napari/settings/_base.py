@@ -330,11 +330,13 @@ def config_file_settings_source(settings: BaseSettings) -> Dict[str, Any]:
                 )
             continue
 
+        # get loader for yaml/json
         load = _get_io_func_for_path(_path, 'load')
         if load is None:
             continue
 
         try:
+            # try to parse the config file into a dict
             new_data = load(_path.read_text()) or {}
         except Exception as err:
             _logger.warning(
@@ -349,10 +351,14 @@ def config_file_settings_source(settings: BaseSettings) -> Dict[str, Any]:
         deep_update(data, new_data, copy=False)
 
     try:
+        # validate the data, passing config_path=None so we dont recurse
+        # back to this point again.
         type(settings)(config_path=None, **data)
     except ValidationError as err:
         if getattr(settings.__config__, 'strict_config_check', False):
             raise
+
+        # if errors occur, we still want to boot, so we just remove bad keys
         errors = err.errors()
         msg = (
             "Validation errors in config file(s).\n"
@@ -360,6 +366,13 @@ def config_file_settings_source(settings: BaseSettings) -> Dict[str, Any]:
             + display_errors(errors)
             + "\n"
         )
+        try:
+            # we're about to nuke some settings, so just in case... try backup
+            backup_path = _path.parent / f'{_path.stem}.BAK{_path.suffix}'
+            backup_path.write_text(_path.read_text())
+        except Exception:
+            pass
+
         _logger.warning(msg)
         try:
             _remove_bad_keys(data, [e.get('loc', ()) for e in errors])
@@ -401,6 +414,10 @@ def _remove_bad_keys(data: dict, keys: List[Tuple[str, ...]]):
         while True:
             base, *key = key  # type: ignore
             if not key:
+                break
+            # since no pydantic fields will be integers, integers usually
+            # mean we're indexing into a typed list. So remove the base key
+            if isinstance(key[0], int):
                 break
             d = d[base]
         del d[base]

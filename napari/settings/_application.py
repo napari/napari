@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Tuple, Union
 
-from pydantic import Field
+from pydantic import Field, validator
 
 from ..utils._base import _DEFAULT_LOCALE
 from ..utils.events.evented_model import EventedModel
@@ -19,7 +19,7 @@ class ApplicationSettings(EventedModel):
     #    or if you want to *rename* options, then you need to do a MAJOR update in
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
-    schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 1, 1)
+    schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 2, 1)
     first_time: bool = Field(
         True,
         title=trans._('First time'),
@@ -50,7 +50,7 @@ class ApplicationSettings(EventedModel):
         ),
     )
     save_window_state: bool = Field(
-        True,
+        False,  # changed from True to False in schema v0.2.1
         title=trans._("Save window state"),
         description=trans._("Toggle saving the main window state of widgets."),
     )
@@ -139,6 +139,14 @@ class ApplicationSettings(EventedModel):
         title=trans._("Playback loop mode"),
         description=trans._("Loop mode for playback."),
     )
+
+    @validator('window_state')
+    def _validate_qbtye(cls, v):
+        if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
+            raise ValueError(
+                trans._("QByte strings must start with '!QBYTE_'")
+            )
+        return v
 
     class Config:
         # Pydantic specific configuration
