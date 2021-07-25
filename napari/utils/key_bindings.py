@@ -445,7 +445,7 @@ class KeymapHandler:
 
         gen = func()
 
-        if inspect.isgeneratorfunction(func):
+        if inspect.isgenerator(gen):
             try:
                 next(gen)  # call function
             except StopIteration:  # only one statement

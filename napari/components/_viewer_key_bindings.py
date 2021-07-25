@@ -19,12 +19,13 @@ def register_viewer_action(description):
         # convert these functions to argument-free functions
         # that act on the current viewer
         @wraps(func)
-        def _func():
-            from ..viewer import Viewer
+        def _func(viewer=None):
+            if viewer is None:
+                from ..viewer import Viewer
 
-            v = Viewer.current()
-            if v is not None:
-                return func(v)
+                viewer = Viewer.current()
+            if viewer is not None:
+                return func(viewer)
 
         action_manager.register_action(
             name='napari:' + func.__name__,
