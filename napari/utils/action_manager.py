@@ -53,7 +53,9 @@ class ButtonWrapper:
         from qtpy.QtCore import Qt
 
         with suppress(TypeError):
-            self._button.clicked.connect(callback, Qt.UniqueConnection)
+            self._button.clicked.connect(
+                lambda e: callback(), Qt.UniqueConnection
+            )
 
     @property
     def destroyed(self):
