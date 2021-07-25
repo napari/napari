@@ -1,5 +1,3 @@
-from enum import Enum
-
 from ..utils.theme import available_themes
 from ..utils.translations import _load_language, get_language_packs, trans
 
@@ -150,10 +148,3 @@ class SchemaVersion(str):
 
     def as_tuple(self):
         return tuple(int(p) for p in self._value.split('.'))
-
-
-class QtBindingChoice(str, Enum):
-    """Python Qt binding to use with the application."""
-
-    pyside2 = 'pyside2'
-    pyqt5 = 'pyqt5'

@@ -16,6 +16,8 @@ _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
 
 class NapariSettings(EventedConfigFileSettings):
+    """Schema for napari settings."""
+
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings
     )
@@ -40,3 +42,13 @@ class NapariSettings(EventedConfigFileSettings):
 
     def __repr__(self):
         return str(self)
+
+
+if __name__ == '__main__':
+    import sys
+
+    if len(sys.argv) > 2:
+        dest = Path(sys.argv[2]).expanduser().absolute()
+    else:
+        dest = Path(__file__).parent / 'napari.schema.json'
+    dest.write_text(NapariSettings.schema_json())
