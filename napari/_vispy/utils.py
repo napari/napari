@@ -75,8 +75,10 @@ def get_view_direction_in_scene_coordinates(
     dims_point: Tuple[int],
     dims_displayed: Tuple[int],
 ) -> np.ndarray:
-    """calculate the unit vector pointing in the direction of the view
+    """Calculate the unit vector pointing in the direction of the view.
 
+    This is only for 3D viewing, so it returns None when
+    len(dims_displayed) == 2.
     Adapted From:
     https://stackoverflow.com/questions/37877592/
         get-view-direction-relative-to-scene-in-vispy/37882984
@@ -96,31 +98,36 @@ def get_view_direction_in_scene_coordinates(
     -------
     view_vector : np.ndarray
         Unit vector in the direction of the view in scene coordinates.
-        Axes are ordered zyx.
+        Axes are ordered zyx. If the viewer is in 2D
+        (i.e., len(dims_displayed) == 2), view_vector is None.
     """
-    tform = view.scene.transform
-    w, h = view.canvas.size
+    if len(dims_displayed) == 3:
+        # only return a vector when viewing in 3D
+        tform = view.scene.transform
+        w, h = view.canvas.size
 
-    # get a point at the center of the canvas
-    # (homogeneous screen coords)
-    screen_center = np.array([w / 2, h / 2, 0, 1])
+        # get a point at the center of the canvas
+        # (homogeneous screen coords)
+        screen_center = np.array([w / 2, h / 2, 0, 1])
 
-    # find a point just in front of the center point
-    # transform both to world coords and find the vector
-    d1 = np.array([0, 0, 1, 0])
-    point_in_front_of_screen_center = screen_center + d1
-    p1 = tform.imap(point_in_front_of_screen_center)
-    p0 = tform.imap(screen_center)
-    d2 = p1 - p0
+        # find a point just in front of the center point
+        # transform both to world coords and find the vector
+        d1 = np.array([0, 0, 1, 0])
+        point_in_front_of_screen_center = screen_center + d1
+        p1 = tform.imap(point_in_front_of_screen_center)
+        p0 = tform.imap(screen_center)
+        d2 = p1 - p0
 
-    # in 3D world coordinates
-    d3 = d2[0:3]
-    d4 = d3 / np.linalg.norm(d3)
+        # in 3D world coordinates
+        d3 = d2[0:3]
+        d4 = d3 / np.linalg.norm(d3)
 
-    # data are ordered xyz on vispy Volume
-    d4 = d4[[2, 1, 0]]
-    view_dir_world = list(dims_point)
-    for i, d in enumerate(dims_displayed):
-        view_dir_world[d] = d4[i]
+        # data are ordered xyz on vispy Volume
+        d4 = d4[[2, 1, 0]]
+        view_dir_world = list(dims_point)
+        for i, d in enumerate(dims_displayed):
+            view_dir_world[d] = d4[i]
 
-    return view_dir_world
+        return view_dir_world
+    else:
+        return None

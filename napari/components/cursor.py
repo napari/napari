@@ -27,6 +27,9 @@ class Cursor(EventedModel):
             * forbidden: A forbidden symbol
             * pointing: A finger for pointing
             * standard: The standard cursor
+    _view_direction : Optional[Tuple[float, ...]]
+        The vector describing the direction of the camera in the scene.
+        This is None when viewing in 2D.
     """
 
     # fields
