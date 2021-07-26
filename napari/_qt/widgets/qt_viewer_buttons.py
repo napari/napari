@@ -284,24 +284,9 @@ class QtViewerButtons(QFrame):
 
         # layout
         form_layout = QFormLayout()
-
-        form_layout.insertRow(
-            0,
-            QLabel(trans._('Grid stride:'), parent=popup),
-            grid_stride,
-        )
-
-        form_layout.insertRow(
-            1,
-            QLabel(trans._('Grid width:'), parent=popup),
-            grid_width,
-        )
-
-        form_layout.insertRow(
-            2,
-            QLabel(trans._('Grid height:'), parent=popup),
-            grid_height,
-        )
+        form_layout.insertRow(0, QLabel(trans._('Grid stride:')), grid_stride)
+        form_layout.insertRow(1, QLabel(trans._('Grid width:')), grid_width)
+        form_layout.insertRow(2, QLabel(trans._('Grid height:')), grid_height)
 
         help_layout = QVBoxLayout()
         help_layout.addWidget(stride_help_symbol)
