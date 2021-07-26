@@ -254,8 +254,7 @@ class QtViewerButtons(QFrame):
 
         grid_width.setObjectName("gridWidthBox")
         grid_width.setAlignment(Qt.AlignCenter)
-        grid_width.setMaximum(20)
-        grid_width.setMinimum(-1)
+        grid_width.setRange(-1, 20)
         grid_width.setValue(self.viewer.grid.shape[1])
         self.last_width_value = self.viewer.grid.shape[
             1
