@@ -244,8 +244,7 @@ class QtViewerButtons(QFrame):
         wh_values = wh_values.pop(1)
         grid_stride.setObjectName("gridStrideBox")
         grid_stride.setAlignment(Qt.AlignCenter)
-        grid_stride.setMaximum(20)
-        grid_stride.setMinimum(-20)
+        grid_stride.setRange(-20, 20)
         grid_stride.setValue(self.viewer.grid.stride)
         self.last_stride_value = (
             self.viewer.grid.stride
