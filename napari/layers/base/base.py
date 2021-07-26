@@ -1217,7 +1217,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     dims_displayed_mask
                 ]
             else:
-                view_dir = np.asarray(view_direction)
+                view_dir = np.asarray(view_direction)[dims_displayed_mask]
 
             # Get the clicked point in data coords (only displayed dims)
             if world is True:
