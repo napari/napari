@@ -24,14 +24,6 @@ class ShortcutsSettings(EventedModel):
         ),
     )
 
-    class Config:
-        # Pydantic specific configuration
-        schema_extra = {
-            "title": trans._("Shortcuts"),
-            "description": trans._("Shortcut settings."),
-            "section": "shortcuts",
-        }
-
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ['schema_version']

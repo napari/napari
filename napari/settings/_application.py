@@ -149,13 +149,7 @@ class ApplicationSettings(EventedModel):
         return v
 
     class Config:
-        # Pydantic specific configuration
         use_enum_values = False  # https://github.com/napari/napari/issues/3062
-        schema_extra = {
-            "title": trans._("Application"),
-            "description": trans._("Main application settings."),
-            "section": "application",
-        }
 
     class NapariConfig:
         # Napari specific configuration

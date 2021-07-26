@@ -36,14 +36,6 @@ class ExperimentalSettings(EventedSettings):
         env="napari_async",
     )
 
-    class Config:
-        # Pydantic specific configuration
-        schema_extra = {
-            "title": trans._("Experimental"),
-            "description": trans._("Experimental settings."),
-            "section": "experimental",
-        }
-
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ['schema_version']

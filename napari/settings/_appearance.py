@@ -39,14 +39,6 @@ class AppearanceSettings(EventedModel):
         description=trans._("Toggle to display a tooltip on mouse hover."),
     )
 
-    class Config:
-        # Pydantic specific configuration
-        schema_extra = {
-            "title": trans._("Appearance"),
-            "description": trans._("User interface appearance settings."),
-            "section": "appearance",
-        }
-
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ['schema_version']

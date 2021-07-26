@@ -55,14 +55,6 @@ class PluginsSettings(EventedModel):
         ),
     )
 
-    class Config:
-        # Pydantic specific configuration
-        schema_extra = {
-            "title": trans._("Plugins"),
-            "description": trans._("Plugins settings."),
-            "section": "plugins",
-        }
-
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = [

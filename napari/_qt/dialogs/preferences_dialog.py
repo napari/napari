@@ -140,7 +140,9 @@ class PreferencesDialog(QDialog):
 
             # Only add pages if there are any properties to add.
             if properties:
-                self.add_page(schema, values)
+                self.add_page(
+                    schema, values, field.field_info.title or field.name
+                )
 
     def get_page_dict(self, field: 'ModelField'):
         """Provides the schema, set of values for each setting, and the
@@ -252,7 +254,7 @@ class PreferencesDialog(QDialog):
         self._list.setCurrentRow(0)
         self.close()
 
-    def add_page(self, schema, values):
+    def add_page(self, schema, values, name):
         """Creates a new page for each section in dialog.
 
         Parameters
@@ -263,11 +265,11 @@ class PreferencesDialog(QDialog):
         values : dict
             Dictionary of current values set in preferences.
         """
-        widget = self.build_page_dialog(schema, values)
-        self._list.addItem(schema["title"])
+        widget = self.build_page_dialog(schema, values, name)
+        self._list.addItem(name)
         self._stack.addWidget(widget)
 
-    def build_page_dialog(self, schema, values):
+    def build_page_dialog(self, schema, values, name):
         """Builds the preferences widget using the json schema builder.
 
         Parameters
@@ -285,13 +287,12 @@ class PreferencesDialog(QDialog):
         form.widget.state = values
 
         # need to disable async if octree is enabled.
-        if schema["section"] == 'experimental' and values['octree'] is True:
+        if name.lower() == 'experimental' and values['octree'] is True:
             form = self._disable_async(form, values)
 
         form.widget.on_changed.connect(
             lambda d: self.check_differences(
-                d,
-                self._values_dict[schema["title"].lower()],
+                d, self._values_dict[name.lower()]
             )
         )
 

@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import Field
 
 from ..utils._base import _DEFAULT_CONFIG_PATH
+from ..utils.translations import trans
 from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
 from ._base import EventedConfigFileSettings
@@ -19,13 +20,29 @@ class NapariSettings(EventedConfigFileSettings):
     """Schema for napari settings."""
 
     application: ApplicationSettings = Field(
-        default_factory=ApplicationSettings
+        default_factory=ApplicationSettings,
+        title=trans._("Application"),
+        description=trans._("Main application settings."),
     )
-    appearance: AppearanceSettings = Field(default_factory=AppearanceSettings)
-    plugins: PluginsSettings = Field(default_factory=PluginsSettings)
-    shortcuts: ShortcutsSettings = Field(default_factory=ShortcutsSettings)
+    appearance: AppearanceSettings = Field(
+        default_factory=AppearanceSettings,
+        title=trans._("Appearance"),
+        description=trans._("User interface appearance settings."),
+    )
+    plugins: PluginsSettings = Field(
+        default_factory=PluginsSettings,
+        title=trans._("Plugins"),
+        description=trans._("Plugins settings."),
+    )
+    shortcuts: ShortcutsSettings = Field(
+        default_factory=ShortcutsSettings,
+        title=trans._("Shortcuts"),
+        description=trans._("Shortcut settings."),
+    )
     experimental: ExperimentalSettings = Field(
-        default_factory=ExperimentalSettings
+        default_factory=ExperimentalSettings,
+        title=trans._("Experimental"),
+        description=trans._("Experimental settings."),
     )
 
     # private attributes and ClassVars will not appear in the schema
@@ -33,6 +50,7 @@ class NapariSettings(EventedConfigFileSettings):
 
     class Config:
         env_prefix = 'napari_'
+        use_enum_values = False
 
     def __str__(self):
         out = 'NapariSettings (defaults excluded)\n'
