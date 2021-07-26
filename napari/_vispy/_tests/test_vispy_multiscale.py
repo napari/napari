@@ -167,3 +167,17 @@ def test_5D_multiscale(make_napari_viewer):
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_multiscale_negative_affine(make_napari_viewer):
+    """Crash on affine transforms that contain negative values?"""
+    viewer = make_napari_viewer(show=True)
+
+    shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
+    data = [np.ones(s) for s in shapes]
+    # this used to crash, see issue #3057
+    _ = viewer.add_image(
+        data, multiscale=True, contrast_limits=[0, 1], scale=(-1, 1)
+    )
