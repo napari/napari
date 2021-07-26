@@ -938,14 +938,17 @@ class Labels(_ImageBase):
 
         Returns
         -------
-        value : Optional[int]
-            The first non-zero value encountered along the ray. If none
-            was encountered or the viewer is in 2D mode, None is returned.
+        value : int
+            The first non-zero value encountered along the ray. If a
+            non-zero value is not encountered, returns 0 (the background value).
         """
-        return self._get_value_ray(
-            start_point=start_position,
-            end_point=end_position,
-            dims_displayed=dims_displayed,
+        return (
+            self._get_value_ray(
+                start_point=start_position,
+                end_point=end_position,
+                dims_displayed=dims_displayed,
+            )
+            or 0
         )
 
     def _reset_history(self, event=None):
