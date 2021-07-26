@@ -1,4 +1,3 @@
-import warnings
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
@@ -452,25 +451,6 @@ class Points(Layer):
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._properties.values
 
-    @staticmethod
-    def _update_color_manager(color_manager, properties, name):
-        if color_manager.color_properties is not None:
-            color_name = color_manager.color_properties.name
-            if color_name not in properties.dict():
-                color_manager.color_mode = ColorMode.DIRECT
-                color_manager.color_properties = None
-                warnings.warn(
-                    trans._(
-                        'property used for {name} dropped',
-                        deferred=True,
-                        name=name,
-                    ),
-                    RuntimeWarning,
-                )
-            else:
-                # TODO: ideally this would not be necessary.
-                color_manager.color_properties = properties.get(color_name)
-
     @properties.setter
     def properties(
         self, properties: Union[Dict[str, Array], 'DataFrame', None]
@@ -478,18 +458,8 @@ class Points(Layer):
         self._properties = PropertyManager.from_layer_kwargs(
             properties=properties, expected_len=len(self._data)
         )
-
-        self._update_color_manager(
-            self._face,
-            self._properties,
-            "face_color",
-        )
-        self._update_color_manager(
-            self._edge,
-            self._properties,
-            "edge_color",
-        )
-
+        self._face._update_properties(self._properties, "face_color")
+        self._edge._update_properties(self._properties, "edge_color")
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
@@ -721,7 +691,7 @@ class Points(Layer):
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
-        self._set_color_mode(edge_color_mode, 'edge')
+        self._edge._set_color_mode(self._properties, edge_color_mode, 'edge')
 
     @property
     def face_color(self) -> np.ndarray:
@@ -784,7 +754,6 @@ class Points(Layer):
 
     @current_face_color.setter
     def current_face_color(self, face_color: ColorType) -> None:
-
         if (
             self._update_properties
             and len(self.selected_data) > 0
@@ -812,67 +781,7 @@ class Points(Layer):
 
     @face_color_mode.setter
     def face_color_mode(self, face_color_mode):
-        self._set_color_mode(face_color_mode, 'face')
-
-    def _set_color_mode(
-        self, color_mode: Union[ColorMode, str], attribute: str
-    ):
-        """Set the face_color_mode or edge_color_mode property
-
-        Parameters
-        ----------
-        color_mode : str, ColorMode
-            The value for setting edge or face_color_mode. If color_mode is a string,
-            it should be one of: 'direct', 'cycle', or 'colormap'
-        attribute : str in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_color_mode or 'face' for face_color_mode.
-        """
-        color_mode = ColorMode(color_mode)
-        color_manager = getattr(self, f'_{attribute}')
-
-        if color_mode == ColorMode.DIRECT:
-            color_manager.color_mode = color_mode
-        elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
-            if color_manager.color_properties is not None:
-                color_property = color_manager.color_properties.name
-            else:
-                color_property = ''
-            if color_property == '':
-                if self.properties:
-                    new_color_property = next(iter(self.properties))
-                    color_manager.color_properties = self._properties.get(
-                        new_color_property
-                    )
-                    warnings.warn(
-                        trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
-                            deferred=True,
-                            attribute=attribute,
-                            new_color_property=new_color_property,
-                        )
-                    )
-                else:
-                    raise ValueError(
-                        trans._(
-                            'There must be a valid Points.properties to use {color_mode}',
-                            deferred=True,
-                            color_mode=color_mode,
-                        )
-                    )
-
-            # ColorMode.COLORMAP can only be applied to numeric properties
-            color_property = color_manager.color_properties.name
-            if (color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[color_property].dtype.type, np.number
-            ):
-                raise TypeError(
-                    trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
-                        deferred=True,
-                    )
-                )
-            color_manager.color_mode = color_mode
+        self._face._set_color_mode(self._properties, face_color_mode, 'face')
 
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map
