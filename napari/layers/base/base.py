@@ -1210,7 +1210,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self.scale_factor = scale_factor
 
-        # Round and clip data corners
+        # Sort, because negative affines can lead to
+        # top-left and bottom-right corners not actually
+        # being top-left and bottom-right
+        data_corners = np.sort(data_corners, axis=0)
+        # round and clip data corners
         data_corners = np.array(
             [np.floor(data_corners[0]), np.ceil(data_corners[1])]
         ).astype(int)
