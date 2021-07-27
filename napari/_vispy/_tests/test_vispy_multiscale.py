@@ -184,3 +184,21 @@ def test_multiscale_flipped_axes(make_napari_viewer):
     _ = viewer.add_image(
         data, multiscale=True, contrast_limits=[0, 1], scale=(-1, 1)
     )
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_multiscale_rotated_image(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    sizes = [4000 // i for i in range(1, 5)]
+    arrays = [np.zeros((size, size), dtype=np.uint8) for size in sizes]
+    for arr in arrays:
+        arr[:10, :10] = 255
+        arr[-10:, -10:] = 255
+
+    viewer.add_image(arrays, multiscale=True, rotate=44)
+    screenshot_rgba = viewer.screenshot(canvas_only=True, flash=False)
+    screenshot_rgb = screenshot_rgba[..., :3]
+    assert np.any(
+        screenshot_rgb
+    )  # make sure there is at least one white pixel
