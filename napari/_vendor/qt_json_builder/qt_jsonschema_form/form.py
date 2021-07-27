@@ -133,9 +133,10 @@ class WidgetBuilder:
             except AttributeError:
                 pass # pass if no setMaximum function
 
-        if 'remove' in schema:
+        if 'ne' in schema:
             try:
-                widget._set_remove_val(schema['remove'])
+                # print('schema ne', schema['ne'])
+                widget._set_remove_val(schema['ne'])
             except:
                 AttributeError
                 pass # pass if no set_remove_val function
