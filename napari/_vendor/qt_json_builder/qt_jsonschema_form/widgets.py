@@ -10,6 +10,8 @@ from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
 from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
 
+from ...._qt.widgets.qt_spinbox import QtSpinBox
+
 
 class SchemaWidgetMixin:
     on_changed = Signal()
@@ -169,19 +171,8 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
         self.description = description
 
 
-class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
+class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
 
-    def __init__(
-        self,
-        schema: dict,
-        ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
-    ):
-        super().__init__(schema, ui_schema, widget_builder)
-
-        self.remove_value = None
-        self._last_value = None
-        self.valueChanged.connect(self._check_value)
 
     @state_property
     def state(self) -> int:
@@ -192,10 +183,6 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
 
         self.setValue(state)
 
-        # last value is needed in the event that a value is removed.
-        if self._last_value is None:
-            self._last_value = state
-
     def _setMinimum(self, value: int):
         self.setMinimum(value)
 
@@ -203,39 +190,10 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
         self.setMaximum(value)
 
     def _set_remove_val(self, value: int):
-        self.remove_value = value
-    
-    def _check_value(self, value):
-        """Will remove a value from the spinbox if there is one. 
-            Then emits signal as usual.
-
-        Parameter
-        ---------
-        value: int
-            Value to be removed from QSpinbox.
-        """
-
-        if self.remove_value is not None:
-            # Value not allowed on spinbox
-            if value == self.remove_value:
-                #this value cannot be set.  need to move on to next value.
-                if value == self._last_value - 1:
-                    #going to smaller values
-                    value = self._last_value - 2
-                elif value == self._last_value + 1:
-                    # going to larger values
-                    value = self._last_value + 2
-                else:
-                    # need to reset to old value
-                    value = self._last_value
-
-            self._last_value = value
-            self.state = value
-
-        self.on_changed.emit(self.state)
+        self.setProhibitValue(value)
 
     def configure(self):
-        
+        self.valueChanged.connect(self.on_changed.emit)
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
