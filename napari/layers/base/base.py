@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
@@ -1193,8 +1194,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.
+
         For layer multiscale determining if a new resolution level or tile is
         required.
+
         Parameters
         ----------
         scale_factor : float
@@ -1205,26 +1208,33 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
         """
-        # Note we ignore the first transform which is tile2data
-        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-
         self.scale_factor = scale_factor
 
-        # Sort, because negative affines can lead to
-        # top-left and bottom-right corners not actually
-        # being top-left and bottom-right
-        data_corners = np.sort(data_corners, axis=0)
-        # round and clip data corners
-        data_corners = np.array(
-            [np.floor(data_corners[0]), np.ceil(data_corners[1])]
+        # we need to compute all four corners to compute a complete,
+        # data-aligned bounding box, because top-left/bottom-right may not
+        # remain top-left and bottom-right after transformations.
+        all_corners = list(
+            itertools.product(corner_pixels[:, 0], corner_pixels[:, 1])
+        )
+        # Note that we ignore the first transform which is tile2data
+        data_corners = self._transforms[1:].simplified.inverse(all_corners)
+
+        # find the maximal data-axis-aligned bounding box containing all four
+        # canvas corners
+        data_bbox = np.stack(
+            [np.min(data_corners, axis=0), np.max(data_corners, axis=0)]
+        )
+        # round and clip the bounding box values
+        data_bbox_int = np.stack(
+            [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
-        data_corners = np.clip(
-            data_corners, self.extent.data[0], self.extent.data[1]
+        data_bbox_clipped = np.clip(
+            data_bbox_int, self.extent.data[0], self.extent.data[1]
         )
 
         if self._ndisplay == 2 and self.multiscale:
             level, displayed_corners = compute_multiscale_level_and_corners(
-                data_corners[:, self._dims_displayed],
+                data_bbox_clipped[:, self._dims_displayed],
                 shape_threshold,
                 self.downsample_factors[:, self._dims_displayed],
             )
@@ -1239,7 +1249,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.refresh()
 
         else:
-            self.corner_pixels = data_corners
+            self.corner_pixels = data_bbox_clipped
 
     @property
     def displayed_coordinates(self):
