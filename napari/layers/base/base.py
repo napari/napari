@@ -1012,7 +1012,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             if world:
                 position = self.world_to_data(position)
             if dims_displayed is not None:
-                if (len(dims_displayed) == 2) or dims_displayed is None:
+                if len(dims_displayed) == 2:
                     value = self._get_value(position=tuple(position))
 
                 elif len(dims_displayed) == 3:
@@ -1217,7 +1217,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     dims_displayed_mask
                 ]
             else:
-                view_dir = np.asarray(view_direction)
+                view_dir = np.asarray(view_direction)[dims_displayed_mask]
 
             # Get the clicked point in data coords (only displayed dims)
             if world is True:
