@@ -4,7 +4,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -13,6 +13,10 @@ from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
+from ...utils.geometry import (
+    find_front_back_face,
+    intersect_ray_with_axis_aligned_bounding_box_3d,
+)
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
@@ -1072,6 +1076,120 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         affine * (rotate * shear * scale + translate)
         """
         return self._transforms[1:3].simplified
+
+    def _world_to_data_ray(self, vector) -> tuple:
+        """Convert a vector defining an orientation from world coordinates to data coordinates.
+        For example, this would be used to convert the view ray.
+
+        Parameters
+        ----------
+        vector : tuple, list, 1D array
+            A vector in world coordinates.
+        dims_displayed: List[int]
+            The indices of the displayed dimensions. This is used to slice the
+            affine transform parameters.
+
+        Returns
+        -------
+        tuple
+            Vector in data coordinates.
+        """
+        p1 = np.asarray(self.world_to_data(vector))
+        p0 = np.asarray(self.world_to_data(np.zeros_like(vector)))
+        normalized_vector = (p1 - p0) / np.linalg.norm(p1 - p0)
+
+        return tuple(normalized_vector)
+
+    def _display_bounding_box(self, dims_displayed_mask: np.ndarray):
+        """An axis aligned (self._ndisplay, 2) bounding box around the data"""
+        return self._extent_data[:, dims_displayed_mask].T
+
+    def get_ray_intersections(
+        self,
+        position: List[float],
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+        """Get the start and end point for the ray extending
+        from a point through the data bounding box.
+
+        Parameters
+        ----------
+        position :
+            the position of the point in nD world coordinates
+        view_direction : np.ndarray
+            a unit vector giving the direction of the ray in nD world coordinates
+        dims_displayed :
+            a list of the dimensions currently being displayed in the viewer.
+
+        Returns
+        -------
+        start_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point closest to the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            an emtpy numpy array is returned (i.e., np.empty([]).
+        end_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point farthest from the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            an emtpy numpy array is returned (i.e., np.empty([]).
+        """
+        if len(dims_displayed) == 3:
+            # create a mask to select the in view dimensions
+            dims_displayed = dims_displayed
+            dims_displayed_mask = np.zeros_like(position, dtype=bool)
+            dims_displayed_mask[dims_displayed] = True
+
+            # create the bounding box in data coordinates
+            bbox = self._display_bounding_box(dims_displayed_mask)
+
+            # get the view direction in data coords (only displayed dims)
+            view_dir_world = view_direction
+            view_dir = np.asarray(self._world_to_data_ray(view_dir_world))[
+                dims_displayed_mask
+            ]
+
+            # Get the clicked point in data coords (only displayed dims)
+            click_pos_data = np.asarray(self.world_to_data(position))[
+                dims_displayed_mask
+            ]
+
+            # Determine the front and back faces
+            front_face_normal, back_face_normal = find_front_back_face(
+                click_pos_data, bbox, view_dir
+            )
+
+            # Get the locations in the plane where the ray intersects
+            if front_face_normal is not None and back_face_normal is not None:
+                start_point_disp_dims = (
+                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                        click_pos_data, view_dir, bbox, front_face_normal
+                    )
+                )
+                end_point_disp_dims = (
+                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                        click_pos_data, view_dir, bbox, back_face_normal
+                    )
+                )
+
+                # add the coordinates for the axes not displayed
+                start_point = np.asarray(position)
+                start_point[dims_displayed_mask] = start_point_disp_dims
+                end_point = np.asarray(position)
+                end_point[dims_displayed_mask] = end_point_disp_dims
+
+            else:
+                # if the click doesn't intersect the data bounding box,
+                # return None
+                start_point = None
+                end_point = None
+
+            return start_point, end_point
+        else:
+            return None, None
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.
