@@ -117,7 +117,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # whether to populate models with the value property of enums, rather
         # than the raw enum. This may be useful if you want to serialise
         # model.dict() later
-        use_enum_values = True
+        use_enum_values = False
         # whether to validate field defaults (default: False)
         validate_all = True
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
