@@ -171,8 +171,11 @@ def test_5D_multiscale(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_multiscale_negative_affine(make_napari_viewer):
-    """Crash on affine transforms that contain negative values?"""
+def test_multiscale_flipped_axes(make_napari_viewer):
+    """Check rendering of multiscale images with negative scale values.
+
+    See https://github.com/napari/napari/issues/3057
+    """
     viewer = make_napari_viewer(show=True)
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
