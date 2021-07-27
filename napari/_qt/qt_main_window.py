@@ -10,7 +10,7 @@ import warnings
 from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
-from qtpy.QtGui import QGuiApplication, QIcon, QKeySequence
+from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
     QApplication,
@@ -302,10 +302,21 @@ class _QtMainWindow(QMainWindow):
     def changeEvent(self, event):
         """Handle window state changes."""
         if event.type() == QEvent.WindowStateChange:
-            condition = self.isMaximized() if os.name == "nt" else self.isFullScreen()
+            # TODO: handle maximization issue. When double clicking on the
+            # title bar on Mac the resizeEvent is called an varying amount
+            # of times which makes it hard to track the original size before
+            # maximization.
+            condition = (
+                self.isMaximized() if os.name == "nt" else self.isFullScreen()
+            )
             if condition:
-                self._window_pos = self._positions[-2]
-                self._window_size = (self._old_size.width(), self._old_size.height())
+                if self._positions and len(self._positions) > 1:
+                    self._window_pos = self._positions[-2]
+
+                self._window_size = (
+                    self._old_size.width(),
+                    self._old_size.height(),
+                )
             else:
                 self._old_size = None
                 self._window_pos = None
@@ -318,7 +329,10 @@ class _QtMainWindow(QMainWindow):
         """Override to handle original size before maximizing."""
         self._old_size = event.oldSize()
         self._positions.append((self.x(), self.y()))
-        self._positions = self._positions[-3:]
+
+        if self._positions and len(self._positions) >= 2:
+            self._window_pos = self._positions[-2]
+            self._positions = self._positions[-2:]
 
         super().resizeEvent(event)
 
