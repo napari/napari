@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from pydantic import BaseSettings, Field, ValidationError
+from pydantic import BaseSettings, Field, ValidationError, validator
 from pydantic.env_settings import SettingsSourceCallable
 from typing_extensions import TypedDict
 
@@ -464,6 +464,16 @@ class ApplicationSettings(BaseNapariSettings):
         le=20,
         ne=0,  # Remove 0 from list
     )
+
+    @validator('grid_stride', 'grid_height', 'grid_width')
+    def non_zero(cls, v):
+        if not isinstance(v, int):
+            raise ValueError(trans._('must be an integer', deferred=True))
+        if v == 0:
+            raise ValueError(
+                trans._('must be a non zero integer', deferred=True)
+            )
+        return v
 
     class Config:
         # Pydantic specific configuration
