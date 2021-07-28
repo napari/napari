@@ -104,7 +104,7 @@ def get_view_direction_in_scene_coordinates(
     # only return a vector when viewing in 3D
     if len(dims_displayed) == 2:
         return None
-        
+
     tform = view.scene.transform
     w, h = view.canvas.size
 
