@@ -796,9 +796,6 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
-        # Add the cursor position to the event
-        event.position = self.viewer.cursor.position
-
         # Add the view ray to the event
         event.view_direction = self.viewer.camera.calculate_nd_view_direction(
             self.viewer.dims.ndim, self.viewer.dims.displayed
@@ -807,6 +804,9 @@ class QtViewer(QSplitter):
         # Update the cursor position
         self.viewer.cursor._view_direction = event.view_direction
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
+
+        # Add the cursor position to the event
+        event.position = self.viewer.cursor.position
 
         # Add the displayed dimensions to the event
         event.dims_displayed = list(self.viewer.dims.displayed)
