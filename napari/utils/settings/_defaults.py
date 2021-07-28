@@ -442,8 +442,8 @@ class ApplicationSettings(BaseNapariSettings):
         default=1,
         title=trans._("Grid Stride"),
         description=trans._("Number of layers to place in each grid square."),
-        ge=-20,
-        le=20,
+        ge=-50,
+        le=50,
         ne=0,
     )
 
@@ -452,7 +452,6 @@ class ApplicationSettings(BaseNapariSettings):
         title=trans._("Grid Width"),
         description=trans._("Number of columns in the grid."),
         ge=-1,
-        le=20,
         ne=0,  # Remove 0 from list
     )
 
@@ -461,7 +460,6 @@ class ApplicationSettings(BaseNapariSettings):
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),
         ge=-1,
-        le=20,
         ne=0,  # Remove 0 from list
     )
 

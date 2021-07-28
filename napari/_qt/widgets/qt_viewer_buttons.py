@@ -244,7 +244,7 @@ class QtViewerButtons(QFrame):
         wh_values = wh_values.pop(1)
         grid_stride.setObjectName("gridStrideBox")
         grid_stride.setAlignment(Qt.AlignCenter)
-        grid_stride.setRange(-20, 20)
+        grid_stride.setRange(-50, 50)
         grid_stride.setProhibitValue(0)
         grid_stride.setValue(self.viewer.grid.stride)
         grid_stride.valueChanged.connect(self._update_grid_stride)
@@ -252,7 +252,7 @@ class QtViewerButtons(QFrame):
 
         grid_width.setObjectName("gridWidthBox")
         grid_width.setAlignment(Qt.AlignCenter)
-        grid_width.setRange(-1, 20)
+        grid_width.setMinimum(-1)
         grid_width.setProhibitValue(0)
         grid_width.setValue(self.viewer.grid.shape[1])
         grid_width.valueChanged.connect(self._update_grid_width)
@@ -260,7 +260,7 @@ class QtViewerButtons(QFrame):
 
         grid_height.setObjectName("gridStrideBox")
         grid_height.setAlignment(Qt.AlignCenter)
-        grid_height.setRange(-1, 20)
+        grid_height.setMinimum(-1)
         grid_height.setProhibitValue(0)
         grid_height.setValue(self.viewer.grid.shape[0])
         grid_height.valueChanged.connect(self._update_grid_height)
