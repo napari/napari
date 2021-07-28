@@ -526,6 +526,8 @@ class QtLabelsControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method.
         """
+        # In 3D mode, we need to disable all buttons other than picking
+        # (only picking works in 3D)
         widget_list = [
             'pick_button',
             'paint_button',
