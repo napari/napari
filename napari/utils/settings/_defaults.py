@@ -283,31 +283,6 @@ class AppearanceSettings(BaseNapariSettings):
         preferences_exclude = ['schema_version']
 
 
-class NonZeroInt(int):
-    """
-    Non zero integer.
-    """
-
-    # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(ne=0)
-
-    @classmethod
-    def validate(cls, v):
-        if not isinstance(v, int):
-            raise ValueError(trans._('must be an integer', deferred=True))
-        if v == 0:
-            raise ValueError(
-                trans._('must be a non zero integer', deferred=True)
-            )
-        return v
-
-
 class ApplicationSettings(BaseNapariSettings):
     # 1. If you want to *change* the default value of a current option, you need to
     #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
@@ -438,7 +413,7 @@ class ApplicationSettings(BaseNapariSettings):
         description=trans._("Loop mode for playback."),
     )
 
-    grid_stride: NonZeroInt = Field(
+    grid_stride: int = Field(
         default=1,
         title=trans._("Grid Stride"),
         description=trans._("Number of layers to place in each grid square."),
@@ -447,7 +422,7 @@ class ApplicationSettings(BaseNapariSettings):
         ne=0,
     )
 
-    grid_width: NonZeroInt = Field(
+    grid_width: int = Field(
         default=-1,
         title=trans._("Grid Width"),
         description=trans._("Number of columns in the grid."),
@@ -455,7 +430,7 @@ class ApplicationSettings(BaseNapariSettings):
         ne=0,  # Remove 0 from list
     )
 
-    grid_height: NonZeroInt = Field(
+    grid_height: int = Field(
         default=-1,
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),

@@ -122,24 +122,13 @@ class WidgetBuilder:
 
         # need to set boundaries for some widgets before the state
         if 'minimum' in schema:
-            try:
-                widget._setMinimum(schema['minimum'])
-            except AttributeError:
-                pass # pass if no setMinimum function
+            widget.setMinimum(schema['minimum'])
 
         if 'maximum' in schema:
-            try:
-                widget._setMaximum(schema['maximum'])
-            except AttributeError:
-                pass # pass if no setMaximum function
+            widget.setMaximum(schema['maximum'])
 
         if 'ne' in schema:
-            try:
-                # print('schema ne', schema['ne'])
-                widget._set_remove_val(schema['ne'])
-            except:
-                AttributeError
-                pass # pass if no set_remove_val function
+            widget.setProhibitValue(schema['ne'])
 
         default_state = get_widget_state(schema, state)
         if default_state is not None:

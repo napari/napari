@@ -473,6 +473,21 @@ class Window:
         self.window_menu.addSeparator()
 
         settings.appearance.events.theme.connect(self._update_theme)
+        settings.application.events.grid_stride.connect(
+            self._update_viewer_states
+        )
+        settings.application.events.grid_width.connect(
+            self._update_viewer_states
+        )
+        settings.application.events.grid_height.connect(
+            self._update_viewer_states
+        )
+        settings.application.events.playback_fps.connect(
+            self._update_viewer_states
+        )
+        settings.application.events.playback_mode.connect(
+            self._update_viewer_states
+        )
 
         plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
@@ -700,7 +715,7 @@ class Window:
         else:
             self._qt_window._preferences_dialog.raise_()
 
-    def _update_viewer_states(self):
+    def _update_viewer_states(self, e=None):
         """Keep widgets in napari up to date with settings values."""
 
         settings = get_settings()

@@ -183,14 +183,23 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
 
         self.setValue(state)
 
-    def _setMinimum(self, value: int):
-        self.setMinimum(value)
+    def setMaximum(self, value: int):
+        try:
+            super().setMaximum(value)
+        except AttributeError:
+            pass
 
-    def _setMaximum(self, value: int):
-        self.setMaximum(value)
+    def setMinimum(self, value: int):
+        try:
+            super().setMinimum(value)
+        except AttributeError:
+            pass
 
-    def _set_remove_val(self, value: int):
-        self.setProhibitValue(value)
+    def setProhibitValue(self, value: int):
+        try:
+            super().setProhibitValue(value)
+        except AttributeError:
+            pass
 
     def configure(self):
         self.valueChanged.connect(self.on_changed.emit)
@@ -581,11 +590,17 @@ class HighlightSizePreviewWidget(SchemaWidgetMixin, QtHighlightSizePreviewWidget
     def setDescription(self, description: str):
         self._description.setText(description)
 
-    def _setMaximum(self, value: int):
-        self.setMaximum(value)
+    def setMaximum(self, value: int):
+        try:
+            super().setMaximum(value)
+        except AttributeError:
+            pass
 
-    def _setMinimum(self, value: int):
-        self.setMinimum(value)
+    def setMinimum(self, value: int):
+        try:
+            super().setMinimum(value)
+        except AttributeError:
+            pass
 
     @state.setter
     def state(self, state: int):
