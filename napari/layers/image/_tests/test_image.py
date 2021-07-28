@@ -535,6 +535,17 @@ def test_message():
     assert type(msg) == str
 
 
+def test_message_3d():
+    """Test converting values and coords to message in 3D."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 15))
+    layer = Image(data)
+    msg = layer.get_status(
+        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    )
+    assert type(msg) == str
+
+
 def test_thumbnail():
     """Test the image thumbnail for square data."""
     np.random.seed(0)
