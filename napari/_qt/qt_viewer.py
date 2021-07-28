@@ -9,7 +9,6 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-from .._vispy.utils import get_view_direction_in_scene_coordinates
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
@@ -801,8 +800,8 @@ class QtViewer(QSplitter):
         event.position = self.viewer.cursor.position
 
         # Add the view ray to the event
-        event.view_direction = get_view_direction_in_scene_coordinates(
-            self.view, self.viewer.dims.ndim, self.viewer.dims.displayed
+        event.view_direction = self.viewer.camera.calculate_nd_view_direction(
+            self.viewer.dims.ndim, self.viewer.dims.displayed
         )
 
         # Update the cursor position
