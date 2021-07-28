@@ -114,10 +114,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # whether to treat any underscore non-class var attrs as private
         # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
         underscore_attrs_are_private = True
-        # whether to populate models with the value property of enums, rather
-        # than the raw enum. This may be useful if you want to serialise
-        # model.dict() later
-        use_enum_values = False
         # whether to validate field defaults (default: False)
         validate_all = True
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson

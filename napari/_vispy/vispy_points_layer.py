@@ -168,7 +168,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.set_gl_state(self.layer.blending)
 
         text_node = self._get_text_node()
-        text_node.set_gl_state(self.layer.text.blending)
+        text_node.set_gl_state(str(self.layer.text.blending))
         self.node.update()
 
     def close(self):
