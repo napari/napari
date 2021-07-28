@@ -224,10 +224,9 @@ class QtViewerButtons(QFrame):
 
         shape_help_msg = trans._(
             'Number of rows and columns in the grid. A value of -1 for either or '
-            + 'both of will be used the row and column numbers will trigger an '
-            + 'auto calculation of the necessary grid shape to appropriately fill '
-            + 'all the layers at the appropriate stride. '
-            + '0 is not a valid entry.'
+            + 'both of width and height will trigger an auto calculation of the '
+            + 'necessary grid shape to appropriately fill all the layers at the '
+            + 'appropriate stride. 0 is not a valid entry.'
         )
 
         stride_help_msg = trans._(
