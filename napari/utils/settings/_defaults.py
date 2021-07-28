@@ -5,13 +5,14 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from pydantic import BaseSettings, Field, ValidationError, validator
+from pydantic import BaseSettings, Field, ValidationError
 from pydantic.env_settings import SettingsSourceCallable
 from typing_extensions import TypedDict
 
 from ...utils.settings._constants import LoopMode
 from ...utils.shortcuts import default_shortcuts
 from .._base import _DEFAULT_LOCALE
+from ..events.custom_types import conint
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
@@ -413,40 +414,23 @@ class ApplicationSettings(BaseNapariSettings):
         description=trans._("Loop mode for playback."),
     )
 
-    grid_stride: int = Field(
+    grid_stride: conint(ge=-50, le=50, ne=0) = Field(
         default=1,
         title=trans._("Grid Stride"),
         description=trans._("Number of layers to place in each grid square."),
-        ge=-50,
-        le=50,
-        ne=0,
     )
 
-    grid_width: int = Field(
+    grid_width: conint(ge=-1, ne=0) = Field(
         default=-1,
         title=trans._("Grid Width"),
         description=trans._("Number of columns in the grid."),
-        ge=-1,
-        ne=0,  # Remove 0 from list
     )
 
-    grid_height: int = Field(
+    grid_height: conint(ge=-1, ne=0) = Field(
         default=-1,
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),
-        ge=-1,
-        ne=0,  # Remove 0 from list
     )
-
-    @validator('grid_stride', 'grid_height', 'grid_width')
-    def non_zero(cls, v):
-        if not isinstance(v, int):
-            raise ValueError(trans._('must be an integer', deferred=True))
-        if v == 0:
-            raise ValueError(
-                trans._('must be a non zero integer', deferred=True)
-            )
-        return v
 
     class Config:
         # Pydantic specific configuration
