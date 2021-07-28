@@ -515,6 +515,17 @@ def test_value():
     assert value == data[0, 0]
 
 
+def test_value_3d():
+    """Currently get_value should return None in 3D"""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 15))
+    layer = Image(data)
+    value = layer.get_value(
+        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    )
+    assert value is None
+
+
 def test_message():
     """Test converting value and coords to message."""
     np.random.seed(0)
