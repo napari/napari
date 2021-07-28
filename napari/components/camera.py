@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
 from pydantic import validator
@@ -55,7 +55,7 @@ class Camera(EventedModel):
         return view_direction
 
     def calculate_nd_view_direction(
-        self, ndim: int, dims_displayed: List[int]
+        self, ndim: int, dims_displayed: Tuple[int]
     ) -> np.ndarray:
         """Calculate the nD view direction vector of the camera.
 
@@ -63,8 +63,8 @@ class Camera(EventedModel):
         ----------
         ndim : int
             Number of dimensions in which to embed the 3D view vector.
-        dims_displayed : List[int]
-            Dimensions in which to embed the 3D view vector
+        dims_displayed : Tuple[int]
+            Dimensions in which to embed the 3D view vector.
 
 
         Returns
@@ -76,5 +76,5 @@ class Camera(EventedModel):
         if len(dims_displayed) != 3:
             return None
         view_direction_nd = np.zeros(ndim)
-        view_direction_nd[dims_displayed] = self.view_direction
+        view_direction_nd[list(dims_displayed)] = self.view_direction
         return view_direction_nd
