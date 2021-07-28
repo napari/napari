@@ -1203,21 +1203,27 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         scale_factor : float
             Scale factor going from canvas to world coordinates.
         corner_pixels : array
-            Coordinates of the top-left and bottom-right canvas pixels in the
+            Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
         """
         self.scale_factor = scale_factor
 
+        displayed_axes = [
+            self._dims_displayed[i] for i in self._dims_displayed_order
+        ]
+        corner_pixels_displayed = corner_pixels[:, displayed_axes]
         # we need to compute all four corners to compute a complete,
         # data-aligned bounding box, because top-left/bottom-right may not
         # remain top-left and bottom-right after transformations.
-        all_corners = list(
-            itertools.product(corner_pixels[:, 0], corner_pixels[:, 1])
-        )
+        all_corners = list(itertools.product(*corner_pixels_displayed.T))
         # Note that we ignore the first transform which is tile2data
-        data_corners = self._transforms[1:].simplified.inverse(all_corners)
+        data_corners = (
+            self._transforms[1:]
+            .simplified.set_slice(self._dims_displayed)
+            .inverse(all_corners)
+        )
 
         # find the maximal data-axis-aligned bounding box containing all four
         # canvas corners
@@ -1228,8 +1234,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         data_bbox_int = np.stack(
             [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
+        displayed_extent = self.extent.data[:, displayed_axes]
         data_bbox_clipped = np.clip(
-            data_bbox_int, self.extent.data[0], self.extent.data[1]
+            data_bbox_int, displayed_extent[0], displayed_extent[1]
         )
 
         if self._ndisplay == 2 and self.multiscale:
