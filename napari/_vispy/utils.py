@@ -72,7 +72,7 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
 
 def get_view_direction_in_scene_coordinates(
     view: ViewBox,
-    dims_point: Tuple[int],
+    ndim: int,
     dims_displayed: Tuple[int],
 ) -> np.ndarray:
     """Calculate the unit vector pointing in the direction of the view.
@@ -87,9 +87,9 @@ def get_view_direction_in_scene_coordinates(
     ----------
     view : vispy.scene.widgets.viewbox.ViewBox
         The vispy view box object to get the view direction from.
-    dims_point : Tuple[int]
-        The indices for each dimension in the current view.
-        This is typically from viewer.dims.point.
+    ndim : int
+        The number of dimensions in the full nD dims model.
+        This is typically from viewer.dims.ndim
     dims_displayed : Tuple[int]
         The indices of the dims displayed in the viewer.
         This is typically from viewer.dims.displayed.
@@ -126,7 +126,7 @@ def get_view_direction_in_scene_coordinates(
 
     # data are ordered xyz on vispy Volume
     d4 = d4[[2, 1, 0]]
-    view_dir_world = list(dims_point)
+    view_dir_world = np.zeros((ndim,))
     for i, d in enumerate(dims_displayed):
         view_dir_world[d] = d4[i]
 

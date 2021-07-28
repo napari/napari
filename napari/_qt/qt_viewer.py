@@ -802,7 +802,7 @@ class QtViewer(QSplitter):
 
         # Add the view ray to the event
         event.view_direction = get_view_direction_in_scene_coordinates(
-            self.view, self.viewer.dims.point, self.viewer.dims.displayed
+            self.view, self.viewer.dims.ndim, self.viewer.dims.displayed
         )
 
         # Update the cursor position
