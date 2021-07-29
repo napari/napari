@@ -28,9 +28,6 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
-    # Create private variable for window
-    _window: 'Window'
-
     def __init__(
         self,
         *,
