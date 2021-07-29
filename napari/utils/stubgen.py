@@ -83,7 +83,7 @@ def _iter_imports(hint) -> Iterator[str]:
         yield hint.__module__
 
 
-def _import_for_type_checking(module):
+def _import_for_type_checking(module) -> ModuleType:
     pre_mods = list(sys.modules)
     if isinstance(module, str):
         module = importlib.import_module(module)
