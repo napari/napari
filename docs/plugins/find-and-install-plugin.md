@@ -15,10 +15,12 @@ You can also share links to specific search results and plugins.
 
 All plugins listed on the napari hub can be installed directly from napari:
 
-1. From the “Plugins” menu, select “Install/Uninstall package(s)...”.
+1. From the “Plugins” menu, select “Install/Uninstall Plugins...”.
+
    ![napari plugin menu](../images/plugin-menu.png)
 
 2. In the resulting window that opens, where it says “Install by name/URL”, type the name of the plugin you want to install.
+
    ![napari plugin installation dialog](../images/plugin-install-dialog.png)
 
 3. Click the “Install” button next to the input bar.
