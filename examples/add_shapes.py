@@ -65,7 +65,7 @@ layer = viewer.add_shapes(
     name='shapes',
 )
 
-# shapes of each type can also be added via their respective add_<shape_type> method
+# shapes of each type can also be added via their respective add_<shape_type> method 
 # e.g. for the polygons above:
 
 # layer = viewer.add_shapes(name='shapes') # create empty layer
@@ -73,7 +73,7 @@ layer = viewer.add_shapes(
 #     polygons,
 #     edge_width=1,
 #     edge_color='coral',
-#     face_color='royalblue',
+#     face_color='royalblue',    
 # )
 
 

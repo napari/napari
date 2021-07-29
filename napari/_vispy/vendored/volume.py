@@ -592,92 +592,78 @@ frag_dict = {
     'iso_categorical': ISO_CATEGORICAL_FRAG_SHADER,
     'translucent': TRANSLUCENT_FRAG_SHADER,
     'additive': ADDITIVE_FRAG_SHADER,
-    'average': AVG_FRAG_SHADER,
+    'average': AVG_FRAG_SHADER
 }
 
 
 class VolumeVisual(Visual):
     """Displays a 3D Volume
 
-        Parameters
-        ----------
-        vol : ndarray
-            The volume to display. Must be ndim==3. Array is assumed to be stored
-            as ``(z, y, x)``.
-        clim : str | tuple
-            Limits to use for the colormap. I.e. the values that map to black and white
-            in a gray colormap. Can be 'auto' to auto-set bounds to
-            the min and max of the data. If not given or None, 'auto' is used.
-        method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
-            'iso', 'average'}
-            The render method to use. See corresponding docs for details.
-            Default 'mip'.
-        threshold : float
-            The threshold to use for the isosurface render method. By default
-            the mean of the given volume is used.
-        attenuation: float
-            The attenuation rate to apply for the attenuated mip render method.
-            Default: 1.0.
-        relative_step_size : float
-            The relative step size to step through the volume. Default 0.8.
-            Increase to e.g. 1.5 to increase performance, at the cost of
-            quality.
-        cmap : str
-            Colormap to use.
-        gamma : float
-            Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
-            by default: 1.
-        interpolation : {'linear', 'nearest'}
-            Selects method of image interpolation.
-    <<<<<<< HEAD
-    =======
-        texture_format: numpy.dtype | str | None
-            How to store data on the GPU. OpenGL allows for many different storage
-            formats and schemes for the low-level texture data stored in the GPU.
-            Most common is unsigned integers or floating point numbers.
-            Unsigned integers are the most widely supported while other formats
-            may not be supported on older versions of OpenGL, WebGL
-            (without enabling some extensions), or with older GPUs.
-            Default value is ``None`` which means data will be scaled on the
-            CPU and the result stored in the GPU as an unsigned integer. If a
-            numpy dtype object, an internal texture format will be chosen to
-            support that dtype and data will *not* be scaled on the CPU. Not all
-            dtypes are supported. If a string, then
-            it must be one of the OpenGL internalformat strings described in the
-            table on this page: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
-            The name should have `GL_` removed and be lowercase (ex.
-            `GL_R32F` becomes ``'r32f'``). Lastly, this can also be the string
-            ``'auto'`` which will use the data type of the provided volume data
-            to determine the internalformat of the texture.
-            When this is specified (not ``None``) data is scaled on the
-            GPU which allows for faster color limit changes. Additionally, when
-            32-bit float data is provided it won't be copied before being
-            transferred to the GPU. Note this visual is limited to "luminance"
-            formatted data (single band). This is equivalent to `GL_RED` format
-            in OpenGL 4.0.
+    Parameters
+    ----------
+    vol : ndarray
+        The volume to display. Must be ndim==3. Array is assumed to be stored
+        as ``(z, y, x)``.
+    clim : str | tuple
+        Limits to use for the colormap. I.e. the values that map to black and white
+        in a gray colormap. Can be 'auto' to auto-set bounds to
+        the min and max of the data. If not given or None, 'auto' is used.
+    method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
+        'iso', 'average'}
+        The render method to use. See corresponding docs for details.
+        Default 'mip'.
+    threshold : float
+        The threshold to use for the isosurface render method. By default
+        the mean of the given volume is used.
+    attenuation: float
+        The attenuation rate to apply for the attenuated mip render method.
+        Default: 1.0.
+    relative_step_size : float
+        The relative step size to step through the volume. Default 0.8.
+        Increase to e.g. 1.5 to increase performance, at the cost of
+        quality.
+    cmap : str
+        Colormap to use.
+    gamma : float
+        Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
+        by default: 1.
+    interpolation : {'linear', 'nearest'}
+        Selects method of image interpolation.
+    texture_format: numpy.dtype | str | None
+        How to store data on the GPU. OpenGL allows for many different storage
+        formats and schemes for the low-level texture data stored in the GPU.
+        Most common is unsigned integers or floating point numbers.
+        Unsigned integers are the most widely supported while other formats
+        may not be supported on older versions of OpenGL, WebGL
+        (without enabling some extensions), or with older GPUs.
+        Default value is ``None`` which means data will be scaled on the
+        CPU and the result stored in the GPU as an unsigned integer. If a
+        numpy dtype object, an internal texture format will be chosen to
+        support that dtype and data will *not* be scaled on the CPU. Not all
+        dtypes are supported. If a string, then
+        it must be one of the OpenGL internalformat strings described in the
+        table on this page: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+        The name should have `GL_` removed and be lowercase (ex.
+        `GL_R32F` becomes ``'r32f'``). Lastly, this can also be the string
+        ``'auto'`` which will use the data type of the provided volume data
+        to determine the internalformat of the texture.
+        When this is specified (not ``None``) data is scaled on the
+        GPU which allows for faster color limit changes. Additionally, when
+        32-bit float data is provided it won't be copied before being
+        transferred to the GPU. Note this visual is limited to "luminance"
+        formatted data (single band). This is equivalent to `GL_RED` format
+        in OpenGL 4.0.
 
-        .. versionchanged: 0.7
+    .. versionchanged: 0.7
 
-            Deprecate 'emulate_texture' keyword argument.
-
-    >>>>>>> 82ca467b515023a9ad6105cfbace9282f67be69c
+        Deprecate 'emulate_texture' keyword argument.
     """
 
     _interpolation_names = ['linear', 'nearest']
 
-    def __init__(
-        self,
-        vol,
-        clim="auto",
-        method='mip',
-        threshold=None,
-        attenuation=1.0,
-        relative_step_size=0.8,
-        cmap='grays',
-        gamma=1.0,
-        interpolation='linear',
-        texture_format=None,
-    ):
+    def __init__(self, vol, clim="auto", method='mip', threshold=None,
+                 attenuation=1.0, relative_step_size=0.8, cmap='grays',
+                 gamma=1.0, interpolation='linear', texture_format=None):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
@@ -689,20 +675,16 @@ class VolumeVisual(Visual):
         # Create gloo objects
         self._vertices = VertexBuffer()
         self._texcoord = VertexBuffer(
-            np.array(
-                [
-                    [0, 0, 0],
-                    [1, 0, 0],
-                    [0, 1, 0],
-                    [1, 1, 0],
-                    [0, 0, 1],
-                    [1, 0, 1],
-                    [0, 1, 1],
-                    [1, 1, 1],
-                ],
-                dtype=np.float32,
-            )
-        )
+            np.array([
+                [0, 0, 0],
+                [1, 0, 0],
+                [0, 1, 0],
+                [1, 1, 0],
+                [0, 0, 1],
+                [1, 0, 1],
+                [0, 1, 1],
+                [1, 1, 1],
+            ], dtype=np.float32))
 
         self._interpolation = interpolation
         self._texture = self._create_texture(texture_format, vol)
@@ -744,13 +726,10 @@ class VolumeVisual(Visual):
         # clamped to 0 and 1.
         # NOTE: This doesn't actually set the data in the texture. Only
         # creates a placeholder texture that will be resized later on.
-        return tex_cls(
-            data,
-            interpolation=self._interpolation,
-            internalformat=texture_format,
-            format='luminance',
-            wrapping='clamp_to_edge',
-        )
+        return tex_cls(data, interpolation=self._interpolation,
+                       internalformat=texture_format,
+                       format='luminance',
+                       wrapping='clamp_to_edge')
 
     def set_data(self, vol, clim=None, copy=True):
         """Set the volume data.
@@ -788,15 +767,10 @@ class VolumeVisual(Visual):
             vol = vol.astype(np.float32)
         self._texture.check_data_format(vol)
         self._last_data = vol
-        self._texture.scale_and_set_data(
-            vol, copy=copy
-        )  # will be efficient if vol is same shape
+        self._texture.scale_and_set_data(vol, copy=copy)  # will be efficient if vol is same shape
         self.shared_program['clim'] = self._texture.clim_normalized
-        self.shared_program['u_shape'] = (
-            vol.shape[2],
-            vol.shape[1],
-            vol.shape[0],
-        )
+        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
+                                          vol.shape[0])
 
         shape = vol.shape[:3]
         if self._vol_shape != shape:
@@ -913,10 +887,8 @@ class VolumeVisual(Visual):
         # Check and save
         known_methods = list(frag_dict.keys())
         if method not in known_methods:
-            raise ValueError(
-                'Volume render method should be in %r, not %r'
-                % (known_methods, method)
-            )
+            raise ValueError('Volume render method should be in %r, not %r' %
+                             (known_methods, method))
         self._method = method
         # Get rid of specific variables - they may become invalid
         if 'u_threshold' in self.shared_program:
@@ -925,16 +897,11 @@ class VolumeVisual(Visual):
             self.shared_program['u_attenuation'] = None
 
         self.shared_program.frag = frag_dict[method]
-        self.shared_program.frag[
-            'sampler_type'
-        ] = self._texture.glsl_sampler_type
+        self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
         self.shared_program.frag['sample'] = self._texture.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
-        self.shared_program['texture2D_LUT'] = (
-            self.cmap.texture_lut()
-            if (hasattr(self.cmap, 'texture_lut'))
-            else None
-        )
+        self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
+            if (hasattr(self.cmap, 'texture_lut')) else None
         self.update()
 
     @property
@@ -993,19 +960,16 @@ class VolumeVisual(Visual):
         y0, y1 = -0.5, shape[1] - 0.5
         z0, z1 = -0.5, shape[0] - 0.5
 
-        pos = np.array(
-            [
-                [x0, y0, z0],
-                [x1, y0, z0],
-                [x0, y1, z0],
-                [x1, y1, z0],
-                [x0, y0, z1],
-                [x1, y0, z1],
-                [x0, y1, z1],
-                [x1, y1, z1],
-            ],
-            dtype=np.float32,
-        )
+        pos = np.array([
+            [x0, y0, z0],
+            [x1, y0, z0],
+            [x0, y1, z0],
+            [x1, y1, z0],
+            [x0, y0, z1],
+            [x1, y0, z1],
+            [x0, y1, z1],
+            [x1, y1, z1],
+        ], dtype=np.float32)
 
         """
           6-------7
@@ -1019,9 +983,8 @@ class VolumeVisual(Visual):
 
         # Order is chosen such that normals face outward; front faces will be
         # culled.
-        indices = np.array(
-            [2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7], dtype=np.uint32
-        )
+        indices = np.array([2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7],
+                           dtype=np.uint32)
 
         # Apply
         self._vertices.set_data(pos)

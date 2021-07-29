@@ -8,11 +8,9 @@
 import numpy as np
 import warnings
 
-F64_PRECISION_WARNING = (
-    "GPUs can't support floating point data with more "
-    "than 32-bits, precision will be lost due to "
-    "downcasting to 32-bit float."
-)
+F64_PRECISION_WARNING = ("GPUs can't support floating point data with more "
+                         "than 32-bits, precision will be lost due to "
+                         "downcasting to 32-bit float.")
 
 
 def should_cast_to_f32(data_dtype):

@@ -68,21 +68,17 @@ class _ScaledTextureMixin:
     def __init__(self, data=None, **texture_kwargs):
         self._clim = None
         self._data_dtype = None
-        data, texture_kwargs = self.init_scaling_texture(
-            data, **texture_kwargs
-        )
+        data, texture_kwargs = self.init_scaling_texture(data, **texture_kwargs)
         # Call the __init__ of the TextureXD class
         super().__init__(data, **texture_kwargs)
 
-    def init_scaling_texture(
-        self, data=None, internalformat=None, **texture_kwargs
-    ):
+    def init_scaling_texture(self, data=None, internalformat=None, **texture_kwargs):
         """Initialize scaling properties and create a representative array."""
         self._data_dtype = getattr(data, 'dtype', None)
         data = self._create_rep_array(data)
         internalformat = self._get_texture_format_for_data(
-            data, internalformat
-        )
+            data,
+            internalformat)
         texture_kwargs['internalformat'] = internalformat
         return data, texture_kwargs
 
@@ -126,11 +122,9 @@ class _ScaledTextureMixin:
 
         """
         if isinstance(self.clim, str) and self.clim == "auto":
-            raise RuntimeError(
-                "Can't return 'auto' normalized color limits "
-                "until data has been set. Call "
-                "'scale_and_set_data' first."
-            )
+            raise RuntimeError("Can't return 'auto' normalized color limits "
+                               "until data has been set. Call "
+                               "'scale_and_set_data' first.")
         if self.clim[0] == self.clim[1]:
             return self.clim[0], np.inf
         # if the internalformat of the texture is normalized we need to
@@ -279,11 +273,9 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
 
         """
         if isinstance(self.clim, str) and self.clim == "auto":
-            raise RuntimeError(
-                "Can't return 'auto' normalized color limits "
-                "until data has been set. Call "
-                "'scale_and_set_data' first."
-            )
+            raise RuntimeError("Can't return 'auto' normalized color limits "
+                               "until data has been set. Call "
+                               "'scale_and_set_data' first.")
 
         range_min, range_max = self._data_limits
         clim_min, clim_max = self.clim
@@ -299,9 +291,7 @@ class CPUScaledTextureMixin(_ScaledTextureMixin):
             should_cast_to_f32(data.dtype)
             data = np.array(data, dtype=np.float32, copy=copy)
         elif not copy and not np.issubdtype(data.dtype, np.floating):
-            raise ValueError(
-                "Data must be of floating type for no copying to occur."
-            )
+            raise ValueError("Data must be of floating type for no copying to occur.")
 
         if clim[0] != clim[1]:
             data -= clim[0]
@@ -379,10 +369,8 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
     def _handle_auto_texture_format(self, texture_format, data):
         if isinstance(texture_format, str) and texture_format == 'auto':
             if data is None:
-                warnings.warn(
-                    "'texture_format' set to 'auto' but no data "
-                    "provided. Falling back to CPU scaling."
-                )
+                warnings.warn("'texture_format' set to 'auto' but no data "
+                              "provided. Falling back to CPU scaling.")
                 texture_format = None
             else:
                 texture_format = data.dtype.type
@@ -393,11 +381,7 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
         if texture_format and not isinstance(texture_format, str):
             texture_format = np.dtype(texture_format).type
             if texture_format not in self._texture_dtype_format:
-                raise ValueError(
-                    "Can't determine internal texture format for '{}'".format(
-                        texture_format
-                    )
-                )
+                raise ValueError("Can't determine internal texture format for '{}'".format(texture_format))
             should_cast_to_f32(texture_format)
             texture_format = self._texture_dtype_format[texture_format]
         # adjust internalformat for format of data (RGBA vs L)
@@ -406,9 +390,7 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
 
     def _get_texture_format_for_data(self, data, internalformat):
         if internalformat is None:
-            raise ValueError(
-                "'internalformat' must be provided for GPU scaled textures."
-            )
+            raise ValueError("'internalformat' must be provided for GPU scaled textures.")
         num_channels = self._data_num_channels(data)
         texture_format = self._handle_auto_texture_format(internalformat, data)
         texture_format = self._get_gl_tex_format(texture_format, num_channels)
@@ -432,30 +414,21 @@ class GPUScaledTextureMixin(_ScaledTextureMixin):
 
     def check_data_format(self, data):
         """Check if provided data will cause issues if set later."""
-        if (
-            self._internalformat_will_change(data)
-            and not self._auto_texture_format
-        ):
-            raise ValueError(
-                "Data being set would cause a format change "
-                "in the texture. This is only allowed when "
-                "'texture_format' is set to 'auto'."
-            )
+        if self._internalformat_will_change(data) and not self._auto_texture_format:
+            raise ValueError("Data being set would cause a format change "
+                             "in the texture. This is only allowed when "
+                             "'texture_format' is set to 'auto'.")
 
     def _reformat_if_necessary(self, data):
         if not self._internalformat_will_change(data):
             return
         if self._auto_texture_format:
             shape_repr = self._create_rep_array(data)
-            internalformat = self._get_gl_tex_format(
-                data.dtype, shape_repr.shape[-1]
-            )
+            internalformat = self._get_gl_tex_format(data.dtype, shape_repr.shape[-1])
             self._resize(data.shape, internalformat=internalformat)
         else:
-            raise RuntimeError(
-                "'internalformat' needs to change but "
-                "'texture_format' was not 'auto'."
-            )
+            raise RuntimeError("'internalformat' needs to change but "
+                               "'texture_format' was not 'auto'.")
 
     def scale_and_set_data(self, data, offset=None, copy=False):
         """Upload new data to the GPU, scaling if necessary."""
