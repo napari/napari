@@ -260,7 +260,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self._data_level = 0
             self._thumbnail_level = 0
-        self.corner_pixels[1] = self.level_shapes[self._data_level]
+        displayed_axes = [
+            self._dims_displayed[i] for i in self._dims_displayed_order
+        ]
+        self.corner_pixels[1] = self.level_shapes[self._data_level][
+            displayed_axes
+        ]
 
         self._new_empty_slice()
 
@@ -564,15 +569,25 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._transforms['tile2data'].scale = scale
 
             if self._ndisplay == 2:
-                for d in self._dims_displayed:
+                displayed_axes = [
+                    self._dims_displayed[i] for i in self._dims_displayed_order
+                ]
+                for i, d in enumerate(displayed_axes):
                     indices[d] = slice(
-                        self.corner_pixels[0, d],
-                        self.corner_pixels[1, d] + 1,
+                        self.corner_pixels[0, i],
+                        self.corner_pixels[1, i] + 1,
                         1,
                     )
-                self._transforms['tile2data'].translate = (
-                    self.corner_pixels[0] * self._transforms['tile2data'].scale
+                displayed_scale = np.asarray(
+                    self._transforms['tile2data'].scale
+                )[displayed_axes]
+                new_translate = np.copy(
+                    self._transforms['tile2data'].translate
                 )
+                new_translate[displayed_axes] = (
+                    self.corner_pixels[0] * displayed_scale
+                )
+                self._transforms['tile2data'].translate = new_translate
             image = self.data[level][tuple(indices)]
             image_indices = indices
 

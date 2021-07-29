@@ -265,7 +265,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._position = (0,) * ndim
         self._dims_point = [0] * ndim
-        self.corner_pixels = np.zeros((2, ndim), dtype=int)
+        self.corner_pixels = np.zeros((2, 2), dtype=int)
         self._editable = True
 
         self._thumbnail_shape = (32, 32, 4)
@@ -1240,19 +1240,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
 
         if self._ndisplay == 2 and self.multiscale:
-            level, displayed_corners = compute_multiscale_level_and_corners(
-                data_bbox_clipped[:, self._dims_displayed],
+            level, scaled_corners = compute_multiscale_level_and_corners(
+                data_bbox_clipped,
                 shape_threshold,
-                self.downsample_factors[:, self._dims_displayed],
+                self.downsample_factors[:, displayed_axes],
             )
-            corners = np.zeros((2, self.ndim))
-            corners[:, self._dims_displayed] = displayed_corners
-            corners = corners.astype(int)
             if self.data_level != level or not np.all(
-                self.corner_pixels == corners
+                self.corner_pixels == scaled_corners
             ):
+                self.corner_pixels = scaled_corners
                 self._data_level = level
-                self.corner_pixels = corners
                 self.refresh()
 
         else:
