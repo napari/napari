@@ -523,15 +523,15 @@ PluginListItem {
   border-radius: 3px;
 }
 
-PluginListItem > QPushButton {
+PluginListItem > QPushButton#install_button {
   background-color: {{ current }}
 }
 
-PluginListItem > QPushButton:hover {
+PluginListItem > QPushButton#install_button:hover {
   background-color: {{ lighten(current, 10) }}
 }
 
-PluginListItem > QPushButton:pressed {
+PluginListItem > QPushButton#install_button:pressed {
   background-color: {{ darken(current, 10) }}
 }
 
@@ -545,6 +545,22 @@ PluginListItem > QPushButton#remove_button:hover {
 
 PluginListItem > QPushButton#remove_button:pressed {
   background-color: {{ darken(warning, 10) }}
+}
+
+PluginListItem > QPushButton#busy_button:pressed {
+  background-color: {{ darken(secondary, 10) }}
+}
+
+PluginListItem > QPushButton#busy_button {
+  background-color: {{ secondary }}
+}
+
+PluginListItem > QPushButton#busy_button:hover {
+  background-color: {{ lighten(secondary, 10) }}
+}
+
+PluginListItem > QPushButton#busy_button:pressed {
+  background-color: {{ darken(secondary, 10) }}
 }
 
 #small_text {

@@ -34,8 +34,9 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
-
-from vispy.gloo import Texture3D, TextureEmulated3D, VertexBuffer, IndexBuffer
+from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
+from vispy.gloo import VertexBuffer, IndexBuffer
+from .gloo.texture import should_cast_to_f32
 from vispy.visuals import Visual
 from vispy.visuals.shaders import Function
 from vispy.color import get_colormap
@@ -45,6 +46,7 @@ import numpy as np
 # todo: implement more render methods (port from visvis)
 # todo: allow anisotropic data
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
+
 
 # Vertex shader
 VERT_SHADER = """
@@ -60,7 +62,7 @@ varying vec4 v_farpos;
 void main() {
     // v_texcoord = a_texcoord;
     v_position = a_position;
-    
+
     // Project local vertex coordinate to camera position. Then do a step
     // backward (in cam coords) and project back. Voila, we get our ray vector.
     vec4 pos_in_cam = $viewtransformf(vec4(v_position, 1));
@@ -68,11 +70,11 @@ void main() {
     // intersection of ray and near clipping plane (z = -1 in clip coords)
     pos_in_cam.z = -pos_in_cam.w;
     v_nearpos = $viewtransformi(pos_in_cam);
-    
+
     // intersection of ray and far clipping plane (z = +1 in clip coords)
     pos_in_cam.z = pos_in_cam.w;
     v_farpos = $viewtransformi(pos_in_cam);
-    
+
     gl_Position = $transform(vec4(v_position, 1.0));
 }
 """  # noqa
@@ -85,7 +87,7 @@ uniform vec3 u_shape;
 uniform vec2 clim;
 uniform float gamma;
 uniform float u_threshold;
-uniform float u_attenuation; // todo add to vispy from napari
+uniform float u_attenuation;
 uniform float u_relative_step_size;
 
 //varyings
@@ -120,16 +122,11 @@ float rand(vec2 co)
 
 float colorToVal(vec4 color1)
 {{
-    return color1.g; // todo: why did I have this abstraction in visvis?
+    return color1.r; // todo: why did I have this abstraction in visvis?
 }}
 
 vec4 applyColormap(float data) {{
-    if (clim.x < clim.y) {{
-        data = clamp(data, clim.x, clim.y);
-    }} else {{
-        data = clamp(data, clim.y, clim.x);
-    }}
-
+    data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
     data = (data - clim.x) / (clim.y - clim.x);
     return $cmap(pow(data, gamma));
 }}
@@ -156,10 +153,10 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     // Calculate color by incorporating lighting
     vec4 color1;
     vec4 color2;
-    
+
     // View direction
     vec3 V = normalize(view_ray);
-    
+
     // calculate normal vector from gradient
     vec3 N; // normal
     color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );
@@ -176,22 +173,22 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     betterColor = max(max(color1, color2),betterColor);
     float gm = length(N); // gradient magnitude
     N = normalize(N);
-    
+
     // Flip normal so it points towards viewer
     float Nselect = float(dot(N,V) > 0.0);
     N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;
-    
+
     // Get color of the texture (albeido)
     color1 = betterColor;
     color2 = color1;
     // todo: parametrise color1_to_color2
-    
+
     // Init colors
     vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 specular_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 final_color;
-    
+
     // todo: allow multiple light, define lights on viewvox or subscene
     int nlights = 1; 
     for (int i=0; i<nlights; i++)
@@ -200,25 +197,25 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
         vec3 L = normalize(view_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
         L = normalize(L+(1.0-lightEnabled));
-        
+
         // Calculate lighting properties
         float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );
         vec3 H = normalize(L+V); // Halfway vector
         float specularTerm = pow( max(dot(H,N),0.0), u_shininess);
-        
+
         // Calculate mask
         float mask1 = lightEnabled;
-        
+
         // Calculate colors
         ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;
         diffuse_color +=  mask1 * lambertTerm;
         specular_color += mask1 * specularTerm * u_specular;
     }}
-    
+
     // Calculate final color by componing different components
     final_color = color2 * ( ambient_color + diffuse_color) + specular_color;
     final_color.a = color2.a;
-    
+
     // Done
     return final_color;
 }}
@@ -361,7 +358,7 @@ void main() {{
         {{
             // Get sample color
             vec4 color = $sample(u_volumetex, loc);
-            float val = color.g;
+            float val = color.r;
 
             {in_loop}
 
@@ -387,11 +384,10 @@ void main() {{
 
 """  # noqa
 
-
 MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
-        int maxi = 0;  // Where the maximum value was encountered
+        int maxi = -1;  // Where the maximum value was encountered
         """,
     in_loop="""
         if( val > maxval ) {
@@ -400,17 +396,66 @@ MIP_SNIPPETS = dict(
         }
         """,
     after_loop="""
-        // Refine search for max value
-        loc = start_loc + step * (float(maxi) - 0.5);
-        for (int i=0; i<10; i++) {
-            maxval = max(maxval, $sample(u_volumetex, loc).g);
-            loc += step * 0.1;
-        }
-        gl_FragColor = applyColormap(maxval);
+        // Refine search for max value, but only if anything was found
+        if ( maxi > -1 ) {{
+            loc = start_loc + step * (float(maxi) - 0.5);
+            for (int i=0; i<10; i++) {
+                maxval = max(maxval, $sample(u_volumetex, loc).r);
+                loc += step * 0.1;
+            }
+            gl_FragColor = applyColormap(maxval);
+        }}
         """,
 )
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
 
+ATTENUATED_MIP_SNIPPETS = dict(
+    before_loop="""
+        float maxval = -99999.0; // The maximum encountered value
+        float sumval = 0.0; // The sum of the encountered values
+        float scaled = 0.0; // The scaled value
+        int maxi = 0;  // Where the maximum value was encountered
+        vec3 maxloc = vec3(0.0);  // Location where the maximum value was encountered
+        """,
+    in_loop="""
+        sumval = sumval + val;
+        scaled = val * exp(-u_attenuation * (sumval - 1) / u_relative_step_size);
+        if( scaled > maxval ) {
+            maxval = scaled;
+            maxi = iter;
+            maxloc = loc;
+        }
+        """,
+    after_loop="""
+        gl_FragColor = applyColormap(maxval);
+        """,
+)
+ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
+
+MINIP_SNIPPETS = dict(
+    before_loop="""
+        float minval = 99999.0; // The minimum encountered value
+        int mini = -1;  // Where the minimum value was encountered
+        """,
+    in_loop="""
+        if( val < minval ) {
+            minval = val;
+            mini = iter;
+        }
+        """,
+    after_loop="""
+        // Refine search for min value, but only if anything was found
+        if ( mini > -1 ) {{
+            loc = start_loc + step * (float(mini) - 0.5);
+            for (int i=0; i<10; i++) {
+                minval = min(minval, $sample(u_volumetex, loc).r);
+                loc += step * 0.1;
+            }
+            gl_FragColor = applyColormap(minval);
+        }}
+        """,
+)
+MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
 
 TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
@@ -421,21 +466,21 @@ TRANSLUCENT_SNIPPETS = dict(
             float a1 = integrated_color.a;
             float a2 = color.a * (1 - a1);
             float alpha = max(a1 + a2, 0.001);
-            
+
             // Doesn't work.. GLSL optimizer bug?
             //integrated_color = (integrated_color * a1 / alpha) + 
             //                   (color * a2 / alpha); 
             // This should be identical but does work correctly:
             integrated_color *= a1 / alpha;
             integrated_color += color * a2 / alpha;
-            
+
             integrated_color.a = alpha;
-            
+
             if( alpha > 0.99 ){
                 // stop integrating if the fragment becomes opaque
                 iter = nsteps;
             }
-        
+
         """,
     after_loop="""
         gl_FragColor = integrated_color;
@@ -443,14 +488,13 @@ TRANSLUCENT_SNIPPETS = dict(
 )
 TRANSLUCENT_FRAG_SHADER = FRAG_SHADER.format(**TRANSLUCENT_SNIPPETS)
 
-
 ADDITIVE_SNIPPETS = dict(
     before_loop="""
         vec4 integrated_color = vec4(0., 0., 0., 0.);
         """,
     in_loop="""
         color = applyColormap(val);
-        
+
         integrated_color = 1.0 - (1.0 - integrated_color) * (1.0 - color);
         """,
     after_loop="""
@@ -458,7 +502,6 @@ ADDITIVE_SNIPPETS = dict(
         """,
 )
 ADDITIVE_FRAG_SHADER = FRAG_SHADER.format(**ADDITIVE_SNIPPETS)
-
 
 ISO_SNIPPETS = dict(
     before_loop="""
@@ -472,9 +515,9 @@ ISO_SNIPPETS = dict(
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 color = $sample(u_volumetex, iloc);
-                if (color.g > u_threshold) {
+                if (color.r > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
-                    gl_FragColor = applyColormap(color.g);
+                    gl_FragColor = applyColormap(color.r);
                     iter = nsteps;
                     break;
                 }
@@ -486,7 +529,9 @@ ISO_SNIPPETS = dict(
         """,
 )
 
-# This is an iso shader for categorical data (e.g., label images)
+ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
+
+
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
@@ -517,56 +562,105 @@ ISO_CATEGORICAL_SNIPPETS = dict(
         """,
 )
 
-ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 ISO_CATEGORICAL_FRAG_SHADER = FRAG_SHADER.format(**ISO_CATEGORICAL_SNIPPETS)
+
+
+AVG_SNIPPETS = dict(
+    before_loop="""
+        float n = 0; // Counter for encountered values
+        float meanval = 0.0; // The mean of encountered values
+        float prev_mean = 0.0; // Variable to store the previous incremental mean
+        """,
+    in_loop="""
+        // Incremental mean value used for numerical stability
+        n += 1; // Increment the counter
+        prev_mean = meanval; // Update the mean for previous iteration
+        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
+        """,
+    after_loop="""
+        // Apply colormap on mean value
+        gl_FragColor = applyColormap(meanval);
+        """,
+)
+AVG_FRAG_SHADER = FRAG_SHADER.format(**AVG_SNIPPETS)
 
 frag_dict = {
     'mip': MIP_FRAG_SHADER,
+    'minip': MINIP_FRAG_SHADER,
+    'attenuated_mip': ATTENUATED_MIP_FRAG_SHADER,
     'iso': ISO_FRAG_SHADER,
     'iso_categorical': ISO_CATEGORICAL_FRAG_SHADER,
     'translucent': TRANSLUCENT_FRAG_SHADER,
     'additive': ADDITIVE_FRAG_SHADER,
+    'average': AVG_FRAG_SHADER,
 }
 
 
 class VolumeVisual(Visual):
     """Displays a 3D Volume
 
-    Parameters
-    ----------
-    vol : ndarray
-        The volume to display. Must be ndim==3.
-    clim : tuple of two floats | None
-        The contrast limits. The values in the volume are mapped to
-        black and white corresponding to these values. Default maps
-        between min and max.
-    method : {'mip', 'translucent', 'additive', 'iso'}
-        The render method to use. See corresponding docs for details.
-        Default 'mip'.
-    threshold : float
-        The threshold to use for the isosurface render method. By default
-        the mean of the given volume is used.
-    relative_step_size : float
-        The relative step size to step through the volume. Default 0.8.
-        Increase to e.g. 1.5 to increase performance, at the cost of
-        quality.
-    cmap : str
-        Colormap to use.
-    gamma : float
-        Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
-        by default: 1.
-    clim_range_threshold : float
-        When changing the clims, if the new clim range is smaller than this fraction of the
-        last-used texture data range, then it will trigger a rescaling of the texture data.
-        For instance: if the texture data was last scaled from 0-1, and the clims are set to
-        0.4-0.5, then a texture rescale will be triggered if ``clim_range_threshold < 0.1``.
-        To prevent rescaling, set this value to 0.  To *always* rescale, set the value to
-        >= 1.  By default, 0.2
-    emulate_texture : bool
-        Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
-        but has lower performance on desktop platforms.
-    interpolation : {'linear', 'nearest'}
-        Selects method of image interpolation.
+        Parameters
+        ----------
+        vol : ndarray
+            The volume to display. Must be ndim==3. Array is assumed to be stored
+            as ``(z, y, x)``.
+        clim : str | tuple
+            Limits to use for the colormap. I.e. the values that map to black and white
+            in a gray colormap. Can be 'auto' to auto-set bounds to
+            the min and max of the data. If not given or None, 'auto' is used.
+        method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
+            'iso', 'average'}
+            The render method to use. See corresponding docs for details.
+            Default 'mip'.
+        threshold : float
+            The threshold to use for the isosurface render method. By default
+            the mean of the given volume is used.
+        attenuation: float
+            The attenuation rate to apply for the attenuated mip render method.
+            Default: 1.0.
+        relative_step_size : float
+            The relative step size to step through the volume. Default 0.8.
+            Increase to e.g. 1.5 to increase performance, at the cost of
+            quality.
+        cmap : str
+            Colormap to use.
+        gamma : float
+            Gamma to use during colormap lookup.  Final color will be cmap(val**gamma).
+            by default: 1.
+        interpolation : {'linear', 'nearest'}
+            Selects method of image interpolation.
+    <<<<<<< HEAD
+    =======
+        texture_format: numpy.dtype | str | None
+            How to store data on the GPU. OpenGL allows for many different storage
+            formats and schemes for the low-level texture data stored in the GPU.
+            Most common is unsigned integers or floating point numbers.
+            Unsigned integers are the most widely supported while other formats
+            may not be supported on older versions of OpenGL, WebGL
+            (without enabling some extensions), or with older GPUs.
+            Default value is ``None`` which means data will be scaled on the
+            CPU and the result stored in the GPU as an unsigned integer. If a
+            numpy dtype object, an internal texture format will be chosen to
+            support that dtype and data will *not* be scaled on the CPU. Not all
+            dtypes are supported. If a string, then
+            it must be one of the OpenGL internalformat strings described in the
+            table on this page: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+            The name should have `GL_` removed and be lowercase (ex.
+            `GL_R32F` becomes ``'r32f'``). Lastly, this can also be the string
+            ``'auto'`` which will use the data type of the provided volume data
+            to determine the internalformat of the texture.
+            When this is specified (not ``None``) data is scaled on the
+            GPU which allows for faster color limit changes. Additionally, when
+            32-bit float data is provided it won't be copied before being
+            transferred to the GPU. Note this visual is limited to "luminance"
+            formatted data (single band). This is equivalent to `GL_RED` format
+            in OpenGL 4.0.
+
+        .. versionchanged: 0.7
+
+            Deprecate 'emulate_texture' keyword argument.
+
+    >>>>>>> 82ca467b515023a9ad6105cfbace9282f67be69c
     """
 
     _interpolation_names = ['linear', 'nearest']
@@ -574,28 +668,23 @@ class VolumeVisual(Visual):
     def __init__(
         self,
         vol,
-        clim=None,
+        clim="auto",
         method='mip',
         threshold=None,
+        attenuation=1.0,
         relative_step_size=0.8,
         cmap='grays',
         gamma=1.0,
-        clim_range_threshold=0.2,
-        emulate_texture=False,
         interpolation='linear',
+        texture_format=None,
     ):
-
-        tex_cls = TextureEmulated3D if emulate_texture else Texture3D
-
         # Storage of information of volume
         self._vol_shape = ()
-        self._clim = None
-        self._texture_limits = None
         self._gamma = gamma
         self._need_vertex_update = True
-        self._clim_range_threshold = clim_range_threshold
         # Set the colormap
         self._cmap = get_colormap(cmap)
+        self._is_zyx = True
 
         # Create gloo objects
         self._vertices = VertexBuffer()
@@ -616,15 +705,14 @@ class VolumeVisual(Visual):
         )
 
         self._interpolation = interpolation
-        self._tex = tex_cls(
-            (10, 10, 10),
-            interpolation=self._interpolation,
-            wrapping='clamp_to_edge',
-        )
+        self._texture = self._create_texture(texture_format, vol)
+        # used to store current data for later CPU-side scaling if
+        # texture_format is None
+        self._last_data = None
 
         # Create program
         Visual.__init__(self, vcode=VERT_SHADER, fcode="")
-        self.shared_program['u_volumetex'] = self._tex
+        self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
         self.shared_program['a_texcoord'] = self._texcoord
         self.shared_program['gamma'] = self._gamma
@@ -636,14 +724,33 @@ class VolumeVisual(Visual):
         # box and will not be drawn.
         self.set_gl_state('translucent', cull_face=False)
 
-        # Set data
-        self.set_data(vol, clim)
+        # Apply clim and set data at the same time
+        self.set_data(vol, clim or "auto")
 
         # Set params
         self.method = method
         self.relative_step_size = relative_step_size
-        self.threshold = threshold if (threshold is not None) else vol.mean()
+        self.threshold = threshold if threshold is not None else vol.mean()
+        self.attenuation = attenuation
         self.freeze()
+
+    def _create_texture(self, texture_format, data):
+        if texture_format is not None:
+            tex_cls = GPUScaledTextured3D
+        else:
+            tex_cls = CPUScaledTexture3D
+
+        # clamp_to_edge means any texture coordinates outside of 0-1 should be
+        # clamped to 0 and 1.
+        # NOTE: This doesn't actually set the data in the texture. Only
+        # creates a placeholder texture that will be resized later on.
+        return tex_cls(
+            data,
+            interpolation=self._interpolation,
+            internalformat=texture_format,
+            format='luminance',
+            wrapping='clamp_to_edge',
+        )
 
     def set_data(self, vol, clim=None, copy=True):
         """Set the volume data.
@@ -652,47 +759,39 @@ class VolumeVisual(Visual):
         ----------
         vol : ndarray
             The 3D volume.
-        clim : tuple | None
-            Colormap limits to use. None will use the min and max values.
-        copy : bool | True
-            Whether to copy the input volume prior to applying clim normalization.
+        clim : tuple
+            Colormap limits to use (min, max). None will use the min and max
+            values. Defaults to ``None``.
+        copy : bool
+            Whether to copy the input volume prior to applying clim
+            normalization on the CPU. Has no effect if visual was created
+            with 'texture_format' not equal to None as data is not modified
+            on the CPU and data must already be copied to the GPU.
+            Data must be 32-bit floating point data to completely avoid any
+            data copying when scaling on the CPU. Defaults to ``True`` for
+            CPU scaled data. It is forced to ``False`` for GPU scaled data.
+
         """
         # Check volume
         if not isinstance(vol, np.ndarray):
             raise ValueError('Volume visual needs a numpy array.')
-        if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] <= 4)):
-            raise ValueError('Volume visual needs a 3D image.')
+        if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] > 1)):
+            raise ValueError('Volume visual needs a 3D array.')
+        if isinstance(self._texture, GPUScaledTextured3D):
+            copy = False
 
-        # Handle clim
-        if clim is not None:
-            clim = np.array(clim, float)
-            if not (clim.ndim == 1 and clim.size == 2):
-                raise ValueError('clim must be a 2-element array-like')
-            self._clim = tuple(clim)
-        if self._clim is None:
-            self._clim = vol.min(), vol.max()
-
-        # store clims used to normalize _tex data for use in clim_normalized
-        self._texture_limits = self._clim
-        # store volume in case it needs to be renormalized by clim.setter
-        self._last_data = vol
-        self.shared_program['clim'] = self.clim_normalized
-
-        # Apply clim (copy data by default... see issue #1727)
-        vol = np.array(vol, dtype='float32', copy=copy)
-        if self._clim[1] == self._clim[0]:
-            if self._clim[0] != 0.0:
-                vol *= 1.0 / self._clim[0]
-        elif self._clim[0] > self._clim[1]:
-            vol *= -1
-            vol += self._clim[1]
-            vol /= self._clim[1] - self._clim[0]
-        else:
-            vol -= self._clim[0]
-            vol /= self._clim[1] - self._clim[0]
+        if clim is not None and clim != self._texture.clim:
+            self._texture.set_clim(clim)
 
         # Apply to texture
-        self._tex.set_data(vol)  # will be efficient if vol is same shape
+        if should_cast_to_f32(vol.dtype):
+            vol = vol.astype(np.float32)
+        self._texture.check_data_format(vol)
+        self._last_data = vol
+        self._texture.scale_and_set_data(
+            vol, copy=copy
+        )  # will be efficient if vol is same shape
+        self.shared_program['clim'] = self._texture.clim_normalized
         self.shared_program['u_shape'] = (
             vol.shape[2],
             vol.shape[1],
@@ -705,23 +804,6 @@ class VolumeVisual(Visual):
             self._need_vertex_update = True
         self._vol_shape = shape
 
-        # Get some stats
-        self._kb_for_texture = np.prod(self._vol_shape) / 1024
-
-    def rescale_data(self):
-        """Force rescaling of data to the current contrast limits and texture upload.
-
-        Because Textures are currently 8-bits, and contrast adjustment is done during
-        rendering by scaling the values retrieved from the texture on the GPU (provided that
-        the new contrast limits settings are within the range of the clims used when the
-        last texture was uploaded), posterization may become visible if the contrast limits
-        become *too* small of a fraction of the clims used to normalize the texture.
-        This function is a convenience to "force" rescaling of the Texture data to the
-        current contrast limits range.
-        """
-        self.set_data(self._last_data, clim=self._clim)
-        self.update()
-
     @property
     def clim(self):
         """The contrast limits that were applied to the volume data.
@@ -729,12 +811,7 @@ class VolumeVisual(Visual):
         Volume display is mapped from black to white with these values.
         Settable via set_data() as well as @clim.setter.
         """
-        return self._clim
-
-    @property
-    def texture_is_inverted(self):
-        if self._texture_limits is not None:
-            return self._texture_limits[1] < self._texture_limits[0]
+        return self._texture.clim
 
     @clim.setter
     def clim(self, value):
@@ -745,53 +822,10 @@ class VolumeVisual(Visual):
         range of the clims previously used to normalize the texture data, then data will
         be renormalized using set_data.
         """
-        clim = np.array(value, float)
-        if not (clim.ndim == 1 and clim.size == 2):
-            raise ValueError('clim must be a 2-element array-like')
-        self._clim = tuple(clim)
-        if self.texture_is_inverted:
-            if (clim[0] > self._texture_limits[0]) or (
-                clim[1] < self._texture_limits[1]
-            ):
-                self.rescale_data()
-                return
-        else:
-            if (clim[0] < self._texture_limits[0]) or (
-                clim[1] > self._texture_limits[1]
-            ):
-                self.rescale_data()
-                return
-        # if the clim range is too small of a percentage of the last-used texture range,
-        # posterization may be visible, so downscale the texture range.
-        range_ratio = np.subtract(*clim) / abs(
-            np.subtract(*self._texture_limits)
-        )
-        if np.abs(range_ratio) < self._clim_range_threshold:
-            self.rescale_data()
-        else:
-            #  new clims are within reasonable range of the texture data, just call shader
-            self.shared_program['clim'] = self.clim_normalized
-            self.update()
-
-    @property
-    def clim_normalized(self):
-        """Normalize current clims between 0-1 based on last-used texture data range.
-
-        In set_data(), the data is normalized (on the CPU) to 0-1 using ``clim``.
-        During rendering, the frag shader will apply the final contrast adjustment based on
-        the current ``clim``.
-        """
-        range_min, range_max = self._texture_limits
-        clim0, clim1 = self.clim
-        if self.texture_is_inverted:
-            tex_range = range_min - range_max
-            clim0 = (clim0 - range_max) / tex_range
-            clim1 = (clim1 - range_max) / tex_range
-        else:
-            tex_range = range_max - range_min
-            clim0 = (clim0 - range_min) / tex_range
-            clim1 = (clim1 - range_min) / tex_range
-        return clim0, clim1
+        if self._texture.set_clim(value):
+            self.set_data(self._last_data, clim=value)
+        self.shared_program['clim'] = self._texture.clim_normalized
+        self.update()
 
     @property
     def gamma(self):
@@ -815,6 +849,11 @@ class VolumeVisual(Visual):
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program['texture2D_LUT'] = (
+            self.cmap.texture_lut()
+            if (hasattr(self.cmap, 'texture_lut'))
+            else None
+        )
         self.update()
 
     @property
@@ -839,7 +878,7 @@ class VolumeVisual(Visual):
             )
         if self._interpolation != interp:
             self._interpolation = interp
-            self._tex.interpolation = self._interpolation
+            self._texture.interpolation = self._interpolation
             self.update()
 
     @property
@@ -852,11 +891,20 @@ class VolumeVisual(Visual):
               the result is opaque.
             * mip: maxiumum intensity projection. Cast a ray and display the
               maximum value that was encountered.
+            * minip: minimum intensity projection. Cast a ray and display the
+              minimum value that was encountered.
+            * attenuated_mip: attenuated maximum intensity projection. Cast a
+              ray and display the maximum value encountered. Values are
+              attenuated as the ray moves deeper into the volume.
             * additive: voxel colors are added along the view ray until
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
               performed to give the visual appearance of a surface.
+            * iso_categorical: isosurface for categorical (integer) data,
+              background value of 0 is not rendered.
+            * average: average intensity projection. Cast a ray and display the
+              average of values that were encountered.
         """
         return self._method
 
@@ -873,10 +921,14 @@ class VolumeVisual(Visual):
         # Get rid of specific variables - they may become invalid
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = None
+        if 'u_attenuation' in self.shared_program:
+            self.shared_program['u_attenuation'] = None
 
         self.shared_program.frag = frag_dict[method]
-        self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
-        self.shared_program.frag['sample'] = self._tex.glsl_sample
+        self.shared_program.frag[
+            'sampler_type'
+        ] = self._texture.glsl_sampler_type
+        self.shared_program.frag['sample'] = self._texture.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = (
             self.cmap.texture_lut()
@@ -895,6 +947,17 @@ class VolumeVisual(Visual):
         self._threshold = float(value)
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = self._threshold
+        self.update()
+
+    @property
+    def attenuation(self):
+        """The attenuation rate to apply for the attenuated mip render method."""
+        return self._attenuation
+
+    @attenuation.setter
+    def attenuation(self, value):
+        self._attenuation = float(value)
+        self.shared_program['u_attenuation'] = self._attenuation
         self.update()
 
     @property
@@ -965,7 +1028,13 @@ class VolumeVisual(Visual):
         self._index_buffer.set_data(indices)
 
     def _compute_bounds(self, axis, view):
-        return 0, self._vol_shape[axis]
+        if self._is_zyx:
+            # axis=(x, y, z) -> shape(..., z, y, x)
+            ndim = len(self._vol_shape)
+            return 0, self._vol_shape[ndim - 1 - axis]
+        else:
+            # axis=(x, y, z) -> shape(x, y, z)
+            return 0, self._vol_shape[axis]
 
     def _prepare_transforms(self, view):
         trs = view.transforms

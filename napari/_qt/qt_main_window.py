@@ -956,7 +956,7 @@ class Window:
         self.plugins_menu.clear()
 
         pip_install_action = QAction(
-            trans._("Install/Uninstall Package(s)..."), self._qt_window
+            trans._("Install/Uninstall Plugins..."), self._qt_window
         )
         pip_install_action.triggered.connect(self._show_plugin_install_dialog)
         self.plugins_menu.addAction(pip_install_action)
