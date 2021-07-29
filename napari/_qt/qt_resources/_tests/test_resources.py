@@ -22,8 +22,6 @@ def test_resources_cleanup():
 
 def test_register_resources(qtbot):
     """Test that resource cleanup is being set properly."""
-    # this variable is initially set to None
-    assert napari._qt.qt_resources._icons._clear_resources is None
     _register_napari_resources(False, True)
     # it is updated once resource file is loaded
     assert napari._qt.qt_resources._icons._clear_resources is not None

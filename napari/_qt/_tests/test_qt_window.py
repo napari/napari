@@ -57,15 +57,15 @@ def test_update_theme(
     register_theme("blue", blue)
 
     # triggered when theme was added
-    mock_add_theme.assert_called_once()
+    mock_add_theme.assert_called()
     mock_remove_theme.assert_not_called()
 
     unregister_theme("blue")
     # triggered when theme was removed
-    mock_remove_theme.assert_called_once()
+    mock_remove_theme.assert_called()
 
     mock_icon_changed.assert_not_called()
     viewer.theme = "light"
     theme = get_theme("light", False)
     theme.icon = "#FF0000"
-    mock_icon_changed.assert_called_once()
+    mock_icon_changed.assert_called()
