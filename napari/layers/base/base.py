@@ -1221,7 +1221,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # Note that we ignore the first transform which is tile2data
         data_corners = (
             self._transforms[1:]
-            .simplified.set_slice(self._dims_displayed)
+            .simplified.set_slice(displayed_axes)
             .inverse(all_corners)
         )
 
