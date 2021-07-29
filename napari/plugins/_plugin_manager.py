@@ -380,11 +380,6 @@ class NapariPluginManager(PluginManager):
                 )
             )
 
-    def iter_themes(self) -> Iterator[Tuple[str, Theme]]:
-        """Return theme_name : theme_colors mapping."""
-        for plugin_name in self._theme_data:
-            yield from self._theme_data[plugin_name].items()
-
     def discover_themes(self):
         """Trigger discovery of theme plugins.
 

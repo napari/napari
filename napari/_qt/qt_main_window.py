@@ -455,10 +455,6 @@ class Window:
         for theme in _themes.values():
             self._connect_theme(theme)
 
-        # # register icon resources - this will regenerate icons to make sure that
-        # # plugin icons are also present
-        # register_napari_themes()
-
     def _add_theme(self, event):
         """Add new theme and connect events."""
         theme = event.value

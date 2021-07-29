@@ -33,7 +33,7 @@ from contextlib import contextmanager
 from itertools import product
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, Iterator, Optional, Tuple, Union
 
 import qtpy
 
@@ -56,7 +56,9 @@ QRC_TEMPLATE = """
 ALIAS_T = '{color}/{svg_stem}{opacity}.svg'
 FILE_T = "<file alias='{alias}'>{path}</file>"
 
-_clear_resources = None
+# This variable is updated by either `_register_napari_resources`
+# and turned into a function which removes existing resources from the app.
+_clear_resources: Optional[Callable] = None
 
 
 @contextmanager
@@ -404,6 +406,13 @@ def _unregister_napari_resources():
 
 
 def register_napari_themes(event=None):
-    """Register theme."""
+    """Register theme.
+
+    This function takes care of unregistering existing resources and
+    registering new or updated resources. This is necessary in order to
+    add new icon(s) or update icon color.
+
+    Not unregistering resources can lead to segfaults which is not desirable...
+    """
     _unregister_napari_resources()
     _register_napari_resources(False, force_rebuild=True)

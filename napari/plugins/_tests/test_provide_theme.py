@@ -40,12 +40,14 @@ def test_provide_theme_hook(napari_plugin_manager: "NapariPluginManager"):
 def test_provide_theme_hook_bad(napari_plugin_manager: "NapariPluginManager"):
     napari_plugin_manager.discover_themes()
 
+    with pytest.warns(FutureWarning):
+        dark = get_theme("dark")
+        dark.pop("foreground")
+        dark["name"] = "dark-bad"
+
     class TestPluginBad:
         @napari_hook_implementation
         def napari_provide_theme():
-            dark = get_theme("dark")
-            dark.pop("foreground")
-            dark["name"] = "dark-bad"
             return {"dark-bad": dark}
 
     with pytest.warns(
@@ -59,6 +61,26 @@ def test_provide_theme_hook_bad(napari_plugin_manager: "NapariPluginManager"):
     assert isinstance(reg, dict)
     assert len(reg) == 0
     assert "dark-bad" not in available_themes()
+
+
+def test_provide_theme_hook_not_dict(
+    napari_plugin_manager: "NapariPluginManager",
+):
+    napari_plugin_manager.discover_themes()
+
+    class TestPluginBad:
+        @napari_hook_implementation
+        def napari_provide_theme():
+            return ["bad-theme", []]
+
+    with pytest.warns(
+        UserWarning,
+        match="Plugin 'TestPluginBad' provided a non-dict object",
+    ):
+        napari_plugin_manager.register(TestPluginBad)
+
+    # make sure theme data is present in the plugin but the theme is not there
+    assert "TestPluginBad" not in napari_plugin_manager._theme_data
 
 
 def test_provide_theme_hook_unregister(

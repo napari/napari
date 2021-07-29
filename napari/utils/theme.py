@@ -216,7 +216,7 @@ def register_theme(name, theme):
     ----------
     name : str
         Name of requested theme.
-    theme : dict of str: str
+    theme : dict of str: str, Theme
         Theme mapping elements to colors.
     """
     if not isinstance(theme, Theme):
