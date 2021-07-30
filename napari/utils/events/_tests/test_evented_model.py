@@ -333,43 +333,43 @@ class TestStringEnum(StringEnum):
 
 
 class ModelWithStringEnum(EventedModel):
-    mode: TestStringEnum = TestStringEnum.NONE
+    enum_field: TestStringEnum = TestStringEnum.NONE
 
 
 def test_evented_model_with_string_enum_default():
     model = ModelWithStringEnum()
-    assert model.mode == TestStringEnum.NONE
+    assert model.enum_field == TestStringEnum.NONE
 
 
 def test_evented_model_with_string_enum_parameter():
-    model = ModelWithStringEnum(mode=TestStringEnum.SOME_VALUE)
-    assert model.mode == TestStringEnum.SOME_VALUE
+    model = ModelWithStringEnum(enum_field=TestStringEnum.SOME_VALUE)
+    assert model.enum_field == TestStringEnum.SOME_VALUE
 
 
 def test_evented_model_with_string_enum_parameter_as_str():
-    model = ModelWithStringEnum(mode='some_value')
-    assert model.mode == TestStringEnum.SOME_VALUE
+    model = ModelWithStringEnum(enum_field='some_value')
+    assert model.enum_field == TestStringEnum.SOME_VALUE
 
 
 def test_evented_model_with_string_enum_setter():
     model = ModelWithStringEnum()
-    model.mode = TestStringEnum.SOME_VALUE
-    assert model.mode == TestStringEnum.SOME_VALUE
+    model.enum_field = TestStringEnum.SOME_VALUE
+    assert model.enum_field == TestStringEnum.SOME_VALUE
 
 
 def test_evented_model_with_string_enum_setter_as_str():
     model = ModelWithStringEnum()
-    model.mode = 'some_value'
-    assert model.mode == TestStringEnum.SOME_VALUE
+    model.enum_field = 'some_value'
+    assert model.enum_field == TestStringEnum.SOME_VALUE
 
 
 def test_evented_model_with_string_enum_parse_raw():
-    model = ModelWithStringEnum(mode=TestStringEnum.SOME_VALUE)
+    model = ModelWithStringEnum(enum_field=TestStringEnum.SOME_VALUE)
     deserialized_model = ModelWithStringEnum.parse_raw(model.json())
-    assert deserialized_model == model
+    assert deserialized_model.enum_field == model.enum_field
 
 
 def test_evented_model_with_string_enum_parse_obj():
-    model = ModelWithStringEnum(mode=TestStringEnum.SOME_VALUE)
+    model = ModelWithStringEnum(enum_field=TestStringEnum.SOME_VALUE)
     deserialized_model = ModelWithStringEnum.parse_obj(model.dict())
-    assert deserialized_model == model
+    assert deserialized_model.enum_field == model.enum_field
