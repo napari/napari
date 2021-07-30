@@ -1192,7 +1192,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         else:
             return None, None
 
-    def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
+    @property
+    def _displayed_axes(self):
+        displayed_axes = [
+            self._dims_displayed[i] for i in self._dims_displayed_order
+        ]
+        return displayed_axes
+
+    @property
+    def _corner_pixels_displayed(self):
+        displayed_axes = self._displayed_axes
+        corner_pixels_displayed = self.corner_pixels[:, displayed_axes]
+        return corner_pixels_displayed
+
+    def _update_draw(
+        self, scale_factor, corner_pixels_displayed, shape_threshold
+    ):
         """Update canvas scale and corner values on draw.
 
         For layer multiscale determining if a new resolution level or tile is
@@ -1202,7 +1217,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ----------
         scale_factor : float
             Scale factor going from canvas to world coordinates.
-        corner_pixels : array
+        corner_pixels_displayed : array, shape (2, 2)
             Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
         shape_threshold : tuple
@@ -1210,10 +1225,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         self.scale_factor = scale_factor
 
-        displayed_axes = [
-            self._dims_displayed[i] for i in self._dims_displayed_order
-        ]
-        corner_pixels_displayed = corner_pixels[:, displayed_axes]
+        displayed_axes = self._displayed_axes
         # we need to compute all four corners to compute a complete,
         # data-aligned bounding box, because top-left/bottom-right may not
         # remain top-left and bottom-right after transformations.
@@ -1240,13 +1252,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
 
         if self._ndisplay == 2 and self.multiscale:
-            level, displayed_corners = compute_multiscale_level_and_corners(
-                data_bbox_clipped[:, self._dims_displayed],
+            level, scaled_corners = compute_multiscale_level_and_corners(
+                data_bbox_clipped,
                 shape_threshold,
-                self.downsample_factors[:, self._dims_displayed],
+                self.downsample_factors[:, displayed_axes],
             )
             corners = np.zeros((2, self.ndim))
-            corners[:, self._dims_displayed] = displayed_corners
+            corners[:, displayed_axes] = scaled_corners
             corners = corners.astype(int)
             if self.data_level != level or not np.all(
                 self.corner_pixels == corners
