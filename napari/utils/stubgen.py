@@ -11,7 +11,7 @@ same name and directory as the input module(s).
 Example
 -------
 
-    python -m napari.utils.stubgen napari.view_layers
+$ python -m napari.utils.stubgen napari.view_layers
 
 # outputs a file to: `napari/view_layers.pyi`
 
@@ -83,27 +83,6 @@ def _iter_imports(hint) -> Iterator[str]:
         yield hint.__module__
 
 
-def _import_for_type_checking(module) -> ModuleType:
-    pre_mods = list(sys.modules)
-    if isinstance(module, str):
-        module = importlib.import_module(module)
-
-    # this is a hack:
-    # we're trying to re-import as many modules as possible that were imported
-    # indirectly as a result of having imported the module above.
-    # some modules will fail on reloading... so we pass them.
-    before, typing.TYPE_CHECKING = typing.TYPE_CHECKING, True
-    try:
-        for mod in [x for x in sys.modules if x not in pre_mods]:
-            try:
-                importlib.reload(importlib.import_module(mod))
-            except Exception:
-                pass
-    finally:
-        typing.TYPE_CHECKING = before
-    return module
-
-
 def generate_function_stub(func) -> Tuple[Set[str], str]:
     """Generate a stub and imports for a function."""
     sig = inspect.signature(func)
@@ -163,7 +142,8 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
 
     By default saves to .pyi file with the same name as the module.
     """
-    module = _import_for_type_checking(module)
+    if isinstance(module, str):
+        module = importlib.import_module(module)
 
     # try to use __all__, or guess exports
     names = getattr(module, '__all__', None)
@@ -207,7 +187,4 @@ if __name__ == '__main__':
     default_modules = ['napari.view_layers', 'napari.components.viewer_model']
 
     for mod in sys.argv[1:] or default_modules:
-        try:
-            generate_module_stub(mod)
-        except Exception as e:
-            print(f"{type(e)} in {mod}: {e}")
+        generate_module_stub(mod)

@@ -21,12 +21,13 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install check-manifest
-          python -m pip install -e .[build]
+          python -m pip install check-manifest build
+          python -m pip install -e .[build]  # need full install so we can build type stubs
       - name: Build Distribution
         run: |
+          make typestubs
           check-manifest  # https://github.com/mgedmin/check-manifest
-          python setup.py sdist bdist_wheel
+          python -m build  # https://pypa-build.readthedocs.io/en/latest/
       - name: Find Release Notes
         id: release_notes
         run: |
