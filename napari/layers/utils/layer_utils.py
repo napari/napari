@@ -435,7 +435,7 @@ def compute_multiscale_level_and_corners(
 
     Parameters
     ----------
-    corner_pixels : array (2, 2)
+    corner_pixels : array (2, D)
         Requested corner pixels at full resolution.
     shape_threshold : tuple
         Maximum size of a displayed tile in pixels.
@@ -447,7 +447,7 @@ def compute_multiscale_level_and_corners(
     -------
     level : int
         Level of the multiscale to be viewing.
-    corners : array (2, 2)
+    corners : array (2, D)
         Needed corner pixels at target resolution.
     """
     requested_shape = corner_pixels[1] - corner_pixels[0]
