@@ -22,6 +22,10 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
     coords : np.array, Nx2
         List of coordinates to ensure painting is continuous
     """
+    if old_coord is None:
+        old_coord = new_coord
+    if new_coord is None:
+        new_coord = old_coord
     num_step = round(
         max(abs(np.array(new_coord) - np.array(old_coord))) / brush_size * 4
     )
@@ -133,3 +137,31 @@ def get_dtype(layer):
         layer_dtype = type(layer_data_level)
 
     return layer_dtype
+
+
+def first_nonzero_coordinate(data, start_point, end_point):
+    shape = np.asarray(data.shape)
+    length = np.linalg.norm(end_point - start_point)
+    length_int = np.round(length).astype(int)
+    coords = np.linspace(start_point, end_point, length_int + 1, endpoint=True)
+    clipped_coords = np.clip(coords, 0, shape - 1).astype(int)
+    nonzero = np.flatnonzero(data[tuple(clipped_coords.T)])
+    if len(nonzero) == 0:
+        return None
+    else:
+        return clipped_coords[nonzero[0]]
+
+
+def get_action_coordinate(layer, event):
+    ndim = len(layer._dims_displayed)
+    if ndim == 2:
+        coordinates = layer.world_to_data(event.position)
+    else:  # 3d
+        start, end = layer.get_ray_intersections(
+            position=event.position,
+            view_direction=event.view_direction,
+            dims_displayed=layer._dims_displayed,
+            world=True,
+        )
+        coordinates = first_nonzero_coordinate(layer.data, start, end)
+    return coordinates
