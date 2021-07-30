@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pytest
 
@@ -141,15 +143,30 @@ def test_blending_modes():
         n_text=n_text,
         properties=properties,
         color='red',
-        blending=Blending.TRANSLUCENT,
+        blending='translucent',
     )
     assert text_manager.blending == Blending.TRANSLUCENT
 
     # set to another valid blending mode
-    text_manager.blending = Blending.ADDITIVE
+    text_manager.blending = 'additive'
     assert text_manager.blending == Blending.ADDITIVE
 
     # set to opaque, which is not allowed
     with pytest.warns(RuntimeWarning):
-        text_manager.blending = Blending.OPAQUE
+        text_manager.blending = 'opaque'
         assert text_manager.blending == Blending.TRANSLUCENT
+
+
+def test_json_with_non_default_blending():
+    classes = np.array(['A', 'B', 'C'])
+    text_manager = TextManager(
+        text='class',
+        n_text=3,
+        properties={'class': classes, 'confidence': np.array([0.5, 0.3, 1])},
+        color='red',
+        blending='additive',
+    )
+
+    text_manager_json = text_manager.json()
+
+    assert json.loads(text_manager_json)['blending'] == 'additive'

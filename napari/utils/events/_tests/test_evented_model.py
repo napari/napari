@@ -323,7 +323,7 @@ def test_evented_model_dask_delayed():
 
 
 # The following tests ensure that StringEnum field values can be
-# compared against the enum values and not just their string value.
+# compared against the enum constants and not their string value.
 # For more context see the GitHub issue:
 # https://github.com/napari/napari/issues/3062
 class TestStringEnum(StringEnum):
@@ -346,7 +346,30 @@ def test_evented_model_with_string_enum_parameter():
     assert model.mode == TestStringEnum.SOME_VALUE
 
 
+def test_evented_model_with_string_enum_parameter_as_str():
+    model = ModelWithStringEnum(mode='some_value')
+    assert model.mode == TestStringEnum.SOME_VALUE
+
+
 def test_evented_model_with_string_enum_setter():
     model = ModelWithStringEnum()
     model.mode = TestStringEnum.SOME_VALUE
     assert model.mode == TestStringEnum.SOME_VALUE
+
+
+def test_evented_model_with_string_enum_setter_as_str():
+    model = ModelWithStringEnum()
+    model.mode = 'some_value'
+    assert model.mode == TestStringEnum.SOME_VALUE
+
+
+def test_evented_model_with_string_enum_parse_raw():
+    model = ModelWithStringEnum(mode=TestStringEnum.SOME_VALUE)
+    deserialized_model = ModelWithStringEnum.parse_raw(model.json())
+    assert deserialized_model == model
+
+
+def test_evented_model_with_string_enum_parse_obj():
+    model = ModelWithStringEnum(mode=TestStringEnum.SOME_VALUE)
+    deserialized_model = ModelWithStringEnum.parse_obj(model.dict())
+    assert deserialized_model == model
