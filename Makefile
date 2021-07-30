@@ -1,4 +1,4 @@
-.PHONY: docs typestubs pre watch release
+.PHONY: docs typestubs pre watch dist
 
 docs:
 	rm -rf docs/_build/
@@ -10,8 +10,8 @@ docs:
 typestubs:
 	python -m napari.utils.stubgen
 
-release:
-	pip install check-manifest build
+dist:
+	pip install -U check-manifest build
 	make typestubs
 	check-manifest
 	python -m build
