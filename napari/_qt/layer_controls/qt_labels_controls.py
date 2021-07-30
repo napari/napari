@@ -537,7 +537,7 @@ class QtLabelsControls(QtLayerControls):
         widgets_to_toggle = {
             (2, True): widget_list,
             (2, False): widget_list,
-            (3, True): widget_list[0:1],
+            (3, True): widget_list[:1],
             (3, False): widget_list,
         }
 
