@@ -16,11 +16,11 @@ def process(im_slice):
 def iterable():
     """using progress as a wrapper for iterables
     """
-    my_stacked_volume = np.random.random((5, 4, 500, 500))
+    my_stacked_volume = np.random.random((5, 4, 500, 500))    
     # we can wrap any iterable object in `progress` and see a progress
     # bar in the viewer
     for im_slice in progress(my_stacked_volume):
-        process(im_slice)
+        process(im_slice)       
 
 def iterable_w_context():
     """using progress with a context manager
@@ -60,7 +60,7 @@ def arbitrary_steps():
         sleep(3)
         pbr.set_description("Step 1 Complete")
         # manually updating the progress bar by 1
-        pbr.update(1)
+        pbr.update(1)    
 
         sleep(1)
         pbr.set_description("Step 2 Complete")

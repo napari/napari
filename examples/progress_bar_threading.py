@@ -20,7 +20,7 @@ def handle_yields(yielded_val):
     progress={'total': 5, 'desc':'thread-progress'},
     # this does not preclude us from connecting other functions to any of the
     # worker signals (including `yielded`)
-    connect={'yielded': handle_yields}
+    connect={'yielded': handle_yields} 
     )
 def my_long_running_thread(_):
     for i in range(5):

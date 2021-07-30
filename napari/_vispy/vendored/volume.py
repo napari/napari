@@ -238,10 +238,10 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     float val1 = 0;
     float val2 = 0;
     int n_bg_borders = 0;
-
+    
     // View direction
     vec3 V = normalize(view_ray);
-
+    
     // calculate normal vector from gradient
     vec3 N; // normal
     color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );
@@ -264,17 +264,17 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     val2 = colorToVal(color2);
     N[2] = val1 - val2;
     n_bg_borders += detectAdjacentBackground(val1, val2);
-
+     
     // Normalize and flip normal so it points towards viewer
     N = normalize(N);
     float Nselect = float(dot(N,V) > 0.0);
     N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;
-
+    
     // Init colors
     vec4 ambient_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 0.0);
     vec4 final_color;
-
+    
     // todo: allow multiple light, define lights on viewvox or subscene
     int nlights = 1; 
     for (int i=0; i<nlights; i++)
@@ -283,7 +283,7 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
         vec3 L = normalize(view_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
         L = normalize(L+(1.0-lightEnabled));
-
+        
         // Calculate lighting properties
         float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );
         if (n_bg_borders > 0) {{
@@ -291,19 +291,19 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
             // we give a default lambda to pixels surrounded by background
             lambertTerm = 0.5;
         }}
-
+        
         // Calculate mask
         float mask1 = lightEnabled;
-
+        
         // Calculate colors
         ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;
         diffuse_color +=  mask1 * lambertTerm;
     }}
-
+    
     // Calculate final color by componing different components
     final_color = betterColor * ( ambient_color + diffuse_color);
     final_color.a = betterColor.a;
-
+    
     // Done
     return final_color;
 }}
@@ -531,6 +531,7 @@ ISO_SNIPPETS = dict(
 
 ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
+
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
@@ -562,6 +563,7 @@ ISO_CATEGORICAL_SNIPPETS = dict(
 )
 
 ISO_CATEGORICAL_FRAG_SHADER = FRAG_SHADER.format(**ISO_CATEGORICAL_SNIPPETS)
+
 
 AVG_SNIPPETS = dict(
     before_loop="""
