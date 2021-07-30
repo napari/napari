@@ -1,4 +1,5 @@
 import inspect
+from enum import auto
 from typing import ClassVar
 from unittest.mock import Mock
 
@@ -11,6 +12,7 @@ from pydantic import Field
 
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
+from napari.utils.misc import StringEnum
 
 
 def test_creating_empty_evented_model():
@@ -318,3 +320,33 @@ def test_evented_model_dask_delayed():
 
     # check that equality checking works as expected
     assert o1 == o1
+
+
+# The following tests ensure that StringEnum field values can be
+# compared against the enum values and not just their string value.
+# For more context see the GitHub issue:
+# https://github.com/napari/napari/issues/3062
+class TestStringEnum(StringEnum):
+    NONE = auto()
+    SOME_VALUE = auto()
+    ANOTHER_VALUE = auto()
+
+
+class ModelWithStringEnum(EventedModel):
+    mode: TestStringEnum = TestStringEnum.NONE
+
+
+def test_evented_model_with_string_enum_default():
+    model = ModelWithStringEnum()
+    assert model.mode == TestStringEnum.NONE
+
+
+def test_evented_model_with_string_enum_parameter():
+    model = ModelWithStringEnum(mode=TestStringEnum.SOME_VALUE)
+    assert model.mode == TestStringEnum.SOME_VALUE
+
+
+def test_evented_model_with_string_enum_setter():
+    model = ModelWithStringEnum()
+    model.mode = TestStringEnum.SOME_VALUE
+    assert model.mode == TestStringEnum.SOME_VALUE
