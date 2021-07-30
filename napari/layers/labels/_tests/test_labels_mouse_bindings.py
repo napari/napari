@@ -64,7 +64,7 @@ def test_paint(Event):
             type='mouse_move',
             is_dragging=True,
             position=(19, 19),
-            view_direction=(0, 1, 0),
+            view_direction=None,
             dims_displayed=(0, 1),
             dims_point=(0, 0),
         )
@@ -401,7 +401,7 @@ def test_fill_nD_all(Event):
             position=(0, 19, 19),
             view_direction=(1, 0, 0),
             dims_displayed=(0, 1),
-            dims_point=(0, 0),
+            dims_point=(0, 0, 0),
         )
     )
     mouse_press_callbacks(layer, event)
