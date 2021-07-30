@@ -122,7 +122,7 @@ def test_empty_layer_with_edge_colormap():
 
 @pytest.mark.parametrize('feature_name', ('edge', 'face'))
 def test_empty_layer_with_edge_color_cycle(feature_name):
-    """Test creating an empty layer where the edge color is a color cycle"""
+    """Test creating an empty layer where the face/edge color is a color cycle"""
     default_properties = {'annotation': np.array(['tail', 'nose', 'paw'])}
     color_cycle = [[0, 1, 0, 1], [1, 0, 1, 1]]
     color_parameters = {
