@@ -9,23 +9,22 @@ from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 import numpy as np
 from random import choice
 
-
 def process(im_slice):
     # do something with your image slice
     sleep(0.4)
 
-
 def iterable():
-    """using progress as a wrapper for iterables"""
+    """using progress as a wrapper for iterables
+    """
     my_stacked_volume = np.random.random((5, 4, 500, 500))
     # we can wrap any iterable object in `progress` and see a progress
     # bar in the viewer
     for im_slice in progress(my_stacked_volume):
         process(im_slice)
 
-
 def iterable_w_context():
-    """using progress with a context manager"""
+    """using progress with a context manager
+    """
     my_stacked_volume = np.random.random((5, 4, 500, 500))
     # progress provides a context manager we can use for automatic
     # teardown of our widget once iteration is complete. Wherever
@@ -42,9 +41,9 @@ def iterable_w_context():
             for channel in progress(im_slice, nest_under=pbr):
                 process(channel)
 
-
 def indeterminate():
-    """By passing a total of 0, we can have an indeterminate progress bar"""
+    """By passing a total of 0, we can have an indeterminate progress bar
+    """
 
     # note progress(total=0) is equivalent to progress()
     with progress(total=0) as pbr:
@@ -54,9 +53,9 @@ def indeterminate():
             x = choice(range(100))
             sleep(0.05)
 
-
 def arbitrary_steps():
-    """We can manually control updating the value of the progress bar."""
+    """We can manually control updating the value of the progress bar.
+    """
     with progress(total=4) as pbr:
         sleep(3)
         pbr.set_description("Step 1 Complete")
@@ -74,7 +73,6 @@ def arbitrary_steps():
 
         # sleeping so we can see full completion
         sleep(1)
-
 
 viewer = napari.Viewer()
 button_layout = QVBoxLayout()

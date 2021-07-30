@@ -136,7 +136,6 @@ def process_ims():
         # uncomment this line to see the 100% progress bar
         # sleep(0.5)
 
-
 button_layout = QVBoxLayout()
 process_btn = QPushButton("Full Process")
 process_btn.clicked.connect(process_ims)

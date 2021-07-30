@@ -18,12 +18,12 @@ class SchemaWidgetMixin:
     INVALID_COLOUR = '#f6989d'
 
     def __init__(
-        self,
-        schema: dict,
-        ui_schema: dict,
-        # note: need to figure out how the following works
-        widget_builder: 'WidgetBuilder',  # noqa: F821
-        **kwargs,
+            self,
+            schema: dict,
+            ui_schema: dict,
+            # note: need to figure out how the following works
+            widget_builder: 'WidgetBuilder',  # noqa: F821
+            **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -189,10 +189,10 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
 
 class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
     def __init__(
-        self,
-        schema: dict,
-        ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+            self,
+            schema: dict,
+            ui_schema: dict,
+            widget_builder: 'WidgetBuilder',  # noqa: F821
     ):
         super().__init__(
             schema, ui_schema, widget_builder, orientation=QtCore.Qt.Horizontal
@@ -306,10 +306,10 @@ class ColorSchemaWidget(SchemaWidgetMixin, QColorButton):
 
 class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
     def __init__(
-        self,
-        schema: dict,
-        ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+            self,
+            schema: dict,
+            ui_schema: dict,
+            widget_builder: 'WidgetBuilder',  # noqa: F821
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
@@ -388,7 +388,7 @@ class ArrayControlsWidget(QtWidgets.QWidget):
 
 class ArrayRowWidget(QtWidgets.QWidget):
     def __init__(
-        self, widget: QtWidgets.QWidget, controls: ArrayControlsWidget
+            self, widget: QtWidgets.QWidget, controls: ArrayControlsWidget
     ):
         super().__init__()
 
@@ -464,7 +464,7 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         for i, row in enumerate(self.rows):
             if previous_row:
                 can_exchange_previous = (
-                    previous_row.widget.schema == row.widget.schema
+                        previous_row.widget.schema == row.widget.schema
                 )
                 row.controls.up_button.setEnabled(can_exchange_previous)
                 previous_row.controls.down_button.setEnabled(
@@ -555,9 +555,7 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.on_changed.emit(self.state)
 
 
-class HighlightSizePreviewWidget(
-    SchemaWidgetMixin, QtHighlightSizePreviewWidget
-):
+class HighlightSizePreviewWidget(SchemaWidgetMixin, QtHighlightSizePreviewWidget):
     @state_property
     def state(self) -> int:
         return self.value()
@@ -598,10 +596,10 @@ class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
 
 class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
     def __init__(
-        self,
-        schema: dict,
-        ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+            self,
+            schema: dict,
+            ui_schema: dict,
+            widget_builder: 'WidgetBuilder',  # noqa: F821
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
@@ -630,10 +628,10 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         self.description = description
 
     def populate_from_schema(
-        self,
-        schema: dict,
-        ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+            self,
+            schema: dict,
+            ui_schema: dict,
+            widget_builder: 'WidgetBuilder',  # noqa: F821
     ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)

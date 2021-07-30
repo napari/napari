@@ -11,21 +11,18 @@ n_points = 10
 # data to depict an empty volume, its bounding box and points along a ray
 # through the volume
 volume = np.zeros(shape=(sidelength_data, sidelength_data, sidelength_data))
-bounding_box = (
-    np.array(
-        [
-            [0, 0, 0],
-            [1, 0, 0],
-            [0, 1, 0],
-            [1, 1, 0],
-            [0, 0, 1],
-            [1, 0, 1],
-            [0, 1, 1],
-            [1, 1, 1],
-        ]
-    )
-    * sidelength_data
-)
+bounding_box = np.array(
+    [
+        [0, 0, 0],
+        [1, 0, 0],
+        [0, 1, 0],
+        [1, 1, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+        [0, 1, 1],
+        [1, 1, 1],
+    ]
+) * sidelength_data
 points = np.zeros(shape=(n_points, 3))
 
 # point sizes
@@ -51,12 +48,12 @@ volume_layer = viewer.add_image(volume, blending='additive')
 @volume_layer.mouse_drag_callbacks.append
 def on_click(layer, event):
     near_point, far_point = layer.get_ray_intersections(
-        event.position, event.view_direction, event.dims_displayed
+        event.position,
+        event.view_direction,
+        event.dims_displayed
     )
     if (near_point is not None) and (far_point is not None):
-        ray_points = np.linspace(
-            near_point, far_point, n_points, endpoint=True
-        )
+        ray_points = np.linspace(near_point, far_point, n_points, endpoint=True)
         if ray_points.shape[1] != 0:
             ray_layer.data = ray_points
 
