@@ -503,3 +503,7 @@ def _move(layer, coordinates):
                 shapes = layer.selected_data
                 layer._selected_box = layer.interaction_box(shapes)
                 layer.refresh()
+
+
+def finish_drawing(layer, event):
+    layer._finish_drawing()

@@ -42,6 +42,7 @@ from ._shapes_mouse_bindings import (
     add_path_polygon,
     add_path_polygon_creating,
     add_rectangle,
+    finish_drawing,
     highlight,
     select,
     vertex_insert,
@@ -557,6 +558,7 @@ class Shapes(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+        self.mouse_double_click_callbacks.append(finish_drawing)
 
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str

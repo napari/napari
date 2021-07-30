@@ -19,6 +19,8 @@ class MousemapProvider:
         self.mouse_drag_callbacks = []
         # Hold callbacks for when mouse wheel is scrolled
         self.mouse_wheel_callbacks = []
+        # Hold callbacks for when mouse is double clicked
+        self.mouse_double_click_callbacks = []
 
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}

@@ -206,6 +206,12 @@ def mouse_release_callbacks(obj, event):
         del obj._persisted_mouse_event[gen]
 
 
+def mouse_double_click_callbacks(obj, event):
+    # iterate through mouse_wheel_callbacks callback functions
+    for func in obj.mouse_double_click_callbacks:
+        func(obj, event)
+
+
 KEY_SYMBOLS = {
     'Control': 'Ctrl',
     'Shift': '⇧',

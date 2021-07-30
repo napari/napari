@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from contextlib import suppress
+from functools import partial
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -12,20 +13,13 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from .._vispy.utils import get_view_direction_in_scene_coordinates
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
-from ..utils import config, perf
+from ..utils import config, interactions, perf
 from ..utils.action_manager import action_manager
 from ..utils.history import (
     get_open_history,
     get_save_history,
     update_open_history,
     update_save_history,
-)
-from ..utils.interactions import (
-    ReadOnlyWrapper,
-    mouse_move_callbacks,
-    mouse_press_callbacks,
-    mouse_release_callbacks,
-    mouse_wheel_callbacks,
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
@@ -272,12 +266,13 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.draw.connect(self.dims.enable_play)
 
-        self.canvas.connect(self.on_mouse_move)
-        self.canvas.connect(self.on_mouse_press)
-        self.canvas.connect(self.on_mouse_release)
+        for e in ('move', 'press', 'release', 'double_click', 'wheel'):
+            cb = getattr(interactions, f'mouse_{e}_callbacks')
+            f = partial(self._process_mouse_event, cb)
+            getattr(self.canvas.events, f'mouse_{e}').connect(f)
+
         self.canvas.connect(self._key_map_handler.on_key_press)
         self.canvas.connect(self._key_map_handler.on_key_release)
-        self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
         self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
@@ -815,52 +810,12 @@ class QtViewer(QSplitter):
         event.dims_point = list(self.viewer.dims.point)
 
         # Put a read only wrapper on the event
-        event = ReadOnlyWrapper(event)
+        event = interactions.ReadOnlyWrapper(event)
         mouse_callbacks(self.viewer, event)
 
         layer = self.viewer.layers.selection.active
         if layer is not None:
             mouse_callbacks(layer, event)
-
-    def on_mouse_wheel(self, event):
-        """Called whenever mouse wheel activated in canvas.
-
-        Parameters
-        ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
-        """
-        self._process_mouse_event(mouse_wheel_callbacks, event)
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-
-        Parameters
-        ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
-        """
-        self._process_mouse_event(mouse_press_callbacks, event)
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-
-        Parameters
-        ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
-        """
-        self._process_mouse_event(mouse_move_callbacks, event)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-
-        Parameters
-        ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
-        """
-        self._process_mouse_event(mouse_release_callbacks, event)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
