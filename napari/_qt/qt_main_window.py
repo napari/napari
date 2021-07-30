@@ -432,6 +432,30 @@ class Window:
             )
 
         # set the grid options on start up
+        stride_minimum = settings.application.schema()['properties'][
+            'grid_stride'
+        ]['minimum']
+        stride_maximum = settings.application.schema()['properties'][
+            'grid_stride'
+        ]['maximum']
+        stride_not_value = settings.application.schema()['properties'][
+            'grid_stride'
+        ]['not']['const']
+        self.qt_viewer.viewer.grid.stride_range = (
+            stride_minimum,
+            stride_maximum,
+        )
+        self.qt_viewer.viewer.grid.stride_not = stride_not_value
+
+        # width and height have same minimum of -1, and not value of 0
+        shape_minimum = settings.application.schema()['properties'][
+            'grid_width'
+        ]['minimum']
+        shape_not_value = settings.application.schema()['properties'][
+            'grid_width'
+        ]['not']['const']
+        self.qt_viewer.viewer.grid.shape_not = shape_not_value
+        self.qt_viewer.viewer.grid.shape_minimum = shape_minimum
         self._update_viewer_states()
 
         self._add_menubar()

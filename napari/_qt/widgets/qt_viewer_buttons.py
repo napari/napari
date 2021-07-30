@@ -239,28 +239,27 @@ class QtViewerButtons(QFrame):
         )
 
         # set up
-        wh_values = list(range(-1, 10))
-        wh_values = wh_values.pop(1)
+        stride_range = self.viewer.grid.stride_range
         grid_stride.setObjectName("gridStrideBox")
         grid_stride.setAlignment(Qt.AlignCenter)
-        grid_stride.setRange(-50, 50)
-        grid_stride.setProhibitValue(0)
+        grid_stride.setRange(stride_range[0], stride_range[1])
+        grid_stride.setProhibitValue(self.viewer.grid.stride_not)
         grid_stride.setValue(self.viewer.grid.stride)
         grid_stride.valueChanged.connect(self._update_grid_stride)
         self.grid_stride_box = grid_stride
 
         grid_width.setObjectName("gridWidthBox")
         grid_width.setAlignment(Qt.AlignCenter)
-        grid_width.setMinimum(-1)
-        grid_width.setProhibitValue(0)
+        grid_width.setMinimum(self.viewer.grid.shape_minimum)
+        grid_width.setProhibitValue(self.viewer.grid.shape_not)
         grid_width.setValue(self.viewer.grid.shape[1])
         grid_width.valueChanged.connect(self._update_grid_width)
         self.grid_width_box = grid_width
 
         grid_height.setObjectName("gridStrideBox")
         grid_height.setAlignment(Qt.AlignCenter)
-        grid_height.setMinimum(-1)
-        grid_height.setProhibitValue(0)
+        grid_height.setMinimum(self.viewer.grid.shape_minimum)
+        grid_height.setProhibitValue(self.viewer.grid.shape_not)
         grid_height.setValue(self.viewer.grid.shape[0])
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height

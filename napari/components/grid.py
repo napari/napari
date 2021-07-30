@@ -32,6 +32,13 @@ class GridCanvas(EventedModel):
     enabled: bool = False
     stride: int = 1
     shape: Tuple[int, int] = (-1, -1)
+    stride_range: Tuple[
+        int,
+        int,
+    ] = (-10, 10)
+    stride_not: int = 0
+    shape_minimum: int = -1
+    shape_not: int = 0
 
     def actual_shape(self, nlayers: int = 1) -> Tuple[int, int]:
         """Return the actual shape of the grid.
