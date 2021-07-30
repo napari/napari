@@ -1,4 +1,4 @@
-.PHONY: docs typestubs pre watch 
+.PHONY: docs typestubs pre watch release
 
 docs:
 	rm -rf docs/_build/
@@ -9,6 +9,12 @@ docs:
 
 typestubs:
 	python -m napari.utils.stubgen
+
+release:
+	pip install check-manifest build
+	make typestubs
+	check-manifest
+	python -m build
 
 pre:
 	pre-commit run -a
