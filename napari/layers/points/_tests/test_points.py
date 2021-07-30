@@ -120,6 +120,33 @@ def test_empty_layer_with_edge_colormap():
     np.testing.assert_allclose(layer._edge.current_color, edge_color)
 
 
+@pytest.mark.parametrize('feature_name', ('edge', 'face'))
+def test_empty_layer_with_edge_color_cycle(feature_name):
+    """Test creating an empty layer where the edge color is a color cycle"""
+    default_properties = {'annotation': np.array(['tail', 'nose', 'paw'])}
+    color_cycle = [[0, 1, 0, 1], [1, 0, 1, 1]]
+    color_parameters = {
+        'colors': 'annotation',
+        'categorical_colormap': color_cycle,
+        'mode': 'cycle',
+    }
+    color_name = f'{feature_name}_color'
+    points_kwargs = {
+        'property_choices': default_properties,
+        color_name: color_parameters,
+    }
+    layer = Points(**points_kwargs)
+
+    color_mode = getattr(layer, f'{feature_name}_color_mode')
+    assert color_mode == 'cycle'
+    layer.current_properties = {'annotation': 'paw'}
+
+    layer.add([10, 10])
+    colors = getattr(layer, color_name)
+    np.testing.assert_allclose(colors, [color_cycle[1]])
+    assert len(layer.data == 1)
+
+
 def test_empty_layer_with_text_properties():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}
