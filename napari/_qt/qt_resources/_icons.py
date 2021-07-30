@@ -392,8 +392,12 @@ def _register_napari_resources(persist=True, force_rebuild=False):
 
 def _unregister_napari_resources():
     """Unregister resources."""
+    global _clear_resources
     if _clear_resources is not None:
         _clear_resources()
+        # since we've just unregistered resources, reference to this method should be
+        # removed
+        _clear_resources = None
     else:
         from importlib import import_module
 
