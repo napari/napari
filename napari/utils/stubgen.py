@@ -11,7 +11,7 @@ same name and directory as the input module(s).
 Example
 -------
 
-$ python -m napari.utils.stubgen napari.view_layers
+    python -m napari.utils.stubgen napari.view_layers
 
 # outputs a file to: `napari/view_layers.pyi`
 
