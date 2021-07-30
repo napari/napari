@@ -224,7 +224,7 @@ class ColorManager(EventedModel):
             self.color_properties = ColorProperties(
                 name=color,
                 values=properties[color],
-                current_value=np.squeeze(current_properties[color]),
+                current_value=current_properties[color][0],
             )
             if guess_continuous(properties[color]):
                 self.color_mode = ColorMode.COLORMAP
@@ -405,9 +405,10 @@ class ColorManager(EventedModel):
             current_property_name = self.color_properties.name
             current_property_values = self.color_properties.values
             if current_property_name in current_properties:
-                new_current_value = np.squeeze(
-                    current_properties[current_property_name]
-                )
+                new_current_value = current_properties[current_property_name][
+                    0
+                ]
+
                 if new_current_value != self.color_properties.current_value:
                     self.color_properties = ColorProperties(
                         name=current_property_name,
