@@ -1,3 +1,5 @@
+import numpy as np
+
 from ._labels_constants import Mode
 from ._labels_utils import get_action_coordinate, interpolate_coordinates
 
@@ -21,6 +23,7 @@ def draw(layer, event):
     pixels will be changed to background and this tool functions like an
     eraser
     """
+    ndisplay = len(layer._dims_displayed)
     coordinates = get_action_coordinate(layer, event)
 
     # on press
@@ -47,6 +50,11 @@ def draw(layer, event):
                 last_cursor_coord, coordinates, layer.brush_size
             )
             for c in interp_coord:
+                if (
+                    ndisplay == 3
+                    and layer.data[tuple(np.round(c).astype(int))] == 0
+                ):
+                    continue
                 if layer._mode in [Mode.PAINT, Mode.ERASE]:
                     layer.paint(c, new_label, refresh=False)
                 elif layer._mode == Mode.FILL:
