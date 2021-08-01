@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
@@ -1191,41 +1192,73 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         else:
             return None, None
 
-    def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
+    @property
+    def _displayed_axes(self):
+        displayed_axes = [
+            self._dims_displayed[i] for i in self._dims_displayed_order
+        ]
+        return displayed_axes
+
+    @property
+    def _corner_pixels_displayed(self):
+        displayed_axes = self._displayed_axes
+        corner_pixels_displayed = self.corner_pixels[:, displayed_axes]
+        return corner_pixels_displayed
+
+    def _update_draw(
+        self, scale_factor, corner_pixels_displayed, shape_threshold
+    ):
         """Update canvas scale and corner values on draw.
+
         For layer multiscale determining if a new resolution level or tile is
         required.
+
         Parameters
         ----------
         scale_factor : float
             Scale factor going from canvas to world coordinates.
-        corner_pixels : array
-            Coordinates of the top-left and bottom-right canvas pixels in the
+        corner_pixels_displayed : array, shape (2, 2)
+            Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
         """
-        # Note we ignore the first transform which is tile2data
-        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-
         self.scale_factor = scale_factor
 
-        # Round and clip data corners
-        data_corners = np.array(
-            [np.floor(data_corners[0]), np.ceil(data_corners[1])]
+        displayed_axes = self._displayed_axes
+        # we need to compute all four corners to compute a complete,
+        # data-aligned bounding box, because top-left/bottom-right may not
+        # remain top-left and bottom-right after transformations.
+        all_corners = list(itertools.product(*corner_pixels_displayed.T))
+        # Note that we ignore the first transform which is tile2data
+        data_corners = (
+            self._transforms[1:]
+            .simplified.set_slice(displayed_axes)
+            .inverse(all_corners)
+        )
+
+        # find the maximal data-axis-aligned bounding box containing all four
+        # canvas corners
+        data_bbox = np.stack(
+            [np.min(data_corners, axis=0), np.max(data_corners, axis=0)]
+        )
+        # round and clip the bounding box values
+        data_bbox_int = np.stack(
+            [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
-        data_corners = np.clip(
-            data_corners, self.extent.data[0], self.extent.data[1]
+        displayed_extent = self.extent.data[:, displayed_axes]
+        data_bbox_clipped = np.clip(
+            data_bbox_int, displayed_extent[0], displayed_extent[1]
         )
 
         if self._ndisplay == 2 and self.multiscale:
-            level, displayed_corners = compute_multiscale_level_and_corners(
-                data_corners[:, self._dims_displayed],
+            level, scaled_corners = compute_multiscale_level_and_corners(
+                data_bbox_clipped,
                 shape_threshold,
-                self.downsample_factors[:, self._dims_displayed],
+                self.downsample_factors[:, displayed_axes],
             )
             corners = np.zeros((2, self.ndim))
-            corners[:, self._dims_displayed] = displayed_corners
+            corners[:, displayed_axes] = scaled_corners
             corners = corners.astype(int)
             if self.data_level != level or not np.all(
                 self.corner_pixels == corners
@@ -1235,7 +1268,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.refresh()
 
         else:
-            self.corner_pixels = data_corners
+            self.corner_pixels = data_bbox_clipped
 
     @property
     def displayed_coordinates(self):
