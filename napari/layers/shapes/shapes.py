@@ -385,7 +385,7 @@ class Shapes(Layer):
         text=None,
         shape_type='rectangle',
         edge_width=1,
-        edge_color='black',
+        edge_color='#777777',
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
