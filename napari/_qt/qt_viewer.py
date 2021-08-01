@@ -872,8 +872,8 @@ class QtViewer(QSplitter):
             if layer.ndim <= self.viewer.dims.ndim:
                 layer._update_draw(
                     scale_factor=1 / self.viewer.camera.zoom,
-                    corner_pixels=self._canvas_corners_in_world[
-                        :, -layer.ndim :
+                    corner_pixels_displayed=self._canvas_corners_in_world[
+                        :, layer._displayed_axes
                     ],
                     shape_threshold=self.canvas.size,
                 )

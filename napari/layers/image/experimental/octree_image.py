@@ -340,7 +340,7 @@ class _OctreeImageBase(_ImageBase):
         )
 
     def _update_draw(
-        self, scale_factor, corner_pixels, shape_threshold
+        self, scale_factor, corner_pixels_displayed, shape_threshold
     ) -> None:
         """Override Layer._update_draw completely.
 
@@ -353,21 +353,24 @@ class _OctreeImageBase(_ImageBase):
         ----------
         scale_factor : float
             Scale factor going from canvas to world coordinates.
-        corner_pixels : array
-            Coordinates of the top-left and bottom-right canvas pixels in the
+        corner_pixels_displayed : array
+            Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
 
         """
         # Compute our 2D corners from the incoming n-d corner_pixels
-        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-        corners = data_corners[:, self._dims_displayed]
+        data_corners = (
+            self._transforms[1:]
+            .simplified.set_slice(self._displayed_axes)
+            .inverse(corner_pixels_displayed)
+        )
 
         # Update our self._view to to capture the state of things right
         # before we are drawn. Our self._view will used by our
         # drawable_chunks() method.
-        self._view = OctreeView(corners, shape_threshold, self.display)
+        self._view = OctreeView(data_corners, shape_threshold, self.display)
 
     def get_intersection(self) -> OctreeIntersection:
         """The the interesection between the current view and the octree.
