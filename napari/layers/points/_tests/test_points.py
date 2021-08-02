@@ -622,6 +622,39 @@ def test_updating_points_properties():
     np.testing.assert_equal(layer.properties, updated_properties)
 
 
+def test_setting_current_properties():
+    shape = (2, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {
+        'annotation': ['paw', 'leg'],
+        'confidence': [0.5, 0.75],
+        'annotator': ['jane', 'ash'],
+        'model': ['worst', 'best'],
+    }
+    layer = Points(data, properties=copy(properties))
+    current_properties = {
+        'annotation': ['leg'],
+        'confidence': 1,
+        'annotator': 'ash',
+        'model': np.array(['best']),
+    }
+    layer.current_properties = current_properties
+
+    expected_current_properties = {
+        'annotation': np.array(['leg']),
+        'confidence': np.array([1]),
+        'annotator': np.array(['ash']),
+        'model': np.array(['best']),
+    }
+
+    coerced_current_properties = layer.current_properties
+    for k, v in coerced_current_properties.items():
+        value = coerced_current_properties[k]
+        assert isinstance(value, np.ndarray)
+        np.testing.assert_equal(value, expected_current_properties[k])
+
+
 properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
 properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
