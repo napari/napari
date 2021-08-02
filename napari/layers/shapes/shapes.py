@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 from vispy.color import get_color_names
@@ -2671,6 +2671,46 @@ class Shapes(Layer):
             # Check if mouse inside shape
             shape = self._data_view.inside(coord)
             value = (shape, None)
+
+        return value
+
+    def _get_value_3d(
+        self,
+        start_position: np.ndarray,
+        end_position: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Union[float, int]:
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_position : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_position : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+
+        """
+        if start_position is not None:
+            # Get the normal vector of the click plane
+            start_position_view = start_position[dims_displayed]
+            end_position_view = end_position[dims_displayed]
+            ray_direction = end_position_view - start_position_view
+            ray_direction_normed = ray_direction / np.linalg.norm(
+                ray_direction
+            )
+            value = self._data_view._inside_3d(
+                start_position_view, ray_direction_normed
+            )
+
+        else:
+            value = (None, None)
 
         return value
 

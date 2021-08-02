@@ -282,7 +282,7 @@ def inside_triangles(triangles):
     Returns
     -------
     inside : (N,) array of bool
-        Array with `True` values for trinagles containing the origin
+        Array with `True` values for triangles containing the origin
     """
     AB = triangles[:, 1, :] - triangles[:, 0, :]
     AC = triangles[:, 2, :] - triangles[:, 0, :]
@@ -332,15 +332,53 @@ def intersect_line_with_plane_3d(
 
     # project direction between line and plane onto the plane normal
     line_plane_direction = plane_position - line_position
-    line_plane_on_plane_normal = np.dot(line_plane_direction, plane_normal)
+    line_plane_on_plane_normal = np.sum(
+        line_plane_direction * plane_normal, axis=1
+    )
 
     # project line direction onto the plane normal
-    line_direction_on_plane_normal = np.dot(line_direction, plane_normal)
+    line_direction_on_plane_normal = np.sum(
+        line_direction * plane_normal, axis=1
+    )
 
     # find scale factor for line direction
     scale_factor = line_plane_on_plane_normal / line_direction_on_plane_normal
 
-    return line_position + (scale_factor * line_direction)
+    if plane_position.ndim == 2:
+        repeated_line_position = np.repeat(
+            line_position[np.newaxis, :], len(scale_factor), axis=0
+        )
+        repeated_line_direction = np.repeat(
+            line_direction[np.newaxis, :], len(scale_factor), axis=0
+        )
+        return repeated_line_position + (
+            np.expand_dims(scale_factor, axis=1) * repeated_line_direction
+        )
+    else:
+        return line_position + (scale_factor * line_direction)
+
+
+def intersect_ray_with_triangle(
+    ray_position: np.ndarray, ray_direction: np.ndarray, triangles: np.ndarray
+):
+    edge_1 = triangles[:, 1, :] - triangles[:, 0, :]
+    edge_2 = triangles[:, 2, :] - triangles[:, 0, :]
+    triangle_normals = np.cross(edge_1, edge_2)
+    triangle_normals = triangle_normals / np.expand_dims(
+        np.linalg.norm(triangle_normals, axis=1), 1
+    )
+
+    intersection_points = intersect_line_with_plane_3d(
+        line_position=ray_position,
+        line_direction=ray_direction,
+        plane_position=triangles[:, 0, :],
+        plane_normal=triangle_normals,
+    )
+    # ray_start_to_triangle = intersected_triangles[:, 0, :] - ray_position
+    # t = np.sum(ray_start_to_triangle * triangle_normals) / np.sum(ray_direction * triangle_normals)
+    # intersection_points = ray_position + t * ray_direction
+
+    return intersection_points
 
 
 def point_in_quadrilateral_2d(
@@ -418,6 +456,53 @@ def ray_in_quadrilateral_3d(
     click_pos_2D = rotation_matrix.dot(ray_position)[:2]
 
     return point_in_quadrilateral_2d(click_pos_2D, quadrilateral_2D)
+
+
+def ray_in_triangle_3d(
+    ray_position: np.ndarray,
+    ray_direction: np.ndarray,
+    triangles: np.ndarray,
+):
+    """Determine if a click occurred within a specified triangles.
+
+    For example, this could be used to determine if a click was
+    in a triangle of a mesh.
+
+    Parameters
+    ----------
+    ray_position : np.ndarray
+        (3,) array containing the location that was clicked. This
+        should be in the same coordinate system as the vertices.
+    ray_direction : np.ndarray
+        (3,) array describing the direction camera is pointing in
+        the scene. This should be in the same coordinate system as
+        the vertices.
+    triangles : np.ndarray
+        (n, 3, 3) array containing the coordinates for the 3 corners
+        of n triangles.
+
+    Returns
+    -------
+    in_triangles : np.ndarray
+        (n,) boolean array that is True of the ray intersects the triangle
+    """
+    vertices = triangles.reshape((-1, triangles.shape[2]))
+    # project the vertices of the bound region on to the view plane
+    vertices_plane = project_point_onto_plane(
+        point=vertices,
+        plane_point=ray_position,
+        plane_normal=ray_direction,
+    )
+
+    # rotate the plane to make the triangles 2D
+    rotation_matrix = rotation_matrix_from_vectors(ray_direction, [0, 0, 1])
+    rotated_vertices = vertices_plane @ rotation_matrix.T
+
+    rotated_vertices_2d = rotated_vertices[:, :2]
+    rotated_triangles_2d = rotated_vertices_2d.reshape(-1, 3, 2)
+    ray_pos_2D = rotation_matrix.dot(ray_position)[:2]
+
+    return inside_triangles(rotated_triangles_2d - ray_pos_2D)
 
 
 def find_front_back_face(

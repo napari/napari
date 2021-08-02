@@ -1,6 +1,10 @@
 import numpy as np
 
-from ...utils.geometry import inside_triangles
+from ...utils.geometry import (
+    inside_triangles,
+    intersect_ray_with_triangle,
+    ray_in_triangle_3d,
+)
 from ...utils.translations import trans
 from ._mesh import Mesh
 from ._shapes_constants import ShapeType, shape_classes
@@ -784,6 +788,56 @@ class ShapeList:
             return ordered_shapes[0]
         else:
             return None
+
+    def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
+        """Determines if any shape is intersected by a ray by looking inside triangle
+        meshes. Looks only at displayed shapes.
+
+        Parameters
+        ----------
+        ray_position : np.ndarray
+            (3,) array containing the location that was clicked. This
+            should be in the same coordinate system as the vertices.
+        ray_direction : np.ndarray
+            (3,) array describing the direction camera is pointing in
+            the scene. This should be in the same coordinate system as
+            the vertices.
+
+        Returns
+        -------
+        shape : int | None
+            Index of shape if any that is at the coordinates. Returns `None`
+            if no shape is found.
+        intersection_point : Optional[np.ndarray]
+            The point where the ray intersects the mesh face. If there was
+            no intersection, returns None.
+        """
+        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
+        inside = ray_in_triangle_3d(
+            ray_position=ray_position,
+            ray_direction=ray_direction,
+            triangles=triangles,
+        )
+        intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
+        if len(intersected_shapes) == 0:
+            shape = None
+            intersection_point = None
+        else:
+            intersected_triangles = triangles[inside]
+            intersection_points = intersect_ray_with_triangle(
+                ray_position=ray_position,
+                ray_direction=ray_direction,
+                triangles=intersected_triangles,
+            )
+            start_to_intersection = intersection_points - ray_position
+            distances = np.linalg.norm(start_to_intersection, axis=1)
+            closest_shape_index = np.argmin(distances)
+            shape = intersected_shapes[closest_shape_index]
+            intersection_point = intersection_points[closest_shape_index]
+
+        return shape, intersection_point
+
+    # def get_ray_intersection(self):
 
     def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns N binary masks, one for each shape, embedded in an array of

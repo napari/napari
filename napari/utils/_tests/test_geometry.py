@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ..geometry import (
+from napari.utils.geometry import (
     bounding_box_to_face_vertices,
     clamp_point_to_bounding_box,
     distance_between_point_and_line_3d,
@@ -14,6 +14,7 @@ from ..geometry import (
     point_in_quadrilateral_2d,
     project_point_onto_plane,
     ray_in_quadrilateral_3d,
+    ray_in_triangle_3d,
     rotation_matrix_from_vectors,
 )
 
@@ -420,3 +421,17 @@ def test_distance_between_point_and_line_3d():
     )
 
     np.testing.assert_allclose(distance, expected_distance)
+
+
+def test_ray_in_triangle_3d():
+    ray_position = np.array([0, 5, 5])
+    ray_direction = np.array([1, 0, 0])
+
+    triangles = np.array(
+        [
+            [[10, 0, 0], [19, 10, 5], [5, 5, 10]],
+            [[10, 4, 4], [10, 0, 0], [10, 4, 0]],
+        ]
+    )
+    in_triangle = ray_in_triangle_3d(ray_position, ray_direction, triangles)
+    np.testing.assert_array_equal(in_triangle, [True, False])
