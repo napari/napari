@@ -87,3 +87,23 @@ def test_resize_larger():
     np.testing.assert_array_equal(
         manager['confidence'].values, [0.2, 0.5, 1, 0.8, 0.8, 0.8]
     )
+
+
+def test_property_changed_event():
+    property_list = [
+        Property.from_values('class', ['sky', 'person', 'building', 'person']),
+        Property.from_values('confidence', [0.2, 0.5, 1, 0.8]),
+    ]
+    manager = PropertyManager.from_property_list(property_list)
+    observed = []
+    manager.events.changed.connect(lambda e: observed.append(e))
+
+    new_class_values = Property.from_values(
+        'class', ['sky', 'person', 'building', 'duck']
+    )
+    manager['class'] = new_class_values
+
+    assert len(observed) == 1
+    assert observed[0].type == 'changed'
+    assert observed[0].key == 'class'
+    assert observed[0].value == new_class_values
