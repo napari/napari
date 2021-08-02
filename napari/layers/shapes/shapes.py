@@ -25,7 +25,11 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import get_current_properties, prepare_properties
+from ..utils.layer_utils import (
+    coerce_current_properties,
+    get_current_properties,
+    prepare_properties,
+)
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -794,7 +798,9 @@ class Shapes(Layer):
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = current_properties
+        self._current_properties = coerce_current_properties(
+            current_properties
+        )
 
         if (
             self._update_properties

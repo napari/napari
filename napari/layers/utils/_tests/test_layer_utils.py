@@ -5,6 +5,7 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     calc_data_range,
+    coerce_current_properties,
     dataframe_to_properties,
     get_current_properties,
     prepare_properties,
@@ -204,3 +205,36 @@ def test_get_current_properties_with_property_choices_then_first_values():
         "face_color": "cyan",
         "angle": 0.5,
     }
+
+
+def test_coerce_current_properties_valid_values():
+    current_properties = {
+        'annotation': ['leg'],
+        'confidence': 1,
+        'annotator': 'ash',
+        'model': np.array(['best']),
+    }
+    expected_current_properties = {
+        'annotation': np.array(['leg']),
+        'confidence': np.array([1]),
+        'annotator': np.array(['ash']),
+        'model': np.array(['best']),
+    }
+    coerced_current_properties = coerce_current_properties(current_properties)
+
+    for k, v in coerced_current_properties.items():
+        value = coerced_current_properties[k]
+        assert isinstance(value, np.ndarray)
+        np.testing.assert_equal(value, expected_current_properties[k])
+
+
+def test_coerce_current_properties_invalid_values():
+    current_properties = {
+        'annotation': ['leg'],
+        'confidence': 1,
+        'annotator': 'ash',
+        'model': np.array(['best', 'best_v2_final']),
+    }
+
+    with pytest.raises(ValueError):
+        _ = coerce_current_properties(current_properties)
