@@ -221,6 +221,10 @@ class ColorManager(EventedModel):
         # if the provided color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
         if is_color_mapped(color, properties):
+            # note that we set ColorProperties.current_value by indexing rather than
+            # np.squeeze since the current_property values have shape (1,) and
+            # np.squeeze would return an array with shape ().
+            # see https://github.com/napari/napari/pull/3110#discussion_r680680779
             self.color_properties = ColorProperties(
                 name=color,
                 values=properties[color],
