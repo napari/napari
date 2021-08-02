@@ -25,12 +25,12 @@ from qtpy.QtWidgets import (
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
+from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
-from ..utils.settings import get_settings
 from ..utils.translations import trans
 from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -89,7 +89,9 @@ class _QtMainWindow(QMainWindow):
         self._status_bar = self.statusBar()
 
         settings = get_settings()
-        settings._defaults['plugins'].call_order = plugin_manager.call_order()
+
+        # TODO:
+        # settings.plugins.defaults.call_order = plugin_manager.call_order()
 
         # set the values in plugins to match the ones saved in settings
         if settings.plugins.call_order is not None:
@@ -659,14 +661,12 @@ class Window:
 
         plugin_manager.discover()
 
-        settings = get_settings()
         # need to reset call order to defaults
-        if settings.plugins.call_order is not None:
-            plugin_manager.set_call_order(get_settings().plugins.call_order)
-        else:
-            plugin_manager.set_call_order(
-                settings._defaults['plugins'].call_order
-            )
+        settings = get_settings()
+        plugin_manager.set_call_order(
+            settings.plugins.call_order
+            or settings.plugins._defaults.get('call_order', {})
+        )
 
         # reset the keybindings in action manager
         self.qt_viewer._bind_shortcuts()

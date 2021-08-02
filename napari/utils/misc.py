@@ -510,3 +510,14 @@ def _combine_signatures(
         key=lambda p: p.kind,
     )
     return inspect.Signature(new_params, return_annotation=return_annotation)
+
+
+def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
+    """Merge possibly nested dicts"""
+    _dct = dct.copy() if copy else dct
+    for k, v in merge_dct.items():
+        if k in _dct and isinstance(dct[k], dict) and isinstance(v, dict):
+            deep_update(_dct[k], v, copy=False)
+        else:
+            _dct[k] = v
+    return _dct

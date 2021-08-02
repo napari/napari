@@ -26,6 +26,7 @@ from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -33,7 +34,6 @@ from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
-from ..utils.settings import SETTINGS
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -130,8 +130,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
-        self.tooltip.visible = SETTINGS.appearance.layer_tooltip_visibility
-        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
+        settings = get_settings()
+        self.tooltip.visible = settings.appearance.layer_tooltip_visibility
+        settings.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visible_update
         )
 
