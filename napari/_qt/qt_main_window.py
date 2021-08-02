@@ -432,33 +432,6 @@ class Window:
             )
 
         # set the grid options on start up
-
-        stride_ge = settings.application.__fields__['grid_stride'].type_.ge
-        stride_le = settings.application.__fields__['grid_stride'].type_.le
-        stride_ne = settings.application.__fields__['grid_stride'].type_.ne
-
-        self.qt_viewer.viewer.grid.__fields__['stride'].type_.ge = stride_ge
-        self.qt_viewer.viewer.grid.__fields__['stride'].type_.le = stride_le
-        self.qt_viewer.viewer.grid.__fields__['stride'].type_.ne = stride_ne
-
-        width_ge = settings.application.__fields__['grid_width'].type_.ge
-        width_ne = settings.application.__fields__['grid_width'].type_.ne
-        self.qt_viewer.viewer.grid.__fields__['shape'].sub_fields[
-            1
-        ].type_.ge = width_ge
-        self.qt_viewer.viewer.grid.__fields__['shape'].sub_fields[
-            1
-        ].type_.ne = width_ne
-
-        height_ge = settings.application.__fields__['grid_height'].type_.ge
-        height_ne = settings.application.__fields__['grid_height'].type_.ne
-        self.qt_viewer.viewer.grid.__fields__['shape'].sub_fields[
-            0
-        ].type_.ge = height_ge
-        self.qt_viewer.viewer.grid.__fields__['shape'].sub_fields[
-            0
-        ].type_.ne = height_ne
-
         self._update_viewer_states()
 
         self._add_menubar()

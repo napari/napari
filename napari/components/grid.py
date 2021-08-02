@@ -30,7 +30,7 @@ class GridCanvas(EventedModel):
     """
 
     # fields
-    stride: conint(ge=-50, le=50, ne=0) = -1
+    stride: conint(ge=-50, le=50, ne=0) = 1
     shape: Tuple[conint(ge=-1, ne=0), conint(ge=-1, ne=0)] = (-1, -1)
     enabled: bool = False
 
