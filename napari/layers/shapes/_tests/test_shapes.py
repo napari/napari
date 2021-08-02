@@ -1900,6 +1900,18 @@ def test_value():
     assert value == (None, None)
 
 
+def test_value_3d():
+    """Currently get_value should return None in 3D"""
+    shape = (10, 4, 3)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    value = layer.get_value(
+        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    )
+    assert value is None
+
+
 def test_message():
     """Test converting values and coords to message."""
     shape = (10, 4, 2)
@@ -1907,6 +1919,18 @@ def test_message():
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     msg = layer.get_status((0,) * 2)
+    assert type(msg) == str
+
+
+def test_message_3d():
+    """Test converting values and coords to message in 3D."""
+    shape = (10, 4, 3)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    msg = layer.get_status(
+        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    )
     assert type(msg) == str
 
 
