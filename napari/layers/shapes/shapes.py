@@ -598,7 +598,7 @@ class Shapes(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return self._properties.values
+        return self._properties.all_values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -614,7 +614,7 @@ class Shapes(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._properties.choices
+        return self._properties.all_choices
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -705,7 +705,7 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return self._properties.default_values
+        return self._properties.all_default_values
 
     @current_properties.setter
     def current_properties(self, current_properties):
@@ -715,7 +715,7 @@ class Shapes(Layer):
             and self._mode in (Mode.SELECT, Mode.PAN_ZOOM)
         )
         for name, value in current_properties.items():
-            prop = self._properties.get(name)
+            prop = self._properties[name]
             prop.default_value = value
             if update_values:
                 prop.values[list(self.selected_data)] = value
@@ -1954,7 +1954,7 @@ class Shapes(Layer):
             ]
 
             for name in self._clipboard['properties']:
-                prop = self._properties.get(name)
+                prop = self._properties[name]
                 prop.values = np.concatenate(
                     (prop.values, self._clipboard['properties'][name]), axis=0
                 )

@@ -415,7 +415,7 @@ class Labels(_ImageBase):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return self._properties.values
+        return self._properties.all_values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -430,12 +430,10 @@ class Labels(_ImageBase):
     ) -> Tuple[PropertyManager, Dict[int, int]]:
         manager = PropertyManager.from_layer_kwargs(properties=properties)
         label_index = {}
-        if 'index' in manager.dict():
-            label_index = {
-                i: k for k, i in enumerate(manager.get('index').values)
-            }
-        elif len(manager.dict()) > 0:
-            max_len = max(len(x) for x in manager.values.values())
+        if 'index' in manager:
+            label_index = {i: k for k, i in enumerate(manager['index'].values)}
+        elif len(manager) > 0:
+            max_len = max(len(x) for x in manager.all_values.values())
             label_index = {i: i for i in range(max_len)}
         return manager, label_index
 
@@ -505,7 +503,7 @@ class Labels(_ImageBase):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
-                'properties': self._properties.dict(),
+                'properties': self._properties,
                 'rendering': self.rendering,
                 'seed': self.seed,
                 'data': self.data,

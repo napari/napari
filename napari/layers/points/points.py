@@ -444,12 +444,12 @@ class Points(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._properties.choices
+        return self._properties.all_choices
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
-        return self._properties.values
+        return self._properties.all_values
 
     @properties.setter
     def properties(
@@ -467,7 +467,7 @@ class Points(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        return self._properties.default_values
+        return self._properties.all_default_values
 
     @current_properties.setter
     def current_properties(self, current_properties):
@@ -477,7 +477,7 @@ class Points(Layer):
             and self._mode != Mode.ADD
         )
         for name, value in current_properties.items():
-            prop = self._properties.get(name)
+            prop = self._properties[name]
             prop.default_value = value
             if update_values:
                 prop.values[list(self.selected_data)] = value
@@ -820,8 +820,8 @@ class Points(Layer):
                 'edge_color_cycle': self.edge_color_cycle,
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
-                'properties': self._properties.values,
-                'property_choices': self._properties.choices,
+                'properties': self.properties,
+                'property_choices': self.property_choices,
                 'text': self.text.dict(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
@@ -1311,7 +1311,7 @@ class Points(Layer):
             )
 
             for name in self._clipboard['properties']:
-                prop = self._properties.get(name)
+                prop = self._properties[name]
                 prop.values = np.concatenate(
                     (prop.values, self._clipboard['properties'][name]), axis=0
                 )

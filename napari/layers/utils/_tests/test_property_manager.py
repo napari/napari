@@ -5,7 +5,7 @@ from napari.layers.utils.property_manager import Property, PropertyManager
 
 def test_property_manager_empty():
     manager = PropertyManager()
-    assert len(manager._properties) == 0
+    assert len(manager) == 0
 
 
 def test_property_manager_from_property_list():
@@ -16,8 +16,8 @@ def test_property_manager_from_property_list():
 
     manager = PropertyManager.from_property_list(property_list)
 
-    assert manager._properties['class'] == property_list[0]
-    assert manager._properties['confidence'] == property_list[1]
+    assert manager['class'] == property_list[0]
+    assert manager['confidence'] == property_list[1]
 
 
 def test_property_manager_from_property_arrays():
@@ -29,13 +29,13 @@ def test_property_manager_from_property_arrays():
     manager = PropertyManager.from_property_arrays(property_arrays)
 
     np.testing.assert_array_equal(
-        manager._properties['class'].values, property_arrays['class']
+        manager['class'].values, property_arrays['class']
     )
     np.testing.assert_array_equal(
-        manager._properties['confidence'].values, property_arrays['confidence']
+        manager['confidence'].values, property_arrays['confidence']
     )
-    assert manager._properties['class'].default_value == 'person'
-    assert manager._properties['confidence'].default_value == 0.8
+    assert manager['class'].default_value == 'person'
+    assert manager['confidence'].default_value == 0.8
 
 
 def test_property_manager_from_property_choices():
@@ -48,14 +48,14 @@ def test_property_manager_from_property_choices():
     manager = PropertyManager.from_property_choices(property_choices)
 
     np.testing.assert_array_equal(
-        manager._properties['class'].choices, property_choices['class']
+        manager['class'].choices, property_choices['class']
     )
     np.testing.assert_array_equal(
-        manager._properties['confidence'].choices,
+        manager['confidence'].choices,
         property_choices['confidence'],
     )
-    assert manager._properties['class'].default_value == 'building'
-    assert manager._properties['confidence'].default_value == 0.2
+    assert manager['class'].default_value == 'building'
+    assert manager['confidence'].default_value == 0.2
 
 
 def test_resize_smaller():
@@ -67,12 +67,8 @@ def test_resize_smaller():
 
     manager.resize(2)
 
-    np.testing.assert_array_equal(
-        manager._properties['class'].values, ['sky', 'person']
-    )
-    np.testing.assert_array_equal(
-        manager._properties['confidence'].values, [0.2, 0.5]
-    )
+    np.testing.assert_array_equal(manager['class'].values, ['sky', 'person'])
+    np.testing.assert_array_equal(manager['confidence'].values, [0.2, 0.5])
 
 
 def test_resize_larger():
@@ -85,9 +81,9 @@ def test_resize_larger():
     manager.resize(6)
 
     np.testing.assert_array_equal(
-        manager._properties['class'].values,
+        manager['class'].values,
         ['sky', 'person', 'building', 'person', 'person', 'person'],
     )
     np.testing.assert_array_equal(
-        manager._properties['confidence'].values, [0.2, 0.5, 1, 0.8, 0.8, 0.8]
+        manager['confidence'].values, [0.2, 0.5, 1, 0.8, 0.8, 0.8]
     )

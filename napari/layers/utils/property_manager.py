@@ -2,7 +2,7 @@ from typing import Any
 
 import numpy as np
 
-from ...utils.events import EventedModel
+from ...utils.events import EventedDict, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 
@@ -64,51 +64,40 @@ class Property(EventedModel):
         )
 
 
-class PropertyManager:
+class PropertyManager(EventedDict):
     """Manages a collection of properties."""
 
     def __init__(self, properties=None):
-        if properties is None:
-            properties = {}
-        self._properties = properties
-
-    def dict(self):
-        return self._properties
-
-    def get(self, name):
-        return self._properties[name]
-
-    def add(self, prop):
-        self._properties[prop.name] = prop
+        super().__init__(data=properties, basetype=Property)
 
     def resize(self, size):
-        for prop in self._properties.values():
+        for prop in self.values():
             prop.resize(size)
 
     def remove(self, indices):
-        for prop in self._properties.values():
+        for prop in self.values():
             prop.remove(indices)
 
     @property
-    def values(self):
-        return {prop.name: prop.values for prop in self._properties.values()}
+    def all_values(self):
+        return {prop.name: prop.values for prop in self.values()}
 
     @property
-    def choices(self):
-        return {prop.name: prop.choices for prop in self._properties.values()}
+    def all_choices(self):
+        return {prop.name: prop.choices for prop in self.values()}
 
     @property
-    def default_values(self):
+    def all_default_values(self):
         return {
             prop.name: np.atleast_1d(prop.default_value)
-            for prop in self._properties.values()
+            for prop in self.values()
         }
 
-    @default_values.setter
+    @all_default_values.setter
     def default_values(self, default_values):
         for name, value in default_values.items():
-            if name in self._properties:
-                self._properties[name].default_value = value
+            if name in self:
+                self[name].default_value = value
 
     @classmethod
     def from_property_list(cls, property_list):
@@ -151,7 +140,7 @@ class PropertyManager:
             manager = cls.from_property_choices(property_choices)
         else:
             manager = cls()
-        lens = [len(v) for v in manager.values.values()]
+        lens = [len(v) for v in manager.all_values.values()]
         if expected_len is None and len(lens) > 0:
             expected_len = lens[0]
         if any(v != expected_len for v in lens):

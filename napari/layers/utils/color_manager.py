@@ -141,8 +141,8 @@ class ColorManager(EventedModel):
         """
         # if the provided color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
-        if is_color_mapped(color, properties.dict()):
-            self.color_properties = properties.get(color)
+        if is_color_mapped(color, properties):
+            self.color_properties = properties[color]
             if guess_continuous(self.color_properties.values):
                 self.color_mode = ColorMode.COLORMAP
             else:
@@ -180,7 +180,7 @@ class ColorManager(EventedModel):
            Default value is False.
         """
         if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
-            self.color_properties = properties.get(self.color_properties.name)
+            self.color_properties = properties[self.color_properties.name]
             if update_color_mapping is True:
                 self.contrast_limits = None
             self.events.color_properties()
@@ -282,7 +282,7 @@ class ColorManager(EventedModel):
     def _update_properties(self, properties, name):
         if self.color_properties is not None:
             color_name = self.color_properties.name
-            if color_name not in properties.dict():
+            if color_name not in properties:
                 self.color_mode = ColorMode.DIRECT
                 self.color_properties = None
                 warnings.warn(
@@ -295,7 +295,7 @@ class ColorManager(EventedModel):
                 )
             else:
                 # TODO: ideally this would not be necessary.
-                self.color_properties = properties.get(color_name)
+                self.color_properties = properties[color_name]
 
     def _update_current_properties(
         self, current_properties: Dict[str, np.ndarray]
@@ -355,7 +355,7 @@ class ColorManager(EventedModel):
         if color_mode == ColorMode.DIRECT:
             self.color_mode = color_mode
         elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
-            properties = property_manager.values
+            properties = property_manager.all_values
             if self.color_properties is not None:
                 color_property = self.color_properties.name
             else:
@@ -363,9 +363,9 @@ class ColorManager(EventedModel):
             if color_property == '':
                 if properties:
                     new_color_property = next(iter(properties))
-                    self.color_properties = property_manager.get(
+                    self.color_properties = property_manager[
                         new_color_property
-                    )
+                    ]
                     warnings.warn(
                         trans._(
                             '_{attribute}_color_property was not set, setting to: {new_color_property}',
@@ -434,7 +434,7 @@ class ColorManager(EventedModel):
 
             if isinstance(color_properties, str):
                 try:
-                    color_properties = properties.get(color_properties)
+                    color_properties = properties[color_properties]
                 except KeyError:
                     raise KeyError(
                         trans._(
@@ -455,8 +455,8 @@ class ColorManager(EventedModel):
         }
 
         if color_properties is None:
-            if is_color_mapped(color_values, properties.dict()):
-                color_properties = properties.get(color_values)
+            if is_color_mapped(color_values, properties):
+                color_properties = properties[color_values]
                 if color_mode is None:
                     if guess_continuous(color_properties.values):
                         color_mode = ColorMode.COLORMAP

@@ -274,7 +274,7 @@ class Vectors(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return self._properties.values
+        return self._properties.all_values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -305,7 +305,7 @@ class Vectors(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._properties.choices
+        return self._properties.all_choices
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -452,9 +452,9 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    self._edge.color_properties = self._properties.get(
+                    self._edge.color_properties = self._properties[
                         color_property
-                    )
+                    ]
                     warnings.warn(
                         trans._(
                             'edge_color property was not set, setting to: {color_property}',
