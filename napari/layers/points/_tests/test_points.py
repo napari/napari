@@ -121,8 +121,11 @@ def test_empty_layer_with_edge_colormap():
 
 
 @pytest.mark.parametrize('feature_name', ('edge', 'face'))
-def test_empty_layer_with_edge_color_cycle(feature_name):
-    """Test creating an empty layer where the face/edge color is a color cycle"""
+def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
+    """Test creating an empty layer where the face/edge color is a color cycle
+
+    See: https://github.com/napari/napari/pull/3110
+    """
     default_properties = {'annotation': np.array(['tail', 'nose', 'paw'])}
     color_cycle = [[0, 1, 0, 1], [1, 0, 1, 1]]
     color_parameters = {
@@ -139,12 +142,14 @@ def test_empty_layer_with_edge_color_cycle(feature_name):
 
     color_mode = getattr(layer, f'{feature_name}_color_mode')
     assert color_mode == 'cycle'
-    layer.current_properties = {'annotation': 'paw'}
+    layer.current_properties = {'annotation': np.array(['paw'])}
 
     layer.add([10, 10])
     colors = getattr(layer, color_name)
     np.testing.assert_allclose(colors, [color_cycle[1]])
-    assert len(layer.data == 1)
+    assert len(layer.data) == 1
+    cm = getattr(layer, f'_{feature_name}')
+    assert cm.color_properties.current_value == 'paw'
 
 
 def test_empty_layer_with_text_properties():
