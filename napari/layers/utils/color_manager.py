@@ -409,6 +409,10 @@ class ColorManager(EventedModel):
             current_property_name = self.color_properties.name
             current_property_values = self.color_properties.values
             if current_property_name in current_properties:
+                # note that we set ColorProperties.current_value by indexing rather than
+                # np.squeeze since the current_property values have shape (1,) and
+                # np.squeeze would return an array with shape ().
+                # see https://github.com/napari/napari/pull/3110#discussion_r680680779
                 new_current_value = current_properties[current_property_name][
                     0
                 ]
