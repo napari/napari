@@ -239,27 +239,37 @@ class QtViewerButtons(QFrame):
         )
 
         # set up
-        stride_range = self.viewer.grid.stride_range
+        stride_min = self.viewer.grid.__fields__['stride'].type_.ge
+        stride_max = self.viewer.grid.__fields__['stride'].type_.le
+        stride_not = self.viewer.grid.__fields__['stride'].type_.ne
         grid_stride.setObjectName("gridStrideBox")
         grid_stride.setAlignment(Qt.AlignCenter)
-        grid_stride.setRange(stride_range[0], stride_range[1])
-        grid_stride.setProhibitValue(self.viewer.grid.stride_not)
+        grid_stride.setRange(stride_min, stride_max)
+        grid_stride.setProhibitValue(stride_not)
         grid_stride.setValue(self.viewer.grid.stride)
         grid_stride.valueChanged.connect(self._update_grid_stride)
         self.grid_stride_box = grid_stride
 
+        width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
+        width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
         grid_width.setObjectName("gridWidthBox")
         grid_width.setAlignment(Qt.AlignCenter)
-        grid_width.setMinimum(self.viewer.grid.shape_minimum)
-        grid_width.setProhibitValue(self.viewer.grid.shape_not)
+        grid_width.setMinimum(width_min)
+        grid_width.setProhibitValue(width_not)
         grid_width.setValue(self.viewer.grid.shape[1])
         grid_width.valueChanged.connect(self._update_grid_width)
         self.grid_width_box = grid_width
 
+        height_min = (
+            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ge
+        )
+        height_not = (
+            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
+        )
         grid_height.setObjectName("gridStrideBox")
         grid_height.setAlignment(Qt.AlignCenter)
-        grid_height.setMinimum(self.viewer.grid.shape_minimum)
-        grid_height.setProhibitValue(self.viewer.grid.shape_not)
+        grid_height.setMinimum(height_min)
+        grid_height.setProhibitValue(height_not)
         grid_height.setValue(self.viewer.grid.shape[0])
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height

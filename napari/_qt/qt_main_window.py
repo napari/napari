@@ -432,30 +432,33 @@ class Window:
             )
 
         # set the grid options on start up
-        stride_minimum = settings.application.schema()['properties'][
-            'grid_stride'
-        ]['minimum']
-        stride_maximum = settings.application.schema()['properties'][
-            'grid_stride'
-        ]['maximum']
-        stride_not_value = settings.application.schema()['properties'][
-            'grid_stride'
-        ]['not']['const']
-        self.qt_viewer.viewer.grid.stride_range = (
-            stride_minimum,
-            stride_maximum,
-        )
-        self.qt_viewer.viewer.grid.stride_not = stride_not_value
 
-        # width and height have same minimum of -1, and not value of 0
-        shape_minimum = settings.application.schema()['properties'][
-            'grid_width'
-        ]['minimum']
-        shape_not_value = settings.application.schema()['properties'][
-            'grid_width'
-        ]['not']['const']
-        self.qt_viewer.viewer.grid.shape_not = shape_not_value
-        self.qt_viewer.viewer.grid.shape_minimum = shape_minimum
+        stride_ge = settings.application.__fields__['grid_stride'].type_.ge
+        stride_le = settings.application.__fields__['grid_stride'].type_.le
+        stride_ne = settings.application.__fields__['grid_stride'].type_.ne
+
+        self.qt_viewer.viewer.grid.__fields__['stride'].type_.ge = stride_ge
+        self.qt_viewer.viewer.grid.__fields__['stride'].type_.le = stride_le
+        self.qt_viewer.viewer.grid.__fields__['stride'].type_.ne = stride_ne
+
+        width_ge = settings.application.__fields__['grid_width'].type_.ge
+        width_ne = settings.application.__fields__['grid_width'].type_.ne
+        self.qt_viewer.viewer.grid.__fields__['shape'].sub_fields[
+            1
+        ].type_.ge = width_ge
+        self.qt_viewer.viewer.grid.__fields__['shape'].sub_fields[
+            1
+        ].type_.ne = width_ne
+
+        height_ge = settings.application.__fields__['grid_height'].type_.ge
+        height_ne = settings.application.__fields__['grid_height'].type_.ne
+        self.qt_viewer.viewer.grid.__fields__['shape'].sub_fields[
+            0
+        ].type_.ge = height_ge
+        self.qt_viewer.viewer.grid.__fields__['shape'].sub_fields[
+            0
+        ].type_.ne = height_ne
+
         self._update_viewer_states()
 
         self._add_menubar()

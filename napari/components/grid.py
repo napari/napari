@@ -3,6 +3,7 @@ from typing import Tuple
 import numpy as np
 
 from ..utils.events import EventedModel
+from ..utils.events.custom_types import conint
 
 
 class GridCanvas(EventedModel):
@@ -29,16 +30,9 @@ class GridCanvas(EventedModel):
     """
 
     # fields
+    stride: conint(ge=-50, le=50, ne=0) = -1
+    shape: Tuple[conint(ge=-1, ne=0), conint(ge=-1, ne=0)] = (-1, -1)
     enabled: bool = False
-    stride: int = 1
-    shape: Tuple[int, int] = (-1, -1)
-    stride_range: Tuple[
-        int,
-        int,
-    ] = (-10, 10)
-    stride_not: int = 0
-    shape_minimum: int = -1
-    shape_not: int = 0
 
     def actual_shape(self, nlayers: int = 1) -> Tuple[int, int]:
         """Return the actual shape of the grid.
