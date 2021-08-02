@@ -122,7 +122,8 @@ def test_empty_layer_with_edge_colormap():
 
 @pytest.mark.parametrize('feature_name', ('edge', 'face'))
 def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
-    """Test creating an empty layer where the face/edge color is a color cycle
+    """Test setting current_properties an empty layer where the face/edge color
+    is a color cycle.
 
     See: https://github.com/napari/napari/pull/3110
     """
