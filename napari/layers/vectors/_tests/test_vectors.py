@@ -578,6 +578,7 @@ def test_value():
     ],
 )
 def test_value_3d(position, view_direction, dims_displayed, world):
+    """Currently get_value should return None in 3D"""
     np.random.seed(0)
     data = np.random.random((10, 2, 3))
     data[:, 0, :] = 20 * data[:, 0, :]
