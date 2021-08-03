@@ -160,7 +160,7 @@ def first_nonzero_coordinate(data, start_point, end_point):
     length = np.linalg.norm(end_point - start_point)
     length_int = np.round(length).astype(int)
     coords = np.linspace(start_point, end_point, length_int + 1, endpoint=True)
-    clipped_coords = np.clip(coords, 0, shape - 1).astype(int)
+    clipped_coords = np.clip(np.round(coords), 0, shape - 1).astype(int)
     nonzero = np.flatnonzero(data[tuple(clipped_coords.T)])
     if len(nonzero) == 0:
         return None
