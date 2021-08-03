@@ -31,6 +31,16 @@ def test_interpolate_coordinates():
     assert np.all(coords == expected_coords)
 
 
+def test_interpolate_with_none():
+    """Test that interpolating with one None coordinate returns original."""
+    coord = np.array([5, 5])
+    expected = coord[np.newaxis, :]
+    actual = interpolate_coordinates(coord, None, brush_size=1)
+    np.testing.assert_array_equal(actual, expected)
+    actual2 = interpolate_coordinates(None, coord, brush_size=5)
+    np.testing.assert_array_equal(actual2, expected)
+
+
 def test_get_dtype():
     np.random.seed(0)
     data = np.random.randint(20, size=(50, 50))
