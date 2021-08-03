@@ -302,3 +302,19 @@ def test_custom_layer(make_napari_viewer):
     # Make a viewer and add the custom layer
     viewer = make_napari_viewer(show=True)
     viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
+
+
+def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
+    """Test emitting data with no change doesn't change the layer _value."""
+    viewer = make_napari_viewer()
+
+    data = np.array([[0, 0], [10, 10], [20, 20]])
+    layer = viewer.add_points(data, size=2)
+    viewer.layers.selection.active = layer
+
+    assert layer._value is None
+    viewer.cursor.position = tuple(layer.data[1])
+    assert layer._value == 1
+
+    layer.events.data(value=layer.data)
+    assert layer._value == 1

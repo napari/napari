@@ -344,7 +344,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.ndim = ndim
             for i in range(ndim):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
-        self.cursor.position = (0,) * self.dims.ndim
+
+        new_dim = self.dims.ndim
+        dim_diff = new_dim - len(self.cursor.position)
+        if dim_diff < 0:
+            self.cursor.position = self.cursor.position[:new_dim]
+        elif dim_diff > 0:
+            self.cursor.position = tuple(
+                list(self.cursor.position) + [0] * dim_diff
+            )
         self.events.layers_change()
 
     def _update_interactive(self, event):
