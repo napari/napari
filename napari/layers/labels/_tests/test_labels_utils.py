@@ -85,7 +85,22 @@ def test_first_nonzero_coordinate():
 
 
 def test_mouse_event_to_labels_coordinate_2d(MouseEvent):
-    pass
+    data = np.zeros((11, 11), dtype=int)
+    data[4:7, 4:7] = 1
+    layer = Labels(data, scale=(2, 2))
+
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=False,
+            position=(10, 10),
+            view_direction=None,
+            dims_displayed=(1, 2),
+            dims_point=(0, 0),
+        )
+    )
+    coord = mouse_event_to_labels_coordinate(layer, event)
+    np.testing.assert_array_equal(coord, [5, 5])
 
 
 def test_mouse_event_to_labels_coordinate_3d(MouseEvent):
