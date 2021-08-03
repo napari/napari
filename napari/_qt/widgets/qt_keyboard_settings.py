@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QKeySequenceEdit,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -24,7 +25,6 @@ from ...settings import get_settings
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
-from ..dialogs.qt_message_dialogs import ConfirmDialog
 from ..qt_resources import get_stylesheet
 
 # Dict used to format strings returned from converted key press events.
@@ -119,16 +119,22 @@ class ShortcutEditor(QWidget):
     def restore_defaults(self):
         """Launches dialog to confirm restore choice."""
 
-        self._reset_dialog = ConfirmDialog(
-            parent=self,
-            text=trans._(
-                "Are you sure you want to restore default shortcuts?"
-            ),
-        )
-        self._reset_dialog.valueChanged.connect(self._reset_shortcuts)
-        self._reset_dialog.exec_()
+        restore_box = QMessageBox()
 
-    def _reset_shortcuts(self, event=None):
+        settings = get_settings()
+        restore_box.setStyleSheet(get_stylesheet(settings.appearance.theme))
+        restore_box.setText(
+            trans._("Are you sure you want to restore default shortcuts?")
+        )
+        restore_box.setStandardButtons(
+            QMessageBox.Cancel | QMessageBox.RestoreDefaults
+        )
+        restore = restore_box.exec()
+
+        if restore == QMessageBox.RestoreDefaults:
+            self._reset_shortcuts()
+
+    def _reset_shortcuts(self):
         """Reset shortcuts to default settings.
 
         Parameters
@@ -137,18 +143,16 @@ class ShortcutEditor(QWidget):
             Event will indicate whether user confirmed resetting shortcuts.
         """
 
-        # event is True if the user confirmed reset shortcuts
-        if event is True:
-            get_settings().shortcuts.reset()
-            for (
-                action,
-                shortcuts,
-            ) in get_settings().shortcuts.shortcuts.items():
-                action_manager.unbind_shortcut(action)
-                for shortcut in shortcuts:
-                    action_manager.bind_shortcut(action, shortcut)
+        get_settings().shortcuts.reset()
+        for (
+            action,
+            shortcuts,
+        ) in get_settings().shortcuts.shortcuts.items():
+            action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, shortcut)
 
-            self._set_table(layer_str=self.layer_combo_box.currentText())
+        self._set_table(layer_str=self.layer_combo_box.currentText())
 
     def _set_table(self, layer_str=''):
         """Builds and populates keybindings table.
