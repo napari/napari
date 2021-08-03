@@ -1,5 +1,10 @@
+import numpy as np
+
 from ._labels_constants import Mode
-from ._labels_utils import interpolate_coordinates
+from ._labels_utils import (
+    interpolate_coordinates,
+    mouse_event_to_labels_coordinate,
+)
 
 
 def draw(layer, event):
@@ -21,17 +26,20 @@ def draw(layer, event):
     pixels will be changed to background and this tool functions like an
     eraser
     """
-    coordinates = layer.world_to_data(event.position)
+    ndisplay = len(layer._dims_displayed)
+    coordinates = mouse_event_to_labels_coordinate(layer, event)
+
     # on press
     if layer._mode == Mode.ERASE:
         new_label = layer._background_label
     else:
         new_label = layer.selected_label
 
-    if layer._mode in [Mode.PAINT, Mode.ERASE]:
-        layer.paint(coordinates, new_label)
-    elif layer._mode == Mode.FILL:
-        layer.fill(coordinates, new_label)
+    if coordinates is not None:
+        if layer._mode in [Mode.PAINT, Mode.ERASE]:
+            layer.paint(coordinates, new_label)
+        elif layer._mode == Mode.FILL:
+            layer.fill(coordinates, new_label)
 
     last_cursor_coord = coordinates
     yield
@@ -39,16 +47,22 @@ def draw(layer, event):
     layer._block_saving = True
     # on move
     while event.type == 'mouse_move':
-        coordinates = layer.world_to_data(event.position)
-        interp_coord = interpolate_coordinates(
-            last_cursor_coord, coordinates, layer.brush_size
-        )
-        for c in interp_coord:
-            if layer._mode in [Mode.PAINT, Mode.ERASE]:
-                layer.paint(c, new_label, refresh=False)
-            elif layer._mode == Mode.FILL:
-                layer.fill(c, new_label, refresh=False)
-        layer.refresh()
+        coordinates = mouse_event_to_labels_coordinate(layer, event)
+        if coordinates is not None or last_cursor_coord is not None:
+            interp_coord = interpolate_coordinates(
+                last_cursor_coord, coordinates, layer.brush_size
+            )
+            for c in interp_coord:
+                if (
+                    ndisplay == 3
+                    and layer.data[tuple(np.round(c).astype(int))] == 0
+                ):
+                    continue
+                if layer._mode in [Mode.PAINT, Mode.ERASE]:
+                    layer.paint(c, new_label, refresh=False)
+                elif layer._mode == Mode.FILL:
+                    layer.fill(c, new_label, refresh=False)
+            layer.refresh()
         last_cursor_coord = coordinates
         yield
 
