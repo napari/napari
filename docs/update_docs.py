@@ -1,12 +1,13 @@
 from pathlib import Path
 
 from jinja2 import Template
+from pydantic import BaseModel
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QApplication
 
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.qt_resources import get_stylesheet
-from napari.utils.settings._defaults import CORE_SETTINGS
+from napari.settings import NapariSettings
 
 REPO_ROOT_PATH = Path(__file__).resolve().parents[1]
 GUIDES_PATH = REPO_ROOT_PATH / "docs" / "guides"
@@ -20,7 +21,7 @@ Starting with version 0.4.6, napari provides persistent settings.
 Settings are managed by the global `SETTINGS` object and can be imported as:
 
 ```python
-from napari.utils.settings import SETTINGS
+from napari.settings import SETTINGS
 ```
 
 ## Sections
@@ -54,7 +55,7 @@ The settings are grouped by sections and napari core provides the following:
 ## Changing settings programmatically
 
 ```python
-from napari.utils.settings import SETTINGS
+from napari.settings import SETTINGS
 
 SETTINGS.appearance.theme = "light"
 ```
@@ -107,7 +108,10 @@ def generate_images():
     pref.show()
 
     available_settings = []
-    for setting in CORE_SETTINGS:
+    for field in NapariSettings.__fields__.values():
+        setting = field.type_
+        if not isinstance(setting, BaseModel):
+            continue
         preferences_exclude = getattr(
             setting.NapariConfig, "preferences_exclude", []
         )
@@ -140,7 +144,10 @@ def generate_images():
 def create_preferences_docs():
     """Create preferences docs from SETTINGS using a jinja template."""
     sections = {}
-    for setting in CORE_SETTINGS:
+    for field in NapariSettings.__fields__.values():
+        setting = field.type_
+        if not isinstance(setting, BaseModel):
+            continue
         schema = setting.schema()
         title = schema.get("title", "")
         description = schema.get("description", "")

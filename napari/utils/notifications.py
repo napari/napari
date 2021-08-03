@@ -51,6 +51,12 @@ class NotificationSeverity(StringEnum):
     def __ge__(self, other):
         return name2num[str(self)] >= name2num[str(other)]
 
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return hash(self.value)
+
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
@@ -280,7 +286,7 @@ def show_info(message: str):
 
 
 def show_console_notification(notification: Notification):
-    from .settings import get_settings
+    from ..settings import get_settings
 
     if (
         notification.severity

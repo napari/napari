@@ -1,4 +1,4 @@
-.PHONY: docs typestubs pre watch 
+.PHONY: docs typestubs genschema pre watch 
 
 docs:
 	rm -rf docs/_build/
@@ -9,6 +9,9 @@ docs:
 
 typestubs:
 	python -m napari.utils.stubgen
+
+settings-schema:
+	python -m napari.settings._napari_settings
 
 pre:
 	pre-commit run -a

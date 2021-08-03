@@ -1,9 +1,9 @@
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Text
 
+from ..settings import get_settings
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.events import disconnect_events
-from ..utils.settings import get_settings
 from ._text_utils import update_text
 from .markers import Markers
 from .vispy_base_layer import VispyBaseLayer

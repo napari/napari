@@ -365,7 +365,7 @@ class NapariQtNotification(QDialog):
 
     @classmethod
     def show_notification(cls, notification: Notification):
-        from ...utils.settings import get_settings
+        from ...settings import get_settings
 
         settings = get_settings()
 

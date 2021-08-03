@@ -59,4 +59,12 @@ def draw(layer, event):
 def pick(layer, event):
     """Change the selected label to the same as the region clicked."""
     # on press
-    layer.selected_label = layer.get_value(event.position, world=True) or 0
+    layer.selected_label = (
+        layer.get_value(
+            event.position,
+            view_direction=event.view_direction,
+            dims_displayed=event.dims_displayed,
+            world=True,
+        )
+        or 0
+    )
