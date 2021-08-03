@@ -1,3 +1,4 @@
+import collections
 import os
 import sys
 import warnings
@@ -165,3 +166,26 @@ def make_napari_viewer(
                 raise AssertionError(f'Widgets leaked!: {leak}')
             else:
                 warnings.warn(f'Widgets leaked!: {leak}')
+
+
+@pytest.fixture
+def MouseEvent():
+    """Create a subclass for simulating vispy mouse events.
+
+    Returns
+    -------
+    Event : Type
+        A new tuple subclass named Event that can be used to create a
+        NamedTuple object with fields "type" and "is_dragging".
+    """
+    return collections.namedtuple(
+        'Event',
+        field_names=[
+            'type',
+            'is_dragging',
+            'position',
+            'view_direction',
+            'dims_displayed',
+            'dims_point',
+        ],
+    )

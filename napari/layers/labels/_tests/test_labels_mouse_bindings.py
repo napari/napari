@@ -1,7 +1,4 @@
-import collections
-
 import numpy as np
-import pytest
 
 from napari.layers import Labels
 from napari.utils.interactions import (
@@ -12,30 +9,7 @@ from napari.utils.interactions import (
 )
 
 
-@pytest.fixture
-def Event():
-    """Create a subclass for simulating vispy mouse events.
-
-    Returns
-    -------
-    Event : Type
-        A new tuple subclass named Event that can be used to create a
-        NamedTuple object with fields "type" and "is_dragging".
-    """
-    return collections.namedtuple(
-        'Event',
-        field_names=[
-            'type',
-            'is_dragging',
-            'position',
-            'view_direction',
-            'dims_displayed',
-            'dims_point',
-        ],
-    )
-
-
-def test_paint(Event):
+def test_paint(MouseEvent):
     """Test painting labels with circle brush."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
@@ -47,7 +21,7 @@ def test_paint(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(0, 0),
@@ -60,7 +34,7 @@ def test_paint(Event):
 
     # Simulate drag
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_move',
             is_dragging=True,
             position=(19, 19),
@@ -73,7 +47,7 @@ def test_paint(Event):
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_release',
             is_dragging=False,
             position=(19, 19),
@@ -93,7 +67,7 @@ def test_paint(Event):
     assert np.sum(layer.data == 3) == 244
 
 
-def test_paint_scale(Event):
+def test_paint_scale(MouseEvent):
     """Test painting labels with circle brush when scaled."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data, scale=(2, 2))
@@ -104,7 +78,7 @@ def test_paint_scale(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(0, 0),
@@ -117,7 +91,7 @@ def test_paint_scale(Event):
 
     # Simulate drag
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_move',
             is_dragging=True,
             position=(39, 39),
@@ -130,7 +104,7 @@ def test_paint_scale(Event):
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_release',
             is_dragging=False,
             position=(39, 39),
@@ -150,7 +124,7 @@ def test_paint_scale(Event):
     assert np.sum(layer.data == 3) == 244
 
 
-def test_erase(Event):
+def test_erase(MouseEvent):
     """Test erasing labels with different brush shapes."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
@@ -161,7 +135,7 @@ def test_erase(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(0, 0),
@@ -174,7 +148,7 @@ def test_erase(Event):
 
     # Simulate drag
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_move',
             is_dragging=True,
             position=(19, 19),
@@ -187,7 +161,7 @@ def test_erase(Event):
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_release',
             is_dragging=False,
             position=(19, 19),
@@ -207,7 +181,7 @@ def test_erase(Event):
     assert np.sum(layer.data == 1) == 156
 
 
-def test_pick(Event):
+def test_pick(MouseEvent):
     """Test picking label."""
     data = np.ones((20, 20), dtype=np.int32)
     data[:5, :5] = 2
@@ -219,7 +193,7 @@ def test_pick(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(0, 0),
@@ -233,7 +207,7 @@ def test_pick(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(19, 19),
@@ -246,7 +220,7 @@ def test_pick(Event):
     assert layer.selected_label == 3
 
 
-def test_fill(Event):
+def test_fill(MouseEvent):
     """Test filling label."""
     data = np.ones((20, 20), dtype=np.int32)
     data[:5, :5] = 2
@@ -262,7 +236,7 @@ def test_fill(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(0, 0),
@@ -281,7 +255,7 @@ def test_fill(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(19, 19),
@@ -297,7 +271,7 @@ def test_fill(Event):
     assert np.unique(layer.data[-5:, :5]) == 1
 
 
-def test_fill_nD_plane(Event):
+def test_fill_nD_plane(MouseEvent):
     """Test filling label nD plane."""
     data = np.ones((20, 20, 20), dtype=np.int32)
     data[:5, :5, :5] = 2
@@ -315,7 +289,7 @@ def test_fill_nD_plane(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(0, 0, 0),
@@ -336,7 +310,7 @@ def test_fill_nD_plane(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(0, 19, 19),
@@ -356,7 +330,7 @@ def test_fill_nD_plane(Event):
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
 
-def test_fill_nD_all(Event):
+def test_fill_nD_all(MouseEvent):
     """Test filling label nD."""
     data = np.ones((20, 20, 20), dtype=np.int32)
     data[:5, :5, :5] = 2
@@ -375,7 +349,7 @@ def test_fill_nD_all(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(0, 0, 0),
@@ -395,7 +369,7 @@ def test_fill_nD_all(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(
+        MouseEvent(
             type='mouse_press',
             is_dragging=False,
             position=(0, 19, 19),
