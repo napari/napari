@@ -384,3 +384,50 @@ def test_fill_nD_all(MouseEvent):
     assert np.unique(layer.data[:5, -5:, -5:]) == 5
     assert np.unique(layer.data[-5:, :5, -5:]) == 5
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
+
+
+def test_paint_3d(MouseEvent):
+    """Test filling label nD."""
+    data = np.zeros((21, 21, 21), dtype=np.int32)
+    data[10, 10, 10] = 1
+    layer = Labels(data)
+    layer._slice_dims(point=(0, 0, 0), ndisplay=3)
+
+    layer.n_edit_dimensions = 3
+    layer.mode = 'paint'
+    layer.selected_label = 4
+    layer.brush_size = 3
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0.1, 0, 0),
+            view_direction=np.full(3, np.sqrt(3)),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_press_callbacks(layer, event)
+    np.testing.assert_array_equal(np.unique(layer.data), [0, 4])
+    num_filled = np.bincount(layer.data.ravel())[4]
+    assert num_filled > 1
+
+    layer.mode = 'erase'
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 10, 10),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    new_num_filled = np.bincount(layer.data.ravel())[4]
+    assert new_num_filled < num_filled
