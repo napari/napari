@@ -5,7 +5,9 @@ from napari.layers.labels._labels_utils import (
     first_nonzero_coordinate,
     get_dtype,
     interpolate_coordinates,
+    mouse_event_to_labels_coordinate,
 )
+from napari.utils.interactions import ReadOnlyWrapper
 
 
 def test_interpolate_coordinates():
@@ -80,3 +82,43 @@ def test_first_nonzero_coordinate():
         ),
         [4, 6, 6],
     )
+
+
+def test_mouse_event_to_labels_coordinate_2d(MouseEvent):
+    pass
+
+
+def test_mouse_event_to_labels_coordinate_3d(MouseEvent):
+    data = np.zeros((11, 11, 11), dtype=int)
+    data[4:7, 4:7, 4:7] = 1
+    layer = Labels(data, scale=(2, 2, 2))
+    layer._slice_dims(point=(0, 0, 0), ndisplay=3)
+
+    # click straight down from the top
+    # (note the scale on the layer!)
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 10, 10),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(10, 10, 10),
+        )
+    )
+    coord = mouse_event_to_labels_coordinate(layer, event)
+    np.testing.assert_array_equal(coord, [4, 5, 5])
+
+    # click diagonally from the top left corner
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 0, 0),
+            view_direction=np.full(3, 1 / np.sqrt(3)),
+            dims_displayed=(0, 1, 2),
+            dims_point=(10, 10, 10),
+        )
+    )
+    coord = mouse_event_to_labels_coordinate(layer, event)
+    np.testing.assert_array_equal(coord, [4, 4, 4])
