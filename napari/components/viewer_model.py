@@ -34,6 +34,7 @@ from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
+from ..utils.settings import get_settings
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -132,10 +133,21 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
+
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
         settings.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visible_update
+        )
+
+        settings.application.events.grid_stride.connect(
+            self._update_viewer_grid
+        )
+        settings.application.events.grid_width.connect(
+            self._update_viewer_grid
+        )
+        settings.application.events.grid_height.connect(
+            self._update_viewer_grid
         )
 
         # Add extra events - ideally these will be removed too!
@@ -172,6 +184,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
+
+    def _update_viewer_grid(self, e=None):
+        """Keep viewer grid settings up to date with settings values."""
+
+        settings = get_settings()
+
+        self.grid.stride = settings.application.grid_stride
+        self.grid.shape = (
+            settings.application.grid_height,
+            settings.application.grid_width,
+        )
 
     @validator('theme')
     def _valid_theme(cls, v):
