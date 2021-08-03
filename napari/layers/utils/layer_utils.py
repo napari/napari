@@ -553,8 +553,24 @@ def coerce_affine(affine, *, ndim, name=None):
 
 
 def dims_displayed_world_to_layer(
-    dims_displayed_world: List[int], ndim_world: int, ndim_layer: int
-):
+    dims_displayed_world: List[int],
+    ndim_world: int,
+    ndim_layer: int,
+) -> List[int]:
+    """Convert the dims_displayed from world dims to the layer dims.
+
+    This accounts differences in the number of dimensions in the world
+    dims versus the layer and for transpose and rolls.
+
+    Parameters
+    ----------
+    dims_displayed_world : List[int]
+        The dims_displayed in world coordinates (i.e., from viewer.dims.displayed).
+    ndim_world : int
+        The number of dimensions in the world coordinates (i.e., viewer.dims.ndim)
+    ndim_layer : int
+        The number of dimensions in layer the layer (i.e., layer.ndim).
+    """
     if ndim_world > len(dims_displayed_world):
         all_dims = list(range(ndim_world))
         not_in_dims_displayed = [
