@@ -268,8 +268,11 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
         return self.value
 
     def __eq__(self, other):
-        """Equality is based on string values to allow direct comparison with strings."""
-        return str(self) == str(other)
+        if type(self) is type(other):
+            return self is other
+        elif isinstance(other, str):
+            return str(self) == other
+        return NotImplemented
 
     def __hash__(self):
         return hash(str(self))

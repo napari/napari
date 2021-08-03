@@ -326,50 +326,50 @@ def test_evented_model_dask_delayed():
 # compared against the enum constants and not their string value.
 # For more context see the GitHub issue:
 # https://github.com/napari/napari/issues/3062
-class TestStringEnum(StringEnum):
+class SomeStringEnum(StringEnum):
     NONE = auto()
     SOME_VALUE = auto()
     ANOTHER_VALUE = auto()
 
 
 class ModelWithStringEnum(EventedModel):
-    enum_field: TestStringEnum = TestStringEnum.NONE
+    enum_field: SomeStringEnum = SomeStringEnum.NONE
 
 
 def test_evented_model_with_string_enum_default():
     model = ModelWithStringEnum()
-    assert model.enum_field == TestStringEnum.NONE
+    assert model.enum_field == SomeStringEnum.NONE
 
 
 def test_evented_model_with_string_enum_parameter():
-    model = ModelWithStringEnum(enum_field=TestStringEnum.SOME_VALUE)
-    assert model.enum_field == TestStringEnum.SOME_VALUE
+    model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
+    assert model.enum_field == SomeStringEnum.SOME_VALUE
 
 
 def test_evented_model_with_string_enum_parameter_as_str():
     model = ModelWithStringEnum(enum_field='some_value')
-    assert model.enum_field == TestStringEnum.SOME_VALUE
+    assert model.enum_field == SomeStringEnum.SOME_VALUE
 
 
 def test_evented_model_with_string_enum_setter():
     model = ModelWithStringEnum()
-    model.enum_field = TestStringEnum.SOME_VALUE
-    assert model.enum_field == TestStringEnum.SOME_VALUE
+    model.enum_field = SomeStringEnum.SOME_VALUE
+    assert model.enum_field == SomeStringEnum.SOME_VALUE
 
 
 def test_evented_model_with_string_enum_setter_as_str():
     model = ModelWithStringEnum()
     model.enum_field = 'some_value'
-    assert model.enum_field == TestStringEnum.SOME_VALUE
+    assert model.enum_field == SomeStringEnum.SOME_VALUE
 
 
 def test_evented_model_with_string_enum_parse_raw():
-    model = ModelWithStringEnum(enum_field=TestStringEnum.SOME_VALUE)
+    model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
     deserialized_model = ModelWithStringEnum.parse_raw(model.json())
     assert deserialized_model.enum_field == model.enum_field
 
 
 def test_evented_model_with_string_enum_parse_obj():
-    model = ModelWithStringEnum(enum_field=TestStringEnum.SOME_VALUE)
+    model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
     deserialized_model = ModelWithStringEnum.parse_obj(model.dict())
     assert deserialized_model.enum_field == model.enum_field

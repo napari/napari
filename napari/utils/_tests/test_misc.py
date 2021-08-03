@@ -68,13 +68,12 @@ def test_ensure_iterable(input, expected):
         assert result == expectation
 
 
-# Make a test StringEnum
-class TestEnum(StringEnum):
-    THING = auto()
-    OTHERTHING = auto()
-
-
 def test_string_enum():
+    # Make a test StringEnum
+    class TestEnum(StringEnum):
+        THING = auto()
+        OTHERTHING = auto()
+
     # test setting by value, correct case
     assert TestEnum('thing') == TestEnum.THING
 
@@ -112,11 +111,21 @@ def test_string_enum():
     with pytest.raises(ValueError):
         TestEnum(OtherEnum.SOMETHING)
 
+    # test strint conversion
+    assert str(TestEnum.THING) == 'thing'
+
     # test direct comparison with a string
     assert TestEnum.THING == 'thing'
     assert 'thing' == TestEnum.THING
     assert TestEnum.THING != 'notathing'
     assert 'notathing' != TestEnum.THING
+
+    # test comparison with another enum with same value names
+    class AnotherTestEnum(StringEnum):
+        THING = auto()
+        ANOTHERTHING = auto()
+
+    assert TestEnum.THING != AnotherTestEnum.THING
 
 
 def test_abspath_or_url():
