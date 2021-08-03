@@ -34,9 +34,9 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
-from vispy.visuals._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
+from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
 from vispy.gloo import VertexBuffer, IndexBuffer
-from vispy.gloo.texture import should_cast_to_f32
+from .gloo.texture import should_cast_to_f32
 from vispy.visuals import Visual
 from vispy.visuals.shaders import Function
 from vispy.color import get_colormap
@@ -496,6 +496,7 @@ ATTENUATED_MIP_SNIPPETS = dict(
         gl_FragColor = applyColormap(maxval);
         """,
 )
+ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
 
 MINIP_SNIPPETS = dict(
     before_loop="""
@@ -510,16 +511,17 @@ MINIP_SNIPPETS = dict(
         """,
     after_loop="""
         // Refine search for min value, but only if anything was found
-        if ( mini > -1 ) {
+        if ( mini > -1 ) {{
             loc = start_loc + step * (float(mini) - 0.5);
             for (int i=0; i<10; i++) {
                 minval = min(minval, $sample(u_volumetex, loc).r);
                 loc += step * 0.1;
             }
             gl_FragColor = applyColormap(minval);
-        }
+        }}
         """,
 )
+MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
 
 TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
@@ -676,7 +678,7 @@ class VolumeVisual(Visual):
         in a gray colormap. Can be 'auto' to auto-set bounds to
         the min and max of the data. If not given or None, 'auto' is used.
     method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
-        'iso', 'iso_categorical', 'average'}
+        'iso', 'average'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
@@ -696,7 +698,7 @@ class VolumeVisual(Visual):
         by default: 1.
     interpolation : {'linear', 'nearest'}
         Selects method of image interpolation.
-    texture_format : numpy.dtype | str | None
+    texture_format: numpy.dtype | str | None
         How to store data on the GPU. OpenGL allows for many different storage
         formats and schemes for the low-level texture data stored in the GPU.
         Most common is unsigned integers or floating point numbers.
@@ -720,22 +722,6 @@ class VolumeVisual(Visual):
         transferred to the GPU. Note this visual is limited to "luminance"
         formatted data (single band). This is equivalent to `GL_RED` format
         in OpenGL 4.0.
-    raycasting_mode : {'volume', 'plane'}
-        Whether to cast a ray through the whole volume or perpendicular to a
-        plane through the volume defined.
-    plane_position : ArrayLike
-        A (3,) array containing a position on a plane of interest in the volume.
-        The position is defined in data coordinates. Only relevant in
-        raycasting_mode = 'plane'.
-    plane_normal : ArrayLike
-        A (3,) array containing a vector normal to the plane of interest in the
-        volume. The normal vector is defined in data coordinates. Only relevant
-        in raycasting_mode = 'plane'.
-    plane_thickness : float
-        A value defining the total length of the ray perpendicular to the
-        plane interrogated during rendering. Only relevant in
-        raycasting_mode = 'plane'.
-
 
     .. versionchanged: 0.7
 
@@ -780,7 +766,7 @@ class VolumeVisual(Visual):
         self._last_data = None
 
         # Create program
-        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        Visual.__init__(self, vcode=VERT_SHADER, fcode="")
         self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
         self.shared_program['a_texcoord'] = self._texcoord
@@ -861,6 +847,13 @@ class VolumeVisual(Visual):
 
         if clim is not None and clim != self._texture.clim:
             self._texture.set_clim(clim)
+        if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] > 1)):
+            raise ValueError('Volume visual needs a 3D array.')
+        if isinstance(self._texture, GPUScaledTextured3D):
+            copy = False
+
+        if clim is not None and clim != self._texture.clim:
+            self._texture.set_clim(clim)
 
         # Apply to texture
         if should_cast_to_f32(vol.dtype):
@@ -923,6 +916,11 @@ class VolumeVisual(Visual):
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program['texture2D_LUT'] = (
+            self.cmap.texture_lut()
+            if (hasattr(self.cmap, 'texture_lut'))
+            else None
+        )
         self.update()
 
     @property
@@ -982,6 +980,8 @@ class VolumeVisual(Visual):
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
               performed to give the visual appearance of a surface.
+            * iso_categorical: isosurface for categorical (integer) data,
+              background value of 0 is not rendered.
             * average: average intensity projection. Cast a ray and display the
               average of values that were encountered.
         """
@@ -1001,8 +1001,8 @@ class VolumeVisual(Visual):
         if 'u_attenuation' in self.shared_program:
             self.shared_program['u_attenuation'] = None
 
-        # TODO: $sample needs to be unset and re-set, since it's present inside the snippets.
-        #       Program should probably be able to do this automatically
+        # $sample needs to be unset and re-set, since it's present inside the
+        # snippets. Program should probably be able to do this automatically
         self.shared_program.frag['sample'] = None
         self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.shared_program.frag['before_loop'] = self._before_loop_snippet
@@ -1013,23 +1013,6 @@ class VolumeVisual(Visual):
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
             if (hasattr(self.cmap, 'texture_lut')) else None
-        self.update()
-
-    @property
-    def _raycasting_setup_snippet(self):
-        return RAYCASTING_MODE_DICT[self.raycasting_mode]
-
-    @property
-    def raycasting_mode(self):
-        return self._raycasting_mode
-
-    @raycasting_mode.setter
-    def raycasting_mode(self, value: str):
-        valid_raycasting_modes = RAYCASTING_MODE_DICT.keys()
-        if value not in valid_raycasting_modes:
-            raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
-        self._raycasting_mode = value
-        self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.update()
 
     @property
@@ -1052,8 +1035,7 @@ class VolumeVisual(Visual):
     @attenuation.setter
     def attenuation(self, value):
         self._attenuation = float(value)
-        if 'u_attenuation' in self.shared_program:
-            self.shared_program['u_attenuation'] = self._attenuation
+        self.shared_program['u_attenuation'] = self._attenuation
         self.update()
 
     @property

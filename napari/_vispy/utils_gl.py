@@ -73,7 +73,7 @@ def get_max_texture_sizes() -> Tuple[int, int]:
 def fix_data_dtype(data):
     """Makes sure the dtype of the data is accetpable to vispy.
 
-    Acceptable types are int8, uint8, int16, uint16, float32, float64.
+    Acceptable types are int8, uint8, int16, uint16, float32.
 
     Parameters
     ----------

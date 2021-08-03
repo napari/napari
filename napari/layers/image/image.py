@@ -270,7 +270,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self._data_level = 0
             self._thumbnail_level = 0
-        self.corner_pixels[1] = self.level_shapes[self._data_level]
+        displayed_axes = self._displayed_axes
+        self.corner_pixels[1][displayed_axes] = self.level_shapes[
+            self._data_level
+        ][displayed_axes]
 
         self._new_empty_slice()
 
@@ -594,7 +597,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._transforms['tile2data'].scale = scale
 
             if self._ndisplay == 2:
-                for d in self._dims_displayed:
+                for d in self._displayed_axes:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
                         self.corner_pixels[1, d] + 1,

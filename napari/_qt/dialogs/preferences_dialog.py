@@ -1,4 +1,5 @@
 import json
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize, Signal
 from qtpy.QtWidgets import (
@@ -11,9 +12,12 @@ from qtpy.QtWidgets import (
 )
 
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
-from ...utils.settings import get_settings
+from ...settings import get_settings
 from ...utils.translations import trans
 from .qt_message_dialogs import ConfirmDialog, ResetNapariInfoDialog
+
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
 
 class PreferencesDialog(QDialog):
@@ -127,8 +131,8 @@ class PreferencesDialog(QDialog):
         self._values_dict = {}
         self._setting_changed_dict = {}
 
-        for page, setting in settings.schemas().items():
-            schema, values, properties = self.get_page_dict(setting)
+        for page, field in settings.__fields__.items():
+            schema, values, properties = self.get_page_dict(field)
 
             self._setting_changed_dict[page] = {}
             self._values_orig_dict[page] = values
@@ -136,16 +140,18 @@ class PreferencesDialog(QDialog):
 
             # Only add pages if there are any properties to add.
             if properties:
-                self.add_page(schema, values)
+                self.add_page(
+                    schema, values, field.field_info.title or field.name
+                )
 
-    def get_page_dict(self, setting):
-        """Provides the schema, set of values for each setting, and the properties
-        for each setting.
+    def get_page_dict(self, field: 'ModelField'):
+        """Provides the schema, set of values for each setting, and the
+        properties for each setting.
 
         Parameters
         ----------
-        setting : dict
-            Dictionary of settings for a page within the settings manager.
+        field : ModelField
+            A top-level field in the NapariSettings object.
 
         Returns
         -------
@@ -157,30 +163,26 @@ class PreferencesDialog(QDialog):
             Dictionary of properties within the json schema.
 
         """
-        schema = json.loads(setting['json_schema'])
+        from enum import EnumMeta
 
-        # Resolve allOf references
-        definitions = schema.get("definitions", {})
-        if definitions:
-            for key, data in schema["properties"].items():
-                if "allOf" in data:
-                    allof = data["allOf"]
-                    allof = [d["$ref"].rsplit("/")[-1] for d in allof]
-                    for definition in allof:
-                        local_def = definitions[definition]
-                        schema["properties"][key]["enum"] = local_def["enum"]
-                        schema["properties"][key]["type"] = "string"
+        schema = json.loads(field.type_.schema_json())
+
+        # find enums:
+        for name, subfield in field.type_.__fields__.items():
+            if isinstance(subfield.type_, EnumMeta):
+                enums = [s.value for s in subfield.type_]  # type: ignore
+                schema["properties"][name]["enum"] = enums
+                schema["properties"][name]["type"] = "string"
 
         # Need to remove certain properties that will not be displayed on the GUI
         properties = schema.pop('properties')
-        model = setting['model']
-        with model.enums_as_values():
-            values = model.dict()
-        napari_config = getattr(model, "NapariConfig", None)
-        if napari_config is not None:
-            for val in napari_config.preferences_exclude:
-                properties.pop(val)
-                values.pop(val)
+        setting = getattr(get_settings(), field.name)
+        with setting.enums_as_values():
+            values = setting.dict()
+        napari_config = getattr(setting, "NapariConfig", None)
+        for val in napari_config.preferences_exclude:
+            properties.pop(val)
+            values.pop(val)
 
         schema['properties'] = properties
 
@@ -241,8 +243,8 @@ class PreferencesDialog(QDialog):
             # of preference dialog session, change them back.
             # Using the settings value seems to be the best way to get the checkboxes right
             # on the plugin call order widget.
-            setting = settings.schemas()[page]
-            schema, new_values, properties = self.get_page_dict(setting)
+            field = settings.__fields__[page]
+            schema, new_values, properties = self.get_page_dict(field)
             self.check_differences(self._values_orig_dict[page], new_values)
 
         # need to reset plugin_manager to defaults and change keybindings in action_manager.
@@ -252,7 +254,7 @@ class PreferencesDialog(QDialog):
         self._list.setCurrentRow(0)
         self.close()
 
-    def add_page(self, schema, values):
+    def add_page(self, schema, values, name):
         """Creates a new page for each section in dialog.
 
         Parameters
@@ -263,11 +265,11 @@ class PreferencesDialog(QDialog):
         values : dict
             Dictionary of current values set in preferences.
         """
-        widget = self.build_page_dialog(schema, values)
-        self._list.addItem(schema["title"])
+        widget = self.build_page_dialog(schema, values, name)
+        self._list.addItem(name)
         self._stack.addWidget(widget)
 
-    def build_page_dialog(self, schema, values):
+    def build_page_dialog(self, schema, values, name):
         """Builds the preferences widget using the json schema builder.
 
         Parameters
@@ -278,38 +280,19 @@ class PreferencesDialog(QDialog):
         values : dict
             Dictionary of current values set in preferences.
         """
-        settings = get_settings()
         builder = WidgetBuilder()
         form = builder.create_form(schema, self.ui_schema)
-
-        # Disable widgets that loaded settings from environment variables
-        section = schema["section"]
-        form_layout = form.widget.layout()
-        for row in range(form.widget.layout().rowCount()):
-            widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
-            name = widget._name
-            disable = bool(
-                settings._env_settings.get(section, {}).get(name, None)
-            )
-            widget.setDisabled(disable)
-            try:
-                widget.opacity.setOpacity(0.3 if disable else 1)
-            except AttributeError:
-                # some widgets may not have opacity (such as the QtPluginSorter)
-                pass
 
         # set state values for widget
         form.widget.state = values
 
-        if section == 'experimental':
-            # need to disable async if octree is enabled.
-            if values['octree'] is True:
-                form = self._disable_async(form, values)
+        # need to disable async if octree is enabled.
+        if name.lower() == 'experimental' and values['octree'] is True:
+            form = self._disable_async(form, values)
 
         form.widget.on_changed.connect(
             lambda d: self.check_differences(
-                d,
-                self._values_dict[schema["title"].lower()],
+                d, self._values_dict[name.lower()]
             )
         )
 
@@ -317,13 +300,11 @@ class PreferencesDialog(QDialog):
 
     def _disable_async(self, form, values, disable=True, state=True):
         """Disable async if octree is True."""
-        settings = get_settings()
         # need to make sure that if async_ is an environment setting, that we don't
         # enable it here.
-        if (
-            settings._env_settings['experimental'].get('async_', None)
-            is not None
-        ):
+
+        env_settings = get_settings().env_settings().get('experimental', {})
+        if env_settings.get('async_') not in (None, '0'):
             disable = True
 
         idx = list(values.keys()).index('async_')
@@ -349,10 +330,7 @@ class PreferencesDialog(QDialog):
         for setting_name, value in new_dict.items():
             if value != old_dict[setting_name]:
                 self._setting_changed_dict[page][setting_name] = value
-            elif (
-                value == old_dict[setting_name]
-                and setting_name in self._setting_changed_dict[page]
-            ):
+            elif setting_name in self._setting_changed_dict[page]:
                 self._setting_changed_dict[page].pop(setting_name)
 
     def set_current_index(self, index: int):
@@ -386,7 +364,7 @@ class PreferencesDialog(QDialog):
             # change the values in settings
             for setting_name, value in different_values.items():
                 try:
-                    setattr(settings._settings[page], setting_name, value)
+                    setattr(getattr(settings, page), setting_name, value)
                     self._values_dict[page] = new_dict
 
                     if page == 'experimental':
@@ -395,7 +373,7 @@ class PreferencesDialog(QDialog):
 
                             # disable/enable async checkbox
                             widget = self._stack.currentWidget()
-                            cstate = True if value is True else False
+                            cstate = value is True
                             self._disable_async(
                                 widget, new_dict, disable=cstate
                             )
