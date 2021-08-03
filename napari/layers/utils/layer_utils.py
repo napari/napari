@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import dask
 import numpy as np
@@ -550,3 +550,30 @@ def coerce_affine(affine, *, ndim, name=None):
     if name is not None:
         affine.name = name
     return affine
+
+
+def dims_displayed_world_to_layer(
+    dims_displayed_world: List[int], ndim_world: int, ndim_layer: int
+):
+    if ndim_world > len(dims_displayed_world):
+        all_dims = list(range(ndim_world))
+        not_in_dims_displayed = [
+            d for d in all_dims if d not in dims_displayed_world
+        ]
+        order = not_in_dims_displayed + dims_displayed_world
+    else:
+        order = dims_displayed_world
+    offset = ndim_world - ndim_layer
+    order = np.array(order)
+    if offset <= 0:
+        order = list(range(-offset)) + list(order - offset)
+    else:
+        order = list(order[order >= offset] - offset)
+    n_display_world = len(dims_displayed_world)
+    if n_display_world > ndim_layer:
+        n_display_layer = ndim_layer
+    else:
+        n_display_layer = n_display_world
+    dims_displayed = order[-n_display_layer:]
+
+    return dims_displayed
