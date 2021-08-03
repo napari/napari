@@ -676,7 +676,7 @@ class VolumeVisual(Visual):
         in a gray colormap. Can be 'auto' to auto-set bounds to
         the min and max of the data. If not given or None, 'auto' is used.
     method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
-        'iso', 'average'}
+        'iso', 'iso_categorical', 'average'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
