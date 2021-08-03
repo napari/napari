@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import TextMode
 from napari.layers.utils.text_manager import TextManager
 
@@ -143,13 +142,13 @@ def test_blending_modes():
         color='red',
         blending='translucent',
     )
-    assert text_manager.blending == Blending.TRANSLUCENT
+    assert text_manager.blending == 'translucent'
 
     # set to another valid blending mode
     text_manager.blending = 'additive'
-    assert text_manager.blending == Blending.ADDITIVE
+    assert text_manager.blending == 'additive'
 
     # set to opaque, which is not allowed
     with pytest.warns(RuntimeWarning):
         text_manager.blending = 'opaque'
-        assert text_manager.blending == Blending.TRANSLUCENT
+        assert text_manager.blending == 'translucent'

@@ -111,7 +111,7 @@ def test_string_enum():
     with pytest.raises(ValueError):
         TestEnum(OtherEnum.SOMETHING)
 
-    # test strint conversion
+    # test string conversion
     assert str(TestEnum.THING) == 'thing'
 
     # test direct comparison with a string
