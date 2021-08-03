@@ -114,7 +114,7 @@ def test_mouse_event_to_labels_coordinate_3d(MouseEvent):
         MouseEvent(
             type='mouse_press',
             is_dragging=False,
-            position=(0, 0, 0),
+            position=(0.1, 0, 0),
             view_direction=np.full(3, 1 / np.sqrt(3)),
             dims_displayed=(0, 1, 2),
             dims_point=(10, 10, 10),
