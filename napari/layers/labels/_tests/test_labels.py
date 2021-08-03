@@ -763,7 +763,7 @@ def test_value():
     ],
 )
 def test_value_3d(position, view_direction, dims_displayed, world):
-    """Currently get_value should return None in 3D"""
+    """get_value should return label value in 3D"""
     data = np.zeros((20, 20, 20), dtype=int)
     data[0:10, 0:10, 0:10] = 1
     layer = Labels(data)
