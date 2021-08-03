@@ -2,6 +2,7 @@ import numpy as np
 
 from napari.layers.labels import Labels
 from napari.layers.labels._labels_utils import (
+    first_nonzero_coordinate,
     get_dtype,
     interpolate_coordinates,
 )
@@ -56,3 +57,26 @@ def test_get_dtype():
     data = data.astype(int)
     int_layer = Labels(data)
     assert get_dtype(int_layer) == int
+
+
+def test_first_nonzero_coordinate():
+    data = np.zeros((11, 11, 11))
+    data[4:7, 4:7, 4:7] = 1
+    np.testing.assert_array_equal(
+        first_nonzero_coordinate(data, np.zeros(3), np.full(3, 10)),
+        [4, 4, 4],
+    )
+    np.testing.assert_array_equal(
+        first_nonzero_coordinate(data, np.full(3, 10), np.zeros(3)),
+        [6, 6, 6],
+    )
+    assert (
+        first_nonzero_coordinate(data, np.zeros(3), np.array([0, 1, 1]))
+        is None
+    )
+    np.testing.assert_array_equal(
+        first_nonzero_coordinate(
+            data, np.array([0, 6, 6]), np.array([10, 5, 5])
+        ),
+        [4, 6, 6],
+    )
