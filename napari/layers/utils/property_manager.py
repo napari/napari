@@ -93,12 +93,6 @@ class PropertyManager(EventedDict):
             for prop in self.values()
         }
 
-    @all_default_values.setter
-    def default_values(self, default_values):
-        for name, value in default_values.items():
-            if name in self:
-                self[name].default_value = value
-
     @classmethod
     def from_property_list(cls, property_list):
         return cls(properties={prop.name: prop for prop in property_list})
