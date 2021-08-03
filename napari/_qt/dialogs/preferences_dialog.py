@@ -15,7 +15,6 @@ from qtpy.QtWidgets import (
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from ...settings import get_settings
 from ...utils.translations import trans
-from ..qt_resources import get_stylesheet
 from .qt_message_dialogs import ResetNapariInfoDialog
 
 if TYPE_CHECKING:
@@ -193,19 +192,15 @@ class PreferencesDialog(QDialog):
     def restore_defaults(self):
         """Launches dialog to confirm restore settings choice."""
 
-        restore_box = QMessageBox()
-
-        settings = get_settings()
-        restore_box.setStyleSheet(get_stylesheet(settings.appearance.theme))
-        restore_box.setText(
-            trans._("Are you sure you want to restore default settings?")
+        response = QMessageBox.question(
+            self,
+            trans._("Restore Settings"),
+            trans._("Are you sure you want to restore default settings?"),
+            QMessageBox.RestoreDefaults | QMessageBox.Cancel,
+            QMessageBox.RestoreDefaults,
         )
-        restore_box.setStandardButtons(
-            QMessageBox.Cancel | QMessageBox.RestoreDefaults
-        )
-        restore = restore_box.exec()
 
-        if restore == QMessageBox.RestoreDefaults:
+        if response == QMessageBox.RestoreDefaults:
             self._reset_widgets()
 
     def _reset_widgets(self):

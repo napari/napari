@@ -72,7 +72,7 @@ class ShortcutEditor(QWidget):
         self._table.setSelectionBehavior(QAbstractItemView.SelectItems)
         self._table.setSelectionMode(QAbstractItemView.SingleSelection)
         self._table.setShowGrid(False)
-        self._restore_button = QPushButton(trans._("Reset All Keybindings"))
+        self._restore_button = QPushButton(trans._("Restore All Keybindings"))
 
         # Set up dictionary for layers and associated actions.
         all_actions = action_manager._actions.copy()
@@ -119,19 +119,15 @@ class ShortcutEditor(QWidget):
     def restore_defaults(self):
         """Launches dialog to confirm restore choice."""
 
-        restore_box = QMessageBox()
-
-        settings = get_settings()
-        restore_box.setStyleSheet(get_stylesheet(settings.appearance.theme))
-        restore_box.setText(
-            trans._("Are you sure you want to restore default shortcuts?")
+        response = QMessageBox.question(
+            self,
+            trans._("Restore Shortcuts"),
+            trans._("Are you sure you want to restore default shortcuts?"),
+            QMessageBox.RestoreDefaults | QMessageBox.Cancel,
+            QMessageBox.RestoreDefaults,
         )
-        restore_box.setStandardButtons(
-            QMessageBox.Cancel | QMessageBox.RestoreDefaults
-        )
-        restore = restore_box.exec()
 
-        if restore == QMessageBox.RestoreDefaults:
+        if response == QMessageBox.RestoreDefaults:
             self._reset_shortcuts()
 
     def _reset_shortcuts(self):
