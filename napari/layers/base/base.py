@@ -1022,6 +1022,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if self.visible:
             if world:
                 position = self.world_to_data(position)
+
+                if np.max(dims_displayed) > (self.ndim - 1):
+                    # if the world dims have more dimensions than the layers,
+                    # we need to map them properly
+                    dims_displayed = self._dims_displayed
+                elif len(dims_displayed) > self.ndim:
+                    dims_displayed = self._dims_displayed
+
             if dims_displayed is not None:
                 if len(dims_displayed) == 2:
                     value = self._get_value(position=tuple(position))
