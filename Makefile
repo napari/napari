@@ -1,4 +1,4 @@
-.PHONY: docs typestubs pre watch dist
+.PHONY: docs typestubs pre watch dist settings-schema
 
 docs:
 	rm -rf docs/_build/
@@ -15,6 +15,9 @@ dist:
 	make typestubs
 	check-manifest
 	python -m build
+
+settings-schema:
+	python -m napari.settings._napari_settings
 
 pre:
 	pre-commit run -a

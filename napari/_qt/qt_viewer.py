@@ -9,7 +9,6 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-from .._vispy.utils import get_view_direction_in_scene_coordinates
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
@@ -52,8 +51,8 @@ from .._vispy import (  # isort:skip
 if TYPE_CHECKING:
     from ..viewer import Viewer
 
+from ..settings import get_settings
 from ..utils.io import imsave_extensions
-from ..utils.settings import get_settings
 
 
 class QtViewer(QSplitter):
@@ -797,16 +796,17 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        # Add the view ray to the event
+        event.view_direction = self.viewer.camera.calculate_nd_view_direction(
+            self.viewer.dims.ndim, self.viewer.dims.displayed
+        )
+
         # Update the cursor position
+        self.viewer.cursor._view_direction = event.view_direction
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
 
         # Add the cursor position to the event
         event.position = self.viewer.cursor.position
-
-        # Add the view ray to the event
-        event.view_direction = get_view_direction_in_scene_coordinates(
-            self.view, self.viewer.dims.point, self.viewer.dims.displayed
-        )
 
         # Add the displayed dimensions to the event
         event.dims_displayed = list(self.viewer.dims.displayed)
@@ -872,8 +872,8 @@ class QtViewer(QSplitter):
             if layer.ndim <= self.viewer.dims.ndim:
                 layer._update_draw(
                     scale_factor=1 / self.viewer.camera.zoom,
-                    corner_pixels=self._canvas_corners_in_world[
-                        :, -layer.ndim :
+                    corner_pixels_displayed=self._canvas_corners_in_world[
+                        :, layer._displayed_axes
                     ],
                     shape_threshold=self.canvas.size,
                 )

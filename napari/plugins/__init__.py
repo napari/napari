@@ -1,4 +1,4 @@
-from ..utils.settings import get_settings
+from ..settings import get_settings
 from ._plugin_manager import NapariPluginManager
 
 __all__ = ["plugin_manager", "menu_item_template"]
