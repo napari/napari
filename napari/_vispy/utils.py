@@ -72,11 +72,13 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
 
 def get_view_direction_in_scene_coordinates(
     view: ViewBox,
-    dims_point: Tuple[int],
+    ndim: int,
     dims_displayed: Tuple[int],
 ) -> np.ndarray:
-    """calculate the unit vector pointing in the direction of the view
+    """Calculate the unit vector pointing in the direction of the view.
 
+    This is only for 3D viewing, so it returns None when
+    len(dims_displayed) == 2.
     Adapted From:
     https://stackoverflow.com/questions/37877592/
         get-view-direction-relative-to-scene-in-vispy/37882984
@@ -85,9 +87,9 @@ def get_view_direction_in_scene_coordinates(
     ----------
     view : vispy.scene.widgets.viewbox.ViewBox
         The vispy view box object to get the view direction from.
-    dims_point : Tuple[int]
-        The indices for each dimension in the current view.
-        This is typically from viewer.dims.point.
+    ndim : int
+        The number of dimensions in the full nD dims model.
+        This is typically from viewer.dims.ndim
     dims_displayed : Tuple[int]
         The indices of the dims displayed in the viewer.
         This is typically from viewer.dims.displayed.
@@ -96,8 +98,13 @@ def get_view_direction_in_scene_coordinates(
     -------
     view_vector : np.ndarray
         Unit vector in the direction of the view in scene coordinates.
-        Axes are ordered zyx.
+        Axes are ordered zyx. If the viewer is in 2D
+        (i.e., len(dims_displayed) == 2), view_vector is None.
     """
+    # only return a vector when viewing in 3D
+    if len(dims_displayed) == 2:
+        return None
+
     tform = view.scene.transform
     w, h = view.canvas.size
 
@@ -119,7 +126,7 @@ def get_view_direction_in_scene_coordinates(
 
     # data are ordered xyz on vispy Volume
     d4 = d4[[2, 1, 0]]
-    view_dir_world = list(dims_point)
+    view_dir_world = np.zeros((ndim,))
     for i, d in enumerate(dims_displayed):
         view_dir_world[d] = d4[i]
 

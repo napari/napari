@@ -23,7 +23,15 @@ def Event():
         NamedTuple object with fields "type" and "is_dragging".
     """
     return collections.namedtuple(
-        'Event', field_names=['type', 'is_dragging', 'position']
+        'Event',
+        field_names=[
+            'type',
+            'is_dragging',
+            'position',
+            'view_direction',
+            'dims_displayed',
+            'dims_point',
+        ],
     )
 
 
@@ -39,19 +47,40 @@ def test_paint(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(0, 0))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 0),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag
     event = ReadOnlyWrapper(
-        Event(type='mouse_move', is_dragging=True, position=(19, 19))
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=(19, 19),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, position=(19, 19))
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            position=(19, 19),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -75,19 +104,40 @@ def test_paint_scale(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(0, 0))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 0),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag
     event = ReadOnlyWrapper(
-        Event(type='mouse_move', is_dragging=True, position=(39, 39))
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=(39, 39),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, position=(39, 39))
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            position=(39, 39),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -111,19 +161,40 @@ def test_erase(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(0, 0))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 0),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag
     event = ReadOnlyWrapper(
-        Event(type='mouse_move', is_dragging=True, position=(19, 19))
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=(19, 19),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, position=(19, 19))
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            position=(19, 19),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -148,14 +219,28 @@ def test_pick(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(0, 0))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 0),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
     assert layer.selected_label == 2
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(19, 19))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(19, 19),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
     assert layer.selected_label == 3
@@ -177,7 +262,14 @@ def test_fill(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(0, 0))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 0),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
     assert np.unique(layer.data[:5, :5]) == 4
@@ -189,7 +281,14 @@ def test_fill(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(19, 19))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(19, 19),
+            view_direction=None,
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
     assert np.unique(layer.data[:5, :5]) == 4
@@ -216,7 +315,14 @@ def test_fill_nD_plane(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(0, 0, 0))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 0, 0),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
     assert np.unique(layer.data[0, :5, :5]) == 4
@@ -230,7 +336,14 @@ def test_fill_nD_plane(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(0, 19, 19))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 19, 19),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1),
+            dims_point=(0, 0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
     assert np.unique(layer.data[0, :5, :5]) == 4
@@ -262,7 +375,14 @@ def test_fill_nD_all(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(0, 0, 0))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 0, 0),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1),
+            dims_point=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
     assert np.unique(layer.data[:5, :5, :5]) == 4
@@ -275,7 +395,14 @@ def test_fill_nD_all(Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, position=(0, 19, 19))
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=(0, 19, 19),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1),
+            dims_point=(0, 0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
     assert np.unique(layer.data[:5, :5, :5]) == 4

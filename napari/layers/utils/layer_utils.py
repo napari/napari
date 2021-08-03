@@ -321,6 +321,57 @@ def get_current_properties(
     return current_properties
 
 
+def _coerce_current_properties_value(
+    value: Union[float, str, int, bool, list, tuple, np.ndarray]
+) -> np.ndarray:
+    """Coerce a value in a current_properties dictionary into the correct type.
+
+    Parameters
+    ----------
+    value : Union[float, str, int, bool, list, tuple, np.ndarray]
+        The value to be coerced.
+
+    Returns
+    -------
+    coerced_value : np.ndarray
+        The value in a 1D numpy array with length 1.
+    """
+    if isinstance(value, (np.ndarray, list, tuple)):
+        if len(value) != 1:
+            raise ValueError('current_properties values should have length 1.')
+        coerced_value = np.asarray(value)
+    else:
+        coerced_value = np.array([value])
+
+    return coerced_value
+
+
+def coerce_current_properties(
+    current_properties: Dict[
+        str, Union[float, str, int, bool, list, tuple, np.ndarray]
+    ]
+) -> Dict[str, np.ndarray]:
+    """Coerce a current_properties dictionary into the correct type.
+
+
+    Parameters
+    ----------
+    current_properties : Dict[str, Union[float, str, int, bool, list, tuple, np.ndarray]]
+        The current_properties dictionary to be coerced.
+
+    Returns
+    -------
+    coerced_current_properties : Dict[str, np.ndarray]
+        The current_properties dictionary with string keys and 1D numpy array with length 1 values.
+    """
+    coerced_current_properties = {
+        k: _coerce_current_properties_value(v)
+        for k, v in current_properties.items()
+    }
+
+    return coerced_current_properties
+
+
 def dataframe_to_properties(
     dataframe: DataFrame,
 ) -> Dict[str, np.ndarray]:

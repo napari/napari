@@ -1,8 +1,8 @@
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Mesh, Text
 
+from ..settings import get_settings
 from ..utils.events import disconnect_events
-from ..utils.settings import get_settings
 from ._text_utils import update_text
 from .vispy_base_layer import VispyBaseLayer
 

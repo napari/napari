@@ -16,4 +16,5 @@ def test_octree_import():
 
     env = os.environ.copy()
     env['NAPARI_OCTREE'] = '1'
+    env['NAPARI_CONFIG'] = ''  # don't try to save config
     subprocess.run(cmd, check=True, env=env)
