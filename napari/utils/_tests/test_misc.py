@@ -127,6 +127,15 @@ def test_string_enum():
 
     assert TestEnum.THING != AnotherTestEnum.THING
 
+    # test lookup in a set
+    assert TestEnum.THING in {TestEnum.THING, TestEnum.OTHERTHING}
+    assert TestEnum.THING not in {TestEnum.OTHERTHING}
+    assert TestEnum.THING in {'thing', TestEnum.OTHERTHING}
+    assert TestEnum.THING not in {
+        AnotherTestEnum.THING,
+        AnotherTestEnum.ANOTHERTHING,
+    }
+
 
 def test_abspath_or_url():
     relpath = "~" + sep + "something"
