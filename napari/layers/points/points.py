@@ -1395,8 +1395,7 @@ class Points(Layer):
                     self.properties[k], index, axis=0
                 )
             self.text.remove(index)
-            if self._value in self.selected_data:
-                self._value = None
+            self._value = None
             self.selected_data = set()
             self.data = np.delete(self.data, index, axis=0)
 
