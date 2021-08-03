@@ -754,6 +754,29 @@ def test_value():
     assert value == data[0, 0]
 
 
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ([10, 5, 5], [1, 0, 0], [0, 1, 2], False),
+        ([10, 5, 5], [1, 0, 0], [0, 1, 2], True),
+        ([0, 10, 5, 5], [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
+    """get_value should return label value in 3D"""
+    data = np.zeros((20, 20, 20), dtype=int)
+    data[0:10, 0:10, 0:10] = 1
+    layer = Labels(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    value = layer.get_value(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
+    )
+    assert value == 1
+
+
 def test_message():
     """Test converting value and coords to message."""
     np.random.seed(0)

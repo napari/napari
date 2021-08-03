@@ -1933,14 +1933,26 @@ def test_value():
     assert value == (None, None)
 
 
-def test_value_3d():
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
+        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
     """Currently get_value should return None in 3D"""
     shape = (10, 4, 3)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
     value = layer.get_value(
-        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
     )
     assert value is None
 
