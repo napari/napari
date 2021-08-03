@@ -496,7 +496,6 @@ ATTENUATED_MIP_SNIPPETS = dict(
         gl_FragColor = applyColormap(maxval);
         """,
 )
-ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
 
 MINIP_SNIPPETS = dict(
     before_loop="""
@@ -511,17 +510,16 @@ MINIP_SNIPPETS = dict(
         """,
     after_loop="""
         // Refine search for min value, but only if anything was found
-        if ( mini > -1 ) {{
+        if ( mini > -1 ) {
             loc = start_loc + step * (float(mini) - 0.5);
             for (int i=0; i<10; i++) {
                 minval = min(minval, $sample(u_volumetex, loc).r);
                 loc += step * 0.1;
             }
             gl_FragColor = applyColormap(minval);
-        }}
+        }
         """,
 )
-MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
 
 TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
@@ -766,7 +764,7 @@ class VolumeVisual(Visual):
         self._last_data = None
 
         # Create program
-        Visual.__init__(self, vcode=VERT_SHADER, fcode="")
+        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER)
         self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
         self.shared_program['a_texcoord'] = self._texcoord
@@ -1013,6 +1011,23 @@ class VolumeVisual(Visual):
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
             if (hasattr(self.cmap, 'texture_lut')) else None
+        self.update()
+
+    @property
+    def _raycasting_setup_snippet(self):
+        return RAYCASTING_MODE_DICT[self.raycasting_mode]
+
+    @property
+    def raycasting_mode(self):
+        return self._raycasting_mode
+
+    @raycasting_mode.setter
+    def raycasting_mode(self, value: str):
+        valid_raycasting_modes = RAYCASTING_MODE_DICT.keys()
+        if value not in valid_raycasting_modes:
+            raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
+        self._raycasting_mode = value
+        self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.update()
 
     @property

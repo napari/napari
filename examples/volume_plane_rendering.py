@@ -10,7 +10,7 @@ from skimage import data
 from superqt import QLabeledDoubleSlider
 
 import napari
-from napari._qt import get_app
+from napari._qt.qt_event_loop import get_app
 
 blobs = data.binary_blobs(length=64, volume_fraction=0.1, n_dim=3).astype(
     float
