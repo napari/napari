@@ -1,7 +1,10 @@
 import numpy as np
 
 from ._labels_constants import Mode
-from ._labels_utils import get_action_coordinate, interpolate_coordinates
+from ._labels_utils import (
+    interpolate_coordinates,
+    mouse_event_to_labels_coordinate,
+)
 
 
 def draw(layer, event):
@@ -24,7 +27,7 @@ def draw(layer, event):
     eraser
     """
     ndisplay = len(layer._dims_displayed)
-    coordinates = get_action_coordinate(layer, event)
+    coordinates = mouse_event_to_labels_coordinate(layer, event)
 
     # on press
     if layer._mode == Mode.ERASE:
@@ -44,7 +47,7 @@ def draw(layer, event):
     layer._block_saving = True
     # on move
     while event.type == 'mouse_move':
-        coordinates = get_action_coordinate(layer, event)
+        coordinates = mouse_event_to_labels_coordinate(layer, event)
         if coordinates is not None or last_cursor_coord is not None:
             interp_coord = interpolate_coordinates(
                 last_cursor_coord, coordinates, layer.brush_size

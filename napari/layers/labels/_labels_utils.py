@@ -168,7 +168,7 @@ def first_nonzero_coordinate(data, start_point, end_point):
         return clipped_coords[nonzero[0]]
 
 
-def get_action_coordinate(layer, event):
+def mouse_event_to_labels_coordinate(layer, event):
     """Return the data coordinate of a Labels layer mouse event in 2D or 3D.
 
     In 2D, this is just the event's position transformed by the layer's
