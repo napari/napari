@@ -284,6 +284,11 @@ class AppearanceSettings(BaseNapariSettings):
         preferences_exclude = ['schema_version']
 
 
+GridStride = conint(ge=-50, le=50, ne=0)
+GridWidth = conint(ge=-1, ne=0)
+GridHeight = conint(ge=-1, ne=0)
+
+
 class ApplicationSettings(BaseNapariSettings):
     # 1. If you want to *change* the default value of a current option, you need to
     #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
@@ -414,19 +419,19 @@ class ApplicationSettings(BaseNapariSettings):
         description=trans._("Loop mode for playback."),
     )
 
-    grid_stride: conint(ge=-50, le=50, ne=0) = Field(
+    grid_stride: GridStride = Field(
         default=1,
         title=trans._("Grid Stride"),
         description=trans._("Number of layers to place in each grid square."),
     )
 
-    grid_width: conint(ge=-1, ne=0) = Field(
+    grid_width: GridWidth = Field(
         default=-1,
         title=trans._("Grid Width"),
         description=trans._("Number of columns in the grid."),
     )
 
-    grid_height: conint(ge=-1, ne=0) = Field(
+    grid_height: GridHeight = Field(
         default=-1,
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),

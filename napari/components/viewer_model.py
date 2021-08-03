@@ -140,6 +140,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self._tooltip_visible_update
         )
 
+        self._update_viewer_grid()
         settings.application.events.grid_stride.connect(
             self._update_viewer_grid
         )
