@@ -387,11 +387,7 @@ def run(
             )
         )
         return
-    if os.getenv("NAPARI_CATCH_ERRORS") not in ('0', 'False'):
-        with notification_manager:
-            app.exec_()
-    else:
-        sys.excepthook = excepthook_wrap
+    with notification_manager:
         app.exec_()
 
 

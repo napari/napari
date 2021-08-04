@@ -253,7 +253,9 @@ class NotificationManager:
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
             sys.exit("Exit on error")
-
+        if os.getenv("NAPARI_CATCH_ERRORS") in ('0', 'False'):
+            sys.__excepthook__(exctype, value, traceback)
+            return
         try:
             self.dispatch(Notification.from_exception(value))
         except Exception:
