@@ -328,7 +328,8 @@ If you are using Github, add the `"napari-plugin" topic
 see your work.
 
 The `napari hub <https://www.napari-hub.org/>`_
-automatically displays information about all napari plugins,
+automatically displays information about PyPI packages annotated with the
+`Framework :: napari` `Trove classifier <https://pypi.org/classifiers/>`_,
 to help end users discover plugins that fit their needs.
 To ensure you are providing the relevant metadata and description
 for your plugin, see the following documentation in the
