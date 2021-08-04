@@ -16,6 +16,7 @@
 
 - file: plugins/index
   sections:
+    - file: plugins/find-and-install-plugin
     - file: plugins/for_napari_developers
     - file: plugins/for_plugin_developers
     - file: plugins/hook_specifications
@@ -84,4 +85,3 @@
 - file: api/index
   sections:
     - file: api/napari
-
