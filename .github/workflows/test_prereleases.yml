@@ -17,6 +17,8 @@ jobs:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
     runs-on: ${{ matrix.platform }}
     if: github.repository == 'napari/napari'
+    env:
+      DISPLAY: ':99.0'
     strategy:
       fail-fast: false
       matrix:

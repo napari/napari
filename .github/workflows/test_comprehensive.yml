@@ -53,6 +53,8 @@ jobs:
     needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
+    env:
+      DISPLAY: ':99.0'
     strategy:
       fail-fast: false
       matrix:
@@ -173,6 +175,8 @@ jobs:
   test_pip_install:
     name: ubuntu-latest 3.8 pip install
     runs-on: ubuntu-latest
+    env:
+      DISPLAY: ':99.0'
     steps:
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
