@@ -2,8 +2,11 @@
 
 # Finding and installing a napari plugin
 
-You can find plugins to use with napari on the [napari hub](https://napari.org),
-and can install plugins directly from your instance of napari itself.
+napari plugins are Python packages distributed on the Python Package Index
+(PyPI), and annotated with the tag [`Framework ::
+napari`](https://pypi.org/search/?q=&o=&c=Framework+%3A%3A+napari).  The
+[napari hub](https://napari-hub.org) uses this data, together with additional
+metadata, to produce a more user friendly way to find napari plugins.
 
 ## Finding plugins on the napari hub
 
