@@ -150,7 +150,7 @@ class NapariQtNotification(QDialog):
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(self.close)
-        self.timer.start()
+            self.timer.start()
 
     def mouseMoveEvent(self, event):
         """On hover, stop the self-destruct timer"""
