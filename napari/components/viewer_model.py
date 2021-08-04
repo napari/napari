@@ -34,7 +34,6 @@ from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
-from ..utils.settings import get_settings
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll

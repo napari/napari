@@ -9,7 +9,7 @@ from pydantic import BaseSettings, Field, ValidationError
 from pydantic.env_settings import SettingsSourceCallable
 from typing_extensions import TypedDict
 
-from ...utils.settings._constants import LoopMode
+from ...settings._constants import LoopMode
 from ...utils.shortcuts import default_shortcuts
 from .._base import _DEFAULT_LOCALE
 from ..events.custom_types import conint
