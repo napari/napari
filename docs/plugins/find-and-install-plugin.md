@@ -8,6 +8,9 @@ napari`](https://pypi.org/search/?q=&o=&c=Framework+%3A%3A+napari).  The
 [napari hub](https://napari-hub.org) uses this data, together with additional
 metadata, to produce a more user friendly way to find napari plugins.
 
+Similarly, plugins annotated on PyPI with `Framework :: napari` are listed in
+the "Plugins > Install/Uninstall Plugins" menu within napari.
+
 ## Finding plugins on the napari hub
 
 The napari hub hosts information about all napari-compatible plugins.
