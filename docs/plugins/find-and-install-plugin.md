@@ -19,7 +19,8 @@ You can also share links to specific search results and plugins.
 
 ## Installing plugins with napari
 
-All plugins listed on the napari hub can be installed directly from napari:
+All PyPI packages annotated with the `Framework :: napari` tag can be installed
+directly from within napari:
 
 1. From the “Plugins” menu, select “Install/Uninstall Plugins...”.
 
