@@ -189,6 +189,10 @@ class NotificationManager:
     def __init__(self) -> None:
         self.records: List[Notification] = []
         self.exit_on_error = os.getenv('NAPARI_EXIT_ON_ERROR') in ('1', 'True')
+        self.catch_error = os.getenv("NAPARI_CATCH_ERRORS") not in (
+            '0',
+            'False',
+        )
         self.notification_ready = self.changed = EventEmitter(
             source=self, event_class=Notification
         )
@@ -253,7 +257,7 @@ class NotificationManager:
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
             sys.exit("Exit on error")
-        if os.getenv("NAPARI_CATCH_ERRORS") in ('0', 'False'):
+        if not self.catch_error:
             sys.__excepthook__(exctype, value, traceback)
             return
         try:
