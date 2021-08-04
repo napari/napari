@@ -499,7 +499,9 @@ def napari_experimental_provide_dock_widget() -> Union[
 
 
 @napari_hook_specification(historic=True)
-def napari_provide_theme() -> Dict[str, Dict[str, Union[str, Tuple, List]]]:
+def napari_experimental_provide_theme() -> Dict[
+    str, Dict[str, Union[str, Tuple, List]]
+]:
     """Provide GUI with a set of colors used through napari. This hook allows you to
     provide additional color schemes so you can accomplish your desired styling.
 
@@ -541,6 +543,6 @@ def napari_provide_theme() -> Dict[str, Dict[str, Union[str, Tuple, List]]]:
     ...     return themes
     >>>
     >>> @napari_hook_implementation
-    >>> def napari_provide_theme():
+    >>> def napari_experimental_provide_theme():
     ...     return get_new_theme()
     """

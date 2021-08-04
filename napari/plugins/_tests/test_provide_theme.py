@@ -1,4 +1,4 @@
-"""Test `napari_provide_theme` hook specification."""
+"""Test `napari_experimental_provide_theme` hook specification."""
 from typing import TYPE_CHECKING
 
 import pytest
@@ -19,7 +19,7 @@ def test_provide_theme_hook(napari_plugin_manager: "NapariPluginManager"):
 
     class TestPlugin:
         @napari_hook_implementation
-        def napari_provide_theme():
+        def napari_experimental_provide_theme():
             return {"dark-test": dark}
 
     viewer = ViewerModel()
@@ -47,7 +47,7 @@ def test_provide_theme_hook_bad(napari_plugin_manager: "NapariPluginManager"):
 
     class TestPluginBad:
         @napari_hook_implementation
-        def napari_provide_theme():
+        def napari_experimental_provide_theme():
             return {"dark-bad": dark}
 
     with pytest.warns(
@@ -70,7 +70,7 @@ def test_provide_theme_hook_not_dict(
 
     class TestPluginBad:
         @napari_hook_implementation
-        def napari_provide_theme():
+        def napari_experimental_provide_theme():
             return ["bad-theme", []]
 
     with pytest.warns(
@@ -92,7 +92,7 @@ def test_provide_theme_hook_unregister(
 
     class TestPlugin:
         @napari_hook_implementation
-        def napari_provide_theme():
+        def napari_experimental_provide_theme():
             return {"dark-test": dark}
 
     napari_plugin_manager.discover_themes()
