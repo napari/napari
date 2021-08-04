@@ -515,12 +515,46 @@ def test_value():
     assert value == data[0, 0]
 
 
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
+        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
+    """Currently get_value should return None in 3D"""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 15))
+    layer = Image(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    value = layer.get_value(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
+    )
+    assert value is None
+
+
 def test_message():
     """Test converting value and coords to message."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     msg = layer.get_status((0,) * 2)
+    assert type(msg) == str
+
+
+def test_message_3d():
+    """Test converting values and coords to message in 3D."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 15))
+    layer = Image(data)
+    msg = layer.get_status(
+        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    )
     assert type(msg) == str
 
 

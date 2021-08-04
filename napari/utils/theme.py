@@ -258,7 +258,7 @@ def rebuild_theme_settings(event=None):
     event : event
         Unused event.
     """
-    from ..utils.settings import get_settings
+    from ..settings import get_settings
 
     settings = get_settings()
     settings.appearance.refresh_themes()

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 
-from napari.utils.settings import get_settings
+from napari.settings import get_settings
 from napari.utils.theme import Theme, available_themes, get_theme
 from napari.viewer import ViewerModel
 

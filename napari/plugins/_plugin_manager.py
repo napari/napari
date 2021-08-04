@@ -23,11 +23,11 @@ from napari_plugin_engine.hooks import HookCaller
 from pydantic import ValidationError
 from typing_extensions import TypedDict
 
+from ..settings import get_settings
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
 from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
-from ..utils.settings import get_settings
 from ..utils.theme import Theme, register_theme, unregister_theme
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
@@ -98,11 +98,12 @@ class NapariPluginManager(PluginManager):
 
                 self.register(_skimage_data, name='scikit-image')
 
-            from ..utils.settings import SETTINGS
+            from ..settings import get_settings
 
             # dicts to store maps from extension -> plugin_name
-            self._extension2reader.update(SETTINGS.plugins.extension2reader)
-            self._extension2writer.update(SETTINGS.plugins.extension2writer)
+            plugin_settings = get_settings().plugins
+            self._extension2reader.update(plugin_settings.extension2reader)
+            self._extension2writer.update(plugin_settings.extension2writer)
 
     def register(
         self, namespace: Any, name: Optional[str] = None
@@ -615,10 +616,10 @@ class NapariPluginManager(PluginManager):
         extensions : Union[str, Iterable[str]]
             Name(s) of extensions to always write with `reader`
         """
-        from ..utils.settings import SETTINGS
+        from ..settings import get_settings
 
         self._assign_plugin_to_extensions(reader, extensions, type_='reader')
-        SETTINGS.plugins.extension2reader = self._extension2reader
+        get_settings().plugins.extension2reader = self._extension2reader
 
     def get_writer_for_extension(self, extension: str) -> Optional[str]:
         """Return writer plugin assigned to `extension`, or None."""
@@ -636,10 +637,10 @@ class NapariPluginManager(PluginManager):
         extensions : Union[str, Iterable[str]]
             Name(s) of extensions to always write with `writer`
         """
-        from ..utils.settings import SETTINGS
+        from ..settings import get_settings
 
         self._assign_plugin_to_extensions(writer, extensions, type_='writer')
-        SETTINGS.plugins.extension2writer = self._extension2writer
+        get_settings().plugins.extension2writer = self._extension2writer
 
     def _get_plugin_for_extension(
         self, extension: str, type_: str

@@ -413,8 +413,9 @@ def test_process_mouse_event(make_napari_viewer):
     MouseEvent by _process_mouse_events.
     """
     # make a mock mouse event
+    new_pos = [25, 25]
     mouse_event = MouseEvent(
-        pos=[25, 25],
+        pos=new_pos,
     )
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
@@ -428,6 +429,9 @@ def test_process_mouse_event(make_napari_viewer):
         np.testing.assert_almost_equal(event.view_direction, [0, 1, 0, 0])
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == 0
+
+        expected_position = view._map_canvas2world(new_pos)
+        np.testing.assert_almost_equal(expected_position, list(event.position))
 
     viewer.dims.ndisplay = 3
     view._process_mouse_event(mouse_press_callbacks, mouse_event)

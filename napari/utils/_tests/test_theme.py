@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from napari.utils.settings import get_settings
+from napari.settings import get_settings
 from napari.utils.theme import (
     Theme,
     available_themes,

@@ -526,9 +526,24 @@ class QtLabelsControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method.
         """
+        # In 3D mode, we need to disable all buttons other than picking
+        # (only picking works in 3D)
+        widget_list = [
+            'pick_button',
+            'fill_button',
+            'paint_button',
+            'erase_button',
+        ]
+        widgets_to_toggle = {
+            (2, True): widget_list,
+            (2, False): widget_list,
+            (3, True): widget_list,
+            (3, False): widget_list,
+        }
+
         disable_with_opacity(
             self,
-            ['pick_button', 'paint_button', 'fill_button'],
+            widgets_to_toggle[(self.layer._ndisplay, self.layer.editable)],
             self.layer.editable,
         )
 
@@ -560,6 +575,8 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.renderComboBox.show()
             self.renderLabel.show()
+
+        self._on_editable_change()
 
 
 class QtColorBox(QWidget):

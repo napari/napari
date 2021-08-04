@@ -26,6 +26,7 @@ from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -33,7 +34,6 @@ from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
-from ..utils.settings import SETTINGS
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -60,8 +60,10 @@ EXCLUDE_DICT = {
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
-    from ..types import FullLayerData, LayerData, PathOrPaths
+    from ..types import FullLayerData, LayerData
 
+PathLike = Union[str, Path]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
@@ -130,8 +132,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
-        self.tooltip.visible = SETTINGS.appearance.layer_tooltip_visibility
-        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
+        settings = get_settings()
+        self.tooltip.visible = settings.appearance.layer_tooltip_visibility
+        settings.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visible_update
         )
 
@@ -344,7 +347,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.ndim = ndim
             for i in range(ndim):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
-        self.cursor.position = (0,) * self.dims.ndim
+
+        new_dim = self.dims.ndim
+        dim_diff = new_dim - len(self.cursor.position)
+        if dim_diff < 0:
+            self.cursor.position = self.cursor.position[:new_dim]
+        elif dim_diff > 0:
+            self.cursor.position = tuple(
+                list(self.cursor.position) + [0] * dim_diff
+            )
         self.events.layers_change()
 
     def _update_interactive(self, event):
@@ -375,7 +386,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Update status and help bar based on active layer
         active = self.layers.selection.active
         if active is not None:
-            self.status = active.get_status(self.cursor.position, world=True)
+            self.status = active.get_status(
+                self.cursor.position,
+                view_direction=self.cursor._view_direction,
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
