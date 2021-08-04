@@ -318,3 +318,19 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
 
     layer.events.data(value=layer.data)
     assert layer._value == 1
+
+
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_emitting_data_doesnt_change_cursor_position(
+    make_napari_viewer, layer_class, data, ndim
+):
+    """Test emitting data event from layer doesn't change cursor position"""
+    viewer = make_napari_viewer()
+    layer = layer_class(data)
+    viewer.add_layer(layer)
+
+    new_position = (5,) * ndim
+    viewer.cursor.position = new_position
+    layer.events.data(value=layer.data)
+
+    assert viewer.cursor.position == new_position
