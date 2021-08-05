@@ -508,21 +508,15 @@ class QtViewer(QSplitter):
         hist = get_save_history()
         dlg.setHistory(hist)
 
-        if in_ipython():
-            filename, _ = dlg.getSaveFileName(
-                parent=self,
-                caption=trans._('Save {msg} layers', msg=msg),
-                directory=hist[0],  # home dir by default,
-                filter=ext_str,
-                options=QFileDialog.DontUseNativeDialog,
-            )
-        else:
-            filename, _ = dlg.getSaveFileName(
-                parent=self,
-                caption=trans._('Save {msg} layers', msg=msg),
-                directory=hist[0],  # home dir by default,
-                filter=ext_str,
-            )
+        filename, _ = dlg.getSaveFileName(
+            parent=self,
+            caption=trans._('Save {msg} layers', msg=msg),
+            directory=hist[0],  # home dir by default,
+            filter=ext_str,
+            options=(
+                QFileDialog.DontUseNativeDialog if in_ipython() else QFileDialog.Options()
+            ),
+        )
 
         if filename:
             with warnings.catch_warnings(record=True) as wa:
