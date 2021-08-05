@@ -32,6 +32,19 @@ except ImportError:
             return path
 
 
+def pytest_sessionstart(session):
+    # https://stackoverflow.com/questions/31952711/threading-pyqt-crashes-with-unknown-request-in-queue-while-dequeuing
+    # https://stackoverflow.com/a/35394239/7475772
+    # https://docs.pytest.org/en/latest/reference/reference.html#_pytest.hookspec.pytest_sessionstart
+    try:
+        from qtpy.QtCore import QCoreApplication, Qt
+
+        assert QCoreApplication.instance() is None
+        QCoreApplication.setAttribute(Qt.AA_X11InitThreads)
+    except ImportError:
+        pass
+
+
 def pytest_addoption(parser):
     """Add napari specific command line options.
 
