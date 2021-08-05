@@ -514,7 +514,9 @@ class QtViewer(QSplitter):
             directory=hist[0],  # home dir by default,
             filter=ext_str,
             options=(
-                QFileDialog.DontUseNativeDialog if in_ipython() else QFileDialog.Options()
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
             ),
         )
 
@@ -616,19 +618,16 @@ class QtViewer(QSplitter):
         hist = get_open_history()
         dlg.setHistory(hist)
 
-        if in_ipython():
-            filenames, _ = dlg.getOpenFileNames(
-                parent=self,
-                caption=trans._('Select file(s)...'),
-                directory=hist[0],
-                options=QFileDialog.DontUseNativeDialog,
-            )
-        else:
-            filenames, _ = dlg.getOpenFileNames(
-                parent=self,
-                caption=trans._('Select file(s)...'),
-                directory=hist[0],
-            )
+        filenames, _ = dlg.getOpenFileNames(
+            parent=self,
+            caption=trans._('Select file(s)...'),
+            directory=hist[0],
+            options=(
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
+            ),
+        )
 
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames)
@@ -640,19 +639,17 @@ class QtViewer(QSplitter):
         hist = get_open_history()
         dlg.setHistory(hist)
 
-        if in_ipython():
-            filenames, _ = dlg.getOpenFileNames(
-                parent=self,
-                caption=trans._('Select files...'),
-                directory=hist[0],  # home dir by default
-                options=QFileDialog.DontUseNativeDialog,
-            )
-        else:
-            filenames, _ = dlg.getOpenFileNames(
-                parent=self,
-                caption=trans._('Select files...'),
-                directory=hist[0],  # home dir by default
-            )
+        filenames, _ = dlg.getOpenFileNames(
+            parent=self,
+            caption=trans._('Select files...'),
+            directory=hist[0],  # home dir by default
+            options=(
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
+            ),
+        )
+
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames, stack=True)
             update_open_history(filenames[0])
@@ -663,19 +660,16 @@ class QtViewer(QSplitter):
         hist = get_open_history()
         dlg.setHistory(hist)
 
-        if in_ipython():
-            folder = dlg.getExistingDirectory(
-                parent=self,
-                caption=trans._('Select folder...'),
-                directory=hist[0],  # home dir by default
-                options=QFileDialog.DontUseNativeDialog,
-            )
-        else:
-            folder = dlg.getExistingDirectory(
-                parent=self,
-                caption=trans._('Select folder...'),
-                directory=hist[0],  # home dir by default
-            )
+        folder = dlg.getExistingDirectory(
+            parent=self,
+            caption=trans._('Select folder...'),
+            directory=hist[0],  # home dir by default
+            options=(
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
+            ),
+        )
 
         if folder not in {'', None}:
             self.viewer.open([folder])
