@@ -27,6 +27,7 @@ def init_application():
     try:
         from qtpy.QtCore import QCoreApplication, Qt
 
+        assert QCoreApplication.instance() is None
         QCoreApplication.setAttribute(Qt.AA_X11InitThreads)
     except ImportError:
         pass
