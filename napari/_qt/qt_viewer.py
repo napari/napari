@@ -28,6 +28,7 @@ from ..utils.interactions import (
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
+from ..utils.misc import in_ipython
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
@@ -47,6 +48,7 @@ from .._vispy import (  # isort:skip
     VispyTextVisual,
     create_vispy_visual,
 )
+
 
 if TYPE_CHECKING:
     from ..viewer import Viewer
@@ -506,12 +508,21 @@ class QtViewer(QSplitter):
         hist = get_save_history()
         dlg.setHistory(hist)
 
-        filename, _ = dlg.getSaveFileName(
-            parent=self,
-            caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default,
-            filter=ext_str,
-        )
+        if in_ipython():
+            filename, _ = dlg.getSaveFileName(
+                parent=self,
+                caption=trans._('Save {msg} layers', msg=msg),
+                directory=hist[0],  # home dir by default,
+                filter=ext_str,
+                options=QFileDialog.DontUseNativeDialog,
+            )
+        else:
+            filename, _ = dlg.getSaveFileName(
+                parent=self,
+                caption=trans._('Save {msg} layers', msg=msg),
+                directory=hist[0],  # home dir by default,
+                filter=ext_str,
+            )
 
         if filename:
             with warnings.catch_warnings(record=True) as wa:
@@ -610,11 +621,20 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_open_history()
         dlg.setHistory(hist)
-        filenames, _ = dlg.getOpenFileNames(
-            parent=self,
-            caption=trans._('Select file(s)...'),
-            directory=hist[0],
-        )
+
+        if in_ipython():
+            filenames, _ = dlg.getOpenFileNames(
+                parent=self,
+                caption=trans._('Select file(s)...'),
+                directory=hist[0],
+                options=QFileDialog.DontUseNativeDialog,
+            )
+        else:
+            filenames, _ = dlg.getOpenFileNames(
+                parent=self,
+                caption=trans._('Select file(s)...'),
+                directory=hist[0],
+            )
 
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames)
@@ -625,11 +645,20 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_open_history()
         dlg.setHistory(hist)
-        filenames, _ = dlg.getOpenFileNames(
-            parent=self,
-            caption=trans._('Select files...'),
-            directory=hist[0],  # home dir by default
-        )
+
+        if in_ipython():
+            filenames, _ = dlg.getOpenFileNames(
+                parent=self,
+                caption=trans._('Select files...'),
+                directory=hist[0],  # home dir by default
+                options=QFileDialog.DontUseNativeDialog,
+            )
+        else:
+            filenames, _ = dlg.getOpenFileNames(
+                parent=self,
+                caption=trans._('Select files...'),
+                directory=hist[0],  # home dir by default
+            )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames, stack=True)
             update_open_history(filenames[0])
@@ -639,11 +668,21 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_open_history()
         dlg.setHistory(hist)
-        folder = dlg.getExistingDirectory(
-            parent=self,
-            caption=trans._('Select folder...'),
-            directory=hist[0],  # home dir by default
-        )
+
+        if in_ipython():
+            folder = dlg.getExistingDirectory(
+                parent=self,
+                caption=trans._('Select folder...'),
+                directory=hist[0],  # home dir by default
+                options=QFileDialog.DontUseNativeDialog,
+            )
+        else:
+            folder = dlg.getExistingDirectory(
+                parent=self,
+                caption=trans._('Select folder...'),
+                directory=hist[0],  # home dir by default
+            )
+
         if folder not in {'', None}:
             self.viewer.open([folder])
             update_open_history(folder)
