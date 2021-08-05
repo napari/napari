@@ -5,11 +5,16 @@ from typing import List, Tuple, Union
 from pydantic import Field, validator
 
 from ..utils._base import _DEFAULT_LOCALE
+from ..utils.events.custom_types import conint
 from ..utils.events.evented_model import EventedModel
 from ..utils.notifications import NotificationSeverity
 from ..utils.translations import trans
 from ._constants import LoopMode
 from ._fields import Language, SchemaVersion
+
+GridStride = conint(ge=-50, le=50, ne=0)
+GridWidth = conint(ge=-1, ne=0)
+GridHeight = conint(ge=-1, ne=0)
 
 
 class ApplicationSettings(EventedModel):
@@ -138,6 +143,24 @@ class ApplicationSettings(EventedModel):
         LoopMode.LOOP,
         title=trans._("Playback loop mode"),
         description=trans._("Loop mode for playback."),
+    )
+
+    grid_stride: GridStride = Field(
+        default=1,
+        title=trans._("Grid Stride"),
+        description=trans._("Number of layers to place in each grid square."),
+    )
+
+    grid_width: GridWidth = Field(
+        default=-1,
+        title=trans._("Grid Width"),
+        description=trans._("Number of columns in the grid."),
+    )
+
+    grid_height: GridHeight = Field(
+        default=-1,
+        title=trans._("Grid Height"),
+        description=trans._("Number of rows in the grid."),
     )
 
     @validator('window_state')
