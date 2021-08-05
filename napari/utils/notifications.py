@@ -221,6 +221,13 @@ class NotificationManager:
             # Patch for Python < 3.8
             _setup_thread_excepthook()
 
+        try:
+            from napari_error_monitor import install_error_monitor
+
+            install_error_monitor()
+        except ImportError:
+            pass
+
         self._originals_except_hooks.append(sys.excepthook)
         self._original_showwarnings_hooks.append(warnings.showwarning)
 
@@ -260,6 +267,14 @@ class NotificationManager:
         if not self.catch_error:
             sys.__excepthook__(exctype, value, traceback)
             return
+
+        try:
+            from napari_error_monitor import capture_exception
+
+            capture_exception(value)
+        except ImportError:
+            pass
+
         try:
             self.dispatch(Notification.from_exception(value))
         except Exception:
