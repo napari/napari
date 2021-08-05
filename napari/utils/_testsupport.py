@@ -21,6 +21,17 @@ def pytest_addoption(parser):
     )
 
 
+@pytest.fixture(scope="session", autouse=True)
+def init_application():
+    # https://stackoverflow.com/questions/31952711/threading-pyqt-crashes-with-unknown-request-in-queue-while-dequeuing
+    try:
+        from qtpy.QtCore import QCoreApplication, Qt
+
+        QCoreApplication.setAttribute(Qt.AA_X11InitThreads)
+    except ImportError:
+        pass
+
+
 @pytest.fixture
 def napari_plugin_manager(monkeypatch):
     """A napari plugin manager that blocks discovery by default.
