@@ -2,8 +2,8 @@ from typing import Tuple
 
 import numpy as np
 
+from ..settings._application import GridHeight, GridStride, GridWidth
 from ..utils.events import EventedModel
-from ..utils.settings._defaults import GridHeight, GridStride, GridWidth
 
 
 class GridCanvas(EventedModel):
