@@ -30,7 +30,7 @@ class Plane3D(EventedModel):
 
     @validator('normal_vector')
     def _ensure_normalised_vector(cls, v):
-        return v / np.linalg.norm(v)
+        return tuple(v / np.linalg.norm(v))
 
     def shift_along_normal_vector(self, distance: float):
         """Shift the plane along its normal vector by a given distance."""
