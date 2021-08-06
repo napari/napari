@@ -13,11 +13,11 @@ class Plane3D(EventedModel):
     Attributes
     ----------
     position : 3-tuple
-        A position in 3D, defined in data coordinates.
+        A 3D position on the plane, defined in data coordinates.
     normal_vector : 3-tuple
-        A normal vector in 3D, defined in data coordinates.
+        A 3D unit vector normal to the plane, defined in data coordinates.
     thickness : float
-        A thickness for the slice
+        Thickness of the slice
     """
 
     position: Tuple[float, float, float] = (0, 0, 0)
@@ -28,10 +28,10 @@ class Plane3D(EventedModel):
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
 
-    @property
-    def normalised_normal_vector(self):
-        return self.normal_vector / np.linalg.norm(self.normal_vector)
+    @validator('normal_vector')
+    def _ensure_normalised_vector(cls, v):
+        return v / np.linalg.norm(v)
 
     def shift_along_normal_vector(self, distance: float):
         """Shift the plane along its normal vector by a given distance."""
-        self.position += distance * self.normalised_normal_vector
+        self.position += distance * self.normal_vector
