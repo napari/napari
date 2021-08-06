@@ -138,20 +138,20 @@ vec4 applyColormap(float data) {
 }
 
 bool floatNotEqual(float val1, float val2, float equality_tolerance)
-{{
+{
     // check if val1 and val2 are not equal
     bool not_equal = abs(val1 - val2) > equality_tolerance;
 
     return not_equal;
-}}
+}
 
 bool floatEqual(float val1, float val2, float equality_tolerance)
-{{
+{
     // check if val1 and val2 are equal
     bool equal = abs(val1 - val2) < equality_tolerance;
 
     return equal;
-}}
+}
 
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
@@ -244,15 +244,15 @@ vec3 intersectLinePlane(vec3 linePosition,
 }
 
 int detectAdjacentBackground(float val_neg, float val_pos)
-{{
+{
     // determine if the adjacent voxels along an axis are both background
     int adjacent_bg = int( floatEqual(val_neg, u_categorical_bg_value, u_equality_tolerance) );
     adjacent_bg = adjacent_bg * int( floatEqual(val_pos, u_categorical_bg_value, u_equality_tolerance) );
     return adjacent_bg;
-}}
+}
 
 vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
-{{   
+{   
     // Calculate color by incorporating ambient and diffuse lighting
     vec4 color0 = $sample(u_volumetex, loc);
     vec4 color1;
@@ -301,7 +301,7 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     // todo: allow multiple light, define lights on viewvox or subscene
     int nlights = 1; 
     for (int i=0; i<nlights; i++)
-    {{ 
+    { 
         // Get light direction (make sure to prevent zero devision)
         vec3 L = normalize(view_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
@@ -309,11 +309,11 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
         
         // Calculate lighting properties
         float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );
-        if (n_bg_borders > 0) {{
+        if (n_bg_borders > 0) {
             // to fix dim pixels due to poor normal estimation,
             // we give a default lambda to pixels surrounded by background
             lambertTerm = 0.5;
-        }}
+        }
         
         // Calculate mask
         float mask1 = lightEnabled;
@@ -321,7 +321,7 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
         // Calculate colors
         ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;
         diffuse_color +=  mask1 * lambertTerm;
-    }}
+    }
     
     // Calculate final color by componing different components
     final_color = betterColor * ( ambient_color + diffuse_color);
@@ -329,7 +329,7 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     
     // Done
     return final_color;
-}}
+}
 
 
 // for some reason, this has to be the last function in order for the
