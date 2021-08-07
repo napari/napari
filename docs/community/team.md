@@ -17,7 +17,7 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - [@tlambert03](https://github.com/tlambert03)
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - [@ziyangczi](https://github.com/ziyangczi)
 
-<sub>***SC** currently on the napari [steering council](https://napari.org/community/governance.html#steering-council).</sub>
+<sub>***SC** on the napari [steering council](https://napari.org/community/governance.html#steering-council).</sub>
 
 ## Emeritus Core Developers
 
@@ -45,6 +45,6 @@ The napari project and community has been generously supported by the [CZI Scien
 - The CZI Imaging Technology Team, under the leadership of Nicholas Sofroniew and engineering management of Justine Larsen, has been making direct engineering and design contributions to improve and expand napari.
 - The CZI Imaging Tech Team has supported contractors, both independent and in collaboration with [Quansight Labs](https://www.quansight.com/labs), to improve and expand napari.
 - The CZI Imaging Tech Team, through an effort led by Justin Kiggins, has created [napari-hub.org](https://www.napari-hub.org/), a site to make discovering and sharing napari plugins easier.
-- CZI has launched a [grant program](https://chanzuckerberg.com/rfa/napari-plugin-accelerator-grants/) to help accelerate the napari plugin community.
+- CZI has launched a [grant program](https://chanzuckerberg.com/rfa/napari-plugin-accelerator-grants/) to help accelerate the napari plugin developer community.
 
-If you or you're organization are interested in also supporting the napari project please email the napari steering council at `napari-steering-council@googlegroups.com`. You can also read more about the [governance](https://napari.org/community/governance.html) of napari.
+If you or you're organization are interested in also supporting the napari project please email the napari steering council at `napari-steering-council@googlegroups.com`.
