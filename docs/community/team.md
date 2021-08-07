@@ -47,4 +47,4 @@ The napari project and community has been generously supported by the [CZI Scien
 - The CZI Imaging Tech Team, through an effort led by Justin Kiggins, has created [napari-hub.org](https://www.napari-hub.org/), a site to make discovering and sharing napari plugins easier.
 - CZI has launched a [grant program](https://chanzuckerberg.com/rfa/napari-plugin-accelerator-grants/) to help accelerate the napari plugin developer community.
 
-If you or you're organization are interested in also supporting the napari project please email the napari steering council at `napari-steering-council@googlegroups.com`.
+If you or your organization are interested in also supporting the napari project please email the napari steering council at `napari-steering-council@googlegroups.com`.
