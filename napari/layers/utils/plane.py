@@ -9,7 +9,10 @@ from ...utils.misc import ensure_n_tuple
 
 
 class PlaneManager(EventedModel):
-    """Manages properties relating to a plane in 3D with a defined thickness.
+    """Manages properties relating to plane rendering in 3D.
+
+    In this object, planes in 3D are defined by a position, a normal vector
+    and a thickness parameter.
 
     Attributes
     ----------
@@ -20,7 +23,7 @@ class PlaneManager(EventedModel):
     thickness : float
         Thickness of the slice
     enabled : bool
-        Whether the plane is enabled.
+        Whether plane rendering is enabled.
     """
 
     position: Tuple[float, float, float] = (0, 0, 0)
@@ -47,3 +50,26 @@ class PlaneManager(EventedModel):
         return intersect_line_with_plane_3d(
             line_position, line_orientation, self.position, self.normal_vector
         )
+
+    @classmethod
+    def from_points(cls, points: np.ndarray):
+        """Derive a PlaneManager from three points.
+
+        Parameters
+        ----------
+        points : np.ndarray
+            (3, 3) array of points
+
+        Returns
+        -------
+        plane : PlaneManager
+        """
+        a = points[0]
+        b = points[1]
+        c = points[2]
+        ab = b - a
+        ac = c - a
+
+        plane_normal = np.cross(ab, ac)
+        plane_position = np.mean(points, axis=0)
+        return cls(position=plane_position, normal_vector=plane_normal)
