@@ -25,14 +25,17 @@ volume_layer = viewer.add_image(
 
 # add the same volume and render as plane
 # plane should be in 'additive' blending mode or depth looks all wrong
+plane_parameters = {
+    'position': (32, 32, 32),
+    'normal': (1, 0, 0),
+    'thickness': 5,
+    'enabled': True
+}
 plane_layer = viewer.add_image(
-    blobs, rendering='average', name='plane', blending='additive', opacity=0.5
+    blobs, rendering='average', name='plane', blending='additive', opacity=0.5,
+    plane=plane_parameters
 )
-plane_layer.render_as_plane = True
 
-plane_layer.plane.position = (32, 32, 32)
-plane_layer.plane.normal_vector = (1, 0, 0)
-plane_layer.plane.thickness = 5
 
 # add a point to display plane point
 plane_point_layer = viewer.add_points(np.array([32, 32, 32]), face_color='cornflowerblue',
@@ -226,5 +229,5 @@ def create_plane_widget():
 
 app = get_app()
 plane_widget = create_plane_widget()
-viewer.window.add_dock_widget(plane_widget)
+viewer.window.add_dock_widget(plane_widget, name='Plane Widget')
 napari.run()
