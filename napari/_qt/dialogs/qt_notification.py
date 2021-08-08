@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 from qtpy.QtCore import (
@@ -150,7 +149,7 @@ class NapariQtNotification(QDialog):
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(self.close)
-        self.timer.start()
+            self.timer.start()
 
     def mouseMoveEvent(self, event):
         """On hover, stop the self-destruct timer"""
@@ -372,21 +371,19 @@ class NapariQtNotification(QDialog):
         # after https://github.com/napari/napari/issues/2370,
         # the os.getenv can be removed (and NAPARI_CATCH_ERRORS retired)
         if (
-            os.getenv("NAPARI_CATCH_ERRORS") not in ('0', 'False')
-            and notification.severity
+            notification.severity
             >= settings.application.gui_notification_level
         ):
             application_instance = QApplication.instance()
-            if application_instance:
-                # Check if this is running from a thread
-                if application_instance.thread() != QThread.currentThread():
-                    dispatcher = getattr(
-                        application_instance, "_dispatcher", None
-                    )
-                    if dispatcher:
-                        dispatcher.sig_notified.emit(notification)
+            if (
+                application_instance
+                and application_instance.thread() != QThread.currentThread()
+            ):
+                dispatcher = getattr(application_instance, "_dispatcher", None)
+                if dispatcher:
+                    dispatcher.sig_notified.emit(notification)
 
-                    return
+                return
 
             cls.from_notification(notification).show()
 

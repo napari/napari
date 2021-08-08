@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QListWidget,
+    QMessageBox,
     QPushButton,
     QStackedWidget,
     QVBoxLayout,
@@ -14,7 +15,7 @@ from qtpy.QtWidgets import (
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from ...settings import get_settings
 from ...utils.translations import trans
-from .qt_message_dialogs import ConfirmDialog, ResetNapariInfoDialog
+from .qt_message_dialogs import ResetNapariInfoDialog
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
@@ -190,14 +191,19 @@ class PreferencesDialog(QDialog):
 
     def restore_defaults(self):
         """Launches dialog to confirm restore settings choice."""
-        self._reset_dialog = ConfirmDialog(
-            parent=self,
-            text=trans._("Are you sure you want to restore default settings?"),
-        )
-        self._reset_dialog.valueChanged.connect(self._reset_widgets)
-        self._reset_dialog.exec_()
 
-    def _reset_widgets(self, event=None):
+        response = QMessageBox.question(
+            self,
+            trans._("Restore Settings"),
+            trans._("Are you sure you want to restore default settings?"),
+            QMessageBox.RestoreDefaults | QMessageBox.Cancel,
+            QMessageBox.RestoreDefaults,
+        )
+
+        if response == QMessageBox.RestoreDefaults:
+            self._reset_widgets()
+
+    def _reset_widgets(self):
         """Deletes the widgets and rebuilds with defaults.
 
         Parameter
@@ -209,21 +215,20 @@ class PreferencesDialog(QDialog):
 
         """
 
-        if event is True:
-            get_settings().reset()
-            self.accept()
-            self.valueChanged.emit()
-            self._list.clear()
+        get_settings().reset()
+        self.accept()
+        self._list.clear()
 
-            for n in range(self._stack.count()):
-                widget = self._stack.removeWidget(  # noqa: F841
-                    self._stack.currentWidget()
-                )
-                del widget
+        for n in range(self._stack.count()):
+            widget = self._stack.removeWidget(  # noqa: F841
+                self._stack.currentWidget()
+            )
+            del widget
 
-            self.make_dialog()
-            self._list.setCurrentRow(0)
-            self.show()
+        self.make_dialog()
+        self._list.setCurrentRow(0)
+        self.valueChanged.emit()
+        self.show()
 
     def on_click_ok(self):
         """Keeps the selected preferences saved to settings."""
