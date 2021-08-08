@@ -16,7 +16,7 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ..utils.plane import Plane3D
+from ..utils.plane import PlaneManager
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
@@ -282,7 +282,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
         self._render_as_plane = render_as_plane
-        self._plane = Plane3D()
+        self._plane = PlaneManager()
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:

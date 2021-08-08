@@ -7,8 +7,8 @@ from ...utils.events import EventedModel
 from ...utils.misc import ensure_n_tuple
 
 
-class Plane3D(EventedModel):
-    """Object modelling a plane in 3D with a defined thickness.
+class PlaneManager(EventedModel):
+    """Manages properties relating to a plane in 3D with a defined thickness.
 
     Attributes
     ----------
@@ -18,11 +18,14 @@ class Plane3D(EventedModel):
         A 3D unit vector normal to the plane, defined in data coordinates.
     thickness : float
         Thickness of the slice
+    enabled : bool
+        Whether the plane is enabled.
     """
 
     position: Tuple[float, float, float] = (0, 0, 0)
     normal_vector: Tuple[float, float, float] = (1, 0, 0)
     thickness: float = 10.0
+    enabled: bool = False
 
     @validator('position', 'normal_vector', pre=True)
     def _ensure_3_tuple(cls, v):
