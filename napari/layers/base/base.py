@@ -30,6 +30,7 @@ from ..utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
+    dims_displayed_world_to_layer,
 )
 from ._base_constants import Blending
 
@@ -1021,7 +1022,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         if self.visible:
             if world:
+                ndim_world = len(position)
+
+                if dims_displayed is not None:
+                    # convert the dims_displayed to the layer dims.This accounts
+                    # for differences in the number of dimensions in the world
+                    # dims versus the layer and for transpose and rolls.
+                    dims_displayed = dims_displayed_world_to_layer(
+                        dims_displayed,
+                        ndim_world=ndim_world,
+                        ndim_layer=self.ndim,
+                    )
                 position = self.world_to_data(position)
+
             if dims_displayed is not None:
                 if len(dims_displayed) == 2:
                     value = self._get_value(position=tuple(position))

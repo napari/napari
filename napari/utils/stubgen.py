@@ -187,7 +187,4 @@ if __name__ == '__main__':
     default_modules = ['napari.view_layers', 'napari.components.viewer_model']
 
     for mod in sys.argv[1:] or default_modules:
-        try:
-            generate_module_stub(mod)
-        except Exception as e:
-            print(f"ERROR: {e}")
+        generate_module_stub(mod)

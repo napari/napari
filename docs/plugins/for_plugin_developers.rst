@@ -327,6 +327,20 @@ If you are using Github, add the `"napari-plugin" topic
 <https://github.com/topics/napari-plugin>`_ to your repo so other developers can
 see your work.
 
+The `napari hub <https://www.napari-hub.org/>`_
+automatically displays information about PyPI packages annotated with the
+`Framework :: napari` `Trove classifier <https://pypi.org/classifiers/>`_,
+to help end users discover plugins that fit their needs.
+To ensure you are providing the relevant metadata and description
+for your plugin, see the following documentation in the
+`napari hub GitHub <https://github.com/chanzuckerberg/napari-hub/tree/main/docs>`_’s docs folder:
+
+- `Customizing your plugin’s listing <https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md>`_
+- `Writing the perfect description for your plugin <https://github.com/chanzuckerberg/napari-hub/blob/main/docs/writing-the-perfect-description.md>`_
+
+For more about the napari hub, see the `napari hub About page <https://www.napari-hub.org/about>`_.
+To learn more about the hub’s development process, see the `napari hub GitHub’s Wiki <https://github.com/chanzuckerberg/napari-hub/wiki>`_.
+
 When you are ready for users, announce your plugin on the `Image.sc Forum
 <https://forum.image.sc/tag/napari>`_.
 

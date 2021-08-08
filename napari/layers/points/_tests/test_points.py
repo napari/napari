@@ -9,6 +9,7 @@ from vispy.color import get_colormap
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -363,6 +364,7 @@ def test_removing_selected_points():
     assert len(layer.selected_data) == 0
     keep = [1, 2] + list(range(4, 10))
     assert np.all(layer.data == data[keep])
+    assert layer._value is None
 
     # Select another point and remove it
     layer.selected_data = {4}
@@ -710,7 +712,7 @@ def test_set_text_with_kwarg_dict(properties):
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
-        'anchor': 'upper_left',
+        'anchor': Anchor.UPPER_LEFT,
         'size': 10,
         'visible': True,
     }
@@ -1449,13 +1451,25 @@ def test_value():
     assert value is None
 
 
-def test_value_3d():
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
+        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
     """Currently get_value should return None in 3D"""
     np.random.seed(0)
     data = np.random.random((10, 3))
     layer = Points(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
     value = layer.get_value(
-        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
     )
     assert value is None
 

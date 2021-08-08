@@ -387,6 +387,5 @@ def run(
             )
         )
         return
-
     with notification_manager:
         app.exec_()
