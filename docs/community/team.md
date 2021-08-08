@@ -30,21 +30,21 @@ The napari project began in the spring of 2018. It was born out of the shared ne
 
 Named after the tiny village of Napari, in the Republic of Kiribati in the Pacifc Ocean, at the geographic midpoint between Loïc's home of San Francisco and Juan’s home of Melbourne, the napari project has, from its inception, been a global community effort.
 
-Early development on the project was led by Kira Evans, first as an intern with Loïc at CZ Biohub, then later as a software engineer at the Chan Zuckerberg Initiative (CZI). By the fall of 2018, Nicholas Sofroniew (CZI) joined in, accelerating both the organization and management of the growing team and the development of core features.
+Early development on the project was led by Kira Evans, first as an intern with Loïc at CZ Biohub, then later as a software engineer at the Chan Zuckerberg Initiative (CZI). Nicholas Sofroniew (CZI) joined in the fall of 2018, accelerating both the organization and management of the growing team, as well as the development of core features.
 
 You can read a full history of the project’s founding and early development in this [blog post](https://ilovesymposia.com/2019/10/24/introducing-napari-a-fast-n-dimensional-image-viewer-in-python/) from Juan.
 
-Since then, napari has grown to over 80 direct contributors. Talley Lambert, from Harvard Medical School, began contributing around the time Juan wrote about napari’s founding, and has been a critical driver of napari's development ever since. We have core developers located in three continents and three biweekly community calls spread across the day to try to accommodate users and contributors in any time zone.
+Over time, napari has grown to over 80 direct contributors. Talley Lambert, from Harvard Medical School, began contributing around the time of Juan's blog post, and has been a critical driver of napari's development ever since. We have core developers located in three continents and three biweekly community calls spread across the day to try to accommodate users and contributors in any time zone.
 
-Read more about napari’s [mission and values](https://napari.org/community/mission_and_values.html), how to get started as a [contributor](https://napari.org/developers/contributing.html) or join us in our [zulip chat](https://napari.zulipchat.com/login/) or follow us on [twitter](https://twitter.com/napari_imaging)
+Read more about napari’s [mission and values](https://napari.org/community/mission_and_values.html), how to get started as a [contributor](https://napari.org/developers/contributing.html) or join us in our [zulip chat](https://napari.zulipchat.com/login/) for a more synchronous conversation. You can also follow us on [twitter](https://twitter.com/napari_imaging).
 
 ## Funding and Support
 
-The napari project and community has been generously supported by the [CZI Science Imaging Program](https://chanzuckerberg.com/science/programs-resources/imaging/). 
+The napari project and community have been generously supported by the [CZI Science Imaging Program](https://chanzuckerberg.com/science/programs-resources/imaging/). 
 - Since late 2018, Juan Nunez-Iglesias has been supported by a CZI Imaging Software Fellowship.
 - The CZI Imaging Technology Team, under the leadership of Nicholas Sofroniew and engineering management of Justine Larsen, has been making direct engineering and design contributions to improve and expand napari.
 - The CZI Imaging Tech Team has supported contractors, both independent and in collaboration with [Quansight Labs](https://www.quansight.com/labs), to improve and expand napari.
 - The CZI Imaging Tech Team, through an effort led by Justin Kiggins, has created [napari-hub.org](https://www.napari-hub.org/), a site to make discovering and sharing napari plugins easier.
 - CZI has launched a [grant program](https://chanzuckerberg.com/rfa/napari-plugin-accelerator-grants/) to help accelerate the napari plugin developer community.
 
-If you or your organization are interested in also supporting the napari project please email the napari steering council at `napari-steering-council@googlegroups.com`.
+If you or your organization are interested in also supporting the napari project, please email the napari steering council at `napari-steering-council@googlegroups.com`.
