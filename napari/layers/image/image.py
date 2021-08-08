@@ -16,7 +16,7 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ..utils.plane import PlaneManager
+from ..utils.plane_manager import PlaneManager
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
@@ -107,10 +107,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    render_as_plane : bool
-        Whether 3D data should be rendered as a plane in 3D.
-        True - data is rendered as a plane.
-        False - data is rendered as a volume.
+    plane : dict
+        Properties defining plane rendering in 3D. Properties are defined in
+        data coordinates. Valid dictionary keys are
+        {'position', 'normal_vector', 'thickness', and 'enabled'}.
 
     Attributes
     ----------
@@ -158,6 +158,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Threshold for isosurface.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
+    plane : PlaneManager
+        Properties defining plane rendering in 3D.
 
     Notes
     -----
@@ -181,7 +183,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
-        render_as_plane=False,
+        plane=None,
         iso_threshold=0.5,
         attenuation=0.05,
         name=None,
@@ -245,10 +247,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             rendering=Event,
             iso_threshold=Event,
             attenuation=Event,
-            render_as_plane=Event,
-            plane_position=Event,
-            plane_normal=Event,
-            plane_thickness=Event,
         )
 
         # Set data
@@ -281,7 +279,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._render_as_plane = render_as_plane
         self._plane = PlaneManager()
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
@@ -300,7 +297,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
-        self.render_as_plane = render_as_plane
+        if plane is not None:
+            self.plane.update(plane)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -498,19 +496,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Set current rendering mode."""
         self._rendering = Rendering(rendering)
         self.events.rendering()
-
-    @property
-    def render_as_plane(self):
-        """Should this layer be rendered as a plane.
-        If False, render as volume (default). If True, render as a plane.
-        """
-        return self._render_as_plane
-
-    @render_as_plane.setter
-    def render_as_plane(self, value: bool):
-        if self._render_as_plane is not value:
-            self._render_as_plane = value
-            self.events.render_as_plane()
 
     @property
     def plane(self):

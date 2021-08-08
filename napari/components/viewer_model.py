@@ -523,7 +523,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
-        render_as_plane=False,
+        plane=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -633,9 +633,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             should be the largest. Please note multiscale rendering is only
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
-        render_as_plane : bool
-            Whether to render image data in 3D as a 3D volume or a 2D plane
-            through the volume.
+        plane : dict
+            Properties defining plane rendering in 3D. Properties are defined
+            in data coordinates. Valid dictionary keys are
+            {'position', 'normal_vector', 'thickness', and 'enabled'}.
 
         Returns
         -------
@@ -674,7 +675,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'blending': blending,
             'visible': visible,
             'multiscale': multiscale,
-            'render_as_plane': render_as_plane,
+            'plane': plane,
         }
 
         # these arguments are *already* iterables in the single-channel case.

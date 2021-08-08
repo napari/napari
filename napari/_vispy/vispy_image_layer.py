@@ -51,18 +51,14 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.events.render_as_plane.connect(
-            self._on_render_as_plane_change
-        )
+        self.layer.plane.events.enabled.connect(self._on_plane_enabled_change)
         self.layer.plane.events.position.connect(
             self._on_plane_position_change
         )
         self.layer.plane.events.thickness.connect(
             self._on_plane_thickness_change
         )
-        self.layer.plane.events.normal_vector.connect(
-            self._on_plane_normal_change
-        )
+        self.layer.plane.events.normal.connect(self._on_plane_normal_change)
 
         self._on_display_change()
         self._on_data_change()
@@ -157,9 +153,9 @@ class VispyImageLayer(VispyBaseLayer):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
 
-    def _on_render_as_plane_change(self, event=None):
+    def _on_plane_enabled_change(self, event=None):
         if isinstance(self.node, VolumeNode):
-            if self.layer.render_as_plane is True:
+            if self.layer.plane.enabled is True:
                 raycasting_mode = 'plane'
             else:
                 raycasting_mode = 'volume'
@@ -175,7 +171,7 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_plane_normal_change(self, event=None):
         if isinstance(self.node, VolumeNode):
-            self.node.plane_normal = self.layer.plane.normal_vector
+            self.node.plane_normal = self.layer.plane.normal
 
     def reset(self, event=None):
         self._reset_base()
@@ -184,7 +180,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_contrast_limits_change()
         self._on_gamma_change()
         self._on_rendering_change()
-        self._on_render_as_plane_change()
+        self._on_plane_enabled_change()
         self._on_plane_position_change()
         self._on_plane_normal_change()
         self._on_plane_thickness_change()
