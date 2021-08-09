@@ -38,7 +38,9 @@ class Tracks(Layer):
     tail_width : float
         Width of the track tails in pixels.
     tail_length : float
-        Length of the track tails in units of time.
+        Length of the positive (backward in time) tails in units of time.
+    head_length : float
+        Length of the positive (forward in time) tails in units of time.
     colormap : str
         Default colormap to use to set vertex colors. Specialized colormaps,
         relating to specified properties can be passed to the layer via
@@ -94,6 +96,7 @@ class Tracks(Layer):
         graph=None,
         tail_width=2,
         tail_length=30,
+        head_length=0,
         name=None,
         metadata=None,
         scale=None,
@@ -141,6 +144,7 @@ class Tracks(Layer):
         self.events.add(
             tail_width=Event,
             tail_length=Event,
+            head_length=Event,
             display_id=Event,
             display_tail=Event,
             display_graph=Event,
@@ -164,6 +168,7 @@ class Tracks(Layer):
         # track display properties
         self.tail_width = tail_width
         self.tail_length = tail_length
+        self.head_length = head_length
         self.display_id = False
         self.display_tail = True
         self.display_graph = True
@@ -220,6 +225,7 @@ class Tracks(Layer):
                 'colormaps_dict': self.colormaps_dict,
                 'tail_width': self.tail_width,
                 'tail_length': self.tail_length,
+                'head_length': self.head_length,
             }
         )
         return state
@@ -288,7 +294,9 @@ class Tracks(Layer):
             # modulate track colors as per colormap/current_time
             colors = self.track_colors[thumbnail_indices]
             times = self.track_times[thumbnail_indices]
-            alpha = (self.current_time - times) / self.tail_length
+            alpha = (self.head_length + self.current_time - times) / (
+                self.tail_length + self.head_length
+            )
             alpha[times > self.current_time] = 1.0
             colors[:, -1] = np.clip(1.0 - alpha, 0.0, 1.0)
             colormapped[coords[:, 1], coords[:, 0]] = colors
@@ -426,6 +434,15 @@ class Tracks(Layer):
     def tail_length(self, tail_length: Union[int, float]):
         self._tail_length = tail_length
         self.events.tail_length()
+
+    @property
+    def head_length(self) -> Union[int, float]:
+        return self._head_length
+
+    @head_length.setter
+    def head_length(self, head_length: Union[int, float]):
+        self._head_length = head_length
+        self.events.head_length()
 
     @property
     def display_id(self) -> bool:

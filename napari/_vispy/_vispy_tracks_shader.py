@@ -15,7 +15,7 @@ class TrackShader(Filter):
 
     The shader simply changes the visibility and/or fading of the data according
     to the current_time and the associate time metadata for each vertex. This
-    is scaled according to the tail length. Points ahead of the current time
+    is scaled according to the tail and head length. Points ahead of the current time
     are rendered with alpha set to zero.
 
     Parameters
@@ -24,8 +24,10 @@ class TrackShader(Filter):
         the current time, which is typically the frame index, although this
         can be an arbitrary float
     tail_length : int, float
+        the lower limit on length of the 'tail'
+    head_length : int, float
         the upper limit on length of the 'tail'
-    use_fade : bool
+     use_fade : bool
         this will enable/disable tail fading with time
     vertex_time : 1D array, list
         a vector describing the time associated with each vertex
@@ -44,7 +46,7 @@ class TrackShader(Filter):
 
             float alpha;
 
-            if ($a_vertex_time > $current_time) {
+            if ($a_vertex_time > $current_time + $head_length) {
                 // this is a hack to minimize the frag shader rendering ahead
                 // of the current time point due to interpolation
                 if ($a_vertex_time <= $current_time + 1){
@@ -54,8 +56,8 @@ class TrackShader(Filter):
                 }
             } else {
                 // fade the track into the temporal distance, scaled by the
-                // maximum tail length from the gui
-                float fade = ($current_time - $a_vertex_time) / $tail_length;
+                // maximum tail and head length from the gui
+                float fade = ($head_length + $current_time - $a_vertex_time) / ($tail_length + $head_length);
                 alpha = clamp(1.0-fade, 0.0, 1.0);
             }
 
@@ -87,6 +89,7 @@ class TrackShader(Filter):
         self,
         current_time: Union[int, float] = 0,
         tail_length: Union[int, float] = 30,
+        head_length: Union[int, float] = 0,
         use_fade: bool = True,
         vertex_time: Union[List, np.ndarray] = None,
     ):
@@ -97,6 +100,7 @@ class TrackShader(Filter):
 
         self.current_time = current_time
         self.tail_length = tail_length
+        self.head_length = head_length
         self.use_fade = use_fade
         self.vertex_time = vertex_time
 
@@ -128,6 +132,15 @@ class TrackShader(Filter):
     def tail_length(self, tail_length: Union[int, float]):
         self._tail_length = tail_length
         self.vshader['tail_length'] = float(self._tail_length)
+
+    @property
+    def head_length(self) -> Union[int, float]:
+        return self._tail_length
+
+    @head_length.setter
+    def head_length(self, head_length: Union[int, float]):
+        self._head_length = head_length
+        self.vshader['head_length'] = float(self._head_length)
 
     def _attach(self, visual):
         super()._attach(visual)

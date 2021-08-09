@@ -34,6 +34,7 @@ class QtTracksControls(QtLayerControls):
         # NOTE(arl): there are no events fired for changing checkboxes
         self.layer.events.tail_width.connect(self._on_tail_width_change)
         self.layer.events.tail_length.connect(self._on_tail_length_change)
+        self.layer.events.head_length.connect(self._on_head_length_change)
         self.layer.events.properties.connect(self._on_properties_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.color_by.connect(self._on_color_by_change)
@@ -47,6 +48,13 @@ class QtTracksControls(QtLayerControls):
         for name, colormap in AVAILABLE_COLORMAPS.items():
             display_name = colormap._display_name
             self.colormap_combobox.addItem(display_name, name)
+
+        # slider for track head length
+        self.head_length_slider = QSlider(Qt.Horizontal)
+        self.head_length_slider.setFocusPolicy(Qt.NoFocus)
+        self.head_length_slider.setMinimum(0)
+        self.head_length_slider.setMaximum(MAX_TAIL_LENGTH)
+        self.head_length_slider.setSingleStep(1)
 
         # slider for track tail length
         self.tail_length_slider = QSlider(Qt.Horizontal)
@@ -71,6 +79,7 @@ class QtTracksControls(QtLayerControls):
 
         self.tail_width_slider.valueChanged.connect(self.change_tail_width)
         self.tail_length_slider.valueChanged.connect(self.change_tail_length)
+        self.head_length_slider.valueChanged.connect(self.change_head_length)
         self.tail_checkbox.stateChanged.connect(self.change_display_tail)
         self.id_checkbox.stateChanged.connect(self.change_display_id)
         self.graph_checkbox.stateChanged.connect(self.change_display_graph)
@@ -90,14 +99,16 @@ class QtTracksControls(QtLayerControls):
         self.grid_layout.addWidget(self.opacitySlider, 3, 1)
         self.grid_layout.addWidget(QLabel(trans._('tail width:')), 4, 0)
         self.grid_layout.addWidget(self.tail_width_slider, 4, 1)
-        self.grid_layout.addWidget(QLabel(trans._('tail length:')), 5, 0)
+        self.grid_layout.addWidget(QLabel(trans._('- tail length:')), 5, 0)
         self.grid_layout.addWidget(self.tail_length_slider, 5, 1)
-        self.grid_layout.addWidget(QLabel(trans._('tail:')), 6, 0)
-        self.grid_layout.addWidget(self.tail_checkbox, 6, 1)
-        self.grid_layout.addWidget(QLabel(trans._('show ID:')), 7, 0)
-        self.grid_layout.addWidget(self.id_checkbox, 7, 1)
-        self.grid_layout.addWidget(QLabel(trans._('graph:')), 8, 0)
-        self.grid_layout.addWidget(self.graph_checkbox, 8, 1)
+        self.grid_layout.addWidget(QLabel(trans._('+ tail length:')), 6, 0)
+        self.grid_layout.addWidget(self.head_length_slider, 6, 1)
+        self.grid_layout.addWidget(QLabel(trans._('tail:')), 7, 0)
+        self.grid_layout.addWidget(self.tail_checkbox, 7, 1)
+        self.grid_layout.addWidget(QLabel(trans._('show ID:')), 8, 0)
+        self.grid_layout.addWidget(self.id_checkbox, 8, 1)
+        self.grid_layout.addWidget(QLabel(trans._('graph:')), 9, 0)
+        self.grid_layout.addWidget(self.graph_checkbox, 9, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -132,6 +143,19 @@ class QtTracksControls(QtLayerControls):
             value = self.layer.tail_length
             value = np.clip(value, 1, MAX_TAIL_LENGTH)
             self.tail_length_slider.setValue(value)
+
+    def _on_head_length_change(self, event=None):
+        """Receive layer model track line width change event and update slider.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
+        with self.layer.events.head_length.blocker():
+            value = self.layer.head_length
+            value = np.clip(value, 0, MAX_TAIL_LENGTH)
+            self.head_length_slider.setValue(value)
 
     def _on_properties_change(self, event=None):
         """Change the properties that can be used to color the tracks."""
@@ -181,7 +205,7 @@ class QtTracksControls(QtLayerControls):
         self.layer.tail_width = float(value) / 2.0
 
     def change_tail_length(self, value):
-        """Change edge line width of shapes on the layer model.
+        """Change edge line backward length of shapes on the layer model.
 
         Parameters
         ----------
@@ -189,6 +213,16 @@ class QtTracksControls(QtLayerControls):
             Line length of track tails.
         """
         self.layer.tail_length = value
+
+    def change_head_length(self, value):
+        """Change edge line forward length of shapes on the layer model.
+
+        Parameters
+        ----------
+        value : int
+            Line length of track tails.
+        """
+        self.layer.head_length = value
 
     def change_display_tail(self, state):
         self.layer.display_tail = self.tail_checkbox.isChecked()
