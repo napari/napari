@@ -1,6 +1,6 @@
 """
 Display one 3-D volume layer using the add_volume API and display it as a plane
-with a simple widget for modifying plane parameters
+with interactive controls for moving the plane and adding points
 """
 import napari
 import numpy as np
