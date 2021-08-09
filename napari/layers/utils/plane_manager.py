@@ -72,4 +72,4 @@ class PlaneManager(EventedModel):
 
         plane_normal = np.cross(ab, ac)
         plane_position = np.mean(points, axis=0)
-        return cls(position=plane_position, normal_vector=plane_normal)
+        return cls(position=plane_position, normal=plane_normal)
