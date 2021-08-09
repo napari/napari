@@ -44,11 +44,11 @@ class PlaneManager(EventedModel):
         self.position += distance * self.normal
 
     def intersect_with_line(
-        self, line_position: np.ndarray, line_orientation: np.ndarray
+        self, line_position: np.ndarray, line_direction: np.ndarray
     ) -> np.ndarray:
         """Calculate a 3D line-plane intersection."""
         return intersect_line_with_plane_3d(
-            line_position, line_orientation, self.position, self.normal
+            line_position, line_direction, self.position, self.normal
         )
 
     @classmethod
