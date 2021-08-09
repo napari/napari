@@ -22,9 +22,10 @@ def test_plane_manager_vector_setter():
 
 def test_plane_manager_from_points():
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
-    plane = PlaneManager.from_points(points)
+    plane = PlaneManager.from_points(*points)
     assert isinstance(plane, PlaneManager)
     assert plane.normal == (0, 0, 1)
+    assert np.allclose(plane.position, np.mean(points, axis=0))
 
 
 def test_update_plane_manager_from_dict():

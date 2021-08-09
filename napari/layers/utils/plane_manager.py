@@ -52,24 +52,29 @@ class PlaneManager(EventedModel):
         )
 
     @classmethod
-    def from_points(cls, points: np.ndarray):
+    def from_points(cls, a, b, c):
         """Derive a PlaneManager from three points.
 
         Parameters
         ----------
-        points : np.ndarray
-            (3, 3) array of points
+        a : ArrayLike
+            (3,) array containing coordinates of a point
+        b : ArrayLike
+            (3,) array containing coordinates of a point
+        c : ArrayLike
+            (3,) array containing coordinates of a point
 
         Returns
         -------
         plane : PlaneManager
         """
-        a = points[0]
-        b = points[1]
-        c = points[2]
+        a = np.array(a)
+        b = np.array(b)
+        c = np.array(c)
+        abc = np.row_stack((a, b, c))
         ab = b - a
         ac = c - a
 
         plane_normal = np.cross(ab, ac)
-        plane_position = np.mean(points, axis=0)
+        plane_position = np.mean(abc, axis=0)
         return cls(position=plane_position, normal=plane_normal)
