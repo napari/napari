@@ -34,6 +34,10 @@ class PlaneManager(EventedModel):
     def _normalise_vector(cls, v):
         return tuple(v / np.linalg.norm(v))
 
+    @validator('normal', 'position', pre=True)
+    def _ensure_tuple(cls, v):
+        return tuple(v)
+
     def shift_along_normal_vector(self, distance: float):
         """Shift the plane along its normal vector by a given distance."""
         self.position += distance * self.normal
