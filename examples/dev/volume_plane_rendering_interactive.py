@@ -4,12 +4,7 @@ with a simple widget for modifying plane parameters
 """
 import napari
 import numpy as np
-from napari._qt.qt_event_loop import get_app
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout
 from skimage import data
-from superqt import QLabeledDoubleSlider
-
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -43,63 +38,28 @@ plane_layer = viewer.add_image(
 points_layer = viewer.add_points(name='points', ndim=3, face_color='cornflowerblue')
 
 
-# Widget to control some plane params
-class PlaneWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        master_layout = QVBoxLayout(self)
-
-        self.position_slider_box = QGroupBox('plane position (axis 1)')
-        self.position_slider = QLabeledDoubleSlider(Qt.Horizontal, self)
-        self.position_slider.setMinimum(0.05)
-        self.position_slider.setMaximum(64)
-        self.position_slider.setValue(32)
-
-        position_layout = QHBoxLayout(self.position_slider_box)
-        position_layout.addWidget(self.position_slider)
-
-        self.thickness_box = QGroupBox('plane thickness')
-        self.thickness_spinbox = QLabeledDoubleSlider(Qt.Horizontal, self)
-        self.thickness_spinbox.setMinimum(1.0)
-        self.thickness_spinbox.setMaximum(64)
-        self.thickness_spinbox.setValue(10)
-
-        thickness_layout = QHBoxLayout(self.thickness_box)
-        thickness_layout.addWidget(self.thickness_spinbox)
-
-        master_layout.addWidget(self.position_slider_box)
-        master_layout.addWidget(self.thickness_box)
-
-
-def update_plane_y_position(widget):
-    plane_position = [32, widget.position_slider.value(), 32]
-    viewer.layers['plane'].plane.position = plane_position
-
-
-def update_plane_thickness(widget):
-    plane_layer.plane.thickness = widget.thickness_spinbox.value()
-
-
-def create_plane_widget():
-    widget = PlaneWidget()
-    widget.position_slider.valueChanged.connect(
-        lambda: update_plane_y_position(widget)
-    )
-    widget.thickness_spinbox.valueChanged.connect(
-        lambda: update_plane_thickness(widget)
-    )
-    return widget
-
-
-def point_in_bounding_box(point, bbox):
-    if np.all(point > bbox[0]) and np.all(point < bbox[1]):
+def point_in_bounding_box(point, bounding_box):
+    if np.all(point > bounding_box[0]) and np.all(point < bounding_box[1]):
         return True
     return False
 
 
 @viewer.mouse_drag_callbacks.append
-def on_click(viewer, event):
+def shift_plane_along_normal(viewer, event):
+    """Shift a plane along its normal vector on mouse drag.
+
+    This callback will shift a plane along its normal vector when the plane is
+    clicked and dragged. The general strategy is to
+    1) find both the plane normal vector and the mouse drag vector in canvas
+    coordinates
+    2) calculate how far to move the plane in canvas coordinates, this is done
+    by projecting the mouse drag vector onto the (normalised) plane normal
+    vector
+    3) transform this drag distance (canvas coordinates) into data coordinates
+    4) update the plane position
+
+    It will also add a point to the points layer for a 'click-not-drag' event.
+    """
     # get layers from viewer
     plane_layer = viewer.layers['plane']
     points_layer = viewer.layers['points']
@@ -118,8 +78,8 @@ def on_click(viewer, event):
         line_position=near_point, line_direction=event.view_direction
     )
 
-    # Check if intersection is within data bbox (click was on plane)
-    # early exit, avoids excessive calculation
+    # Check if click was on plane by checking if intersection occurs within
+    # data bounding box. If so, exit early.
     if not point_in_bounding_box(intersection, plane_layer.extent.data):
         return
 
@@ -168,8 +128,9 @@ def on_click(viewer, event):
 
         # Update position of plane according to drag vector
         # only update if plane position is within data bounding box
-        scale_factor = drag_projection_on_plane_normal / np.linalg.norm(plane_normal_canv)
-        updated_position = original_plane_position + scale_factor * np.array(plane_layer.plane.normal)
+        drag_distance_data = drag_projection_on_plane_normal / np.linalg.norm(plane_normal_canv)
+        updated_position = original_plane_position + drag_distance_data * np.array(
+            plane_layer.plane.normal)
 
         if point_in_bounding_box(updated_position, plane_layer.extent.data):
             plane_layer.plane.position = updated_position
@@ -177,16 +138,14 @@ def on_click(viewer, event):
         yield
     if dragged:
         pass
-    else: # event was a click without a drag
+    else:  # event was a click without a drag
         if point_in_bounding_box(intersection, plane_layer.extent.data):
             points_layer.add(intersection)
+
+    # Re-enable
     plane_layer.interactive = True
 
-app = get_app()
-plane_widget = create_plane_widget()
-viewer.window.add_dock_widget(
-    plane_widget, name='Plane Widget', area='left'
-)
+
 viewer.axes.visible = True
 viewer.camera.angles = (45, 45, 45)
 viewer.camera.zoom = 5
