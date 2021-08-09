@@ -4,7 +4,6 @@ with a simple widget for modifying plane parameters
 """
 import napari
 import numpy as np
-from napari._qt.qt_event_loop import get_app
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout
 from skimage import data
@@ -87,7 +86,6 @@ def create_plane_widget():
     return widget
 
 
-app = get_app()
 plane_widget = create_plane_widget()
 viewer.window.add_dock_widget(
     plane_widget, name='Plane Widget', area='left'
