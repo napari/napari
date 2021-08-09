@@ -5,7 +5,6 @@ from pydantic import validator
 
 from ...utils.events import EventedModel
 from ...utils.geometry import intersect_line_with_plane_3d
-from ...utils.misc import ensure_n_tuple
 
 
 class PlaneManager(EventedModel):
@@ -30,10 +29,6 @@ class PlaneManager(EventedModel):
     normal: Tuple[float, float, float] = (1, 0, 0)
     thickness: float = 10.0
     enabled: bool = False
-
-    @validator('position', 'normal', pre=True)
-    def _ensure_3_tuple(cls, v):
-        return ensure_n_tuple(v, n=3)
 
     @validator('normal')
     def _normalise_vector(cls, v):

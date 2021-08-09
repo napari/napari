@@ -1,4 +1,6 @@
 import numpy as np
+import pytest
+from pydantic import ValidationError
 
 from napari.layers.utils.plane_manager import PlaneManager
 
@@ -39,3 +41,11 @@ def test_update_plane_manager_from_dict():
     plane.update(properties)
     for k, v in properties.items():
         assert getattr(plane, k) == v
+
+
+def test_plane_manager_3_tuple():
+    """Test for failure to instantiate with non 3-sequences of numbers"""
+    with pytest.raises(ValidationError):
+        plane = PlaneManager(  # noqa: F841
+            position=(32, 32, 32, 32), normal_vector=(1, 0, 0, 0), thickness=10
+        )
