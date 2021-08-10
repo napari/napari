@@ -161,19 +161,6 @@ class PlaneList(SelectableEventedList):
                     )
                 )
         return cls(planes)
-=======
-                f'Planes can only be constructed from arrays of shape '
-                f'(N, 2, 3), not {array.shape}'
-            )
-        self.clear()
-        for sub_arr in array:
-            plane = PlaneManager(
-                position=sub_arr[0],
-                normal=sub_arr[1],
-                enabled=True,
-            )
-            self.append(plane)
->>>>>>> 1fdd86d5 (added PlaneManager (changed old to ThickPlaneManager) and implemented in image and lable layer.)
 
 
 class ThickPlaneManager(PlaneManager):
