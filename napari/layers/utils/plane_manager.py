@@ -125,6 +125,37 @@ class PlaneList(SelectableEventedList):
         self.clear()
         self.extend(planes)
 
+    def from_bounding_box(self, center, dimensions):
+        """
+        generate 6 planes positioned to form a bounding box, with normals towards the center
+
+        Parameters
+        ----------
+        center : ArrayLike
+            (3,) array, coordinates of the center of the box
+        extents : ArrayLike
+            (3,) array, dimensions of the box
+
+        Returns
+        -------
+        list : PlaneList
+        """
+        self.clear()
+        for axis in range(3):
+            for direction in (-1, 1):
+                shift = (dimensions[axis] / 2) * direction
+                position = np.array(center)
+                position[axis] += shift
+
+                normal = np.zeros(3)
+                normal[axis] = -direction
+
+                self.append(
+                    PlaneManager(
+                        position=position, normal=normal, enabled=True
+                    )
+                )
+
 
 class ThickPlaneManager(PlaneManager):
     """Defines a thick plane in 3D and provides utility methods and events to handle it.
