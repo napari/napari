@@ -3,15 +3,14 @@ from typing import Tuple
 import numpy as np
 from pydantic import validator
 
-from ...utils.events import EventedModel
+from ...utils.events import EventedList, EventedModel
 from ...utils.geometry import intersect_line_with_plane_3d
 
 
 class PlaneManager(EventedModel):
-    """Manages properties relating to plane rendering in 3D.
+    """Defines a plane in 3D and provides utility methods and events to handle it.
 
-    In this object, planes in 3D are defined by a position, a normal vector
-    and a thickness parameter.
+    Planes are defined by a position and a normal vector.
 
     Attributes
     ----------
@@ -19,15 +18,12 @@ class PlaneManager(EventedModel):
         A 3D position on the plane, defined in data coordinates.
     normal : 3-tuple
         A 3D unit vector normal to the plane, defined in data coordinates.
-    thickness : float
-        Thickness of the slice
     enabled : bool
-        Whether plane rendering is enabled.
+        Whether the plane is considered enabled.
     """
 
     position: Tuple[float, float, float] = (0, 0, 0)
     normal: Tuple[float, float, float] = (1, 0, 0)
-    thickness: float = 10.0
     enabled: bool = False
 
     @validator('normal')
@@ -77,3 +73,59 @@ class PlaneManager(EventedModel):
         plane_normal = np.cross(ab, ac)
         plane_position = np.mean(abc, axis=0)
         return cls(position=plane_position, normal=plane_normal)
+
+
+class PlaneList(EventedList):
+    """
+    A list of planes providing some utility methods
+    """
+
+    def as_array(self):
+        """
+        return a (N, 2, 3) array representing the planes
+        """
+        arrays = []
+        for plane in self:
+            if plane.enabled:
+                arrays.append(np.stack([plane.position, plane.normal]))
+        if not arrays:
+            return np.empty((0, 2, 3))
+        return np.stack(arrays)
+
+    def from_array(self, array):
+        """
+        construct the PlaneList from an array of shape (N, 2, 3)
+        """
+        if array.ndim != 3 or array.shape[1:] != (2, 3):
+            raise ValueError(
+                f'Planes can only be constructed from arrays of shape '
+                f'(N, 2, 3), not {array.shape}'
+            )
+        self.clear()
+        for sub_arr in array:
+            plane = PlaneManager(
+                position=sub_arr[0],
+                normal=sub_arr[1],
+                enabled=True,
+            )
+            self.append(plane)
+
+
+class ThickPlaneManager(PlaneManager):
+    """Defines a thick plane in 3D and provides utility methods and events to handle it.
+
+    Thick planes are defined by a position a normal vector and a thickness.
+
+    Attributes
+    ----------
+    position : 3-tuple
+        A 3D position on the plane, defined in data coordinates.
+    normal : 3-tuple
+        A 3D unit vector normal to the plane, defined in data coordinates.
+    thickness : float
+        Thickness of the slice.
+    enabled : bool
+        Whether the plane is considered enabled.
+    """
+
+    thickness: float = 10.0
