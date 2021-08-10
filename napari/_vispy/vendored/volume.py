@@ -102,6 +102,11 @@ const vec4 u_diffuse = vec4(0.8, 0.2, 0.2, 1.0);
 const vec4 u_specular = vec4(1.0, 1.0, 1.0, 1.0);
 const float u_shininess = 40.0;
 
+// uniforms for plane definition. Defined in data coordinates.
+uniform vec3 u_plane_normal;
+uniform vec3 u_plane_position;
+uniform float u_plane_thickness;
+
 // the tolerance for testing equality of floats with floatEqual and floatNotEqual
 const float u_equality_tolerance = 1e-8;
 
@@ -114,42 +119,43 @@ const float u_categorical_bg_value = 0;
 vec3 view_ray;
 
 float rand(vec2 co)
-{{
+{
     // Create a pseudo-random number between 0 and 1.
     // http://stackoverflow.com/questions/4200224
     return fract(sin(dot(co.xy ,vec2(12.9898, 78.233))) * 43758.5453);
-}}
+}
 
 float colorToVal(vec4 color1)
-{{
+{
     return color1.r; // todo: why did I have this abstraction in visvis?
-}}
+}
 
-vec4 applyColormap(float data) {{
+vec4 applyColormap(float data) {
     data = clamp(data, min(clim.x, clim.y), max(clim.x, clim.y));
     data = (data - clim.x) / (clim.y - clim.x);
-    return $cmap(pow(data, gamma));
-}}
+    vec4 color = $cmap(pow(data, gamma));
+    return color;
+}
 
 bool floatNotEqual(float val1, float val2, float equality_tolerance)
-{{
+{
     // check if val1 and val2 are not equal
     bool not_equal = abs(val1 - val2) > equality_tolerance;
 
     return not_equal;
-}}
+}
 
 bool floatEqual(float val1, float val2, float equality_tolerance)
-{{
+{
     // check if val1 and val2 are equal
     bool equal = abs(val1 - val2) < equality_tolerance;
 
     return equal;
-}}
+}
 
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
-{{   
+{   
     // Calculate color by incorporating lighting
     vec4 color1;
     vec4 color2;
@@ -192,7 +198,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     // todo: allow multiple light, define lights on viewvox or subscene
     int nlights = 1; 
     for (int i=0; i<nlights; i++)
-    {{ 
+    { 
         // Get light direction (make sure to prevent zero devision)
         vec3 L = normalize(view_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
@@ -210,7 +216,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
         ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;
         diffuse_color +=  mask1 * lambertTerm;
         specular_color += mask1 * specularTerm * u_specular;
-    }}
+    }
 
     // Calculate final color by componing different components
     final_color = color2 * ( ambient_color + diffuse_color) + specular_color;
@@ -218,18 +224,35 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 
     // Done
     return final_color;
-}}
+}
+
+vec3 intersectLinePlane(vec3 linePosition, 
+                        vec3 lineVector, 
+                        vec3 planePosition, 
+                        vec3 planeNormal) {
+    // function to find the intersection between a line and a plane
+    // line is defined by position and vector
+    // plane is defined by position and normal vector
+    // https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
+
+    // find scale factor for line vector
+    float scaleFactor = dot(planePosition - linePosition, planeNormal) / 
+                        dot(lineVector, planeNormal);
+
+    // calculate intersection
+    return linePosition + ( scaleFactor * lineVector );
+}
 
 int detectAdjacentBackground(float val_neg, float val_pos)
-{{
+{
     // determine if the adjacent voxels along an axis are both background
     int adjacent_bg = int( floatEqual(val_neg, u_categorical_bg_value, u_equality_tolerance) );
     adjacent_bg = adjacent_bg * int( floatEqual(val_pos, u_categorical_bg_value, u_equality_tolerance) );
     return adjacent_bg;
-}}
+}
 
 vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
-{{   
+{   
     // Calculate color by incorporating ambient and diffuse lighting
     vec4 color0 = $sample(u_volumetex, loc);
     vec4 color1;
@@ -278,7 +301,7 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     // todo: allow multiple light, define lights on viewvox or subscene
     int nlights = 1; 
     for (int i=0; i<nlights; i++)
-    {{ 
+    { 
         // Get light direction (make sure to prevent zero devision)
         vec3 L = normalize(view_ray);  //lightDirs[i]; 
         float lightEnabled = float( length(L) > 0.0 );
@@ -286,11 +309,11 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
         
         // Calculate lighting properties
         float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );
-        if (n_bg_borders > 0) {{
+        if (n_bg_borders > 0) {
             // to fix dim pixels due to poor normal estimation,
             // we give a default lambda to pixels surrounded by background
             lambertTerm = 0.5;
-        }}
+        }
         
         // Calculate mask
         float mask1 = lightEnabled;
@@ -298,7 +321,7 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
         // Calculate colors
         ambient_color +=  mask1 * u_ambient;  // * gl_LightSource[i].ambient;
         diffuse_color +=  mask1 * lambertTerm;
-    }}
+    }
     
     // Calculate final color by componing different components
     final_color = betterColor * ( ambient_color + diffuse_color);
@@ -306,13 +329,13 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     
     // Done
     return final_color;
-}}
+}
 
 
 // for some reason, this has to be the last function in order for the
 // filters to be inserted in the correct place...
 
-void main() {{
+void main() {
     vec3 farpos = v_farpos.xyz / v_farpos.w;
     vec3 nearpos = v_nearpos.xyz / v_nearpos.w;
 
@@ -320,6 +343,57 @@ void main() {{
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
 
+    // Set up the ray casting
+    // This snippet must define three variables:
+    // vec3 start_loc - the starting location of the ray in texture coordinates
+    // vec3 step - the step vector in texture coordinates
+    // int nsteps - the number of steps to make through the texture
+
+    $raycasting_setup
+
+    // For testing: show the number of steps. This helps to establish
+    // whether the rays are correctly oriented
+    //gl_FragColor = vec4(0.0, f_nsteps / 3.0 / u_shape.x, 1.0, 1.0);
+    //return;
+
+    $before_loop
+
+    // This outer loop seems necessary on some systems for large
+    // datasets. Ugly, but it works ...
+    vec3 loc = start_loc;
+    int iter = 0;
+    while (iter < nsteps) {
+        for (iter=iter; iter<nsteps; iter++)
+        {
+            // Get sample color
+            vec4 color = $sample(u_volumetex, loc);
+            float val = color.r;
+
+            $in_loop
+
+            // Advance location deeper into the volume
+            loc += step;
+        }
+    }
+
+    $after_loop
+
+    /* Set depth value - from visvis TODO
+    int iter_depth = int(maxi);
+    // Calculate end position in world coordinates
+    vec4 position2 = vertexPosition;
+    position2.xyz += ray*shape*float(iter_depth);
+    // Project to device coordinates and set fragment depth
+    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
+    iproj.z /= iproj.w;
+    gl_FragDepth = (iproj.z+1.0)/2.0;
+    */
+}
+
+
+"""  # noqa
+
+RAYCASTING_SETUP_VOLUME = """
     // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
     distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
@@ -341,48 +415,42 @@ void main() {{
     // Get starting location and step vector in texture coordinates
     vec3 step = ((v_position - front) / u_shape) / f_nsteps;
     vec3 start_loc = front / u_shape;
+"""
 
-    // For testing: show the number of steps. This helps to establish
-    // whether the rays are correctly oriented
-    //gl_FragColor = vec4(0.0, f_nsteps / 3.0 / u_shape.x, 1.0, 1.0);
-    //return;
+RAYCASTING_SETUP_PLANE = """
+    // find intersection of view ray with plane in data coordinates
+    vec3 intersection = intersectLinePlane(v_position.xyz, view_ray, 
+                                           u_plane_position, u_plane_normal);
+    // and texture coordinates
+    vec3 intersection_tex = intersection / u_shape;
 
-    {before_loop}
+    // discard if intersection not in texture
+    
+    float out_of_bounds = 0;
 
-    // This outer loop seems necessary on some systems for large
-    // datasets. Ugly, but it works ...
-    vec3 loc = start_loc;
-    int iter = 0;
-    while (iter < nsteps) {{
-        for (iter=iter; iter<nsteps; iter++)
-        {{
-            // Get sample color
-            vec4 color = $sample(u_volumetex, loc);
-            float val = color.r;
+    out_of_bounds += float(intersection_tex.x > 1);
+    out_of_bounds += float(intersection_tex.x < 0);
+    out_of_bounds += float(intersection_tex.y > 1);
+    out_of_bounds += float(intersection_tex.y < 0);
+    out_of_bounds += float(intersection_tex.z > 1);
+    out_of_bounds += float(intersection_tex.z < 0);
+    
+    if (out_of_bounds > 0) {
+        discard;
+    }
 
-            {in_loop}
+    // Decide how many steps to take
+    int nsteps = int(u_plane_thickness / u_relative_step_size + 0.5);
+    float f_nsteps = float(nsteps);
+    if( nsteps < 1 )
+        discard;
 
-            // Advance location deeper into the volume
-            loc += step;
-        }}
-    }}
-
-    {after_loop}
-
-    /* Set depth value - from visvis TODO
-    int iter_depth = int(maxi);
-    // Calculate end position in world coordinates
-    vec4 position2 = vertexPosition;
-    position2.xyz += ray*shape*float(iter_depth);
-    // Project to device coordinates and set fragment depth
-    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
-    iproj.z /= iproj.w;
-    gl_FragDepth = (iproj.z+1.0)/2.0;
-    */
-}}
-
-
-"""  # noqa
+    // Get step vector and starting location in texture coordinates
+    // step vector is along plane normal
+    vec3 N = normalize(u_plane_normal);
+    vec3 step = N / u_shape;
+    vec3 start_loc = intersection_tex - ((step * f_nsteps) / 2);
+"""
 
 MIP_SNIPPETS = dict(
     before_loop="""
@@ -397,17 +465,16 @@ MIP_SNIPPETS = dict(
         """,
     after_loop="""
         // Refine search for max value, but only if anything was found
-        if ( maxi > -1 ) {{
+        if ( maxi > -1 ) {
             loc = start_loc + step * (float(maxi) - 0.5);
             for (int i=0; i<10; i++) {
                 maxval = max(maxval, $sample(u_volumetex, loc).r);
                 loc += step * 0.1;
             }
             gl_FragColor = applyColormap(maxval);
-        }}
+        }
         """,
 )
-MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
 
 ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
@@ -430,7 +497,6 @@ ATTENUATED_MIP_SNIPPETS = dict(
         gl_FragColor = applyColormap(maxval);
         """,
 )
-ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
 
 MINIP_SNIPPETS = dict(
     before_loop="""
@@ -445,17 +511,16 @@ MINIP_SNIPPETS = dict(
         """,
     after_loop="""
         // Refine search for min value, but only if anything was found
-        if ( mini > -1 ) {{
+        if ( mini > -1 ) {
             loc = start_loc + step * (float(mini) - 0.5);
             for (int i=0; i<10; i++) {
                 minval = min(minval, $sample(u_volumetex, loc).r);
                 loc += step * 0.1;
             }
             gl_FragColor = applyColormap(minval);
-        }}
+        }
         """,
 )
-MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
 
 TRANSLUCENT_SNIPPETS = dict(
     before_loop="""
@@ -486,7 +551,6 @@ TRANSLUCENT_SNIPPETS = dict(
         gl_FragColor = integrated_color;
         """,
 )
-TRANSLUCENT_FRAG_SHADER = FRAG_SHADER.format(**TRANSLUCENT_SNIPPETS)
 
 ADDITIVE_SNIPPETS = dict(
     before_loop="""
@@ -501,7 +565,6 @@ ADDITIVE_SNIPPETS = dict(
         gl_FragColor = integrated_color;
         """,
 )
-ADDITIVE_FRAG_SHADER = FRAG_SHADER.format(**ADDITIVE_SNIPPETS)
 
 ISO_SNIPPETS = dict(
     before_loop="""
@@ -529,9 +592,25 @@ ISO_SNIPPETS = dict(
         """,
 )
 
-ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
+AVG_SNIPPETS = dict(
+    before_loop="""
+        float n = 0; // Counter for encountered values
+        float meanval = 0.0; // The mean of encountered values
+        float prev_mean = 0.0; // Variable to store the previous incremental mean
+        """,
+    in_loop="""
+        // Incremental mean value used for numerical stability
+        n += 1; // Increment the counter
+        prev_mean = meanval; // Update the mean for previous iteration
+        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
+        """,
+    after_loop="""
+        // Apply colormap on mean value
+        gl_FragColor = applyColormap(meanval);
+        """,
+)
 
-
+# This is an iso shader for categorical data (e.g., label images)
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
@@ -562,37 +641,26 @@ ISO_CATEGORICAL_SNIPPETS = dict(
         """,
 )
 
-ISO_CATEGORICAL_FRAG_SHADER = FRAG_SHADER.format(**ISO_CATEGORICAL_SNIPPETS)
+RAYCASTING_MODE_SNIPPETS = {
+    'volume': RAYCASTING_SETUP_VOLUME,
+    'plane': RAYCASTING_SETUP_PLANE,
+}
 
-
-AVG_SNIPPETS = dict(
-    before_loop="""
-        float n = 0; // Counter for encountered values
-        float meanval = 0.0; // The mean of encountered values
-        float prev_mean = 0.0; // Variable to store the previous incremental mean
-        """,
-    in_loop="""
-        // Incremental mean value used for numerical stability
-        n += 1; // Increment the counter
-        prev_mean = meanval; // Update the mean for previous iteration
-        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
-        """,
-    after_loop="""
-        // Apply colormap on mean value
-        gl_FragColor = applyColormap(meanval);
-        """,
-)
-AVG_FRAG_SHADER = FRAG_SHADER.format(**AVG_SNIPPETS)
 
 frag_dict = {
-    'mip': MIP_FRAG_SHADER,
-    'minip': MINIP_FRAG_SHADER,
-    'attenuated_mip': ATTENUATED_MIP_FRAG_SHADER,
-    'iso': ISO_FRAG_SHADER,
-    'iso_categorical': ISO_CATEGORICAL_FRAG_SHADER,
-    'translucent': TRANSLUCENT_FRAG_SHADER,
-    'additive': ADDITIVE_FRAG_SHADER,
-    'average': AVG_FRAG_SHADER
+    'mip': MIP_SNIPPETS,
+    'minip': MINIP_SNIPPETS,
+    'attenuated_mip': ATTENUATED_MIP_SNIPPETS,
+    'iso': ISO_SNIPPETS,
+    'iso_categorical': ISO_CATEGORICAL_SNIPPETS,
+    'translucent': TRANSLUCENT_SNIPPETS,
+    'additive': ADDITIVE_SNIPPETS,
+    'average': AVG_SNIPPETS,
+}
+
+RAYCASTING_MODE_DICT = {
+    'volume': RAYCASTING_SETUP_VOLUME,
+    'plane': RAYCASTING_SETUP_PLANE
 }
 
 
@@ -609,7 +677,7 @@ class VolumeVisual(Visual):
         in a gray colormap. Can be 'auto' to auto-set bounds to
         the min and max of the data. If not given or None, 'auto' is used.
     method : {'mip', 'attenuated_mip', 'minip', 'translucent', 'additive',
-        'iso', 'average'}
+        'iso', 'iso_categorical', 'average'}
         The render method to use. See corresponding docs for details.
         Default 'mip'.
     threshold : float
@@ -664,10 +732,13 @@ class VolumeVisual(Visual):
 
     def __init__(self, vol, clim="auto", method='mip', threshold=None,
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
-                 gamma=1.0, interpolation='linear', texture_format=None):
+                 gamma=1.0, interpolation='linear', texture_format=None,
+                 raycasting_mode='volume', plane_position=None,
+                 plane_normal=None, plane_thickness=1.0):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
+        self._raycasting_mode = raycasting_mode
         self._need_vertex_update = True
         # Set the colormap
         self._cmap = get_colormap(cmap)
@@ -694,7 +765,7 @@ class VolumeVisual(Visual):
         self._last_data = None
 
         # Create program
-        Visual.__init__(self, vcode=VERT_SHADER, fcode="")
+        Visual.__init__(self, vcode=VERT_SHADER, fcode=FRAG_SHADER)
         self.shared_program['u_volumetex'] = self._texture
         self.shared_program['a_position'] = self._vertices
         self.shared_program['a_texcoord'] = self._texcoord
@@ -711,10 +782,23 @@ class VolumeVisual(Visual):
         self.set_data(vol, clim or "auto")
 
         # Set params
+        self.raycasting_mode = raycasting_mode
         self.method = method
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
         self.attenuation = attenuation
+
+        # Set plane params
+        if plane_position is None:
+            self.plane_position = np.array(vol.shape) / 2
+        else:
+            self.plane_position = plane_position
+        if plane_normal is None:
+            self.plane_normal = [1, 0, 0]
+        else:
+            self.plane_normal = plane_normal
+        self.plane_thickness = plane_thickness
+
         self.freeze()
 
     def _create_texture(self, texture_format, data):
@@ -755,6 +839,13 @@ class VolumeVisual(Visual):
         # Check volume
         if not isinstance(vol, np.ndarray):
             raise ValueError('Volume visual needs a numpy array.')
+        if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] > 1)):
+            raise ValueError('Volume visual needs a 3D array.')
+        if isinstance(self._texture, GPUScaledTextured3D):
+            copy = False
+
+        if clim is not None and clim != self._texture.clim:
+            self._texture.set_clim(clim)
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] > 1)):
             raise ValueError('Volume visual needs a 3D array.')
         if isinstance(self._texture, GPUScaledTextured3D):
@@ -857,6 +948,18 @@ class VolumeVisual(Visual):
             self.update()
 
     @property
+    def _before_loop_snippet(self):
+        return frag_dict[self.method]['before_loop']
+
+    @property
+    def _in_loop_snippet(self):
+        return frag_dict[self.method]['in_loop']
+
+    @property
+    def _after_loop_snippet(self):
+        return frag_dict[self.method]['after_loop']
+
+    @property
     def method(self):
         """The render method to use
 
@@ -897,12 +1000,35 @@ class VolumeVisual(Visual):
         if 'u_attenuation' in self.shared_program:
             self.shared_program['u_attenuation'] = None
 
-        self.shared_program.frag = frag_dict[method]
+        # $sample needs to be unset and re-set, since it's present inside the
+        # snippets. Program should probably be able to do this automatically
+        self.shared_program.frag['sample'] = None
+        self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
+        self.shared_program.frag['before_loop'] = self._before_loop_snippet
+        self.shared_program.frag['in_loop'] = self._in_loop_snippet
+        self.shared_program.frag['after_loop'] = self._after_loop_snippet
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
         self.shared_program.frag['sample'] = self._texture.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
         self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
             if (hasattr(self.cmap, 'texture_lut')) else None
+        self.update()
+
+    @property
+    def _raycasting_setup_snippet(self):
+        return RAYCASTING_MODE_DICT[self.raycasting_mode]
+
+    @property
+    def raycasting_mode(self):
+        return self._raycasting_mode
+
+    @raycasting_mode.setter
+    def raycasting_mode(self, value: str):
+        valid_raycasting_modes = RAYCASTING_MODE_DICT.keys()
+        if value not in valid_raycasting_modes:
+            raise ValueError(f"Raycasting mode should be in {valid_raycasting_modes}, not {value}")
+        self._raycasting_mode = value
+        self.shared_program.frag['raycasting_setup'] = self._raycasting_setup_snippet
         self.update()
 
     @property
@@ -946,6 +1072,45 @@ class VolumeVisual(Visual):
             raise ValueError('relative_step_size cannot be smaller than 0.1')
         self._relative_step_size = value
         self.shared_program['u_relative_step_size'] = value
+
+    @property
+    def plane_position(self):
+        return self._plane_position
+
+    @plane_position.setter
+    def plane_position(self, value):
+        value = np.array(value, dtype=np.float32).ravel()
+        if value.shape != (3,):
+            raise ValueError('plane_position must be a 3 element array-like object')
+        self._plane_position = value
+        self.shared_program['u_plane_position'] = value[::-1]
+        self.update()
+
+    @property
+    def plane_normal(self):
+        return self._plane_normal
+
+    @plane_normal.setter
+    def plane_normal(self, value):
+        value = np.array(value, dtype=np.float32).ravel()
+        if value.shape != (3,):
+            raise ValueError('plane_normal must be a 3 element array-like object')
+        self._plane_normal = value
+        self.shared_program['u_plane_normal'] = value[::-1]
+        self.update()
+
+    @property
+    def plane_thickness(self):
+        return self._plane_thickness
+
+    @plane_thickness.setter
+    def plane_thickness(self, value: float):
+        value = float(value)
+        if value < 1:
+            raise ValueError('plane_thickness should be at least 1.0')
+        self._plane_thickness = value
+        self.shared_program['u_plane_thickness'] = value
+        self.update()
 
     def _create_vertex_data(self):
         """Create and set positions and texture coords from the given shape
