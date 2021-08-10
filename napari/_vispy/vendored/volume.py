@@ -367,7 +367,7 @@ void main() {
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
         {
-// Only sample volume if loc is not clipped by clipping planes
+            // Only sample volume if loc is not clipped by clipping planes
             float is_shown = $clip_by_planes(loc, u_shape);
             if (is_shown >= 0)
             {
