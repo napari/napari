@@ -364,6 +364,10 @@ void main() {
     // datasets. Ugly, but it works ...
     vec3 loc = start_loc;
     int iter = 0;
+    
+    // Keep track of whether texture has been sampled
+    float texture_sampled = 0;
+    
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
         {
@@ -374,6 +378,7 @@ void main() {
                 // Get sample color
                 vec4 color = $sample(u_volumetex, loc);
                 float val = color.r;
+                texture_sampled += 1;
 
                 $in_loop
             }
@@ -381,7 +386,12 @@ void main() {
             loc += step;
         }
     }
-
+    
+    // discard fragment if texture not sampled
+    if ( texture_sampled < 1 ) {
+        discard;
+    }
+    
     $after_loop
 
     /* Set depth value - from visvis TODO
