@@ -74,6 +74,23 @@ class PlaneManager(EventedModel):
         plane_position = np.mean(abc, axis=0)
         return cls(position=plane_position, normal=plane_normal)
 
+    def as_array(self):
+        """
+        return a (2, 3) array representing the plane
+        """
+        return np.stack([self.position, self.normal])
+
+    @classmethod
+    def from_array(cls, array, enabled=True):
+        """
+        construct the plane from a (2, 3) array
+        """
+        return cls(
+            position=array[0],
+            normal=array[1],
+            enabled=enabled,
+        )
+
     def __hash__(self):
         return id(self)
 
@@ -90,7 +107,7 @@ class PlaneList(SelectableEventedList):
         arrays = []
         for plane in self:
             if plane.enabled:
-                arrays.append(np.stack([plane.position, plane.normal]))
+                arrays.append(plane.as_array())
         if not arrays:
             return np.empty((0, 2, 3))
         return np.stack(arrays)
@@ -104,14 +121,9 @@ class PlaneList(SelectableEventedList):
                 f'Planes can only be constructed from arrays of shape '
                 f'(N, 2, 3), not {array.shape}'
             )
+        planes = [PlaneManager.from_array(sub_arr) for sub_arr in array]
         self.clear()
-        for sub_arr in array:
-            plane = PlaneManager(
-                position=sub_arr[0],
-                normal=sub_arr[1],
-                enabled=True,
-            )
-            self.append(plane)
+        self.extend(planes)
 
 
 class ThickPlaneManager(PlaneManager):
