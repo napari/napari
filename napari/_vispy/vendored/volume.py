@@ -7,19 +7,19 @@ About this technique
 --------------------
 
 In Python, we define the six faces of a cuboid to draw, as well as
-texture cooridnates corresponding with the vertices of the cuboid. 
+texture cooridnates corresponding with the vertices of the cuboid.
 The back faces of the cuboid are drawn (and front faces are culled)
-because only the back faces are visible when the camera is inside the 
+because only the back faces are visible when the camera is inside the
 volume.
 
-In the vertex shader, we intersect the view ray with the near and far 
+In the vertex shader, we intersect the view ray with the near and far
 clipping planes. In the fragment shader, we use these two points to
 compute the ray direction and then compute the position of the front
 cuboid surface (or near clipping plane) along the view ray.
 
 Next we calculate the number of steps to walk from the front surface
 to the back surface and iterate over these positions in a for-loop.
-At each iteration, the fragment color or other voxel information is 
+At each iteration, the fragment color or other voxel information is
 updated depending on the selected rendering method.
 
 It is important for the texture interpolation is 'linear' for most volumes,
@@ -34,6 +34,8 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
+from functools import lru_cache
+
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
 from vispy.gloo import VertexBuffer, IndexBuffer
 from .gloo.texture import should_cast_to_f32
@@ -365,12 +367,16 @@ void main() {
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
         {
-            // Get sample color
-            vec4 color = $sample(u_volumetex, loc);
-            float val = color.r;
+            // Ignore this step if clipped out by the clipping planes
+            float is_shown = $clip_by_planes(loc, u_shape);
+            if (is_shown >= 0)
+            {
+                // Get sample color
+                vec4 color = $sample(u_volumetex, loc);
+                float val = color.r;
 
-            $in_loop
-
+                $in_loop
+            }
             // Advance location deeper into the volume
             loc += step;
         }
@@ -533,8 +539,8 @@ TRANSLUCENT_SNIPPETS = dict(
             float alpha = max(a1 + a2, 0.001);
 
             // Doesn't work.. GLSL optimizer bug?
-            //integrated_color = (integrated_color * a1 / alpha) + 
-            //                   (color * a2 / alpha); 
+            //integrated_color = (integrated_color * a1 / alpha) +
+            //                   (color * a2 / alpha);
             // This should be identical but does work correctly:
             integrated_color *= a1 / alpha;
             integrated_color += color * a2 / alpha;
@@ -545,7 +551,6 @@ TRANSLUCENT_SNIPPETS = dict(
                 // stop integrating if the fragment becomes opaque
                 iter = nsteps;
             }
-
         """,
     after_loop="""
         gl_FragColor = integrated_color;
@@ -734,7 +739,8 @@ class VolumeVisual(Visual):
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
-                 plane_normal=None, plane_thickness=1.0):
+                 plane_normal=None, plane_thickness=1.0,
+                 clipping_planes=None):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
@@ -787,6 +793,7 @@ class VolumeVisual(Visual):
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
         self.attenuation = attenuation
+        self.clipping_planes = clipping_planes
 
         # Set plane params
         if plane_position is None:
@@ -959,6 +966,56 @@ class VolumeVisual(Visual):
     def _after_loop_snippet(self):
         return frag_dict[self.method]['after_loop']
 
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def _build_clipping_planes_func(n_planes):
+        """
+        build the code snippet used to clip the volume based on self.clipping_planes
+        """
+        func = Function(
+            '$vars\nfloat clip_planes(vec3 loc, vec3 vol_shape) { float is_shown = 1.0; $clips; return is_shown; }')
+        # each plane is defined by a position and a normal vector
+        # the fragment is considered clipped if on the "negative" side of the plane
+        vars_template = '''
+            uniform vec3 u_clipping_plane_pos{idx};
+            uniform vec3 u_clipping_plane_norm{idx};
+            '''
+        clip_template = '''
+            vec3 relative_vec{idx} = loc - ( u_clipping_plane_pos{idx} / vol_shape );
+            float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
+            is_shown = min(is_shown{idx}, is_shown);
+            '''
+        all_vars = []
+        all_clips = []
+        for idx in range(n_planes):
+            all_vars.append(vars_template.format(idx=idx))
+            all_clips.append(clip_template.format(idx=idx))
+        func['vars'] = ''.join(all_vars)
+        func['clips'] = ''.join(all_clips)
+        return func
+
+    @property
+    def clipping_planes(self):
+        """
+        a set of planes used to clip the volume. Each plane is defined by a position and
+        a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+        """
+        return self._clipping_planes[:, :, ::-1]
+
+    @clipping_planes.setter
+    def clipping_planes(self, value):
+        if value is None:
+            value = np.empty([0, 2, 3])
+        value = value[:, :, ::-1]
+        self._clipping_planes = value
+
+        self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func(len(value))
+
+        for idx, plane in enumerate(value):
+            self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
+            self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+        self.update()
+
     @property
     def method(self):
         """The render method to use
@@ -1051,7 +1108,8 @@ class VolumeVisual(Visual):
     @attenuation.setter
     def attenuation(self, value):
         self._attenuation = float(value)
-        self.shared_program['u_attenuation'] = self._attenuation
+        if 'u_attenuation' in self.shared_program:
+            self.shared_program['u_attenuation'] = self._attenuation
         self.update()
 
     @property
