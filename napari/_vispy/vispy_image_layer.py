@@ -51,6 +51,14 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
+        self.layer.plane.events.enabled.connect(self._on_plane_enabled_change)
+        self.layer.plane.events.position.connect(
+            self._on_plane_position_change
+        )
+        self.layer.plane.events.thickness.connect(
+            self._on_plane_thickness_change
+        )
+        self.layer.plane.events.normal.connect(self._on_plane_normal_change)
 
         self._on_display_change()
         self._on_data_change()
@@ -145,6 +153,26 @@ class VispyImageLayer(VispyBaseLayer):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
 
+    def _on_plane_enabled_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            if self.layer.plane.enabled is True:
+                raycasting_mode = 'plane'
+            else:
+                raycasting_mode = 'volume'
+            self.node.raycasting_mode = raycasting_mode
+
+    def _on_plane_thickness_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_thickness = self.layer.plane.thickness
+
+    def _on_plane_position_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_position = self.layer.plane.position
+
+    def _on_plane_normal_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_normal = self.layer.plane.normal
+
     def reset(self, event=None):
         self._reset_base()
         self._on_interpolation_change()
@@ -152,6 +180,10 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_contrast_limits_change()
         self._on_gamma_change()
         self._on_rendering_change()
+        self._on_plane_enabled_change()
+        self._on_plane_position_change()
+        self._on_plane_normal_change()
+        self._on_plane_thickness_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.
