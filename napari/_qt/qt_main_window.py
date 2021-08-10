@@ -432,6 +432,9 @@ class Window:
                 self.qt_viewer.canvas._backend.screen_changed
             )
 
+        # set the grid options on start up
+        self._update_widget_states()
+
         self._add_menubar()
         self._add_file_menu()
         self._add_view_menu()
@@ -475,6 +478,12 @@ class Window:
         self.window_menu.addSeparator()
 
         settings.appearance.events.theme.connect(self._update_theme)
+        settings.application.events.playback_fps.connect(
+            self._update_widget_states
+        )
+        settings.application.events.playback_mode.connect(
+            self._update_widget_states
+        )
 
         plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
@@ -779,17 +788,18 @@ class Window:
 
             self._qt_window._preferences_dialog = win
             win.valueChanged.connect(self._reset_preference_states)
-            win.updatedValues.connect(self._update_player_settings)
+            win.updatedValues.connect(self._update_widget_states)
             win.closed.connect(self._on_preferences_closed)
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
 
-    def _update_player_settings(self):
-        """Keep player settings up to date with settings values."""
+    def _update_widget_states(self, e=None):
+        """Keep widgets in napari up to date with settings values."""
 
         settings = get_settings()
 
+        # update playback settings
         for widget in self.qt_viewer.dims.slider_widgets:
             setattr(widget, 'fps', settings.application.playback_fps)
             setattr(widget, 'loop_mode', settings.application.playback_mode)

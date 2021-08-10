@@ -16,6 +16,7 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
+from ..utils.plane_manager import PlaneManager
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
@@ -106,6 +107,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    plane : dict
+        Properties defining plane rendering in 3D. Properties are defined in
+        data coordinates. Valid dictionary keys are
+        {'position', 'normal_vector', 'thickness', and 'enabled'}.
 
     Attributes
     ----------
@@ -153,6 +158,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Threshold for isosurface.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
+    plane : PlaneManager
+        Properties defining plane rendering in 3D.
 
     Notes
     -----
@@ -176,6 +183,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
+        plane=None,
         iso_threshold=0.5,
         attenuation=0.05,
         name=None,
@@ -267,10 +275,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         self._new_empty_slice()
 
-        # Set contrast_limits and colormaps
+        # Set contrast limits, colormaps and plane parameters
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
+        self._plane = PlaneManager()
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
@@ -288,6 +297,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
+        if plane is not None:
+            self.plane.update(plane)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -485,6 +496,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Set current rendering mode."""
         self._rendering = Rendering(rendering)
         self.events.rendering()
+
+    @property
+    def plane(self):
+        return self._plane
 
     @property
     def loaded(self):
@@ -814,6 +829,7 @@ class Image(_ImageBase):
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
+                'plane': self.plane.dict(),
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,

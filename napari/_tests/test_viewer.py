@@ -90,7 +90,7 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
     'Surface': 0,
     'Tracks': 0,
     'Points': 8,
-    'Labels': 14,
+    'Labels': 11,
     'Shapes': 19,
 }
 

@@ -111,6 +111,31 @@ def test_string_enum():
     with pytest.raises(ValueError):
         TestEnum(OtherEnum.SOMETHING)
 
+    # test string conversion
+    assert str(TestEnum.THING) == 'thing'
+
+    # test direct comparison with a string
+    assert TestEnum.THING == 'thing'
+    assert 'thing' == TestEnum.THING
+    assert TestEnum.THING != 'notathing'
+    assert 'notathing' != TestEnum.THING
+
+    # test comparison with another enum with same value names
+    class AnotherTestEnum(StringEnum):
+        THING = auto()
+        ANOTHERTHING = auto()
+
+    assert TestEnum.THING != AnotherTestEnum.THING
+
+    # test lookup in a set
+    assert TestEnum.THING in {TestEnum.THING, TestEnum.OTHERTHING}
+    assert TestEnum.THING not in {TestEnum.OTHERTHING}
+    assert TestEnum.THING in {'thing', TestEnum.OTHERTHING}
+    assert TestEnum.THING not in {
+        AnotherTestEnum.THING,
+        AnotherTestEnum.ANOTHERTHING,
+    }
+
 
 def test_abspath_or_url():
     relpath = "~" + sep + "something"

@@ -269,6 +269,16 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
         """
         return self.value
 
+    def __eq__(self, other):
+        if type(self) is type(other):
+            return self is other
+        elif isinstance(other, str):
+            return str(self) == other
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(str(self))
+
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
 camel_to_spaces_pattern = re.compile(

@@ -132,10 +132,22 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
+
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
         settings.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visible_update
+        )
+
+        self._update_viewer_grid()
+        settings.application.events.grid_stride.connect(
+            self._update_viewer_grid
+        )
+        settings.application.events.grid_width.connect(
+            self._update_viewer_grid
+        )
+        settings.application.events.grid_height.connect(
+            self._update_viewer_grid
         )
 
         # Add extra events - ideally these will be removed too!
@@ -172,6 +184,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
+
+    def _update_viewer_grid(self, e=None):
+        """Keep viewer grid settings up to date with settings values."""
+
+        settings = get_settings()
+
+        self.grid.stride = settings.application.grid_stride
+        self.grid.shape = (
+            settings.application.grid_height,
+            settings.application.grid_width,
+        )
 
     @validator('theme')
     def _valid_theme(cls, v):
@@ -533,6 +556,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
+        plane=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -642,6 +666,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             should be the largest. Please note multiscale rendering is only
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
+        plane : dict
+            Properties defining plane rendering in 3D. Properties are defined
+            in data coordinates. Valid dictionary keys are
+            {'position', 'normal_vector', 'thickness', and 'enabled'}.
 
         Returns
         -------
@@ -680,6 +708,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'blending': blending,
             'visible': visible,
             'multiscale': multiscale,
+            'plane': plane,
         }
 
         # these arguments are *already* iterables in the single-channel case.
