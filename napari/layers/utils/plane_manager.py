@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 from pydantic import validator
 
-from ...utils.events import EventedList, EventedModel
+from ...utils.events import EventedModel, SelectableEventedList
 from ...utils.geometry import intersect_line_with_plane_3d
 
 
@@ -74,8 +74,11 @@ class PlaneManager(EventedModel):
         plane_position = np.mean(abc, axis=0)
         return cls(position=plane_position, normal=plane_normal)
 
+    def __hash__(self):
+        return id(self)
 
-class PlaneList(EventedList):
+
+class PlaneList(SelectableEventedList):
     """
     A list of planes providing some utility methods
     """
