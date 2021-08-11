@@ -16,6 +16,7 @@ from ..types import (
     image_reader_to_layerdata_reader,
 )
 from ..utils.io import (
+    READER_EXTENSIONS,
     csv_to_layer_data,
     imsave,
     imsave_extensions,
@@ -39,7 +40,7 @@ def csv_reader_function(path: Union[str, List[str]]) -> List[LayerData]:
 
 
 @napari_hook_implementation(trylast=True)
-def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
+def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the
@@ -57,7 +58,10 @@ def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
     """
     if isinstance(path, str) and path.endswith('.csv'):
         return csv_reader_function
-    return image_reader_to_layerdata_reader(magic_imread)
+
+    _p = [path] if isinstance(path, str) else path
+    if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in _p):
+        return image_reader_to_layerdata_reader(magic_imread)
 
 
 @napari_hook_implementation(trylast=True)
