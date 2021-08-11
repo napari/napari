@@ -754,9 +754,9 @@ def test_instiantiate_with_plane_manager():
     """Test that an image layer can be instantiated with plane parameters
     in a PlaneManager.
     """
-    plane_parameters = PlaneManager(
+    plane_manager = PlaneManager(
         position=(32, 32, 32), normal=(1, 1, 1), thickness=22
     )
-    image = Image(np.ones((32, 32, 32)), plane=plane_parameters)
-    for k, v in plane_parameters.dict().items():
+    image = Image(np.ones((32, 32, 32)), plane=plane_manager)
+    for k, v in plane_manager.dict().items():
         assert v == getattr(image.plane, k, v)
