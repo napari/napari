@@ -222,8 +222,8 @@ class QtLabelsControls(QtLayerControls):
         button_row.addStretch(1)
         button_row.addWidget(self.colormapUpdate)
         button_row.addWidget(self.erase_button)
-        button_row.addWidget(self.fill_button)
         button_row.addWidget(self.paint_button)
+        button_row.addWidget(self.fill_button)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.panzoom_button)
         button_row.setSpacing(4)
@@ -530,14 +530,14 @@ class QtLabelsControls(QtLayerControls):
         # (only picking works in 3D)
         widget_list = [
             'pick_button',
-            'paint_button',
             'fill_button',
+            'paint_button',
             'erase_button',
         ]
         widgets_to_toggle = {
             (2, True): widget_list,
             (2, False): widget_list,
-            (3, True): widget_list[:1],
+            (3, True): widget_list,
             (3, False): widget_list,
         }
 
@@ -546,9 +546,6 @@ class QtLabelsControls(QtLayerControls):
             widgets_to_toggle[(self.layer._ndisplay, self.layer.editable)],
             self.layer.editable,
         )
-
-        if self.layer.editable and self.layer._ndisplay == 3:
-            disable_with_opacity(self, widget_list[1:], False)
 
     def _on_rendering_change(self, event):
         """Receive layer model rendering change event and update dropdown menu.

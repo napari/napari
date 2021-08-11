@@ -116,6 +116,10 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    plane : dict
+        Properties defining plane rendering in 3D. Properties are defined in
+        data coordinates. Valid dictionary keys are
+        {'position', 'normal_vector', 'thickness', and 'enabled'}.
 
     Attributes
     ----------
@@ -212,6 +216,7 @@ class Labels(_ImageBase):
         rendering='iso_categorical',
         visible=True,
         multiscale=None,
+        plane=None,
     ):
 
         self._seed = seed
@@ -252,6 +257,7 @@ class Labels(_ImageBase):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            plane=plane,
         )
 
         self.events.add(
@@ -505,6 +511,7 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self._properties,
                 'rendering': self.rendering,
+                'plane': self.plane,
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,

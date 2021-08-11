@@ -90,6 +90,7 @@ def split_channels(
         'affine',
         'contrast_limits',
         'metadata',
+        'plane',
     }
 
     # turn the kwargs dict into a mapping of {key: iterator}

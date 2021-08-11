@@ -114,10 +114,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # whether to treat any underscore non-class var attrs as private
         # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
         underscore_attrs_are_private = True
-        # whether to populate models with the value property of enums, rather
-        # than the raw enum. This may be useful if you want to serialise
-        # model.dict() later
-        use_enum_values = True
         # whether to validate field defaults (default: False)
         validate_all = True
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
@@ -158,6 +154,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     @property
     def events(self):
         return self._events
+
+    @property
+    def _defaults(self):
+        return get_defaults(self)
+
+    def reset(self):
+        for name, value in self._defaults.items():
+            setattr(self, name, value)
 
     def asdict(self):
         """Convert a model to a dictionary."""
@@ -227,12 +231,24 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             Whether enums should be shown as values (or as enum objects),
             by default `True`
         """
-        before = getattr(self.Config, 'use_enum_values', None)
+        null = object()
+        before = getattr(self.Config, 'use_enum_values', null)
         self.Config.use_enum_values = as_values
         try:
             yield
         finally:
-            if before:
+            if before is not null:
                 self.Config.use_enum_values = before
             else:
                 delattr(self.Config, 'use_enum_values')
+
+
+def get_defaults(obj: BaseModel):
+    """Get possibly nested default values for a Model object."""
+    dflt = {}
+    for k, v in obj.__fields__.items():
+        d = v.get_default()
+        if d is None and isinstance(v.type_, main.ModelMetaclass):
+            d = get_defaults(v.type_)
+        dflt[k] = d
+    return dflt

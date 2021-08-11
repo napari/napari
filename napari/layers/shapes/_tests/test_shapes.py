@@ -7,7 +7,7 @@ import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
-from napari.layers.utils._text_constants import TextMode
+from napari.layers.utils._text_constants import Anchor, TextMode
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -160,6 +160,39 @@ def test_properties_dataframe():
     np.testing.assert_equal(layer.properties, properties)
 
 
+def test_setting_current_properties():
+    shape = (2, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {
+        'annotation': ['paw', 'leg'],
+        'confidence': [0.5, 0.75],
+        'annotator': ['jane', 'ash'],
+        'model': ['worst', 'best'],
+    }
+    layer = Shapes(data, properties=copy(properties))
+    current_properties = {
+        'annotation': ['leg'],
+        'confidence': 1,
+        'annotator': 'ash',
+        'model': np.array(['best']),
+    }
+    layer.current_properties = current_properties
+
+    expected_current_properties = {
+        'annotation': np.array(['leg']),
+        'confidence': np.array([1]),
+        'annotator': np.array(['ash']),
+        'model': np.array(['best']),
+    }
+
+    coerced_current_properties = layer.current_properties
+    for k, v in coerced_current_properties.items():
+        value = coerced_current_properties[k]
+        assert isinstance(value, np.ndarray)
+        np.testing.assert_equal(value, expected_current_properties[k])
+
+
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
@@ -244,7 +277,7 @@ def test_set_text_with_kwarg_dict(properties):
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
-        'anchor': 'upper_left',
+        'anchor': Anchor.UPPER_LEFT,
         'size': 10,
         'visible': True,
     }
@@ -1900,14 +1933,26 @@ def test_value():
     assert value == (None, None)
 
 
-def test_value_3d():
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
+        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
     """Currently get_value should return None in 3D"""
     shape = (10, 4, 3)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
     value = layer.get_value(
-        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
     )
     assert value is None
 

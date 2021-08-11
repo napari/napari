@@ -30,6 +30,7 @@ from ..utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
+    dims_displayed_world_to_layer,
 )
 from ._base_constants import Blending
 
@@ -210,7 +211,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data)
-        self.metadata = metadata or {}
+        self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
@@ -377,6 +378,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """str: Unique name of the layer."""
         return self._name
 
+    @name.setter
+    def name(self, name):
+        if name == self.name:
+            return
+        if not name:
+            name = self._basename()
+        self._name = name
+        self.events.name()
+
+    @property
+    def metadata(self) -> dict:
+        """Key/value map for user-stored data."""
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, value: dict) -> None:
+        self._metadata.clear()
+        self._metadata.update(value)
+
     @property
     def source(self):
         return self._source
@@ -389,15 +409,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Derived classes that do asynchronous loading can override this.
         """
         return True
-
-    @name.setter
-    def name(self, name):
-        if name == self.name:
-            return
-        if not name:
-            name = self._basename()
-        self._name = name
-        self.events.name()
 
     @property
     def opacity(self):
@@ -1011,7 +1022,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         if self.visible:
             if world:
+                ndim_world = len(position)
+
+                if dims_displayed is not None:
+                    # convert the dims_displayed to the layer dims.This accounts
+                    # for differences in the number of dimensions in the world
+                    # dims versus the layer and for transpose and rolls.
+                    dims_displayed = dims_displayed_world_to_layer(
+                        dims_displayed,
+                        ndim_world=ndim_world,
+                        ndim_layer=self.ndim,
+                    )
                 position = self.world_to_data(position)
+
             if dims_displayed is not None:
                 if len(dims_displayed) == 2 or self.ndim == 2:
                     value = self._get_value(position=tuple(position))

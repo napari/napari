@@ -18,7 +18,11 @@ from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import get_current_properties, prepare_properties
+from ..utils.layer_utils import (
+    coerce_current_properties,
+    get_current_properties,
+    prepare_properties,
+)
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -539,7 +543,9 @@ class Points(Layer):
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = current_properties
+        self._current_properties = coerce_current_properties(
+            current_properties
+        )
 
         if (
             self._update_properties
@@ -1395,8 +1401,7 @@ class Points(Layer):
                     self.properties[k], index, axis=0
                 )
             self.text.remove(index)
-            if self._value in self.selected_data:
-                self._value = None
+            self._value = None
             self.selected_data = set()
             self.data = np.delete(self.data, index, axis=0)
 
