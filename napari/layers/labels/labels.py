@@ -521,7 +521,9 @@ class Labels(_ImageBase):
                 'properties': self._properties,
                 'rendering': self.rendering,
                 'plane': self.plane.dict(),
-                'clipping_planes': self.clipping_planes,
+                'clipping_planes': [
+                    plane.dict() for plane in self.clipping_planes
+                ],
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,

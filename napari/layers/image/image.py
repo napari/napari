@@ -867,7 +867,9 @@ class Image(_ImageBase):
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
                 'plane': self.plane.dict(),
-                'clipping_planes': self.clipping_planes,
+                'clipping_planes': [
+                    plane.dict() for plane in self.clipping_planes
+                ],
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
