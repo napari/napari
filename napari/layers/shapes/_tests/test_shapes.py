@@ -1949,7 +1949,7 @@ def test_value():
 def test_value_3d(
     position, view_direction, dims_displayed, world, scale, expected
 ):
-    """Currently get_value should return None in 3D"""
+    """Test get_value in 3D with and without scale"""
     data = np.array(
         [
             [
