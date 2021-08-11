@@ -5,6 +5,7 @@ from pydantic import validator
 
 from ...utils.events import EventedModel, SelectableEventedList
 from ...utils.geometry import intersect_line_with_plane_3d
+from ...utils.translations import trans
 
 
 class PlaneManager(EventedModel):
@@ -112,20 +113,24 @@ class PlaneList(SelectableEventedList):
             return np.empty((0, 2, 3))
         return np.stack(arrays)
 
-    def from_array(self, array):
+    @classmethod
+    def from_array(cls, array):
         """
         construct the PlaneList from an array of shape (N, 2, 3)
         """
         if array.ndim != 3 or array.shape[1:] != (2, 3):
             raise ValueError(
-                f'Planes can only be constructed from arrays of shape '
-                f'(N, 2, 3), not {array.shape}'
+                trans._(
+                    'Planes can only be constructed from arrays of shape (N, 2, 3), not {shape}',
+                    deferred=True,
+                    shape=array.shape,
+                )
             )
         planes = [PlaneManager.from_array(sub_arr) for sub_arr in array]
-        self.clear()
-        self.extend(planes)
+        return cls(planes)
 
-    def from_bounding_box(self, center, dimensions):
+    @classmethod
+    def from_bounding_box(cls, center, dimensions):
         """
         generate 6 planes positioned to form a bounding box, with normals towards the center
 
@@ -140,7 +145,7 @@ class PlaneList(SelectableEventedList):
         -------
         list : PlaneList
         """
-        self.clear()
+        planes = []
         for axis in range(3):
             for direction in (-1, 1):
                 shift = (dimensions[axis] / 2) * direction
@@ -150,11 +155,12 @@ class PlaneList(SelectableEventedList):
                 normal = np.zeros(3)
                 normal[axis] = -direction
 
-                self.append(
+                planes.append(
                     PlaneManager(
                         position=position, normal=normal, enabled=True
                     )
                 )
+        return cls(planes)
 
 
 class ThickPlaneManager(PlaneManager):
