@@ -183,7 +183,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
-        plane=None,
+        plane=PlaneManager(),
         iso_threshold=0.5,
         attenuation=0.05,
         name=None,
@@ -297,8 +297,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
-        if plane is not None:
-            self.plane = plane
+        self.plane = plane
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
