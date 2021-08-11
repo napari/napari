@@ -1253,3 +1253,14 @@ def test_cursor_ray_3d_transposed():
     )
     np.testing.assert_allclose(start_point, [0, 11, 5, 1])
     np.testing.assert_allclose(end_point, [19, 11, 5, 1])
+
+
+def test_labels_state_update():
+    """Test that a labels layer can be updated from the output of its
+    _get_state() method
+    """
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    state = layer._get_state()
+    for k, v in state.items():
+        setattr(layer, k, v)

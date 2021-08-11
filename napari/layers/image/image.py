@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -107,7 +107,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    plane : dict
+    plane : dict or PlaneManager
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
@@ -501,6 +501,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def plane(self):
         return self._plane
 
+    @plane.setter
+    def plane(self, value: Union[dict, PlaneManager]):
+        self._plane.update(value)
+
     @property
     def loaded(self):
         """Has the data for this layer been loaded yet.
@@ -829,7 +833,7 @@ class Image(_ImageBase):
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
-                'plane': self.plane.dict(),
+                'plane': self.plane,
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
