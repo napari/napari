@@ -819,23 +819,50 @@ class ShapeList:
             triangles=triangles,
         )
         intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
-        if len(intersected_shapes) == 0:
-            shape = None
-            intersection_point = None
-        else:
-            intersected_triangles = triangles[inside]
-            intersection_points = intersect_ray_with_triangle(
+        if len(intersected_shapes) > 0:
+            intersection_points = self._shape_intersection(
+                shape_indices=inside,
                 ray_position=ray_position,
                 ray_direction=ray_direction,
-                triangles=intersected_triangles,
             )
             start_to_intersection = intersection_points - ray_position
             distances = np.linalg.norm(start_to_intersection, axis=1)
             closest_shape_index = np.argmin(distances)
             shape = intersected_shapes[closest_shape_index]
-            intersection_point = intersection_points[closest_shape_index]
+            return shape
+        else:
+            return None
 
-        return shape, intersection_point
+    def _shape_intersection(
+        self,
+        shape_indices: np.ndarray,
+        ray_position: np.ndarray,
+        ray_direction: np.ndarray,
+    ):
+        """Find the intersection of a ray with specified shapes.
+
+        Parameters
+        ----------
+        shape_indices : np.ndarray
+            (n,) array of shape indices to find the intersection with the ray
+        ray_position : np.ndarray
+            (3,) array with the coordinate of the starting point of the ray.
+        ray_direction : np.ndarray
+            (3,) array of the normal direction of the ray.
+
+        Returns
+        -------
+        intersection_points : np.ndarray
+            (n x 3) array of the intersection of the ray with each of the specified shapes.
+        """
+        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
+        intersected_triangles = triangles[shape_indices]
+        intersection_points = intersect_ray_with_triangle(
+            ray_position=ray_position,
+            ray_direction=ray_direction,
+            triangles=intersected_triangles,
+        )
+        return intersection_points
 
     def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns N binary masks, one for each shape, embedded in an array of

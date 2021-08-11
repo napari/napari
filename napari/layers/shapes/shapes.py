@@ -2695,7 +2695,8 @@ class Shapes(Layer):
         -------
         value
             The data value along the supplied ray.
-
+        vertex : None
+            Index of vertex if any that is at the coordinates. Always returns `None`.
         """
         if (start_position is not None) and (end_position is not None):
             # Get the normal vector of the click plane
@@ -2710,9 +2711,9 @@ class Shapes(Layer):
             )
 
         else:
-            value = (None, None)
+            value = None
 
-        return value
+        return (value, None)
 
     def move_to_front(self):
         """Moves selected objects to be displayed in front of all others."""
