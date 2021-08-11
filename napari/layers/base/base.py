@@ -1047,7 +1047,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                         position=position,
                         view_direction=view_direction,
                         dims_displayed=dims_displayed,
-                        world=False,
+                        world=world,
                     )
                     value = self._get_value_3d(
                         start_position=start_pos,

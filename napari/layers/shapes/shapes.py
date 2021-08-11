@@ -2712,6 +2712,11 @@ class Shapes(Layer):
             ray_direction_normed = ray_direction / np.linalg.norm(
                 ray_direction
             )
+            # step the start position back a little bit to be able to detect shapes
+            # that contain the start_position
+            start_position_view = (
+                start_position_view - 0.1 * ray_direction_normed
+            )
             value = self._data_view._inside_3d(
                 start_position_view, ray_direction_normed
             )
