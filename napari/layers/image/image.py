@@ -111,7 +111,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
-    clipping_planes: list of dicts, list of PlaneManager, or PlaneList
+    clipping_planes : list of dicts, list of PlaneManager, or PlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
 
@@ -163,7 +163,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Attenuation rate for attenuated maximum intensity projection.
     plane : ThickPlaneManager
         Properties defining plane rendering in 3D.
-    clipping_planes: PlaneList
+    clipping_planes : PlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
