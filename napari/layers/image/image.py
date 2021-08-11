@@ -298,7 +298,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.interpolation = interpolation
         self.rendering = rendering
         if plane is not None:
-            self.plane.update(plane)
+            self.plane = plane
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
