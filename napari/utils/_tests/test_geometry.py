@@ -9,6 +9,7 @@ from napari.utils.geometry import (
     find_front_back_face,
     inside_triangles,
     intersect_line_with_axis_aligned_plane,
+    intersect_line_with_multiple_planes_3d,
     intersect_line_with_plane_3d,
     intersect_ray_with_axis_aligned_bounding_box_3d,
     point_in_quadrilateral_2d,
@@ -77,6 +78,22 @@ def test_intersect_line_with_plane_3d(
         line_position, line_direction, plane_position, plane_normal
     )
     np.testing.assert_allclose(expected, intersection)
+
+
+def test_intersect_line_with_multiple_planes_3d():
+    """Test intersecting a ray with multiple planes and getting the intersection
+    with each one.
+    """
+    line_position = [0, 0, 1]
+    line_direction = [0, 0, -1]
+    plane_positions = [[0, 0, 0], [0, 0, 1]]
+    plane_normals = [[0, 0, 1], [0, 0, 1]]
+    intersections = intersect_line_with_multiple_planes_3d(
+        line_position, line_direction, plane_positions, plane_normals
+    )
+
+    expected = np.array([[0, 0, 0], [0, 0, 1]])
+    np.testing.assert_allclose(intersections, expected)
 
 
 @pytest.mark.parametrize(

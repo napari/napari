@@ -837,8 +837,6 @@ class ShapeList:
 
         return shape, intersection_point
 
-    # def get_ray_intersection(self):
-
     def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.

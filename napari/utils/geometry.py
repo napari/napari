@@ -38,9 +38,7 @@ def project_point_onto_plane(
         The point that has been projected to the plane.
         This is always an Nx3 array.
     """
-    point = np.asarray(point)
-    if point.ndim == 1:
-        point = np.expand_dims(point, axis=0)
+    point = np.atleast_2d(point)
     plane_point = np.asarray(plane_point)
     # make the plane normals have the same shape as the points
     plane_normal = np.tile(plane_normal, (point.shape[0], 1))
@@ -307,6 +305,50 @@ def intersect_line_with_plane_3d(
     The line is defined by a position and a direction vector.
     The plane is defined by a position and a normal vector.
     https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
+    Parameters
+    ----------
+    line_position : np.ndarray
+        a position on a 3D line with shape (3,).
+    line_direction : np.ndarray
+        direction of the 3D line with shape (3,).
+    plane_position : np.ndarray
+        a position on a plane in 3D with shape (3,).
+    plane_normal : np.ndarray
+        a vector normal to the plane in 3D with shape (3,).
+    Returns
+    -------
+    plane_intersection : np.ndarray
+        the intersection of the line with the plane, shape (3,)
+    """
+    # cast to arrays
+    line_position = np.asarray(line_position, dtype=float)
+    line_direction = np.asarray(line_direction, dtype=float)
+    plane_position = np.asarray(plane_position, dtype=float)
+    plane_normal = np.asarray(plane_normal, dtype=float)
+
+    # project direction between line and plane onto the plane normal
+    line_plane_direction = plane_position - line_position
+    line_plane_on_plane_normal = np.dot(line_plane_direction, plane_normal)
+
+    # project line direction onto the plane normal
+    line_direction_on_plane_normal = np.dot(line_direction, plane_normal)
+
+    # find scale factor for line direction
+    scale_factor = line_plane_on_plane_normal / line_direction_on_plane_normal
+
+    return line_position + (scale_factor * line_direction)
+
+
+def intersect_line_with_multiple_planes_3d(
+    line_position: np.ndarray,
+    line_direction: np.ndarray,
+    plane_position: np.ndarray,
+    plane_normal: np.ndarray,
+) -> np.ndarray:
+    """Find the intersection of a line with an arbitrarily oriented plane in 3D.
+    The line is defined by a position and a direction vector.
+    The plane is defined by a position and a normal vector.
+    https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
 
     Parameters
     ----------
@@ -327,8 +369,8 @@ def intersect_line_with_plane_3d(
     # cast to arrays
     line_position = np.asarray(line_position, dtype=float)
     line_direction = np.asarray(line_direction, dtype=float)
-    plane_position = np.asarray(plane_position, dtype=float)
-    plane_normal = np.asarray(plane_normal, dtype=float)
+    plane_position = np.atleast_2d(plane_position).astype(float)
+    plane_normal = np.atleast_2d(plane_normal).astype(float)
 
     # project direction between line and plane onto the plane normal
     line_plane_direction = plane_position - line_position
@@ -344,18 +386,16 @@ def intersect_line_with_plane_3d(
     # find scale factor for line direction
     scale_factor = line_plane_on_plane_normal / line_direction_on_plane_normal
 
-    if plane_position.ndim == 2:
-        repeated_line_position = np.repeat(
-            line_position[np.newaxis, :], len(scale_factor), axis=0
-        )
-        repeated_line_direction = np.repeat(
-            line_direction[np.newaxis, :], len(scale_factor), axis=0
-        )
-        return repeated_line_position + (
-            np.expand_dims(scale_factor, axis=1) * repeated_line_direction
-        )
-    else:
-        return line_position + (scale_factor * line_direction)
+    # if plane_position.ndim == 2:
+    repeated_line_position = np.repeat(
+        line_position[np.newaxis, :], len(scale_factor), axis=0
+    )
+    repeated_line_direction = np.repeat(
+        line_direction[np.newaxis, :], len(scale_factor), axis=0
+    )
+    return repeated_line_position + (
+        np.expand_dims(scale_factor, axis=1) * repeated_line_direction
+    )
 
 
 def intersect_ray_with_triangle(
@@ -368,7 +408,7 @@ def intersect_ray_with_triangle(
         np.linalg.norm(triangle_normals, axis=1), 1
     )
 
-    intersection_points = intersect_line_with_plane_3d(
+    intersection_points = intersect_line_with_multiple_planes_3d(
         line_position=ray_position,
         line_direction=ray_direction,
         plane_position=triangles[:, 0, :],

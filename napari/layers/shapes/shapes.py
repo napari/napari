@@ -2697,7 +2697,7 @@ class Shapes(Layer):
             The data value along the supplied ray.
 
         """
-        if start_position is not None:
+        if (start_position is not None) and (end_position is not None):
             # Get the normal vector of the click plane
             start_position_view = start_position[dims_displayed]
             end_position_view = end_position[dims_displayed]
