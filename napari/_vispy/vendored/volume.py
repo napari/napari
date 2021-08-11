@@ -1116,8 +1116,7 @@ class VolumeVisual(Visual):
     @attenuation.setter
     def attenuation(self, value):
         self._attenuation = float(value)
-        if 'u_attenuation' in self.shared_program:
-            self.shared_program['u_attenuation'] = self._attenuation
+        self.shared_program['u_attenuation'] = self._attenuation
         self.update()
 
     @property
