@@ -5,7 +5,7 @@ import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
-from napari.layers.utils.plane_manager import PlaneManager
+from napari.layers.utils.plane_manager import PlaneList, PlaneManager
 from napari.utils import Colormap
 from napari.utils.transforms.transform_utils import rotate_to_matrix
 
@@ -760,3 +760,20 @@ def test_instiantiate_with_plane_manager():
     image = Image(np.ones((32, 32, 32)), plane=plane_manager)
     for k, v in plane_manager.dict().items():
         assert v == getattr(image.plane, k, v)
+
+
+def test_instantiate_with_clipping_planelist():
+    planes = PlaneList.from_array(np.ones((2, 2, 3)))
+    image = Image(np.ones((32, 32, 32)), clipping_planes=planes)
+    assert len(image.clipping_planes) == 2
+
+
+def test_instantiate_with_clipping_planes_dict():
+    planes = [
+        {'position': (0, 0, 0), 'normal': (0, 0, 1)},
+        {'position': (0, 1, 0), 'normal': (1, 0, 0)},
+    ]
+    image = Image(np.ones((32, 32, 32)), clipping_planes=planes)
+    for i in range(len(planes)):
+        assert image.clipping_planes[i].position == planes[i]['position']
+        assert image.clipping_planes[i].normal == planes[i]['normal']

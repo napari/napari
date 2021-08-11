@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, List, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -111,7 +111,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
-    clipping_planes: list of dicts
+    clipping_planes: list of dicts, list of PlaneManager, or PlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
 
@@ -163,7 +163,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Attenuation rate for attenuated maximum intensity projection.
     plane : ThickPlaneManager
         Properties defining plane rendering in 3D.
-    clipping_planes: list of PlaneManager
+    clipping_planes: PlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
@@ -305,15 +305,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.interpolation = interpolation
         self.rendering = rendering
         if plane is not None:
-<<<<<<< HEAD
             self.plane = plane
-=======
             self.plane.update(plane)
-        if clipping_planes is not None:
-            self.clipping_planes.extend(
-                PlaneManager(**kwargs) for kwargs in clipping_planes
-            )
->>>>>>> a98b5669 (added PlaneManager (changed old to ThickPlaneManager) and implemented in image and lable layer.)
+        self.clipping_planes = clipping_planes
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -530,6 +524,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @property
     def clipping_planes(self):
         return self._clipping_planes
+
+    @clipping_planes.setter
+    def clipping_planes(
+        self, value: Union[List[PlaneManager, dict], PlaneList]
+    ):
+        self._clipping_planes.clear()
+        if value is not None:
+            for new_plane in value:
+                plane = PlaneManager()
+                plane.update(new_plane)
+                self._clipping_planes.append(plane)
 
     @property
     def loaded(self):
@@ -862,7 +867,7 @@ class Image(_ImageBase):
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
                 'plane': self.plane.dict(),
-                'clipping_planes': self.clipping_planes.dict(),
+                'clipping_planes': self.clipping_planes,
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,

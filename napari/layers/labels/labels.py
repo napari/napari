@@ -120,7 +120,7 @@ class Labels(_ImageBase):
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
-    clipping_planes: list of dicts
+    clipping_planes: list of dicts, list of PlaneManager, or PlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
 
@@ -189,7 +189,7 @@ class Labels(_ImageBase):
         paint with background label, which effectively removes the label.
     plane : ThickPlaneManager
         Properties defining plane rendering in 3D.
-    clipping_planes: list of PlaneManager
+    clipping_planes: PlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
@@ -224,6 +224,7 @@ class Labels(_ImageBase):
         visible=True,
         multiscale=None,
         plane=None,
+        clipping_planes=None,
     ):
 
         self._seed = seed
@@ -265,6 +266,7 @@ class Labels(_ImageBase):
             visible=visible,
             multiscale=multiscale,
             plane=plane,
+            clipping_planes=clipping_planes,
         )
 
         self.events.add(
@@ -519,7 +521,7 @@ class Labels(_ImageBase):
                 'properties': self._properties,
                 'rendering': self.rendering,
                 'plane': self.plane.dict(),
-                'clipping_planes': self.clipping_planes.dict(),
+                'clipping_planes': self.clipping_planes,
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,
