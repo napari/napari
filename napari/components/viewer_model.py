@@ -672,7 +672,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Properties defining plane rendering in 3D. Properties are defined
             in data coordinates. Valid dictionary keys are
             {'position', 'normal_vector', 'thickness', and 'enabled'}.
-        clipping_planes: list of dicts, list of PlaneManager, or PlaneList
+        clipping_planes : list of dicts, list of PlaneManager, or PlaneList
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
 
