@@ -4,6 +4,7 @@ from itertools import cycle
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import scipy.ndimage
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import (
@@ -13,6 +14,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
+from ...utils.transforms import CompositeAffine
 from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
@@ -1134,7 +1136,7 @@ class Points(Layer):
         Returns
         -------
         text_coords : (N x D) np.ndarray
-            Array of coordindates for the N text elements in view
+            Array of coordinates for the N text elements in view
         """
         # TODO check if it is used, as it has wrong signature and this not cause errors.
         return self.text.compute_text_coords(self._view_data, self._ndisplay)
@@ -1497,3 +1499,101 @@ class Points(Layer):
 
         else:
             self._clipboard = {}
+
+    def to_mask(self, *, shape, translate=None, scale=None):
+        # return self._to_mask_distance_transform(shape=shape, translate=translate, scale=scale)
+        # return self._to_mask_exact(shape=shape, translate=translate, scale=scale)
+        return self._to_mask_exact_efficient(
+            shape=shape, translate=translate, scale=scale
+        )
+
+    def _to_mask_prep_coords_radii(self, *, shape, scale=None, translate=None):
+        if translate is None:
+            translate = (0,) * self.ndim
+        if scale is None:
+            scale = (1,) * self.ndim
+        mask = np.zeros(shape, dtype=int)
+        points_in_world_coords = np.atleast_2d(self._data_to_world(self.data))
+        mask_world_to_data = CompositeAffine(
+            scale=scale, translate=translate
+        ).inverse
+        points_in_mask_data_coords = np.atleast_2d(
+            mask_world_to_data(points_in_world_coords)
+        )
+
+        mean_radii = np.tile(
+            np.mean(self.size, axis=1, keepdims=True) / 2, (1, self.ndim)
+        )
+        # TODO: this helps to squash the rasterized points when there is
+        # anisotropic scaling in the reference image and thus points layer.
+        # This way when the image gets imported back into napari with the same
+        # anisotropic scaling, the points are roughly circular.
+        # However, the points scaling factor does affect the size of the points,
+        # we may want to try to extract that.
+        # radii_in_world = mean_radii
+        radii_in_world = np.atleast_2d(self._data_to_world(mean_radii))
+        radii_in_mask_data = np.abs(
+            np.atleast_2d(mask_world_to_data(radii_in_world))
+        )
+
+        return mask, points_in_mask_data_coords, radii_in_mask_data
+
+    def _to_mask_exact(self, *, shape, translate=None, scale=None):
+        mask, all_coords, all_radii = self._to_mask_prep_coords_radii(
+            shape=shape, translate=translate, scale=scale
+        )
+
+        mask_coords = [range(0, dim_size) for dim_size in shape]
+        # D1 x D2 x ... Dd x D
+        # copy=False doesn't help speed much, but need to verify memory.
+        mask_grids = np.stack(
+            np.meshgrid(*mask_coords, copy=False, indexing='ij'), axis=-1
+        )
+
+        # coords and radii are (D,)
+        for coords, radii in zip(all_coords, all_radii):
+            square_distances = np.sum(
+                ((mask_grids - coords) / radii) ** 2, axis=-1
+            )
+            mask[square_distances <= 1] = True
+        return mask
+
+    def _to_mask_exact_efficient(self, *, shape, translate=None, scale=None):
+        mask, all_coords, all_radii = self._to_mask_prep_coords_radii(
+            shape=shape, translate=translate, scale=scale
+        )
+
+        for coords, radii in zip(all_coords, all_radii):
+            lower_coords = np.maximum(np.floor(coords - radii), 0).astype(int)
+            upper_coords = np.minimum(
+                np.ceil(coords + radii) + 1, shape
+            ).astype(int)
+
+            submask_coords = [
+                range(lower_coords[i], upper_coords[i])
+                for i in range(self.ndim)
+            ]
+            # D x D1 x D2 x ... x Dd (e.g. for D=2, this might something like 2x4x5)
+            submask_grids = np.stack(
+                np.meshgrid(*submask_coords, copy=False, indexing='ij'),
+                axis=-1,
+            )
+
+            square_distances = np.sum(
+                ((submask_grids - coords) / radii) ** 2, axis=-1
+            )
+            mask[np.ix_(*submask_coords)] = square_distances <= 1
+        return mask
+
+    def _to_mask_distance_transform(
+        self, *, shape, translate=None, scale=None
+    ):
+        mask, all_coords, all_radii = self._to_mask_prep_coords_radii(
+            shape=shape, translate=translate, scale=scale
+        )
+        for coords in all_coords:
+            mask_indices = np.round(coords).astype(int)
+            if np.all(mask_indices >= 0) and np.all(mask_indices < shape):
+                mask[tuple(mask_indices)] = 1
+        distances = scipy.ndimage.distance_transform_edt(~mask)
+        return (distances <= np.mean(all_radii)).astype(int)

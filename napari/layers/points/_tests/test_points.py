@@ -1691,3 +1691,202 @@ def test_set_face_color_mode_after_set_properties():
         current_value=first_property_values[-1],
     )
     assert points._face.color_properties == expected_properties
+
+
+def test_to_mask_2d_with_size_1():
+    data = [
+        [2, 3],
+        [6, 7],
+    ]
+    points = Points(data, size=1)
+
+    mask = points.to_mask(shape=(10, 10))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_2():
+    data = [
+        [2, 3],
+        [6, 7],
+    ]
+    points = Points(data, size=2)
+
+    mask = points.to_mask(shape=(10, 10))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_2_isotropic_scale():
+    data = [
+        [2, 3],
+        [6, 7],
+    ]
+    scale = (2, 2)
+    points = Points(data, size=2, scale=scale)
+
+    mask = points.to_mask(shape=(10, 10), scale=scale)
+
+    # The raw data is the same as without scaling, because napari
+    # will handle scaling the data at visualization time.
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_4():
+    data = [
+        [2, 3],
+        [6, 7],
+    ]
+    points = Points(data, size=4)
+
+    mask = points.to_mask(shape=(10, 10))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+@pytest.mark.skip(reason="unsure how to handle anisotropic scaling")
+def test_to_mask_2d_with_size_4_anisotropic_scale():
+    data = [
+        [2, 3],
+        [6, 7],
+    ]
+    points = Points(data, size=4, scale=(2, 1))
+
+    mask = points.to_mask(shape=(10, 10), scale=(2, 1))
+
+    # We expect the mask to be squashed in the first dimension because
+    # when it is add as an image with the same scale, it will be stretched
+    # in that dimension to make circular points.
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_3d_with_size_1():
+    data = [[1, 2, 3]]
+    points = Points(data, size=1)
+
+    mask = points.to_mask(shape=(3, 4, 5))
+
+    expected_mask = np.array(
+        [
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_3d_with_size_2():
+    data = [[1, 2, 3]]
+    points = Points(data, size=2)
+
+    mask = points.to_mask(shape=(3, 4, 5))
+
+    expected_mask = np.array(
+        [
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 1, 1, 1],
+                [0, 0, 0, 1, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0],
+            ],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)

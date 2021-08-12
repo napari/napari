@@ -793,7 +793,7 @@ class ShapeList:
         ----------
         mask_shape : np.ndarray | tuple | None
             2-tuple defining shape of mask to be generated. If non specified,
-            takes the max of all the vertiecs
+            takes the max of all the vertices
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -829,7 +829,7 @@ class ShapeList:
         ----------
         labels_shape : np.ndarray | tuple | None
             2-tuple defining shape of labels image to be generated. If non
-            specified, takes the max of all the vertiecs
+            specified, takes the max of all the vertices
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
