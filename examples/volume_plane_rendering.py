@@ -72,7 +72,7 @@ def update_plane_y_position(widget):
 
 
 def update_plane_thickness(widget):
-    plane_layer.plane.thickness = widget.thickness_spinbox.value()
+    plane_layer.embedded_plane.thickness = widget.thickness_spinbox.value()
 
 
 def create_plane_widget():
