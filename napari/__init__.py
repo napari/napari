@@ -1,5 +1,4 @@
 import os
-import sys
 
 try:
     from ._version import version as __version__
@@ -55,18 +54,3 @@ __getattr__, __dir__, __all__ = install_lazy(
     __name__, _proto_all_, _submod_attrs
 )
 del install_lazy
-
-
-class AttributeProtector:
-    def __init__(self, module):
-        self.__dict__['module'] = module
-
-    def __getattr__(self, attr):
-        return getattr(self.module, attr)
-
-    def __setattr__(self, attr, val):
-        if attr == 'current_viewer':
-            raise TypeError(f'{attr!r} can not be set')
-
-
-sys.modules[__name__] = AttributeProtector(sys.modules[__name__])
