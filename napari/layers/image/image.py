@@ -304,6 +304,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
+        # Add default Image callbacks
         mouse_drag_callbacks = [
             on_embedded_plane_drag,
         ]
