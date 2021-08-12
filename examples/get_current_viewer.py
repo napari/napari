@@ -14,4 +14,4 @@ viewer = napari.Viewer()
 viewer = 'oops no viewer here'
 
 # get that reference again
-viewer = napari.current_viewer
+viewer = napari.current_viewer()

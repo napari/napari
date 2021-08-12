@@ -122,3 +122,15 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
+
+
+def current_viewer():
+    try:
+        from napari._qt.qt_main_window import _QtMainWindow
+
+        win = _QtMainWindow.current()
+        if win:
+            return win.qt_viewer.viewer
+    except ImportError:
+        pass
+    return None
