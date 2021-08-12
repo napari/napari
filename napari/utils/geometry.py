@@ -546,3 +546,19 @@ def distance_between_point_and_line_3d(
     )
     distance = np.linalg.norm(point - closest_point_on_line)
     return distance
+
+
+def point_in_bounding_box(point: np.ndarray, bounding_box: np.ndarray) -> bool:
+    """Determine whether an nD point is inside an nD bounding box.
+
+    Parameters
+    ----------
+    point : np.ndarray
+        (n,) array containing nD point coordinates to check.
+    bounding_box : np.ndarray
+        (2, n) array containing the min and max of the nD bounding box.
+        As returned by `Layer._extent_data`.
+    """
+    if np.all(point > bounding_box[0]) and np.all(point < bounding_box[1]):
+        return True
+    return False
