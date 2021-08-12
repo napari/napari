@@ -3,12 +3,10 @@ Display one 3-D volume layer using the add_volume API and display it as a plane
 with a simple widget for modifying plane parameters
 """
 import napari
-import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout
+from qtpy.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton
 from skimage import data
 from superqt import QLabeledDoubleSlider
-
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -38,20 +36,22 @@ plane_layer = viewer.add_image(
     plane=plane_parameters
 )
 
+
 class PlaneWidget(QWidget):
     def __init__(self):
         super().__init__()
 
         master_layout = QVBoxLayout(self)
 
-        self.position_slider_box = QGroupBox('plane position (axis 1)')
-        self.position_slider = QLabeledDoubleSlider(Qt.Horizontal, self)
-        self.position_slider.setMinimum(0.05)
-        self.position_slider.setMaximum(64)
-        self.position_slider.setValue(32)
+        self.plane_orientation_groupbox = QGroupBox('plane orientation')
+        self.z = QPushButton(text='z')
+        self.y = QPushButton(text='y')
+        self.x = QPushButton(text='x')
+        self.oblique = QPushButton(text='oblique')
 
-        position_layout = QHBoxLayout(self.position_slider_box)
-        position_layout.addWidget(self.position_slider)
+        plane_orientation_layout = QHBoxLayout(self.plane_orientation_groupbox)
+        for button in (self.z, self.y, self.x, self.oblique):
+            plane_orientation_layout.addWidget(button)
 
         self.thickness_box = QGroupBox('plane thickness')
         self.thickness_spinbox = QLabeledDoubleSlider(Qt.Horizontal, self)
@@ -62,24 +62,24 @@ class PlaneWidget(QWidget):
         thickness_layout = QHBoxLayout(self.thickness_box)
         thickness_layout.addWidget(self.thickness_spinbox)
 
-        master_layout.addWidget(self.position_slider_box)
+        master_layout.addWidget(self.plane_orientation_groupbox)
         master_layout.addWidget(self.thickness_box)
-
-
-def update_plane_y_position(widget):
-    plane_position = [32, widget.position_slider.value(), 32]
-    viewer.layers['plane'].embedded_plane.position = plane_position
 
 
 def update_plane_thickness(widget):
     plane_layer.embedded_plane.thickness = widget.thickness_spinbox.value()
 
 
+def set_plane_normal(normal_vector):
+    plane_layer.embedded_plane.normal = normal_vector
+
+
 def create_plane_widget():
     widget = PlaneWidget()
-    widget.position_slider.valueChanged.connect(
-        lambda: update_plane_y_position(widget)
-    )
+    widget.x.clicked.connect(lambda: set_plane_normal((0, 0, 1)))
+    widget.y.clicked.connect(lambda: set_plane_normal((0, 1, 0)))
+    widget.z.clicked.connect(lambda: set_plane_normal((1, 0, 0)))
+    widget.oblique.clicked.connect(lambda: set_plane_normal((1, 1, 1)))
     widget.thickness_spinbox.valueChanged.connect(
         lambda: update_plane_thickness(widget)
     )
@@ -90,7 +90,11 @@ plane_widget = create_plane_widget()
 viewer.window.add_dock_widget(
     plane_widget, name='Plane Widget', area='left'
 )
+
 viewer.axes.visible = True
-viewer.camera.angles = (45, 45, 45)
+viewer.camera.angles = (100, 20, 120)
 viewer.camera.zoom = 5
+viewer.text_overlay.visible = True
+viewer.text_overlay.text = "click and drag the plane to shift it along its normal vector"
+
 napari.run()
