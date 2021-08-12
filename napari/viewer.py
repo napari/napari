@@ -124,13 +124,14 @@ class Viewer(ViewerModel):
                 chunk_loader.on_layer_deleted(layer)
 
 
-def current_viewer():
+def current_viewer() -> Viewer:
+    """Return the currently active napari viewer."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow
 
-        win = _QtMainWindow.current()
-        if win:
-            return win.qt_viewer.viewer
+        window = _QtMainWindow.current()
+        if window:
+            return window.qt_viewer.viewer
     except ImportError:
         pass
     return None
