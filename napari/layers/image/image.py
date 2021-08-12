@@ -365,6 +365,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)
+        if self._keep_autoscale:
+            self.reset_contrast_limits()
         self._set_editable()
 
     def _get_ndim(self):
@@ -636,6 +638,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self, image_indices, image, thumbnail_source
         )
         self._load_slice(data)
+        if self._keep_autoscale:
+            self.reset_contrast_limits()
 
     @property
     def _SliceDataClass(self):

@@ -37,9 +37,7 @@ class IntensityVisualizationMixin:
 
     def reset_contrast_limits(self: 'Image', mode=None):
         """Scale contrast limits to data range"""
-        if isinstance(mode, Event):
-            mode = None
-        mode = mode or self.autoscale_source
+        mode = mode or self._autoscale_source
         data_range = self._calc_data_range(mode)
         self.contrast_limits = data_range
 
@@ -52,34 +50,6 @@ class IntensityVisualizationMixin:
         if np.issubdtype(self.dtype, np.unsignedinteger):
             info = np.iinfo(self.dtype)
             self.contrast_limits_range = (info.min, info.max)
-
-    @property
-    def autoscale_source(self):
-        """Data source for autoscaling, either 'data' (full) or 'slice'."""
-        return self._autoscale_source
-
-    @autoscale_source.setter
-    def autoscale_source(self, source):
-        if source.lower() not in ('data', 'slice'):
-            raise ValueError(
-                "autoscale_source must be either 'data' or 'slice'"
-            )
-        self._autoscale_source = source.lower()
-
-    @property
-    def keep_autoscale(self):
-        """Whether to auto-rescale when the data/view_slice changes."""
-        return self._keep_autoscale
-
-    @keep_autoscale.setter
-    def keep_autoscale(self: 'Image', val):
-        self._keep_autoscale = bool(val)
-        if self._keep_autoscale:
-            self.events.data.connect(self.reset_contrast_limits)
-            self.events.set_data.connect(self.reset_contrast_limits)
-        else:
-            self.events.data.disconnect(self.reset_contrast_limits)
-            self.events.set_data.disconnect(self.reset_contrast_limits)
 
     @property
     def colormap(self):
@@ -118,14 +88,6 @@ class IntensityVisualizationMixin:
         self.contrast_limits_range = newrange
         self._update_thumbnail()
         self.events.contrast_limits()
-
-    @property
-    def autoscale(self):
-        pass
-
-    @autoscale.setter
-    def autoscale(self, mode):
-        pass
 
     @property
     def contrast_limits_range(self):
