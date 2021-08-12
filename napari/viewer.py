@@ -129,9 +129,7 @@ def current_viewer() -> Viewer:
     try:
         from napari._qt.qt_main_window import _QtMainWindow
 
-        window = _QtMainWindow.current()
-        if window:
-            return window.current_viewer()
+    return _QtMainWindow.current_viewer()
     except ImportError:
         pass
     return None
