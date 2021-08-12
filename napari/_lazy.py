@@ -1,5 +1,7 @@
 from importlib import import_module
 
+import napari._qt.qt_main_window
+
 
 def install_lazy(module_name, submodules=None, submod_attrs=None):
     """Install lazily loaded submodules, and functions or other attributes.
@@ -46,6 +48,12 @@ def install_lazy(module_name, submodules=None, submod_attrs=None):
         elif name in attr_to_modules:
             submod = import_module(f'{module_name}.{attr_to_modules[name]}')
             return getattr(submod, name)
+        elif name == 'current_viewer':
+            current_qt_main_window = (
+                napari._qt.qt_main_window._QtMainWindow.current()
+            )
+            if current_qt_main_window:
+                return current_qt_main_window.qt_viewer.viewer
         else:
             raise AttributeError(f'No {module_name} attribute {name}')
 
