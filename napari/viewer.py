@@ -131,5 +131,4 @@ def current_viewer() -> Viewer:
 
     return _QtMainWindow.current_viewer()
     except ImportError:
-        pass
-    return None
+        return None
