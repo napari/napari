@@ -1,4 +1,6 @@
 import os
+from dataclasses import dataclass
+from typing import List
 from unittest import mock
 
 import numpy as np
@@ -11,6 +13,7 @@ from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
 )
+from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
 
 
@@ -403,3 +406,38 @@ def test_active_keybindings(make_napari_viewer):
     assert viewer.layers.selection.active == layer_image
     assert len(view._key_map_handler.keymap_providers) == 2
     assert view._key_map_handler.keymap_providers[0] == layer_image
+
+
+@dataclass
+class MouseEvent:
+    # mock mouse event class
+    pos: List[int]
+
+
+def test_process_mouse_event(make_napari_viewer):
+    """Test that the correct properties are added to the
+    MouseEvent by _process_mouse_events.
+    """
+    # make a mock mouse event
+    new_pos = [25, 25]
+    mouse_event = MouseEvent(
+        pos=new_pos,
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+
+    viewer = make_napari_viewer()
+    view = viewer.window.qt_viewer
+    labels = viewer.add_labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
+
+    @labels.mouse_drag_callbacks.append
+    def on_click(layer, event):
+        np.testing.assert_almost_equal(event.view_direction, [0, 1, 0, 0])
+        np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
+        assert event.dims_point[0] == 0
+
+        expected_position = view._map_canvas2world(new_pos)
+        np.testing.assert_almost_equal(expected_position, list(event.position))
+
+    viewer.dims.ndisplay = 3
+    view._process_mouse_event(mouse_press_callbacks, mouse_event)

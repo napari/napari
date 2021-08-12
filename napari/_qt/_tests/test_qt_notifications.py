@@ -103,12 +103,16 @@ def test_notification_display(mock_show, severity, monkeypatch):
     that show_notification is capable of receiving various event types.
     (we don't need to test that )
     """
-    from napari.utils.settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
 
     monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
-    monkeypatch.setattr(settings.application, 'gui_notification_level', 'info')
+    monkeypatch.setattr(
+        settings.application,
+        'gui_notification_level',
+        NotificationSeverity.INFO,
+    )
     notif = Notification('hi', severity, actions=[('click', lambda x: None)])
     NapariQtNotification.show_notification(notif)
     if NotificationSeverity(severity) >= NotificationSeverity.INFO:
@@ -127,12 +131,16 @@ def test_notification_display(mock_show, severity, monkeypatch):
 
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
 def test_notification_error(mock_show, monkeypatch, clean_current):
-    from napari.utils.settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
 
     monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
-    monkeypatch.setattr(settings.application, 'gui_notification_level', 'info')
+    monkeypatch.setattr(
+        settings.application,
+        'gui_notification_level',
+        NotificationSeverity.INFO,
+    )
     try:
         raise ValueError('error!')
     except ValueError as e:

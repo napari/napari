@@ -225,7 +225,7 @@ class QtPointsControls(QtLayerControls):
         elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
         else:
-            raise ValueError(trans._("Mode not recognized"))
+            raise ValueError(trans._("Mode not recognized {mode}", mode=mode))
 
     def changeSymbol(self, text):
         """Change marker symbol of the points on the layer model.

@@ -64,7 +64,8 @@ ignore = [
   "napari/_version.py",  # added during build by setuptools_scm
   "tools/minreq.py",
   "tox.ini",
-  "napari/_qt/qt_resources/_qt_resources_*.py"
+  "napari/_qt/qt_resources/_qt_resources_*.py",
+  "*.pyi"  # added by make typestubs
 ]
 
 [tool.isort]

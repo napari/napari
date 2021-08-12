@@ -28,8 +28,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
-    # Create private variable for window
-    _window: 'Window'
+    _window: 'Window' = None  # type: ignore
 
     def __init__(
         self,

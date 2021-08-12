@@ -267,6 +267,16 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
         """
         return self.value
 
+    def __eq__(self, other):
+        if type(self) is type(other):
+            return self is other
+        elif isinstance(other, str):
+            return str(self) == other
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(str(self))
+
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
 camel_to_spaces_pattern = re.compile(
@@ -510,3 +520,14 @@ def _combine_signatures(
         key=lambda p: p.kind,
     )
     return inspect.Signature(new_params, return_annotation=return_annotation)
+
+
+def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
+    """Merge possibly nested dicts"""
+    _dct = dct.copy() if copy else dct
+    for k, v in merge_dct.items():
+        if k in _dct and isinstance(dct[k], dict) and isinstance(v, dict):
+            deep_update(_dct[k], v, copy=False)
+        else:
+            _dct[k] = v
+    return _dct

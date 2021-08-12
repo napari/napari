@@ -5,7 +5,9 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     calc_data_range,
+    coerce_current_properties,
     dataframe_to_properties,
+    dims_displayed_world_to_layer,
     get_current_properties,
     prepare_properties,
     segment_normal,
@@ -204,3 +206,58 @@ def test_get_current_properties_with_property_choices_then_first_values():
         "face_color": "cyan",
         "angle": 0.5,
     }
+
+
+def test_coerce_current_properties_valid_values():
+    current_properties = {
+        'annotation': ['leg'],
+        'confidence': 1,
+        'annotator': 'ash',
+        'model': np.array(['best']),
+    }
+    expected_current_properties = {
+        'annotation': np.array(['leg']),
+        'confidence': np.array([1]),
+        'annotator': np.array(['ash']),
+        'model': np.array(['best']),
+    }
+    coerced_current_properties = coerce_current_properties(current_properties)
+
+    for k, v in coerced_current_properties.items():
+        value = coerced_current_properties[k]
+        assert isinstance(value, np.ndarray)
+        np.testing.assert_equal(value, expected_current_properties[k])
+
+
+def test_coerce_current_properties_invalid_values():
+    current_properties = {
+        'annotation': ['leg'],
+        'confidence': 1,
+        'annotator': 'ash',
+        'model': np.array(['best', 'best_v2_final']),
+    }
+
+    with pytest.raises(ValueError):
+        _ = coerce_current_properties(current_properties)
+
+
+@pytest.mark.parametrize(
+    "dims_displayed,ndim_world,ndim_layer,expected",
+    [
+        ([1, 2, 3], 4, 4, [1, 2, 3]),
+        ([0, 1, 2], 4, 4, [0, 1, 2]),
+        ([1, 2, 3], 4, 3, [0, 1, 2]),
+        ([0, 1, 2], 4, 3, [2, 0, 1]),
+        ([1, 2, 3], 4, 2, [0, 1]),
+        ([0, 1, 2], 3, 3, [0, 1, 2]),
+        ([0, 1], 2, 2, [0, 1]),
+        ([1, 0], 2, 2, [1, 0]),
+    ],
+)
+def test_dims_displayed_world_to_layer(
+    dims_displayed, ndim_world, ndim_layer, expected
+):
+    dims_displayed_layer = dims_displayed_world_to_layer(
+        dims_displayed, ndim_world=ndim_world, ndim_layer=ndim_layer
+    )
+    np.testing.assert_array_equal(dims_displayed_layer, expected)
