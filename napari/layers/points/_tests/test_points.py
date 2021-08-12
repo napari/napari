@@ -12,6 +12,7 @@ from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.transforms import CompositeAffine
 
 
 def _make_cycled_properties(values, length):
@@ -1753,10 +1754,44 @@ def test_to_mask_2d_with_size_2_isotropic_scale():
     scale = (2, 2)
     points = Points(data, size=2, scale=scale)
 
-    mask = points.to_mask(shape=(10, 10), scale=scale)
+    mask = points.to_mask(
+        shape=(10, 10), data_to_world=CompositeAffine(scale=scale)
+    )
 
     # The raw data is the same as without scaling, because napari
     # will handle scaling the data at visualization time.
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_2_rotate():
+    data_to_world = CompositeAffine(rotate=45)
+    data = data_to_world(
+        [
+            [2, 3],
+            [6, 7],
+        ]
+    )
+    # Using 2 exactly means that the mask might not include some
+    # of the mask pixels due to machine precision issues caused
+    # by applying the rotation to the point coordinates.
+    points = Points(data, size=2.1)
+
+    mask = points.to_mask(shape=(10, 10), data_to_world=data_to_world)
+
     expected_mask = np.array(
         [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -1806,9 +1841,12 @@ def test_to_mask_2d_with_size_4_anisotropic_scale():
         [2, 3],
         [6, 7],
     ]
-    points = Points(data, size=4, scale=(2, 1))
+    scale = (2, 1)
+    points = Points(data, size=4, scale=scale)
 
-    mask = points.to_mask(shape=(10, 10), scale=(2, 1))
+    mask = points.to_mask(
+        shape=(10, 10), data_to_world=CompositeAffine(scale=scale)
+    )
 
     # We expect the mask to be squashed in the first dimension because
     # when it is add as an image with the same scale, it will be stretched

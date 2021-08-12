@@ -14,7 +14,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
-from ...utils.transforms import CompositeAffine
+from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
@@ -1500,25 +1500,22 @@ class Points(Layer):
         else:
             self._clipboard = {}
 
-    def to_mask(self, *, shape, translate=None, scale=None):
+    def to_mask(self, *, shape, data_to_world=None):
         # return self._to_mask_distance_transform(shape=shape, translate=translate, scale=scale)
         # return self._to_mask_exact(shape=shape, translate=translate, scale=scale)
         return self._to_mask_exact_efficient(
-            shape=shape, translate=translate, scale=scale
+            shape=shape, data_to_world=data_to_world
         )
 
-    def _to_mask_prep_coords_radii(self, *, shape, scale=None, translate=None):
-        if translate is None:
-            translate = (0,) * self.ndim
-        if scale is None:
-            scale = (1,) * self.ndim
+    def _to_mask_prep_coords_radii(self, *, shape, data_to_world=None):
+        if data_to_world is None:
+            data_to_world = Affine(linear_matrix=np.eye(self.ndim))
         mask = np.zeros(shape, dtype=int)
-        points_in_world_coords = np.atleast_2d(self._data_to_world(self.data))
-        mask_world_to_data = CompositeAffine(
-            scale=scale, translate=translate
-        ).inverse
+        points_data_to_mask_data = self._data_to_world.compose(
+            data_to_world.inverse
+        )
         points_in_mask_data_coords = np.atleast_2d(
-            mask_world_to_data(points_in_world_coords)
+            points_data_to_mask_data(self.data)
         )
 
         mean_radii = np.tile(
@@ -1530,17 +1527,16 @@ class Points(Layer):
         # anisotropic scaling, the points are roughly circular.
         # However, the points scaling factor does affect the size of the points,
         # we may want to try to extract that.
-        # radii_in_world = mean_radii
-        radii_in_world = np.atleast_2d(self._data_to_world(mean_radii))
-        radii_in_mask_data = np.abs(
-            np.atleast_2d(mask_world_to_data(radii_in_world))
+        # radii_in_mask_data = mean_radii
+        radii_in_mask_data = (
+            np.abs(points_data_to_mask_data.scale) * mean_radii
         )
 
         return mask, points_in_mask_data_coords, radii_in_mask_data
 
-    def _to_mask_exact(self, *, shape, translate=None, scale=None):
+    def _to_mask_exact(self, *, shape, data_to_world=None):
         mask, all_coords, all_radii = self._to_mask_prep_coords_radii(
-            shape=shape, translate=translate, scale=scale
+            shape=shape, data_to_world=data_to_world
         )
 
         mask_coords = [range(0, dim_size) for dim_size in shape]
@@ -1558,9 +1554,9 @@ class Points(Layer):
             mask[square_distances <= 1] = True
         return mask
 
-    def _to_mask_exact_efficient(self, *, shape, translate=None, scale=None):
+    def _to_mask_exact_efficient(self, *, shape, data_to_world=None):
         mask, all_coords, all_radii = self._to_mask_prep_coords_radii(
-            shape=shape, translate=translate, scale=scale
+            shape=shape, data_to_world=data_to_world
         )
 
         for coords, radii in zip(all_coords, all_radii):
@@ -1585,11 +1581,9 @@ class Points(Layer):
             mask[np.ix_(*submask_coords)] = square_distances <= 1
         return mask
 
-    def _to_mask_distance_transform(
-        self, *, shape, translate=None, scale=None
-    ):
+    def _to_mask_distance_transform(self, *, shape, data_to_world=None):
         mask, all_coords, all_radii = self._to_mask_prep_coords_radii(
-            shape=shape, translate=translate, scale=scale
+            shape=shape, data_to_world=data_to_world
         )
         for coords in all_coords:
             mask_indices = np.round(coords).astype(int)
