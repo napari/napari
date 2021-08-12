@@ -124,8 +124,8 @@ class _QtMainWindow(QMainWindow):
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
-    def current_viewer(self):
-        window = self.current()
+    def current_viewer(cls):
+        window = cls.current()
         return window.qt_viewer.viewer if window else None
 
     def event(self, e):
