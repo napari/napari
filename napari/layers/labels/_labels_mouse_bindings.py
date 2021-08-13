@@ -40,6 +40,12 @@ def draw(layer, event):
             layer.paint(coordinates, new_label)
         elif layer._mode == Mode.FILL:
             layer.fill(coordinates, new_label)
+    else:  # still add an item to undo queue
+        # when dragging, if we start a drag outside the layer, we will
+        # incorrectly append to the previous history item. We create a
+        # dummy history item to prevent this.
+        dummy_indices = (np.zeros(shape=0, dtype=int),) * layer.data.ndim
+        layer._undo_history.append([(dummy_indices, [], [])])
 
     last_cursor_coord = coordinates
     yield
