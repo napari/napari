@@ -1028,6 +1028,12 @@ class Labels(_ImageBase):
             self._redo_history, self._undo_history, undoing=False
         )
 
+    def data_setitem(self, key, value):
+        """Edit data in-place while adding to the undo queue."""
+        self._save_history((key, self.data[key], value))
+        # Replace target pixels with new_label
+        self.data[key] = value
+
     def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
