@@ -434,8 +434,12 @@ def test_paint_3d(MouseEvent):
     assert new_num_filled < num_filled
 
 
-def test_paint_3d_undo(MouseEvent):
-    """Test painting labels with circle brush when scaled."""
+def test_erase_3d_undo(MouseEvent):
+    """Test erasing labels in 3D then undoing the erase.
+
+    Specifically, this test checks that undo is correctly filled even
+    when a click and drag starts outside of the data volume.
+    """
     data = np.zeros((20, 20, 20), dtype=np.int32)
     data[10, :, :] = 1
     layer = Labels(data)
@@ -503,8 +507,8 @@ def test_paint_3d_undo(MouseEvent):
     assert ndi.label(layer.data)[1] == 1
 
 
-def test_paint_3d_undo_empty(MouseEvent):
-    """Test painting labels with circle brush when scaled."""
+def test_erase_3d_undo_empty(MouseEvent):
+    """Nothing should be added to undo queue when clicks fall outside data."""
     data = np.zeros((20, 20, 20), dtype=np.int32)
     data[10, :, :] = 1
     layer = Labels(data)
