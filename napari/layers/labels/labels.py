@@ -959,15 +959,8 @@ class Labels(_ImageBase):
         )
 
     def _reset_history(self, event=None):
-        self._undo_history = deque()
-        self._redo_history = deque()
-
-    def _trim_history(self):
-        while (
-            len(self._undo_history) + len(self._redo_history)
-            > self._history_limit
-        ):
-            self._undo_history.popleft()
+        self._undo_history = deque(maxlen=self._history_limit)
+        self._redo_history = deque(maxlen=self._history_limit)
 
     def _save_history(self, value):
         """Save a history "atom" to the undo history.
@@ -992,7 +985,6 @@ class Labels(_ImageBase):
         self._redo_history = deque()
         if not self._block_saving:
             self._undo_history.append([value])
-            self._trim_history()
         else:
             self._undo_history[-1].append(value)
 
