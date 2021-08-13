@@ -3,6 +3,7 @@ from collections import deque
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import wrapt
 from scipy import ndimage as ndi
 
 from ...utils import config
@@ -408,7 +409,17 @@ class Labels(_ImageBase):
     @property
     def data(self):
         """array: Image data."""
-        return self._data
+        layer = self
+
+        class ArrayWithUndo(wrapt.ObjectProxy):
+            """Add undo to data's setitem."""
+
+            def __setitem__(self, key, value):
+                """Edit data in-place while adding to the undo queue."""
+                layer._save_history((key, self[key], value))
+                self.__class__.__setitem__(layer._data, key, value)
+
+        return ArrayWithUndo(self._data)
 
     @data.setter
     def data(self, data):
@@ -1027,12 +1038,6 @@ class Labels(_ImageBase):
         self._load_history(
             self._redo_history, self._undo_history, undoing=False
         )
-
-    def data_setitem(self, key, value):
-        """Edit data in-place while adding to the undo queue."""
-        self._save_history((key, self.data[key], value))
-        # Replace target pixels with new_label
-        self.data[key] = value
 
     def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
