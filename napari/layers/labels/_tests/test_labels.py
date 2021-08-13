@@ -1264,3 +1264,12 @@ def test_labels_state_update():
     state = layer._get_state()
     for k, v in state.items():
         setattr(layer, k, v)
+
+
+def test_labels_set_data_undo():
+    data = np.zeros((10, 10), dtype=np.int32)
+    layer = Labels(data)
+    layer.data[([5, 5, 5], [1, 2, 3])] = 1
+    np.testing.assert_array_equal(layer.data[5, :5], [0, 1, 1, 1, 0])
+    layer.undo()
+    np.testing.assert_array_equal(layer.data, 0)
