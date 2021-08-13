@@ -501,3 +501,43 @@ def test_paint_3d_undo(MouseEvent):
     assert ndi.label(layer.data)[1] == 2
     layer.undo()
     assert ndi.label(layer.data)[1] == 1
+
+
+def test_paint_3d_undo_empty(MouseEvent):
+    """Test painting labels with circle brush when scaled."""
+    data = np.zeros((20, 20, 20), dtype=np.int32)
+    data[10, :, :] = 1
+    layer = Labels(data)
+    layer.brush_size = 5
+    layer.mode = 'erase'
+    layer._slice_dims(point=(0, 0, 0), ndisplay=3)
+    layer.n_edit_dimensions = 3
+
+    # Simulate click, outside data
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=False,
+            position=(-1, -1, -1),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_release',
+            is_dragging=False,
+            position=(-1, -1, -1),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Undo queue should be empty
+    assert len(layer._undo_history) == 0

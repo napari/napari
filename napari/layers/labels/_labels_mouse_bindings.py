@@ -74,6 +74,9 @@ def draw(layer, event):
 
     # on release
     layer._block_saving = False
+    undo_item = layer._undo_history[-1]
+    if len(undo_item) == 1 and len(undo_item[0][0][0]) == 0:
+        layer._undo_history.pop()
 
 
 def pick(layer, event):
