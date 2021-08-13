@@ -1103,10 +1103,6 @@ class Labels(_ImageBase):
         else:
             match_indices = match_indices_local
 
-        self._save_history(
-            (match_indices, self.data[match_indices], new_label)
-        )
-
         # Replace target pixels with new_label
         self.data[match_indices] = new_label
 
@@ -1189,9 +1185,6 @@ class Labels(_ImageBase):
             else:
                 keep_coords = self.data[slice_coord] == self._background_label
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
-
-        # save the existing values to the history
-        self._save_history((slice_coord, self.data[slice_coord], new_label))
 
         # update the labels image
         self.data[slice_coord] = new_label
