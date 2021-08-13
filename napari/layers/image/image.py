@@ -108,7 +108,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    plane : dict
+    plane : dict or PlaneManager
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
@@ -184,7 +184,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
-        plane=None,
+        plane=PlaneManager(),
         iso_threshold=0.5,
         attenuation=0.05,
         name=None,
