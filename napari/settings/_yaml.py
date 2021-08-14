@@ -18,9 +18,15 @@ if TYPE_CHECKING:
 
 
 class YamlDumper(SafeDumper):
-    ...
+    """The default YAML serializer for our pydantic models.
+
+    Add support for custom types by using `YamlDumper.add_representer` or
+    `YamlDumper.add_multi_representer` below.
+    """
 
 
+# add_representer requires a strict type match
+# add_multi_representer also works for all subclasses of the provided type.
 YamlDumper.add_multi_representer(str, YamlDumper.represent_str)
 YamlDumper.add_multi_representer(
     Enum, lambda dumper, data: dumper.represent_str(data.value)
@@ -28,7 +34,14 @@ YamlDumper.add_multi_representer(
 
 
 class PydanticYamlMixin(BaseModel):
-    """Mixin that provides yaml dumping capability to pydantic BaseModel."""
+    """Mixin that provides yaml dumping capability to pydantic BaseModel.
+
+    To provide a custom yaml Dumper on a subclass, provide a `yaml_dumper`
+    on the Config:
+
+        class Config:
+            yaml_dumper = MyDumper
+    """
 
     def yaml(
         self,
@@ -42,7 +55,7 @@ class PydanticYamlMixin(BaseModel):
         dumper: Optional[Dumper] = None,
         **dumps_kwargs: Any,
     ) -> str:
-
+        """Serialize model to yaml."""
         data = self.dict(
             include=include,
             exclude=exclude,

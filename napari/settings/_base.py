@@ -99,25 +99,11 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """Return the path to/from which settings be saved/loaded."""
         return self._config_path
 
-    def save(self, path: Union[str, Path] = None, **dict_kwargs):
-        """Save current settings to path.
-
-        By default, this will exclude settings values that match the default
-        value, and will exclude values that were provided by environment
-        variables.  (see `_save_dict` method.)
-        """
-        path = path or self.config_path
-        if not path:
-            raise ValueError("No path provided in config or save argument.")
-
-        path = Path(path).expanduser().resolve()
-        path.parent.mkdir(exist_ok=True, parents=True)
-        self._dump(path, self._save_dict(**dict_kwargs))
-
     def dict(
         self,
-        include: Union[AbstractSetIntStr, MappingIntStrAny] = None,
-        exclude: Union[AbstractSetIntStr, MappingIntStrAny] = None,
+        *,
+        include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
+        exclude: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -152,6 +138,21 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         data = self.dict(**dict_kwargs)
         _remove_empty_dicts(data)
         return data
+
+    def save(self, path: Union[str, Path] = None, **dict_kwargs):
+        """Save current settings to path.
+
+        By default, this will exclude settings values that match the default
+        value, and will exclude values that were provided by environment
+        variables.  (see `_save_dict` method.)
+        """
+        path = path or self.config_path
+        if not path:
+            raise ValueError("No path provided in config or save argument.")
+
+        path = Path(path).expanduser().resolve()
+        path.parent.mkdir(exist_ok=True, parents=True)
+        self._dump(path, self._save_dict(**dict_kwargs))
 
     def _dump(self, path: str, data: dict):
         """Encode and dump `data` to `path` using a path-appropriate encoder."""
