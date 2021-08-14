@@ -228,20 +228,30 @@ def test_subfield_env_field(monkeypatch):
 # Failing because dark is actually the default...
 def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
 
+    # create a settings file with light theme
     data = "appearance:\n   theme: light"
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
 
+    # make sure they wrote correctly
     disk_settings = fake_path.read_text()
     assert 'theme: light' in disk_settings
+    # make sure they load correctly
     assert NapariSettings(fake_path).appearance.theme == "light"
 
+    # now load settings again with an Env-var override
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'dark')
     settings = NapariSettings(fake_path)
+    # make sure the override worked, and save again
     assert settings.appearance.theme == 'dark'
-    settings.save()
+    # data from the config file is still "known"
+    assert settings._config_file_settings['appearance']['theme'] == 'light'
+    # but we know what came from env vars as well:
+    assert settings.env_settings()['appearance']['theme'] == 'dark'
 
-    # it shouldn't have overriden our non-default value
+    # when we save it shouldn't use environment variables and it shouldn't
+    # have overriden our non-default value of `theme: light`
+    settings.save()
     disk_settings = fake_path.read_text()
     assert 'theme: light' in disk_settings
 

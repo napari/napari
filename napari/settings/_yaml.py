@@ -3,18 +3,18 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
 from yaml import Dumper, SafeDumper, dump_all
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from typing import AbstractSet, Any, Dict, Optional, Union
-
-    from pydantic import BaseModel
+    from typing import AbstractSet, Any, Dict, Optional, TypeVar, Union
 
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
     DictStrAny = Dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
+    Model = TypeVar('Model', bound=BaseModel)
 
 
 class YamlDumper(SafeDumper):
@@ -55,6 +55,8 @@ class PydanticYamlMixin(BaseModel):
             from pydantic.utils import ROOT_KEY
 
             data = data[ROOT_KEY]
+        return self._yaml_dump(data, dumper, **dumps_kwargs)
 
+    def _yaml_dump(self, data, dumper: Optional[Dumper] = None, **kw):
         dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)
-        return dump_all([data], Dumper=dumper, **dumps_kwargs)
+        return dump_all([data], Dumper=dumper, **kw)
