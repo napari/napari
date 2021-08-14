@@ -72,6 +72,7 @@ jobs:
       matrix:
         platform: [ubuntu-latest]
         python: [3.7, 3.8, 3.9]
+        backend: ['pyqt', 'pyside']
         # include:
         #   # Windows py37
         #   - python: 3.7
