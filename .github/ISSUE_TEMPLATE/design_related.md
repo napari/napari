@@ -1,7 +1,7 @@
 ---
-name: "Design"
+name: "\U+2728 Design Related"
 about: Capture needs specific to design and user experience research
-title: '✨ Design-related'
+title: ''
 labels: design
 assignees: liaprins-czi
 
