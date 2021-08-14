@@ -72,7 +72,7 @@ jobs:
       matrix:
         platform: [ubuntu-latest]
         python: [3.7, 3.8, 3.9]
-        backend: ['pyqt', 'pyside']
+        backend: ['pyqt']
         # include:
         #   # Windows py37
         #   - python: 3.7
@@ -144,7 +144,7 @@ jobs:
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: tox
+          run: tox -- napari/utils napari/_qt
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
