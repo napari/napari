@@ -323,3 +323,8 @@ def test_settings_events(test_settings):
     mock.reset_mock()
     test_settings.appearance.theme = 'light'
     mock.assert_not_called()
+
+
+def test_full_serialization(test_settings):
+    test_settings.yaml()
+    test_settings.json()

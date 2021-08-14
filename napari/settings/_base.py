@@ -14,6 +14,7 @@ from pydantic.error_wrappers import display_errors
 from ..utils.events import EmitterGroup, EventedModel
 from ..utils.misc import deep_update
 from ..utils.translations import trans
+from ._yaml import PydanticYamlMixin
 
 _logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
 _NOT_SET = object()
 
 
-class EventedConfigFileSettings(EventedSettings):
+class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     """This adds config read/write and yaml support to EventedSettings.
 
     If your settings class *only* needs to read variables from the environment,
@@ -94,67 +95,6 @@ class EventedConfigFileSettings(EventedSettings):
     def config_path(self):
         return self._config_path
 
-    def dict(  # type: ignore
-        self,
-        *,
-        include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        exclude: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        exclude_env: bool = False,
-    ) -> DictStrAny:
-        data = super().dict(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-        )
-        if exclude_env:
-            eset = getattr(self.__config__, '_env_settings', None)
-            if callable(eset):
-                env_data: dict = eset(type(self))
-                if env_data:
-                    cfg_data = getattr(self, '_config_file_settings', {})
-                    _restore_config_data(data, env_data, cfg_data)
-        return data
-
-    def yaml(
-        self,
-        *,
-        include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        exclude: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        exclude_env: bool = False,
-        **dumps_kwargs: Any,
-    ) -> str:
-        import json
-
-        import yaml
-
-        data = self.dict(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            exclude_env=exclude_env,
-        )
-        _remove_empty_dicts(data)
-
-        # We roundtrip to keep custom string objects (like SchemaVersion)
-        # yaml representable
-        # FIXME: should provide yaml serializer on field itself (as for json)
-        _json = self.__config__.json_dumps(data, default=self.__json_encoder__)
-        return yaml.safe_dump(json.loads(_json), **dumps_kwargs)
-
     def save(self, path=None, **dict_kwargs):
         path = path or self.config_path
         if not path:
@@ -164,10 +104,9 @@ class EventedConfigFileSettings(EventedSettings):
         path.parent.mkdir(exist_ok=True, parents=True)
 
         dict_kwargs.setdefault('exclude_defaults', True)
-        dict_kwargs.setdefault('exclude_env', True)
         data = self.dict(**dict_kwargs)
+        data = self._remove_env_settings(data)
         _remove_empty_dicts(data)
-
         dump = _get_io_func_for_path(path, 'dump')
         if dump is not None:
             with open(path, 'w') as target:
@@ -179,6 +118,12 @@ class EventedConfigFileSettings(EventedSettings):
         if callable(env_settings):
             env_settings = env_settings(self)
         return env_settings
+
+    def _remove_env_settings(self, data):
+        """Remove key:values from `data` that match settings from env vars."""
+        env_data = self.env_settings()
+        if env_data:
+            _restore_config_data(data, env_data, self._config_file_settings)
 
     class Config:
         # If True: validation errors in a config file will raise an exception
