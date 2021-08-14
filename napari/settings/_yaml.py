@@ -31,6 +31,12 @@ YamlDumper.add_multi_representer(str, YamlDumper.represent_str)
 YamlDumper.add_multi_representer(
     Enum, lambda dumper, data: dumper.represent_str(data.value)
 )
+YamlDumper.add_representer(
+    set, lambda dumper, data: dumper.represent_list(data)
+)
+YamlDumper.add_multi_representer(
+    set, lambda dumper, data: dumper.represent_list(data)
+)
 
 
 class PydanticYamlMixin(BaseModel):
@@ -72,4 +78,5 @@ class PydanticYamlMixin(BaseModel):
 
     def _yaml_dump(self, data, dumper: Optional[Dumper] = None, **kw):
         dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)
+        print("dumping", dumper)
         return dump_all([data], Dumper=dumper, **kw)
