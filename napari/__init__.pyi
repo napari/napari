@@ -8,6 +8,7 @@ __version__: str
 
 notification_manager: napari.utils.notifications.NotificationManager
 Viewer = napari.viewer.Viewer
+current_viewer: Callable[[], Viewer]
 
 gui_qt = napari._qt.qt_event_loop.gui_qt
 run = napari._qt.qt_event_loop.run
