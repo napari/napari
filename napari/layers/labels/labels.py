@@ -416,7 +416,9 @@ class Labels(_ImageBase):
 
             def __setitem__(self, key, value):
                 """Edit data in-place while adding to the undo queue."""
-                layer._save_history((key, self[key], value))
+                layer._save_history(
+                    (key, np.array(self[key]), np.array(value))
+                )
                 self.__class__.__setitem__(layer._data, key, value)
 
         return ArrayWithUndo(self._data)
