@@ -357,3 +357,12 @@ def fresh_settings(monkeypatch):
     # this makes sure that we start with fresh settings for every test.
     settings._SETTINGS = None
     yield
+
+
+def pytest_unconfigure(config):
+    try:
+        from qtpy.QtWidgets import QApplication
+
+        print("TOP LEVEL WINDOWS:", QApplication.topLevelWindows())
+    except ImportError:
+        pass
