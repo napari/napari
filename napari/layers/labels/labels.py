@@ -1025,7 +1025,7 @@ class Labels(_ImageBase):
         after.append(list(reversed(history_item)))
         for prev_indices, prev_values, next_values in reversed(history_item):
             values = prev_values if undoing else next_values
-            self.data[prev_indices] = values
+            self._data[prev_indices] = values
 
         self.refresh()
 
