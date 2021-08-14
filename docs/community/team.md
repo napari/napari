@@ -41,6 +41,9 @@ Read more about napari’s [mission and values](https://napari.org/community/mis
 ## Funding and Support
 
 The napari project and community have been generously supported by the [CZI Science Imaging Program](https://chanzuckerberg.com/science/programs-resources/imaging/). 
+
+![CZI logo](https://chanzuckerberg.com/wp-content/themes/czi/img/logo.svg)
+
 - Since late 2018, Juan Nunez-Iglesias has been supported by a CZI Imaging Software Fellowship.
 - The CZI Imaging Technology Team, under the leadership of Nicholas Sofroniew and engineering management of Justine Larsen, has been making direct engineering and design contributions to improve and expand napari.
 - The CZI Imaging Tech Team has supported contractors, both independent and in collaboration with [Quansight Labs](https://www.quansight.com/labs), to improve and expand napari.
