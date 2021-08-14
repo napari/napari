@@ -56,11 +56,14 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     callable
         function that returns layer_data to be handed to viewer._add_layer_data
     """
-    if isinstance(path, str) and path.endswith('.csv'):
-        return csv_reader_function
+    if isinstance(path, str):
+        if path.endswith('.csv'):
+            return csv_reader_function
+        if os.path.isdir(path):
+            return image_reader_to_layerdata_reader(magic_imread)
+        path = [path]
 
-    _p = [path] if isinstance(path, str) else path
-    if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in _p):
+    if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in path):
         return image_reader_to_layerdata_reader(magic_imread)
 
 
