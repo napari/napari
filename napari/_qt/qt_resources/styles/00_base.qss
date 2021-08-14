@@ -99,7 +99,7 @@ QWidget[emphasized="true"] QPushButton:pressed {
 }
 
 
-QWidget[emphasized="true"] QPushButton:checked, QPushButton:checked {
+QWidget[emphasized="true"] QPushButton:checked {
   background-color: {{ current }};
 }
 

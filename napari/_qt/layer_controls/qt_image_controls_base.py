@@ -6,13 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import (
-    QButtonGroup,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QWidget,
-)
+from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 from superqt import QDoubleRangeSlider
 from superqt import QLabeledDoubleSlider as QSlider
 
@@ -218,7 +212,7 @@ class AutoScaleButtons(QWidget):
         once_btn = QPushButton('once')
         once_btn.setFocusPolicy(Qt.NoFocus)
 
-        auto_btn = QPushButton('auto')
+        auto_btn = QPushButton('continuous')
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
@@ -232,21 +226,6 @@ class AutoScaleButtons(QWidget):
 
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
-        self.layout().addSpacing(4)
-
-        tb = QButtonGroup(self)
-        for a in ['slice', 'data']:
-            btn = QPushButton(a)
-            btn.setCheckable(True)
-            if a == 'slice':
-                btn.setChecked(True)
-            btn.clicked.connect(
-                partial(setattr, layer, '_autoscale_source', btn.text())
-            )
-            btn.clicked.connect(lambda e: layer.reset_contrast_limits())
-            btn.setFocusPolicy(Qt.NoFocus)
-            tb.addButton(btn)
-            self.layout().addWidget(btn)
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
