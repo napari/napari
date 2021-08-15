@@ -36,7 +36,7 @@ _submod_attrs = {
         'view_tracks',
         'view_vectors',
     ],
-    'viewer': ['Viewer'],
+    'viewer': ['Viewer', 'current_viewer'],
 }
 
 # All imports in __init__ are hidden inside of `__getattr__` to prevent

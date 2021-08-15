@@ -385,18 +385,6 @@ class QtShapesControls(QtLayerControls):
         """
         self.layer.current_edge_width = float(value) / 2
 
-    def changeOpacity(self, value):
-        """Change opacity value of shapes on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Opacity value for shapes.
-            Input range 0 - 100 (transparent to fully opaque).
-        """
-        with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value / 100
-
     def change_text_visibility(self, state):
         """Toggle the visibiltiy of the text.
 

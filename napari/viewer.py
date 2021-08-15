@@ -28,8 +28,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
-    # Create private variable for window
-    _window: 'Window'
+    _window: 'Window' = None  # type: ignore
 
     def __init__(
         self,
@@ -123,3 +122,13 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
+
+
+def current_viewer() -> Viewer:
+    """Return the currently active napari viewer."""
+    try:
+        from napari._qt.qt_main_window import _QtMainWindow
+
+        return _QtMainWindow.current_viewer()
+    except ImportError:
+        return None

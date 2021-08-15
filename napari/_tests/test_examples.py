@@ -16,6 +16,7 @@ skip = [
     'live_tiffs_generator.py',
     'points-over-time.py',  # too resource hungry
     'embed_ipython.py',  # fails without monkeypatch
+    'custom_key_bindings.py'  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
 ]
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation

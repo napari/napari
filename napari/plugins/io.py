@@ -1,3 +1,5 @@
+import os
+import pathlib
 import warnings
 from logging import getLogger
 from typing import Any, List, Optional, Sequence, Tuple, Union
@@ -52,6 +54,10 @@ def read_data_with_plugins(
         If ``plugin`` is specified but raises an Exception while reading.
     """
     hook_caller = plugin_manager.hook.napari_get_reader
+    path = abspath_or_url(path)
+    if not plugin and isinstance(path, (str, pathlib.Path)):
+        extension = os.path.splitext(path)[-1]
+        plugin = plugin_manager.get_reader_for_extension(extension)
 
     hookimpl: Optional[HookImplementation] = None
     if plugin:
@@ -86,7 +92,6 @@ def read_data_with_plugins(
         return layer_data or None, hookimpl
 
     errors: List[PluginCallError] = []
-    path = abspath_or_url(path)
     skip_impls: List[HookImplementation] = []
     layer_data = None
     while True:
@@ -289,6 +294,10 @@ def _write_multiple_layers_with_plugins(
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
 
+    if not plugin_name and isinstance(path, (str, pathlib.Path)):
+        extension = os.path.splitext(path)[-1]
+        plugin_name = plugin_manager.get_writer_for_extension(extension)
+
     hook_caller = plugin_manager.hook.napari_get_writer
     path = abspath_or_url(path)
     if plugin_name:
@@ -378,6 +387,10 @@ def _write_single_layer_with_plugins(
     hook_caller = getattr(
         plugin_manager.hook, f'napari_write_{layer._type_string}'
     )
+
+    if not plugin_name and isinstance(path, (str, pathlib.Path)):
+        extension = os.path.splitext(path)[-1]
+        plugin_name = plugin_manager.get_writer_for_extension(extension)
 
     if plugin_name and (plugin_name not in plugin_manager.plugins):
         names = {i.plugin_name for i in hook_caller.get_hookimpls()}

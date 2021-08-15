@@ -173,7 +173,7 @@ class ActivityDialog(QDialog):
             self._toggleButton._inProgressIndicator.hide()
 
 
-def get_pbar(nest_under=None, **kwargs):
+def get_pbar(prog, nest_under=None, **kwargs):
     """Adds ProgressBar to viewer ActivityDialog and returns it.
 
     If nest_under is valid ProgressBar, nests new bar underneath
@@ -181,6 +181,8 @@ def get_pbar(nest_under=None, **kwargs):
 
     Parameters
     ----------
+    prog : Progress
+        progress iterable this ProgressBar will belong to
     nest_under : Optional[ProgressBar]
         parent ProgressBar to nest under, by default None
 
@@ -199,6 +201,7 @@ def get_pbar(nest_under=None, **kwargs):
 
     pbar = ProgressBar(**kwargs)
     activity_dialog.add_progress_bar(pbar, nest_under)
+    viewer_instance.destroyed.connect(prog.close_pbar)
 
     return pbar
 
