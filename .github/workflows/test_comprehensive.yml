@@ -85,25 +85,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      # we only really need miniconda for things that fail to build wheels.
-      # At the time this PR was submitted, that was only "numcodecs" on macos with
-      # python3.9. The specific dependencies that will be installed with conda are
-      # specified in tox.ini under the `testenv.conda_deps` section. For example:
-      #
-      # conda_deps =
-      #   py39-macos: numcodecs
-      #
-      # the "if:" section of this step may need to be updated in the future
-      # (and then change the Install tox-conda if: below as well)
-      - name: Setup Miniconda
-        if: runner.os == 'macOS' && matrix.python == '3.9'
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          channels: conda-forge
-          channel-priority: strict
-          python-version: ${{ matrix.python }}
-
       # these libraries, along with pytest-xvfb (added in the `deps` in tox.ini),
       # enable testing on Qt on linux
       - name: Install Linux libraries
@@ -129,10 +110,6 @@ jobs:
         env:
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
-      - name: Install tox-conda
-        if: runner.os == 'macOS' && matrix.python == '3.9'
-        run: pip install tox-conda
-
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
@@ -142,7 +119,6 @@ jobs:
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
         with:
-          shell: bash -l {0}
           run: tox
         env:
           PLATFORM: ${{ matrix.platform }}
