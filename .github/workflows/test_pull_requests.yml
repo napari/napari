@@ -144,7 +144,7 @@ jobs:
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: tox -- napari/_qt/_tests napari/_qt/containers napari/_qt/perf napari/_qt/widgets
+          run: tox -- napari/_qt/_tests napari/_qt/perf napari/_qt/widgets
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
