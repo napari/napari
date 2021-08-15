@@ -4,10 +4,10 @@ name: Full Test
 
 on:
   push:
-    branches:
-      - master
-    tags:
-      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+    # branches:
+    #   - master
+    # tags:
+    #   - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -53,9 +53,6 @@ jobs:
     needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
-    defaults:
-      run:
-        shell: bash -l {0}
     strategy:
       fail-fast: false
       matrix:
@@ -144,6 +141,7 @@ jobs:
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
         with:
+          shell: bash -l {0}
           run: tox
         env:
           PLATFORM: ${{ matrix.platform }}
