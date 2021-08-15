@@ -326,7 +326,6 @@ class QtViewer(QSplitter):
                 QtPerformance(),
                 name=trans._('performance'),
                 area='bottom',
-                shortcut='Ctrl+Shift+P',
             )
         return None
 
