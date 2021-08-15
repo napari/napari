@@ -202,7 +202,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         # Shading mode
         self._shading = shading
 
-    def _calc_data_range(self):
+    def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
 
     @property
@@ -232,6 +232,8 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
+        if self._keep_autoscale:
+            self.reset_contrast_limits()
 
     @property
     def vertices(self):
@@ -393,6 +395,9 @@ class Surface(IntensityVisualizationMixin, Layer):
                 self._view_faces = self.faces[matches]
         else:
             self._view_faces = self.faces
+
+        if self._keep_autoscale:
+            self.reset_contrast_limits()
 
     def _update_thumbnail(self):
         """Update thumbnail with current surface."""

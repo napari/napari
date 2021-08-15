@@ -53,6 +53,9 @@ jobs:
     needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       fail-fast: false
       matrix:
@@ -139,8 +142,9 @@ jobs:
       # in which case we are declaring one specific tox environment to run.
       # see tox.ini for more
       - name: Test with tox
-        shell: bash -l {0}
-        run: tox
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox
         env:
           PLATFORM: ${{ matrix.platform }}
           TOXENV: ${{ matrix.toxenv }}

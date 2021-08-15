@@ -128,12 +128,15 @@ def test_settings_to_dict_no_env(monkeypatch):
 
 
 def test_settings_reset(test_settings):
+    appearance_id = id(test_settings.appearance)
     test_settings.reset()
+    assert id(test_settings.appearance) == appearance_id
     assert test_settings.appearance.theme == "dark"
     test_settings.appearance.theme = "light"
     assert test_settings.appearance.theme == "light"
     test_settings.reset()
     assert test_settings.appearance.theme == "dark"
+    assert id(test_settings.appearance) == appearance_id
 
 
 def test_settings_model(test_settings):
