@@ -281,7 +281,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
-        self.canvas.bgcolor = get_theme(self.viewer.theme)["canvas"]
+        self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
         theme = self.viewer.events.theme
 
         on_theme_change = self.canvas._on_theme_change

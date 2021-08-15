@@ -73,7 +73,7 @@ class QtAboutKeyBindings(QDialog):
         self.key_map_handler = key_map_handler
         theme = get_theme(self.viewer.theme)
 
-        col = theme["secondary"]
+        col = theme['secondary']
         layers = [
             napari.layers.Image,
             napari.layers.Labels,
