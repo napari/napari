@@ -3,7 +3,6 @@
 from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas
 
-from ..utils.colormaps.standardize_color import transform_color
 from .utils_gl import get_max_texture_sizes
 
 
@@ -53,19 +52,12 @@ class VispyCanvas(SceneCanvas):
         self.bgcolor = value or self._last_theme_color
 
     def _on_theme_change(self, event):
-        self._set_theme_change(event.value)
-
-    def _set_theme_change(self, theme: str):
         from ..utils.theme import get_theme
 
-        # Note 1. store last requested theme color, in case we need to reuse it
+        # store last requested theme color, in case we need to reuse it
         # when clearing the background_color_override, without needing to
         # keep track of the viewer.
-        # Note 2. the reason for using the `as_hex` here is to avoid
-        # `UserWarning` which is emitted when RGB values are above 1
-        self._last_theme_color = transform_color(
-            get_theme(theme, False).canvas.as_hex()
-        )[0]
+        self._last_theme_color = get_theme(event.value)['canvas']
         self.bgcolor = self._last_theme_color
 
     @property

@@ -25,7 +25,6 @@ from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from ..utils.settings import get_settings
-from ..utils.theme import THEME_KEYS
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -80,7 +79,6 @@ class NapariPluginManager(PluginManager):
         self._function_widgets: Dict[
             str, Dict[str, Callable[..., Any]]
         ] = dict()
-        self._theme_data: Dict[str, Dict[str, str]] = dict()
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
@@ -289,75 +287,6 @@ class NapariPluginManager(PluginManager):
         """
         return tuple(
             (p, s) for p in self._sample_data for s in self._sample_data[p]
-        )
-
-    # THEME DATA ------------------------------------
-
-    def register_theme_colors(
-        self, data: Dict[str, Dict[str, str]], hookimpl: HookImplementation
-    ):
-        """Register theme data dict returned by `napari_experimental_provide_theme`.
-
-        Each key in `data` is a `theme_name` and the value is dictionary of values.
-        """
-        plugin_name = hookimpl.plugin_name
-        hook_name = '`napari_experimental_provide_theme`'
-        if not isinstance(data, dict):
-            warn_message = trans._(
-                'Plugin {plugin_name!r} provided a non-dict object to {hook_name!r}: data ignored.',
-                deferred=True,
-                plugin_name=plugin_name,
-                hook_name=hook_name,
-            )
-            warn(message=warn_message)
-            return
-
-        _data = {}
-        for name, theme_colors in list(data.items()):
-            if isinstance(theme_colors, dict):
-                if not all(key in theme_colors for key in THEME_KEYS):
-                    warn_message = trans._(
-                        'In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for key {name!r} that'
-                        ' does not have required keys: {keys!r}. Missing keys: {missing!r}. Ignoring',
-                        deferred=True,
-                        hook_name=hook_name,
-                        plugin_name=plugin_name,
-                        name=name,
-                        keys=", ".join(THEME_KEYS),
-                        missing=", ".join(
-                            set(THEME_KEYS) - set(theme_colors.keys())
-                        ),
-                    )
-                    warn(message=warn_message)
-                    continue
-                _data[name] = theme_colors
-
-        if plugin_name not in self._theme_data:
-            self._theme_data[plugin_name] = {}
-        self._theme_data[plugin_name].update(_data)
-
-    def available_themes(self) -> Tuple[Tuple[str, str], ...]:
-        """Return dictionary containing theme colors"""
-        return tuple(
-            (p, s) for p in self._theme_data for s in self._theme_data[p]
-        )
-
-    def iter_themes(self) -> Iterator[Tuple[str, Dict[str, str]]]:
-        """Return theme_name : theme_colors mapping."""
-        for plugin_name in self._theme_data:
-            yield from self._theme_data[plugin_name].items()
-
-    def discover_themes(self):
-        """Trigger discovery of theme plugins.
-
-        As a "historic" hook, this should only need to be called once.
-        (historic here means that even plugins that are discovered after this
-        is called will be added.)
-        """
-        if self._theme_data:
-            return
-        self.hook.napari_experimental_provide_theme.call_historic(
-            result_callback=partial(self.register_theme_colors), with_impl=True
         )
 
     # FUNCTION & DOCK WIDGETS -----------------------

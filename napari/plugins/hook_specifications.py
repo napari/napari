@@ -545,26 +545,3 @@ def napari_experimental_provide_icons() -> List[str]:
     Examples
     --------
     """
-
-
-@napari_hook_specification(historic=True)
-def napari_experimental_provide_theme() -> Dict[str, Dict[str, str]]:
-    """Provide GUI with a set of colors used through napari. This hook allows you to
-    provide additional color schemes so you can accomplish your desired styling.
-
-    Themes are provided as `dict` with several required fields and correctly formatted
-    color values. Colors must be specified using RGB color in 0-255 range using e.g.
-    ``rgb(255,0,127)``
-
-    This hook specification is marked as experimental as the API or how the returned
-    value is handled may change here more frequently than the rest of the codebase.
-
-    Returns
-    -------
-    color_dict : Dict[str, Dict[str, str]
-        A dictionary containing new color scheme to be used by napari. You can replace
-        existing themes by using the same names.
-
-    Examples
-    --------
-    """

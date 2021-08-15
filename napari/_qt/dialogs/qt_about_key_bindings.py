@@ -71,9 +71,9 @@ class QtAboutKeyBindings(QDialog):
         self.key_bindings_strs = OrderedDict()
         self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = ''
         self.key_map_handler = key_map_handler
-        theme = get_theme(self.viewer.theme, False)
+        theme = get_theme(self.viewer.theme)
 
-        col = theme.secondary.as_rgb()
+        col = theme["secondary"]
         layers = [
             napari.layers.Image,
             napari.layers.Labels,

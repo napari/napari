@@ -1,10 +1,4 @@
-from napari.utils.theme import (
-    Theme,
-    available_themes,
-    get_theme,
-    register_theme,
-    unregister_theme,
-)
+from napari.utils.theme import available_themes, get_theme, register_theme
 
 
 def test_default_themes():
@@ -15,16 +9,7 @@ def test_default_themes():
 
 def test_get_theme():
     theme = get_theme('dark')
-    assert isinstance(theme, dict)
     assert theme['folder'] == 'dark'
-
-    # get theme in the old-style dict format
-    theme = get_theme("dark")
-    assert isinstance(theme, dict)
-
-    # get theme in the new model-based format
-    theme = get_theme("dark", False)
-    assert isinstance(theme, Theme)
 
 
 def test_register_theme():
@@ -55,29 +40,3 @@ def test_register_theme():
     # Check that blue theme can be gotten from available themes
     theme = get_theme('test_blue')
     assert theme['background'] == blue_theme['background']
-
-    theme = get_theme("test_blue", False)
-    assert theme.background.as_rgb() == blue_theme["background"]
-
-
-def test_unregister_theme():
-    # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark')
-    blue_theme.update(
-        background='rgb(28, 31, 48)',
-        foreground='rgb(45, 52, 71)',
-        primary='rgb(80, 88, 108)',
-        current='rgb(184, 112, 0)',
-    )
-
-    # Register blue theme
-    register_theme('test_blue', blue_theme)
-
-    # Check that blue theme is listed in available themes
-    themes = available_themes()
-    assert 'test_blue' in themes
-
-    # Remove theme from available themes
-    unregister_theme("test_blue")
-    themes = available_themes()
-    assert 'test_blue' not in themes

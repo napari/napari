@@ -56,8 +56,6 @@ QRC_TEMPLATE = """
 ALIAS_T = '{color}/{svg_stem}{opacity}.svg'
 FILE_T = "<file alias='{alias}'>{path}</file>"
 
-_clear_resources = None
-
 
 @contextmanager
 def _temporary_qrc_file(
@@ -160,7 +158,7 @@ def generate_colorized_svgs(
 
             clrkey, theme_key = color
             theme_key = theme_override.get(svg_stem, theme_key)
-            color = getattr(get_theme(clrkey, False), theme_key)
+            color = get_theme(clrkey)[theme_key]
 
         op_key = "" if op == 1 else f"_{op * 100:.0f}"
         alias = ALIAS_T.format(color=clrkey, svg_stem=svg_stem, opacity=op_key)
@@ -366,13 +364,6 @@ def _register_napari_resources(persist=True, force_rebuild=False):
         exist.  Rebuild may also be forced using the environment variable
         "NAPARI_REBUILD_RESOURCES".
     """
-    # I hate to do this, but if we want to be able to dynamically change color
-    # of e.g. icons, we must unregister old resources using the `qCleanupResources`
-    # method which can be found in the `_qt_resources*.py` module.
-    # If the resources are not cleared, it's 100% going to segfault which
-    # is not desired. See: https://github.com/napari/napari/pull/2900
-    global _clear_resources
-
     key, save_path = _get_resources_path()
     force = force_rebuild or os.environ.get('NAPARI_REBUILD_RESOURCES')
 
@@ -380,30 +371,7 @@ def _register_napari_resources(persist=True, force_rebuild=False):
         from importlib import import_module
 
         modname = f'napari._qt.qt_resources.{key}'
-        mod = import_module(modname)
-        _clear_resources = getattr(mod, "qCleanupResources")
+        import_module(modname)
     else:
         resources = _compile_napari_resources(save_path=persist and save_path)
         exec(resources, globals())
-        _clear_resources = globals()["qCleanupResources"]
-
-
-def _unregister_napari_resources():
-    """Unregister resources."""
-    if _clear_resources is not None:
-        _clear_resources()
-    else:
-        from importlib import import_module
-
-        key, save_path = _get_resources_path()
-        if save_path.exists():
-            modname = f'napari._qt.qt_resources.{key}'
-            mod = import_module(modname)
-            qCleanupResources = getattr(mod, "qCleanupResources")
-            qCleanupResources()  # try cleaning up resources
-
-
-def register_napari_theme():
-    """Register theme."""
-    _unregister_napari_resources()
-    _register_napari_resources(False, force_rebuild=True)

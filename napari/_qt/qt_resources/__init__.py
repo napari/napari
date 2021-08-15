@@ -1,18 +1,13 @@
 from pathlib import Path
 from typing import List, Optional
 
-from ._icons import (
-    _register_napari_resources,
-    _unregister_napari_resources,
-    compile_qt_svgs,
-)
+from ._icons import _register_napari_resources, compile_qt_svgs
 from ._svg import QColoredSVGIcon
 
 __all__ = [
     'get_stylesheet',
     'QColoredSVGIcon',
     '_register_napari_resources',
-    '_unregister_napari_resources',
     'compile_qt_svgs',
 ]
 
