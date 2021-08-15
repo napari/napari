@@ -140,7 +140,9 @@ jobs:
       # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
       - name: Test with tox
-        run: tox
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
