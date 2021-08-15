@@ -12,13 +12,13 @@ from qtpy.QtWidgets import QApplication
 
 from .. import __version__
 from ..plugins.theme import register_plugin_resources
+from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
     notification_manager,
     show_console_notification,
 )
 from ..utils.perf import perf_config
-from ..utils.settings import get_settings
 from ..utils.translations import trans
 from .dialogs.qt_notification import (
     NapariQtNotification,
@@ -387,6 +387,5 @@ def run(
             )
         )
         return
-
     with notification_manager:
         app.exec_()

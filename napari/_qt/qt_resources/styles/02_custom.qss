@@ -256,8 +256,8 @@ QtLayerControlsContainer {
     border-radius: 2px;
     padding: 0px;
     margin: 10px;
-    min-height: 265px;
-    max-height: 265px;
+    min-height: 295px;
+    max-height: 295px;
     min-width: 240px;
     max-width: 240px;
     margin-left: 10px;
@@ -294,6 +294,12 @@ QLabeledRangeSlider > QAbstractSpinBox {
   font-size: 12pt;
   color: {{ secondary }};
 }
+
+AutoScaleButtons QPushButton {
+  font-size: 9pt;
+  padding: 4;
+}
+
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
@@ -523,15 +529,15 @@ PluginListItem {
   border-radius: 3px;
 }
 
-PluginListItem > QPushButton {
+PluginListItem > QPushButton#install_button {
   background-color: {{ current }}
 }
 
-PluginListItem > QPushButton:hover {
+PluginListItem > QPushButton#install_button:hover {
   background-color: {{ lighten(current, 10) }}
 }
 
-PluginListItem > QPushButton:pressed {
+PluginListItem > QPushButton#install_button:pressed {
   background-color: {{ darken(current, 10) }}
 }
 
@@ -545,6 +551,22 @@ PluginListItem > QPushButton#remove_button:hover {
 
 PluginListItem > QPushButton#remove_button:pressed {
   background-color: {{ darken(warning, 10) }}
+}
+
+PluginListItem > QPushButton#busy_button:pressed {
+  background-color: {{ darken(secondary, 10) }}
+}
+
+PluginListItem > QPushButton#busy_button {
+  background-color: {{ secondary }}
+}
+
+PluginListItem > QPushButton#busy_button:hover {
+  background-color: {{ lighten(secondary, 10) }}
+}
+
+PluginListItem > QPushButton#busy_button:pressed {
+  background-color: {{ darken(secondary, 10) }}
 }
 
 #small_text {
@@ -586,6 +608,17 @@ PluginListItem > QPushButton#remove_button:pressed {
 
 #error_label {
   image: url(":/themes/{{ folder }}/warning.svg");
+  max-width: 18px;
+  max-height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin: 0px;
+  margin-left: 1px;
+  padding: 2px;
+}
+
+#help_label {
+  image: url(":/themes/{{ folder }}/help.svg");
   max-width: 18px;
   max-height: 18px;
   min-width: 18px;
