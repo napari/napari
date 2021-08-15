@@ -25,6 +25,7 @@ from .. import layers
 from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
+from ..layers.utils.plane_manager import PlaneManager
 from ..layers.utils.stack_utils import split_channels
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
@@ -556,7 +557,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
-        plane=None,
+        plane=PlaneManager(),
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 

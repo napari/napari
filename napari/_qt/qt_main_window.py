@@ -124,6 +124,11 @@ class _QtMainWindow(QMainWindow):
     def current(cls):
         return cls._instances[-1] if cls._instances else None
 
+    @classmethod
+    def current_viewer(cls):
+        window = cls.current()
+        return window.qt_viewer.viewer if window else None
+
     def event(self, e):
         if e.type() == QEvent.Close:
             # when we close the MainWindow, remove it from the instances list

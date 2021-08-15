@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -107,7 +107,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    plane : dict
+    plane : dict or PlaneManager
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
@@ -183,7 +183,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
-        plane=None,
+        plane=PlaneManager(),
         iso_threshold=0.5,
         attenuation=0.05,
         name=None,
@@ -298,7 +298,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.interpolation = interpolation
         self.rendering = rendering
         if plane is not None:
-            self.plane.update(plane)
+            self.plane = plane
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -339,11 +339,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Raw image for the current slice. (compatibility)"""
         return self._slice.image.raw
 
-    def _calc_data_range(self):
-        if self.multiscale:
-            input_data = self.data[-1]
+    def _calc_data_range(self, mode='data'):
+        if mode == 'data':
+            input_data = self.data[-1] if self.multiscale else self.data
+        elif mode == 'slice':
+            data = self._slice.image.view  # ugh
+            input_data = data[-1] if self.multiscale else data
         else:
-            input_data = self.data
+            raise ValueError(
+                f"mode must be either 'data' or 'slice', got {mode!r}"
+            )
         return calc_data_range(input_data, rgb=self.rgb)
 
     @property
@@ -360,6 +365,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)
+        if self._keep_autoscale:
+            self.reset_contrast_limits()
         self._set_editable()
 
     def _get_ndim(self):
@@ -501,6 +508,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def plane(self):
         return self._plane
 
+    @plane.setter
+    def plane(self, value: Union[dict, PlaneManager]):
+        self._plane.update(value)
+
     @property
     def loaded(self):
         """Has the data for this layer been loaded yet.
@@ -627,6 +638,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self, image_indices, image, thumbnail_source
         )
         self._load_slice(data)
+        if self._keep_autoscale:
+            self.reset_contrast_limits()
 
     @property
     def _SliceDataClass(self):
@@ -688,7 +701,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # call our _set_view_slice(). Do we need a "refresh without
             # set_view_slice()" method that we can call?
 
-            self.events.set_data()  # update vispy
+            self.events.set_data(value=self._slice)  # update vispy
             self._update_thumbnail()
 
     def _update_thumbnail(self):

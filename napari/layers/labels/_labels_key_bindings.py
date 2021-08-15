@@ -1,3 +1,5 @@
+import numpy as np
+
 from ...layers.utils.layer_utils import register_layer_action
 from ...utils.translations import trans
 from ._labels_constants import Mode
@@ -55,7 +57,7 @@ def activate_label_erase_mode(layer):
 )
 def new_label(layer):
     """Set the currently selected label to the largest used label plus one."""
-    layer.selected_label = layer.data.max() + 1
+    layer.selected_label = np.max(layer.data) + 1
 
 
 @register_label_action(
