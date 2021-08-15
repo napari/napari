@@ -1,7 +1,9 @@
-from unittest.mock import patch
+# from unittest.mock import patch
 
-from napari._qt.qt_main_window import Window, _QtMainWindow
-from napari.utils.theme import get_theme, register_theme, unregister_theme
+from napari._qt.qt_main_window import _QtMainWindow
+
+# from napari._qt.qt_main_window import Window, _QtMainWindow
+# from napari.utils.theme import get_theme, register_theme, unregister_theme
 
 
 def test_current_viewer(make_napari_viewer, qapp):
@@ -40,32 +42,32 @@ def test_current_viewer(make_napari_viewer, qapp):
     assert _QtMainWindow.current() is None
 
 
-@patch.object(Window, "_theme_icon_changed")
-@patch.object(Window, "_remove_theme")
-@patch.object(Window, "_add_theme")
-def test_update_theme(
-    mock_add_theme,
-    mock_remove_theme,
-    mock_icon_changed,
-    make_napari_viewer,
-    qapp,
-):
-    viewer = make_napari_viewer()
-
-    blue = get_theme("dark", False)
-    blue.name = "blue"
-    register_theme("blue", blue)
-
-    # triggered when theme was added
-    mock_add_theme.assert_called()
-    mock_remove_theme.assert_not_called()
-
-    unregister_theme("blue")
-    # triggered when theme was removed
-    mock_remove_theme.assert_called()
-
-    mock_icon_changed.assert_not_called()
-    viewer.theme = "light"
-    theme = get_theme("light", False)
-    theme.icon = "#FF0000"
-    mock_icon_changed.assert_called()
+# @patch.object(Window, "_theme_icon_changed")
+# @patch.object(Window, "_remove_theme")
+# @patch.object(Window, "_add_theme")
+# def test_update_theme(
+#     mock_add_theme,
+#     mock_remove_theme,
+#     mock_icon_changed,
+#     make_napari_viewer,
+#     qapp,
+# ):
+#     viewer = make_napari_viewer()
+#
+#     blue = get_theme("dark", False)
+#     blue.name = "blue"
+#     register_theme("blue", blue)
+#
+#     # triggered when theme was added
+#     mock_add_theme.assert_called()
+#     mock_remove_theme.assert_not_called()
+#
+#     unregister_theme("blue")
+#     # triggered when theme was removed
+#     mock_remove_theme.assert_called()
+#
+#     mock_icon_changed.assert_not_called()
+#     viewer.theme = "light"
+#     theme = get_theme("light", False)
+#     theme.icon = "#FF0000"
+#     mock_icon_changed.assert_called()
