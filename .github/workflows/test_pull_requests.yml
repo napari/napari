@@ -170,10 +170,13 @@ jobs:
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
 
-      - name: Test
+      - name: Install this commit
         run: |
-          pip install --upgrade pip
-          pip install pytest-xvfb
           # pip install this git sha directly from github
+          pip install --upgrade pip
           pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
-          pytest --pyargs napari -v --color=yes
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: pytest --pyargs napari --color=yes
