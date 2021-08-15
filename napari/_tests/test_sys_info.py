@@ -2,7 +2,7 @@ from napari.utils.info import sys_info
 
 
 # vispy use_app tries to start Qt, which can cause segfaults when running
-# sys_info on CI.
+# sys_info on CI unless we provide a pytest Qt app
 def test_sys_info(qapp):
     str_info = sys_info()
     assert isinstance(str_info, str)
