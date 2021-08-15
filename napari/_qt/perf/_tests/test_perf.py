@@ -4,12 +4,17 @@ import subprocess
 import sys
 from pathlib import Path
 
+from napari._tests.utils import skip_local_popups
+
+# NOTE:
+# for some reason, running this test fails in a subprocess with a segfault
+# if you don't show the viewer...
 PERFMON_SCRIPT = """
 import napari
 from qtpy.QtCore import QTimer
 
-v = napari.view_points(show=False)
-QTimer.singleShot(500, napari._qt.qt_event_loop.quit_app)
+v = napari.view_points()
+QTimer.singleShot(100, napari._qt.qt_event_loop.quit_app)
 napari.run()
 """
 
@@ -26,6 +31,7 @@ CONFIG = {
 }
 
 
+@skip_local_popups
 def test_trace_on_start(tmp_path: Path):
     """Make sure napari can write a perfmon trace file."""
     trace_path = tmp_path / "trace.json"
@@ -34,9 +40,8 @@ def test_trace_on_start(tmp_path: Path):
     config_path.write_text(json.dumps(CONFIG))
 
     env = os.environ.copy()
-    env['NAPARI_PERFMON'] = str(config_path)
-    env['NAPARI_CONFIG'] = ''  # don't try to save config
-    subprocess.run([sys.executable, '-c', PERFMON_SCRIPT], check=True, env=env)
+    env.update({'NAPARI_PERFMON': str(config_path), 'NAPARI_CONFIG': ''})
+    subprocess.run([sys.executable, '-c', PERFMON_SCRIPT], env=env, check=True)
 
     # Make sure file exists and is not empty.
     assert trace_path.exists(), "Trace file not written"
