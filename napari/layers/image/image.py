@@ -17,7 +17,7 @@ from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ..utils.plane_manager import PlaneManager
-from ._image_base_mouse_bindings import on_embedded_plane_drag
+from ._image_base_mouse_bindings import on_plane_drag
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
@@ -306,7 +306,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Add default Image callbacks
         mouse_drag_callbacks = [
-            on_embedded_plane_drag,
+            on_plane_drag,
         ]
         self.mouse_drag_callbacks += mouse_drag_callbacks
 

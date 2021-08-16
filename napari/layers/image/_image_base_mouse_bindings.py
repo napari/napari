@@ -1,9 +1,90 @@
 import numpy as np
 
-from ...utils.geometry import point_in_bounding_box
+from ...utils.geometry import point_in_bounding_box, project_point_onto_plane
 
 
-def on_embedded_plane_drag(layer, event):
+def on_plane_drag(layer, event):
+    """Shift a rendered plane along its normal vector.
+
+    This function will shift a plane along its normal vector when the plane is
+    clicked and dragged. The general strategy is to
+    1) find the mouse drag vector in data coordinates
+    2) calculate how far to move the plane in canvas coordinates, this is done
+    by projecting the mouse drag vector onto the (normalised) plane normal
+    vector
+    3) update the plane position"""
+    # Early exit if plane rendering not enabled or layer isn't visible
+    if not (layer.embedded_plane.enabled and layer.visible):
+        return
+
+    # Calculate intersection of click with data bounding box in data coordinates
+    near_point, far_point = layer.get_ray_intersections(
+        event.position,
+        event.view_direction,
+        event.dims_displayed,
+    )
+
+    # exit if click is outside data bounding box
+    if near_point is None and far_point is None:
+        return
+
+    # Calculate intersection of click with plane through data in data coordinates
+    intersection = layer.embedded_plane.intersect_with_line(
+        line_position=near_point, line_direction=event.view_direction
+    )
+
+    # Check if click was on plane by checking if intersection occurs within
+    # data bounding box. If not, exit early.
+    if not point_in_bounding_box(intersection, layer.extent.data):
+        return
+
+    # Disable interactivity during plane drag
+    layer.interactive = False
+
+    # Store the original cursor position in world coordinates
+    start_position_world = event.position
+
+    # Store the original plane position
+    original_plane_position = layer.embedded_plane.position
+
+    # store the camera plane in world coordinates
+    camera_plane_position = start_position_world
+    camera_view_direction = event.view_direction
+
+    # store the plane position
+
+    # Project start position onto plane
+    start_position_on_camera_plane = project_point_onto_plane(
+        start_position_world, camera_plane_position, camera_view_direction
+    )
+
+    yield
+
+    while event.type == 'mouse_move':
+        end_position = event.position
+        end_position_on_camera_plane = project_point_onto_plane(
+            end_position, camera_plane_position, camera_view_direction
+        )
+        drag_vector_camera_plane = (
+            end_position_on_camera_plane - start_position_on_camera_plane
+        )
+        print(drag_vector_camera_plane)
+
+        plane_normal = layer.embedded_plane.normal
+
+        d = np.dot(drag_vector_camera_plane, plane_normal)
+        print(d)
+        layer.embedded_plane.position = original_plane_position + d * np.array(
+            layer.embedded_plane.normal
+        )
+
+        yield
+
+    # Re-enable layer interactivity after the drag
+    layer.interactive = True
+
+
+def on_embedded_plane_drag_canv(layer, event):
     """Shift a rendered plane along its normal vector.
 
     This function will shift a plane along its normal vector when the plane is
@@ -35,16 +116,6 @@ def on_embedded_plane_drag(layer, event):
 
     # exit if click is outside data bounding box
     if near_point is None and far_point is None:
-        return
-
-    # Calculate intersection of click with plane through data
-    intersection = layer.embedded_plane.intersect_with_line(
-        line_position=near_point, line_direction=event.view_direction
-    )
-
-    # Check if click was on plane by checking if intersection occurs within
-    # data bounding box. If so, exit early.
-    if not point_in_bounding_box(intersection, layer.extent.data):
         return
 
     # Get transform which maps from data (vispy) to canvas

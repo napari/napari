@@ -592,6 +592,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._dims_order[-self._ndisplay :]
 
     @property
+    def _dims_displayed_mask(self):
+        """To be removed displayed dimensions mask"""
+        dims_displayed_mask = np.zeros(self._ndim, dtype=bool)
+        dims_displayed_mask[self._dims_displayed] = True
+        return dims_displayed_mask
+
+    @property
     def _dims_not_displayed(self):
         """To be removed not displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
@@ -1183,9 +1190,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(normalized_vector)
 
-    def _display_bounding_box(self, dims_displayed_mask: np.ndarray):
+    @property
+    def _display_bounding_box(self):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
-        return self._extent_data[:, dims_displayed_mask].T
+        return self._extent_data[:, self._dims_displayed_mask].T
 
     def get_ray_intersections(
         self,
@@ -1227,29 +1235,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             an emtpy numpy array is returned (i.e., np.empty([]).
         """
         if len(dims_displayed) == 3:
-            # create a mask to select the in view dimensions
-            dims_displayed = dims_displayed
-            dims_displayed_mask = np.zeros_like(position, dtype=bool)
-            dims_displayed_mask[dims_displayed] = True
-
             # create the bounding box in data coordinates
-            bbox = self._display_bounding_box(dims_displayed_mask)
+            bbox = self._display_bounding_box
 
             # get the view direction in data coords (only displayed dims)
             if world is True:
                 view_dir = np.asarray(self._world_to_data_ray(view_direction))[
-                    dims_displayed_mask
+                    self._dims_displayed_mask
                 ]
             else:
-                view_dir = np.asarray(view_direction)[dims_displayed_mask]
+                view_dir = np.asarray(view_direction)[
+                    self._dims_displayed_mask
+                ]
 
             # Get the clicked point in data coords (only displayed dims)
             if world is True:
                 click_pos_data = np.asarray(self.world_to_data(position))[
-                    dims_displayed_mask
+                    self._dims_displayed_mask
                 ]
             else:
-                click_pos_data = np.asarray(position)[dims_displayed_mask]
+                click_pos_data = np.asarray(position)[
+                    self._dims_displayed_mask
+                ]
 
             # Determine the front and back faces
             front_face_normal, back_face_normal = find_front_back_face(
@@ -1271,9 +1278,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
                 # add the coordinates for the axes not displayed
                 start_point = np.asarray(position)
-                start_point[dims_displayed_mask] = start_point_disp_dims
+                start_point[self._dims_displayed_mask] = start_point_disp_dims
                 end_point = np.asarray(position)
-                end_point[dims_displayed_mask] = end_point_disp_dims
+                end_point[self._dims_displayed_mask] = end_point_disp_dims
 
             else:
                 # if the click doesn't intersect the data bounding box,
