@@ -5,6 +5,7 @@ import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
+from napari.layers.utils.plane_manager import PlaneManager
 from napari.utils import Colormap
 from napari.utils.transforms.transform_utils import rotate_to_matrix
 
@@ -721,3 +722,41 @@ def test_2d_image_with_channels_and_affine_assignment_broadcasts(affine_size):
     image = Image(np.ones((1, 1, 1, 100, 100)))
     image.affine = np.eye(affine_size)
     np.testing.assert_array_equal(image.affine, np.eye(6))
+
+
+def test_image_state_update():
+    """Test that an image can be updated from the output of its
+    _get_state method()
+    """
+    image = Image(np.ones((32, 32, 32)))
+    state = image._get_state()
+    for k, v in state.items():
+        setattr(image, k, v)
+
+
+def test_instiantiate_with_plane_dict():
+    """Test that an image layer can be instantiated with plane parameters
+    in a dictionary.
+    """
+    plane_parameters = {
+        'position': (32, 32, 32),
+        'normal': (1, 1, 1),
+        'thickness': 22,
+    }
+    image = Image(np.ones((32, 32, 32)), plane=plane_parameters)
+    for k, v in plane_parameters.items():
+        if k == 'normal':
+            v = tuple(v / np.linalg.norm(v))
+        assert v == getattr(image.plane, k, v)
+
+
+def test_instiantiate_with_plane_manager():
+    """Test that an image layer can be instantiated with plane parameters
+    in a PlaneManager.
+    """
+    plane_manager = PlaneManager(
+        position=(32, 32, 32), normal=(1, 1, 1), thickness=22
+    )
+    image = Image(np.ones((32, 32, 32)), plane=plane_manager)
+    for k, v in plane_manager.dict().items():
+        assert v == getattr(image.plane, k, v)
