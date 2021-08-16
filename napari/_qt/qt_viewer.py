@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from contextlib import suppress
+from functools import partial
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -55,6 +56,49 @@ if TYPE_CHECKING:
 
 from ..settings import get_settings
 from ..utils.io import imsave_extensions
+
+
+def disconnect(viewer: Viewer, self: QtViewer):
+    # fmt: off
+    viewer.layers.events.inserted.disconnect(self._update_welcome_screen)
+    viewer.layers.events.removed.disconnect(self._update_welcome_screen)
+    viewer.layers.selection.events.active.disconnect(self._on_active_change)
+    viewer.camera.events.interactive.disconnect(self._on_interactive)
+    viewer.cursor.events.style.disconnect(self._on_cursor)
+    viewer.cursor.events.size.disconnect(self._on_cursor)
+    viewer.layers.events.reordered.disconnect(self._reorder_layers)
+    viewer.layers.events.inserted.disconnect(self._on_add_layer_change)
+    viewer.layers.events.removed.disconnect(self._remove_layer)
+
+    # connected in VispyTextVisual
+    viewer.text_overlay.events.visible.disconnect(self.text_overlay._on_visible_change)
+    viewer.text_overlay.events.text.disconnect(self.text_overlay._on_data_change)
+    viewer.text_overlay.events.color.disconnect(self.text_overlay._on_text_change)
+    viewer.text_overlay.events.font_size.disconnect(self.text_overlay._on_text_change)
+    viewer.text_overlay.events.position.disconnect(self.text_overlay._on_position_change)
+    viewer.camera.events.zoom.disconnect(self.text_overlay._on_position_change)
+
+    # connected in VispyAxesVisual
+    viewer.events.theme.disconnect(self.axes._on_data_change)
+    viewer.axes.events.visible.disconnect(self.axes._on_visible_change)
+    viewer.axes.events.colored.disconnect(self.axes._on_data_change)
+    viewer.axes.events.dashed.disconnect(self.axes._on_data_change)
+    viewer.axes.events.labels.disconnect(self.axes._on_data_change)
+    viewer.axes.events.arrows.disconnect(self.axes._on_data_change)
+    viewer.dims.events.order.disconnect(self.axes._on_data_change)
+    viewer.dims.events.range.disconnect(self.axes._on_data_change)
+    viewer.dims.events.ndisplay.disconnect(self.axes._on_data_change)
+    viewer.dims.events.axis_labels.disconnect(self.axes._on_data_change)
+    viewer.camera.events.zoom.disconnect(self.axes._on_zoom_change)
+
+    # VispyCamera
+    viewer.dims.events.ndisplay.disconnect(self.camera._on_ndisplay_change)
+    viewer.camera.events.center.disconnect(self.camera._on_center_change)
+    viewer.camera.events.zoom.disconnect(self.camera._on_zoom_change)
+    viewer.camera.events.angles.disconnect(self.camera._on_angles_change)
+    viewer.camera.events.perspective.disconnect(self.camera._on_perspective_change)
+
+    # fmt: on
 
 
 class QtViewer(QSplitter):
@@ -219,11 +263,10 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        disconnector = partial(disconnect, viewer, self)
+        self.destroyed.connect(disconnector)
 
         self.setAcceptDrops(True)
-
-        for layer in self.viewer.layers:
-            self._add_layer(layer)
 
         self.view = self.canvas.central_widget.add_view()
         self.camera = VispyCamera(
@@ -241,6 +284,8 @@ class QtViewer(QSplitter):
         self._remote_manager = _create_remote_manager(
             self.viewer.layers, self._qt_poll
         )
+        for layer in self.viewer.layers:
+            self._add_layer(layer)
 
         # moved from the old layerlist... still feels misplaced.
         # can you help me move this elsewhere?

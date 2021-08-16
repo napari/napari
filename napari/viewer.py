@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from .components.viewer_model import ViewerModel
 from .utils import _magicgui, config
 
 if TYPE_CHECKING:
     # helpful for IDE support
-    from ._qt.qt_main_window import Window
+    from ._qt import qt_main_window
 
 
 @_magicgui.register_type(bind=_magicgui.find_viewer_ancestor)
@@ -28,7 +28,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
-    _window: 'Window' = None  # type: ignore
+    _window: 'qt_main_window.Window' = None  # type: ignore
 
     def __init__(
         self,
@@ -45,15 +45,13 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
-        # having this import here makes all of Qt imported lazily, upon
-        # instantiating the first Viewer.
-        from .window import Window
-
-        self._window = Window(self, show=show)
+        self._window = None
+        if show:
+            self.show()
 
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
-    def window(self) -> 'Window':
+    def window(self) -> Optional['qt_main_window.Window']:
         return self._window
 
     def update_console(self, variables):
@@ -97,21 +95,32 @@ class Viewer(ViewerModel):
             upper-left corner of the rendered region.
         """
         if canvas_only:
-            image = self.window.qt_viewer.screenshot(path=path, flash=flash)
+            return self.window.qt_viewer.screenshot(path=path, flash=flash)
         else:
-            image = self.window.screenshot(path=path, flash=flash)
-        return image
+            return self.window.screenshot(path=path, flash=flash)
 
     def show(self, *, block=False):
         """Resize, show, and raise the viewer window."""
+        if self.window is None:
+            from .window import Window
+
+            self._window = Window(self)
+            self._window.events.closed.connect(self._on_window_closed)
+
         self.window.show(block=block)
+        # having this import here makes all of Qt imported lazily, upon
+        # instantiating the first Viewer.
+
+    def _on_window_closed(self, e=None):
+        self._window = None
 
     def close(self):
         """Close the viewer window."""
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
-        self.window.close()
+        if self.window:
+            self.window.close()
 
         if config.async_loading:
             from .components.experimental.chunk import chunk_loader

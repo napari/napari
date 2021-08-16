@@ -53,6 +53,7 @@ class QtLayerListModel(QtListModel[Layer]):
         # The model needs to emit `dataChanged` whenever data has changed
         # for a given index, so that views can update themselves.
         # Here we convert native events to the dataChanged signal.
+        print("process event")
         if not hasattr(event, 'index'):
             return
         role = {

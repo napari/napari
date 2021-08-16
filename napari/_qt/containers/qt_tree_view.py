@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import MutableSequence
+from functools import partial
 from typing import TYPE_CHECKING, TypeVar
 
 from qtpy.QtWidgets import QTreeView
@@ -41,6 +42,9 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
         self.setDragDropOverwriteMode(False)
         self.setSelectionMode(QTreeView.ExtendedSelection)
         self.setRoot(root)
+        self.destroyed.connect(
+            partial(_BaseEventedItemView._disconnectRoot, self)
+        )
 
     def setRoot(self, root: Group[Node]):
         super().setRoot(root)

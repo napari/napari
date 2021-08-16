@@ -23,3 +23,4 @@ def disconnect_events(emitter, listener):
                 listener
             ):
                 em.disconnect(callback)
+    emitter.disconnect()

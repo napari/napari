@@ -63,6 +63,15 @@ class QtDims(QWidget):
         self.dims.events.order.connect(self._update_display)
         self.dims.events.last_used.connect(self._on_last_used_changed)
 
+        @self.destroyed.connect
+        def _destroyer():
+            self.dims.events.ndim.disconnect(self._update_nsliders)
+            self.dims.events.current_step.disconnect(self._update_slider)
+            self.dims.events.range.disconnect(self._update_range)
+            self.dims.events.ndisplay.disconnect(self._update_display)
+            self.dims.events.order.disconnect(self._update_display)
+            self.dims.events.last_used.disconnect(self._on_last_used_changed)
+
     @property
     def nsliders(self):
         """Returns the number of sliders displayed.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import MutableSequence
+from functools import partial
 from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
 
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
@@ -71,6 +72,8 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     ):
         super().__init__(parent=parent)
         self.setRoot(root)
+        disconnector = partial(disconnect_events, self._root.events, self)
+        self.destroyed.connect(disconnector)
 
     def parent(self, index):
         """Return the parent of the model item with the given ``index``.
@@ -207,7 +210,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
 
         if current_root is not None:
             # we're changing roots... disconnect previous root
-            disconnect_events(self._root.events, self)
+            self._disconnectRoot()
 
         self._root = root
         self._root.events.removing.connect(self._on_begin_removing)

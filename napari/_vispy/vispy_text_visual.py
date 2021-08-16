@@ -20,18 +20,12 @@ class VispyTextVisual:
         self.node.font_size = self._viewer.text_overlay.font_size
         self.node.anchors = ("center", "center")
 
-        self._viewer.text_overlay.events.visible.connect(
-            self._on_visible_change
-        )
-        self._viewer.text_overlay.events.text.connect(self._on_data_change)
-        self._viewer.text_overlay.events.color.connect(self._on_text_change)
-        self._viewer.text_overlay.events.font_size.connect(
-            self._on_text_change
-        )
-        self._viewer.text_overlay.events.position.connect(
-            self._on_position_change
-        )
-        self._viewer.camera.events.zoom.connect(self._on_position_change)
+        viewer.text_overlay.events.visible.connect(self._on_visible_change)
+        viewer.text_overlay.events.text.connect(self._on_data_change)
+        viewer.text_overlay.events.color.connect(self._on_text_change)
+        viewer.text_overlay.events.font_size.connect(self._on_text_change)
+        viewer.text_overlay.events.position.connect(self._on_position_change)
+        viewer.camera.events.zoom.connect(self._on_position_change)
 
         self._on_visible_change(None)
         self._on_data_change(None)

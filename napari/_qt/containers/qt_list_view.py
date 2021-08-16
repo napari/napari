@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING, TypeVar
 
 from qtpy.QtWidgets import QListView
@@ -41,6 +42,9 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):
         self.setDragDropOverwriteMode(False)
         self.setSelectionMode(QListView.ExtendedSelection)
         self.setRoot(root)
+        self.destroyed.connect(
+            partial(_BaseEventedItemView._disconnectRoot, self)
+        )
 
     def model(self) -> QtListModel[ItemType]:
         return super().model()

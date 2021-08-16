@@ -46,6 +46,8 @@ class _BaseEventedItemView(Generic[ItemType]):
     a python `EventedList` object.
     """
 
+    _root: SelectableEventedList[ItemType] = None
+
     # ########## Reimplemented Public Qt Functions ##################
 
     def model(self) -> _BaseEventedItemModel[ItemType]:  # for type hints
@@ -83,6 +85,9 @@ class _BaseEventedItemView(Generic[ItemType]):
 
     def setRoot(self, root: SelectableEventedList[ItemType]):
         """Call during __init__, to set the python model."""
+        if self._root is not None:
+            self._disconnectRoot()
+
         self._root = root
         self.setModel(create_model(root, self))
 
@@ -90,6 +95,11 @@ class _BaseEventedItemView(Generic[ItemType]):
         root.selection.events.changed.connect(self._on_py_selection_change)
         root.selection.events._current.connect(self._on_py_current_change)
         self._sync_selection_models()
+
+    def _disconnectRoot(self):
+        sel_events = self._root.selection.events
+        sel_events.changed.disconnect(self._on_py_selection_change)
+        sel_events._current.disconnect(self._on_py_current_change)
 
     def _on_py_current_change(self, event: Event):
         """The python model current item has changed. Update the Qt view."""
