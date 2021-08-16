@@ -31,6 +31,10 @@ YamlDumper.add_multi_representer(str, YamlDumper.represent_str)
 YamlDumper.add_multi_representer(
     Enum, lambda dumper, data: dumper.represent_str(data.value)
 )
+# the default set representer is ugly:
+# disabled_plugins: !!set
+#   bioformats: null
+# and pydantic will make sure that incoming sets are converted to sets
 YamlDumper.add_representer(
     set, lambda dumper, data: dumper.represent_list(data)
 )
