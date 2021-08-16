@@ -335,7 +335,8 @@ def test_settings_events(test_settings):
     mock.assert_not_called()
 
 
-def test_full_serialize(test_settings: NapariSettings, tmp_path):
+@pytest.mark.parametrize('ext', ['yml', 'yaml', 'json'])
+def test_full_serialize(test_settings: NapariSettings, tmp_path, ext):
     """Make sure that every object in the settings is serializeable.
 
     Should work with both json and yaml.
