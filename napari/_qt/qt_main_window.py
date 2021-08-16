@@ -723,8 +723,6 @@ class Window:
 
     def _reset_preference_states(self):
         # resetting plugin states in plugin manager
-        plugin_manager._blocked.clear()
-
         plugin_manager.discover()
 
         # need to reset call order to defaults
