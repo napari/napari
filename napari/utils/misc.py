@@ -181,21 +181,17 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
     Out[4]: repeat(None)
     """
 
-    if (
-        obj is not None
-        and is_sequence(obj)
-        and len(obj) > 0
-        and is_iterable(obj[0])
-    ):
-        if length is not None and len(obj) != length:
-            raise ValueError(
-                trans._(
-                    "length of {obj} must equal {length}",
-                    deferred=True,
-                    obj=obj,
-                    length=length,
+    if obj is not None and is_sequence(obj):
+        if len(obj) > 0 and is_iterable(obj[0]):
+            if length is not None and len(obj) != length:
+                raise ValueError(
+                    trans._(
+                        "length of {obj} must equal {length}",
+                        deferred=True,
+                        obj=obj,
+                        length=length,
+                    )
                 )
-            )
         return obj
     return itertools.repeat(obj)
 
