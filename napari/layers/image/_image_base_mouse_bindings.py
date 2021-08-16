@@ -10,12 +10,7 @@ def on_plane_drag(layer, event):
     """Shift a rendered plane along its normal vector.
 
     This function will shift a plane along its normal vector when the plane is
-    clicked and dragged. The general strategy is to
-    1) find the mouse drag vector in data coordinates
-    2) calculate how far to move the plane in canvas coordinates, this is done
-    by projecting the mouse drag vector onto the (normalised) plane normal
-    vector
-    3) update the plane position"""
+    clicked and dragged."""
     # Early exit if plane rendering not enabled or layer isn't visible
     if not (layer.embedded_plane.enabled and layer.visible):
         return
@@ -68,7 +63,6 @@ def on_plane_drag(layer, event):
             layer=layer,
             vector=layer.embedded_plane.normal,
         )
-        print(drag_distance)
 
         layer.embedded_plane.position = (
             original_plane_position

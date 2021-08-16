@@ -6,15 +6,29 @@ from napari.utils.geometry import project_point_onto_plane
 def mouse_events_to_projected_distance(start_event, end_event, layer, vector):
     """Calculate the projected distance between two mouse events.
 
-    The projection of the distance between two mouse events onto a 3D axis
-    specified in data coordinates.
+    Project the drag vector between two mouse events onto a 3D axis
+    specified in data coordinates. The layer is used to get the positions
+    in data coordinates from the events, where it is defined in world
+    coordinates.
+
+    The general strategy is to
+    1) find mouse drag start and end positions, project them onto a
+       pseudo-canvas (a plane aligned with the canvas) in data coordinates.
+    2) project the mouse drag vector onto the (normalised) vector in data
+       coordinates
 
     Parameters
     ----------
-    start_event
-    end_event
-    layer
-    axis
+    start_event : Event
+        Mouse event for the starting point
+    end_event : Event
+        Mouse event for the end point
+    layer : Layer
+        Layer in which the vector on which to project the drag vector is
+        defined.
+    vector : np.ndarray
+        (3,) unit vector on which to project the drag vector, defined in data
+        coordinates.
 
     Returns
     -------
