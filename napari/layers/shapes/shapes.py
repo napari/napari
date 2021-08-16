@@ -2685,7 +2685,7 @@ class Shapes(Layer):
         start_position: np.ndarray,
         end_position: np.ndarray,
         dims_displayed: List[int],
-    ) -> Union[float, int]:
+    ) -> Tuple[Union[float, int], None]:
         """Get the layer data value along a ray
 
         Parameters

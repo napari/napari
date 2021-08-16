@@ -820,8 +820,8 @@ class ShapeList:
         )
         intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
         if len(intersected_shapes) > 0:
-            intersection_points = self._shape_intersection(
-                shape_indices=inside,
+            intersection_points = self._triangle_intersection(
+                triangle_indices=inside,
                 ray_position=ray_position,
                 ray_direction=ray_direction,
             )
@@ -833,30 +833,34 @@ class ShapeList:
         else:
             return None
 
-    def _shape_intersection(
+    def _triangle_intersection(
         self,
-        shape_indices: np.ndarray,
+        triangle_indices: np.ndarray,
         ray_position: np.ndarray,
         ray_direction: np.ndarray,
     ):
-        """Find the intersection of a ray with specified shapes.
+        """Find the intersection of a ray with specified triangles.
 
         Parameters
         ----------
-        shape_indices : np.ndarray
-            (n,) array of shape indices to find the intersection with the ray
+        triangle_indices : np.ndarray
+            (n,) array of shape indices to find the intersection with the ray. The indices should
+            correspond with self._mesh.displayed_triangles.
         ray_position : np.ndarray
-            (3,) array with the coordinate of the starting point of the ray.
+            (3,) array with the coordinate of the starting point of the ray in layer coordinates.
+            Only provide the 3 displayed dimensions.
         ray_direction : np.ndarray
-            (3,) array of the normal direction of the ray.
+            (3,) array of the normal direction of the ray in layer coordinates.
+            Only provide the 3 displayed dimensions.
 
         Returns
         -------
         intersection_points : np.ndarray
-            (n x 3) array of the intersection of the ray with each of the specified shapes.
+            (n x 3) array of the intersection of the ray with each of the specified shapes in layer coordinates.
+            Only the 3 displayed dimensions are provided.
         """
         triangles = self._mesh.vertices[self._mesh.displayed_triangles]
-        intersected_triangles = triangles[shape_indices]
+        intersected_triangles = triangles[triangle_indices]
         intersection_points = intersect_ray_with_triangle(
             ray_position=ray_position,
             ray_direction=ray_direction,
