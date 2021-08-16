@@ -701,22 +701,6 @@ class Window:
         else:
             self._qt_window._preferences_dialog.raise_()
 
-    def _reset_preference_states(self):
-        # resetting plugin states in plugin manager
-        plugin_manager._blocked.clear()
-
-        plugin_manager.discover()
-
-        # need to reset call order to defaults
-        settings = get_settings()
-        plugin_manager.set_call_order(
-            settings.plugins.call_order
-            or settings.plugins._defaults.get('call_order', {})
-        )
-
-        # reset the keybindings in action manager
-        self.qt_viewer._bind_shortcuts()
-
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
         settings = get_settings()
