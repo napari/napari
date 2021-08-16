@@ -29,7 +29,7 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
 
     Parameters
     ----------
-    path: Path, optional
+    path : Path, optional
         The path to read/write the settings from.
 
     Returns
