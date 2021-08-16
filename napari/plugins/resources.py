@@ -1,7 +1,6 @@
 """Handling of theme data by the hook specification."""
 import typing as ty
 from logging import getLogger
-from pathlib import Path
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
@@ -173,30 +172,30 @@ def register_plugin_resources(plugin: ty.Optional[str] = None):
     """
     from .._qt.qt_resources import _register_napari_resources
 
-    # get data from each plugin (or single specified plugin)
-    qss_files = get_qss_from_plugins(plugin)
-    svg_paths = get_icons_from_plugins(plugin)
+    # # get data from each plugin (or single specified plugin)
+    # qss_files = get_qss_from_plugins(plugin)
+    # svg_paths = get_icons_from_plugins(plugin)
 
-    force_rebuild = False
+    force_rebuild = True
 
-    # register icons
-    if svg_paths:
-        from ..resources._icons import ICONS
-
-        for plugin_name, icon in svg_paths:
-            icon = Path(icon)
-            if icon.suffix == ".svg":
-                ICONS[f"{plugin_name}/{icon.stem}"] = str(icon)
-        force_rebuild = True
-    # register qss files
-    if qss_files:
-        from .._qt.qt_resources import STYLES
-
-        for style in qss_files:
-            style = Path(style)
-            if style.suffix == ".qss":
-                STYLES[style.stem] = str(style)
-        force_rebuild = True
+    # # register icons
+    # if svg_paths:
+    #     from ..resources._icons import ICONS
+    #
+    #     for plugin_name, icon in svg_paths:
+    #         icon = Path(icon)
+    #         if icon.suffix == ".svg":
+    #             ICONS[f"{plugin_name}/{icon.stem}"] = str(icon)
+    #     force_rebuild = True
+    # # register qss files
+    # if qss_files:
+    #     from .._qt.qt_resources import STYLES
+    #
+    #     for style in qss_files:
+    #         style = Path(style)
+    #         if style.suffix == ".qss":
+    #             STYLES[style.stem] = str(style)
+    #     force_rebuild = True
 
     # since there were some changes to the underlying icons/stylesheets/theme coloring
     # the resources should be regenerated

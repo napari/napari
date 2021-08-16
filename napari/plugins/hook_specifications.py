@@ -498,7 +498,7 @@ def napari_experimental_provide_dock_widget() -> Union[
     """
 
 
-@napari_hook_specification(firstresult=True)
+@napari_hook_specification(historic=True)
 def napari_experimental_provide_qss() -> List[str]:
     """Provide GUI stylesheets that will supplement or overwrite existing
     napari stylesheets.
@@ -521,7 +521,7 @@ def napari_experimental_provide_qss() -> List[str]:
     """
 
 
-@napari_hook_specification(firstresult=True)
+@napari_hook_specification(historic=True)
 def napari_experimental_provide_icons() -> List[str]:
     """Provide GUI svg icons that will supplement or overwrite existing napari icons.
 

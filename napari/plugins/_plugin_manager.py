@@ -82,6 +82,8 @@ class NapariPluginManager(PluginManager):
             str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
         ] = {}
         self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
+        self._icons_data: Dict[str, Dict[str, str]] = {}
+        self._qss_data: Dict[str, Dict[str, str]] = {}
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
@@ -121,11 +123,17 @@ class NapariPluginManager(PluginManager):
 
         plugin = super().unregister(name_or_object)
 
+        # unregister styles and icons
+        self.unregister_icons(_name)
+        self.unregister_qss(_name)
+
         # remove widgets, sample data
         for _dict in (
             self._dock_widgets,
             self._sample_data,
             self._function_widgets,
+            self._qss_data,
+            self._icons_data,
         ):
             _dict.pop(_name, None)
 
@@ -622,3 +630,123 @@ class NapariPluginManager(PluginManager):
                     ext=ext,
                 )
                 warn(msg)
+
+    # THEME/STYLE/ICONS ---------------------------
+
+    def discover_icons(self):
+        """Trigger discovery of icons provided by plugins.
+
+        As a "historic" hook, this should only need to be called once.
+        (historic here means that even plugins that are discovered after this
+        is called will be added.)
+        """
+        if self._icons_data:
+            return
+        self.hook.napari_experimental_provide_icons.call_historic(
+            result_callback=partial(self.register_icons), with_impl=True
+        )
+
+    def register_icons(
+        self,
+        data: Dict[str, Dict[str, Union[str, Tuple, List]]],
+        hookimpl: HookImplementation,
+    ):
+        """Register icons returned by the `napari_experimental_provide_icons` hook.
+        The `icons` data should be provided as an iterable containing full paths to
+        svg icons.
+        """
+        from ..resources import ICONS
+
+        plugin_name = hookimpl.plugin_name
+        hook_name = '`napari_experimental_provide_icons`'
+        if not isinstance(data, Iterable):
+            warn_message = trans._(
+                'Plugin {plugin_name!r} provided a non-iterable object to {hook_name!r}: data ignored',
+                deferred=True,
+                plugin_name=plugin_name,
+                hook_name=hook_name,
+            )
+            warn(message=warn_message)
+            return
+
+        _data = {}
+        for icon in data:
+            icon = Path(icon)
+            if not icon.exists() and icon.suffix != ".svg":
+                continue
+            _data[f"{plugin_name}:{icon.stem}"] = str(icon)
+            ICONS[f"{plugin_name}:{icon.stem}"] = str(icon)
+
+        if plugin_name not in self._icons_data:
+            self._icons_data[plugin_name] = {}
+        self._icons_data[plugin_name].update(_data)
+
+    def unregister_icons(self, plugin_name: str):
+        """Unregister icon data from napari."""
+        # TODO: this will have to update the UI
+        from ..resources import ICONS
+
+        if plugin_name not in self._icons_data:
+            return
+
+        for icon in self._icons_data[plugin_name]:
+            ICONS.pop(icon)
+
+    def discover_qss(self):
+        """Trigger discovery of icons provided by plugins.
+
+        As a "historic" hook, this should only need to be called once.
+        (historic here means that even plugins that are discovered after this
+        is called will be added.)
+        """
+        if self._qss_data:
+            return
+        self.hook.napari_experimental_provide_qss.call_historic(
+            result_callback=partial(self.register_qss), with_impl=True
+        )
+
+    def register_qss(
+        self,
+        data: Dict[str, Dict[str, Union[str, Tuple, List]]],
+        hookimpl: HookImplementation,
+    ):
+        """Register icons returned by the `napari_experimental_provide_icons` hook.
+        The `icons` data should be provided as an iterable containing full paths to
+        svg icons.
+        """
+        from .._qt.qt_resources import STYLES
+
+        plugin_name = hookimpl.plugin_name
+        hook_name = '`napari_experimental_provide_icons`'
+        if not isinstance(data, Iterable):
+            warn_message = trans._(
+                'Plugin {plugin_name!r} provided a non-iterable object to {hook_name!r}: data ignored',
+                deferred=True,
+                plugin_name=plugin_name,
+                hook_name=hook_name,
+            )
+            warn(message=warn_message)
+            return
+
+        _data = {}
+        for stylesheet in data:
+            stylesheet = Path(stylesheet)
+            if not stylesheet.exists() and stylesheet.suffix != ".qss":
+                continue
+            _data[stylesheet.stem] = str(stylesheet)
+            STYLES[stylesheet.stem] = str(stylesheet)
+
+        if plugin_name not in self._qss_data:
+            self._qss_data[plugin_name] = {}
+        self._qss_data[plugin_name].update(_data)
+
+    def unregister_qss(self, plugin_name: str):
+        """Unregister icon data from napari."""
+        # TODO: this will have to update the UI
+        from .._qt.qt_resources import STYLES
+
+        if plugin_name not in self._qss_data:
+            return
+
+        for stylesheet in self._qss_data[plugin_name]:
+            STYLES.pop(stylesheet)

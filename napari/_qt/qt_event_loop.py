@@ -173,12 +173,16 @@ def get_app(
         perf_config.patch_callables()
 
     if not _app_ref:  # running get_app for the first time
+        from ..plugins import plugin_manager
+
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
 
         # this will register all of our resources (icons) with Qt, so that they
         # can be used in qss files and elsewhere.
+        plugin_manager.discover_icons()
+        plugin_manager.discover_qss()
         register_plugin_resources()
 
     _app_ref = app  # prevent garbage collection
