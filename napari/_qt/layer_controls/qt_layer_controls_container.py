@@ -2,16 +2,7 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
-from ...layers import (
-    Image,
-    Labels,
-    Layer,
-    Points,
-    Shapes,
-    Surface,
-    Tracks,
-    Vectors,
-)
+from ... import layers
 from ...utils import config
 from ...utils.translations import trans
 from .qt_image_controls import QtImageControls
@@ -26,13 +17,13 @@ if TYPE_CHECKING:
     from ...components import LayerList
 
 layer_to_controls = {
-    Labels: QtLabelsControls,
-    Image: QtImageControls,  # must be after Labels layer
-    Points: QtPointsControls,
-    Shapes: QtShapesControls,
-    Surface: QtSurfaceControls,
-    Vectors: QtVectorsControls,
-    Tracks: QtTracksControls,
+    layers.Labels: QtLabelsControls,
+    layers.Image: QtImageControls,  # must be after Labels layer
+    layers.Points: QtPointsControls,
+    layers.Shapes: QtShapesControls,
+    layers.Surface: QtSurfaceControls,
+    layers.Vectors: QtVectorsControls,
+    layers.Tracks: QtTracksControls,
 }
 
 if config.async_loading:
@@ -132,7 +123,7 @@ class QtLayerControlsContainer(QStackedWidget):
         """
         self._add_layer(event.value)
 
-    def _add_layer(self, layer: Layer):
+    def _add_layer(self, layer: layers.Layer):
         self.widgets[layer] = create_qt_layer_controls(layer)
         self.addWidget(self.widgets[layer])
 
