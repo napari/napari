@@ -378,7 +378,7 @@ void main() {
 
     $after_loop
 
-    /* Set depth value - from visvis TODO
+    /*Set depth value - from visvis TODO
     int iter_depth = int(maxi);
     // Calculate end position in world coordinates
     vec4 position2 = vertexPosition;
@@ -571,6 +571,7 @@ ISO_SNIPPETS = dict(
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative
         gl_FragColor = vec4(0.0);
+        int surface_found = 0;
     """,
     in_loop="""
         if (val > u_threshold-0.2) {
@@ -582,6 +583,14 @@ ISO_SNIPPETS = dict(
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color.r);
                     iter = nsteps;
+                    
+                    //Set depth value
+                    float clip_distance = length(farpos - nearpos);
+                    vec3 surface_point = iloc * u_shape;
+                    float surface_dist = length(surface_point - nearpos);
+                    float depth = surface_dist / clip_distance;
+                    gl_FragDepth = depth;
+                    surface_found = 1;
                     break;
                 }
                 iloc += step * 0.1;
@@ -589,6 +598,9 @@ ISO_SNIPPETS = dict(
         }
         """,
     after_loop="""
+        if (surface_found == 0) {
+            discard;
+        }
         """,
 )
 
@@ -1168,7 +1180,6 @@ class VolumeVisual(Visual):
     def _prepare_transforms(self, view):
         trs = view.transforms
         view.view_program.vert['transform'] = trs.get_transform()
-
         view_tr_f = trs.get_transform('visual', 'document')
         view_tr_i = view_tr_f.inverse
         view.view_program.vert['viewtransformf'] = view_tr_f
