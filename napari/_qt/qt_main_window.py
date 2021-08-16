@@ -2,12 +2,23 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+from __future__ import annotations
+
 import inspect
 import os
 import sys
 import time
 import warnings
-from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon, QKeySequence
@@ -52,6 +63,9 @@ from .widgets.qt_viewer_dock_widget import (
     QtViewerDockWidget,
 )
 
+if TYPE_CHECKING:
+    from ..viewer import Viewer
+
 _sentinel = object()
 
 
@@ -65,9 +79,9 @@ class _QtMainWindow(QMainWindow):
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[List['_QtMainWindow']] = []
+    _instances: ClassVar[List[_QtMainWindow]] = []
 
-    def __init__(self, window: 'Window', parent=None) -> None:
+    def __init__(self, window: Window, parent=None) -> None:
         super().__init__(parent)
         self._ev = None
         self._window = window
@@ -127,7 +141,7 @@ class _QtMainWindow(QMainWindow):
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
-    def current_viewer(cls):
+    def current_viewer(cls) -> Viewer:
         window = cls.current()
         return window.qt_viewer.viewer if window else None
 
@@ -404,7 +418,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer, *, show: bool = True):
+    def __init__(self, viewer: Viewer, *, show: bool = True):
         settings = get_settings()
 
         # create QApplication if it doesn't already exist

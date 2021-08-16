@@ -112,7 +112,6 @@ class _BaseEventedItemView(Generic[ItemType]):
 
     def _on_py_selection_change(self: QAbstractItemView, event: Event):
         """The python model selection has changed. Update the Qt view."""
-        print("py selection")
         sm = self.selectionModel()
         for is_selected, idx in chain(
             zip(repeat(sm.Select), event.added),

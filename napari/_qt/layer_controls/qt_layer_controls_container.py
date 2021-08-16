@@ -1,6 +1,17 @@
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
-from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
+from ...layers import (
+    Image,
+    Labels,
+    Layer,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 from ...utils import config
 from ...utils.translations import trans
 from .qt_image_controls import QtImageControls
@@ -10,6 +21,9 @@ from .qt_shapes_controls import QtShapesControls
 from .qt_surface_controls import QtSurfaceControls
 from .qt_tracks_controls import QtTracksControls
 from .qt_vectors_controls import QtVectorsControls
+
+if TYPE_CHECKING:
+    from ...components import LayerList
 
 layer_to_controls = {
     Labels: QtLabelsControls,
@@ -62,40 +76,41 @@ class QtLayerControlsContainer(QStackedWidget):
 
     Parameters
     ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
+    layers : napari.components.LayerList
+        list of layers in the viewer.
 
     Attributes
     ----------
     empty_widget : qtpy.QtWidgets.QFrame
         Empty placeholder frame for when no layer is selected.
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
     widgets : dict
         Dictionary of key value pairs matching layer with its widget controls.
         widgets[layer] = controls
     """
 
-    def __init__(self, viewer):
+    def __init__(self, layers: 'LayerList'):
         super().__init__()
         self.setProperty("emphasized", True)
-        self.viewer = viewer
-
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
         self.widgets = {}
         self.addWidget(self.empty_widget)
-        self.setCurrentWidget(self.empty_widget)
 
-        viewer.layers.events.inserted.connect(self._add)
-        viewer.layers.events.removed.connect(self._remove)
-        viewer.layers.selection.events.active.connect(self._display)
+        for layer in layers:
+            self._add_layer(layer)
+        self.setCurrentWidget(
+            self.widgets.get(layers.selection.active, self.empty_widget)
+        )
+
+        layers.events.inserted.connect(self._add)
+        layers.events.removed.connect(self._remove)
+        layers.selection.events.active.connect(self._display)
 
         @self.destroyed.connect
         def _destroy():
-            viewer.layers.events.inserted.disconnect(self._add)
-            viewer.layers.events.removed.disconnect(self._remove)
-            viewer.layers.selection.events.active.disconnect(self._display)
+            layers.events.inserted.disconnect(self._add)
+            layers.events.removed.disconnect(self._remove)
+            layers.selection.events.active.disconnect(self._display)
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.
@@ -105,12 +120,7 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        layer = event.value
-        if layer is None:
-            self.setCurrentWidget(self.empty_widget)
-        else:
-            controls = self.widgets[layer]
-            self.setCurrentWidget(controls)
+        self.setCurrentWidget(self.widgets.get(event.value, self.empty_widget))
 
     def _add(self, event):
         """Add the controls target layer to the list of control widgets.
@@ -120,10 +130,11 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.value`.
         """
-        layer = event.value
-        controls = create_qt_layer_controls(layer)
-        self.addWidget(controls)
-        self.widgets[layer] = controls
+        self._add_layer(event.value)
+
+    def _add_layer(self, layer: Layer):
+        self.widgets[layer] = create_qt_layer_controls(layer)
+        self.addWidget(self.widgets[layer])
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
