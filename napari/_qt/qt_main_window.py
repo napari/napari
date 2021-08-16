@@ -337,7 +337,6 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
-        print("close Event")
         self._window.events.closed()
         if self._ev and self._ev.isRunning():
             self._ev.quit()
@@ -482,11 +481,42 @@ class Window:
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
-
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
+
+        @self._qt_window.destroyed.connect
+        def _disconnect():
+            settings.appearance.events.theme.disconnect(self._update_theme)
+            settings.application.events.playback_fps.disconnect(
+                self._update_widget_states
+            )
+            settings.application.events.playback_mode.disconnect(
+                self._update_widget_states
+            )
+            plugin_manager.events.disabled.disconnect(
+                self._rebuild_plugins_menu
+            )
+            plugin_manager.events.disabled.disconnect(
+                self._rebuild_samples_menu
+            )
+            plugin_manager.events.registered.disconnect(
+                self._rebuild_plugins_menu
+            )
+            plugin_manager.events.registered.disconnect(
+                self._rebuild_samples_menu
+            )
+            plugin_manager.events.unregistered.disconnect(
+                self._rebuild_plugins_menu
+            )
+            plugin_manager.events.unregistered.disconnect(
+                self._rebuild_samples_menu
+            )
+            viewer.events.status.disconnect(self._status_changed)
+            viewer.events.help.disconnect(self._help_changed)
+            viewer.events.title.disconnect(self._title_changed)
+            viewer.events.theme.disconnect(self._update_theme)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
