@@ -13,8 +13,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
-from ...settings import get_settings
 from ...utils.translations import trans
 
 if TYPE_CHECKING:
@@ -36,9 +34,12 @@ class PreferencesDialog(QDialog):
     closed = Signal()
 
     def __init__(self, parent=None):
+        from ...settings import get_settings
+
         super().__init__(parent)
         self.setWindowTitle(trans._("Preferences"))
 
+        self._settings = get_settings()
         self._stack = QStackedWidget(self)
         self._list = QListWidget(self)
         self._list.setObjectName("Preferences")
@@ -50,14 +51,14 @@ class PreferencesDialog(QDialog):
         self._button_ok = QPushButton(trans._("OK"))
         self._button_ok.clicked.connect(self.accept)
         self._button_ok.setDefault(True)
-        self._default_restore = QPushButton(trans._("Restore defaults"))
-        self._default_restore.clicked.connect(self._restore_default_dialog)
+        self._button_restore = QPushButton(trans._("Restore defaults"))
+        self._button_restore.clicked.connect(self._restore_default_dialog)
 
         # Layout
         left_layout = QVBoxLayout()
         left_layout.addWidget(self._list)
         left_layout.addStretch()
-        left_layout.addWidget(self._default_restore)
+        left_layout.addWidget(self._button_restore)
         left_layout.addWidget(self._button_cancel)
         left_layout.addWidget(self._button_ok)
 
@@ -86,40 +87,36 @@ class PreferencesDialog(QDialog):
     def _rebuild_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
 
-        settings = get_settings()
-        self._starting_values = settings.dict()
+        self._starting_values = self._settings.dict()
 
         self._list.clear()
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
-        for field in settings.__fields__.values():
-            self._list.addItem(field.field_info.title or field.name)
-            self._stack.addWidget(self._build_page_dialog(field))
+        for field in self._settings.__fields__.values():
+            self._add_page(field)
 
         self._list.setCurrentRow(0)
 
-    def _build_page_dialog(self, field: 'ModelField'):
+    def _add_page(self, field: 'ModelField'):
         """Builds the preferences widget using the json schema builder.
 
         Parameters
         ----------
-        schema : dict
-            Json schema including all information to build each page in the
-            preferences dialog.
-        values : dict
-            Dictionary of current values set in preferences.
+        field : ModelField
+            subfield for which to create a page.
         """
+        from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
+
         schema, values = self._get_page_dict(field)
         name = field.field_info.title or field.name
-        settings = get_settings()
 
         form = WidgetBuilder().create_form(schema, self.ui_schema)
         # set state values for widget
         form.widget.state = values
         # make settings follow state of the form widget
         form.widget.on_changed.connect(
-            lambda d: getattr(settings, name.lower()).update(d)
+            lambda d: getattr(self._settings, name.lower()).update(d)
         )
 
         # TODO: this shouldn't live here... if there is a coupling/dependency
@@ -128,7 +125,9 @@ class PreferencesDialog(QDialog):
         if (
             name.lower() == 'experimental'
             and values['octree']
-            and settings.env_settings().get('experimental', {}).get('async_')
+            and self._settings.env_settings()
+            .get('experimental', {})
+            .get('async_')
             not in (None, '0')
         ):
             form_layout = form.widget.layout()
@@ -139,7 +138,8 @@ class PreferencesDialog(QDialog):
                     wdg.setDisabled(True)
                     break
 
-        return form
+        self._list.addItem(field.field_info.title or field.name)
+        self._stack.addWidget(form)
 
     def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict, dict]:
         """Provides the schema, set of values for each setting, and the
@@ -155,7 +155,7 @@ class PreferencesDialog(QDialog):
                 schema["properties"][name]["type"] = "string"
 
         # Need to remove certain properties that will not be displayed on the GUI
-        setting = getattr(get_settings(), field.name)
+        setting = getattr(self._settings, field.name)
         with setting.enums_as_values():
             values = setting.dict()
         napari_config = getattr(setting, "NapariConfig", None)
@@ -176,7 +176,7 @@ class PreferencesDialog(QDialog):
             QMessageBox.RestoreDefaults,
         )
         if response == QMessageBox.RestoreDefaults:
-            get_settings().reset()
+            self._settings.reset()
             self._rebuild_dialog()  # TODO: do we need this?
 
     def _restart_required_dialog(self):
@@ -195,5 +195,5 @@ class PreferencesDialog(QDialog):
 
     def reject(self):
         """Restores the settings in place when dialog was launched."""
-        get_settings().update(self._starting_values)
+        self._settings.update(self._starting_values)
         super().reject()
