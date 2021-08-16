@@ -20,12 +20,12 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt import QElidingLabel
 
 from ...plugins import plugin_manager as napari_plugin_manager
 from ...settings import get_settings
 from ...utils.translations import trans
 from ..utils import drag_with_pixmap
-from ..widgets.qt_eliding_label import ElidingLabel
 
 if TYPE_CHECKING:
     from napari_plugin_engine import PluginManager
@@ -87,7 +87,7 @@ class ImplementationListItem(QFrame):
         self.update_position_label()
 
         self.setToolTip(trans._("Click and drag to change call order"))
-        self.plugin_name_label = ElidingLabel(parent=self)
+        self.plugin_name_label = QElidingLabel()
         self.plugin_name_label.setObjectName('small_text')
         self.plugin_name_label.setText(item.hook_implementation.plugin_name)
         plugin_name_size_policy = QSizePolicy(
