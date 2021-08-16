@@ -341,5 +341,4 @@ def test_full_serialize(test_settings: NapariSettings, tmp_path, ext):
 
     Should work with both json and yaml.
     """
-    test_settings.save(tmp_path / 't.yml', exclude_defaults=False)
-    test_settings.save(tmp_path / 't.json', exclude_defaults=False)
+    test_settings.save(tmp_path / f't.{ext}', exclude_defaults=False)
