@@ -690,16 +690,13 @@ class Window:
             win.resized.connect(
                 self._qt_window._update_preferences_dialog_size
             )
-
             if self._qt_window._preferences_dialog_size:
                 win.resize(self._qt_window._preferences_dialog_size)
 
             self._qt_window._preferences_dialog = win
-            # win.valueChanged.connect(self._reset_preference_states)
             win.finished.connect(
                 lambda e: setattr(self._qt_window, '_preferences_dialog', None)
             )
-            win.finished.connect(lambda e: print("finished", e))
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
