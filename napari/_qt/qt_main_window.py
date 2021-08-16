@@ -696,7 +696,10 @@ class Window:
 
             self._qt_window._preferences_dialog = win
             # win.valueChanged.connect(self._reset_preference_states)
-            win.closed.connect(self._on_preferences_closed)
+            win.finished.connect(
+                lambda e: setattr(self._qt_window, '_preferences_dialog', None)
+            )
+            win.finished.connect(lambda e: print("finished", e))
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
@@ -716,10 +719,6 @@ class Window:
 
         # reset the keybindings in action manager
         self.qt_viewer._bind_shortcuts()
-
-    def _on_preferences_closed(self):
-        """Reset preferences dialog variable."""
-        self._qt_window._preferences_dialog = None
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
