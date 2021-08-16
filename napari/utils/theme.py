@@ -303,5 +303,5 @@ _themes = EventedDict(
     },
     basetype=Theme,
 )
-_themes.events.added.connect(rebuild_theme_settings)
-_themes.events.removed.connect(rebuild_theme_settings)
+# _themes.events.added.connect(rebuild_theme_settings)
+# _themes.events.removed.connect(rebuild_theme_settings)
