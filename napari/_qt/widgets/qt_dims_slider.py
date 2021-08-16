@@ -72,11 +72,17 @@ class QtDimSliderWidget(QWidget):
         sep.setObjectName('slice_label_sep')
 
         settings = get_settings()
-
         self._fps = settings.application.playback_fps
+        settings.application.events.playback_fps.connect(
+            lambda e: setattr(self, 'fps', e.value)
+        )
+
         self._minframe = None
         self._maxframe = None
         self._loop_mode = settings.application.playback_mode
+        settings.application.events.playback_fps.connect(
+            lambda e: setattr(self, 'loop_mode', e.value)
+        )
 
         layout = QHBoxLayout()
         self._create_axis_label_widget()

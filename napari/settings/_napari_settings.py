@@ -51,6 +51,10 @@ class NapariSettings(EventedConfigFileSettings):
     class Config:
         env_prefix = 'napari_'
         use_enum_values = False
+        # all of these fields are evented models, so we don't want to break
+        # connections by setting the top-level field itself
+        # (you can still mutate attributes in the subfields)
+        allow_mutation = False
 
     def __str__(self):
         out = 'NapariSettings (defaults excluded)\n'
