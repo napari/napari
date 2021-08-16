@@ -1,15 +1,17 @@
 import napari
 import numpy as np
 
-data_0 = np.zeros((20, 50, 50))
-data_0[10:20, 25:35, 25:35] = 1
+im_data = np.zeros((50, 50, 50))
+im_data[30:40, 25:35, 25:35] = 1
+viewer = napari.view_image(im_data, colormap='magenta', rendering='iso')
+viewer.add_image(im_data, colormap='green', rendering='iso', translate=(30, 0, 0))
 
-data_1 = np.zeros((50, 50, 50))
-data_1[30:40, 25:35, 25:35] = 1
-
-viewer = napari.view_image(data_0, colormap='magenta', rendering='iso')
-viewer.add_image(data_1, colormap='green', rendering='iso')
-viewer.add_points([[25, 30, 30]], size=4)
+points_data = [
+    [50, 30, 30],
+    [25, 30, 30],
+    [75, 30, 30]
+]
+viewer.add_points(points_data, size=4)
 
 viewer.dims.ndisplay = 3
 
