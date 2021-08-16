@@ -34,9 +34,6 @@ YamlDumper.add_multi_representer(
 YamlDumper.add_representer(
     set, lambda dumper, data: dumper.represent_list(data)
 )
-YamlDumper.add_multi_representer(
-    set, lambda dumper, data: dumper.represent_list(data)
-)
 
 
 class PydanticYamlMixin(BaseModel):
