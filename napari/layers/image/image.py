@@ -279,7 +279,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._slicing_plane = PlaneManager()
+        self._experimental_slicing_plane = PlaneManager()
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
@@ -298,7 +298,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.interpolation = interpolation
         self.rendering = rendering
         if plane is not None:
-            self.slicing_plane.update(plane)
+            self.experimental_slicing_plane.update(plane)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -498,12 +498,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.rendering()
 
     @property
-    def slicing_plane(self):
-        return self._slicing_plane
+    def experimental_slicing_plane(self):
+        return self._experimental_slicing_plane
 
-    @slicing_plane.setter
+    @experimental_slicing_plane.setter
     def plane(self, value: Union[dict, PlaneManager]):
-        self._plane.update(value)
+        self._experimental_slicing_plane.update(value)
 
     @property
     def loaded(self):
@@ -833,7 +833,7 @@ class Image(_ImageBase):
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
-                'plane': self.slicing_plane.dict(),
+                'plane': self.experimental_slicing_plane.dict(),
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,

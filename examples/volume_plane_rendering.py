@@ -68,7 +68,7 @@ class PlaneWidget(QWidget):
 
 def update_plane_y_position(widget):
     plane_position = [32, widget.position_slider.value(), 32]
-    viewer.layers['plane'].slicing_plane.position = plane_position
+    viewer.layers['plane'].experimental_slicing_plane.position = plane_position
 
 
 def update_plane_thickness(widget):
