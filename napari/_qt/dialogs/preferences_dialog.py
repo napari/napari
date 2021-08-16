@@ -119,9 +119,9 @@ class PreferencesDialog(QDialog):
             lambda d: getattr(self._settings, name.lower()).update(d)
         )
 
+        # need to disable async if octree is enabled.
         # TODO: this shouldn't live here... if there is a coupling/dependency
         # between these settings, it should be declared in the settings schema
-        # need to disable async if octree is enabled.
         if (
             name.lower() == 'experimental'
             and values['octree']
@@ -131,7 +131,7 @@ class PreferencesDialog(QDialog):
             not in (None, '0')
         ):
             form_layout = form.widget.layout()
-            for i in form_layout.count():
+            for i in range(form_layout.count()):
                 wdg = form_layout.itemAt(i, form_layout.FieldRole).widget()
                 if getattr(wdg, '_name') == 'async_':
                     wdg.opacity.setOpacity(0.3)
