@@ -8,10 +8,12 @@ from ...utils.geometry import intersect_line_with_plane_3d
 from ...utils.translations import trans
 
 
-class PlaneManager(EventedModel):
-    """Defines a plane in 3D and provides utility methods and events to handle it.
+class Plane(EventedModel):
+    """Defines a plane in 3D (with optional thickness) and provides utility methods
+    and events to handle it.
 
-    Planes are defined by a position and a normal vector.
+    A plane is defined by a position, a normal vector and a thickness value, and can
+    be enabled or disabled.
 
     Attributes
     ----------
@@ -19,6 +21,8 @@ class PlaneManager(EventedModel):
         A 3D position on the plane, defined in data coordinates.
     normal : 3-tuple
         A 3D unit vector normal to the plane, defined in data coordinates.
+    thickness : float
+        Thickness of the slice.
     enabled : bool
         Whether the plane is considered enabled.
     """
@@ -26,6 +30,7 @@ class PlaneManager(EventedModel):
     position: Tuple[float, float, float] = (0, 0, 0)
     normal: Tuple[float, float, float] = (1, 0, 0)
     enabled: bool = False
+    thickness: float = 10.0
 
     @validator('normal')
     def _normalise_vector(cls, v):
@@ -49,7 +54,7 @@ class PlaneManager(EventedModel):
 
     @classmethod
     def from_points(cls, a, b, c):
-        """Derive a PlaneManager from three points.
+        """Derive a Plane from three points.
 
         Parameters
         ----------
@@ -62,7 +67,7 @@ class PlaneManager(EventedModel):
 
         Returns
         -------
-        plane : PlaneManager
+        plane : Plane
         """
         a = np.array(a)
         b = np.array(b)
@@ -126,7 +131,7 @@ class PlaneList(SelectableEventedList):
                     shape=array.shape,
                 )
             )
-        planes = [PlaneManager.from_array(sub_arr) for sub_arr in array]
+        planes = [Plane.from_array(sub_arr) for sub_arr in array]
         return cls(planes)
 
     @classmethod
@@ -156,28 +161,6 @@ class PlaneList(SelectableEventedList):
                 normal[axis] = -direction
 
                 planes.append(
-                    PlaneManager(
-                        position=position, normal=normal, enabled=True
-                    )
+                    Plane(position=position, normal=normal, enabled=True)
                 )
         return cls(planes)
-
-
-class ThickPlaneManager(PlaneManager):
-    """Defines a thick plane in 3D and provides utility methods and events to handle it.
-
-    Thick planes are defined by a position a normal vector and a thickness.
-
-    Attributes
-    ----------
-    position : 3-tuple
-        A 3D position on the plane, defined in data coordinates.
-    normal : 3-tuple
-        A 3D unit vector normal to the plane, defined in data coordinates.
-    thickness : float
-        Thickness of the slice.
-    enabled : bool
-        Whether the plane is considered enabled.
-    """
-
-    thickness: float = 10.0

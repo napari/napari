@@ -5,7 +5,7 @@ import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
-from napari.layers.utils.plane_manager import PlaneList, PlaneManager
+from napari.layers.utils.plane import Plane, PlaneList
 from napari.utils import Colormap
 from napari.utils.transforms.transform_utils import rotate_to_matrix
 
@@ -750,15 +750,13 @@ def test_instiantiate_with_plane_dict():
         assert v == getattr(image.plane, k, v)
 
 
-def test_instiantiate_with_plane_manager():
+def test_instiantiate_with_plane():
     """Test that an image layer can be instantiated with plane parameters
-    in a PlaneManager.
+    in a Plane.
     """
-    plane_manager = PlaneManager(
-        position=(32, 32, 32), normal=(1, 1, 1), thickness=22
-    )
-    image = Image(np.ones((32, 32, 32)), plane=plane_manager)
-    for k, v in plane_manager.dict().items():
+    plane = Plane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
+    image = Image(np.ones((32, 32, 32)), plane=plane)
+    for k, v in plane.dict().items():
         assert v == getattr(image.plane, k, v)
 
 

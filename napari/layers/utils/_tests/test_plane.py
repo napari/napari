@@ -2,78 +2,69 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from napari.layers.utils.plane_manager import PlaneList, PlaneManager
+from napari.layers.utils.plane import Plane, PlaneList
 
 
-def test_plane_manager_instantiation():
-    plane = PlaneManager(position=(32, 32, 32), normal_vector=(1, 0, 0))
-    assert isinstance(plane, PlaneManager)
+def test_plane_instantiation():
+    plane = Plane(position=(32, 32, 32), normal_vector=(1, 0, 0), thickness=2)
+    assert isinstance(plane, Plane)
 
 
-def test_plane_manager_vector_normalisation():
-    plane = PlaneManager(position=(0, 0, 0), normal_vector=(5, 0, 0))
+def test_plane_vector_normalisation():
+    plane = Plane(position=(0, 0, 0), normal_vector=(5, 0, 0))
     assert np.allclose(plane.normal, (1, 0, 0))
 
 
-def test_plane_manager_vector_setter():
-    plane = PlaneManager(position=(0, 0, 0), normal_vector=(1, 0, 0))
+def test_plane_vector_setter():
+    plane = Plane(position=(0, 0, 0), normal_vector=(1, 0, 0))
     plane.normal = (1, 0, 0)
 
 
-def test_plane_manager_from_points():
+def test_plane_from_points():
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
-    plane = PlaneManager.from_points(*points)
-    assert isinstance(plane, PlaneManager)
+    plane = Plane.from_points(*points)
+    assert isinstance(plane, Plane)
     assert plane.normal == (0, 0, 1)
     assert np.allclose(plane.position, np.mean(points, axis=0))
 
 
-def test_update_plane_manager_from_dict():
+def test_update_plane_from_dict():
     properties = {
         'position': (0, 0, 0),
         'normal': (1, 0, 0),
         'enabled': True,
     }
-    plane = PlaneManager()
+    plane = Plane()
     plane.update(properties)
     for k, v in properties.items():
         assert getattr(plane, k) == v
 
 
-def test_plane_manager_from_array():
+def test_plane_from_array():
     pos = (0, 0, 0)
     norm = (0, 0, 1)
     array = np.array([pos, norm])
-    plane = PlaneManager.from_array(array)
-    assert isinstance(plane, PlaneManager)
+    plane = Plane.from_array(array)
+    assert isinstance(plane, Plane)
     assert plane.position == pos
     assert plane.normal == norm
 
 
-def test_plane_manager_to_array():
+def test_plane_to_array():
     pos = (0, 0, 0)
     norm = (0, 0, 1)
     array = np.array([pos, norm])
-    plane = PlaneManager(position=pos, normal=norm)
+    plane = Plane(position=pos, normal=norm)
     assert np.allclose(plane.as_array(), array)
 
 
-def test_plane_manager_3_tuple():
+def test_plane_3_tuple():
     """Test for failure to instantiate with non 3-sequences of numbers"""
     with pytest.raises(ValidationError):
-        plane = PlaneManager(  # noqa: F841
+        plane = Plane(  # noqa: F841
             position=(32, 32, 32, 32),
             normal_vector=(1, 0, 0, 0),
         )
-
-
-def test_thick_plane_manager_instantiation():
-    plane = PlaneManager(
-        position=(32, 32, 32),
-        normal_vector=(1, 0, 0),
-        thickness=10,
-    )
-    assert isinstance(plane, PlaneManager)
 
 
 def test_plane_list_instantiation():

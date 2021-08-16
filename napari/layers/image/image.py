@@ -16,7 +16,7 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ..utils.plane_manager import PlaneList, PlaneManager, ThickPlaneManager
+from ..utils.plane import Plane, PlaneList
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
@@ -107,11 +107,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    plane : dict or PlaneManager
+    plane : dict or Plane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
-    clipping_planes : list of dicts, list of PlaneManager, or PlaneList
+    clipping_planes : list of dicts, list of Plane, or PlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
 
@@ -161,7 +161,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Threshold for isosurface.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
-    plane : ThickPlaneManager
+    plane : Plane
         Properties defining plane rendering in 3D.
     clipping_planes : PlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
@@ -188,7 +188,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
-        plane=PlaneManager(),
+        plane=None,
         clipping_planes=None,
         iso_threshold=0.5,
         attenuation=0.05,
@@ -285,7 +285,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._plane = ThickPlaneManager()
+        self._plane = Plane(thickness=10)
         self._clipping_planes = PlaneList()
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
@@ -518,7 +518,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._plane
 
     @plane.setter
-    def plane(self, value: Union[dict, PlaneManager]):
+    def plane(self, value: Union[dict, Plane]):
         self._plane.update(value)
 
     @property
@@ -526,13 +526,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._clipping_planes
 
     @clipping_planes.setter
-    def clipping_planes(
-        self, value: Union[List[PlaneManager, dict], PlaneList]
-    ):
+    def clipping_planes(self, value: Union[List[Plane, dict], PlaneList]):
         self._clipping_planes.clear()
         if value is not None:
             for new_plane in value:
-                plane = PlaneManager()
+                plane = Plane()
                 plane.update(new_plane)
                 self._clipping_planes.append(plane)
 

@@ -25,7 +25,6 @@ from .. import layers
 from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
-from ..layers.utils.plane_manager import PlaneManager
 from ..layers.utils.stack_utils import split_channels
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
@@ -557,7 +556,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
-        plane=PlaneManager(),
+        plane=None,
         clipping_planes=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
@@ -672,7 +671,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Properties defining plane rendering in 3D. Properties are defined
             in data coordinates. Valid dictionary keys are
             {'position', 'normal_vector', 'thickness', and 'enabled'}.
-        clipping_planes : list of dicts, list of PlaneManager, or PlaneList
+        clipping_planes : list of dicts, list of Plane, or PlaneList
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
 
