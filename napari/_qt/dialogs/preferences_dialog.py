@@ -65,6 +65,7 @@ class PreferencesDialog(QDialog):
         self.layout().addWidget(self._stack, 3)
 
         # Build dialog from settings
+        self._starting_values = {}
         self._rebuild_dialog()
 
     def _restart_dialog(self):
@@ -83,8 +84,10 @@ class PreferencesDialog(QDialog):
     def _rebuild_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
 
-        self._list.clear()
+        settings = get_settings()
+        self._starting_values = settings.dict()
 
+        self._list.clear()
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
@@ -95,7 +98,7 @@ class PreferencesDialog(QDialog):
         self._values_dict = {}
         self._setting_changed_dict = {}
 
-        for page, field in get_settings().__fields__.items():
+        for page, field in settings.__fields__.items():
             schema, values, properties = self._get_page_dict(field)
 
             self._setting_changed_dict[page] = {}
@@ -154,10 +157,13 @@ class PreferencesDialog(QDialog):
         # set state values for widget
         form.widget.state = values
 
+        # TODO: this shouldn't live here... if there is a coupling/dependency
+        # between these settings, it should be declared in the settings schema
         # need to disable async if octree is enabled.
         if name.lower() == 'experimental' and values['octree'] is True:
             form = self._disable_async(form, values)
 
+        form.widget.on_changed.connect(lambda *a: print("changed", a))
         form.widget.on_changed.connect(
             lambda d: self.check_differences(
                 d, self._values_dict[name.lower()]
@@ -179,30 +185,6 @@ class PreferencesDialog(QDialog):
             get_settings().reset()
             self._rebuild_dialog()  # TODO: do we need this?
 
-    def reject(self):
-        """Restores the settings in place when dialog was launched."""
-        # Need to check differences for each page.
-        settings = get_settings()
-        for n in range(self._stack.count()):
-            # Must set the current row so that the proper list is updated
-            # in check differences.
-            self._list.setCurrentRow(n)
-            page = self._list.currentItem().text().split(" ")[0].lower()
-            # get new values for settings.  If they were changed from values at beginning
-            # of preference dialog session, change them back.
-            # Using the settings value seems to be the best way to get the checkboxes right
-            # on the plugin call order widget.
-            field = settings.__fields__[page]
-            schema, new_values, properties = self.get_page_dict(field)
-            self.check_differences(self._values_orig_dict[page], new_values)
-
-        # need to reset plugin_manager to defaults and change keybindings in action_manager.
-        # Emit signal to do this in main window.
-        # self.valueChanged.emit()
-
-        self._list.setCurrentRow(0)
-        super().reject()
-
     def _disable_async(self, form, values, disable=True, state=True):
         """Disable async if octree is True."""
         # need to make sure that if async_ is an environment setting, that we don't
@@ -219,6 +201,26 @@ class PreferencesDialog(QDialog):
         widget.setDisabled(disable)
 
         return form
+
+    def reject(self):
+        """Restores the settings in place when dialog was launched."""
+        get_settings().update(self._starting_values)
+        super().reject()
+
+        # # Need to check differences for each page.
+        # settings = get_settings()
+        # for n in range(self._stack.count()):
+        #     # Must set the current row so that the proper list is updated
+        #     # in check differences.
+        #     self._list.setCurrentRow(n)
+        #     page = self._list.currentItem().text().split(" ")[0].lower()
+        #     # get new values for settings.  If they were changed from values at beginning
+        #     # of preference dialog session, change them back.
+        #     # Using the settings value seems to be the best way to get the checkboxes right
+        #     # on the plugin call order widget.
+        #     field = settings.__fields__[page]
+        #     _, new_values, _ = self._get_page_dict(field)
+        #     self.check_differences(self._values_orig_dict[page], new_values)
 
     def _values_changed(self, page, new_dict, old_dict):
         """Loops through each setting in a page to determine if it changed.
