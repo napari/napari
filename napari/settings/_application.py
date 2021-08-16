@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from pydantic import Field, validator
 
@@ -59,14 +59,14 @@ class ApplicationSettings(EventedModel):
         title=trans._("Save window state"),
         description=trans._("Toggle saving the main window state of widgets."),
     )
-    window_position: Tuple[int, int] = Field(
+    window_position: Optional[Tuple[int, int]] = Field(
         None,
         title=trans._("Window position"),
         description=trans._(
             "Last saved x and y coordinates for the main window. This setting is managed by the application."
         ),
     )
-    window_size: Tuple[int, int] = Field(
+    window_size: Optional[Tuple[int, int]] = Field(
         None,
         title=trans._("Window size"),
         description=trans._(
@@ -87,7 +87,7 @@ class ApplicationSettings(EventedModel):
             "Last saved fullscreen state for the main window. This setting is managed by the application."
         ),
     )
-    window_state: str = Field(
+    window_state: Optional[str] = Field(
         None,
         title=trans._("Window state"),
         description=trans._(
@@ -101,7 +101,7 @@ class ApplicationSettings(EventedModel):
             "Toggle diplaying the status bar for the main window."
         ),
     )
-    preferences_size: Tuple[int, int] = Field(
+    preferences_size: Optional[Tuple[int, int]] = Field(
         None,
         title=trans._("Preferences size"),
         description=trans._(

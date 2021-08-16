@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import warnings
 from abc import ABC, abstractmethod
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from typing import List, Optional, Tuple, Union
 
@@ -357,6 +357,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
             (self.mouse_move_callbacks, self._move_modes),
+            (
+                self.mouse_double_click_callbacks,
+                getattr(
+                    self, '_double_click_modes', defaultdict(lambda: no_op)
+                ),
+            ),
         ]:
             if mode_dict[old_mode] in callback_list:
                 callback_list.remove(mode_dict[old_mode])
