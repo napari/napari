@@ -1,11 +1,9 @@
 import numpy as np
 
-from ...utils.geometry import project_point_onto_plane
+from napari.utils.geometry import project_point_onto_plane
 
 
-def mouse_events_to_projected_distance_data(
-    start_event, end_event, layer, axis
-):
+def mouse_events_to_projected_distance(start_event, end_event, layer, vector):
     """Calculate the projected distance between two mouse events.
 
     The projection of the distance between two mouse events onto a 3D axis
@@ -23,8 +21,10 @@ def mouse_events_to_projected_distance_data(
     projected_distance : float
     """
     # Store the start and end positions in world coordinates
-    start_position = start_event.position[layer._dims_displayed_mask]
-    end_position = end_event.position[layer._dims_displayed_mask]
+    start_position = np.array(start_event.position)[layer._dims_displayed_mask]
+    end_position = np.array(end_event.position)[layer._dims_displayed_mask]
+
+    print(np.allclose(start_position, end_position))
 
     # Project the start and end positions onto a pseudo-canvas, a plane
     # parallel to the rendered canvas in data coordinates.
@@ -36,4 +36,4 @@ def mouse_events_to_projected_distance_data(
     drag_vector_canvas = end_position_canvas - start_position_canvas
 
     # Project the drag vector onto the specified axis and return the distance.
-    return np.dot(drag_vector_canvas, axis)
+    return np.dot(drag_vector_canvas, vector)
