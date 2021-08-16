@@ -1,7 +1,7 @@
 """Handling of theme data by the hook specification."""
+import typing as ty
 from logging import getLogger
 from pathlib import Path
-from typing import List, Optional
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
@@ -11,7 +11,7 @@ from . import plugin_manager
 logger = getLogger(__name__)
 
 
-def get_qss_from_plugins(plugin: Optional[str] = None) -> List[str]:
+def get_qss_from_plugins(plugin: ty.Optional[str] = None) -> ty.List[str]:
     """Iterate through hooks and return stylesheet(s).
 
     This function returns list of paths to qss files. These can then
@@ -44,8 +44,8 @@ def get_qss_from_plugins(plugin: Optional[str] = None) -> List[str]:
                         names=names,
                     )
                 )
-            theme_caller = hook_caller._call_plugin(plugin)
-            if not callable(theme_caller):
+            qss_caller = hook_caller._call_plugin(plugin)
+            if not callable(qss_caller):
                 raise ValueError(
                     trans._(
                         'Plugin {plugin!r} is not callable.',
@@ -53,20 +53,20 @@ def get_qss_from_plugins(plugin: Optional[str] = None) -> List[str]:
                         plugin=plugin,
                     )
                 )
-            qss_files = theme_caller()
+            qss_files = qss_caller()
             return qss_files
 
-    errors: List[PluginCallError] = []
-    skip_impls: List[HookImplementation] = []
+    errors: ty.List[PluginCallError] = []
+    skip_impls: ty.List[HookImplementation] = []
     qss_files = []
     while True:
         result = hook_caller.call_with_result_obj(_skip_impls=skip_impls)
-        theme_caller = result.result  # will raise exceptions if any occurred
-        if not theme_caller:
+        qss_caller = result.result  # will raise exceptions if any occurred
+        if not qss_caller:
             # we're all out of theme plugins
             break
         try:
-            _qss_files = theme_caller()
+            _qss_files = qss_caller()
             if _qss_files:
                 qss_files.extend(_qss_files)
         except Exception as exc:
@@ -86,7 +86,9 @@ def get_qss_from_plugins(plugin: Optional[str] = None) -> List[str]:
     return qss_files
 
 
-def get_icons_from_plugins(plugin: Optional[str] = None) -> List[str]:
+def get_icons_from_plugins(
+    plugin: ty.Optional[str] = None,
+) -> ty.List[ty.Tuple[str, str]]:
     """Iterate through hooks and return paths to svg icons.
 
     This function returns list of paths to svg icon files. These can
@@ -118,8 +120,8 @@ def get_icons_from_plugins(plugin: Optional[str] = None) -> List[str]:
                         names=names,
                     )
                 )
-            theme_caller = hook_caller._call_plugin(plugin)
-            if not callable(theme_caller):
+            icon_caller = hook_caller._call_plugin(plugin)
+            if not callable(icon_caller):
                 raise ValueError(
                     trans._(
                         'Plugin {plugin!r} is not callable.',
@@ -127,20 +129,22 @@ def get_icons_from_plugins(plugin: Optional[str] = None) -> List[str]:
                         plugin=plugin,
                     )
                 )
-            svg_paths = theme_caller()
+            svg_paths = icon_caller()
             return svg_paths
 
-    errors: List[PluginCallError] = []
-    skip_impls: List[HookImplementation] = []
+    errors: ty.List[PluginCallError] = []
+    skip_impls: ty.List[HookImplementation] = []
     svg_paths = []
     while True:
         result = hook_caller.call_with_result_obj(_skip_impls=skip_impls)
-        theme_caller = result.result  # will raise exceptions if any occurred
-        if not theme_caller:
+        icon_caller = result.result  # will raise exceptions if any occurred
+        if not icon_caller:
             # we're all out of theme plugins
             break
         try:
-            _svg_paths = theme_caller()
+            plugin_name = result.implementation.plugin_name
+            _svg_paths = icon_caller()
+            _svg_paths = [(plugin_name, icon) for icon in _svg_paths]
             if _svg_paths:
                 svg_paths.extend(_svg_paths)
         except Exception as exc:
@@ -160,7 +164,7 @@ def get_icons_from_plugins(plugin: Optional[str] = None) -> List[str]:
     return svg_paths
 
 
-def register_plugin_resources(plugin: Optional[str] = None):
+def register_plugin_resources(plugin: ty.Optional[str] = None):
     """Register plugin theme data.
 
     This function will load the theme data and update dictionary
@@ -179,12 +183,11 @@ def register_plugin_resources(plugin: Optional[str] = None):
     if svg_paths:
         from ..resources._icons import ICONS
 
-        for icon in svg_paths:
+        for plugin_name, icon in svg_paths:
             icon = Path(icon)
             if icon.suffix == ".svg":
-                ICONS[icon.stem] = str(icon)
+                ICONS[f"{plugin_name}/{icon.stem}"] = str(icon)
         force_rebuild = True
-
     # register qss files
     if qss_files:
         from .._qt.qt_resources import STYLES

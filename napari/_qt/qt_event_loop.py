@@ -11,7 +11,7 @@ from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
-from ..plugins.theme import register_plugin_resources
+from ..plugins.resources import register_plugin_resources
 from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
