@@ -31,7 +31,6 @@ class PreferencesDialog(QDialog):
     }
 
     resized = Signal(QSize)
-    closed = Signal()
 
     def __init__(self, parent=None):
         from ...settings import get_settings
