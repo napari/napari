@@ -1748,6 +1748,42 @@ def test_to_mask_2d_with_size_4():
     np.testing.assert_array_equal(mask, expected_mask)
 
 
+def test_to_mask_2d_with_size_4_top_left():
+    points = Points([[0, 0]], size=4)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [1, 1, 1, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_4_bottom_right():
+    points = Points([[4, 6]], size=4)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 1, 1],
+            [0, 0, 0, 0, 1, 1, 1],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
 def test_to_mask_2d_with_diff_sizes():
     points = Points([[2, 2], [1, 4]], size=[[1, 1], [2, 2]])
 
