@@ -1043,15 +1043,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     view_direction = self._world_to_data_ray(
                         list(view_direction)
                     )
-                    start_pos, end_pos = self.get_ray_intersections(
+                    start_point, end_point = self.get_ray_intersections(
                         position=position,
                         view_direction=view_direction,
                         dims_displayed=dims_displayed,
                         world=False,
                     )
                     value = self._get_value_3d(
-                        start_position=start_pos,
-                        end_position=end_pos,
+                        start_point=start_point,
+                        end_point=end_point,
                         dims_displayed=dims_displayed,
                     )
             else:
@@ -1066,17 +1066,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _get_value_3d(
         self,
-        start_position: np.ndarray,
-        end_position: np.ndarray,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
         dims_displayed: List[int],
     ) -> Union[float, int]:
         """Get the layer data value along a ray
 
         Parameters
         ----------
-        start_position : np.ndarray
+        start_point : np.ndarray
             The start position of the ray used to interrogate the data.
-        end_position : np.ndarray
+        end_point : np.ndarray
             The end position of the ray used to interrogate the data.
         dims_displayed : List[int]
             The indices of the dimensions currently displayed in the Viewer.
@@ -1218,13 +1218,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             intersects with. This is the point closest to the camera.
             The point is the full nD coordinates of the layer data.
             If the click does not intersect the axis-aligned data bounding box,
-            an emtpy numpy array is returned (i.e., np.empty([]).
+            None is returned.
         end_point : np.ndarray
             The point on the axis-aligned data bounding box that the cursor click
             intersects with. This is the point farthest from the camera.
             The point is the full nD coordinates of the layer data.
             If the click does not intersect the axis-aligned data bounding box,
-            an emtpy numpy array is returned (i.e., np.empty([]).
+            None is returned.
         """
         if len(dims_displayed) == 3:
             # create a mask to select the in view dimensions

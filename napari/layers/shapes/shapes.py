@@ -2682,17 +2682,17 @@ class Shapes(Layer):
 
     def _get_value_3d(
         self,
-        start_position: np.ndarray,
-        end_position: np.ndarray,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
         dims_displayed: List[int],
     ) -> Tuple[Union[float, int], None]:
         """Get the layer data value along a ray
 
         Parameters
         ----------
-        start_position : np.ndarray
+        start_point : np.ndarray
             The start position of the ray used to interrogate the data.
-        end_position : np.ndarray
+        end_point : np.ndarray
             The end position of the ray used to interrogate the data.
         dims_displayed : List[int]
             The indices of the dimensions currently displayed in the Viewer.
@@ -2704,10 +2704,42 @@ class Shapes(Layer):
         vertex : None
             Index of vertex if any that is at the coordinates. Always returns `None`.
         """
-        if (start_position is not None) and (end_position is not None):
+        value, _ = self._get_value_and_intersection_3d(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        )
+
+        return (value, None)
+
+    def _get_value_and_intersection_3d(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Tuple[Union[float, int], None]:
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        vertex : None
+            Index of vertex if any that is at the coordinates. Always returns `None`.
+        """
+        if (start_point is not None) and (end_point is not None):
             # Get the normal vector of the click plane
-            start_position_view = start_position[dims_displayed]
-            end_position_view = end_position[dims_displayed]
+            start_position_view = start_point[dims_displayed]
+            end_position_view = end_point[dims_displayed]
             ray_direction = end_position_view - start_position_view
             ray_direction_normed = ray_direction / np.linalg.norm(
                 ray_direction
@@ -2717,14 +2749,15 @@ class Shapes(Layer):
             start_position_view = (
                 start_position_view - 0.1 * ray_direction_normed
             )
-            value = self._data_view._inside_3d(
+            value, intersection = self._data_view._inside_3d(
                 start_position_view, ray_direction_normed
             )
 
         else:
             value = None
+            intersection = None
 
-        return (value, None)
+        return (value, intersection)
 
     def move_to_front(self):
         """Moves selected objects to be displayed in front of all others."""
