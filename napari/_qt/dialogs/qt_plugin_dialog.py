@@ -31,6 +31,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt import QElidingLabel
 from typing_extensions import Literal
 
 import napari.resources
@@ -45,7 +46,6 @@ from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
 from ..qthreading import create_worker
-from ..widgets.qt_eliding_label import ElidingLabel
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
 
@@ -350,7 +350,7 @@ class PluginListItem(QFrame):
         self.error_indicator.hide()
         self.row2.addWidget(self.error_indicator)
         self.row2.setContentsMargins(-1, 4, 0, -1)
-        self.summary = ElidingLabel(parent=self)
+        self.summary = QElidingLabel(parent=self)
         sizePolicy = QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
         )
