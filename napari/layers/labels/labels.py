@@ -394,10 +394,10 @@ class Labels(_ImageBase):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self._selected_color = self.get_color(self.selected_label)
         # invalidate _all_vals to trigger re-generation
         # in _raw_to_displayed
         self._all_vals = np.array([])
+        self._selected_color = self.get_color(self.selected_label)
         self.refresh()
         self.events.selected_label()
 
