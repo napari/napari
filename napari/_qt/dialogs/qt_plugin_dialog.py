@@ -269,17 +269,18 @@ class PluginListItem(QFrame):
         installed: bool = False,
     ):
         super().__init__(parent)
-        self.setup_ui()
+        self.setup_ui(enabled)
         self.plugin_name.setText(package_name)
         self.package_name.setText(version)
         self.summary.setText(summary)
         self.package_author.setText(author)
-        self.enabled_checkbox.hide()
 
         if installed:
+            self.enabled_checkbox.show()
             self.action_button.setText(trans._("uninstall"))
             self.action_button.setObjectName("remove_button")
         else:
+            self.enabled_checkbox.hide()
             self.action_button.setText(trans._("install"))
             self.action_button.setObjectName("install_button")
 
@@ -376,7 +377,11 @@ class PluginListItem(QFrame):
 
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
-        plugin_manager.set_blocked(self.plugin_name.text(), not state)
+        enabled = bool(state)
+        current_distname = self.plugin_name.text()
+        for plugin_name, _, distname in plugin_manager.iter_available():
+            if distname and distname == current_distname:
+                plugin_manager.set_blocked(plugin_name, not enabled)
 
 
 class QPluginList(QListWidget):
@@ -519,9 +524,8 @@ class QtPluginDialog(QDialog):
                     meta.get('author', ''),
                     meta.get('license', ''),
                 ),
-                installed=True
-                # plugin_name=plugin_name,
-                # enabled=plugin_name in plugin_manager.plugins,
+                installed=True,
+                enabled=not plugin_manager.is_blocked(plugin_name),
             )
         self.installed_label.setText(
             trans._(
