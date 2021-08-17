@@ -1695,182 +1695,201 @@ def test_set_face_color_mode_after_set_properties():
 
 
 def test_to_mask_2d_with_size_1():
-    data = [
-        [2, 3],
-        [6, 7],
-    ]
-    points = Points(data, size=1)
+    points = Points([[1, 4]], size=1)
 
-    mask = points.to_mask(shape=(10, 10))
+    mask = points.to_mask(shape=(5, 7))
 
     expected_mask = np.array(
         [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
         ]
     )
     np.testing.assert_allclose(mask, expected_mask)
 
 
 def test_to_mask_2d_with_size_2():
-    data = [
-        [2, 3],
-        [6, 7],
-    ]
-    points = Points(data, size=2)
+    points = Points([[1, 4]], size=2)
 
-    mask = points.to_mask(shape=(10, 10))
+    mask = points.to_mask(shape=(5, 7))
 
     expected_mask = np.array(
         [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ]
-    )
-    np.testing.assert_allclose(mask, expected_mask)
-
-
-def test_to_mask_2d_with_size_2_isotropic_scale():
-    data = [
-        [2, 3],
-        [6, 7],
-    ]
-    scale = (2, 2)
-    points = Points(data, size=2, scale=scale)
-
-    mask = points.to_mask(
-        shape=(10, 10), data_to_world=CompositeAffine(scale=scale)
-    )
-
-    # The raw data is the same as without scaling, because napari
-    # will handle scaling the data at visualization time.
-    expected_mask = np.array(
-        [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ]
-    )
-    np.testing.assert_allclose(mask, expected_mask)
-
-
-def test_to_mask_2d_with_size_2_rotate():
-    data_to_world = CompositeAffine(rotate=45)
-    data = data_to_world(
-        [
-            [2, 3],
-            [6, 7],
-        ]
-    )
-    # Using 2 exactly means that the mask might not include some
-    # of the mask pixels due to machine precision issues caused
-    # by applying the rotation to the point coordinates.
-    points = Points(data, size=2.1)
-
-    mask = points.to_mask(shape=(10, 10), data_to_world=data_to_world)
-
-    expected_mask = np.array(
-        [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
         ]
     )
     np.testing.assert_allclose(mask, expected_mask)
 
 
 def test_to_mask_2d_with_size_4():
-    data = [
-        [2, 3],
-        [6, 7],
-    ]
-    points = Points(data, size=4)
+    points = Points([[1, 4]], size=4)
 
-    mask = points.to_mask(shape=(10, 10))
+    mask = points.to_mask(shape=(5, 7))
 
     expected_mask = np.array(
         [
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-            [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
         ]
     )
     np.testing.assert_allclose(mask, expected_mask)
 
 
-@pytest.mark.skip(reason="unsure how to handle anisotropic scaling")
-def test_to_mask_2d_with_size_4_anisotropic_scale():
-    data = [
-        [2, 3],
-        [6, 7],
-    ]
-    scale = (2, 1)
-    points = Points(data, size=4, scale=scale)
+def test_to_mask_2d_with_diff_sizes():
+    points = Points([[2, 2], [1, 4]], size=[[1, 1], [2, 2]])
 
-    mask = points.to_mask(
-        shape=(10, 10), data_to_world=CompositeAffine(scale=scale)
-    )
+    mask = points.to_mask(shape=(5, 7))
 
-    # We expect the mask to be squashed in the first dimension because
-    # when it is add as an image with the same scale, it will be stretched
-    # in that dimension to make circular points.
     expected_mask = np.array(
         [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_overlap():
+    points = Points([[1, 3], [1, 4]], size=2)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 1, 0],
+            [0, 0, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_translate():
+    points = Points([[1, 4]], size=2)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(translate=(-1, 2))
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0],
+            [0, 1, 1, 1, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_rotate():
+    # Make the size just over 2, instead of exactly 2, to ensure that all expected pixels are
+    # included, despite floating point imprecision caused by applying the rotation.
+    points = Points([[-4, 1]], size=2.1)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(rotate=90)
+    )
+
+    # The point [-4, 1] is defined in world coordinates, so after applying
+    # the inverse data_to_world transform will become [1, 4].
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_isotropic_scale():
+    points = Points([[2, 8]], size=4)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(scale=(2, 2))
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_anisotropic_scale_isotropic_output():
+    # With isotropic output, the size of the output ball is determined
+    # by the geometric mean of the scale which is sqrt(2), so absorb that
+    # into the size to keep the math simple.
+    points = Points([[2, 4]], size=2 * np.sqrt(2))
+
+    mask = points.to_mask(
+        shape=(5, 7),
+        data_to_world=CompositeAffine(scale=(2, 1)),
+        isotropic_output=True,
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ]
+    )
+    np.testing.assert_allclose(mask, expected_mask)
+
+
+def test_to_mask_2d_with_anisotropic_scale_anisotropic_output():
+    points = Points([[2, 4]], size=4)
+
+    mask = points.to_mask(
+        shape=(5, 7),
+        data_to_world=CompositeAffine(scale=(2, 1)),
+        isotropic_output=False,
+    )
+
+    # With anisotropic output, the output ball will be squashed
+    # in the dimension with scaling, so that after adding it back as an image
+    # with the same scaling, it should be roughly isotropic.
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
         ]
     )
     np.testing.assert_allclose(mask, expected_mask)
 
 
 def test_to_mask_3d_with_size_1():
-    data = [[1, 2, 3]]
-    points = Points(data, size=1)
+    points = Points([[1, 2, 3]], size=1)
 
     mask = points.to_mask(shape=(3, 4, 5))
 
@@ -1900,8 +1919,7 @@ def test_to_mask_3d_with_size_1():
 
 
 def test_to_mask_3d_with_size_2():
-    data = [[1, 2, 3]]
-    points = Points(data, size=2)
+    points = Points([[1, 2, 3]], size=2)
 
     mask = points.to_mask(shape=(3, 4, 5))
 

@@ -4,7 +4,7 @@ from itertools import cycle
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-import scipy.ndimage
+from scipy.stats import gmean
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import (
@@ -14,7 +14,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
-from ...utils.transforms import Affine
+from ...utils.transforms import Affine, CompositeAffine
 from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
@@ -1500,94 +1500,91 @@ class Points(Layer):
         else:
             self._clipboard = {}
 
-    def to_mask(self, *, shape, data_to_world=None):
-        # return self._to_mask_distance_transform(shape=shape, translate=translate, scale=scale)
-        # return self._to_mask_exact(shape=shape, translate=translate, scale=scale)
-        return self._to_mask_exact_efficient(
-            shape=shape, data_to_world=data_to_world
-        )
+    def to_mask(
+        self,
+        *,
+        shape: tuple,
+        data_to_world: Optional[CompositeAffine] = None,
+        isotropic_output: bool = True,
+    ):
+        """Return a binary mask array of all the points as balls.
 
-    def _to_mask_prep_coords_radii(self, *, shape, data_to_world=None):
+        Parameters
+        ----------
+        shape : tuple
+            The shape of the mask to be generated.
+        data_to_world : Optional[Affine]
+            The data-to-world transform of the output mask image. This likely comes from a reference image.
+            If None, then this is the identity transform.
+        isotropic_output : bool
+            If True, then force the output mask to always contain isotropic balls in data/pixel coordinates.
+            Otherwise, allow the anisotropy in the data-to-world transform to squash the balls in certain dimensions.
+            By default this is True, but you should set it to False if you are going to create a napari image
+            layer from the result with the same data-to-world transform and want the visualized balls to be
+            roughly isotropic.
+
+        Returns
+        -------
+        np.ndarray
+            The output binary mask array of the given shape containing this layer's points as balls.
+        """
         if data_to_world is None:
-            data_to_world = Affine(linear_matrix=np.eye(self.ndim))
+            data_to_world = Affine(ndim=self.ndim)
         mask = np.zeros(shape, dtype=int)
+        mask_world_to_data = data_to_world.inverse
         points_data_to_mask_data = self._data_to_world.compose(
-            data_to_world.inverse
+            mask_world_to_data
         )
         points_in_mask_data_coords = np.atleast_2d(
             points_data_to_mask_data(self.data)
         )
 
-        mean_radii = np.tile(
-            np.mean(self.size, axis=1, keepdims=True) / 2, (1, self.ndim)
-        )
-        # TODO: this helps to squash the rasterized points when there is
-        # anisotropic scaling in the reference image and thus points layer.
-        # This way when the image gets imported back into napari with the same
-        # anisotropic scaling, the points are roughly circular.
-        # However, the points scaling factor does affect the size of the points,
-        # we may want to try to extract that.
-        # radii_in_mask_data = mean_radii
-        radii_in_mask_data = (
-            np.abs(points_data_to_mask_data.scale) * mean_radii
-        )
+        # Calculating the radii of the output points in the mask is complex.
 
-        return mask, points_in_mask_data_coords, radii_in_mask_data
+        # Points.size tells the size of the points in pixels in each dimension,
+        # so we take the arithmetic mean across dimensions to define a scalar size
+        # per point, which is consistent with visualization.
+        mean_radii = np.mean(self.size, axis=1, keepdims=True) / 2
 
-    def _to_mask_exact(self, *, shape, data_to_world=None):
-        mask, all_coords, all_radii = self._to_mask_prep_coords_radii(
-            shape=shape, data_to_world=data_to_world
-        )
-
-        mask_coords = [range(0, dim_size) for dim_size in shape]
-        # D1 x D2 x ... Dd x D
-        # copy=False doesn't help speed much, but need to verify memory.
-        mask_grids = np.stack(
-            np.meshgrid(*mask_coords, copy=False, indexing='ij'), axis=-1
+        # Always scale each radius by the geometric mean scale of the Points layer to
+        # keep the balls isotropic when visualized in world coordinates.
+        # Then scale each radius by the mean scale of the output image mask
+        # using the geometric mean if isotropic output is desired.
+        # We use the geometric mean instead of the arithmetic mean
+        # to maintain the volume scaling factor of the transforms.
+        mean_scale = gmean(self._data_to_world.scale)
+        radii_scale = mean_scale * (
+            gmean(mask_world_to_data.scale)
+            if isotropic_output
+            else mask_world_to_data.scale
         )
 
-        # coords and radii are (D,)
-        for coords, radii in zip(all_coords, all_radii):
-            square_distances = np.sum(
-                ((mask_grids - coords) / radii) ** 2, axis=-1
-            )
-            mask[square_distances <= 1] = True
-        return mask
+        output_data_radii = mean_radii * np.atleast_2d(radii_scale)
 
-    def _to_mask_exact_efficient(self, *, shape, data_to_world=None):
-        mask, all_coords, all_radii = self._to_mask_prep_coords_radii(
-            shape=shape, data_to_world=data_to_world
-        )
-
-        for coords, radii in zip(all_coords, all_radii):
+        for coords, radii in zip(
+            points_in_mask_data_coords, output_data_radii
+        ):
+            # Define a minimal set of coordinates where the mask could be present
+            # by defining an inclusive lower and exclusive upper bound for each
+            # dimension.
             lower_coords = np.maximum(np.floor(coords - radii), 0).astype(int)
             upper_coords = np.minimum(
                 np.ceil(coords + radii) + 1, shape
             ).astype(int)
-
+            # Generate every possible coordinate within the bounds defined above
+            # in a grid of size D1 x D2 x ... x Dd x D (e.g. for D=2, this might be 4x5x2).
             submask_coords = [
                 range(lower_coords[i], upper_coords[i])
                 for i in range(self.ndim)
             ]
-            # D x D1 x D2 x ... x Dd (e.g. for D=2, this might something like 2x4x5)
             submask_grids = np.stack(
                 np.meshgrid(*submask_coords, copy=False, indexing='ij'),
                 axis=-1,
             )
-
-            square_distances = np.sum(
+            # Update the mask coordinates based on the normalized square distance
+            # using a logical or to maintain any existing positive mask locations.
+            normalized_square_distances = np.sum(
                 ((submask_grids - coords) / radii) ** 2, axis=-1
             )
-            mask[np.ix_(*submask_coords)] = square_distances <= 1
+            mask[np.ix_(*submask_coords)] |= normalized_square_distances <= 1
         return mask
-
-    def _to_mask_distance_transform(self, *, shape, data_to_world=None):
-        mask, all_coords, all_radii = self._to_mask_prep_coords_radii(
-            shape=shape, data_to_world=data_to_world
-        )
-        for coords in all_coords:
-            mask_indices = np.round(coords).astype(int)
-            if np.all(mask_indices >= 0) and np.all(mask_indices < shape):
-                mask[tuple(mask_indices)] = 1
-        distances = scipy.ndimage.distance_transform_edt(~mask)
-        return (distances <= np.mean(all_radii)).astype(int)
