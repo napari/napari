@@ -599,8 +599,8 @@ class EventEmitter:
             # here... but this error is consistent across backends
             if (
                 isinstance(e, RuntimeError)
-                and str(e).startswith('wrapped')
-                and 'has been deleted' in str(e)
+                and 'C++' in str(e)
+                and str(e).endswith(('has been deleted', 'already deleted.'))
             ):
                 self.disconnect(cb)
                 return
