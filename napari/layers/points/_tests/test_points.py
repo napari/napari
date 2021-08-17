@@ -1706,9 +1706,10 @@ def test_to_mask_2d_with_size_1():
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_2d_with_size_2():
@@ -1723,9 +1724,10 @@ def test_to_mask_2d_with_size_2():
             [0, 0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_2d_with_size_4():
@@ -1740,9 +1742,10 @@ def test_to_mask_2d_with_size_4():
             [0, 0, 0, 1, 1, 1, 0],
             [0, 0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_2d_with_diff_sizes():
@@ -1757,9 +1760,10 @@ def test_to_mask_2d_with_diff_sizes():
             [0, 0, 1, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_2d_with_overlap():
@@ -1774,9 +1778,10 @@ def test_to_mask_2d_with_overlap():
             [0, 0, 0, 1, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_2d_with_translate():
@@ -1793,9 +1798,10 @@ def test_to_mask_2d_with_translate():
             [0, 1, 1, 1, 0, 0, 0],
             [0, 0, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_2d_with_rotate():
@@ -1816,9 +1822,10 @@ def test_to_mask_2d_with_rotate():
             [0, 0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_2d_with_isotropic_scale():
@@ -1835,9 +1842,10 @@ def test_to_mask_2d_with_isotropic_scale():
             [0, 0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_2d_with_anisotropic_scale_isotropic_output():
@@ -1859,9 +1867,10 @@ def test_to_mask_2d_with_anisotropic_scale_isotropic_output():
             [0, 0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_2d_with_anisotropic_scale_anisotropic_output():
@@ -1883,9 +1892,10 @@ def test_to_mask_2d_with_anisotropic_scale_anisotropic_output():
             [0, 0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_3d_with_size_1():
@@ -1913,9 +1923,10 @@ def test_to_mask_3d_with_size_1():
                 [0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0],
             ],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)
 
 
 def test_to_mask_3d_with_size_2():
@@ -1943,6 +1954,7 @@ def test_to_mask_3d_with_size_2():
                 [0, 0, 0, 1, 0],
                 [0, 0, 0, 0, 0],
             ],
-        ]
+        ],
+        dtype=bool,
     )
-    np.testing.assert_allclose(mask, expected_mask)
+    np.testing.assert_array_equal(mask, expected_mask)

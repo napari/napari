@@ -1530,7 +1530,7 @@ class Points(Layer):
         """
         if data_to_world is None:
             data_to_world = Affine(ndim=self.ndim)
-        mask = np.zeros(shape, dtype=int)
+        mask = np.zeros(shape, dtype=bool)
         mask_world_to_data = data_to_world.inverse
         points_data_to_mask_data = self._data_to_world.compose(
             mask_world_to_data
