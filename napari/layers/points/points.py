@@ -14,7 +14,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
-from ...utils.transforms import Affine, CompositeAffine
+from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
@@ -1504,7 +1504,7 @@ class Points(Layer):
         self,
         *,
         shape: tuple,
-        data_to_world: Optional[CompositeAffine] = None,
+        data_to_world: Optional[Affine] = None,
         isotropic_output: bool = True,
     ):
         """Return a binary mask array of all the points as balls.
@@ -1515,7 +1515,7 @@ class Points(Layer):
             The shape of the mask to be generated.
         data_to_world : Optional[Affine]
             The data-to-world transform of the output mask image. This likely comes from a reference image.
-            If None, then this is the identity transform.
+            If None, then this is the same as this layer's data-to-world transform.
         isotropic_output : bool
             If True, then force the output mask to always contain isotropic balls in data/pixel coordinates.
             Otherwise, allow the anisotropy in the data-to-world transform to squash the balls in certain dimensions.
@@ -1529,7 +1529,7 @@ class Points(Layer):
             The output binary mask array of the given shape containing this layer's points as balls.
         """
         if data_to_world is None:
-            data_to_world = Affine(ndim=self.ndim)
+            data_to_world = self._data_to_world
         mask = np.zeros(shape, dtype=bool)
         mask_world_to_data = data_to_world.inverse
         points_data_to_mask_data = self._data_to_world.compose(

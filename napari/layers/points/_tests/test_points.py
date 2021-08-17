@@ -1898,6 +1898,45 @@ def test_to_mask_2d_with_anisotropic_scale_anisotropic_output():
     np.testing.assert_array_equal(mask, expected_mask)
 
 
+def test_to_mask_2d_with_points_scale_but_no_mask_scale():
+    points = Points([[1, 4]], size=2, scale=(2, 2))
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_same_points_and_mask_scale():
+    scale = (2, 2)
+    points = Points([[1, 4]], size=2, scale=scale)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(scale=scale)
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
 def test_to_mask_3d_with_size_1():
     points = Points([[1, 2, 3]], size=1)
 
