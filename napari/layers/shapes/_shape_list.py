@@ -829,9 +829,10 @@ class ShapeList:
             distances = np.linalg.norm(start_to_intersection, axis=1)
             closest_shape_index = np.argmin(distances)
             shape = intersected_shapes[closest_shape_index]
-            return shape
+            intersection = intersection_points[closest_shape_index]
+            return shape, intersection
         else:
-            return None
+            return None, None
 
     def _triangle_intersection(
         self,
