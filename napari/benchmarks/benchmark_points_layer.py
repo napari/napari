@@ -103,20 +103,28 @@ class PointsSlicingSuite:
         self.layer._slice_data(self.slice)
 
 
-class Points2DToMaskSuite:
+class PointsToMaskSuite:
     """Benchmarks for creating a binary image mask from points."""
 
-    param_names = ['num_points', 'num_pixels', 'point_size']
+    param_names = ['num_points', 'mask_shape', 'point_size']
     params = [
-        [2 ** i for i in range(4, 18, 2)],
-        [2 ** i for i in range(7, 13)],
-        [10, 20],
+        [64, 256, 1024, 4096, 16384],
+        [
+            (256, 256),
+            (512, 512),
+            (1024, 1024),
+            (2048, 2048),
+            (128, 128, 128),
+            (256, 256, 256),
+            (512, 512, 512),
+        ],
+        [5, 10],
     ]
 
-    def setup(self, num_points, num_pixels, point_size):
+    def setup(self, num_points, mask_shape, point_size):
         np.random.seed(0)
-        self.data = np.random.random((num_points, 2)) * num_pixels
-        self.layer = Points(self.data, size=point_size)
+        data = np.random.random((num_points, len(mask_shape))) * mask_shape
+        self.layer = Points(data, size=point_size)
 
-    def time_to_mask(self, num_points, num_pixels, point_size):
-        self.layer.to_mask(shape=(num_pixels,) * 2)
+    def time_to_mask(self, num_points, mask_shape, point_size):
+        self.layer.to_mask(shape=mask_shape)
