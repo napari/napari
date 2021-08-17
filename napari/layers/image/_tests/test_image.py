@@ -734,7 +734,7 @@ def test_image_state_update():
         setattr(image, k, v)
 
 
-def test_instiantiate_with_slicing_plane_dict():
+def test_instiantiate_with_experimental_slicing_plane_dict():
     """Test that an image layer can be instantiated with plane parameters
     in a dictionary.
     """
@@ -743,35 +743,42 @@ def test_instiantiate_with_slicing_plane_dict():
         'normal': (1, 1, 1),
         'thickness': 22,
     }
-    image = Image(np.ones((32, 32, 32)), slicing_plane=plane_parameters)
+    image = Image(
+        np.ones((32, 32, 32)), experimental_slicing_plane=plane_parameters
+    )
     for k, v in plane_parameters.items():
         if k == 'normal':
             v = tuple(v / np.linalg.norm(v))
-        assert v == getattr(image.slicing_plane, k, v)
+        assert v == getattr(image.experimental_slicing_plane, k, v)
 
 
-def test_instiantiate_with_slicing_plane():
+def test_instiantiate_with_experimental_slicing_plane():
     """Test that an image layer can be instantiated with plane parameters
     in a Plane.
     """
     plane = Plane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
-    image = Image(np.ones((32, 32, 32)), slicing_plane=plane)
+    image = Image(np.ones((32, 32, 32)), experimental_slicing_plane=plane)
     for k, v in plane.dict().items():
-        assert v == getattr(image.slicing_plane, k, v)
+        assert v == getattr(image.experimental_slicing_plane, k, v)
 
 
 def test_instantiate_with_clipping_planelist():
     planes = PlaneList.from_array(np.ones((2, 2, 3)))
-    image = Image(np.ones((32, 32, 32)), clipping_planes=planes)
-    assert len(image.clipping_planes) == 2
+    image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
+    assert len(image.experimental_clipping_planes) == 2
 
 
-def test_instantiate_with_clipping_planes_dict():
+def test_instantiate_with_experimental_clipping_planes_dict():
     planes = [
         {'position': (0, 0, 0), 'normal': (0, 0, 1)},
         {'position': (0, 1, 0), 'normal': (1, 0, 0)},
     ]
-    image = Image(np.ones((32, 32, 32)), clipping_planes=planes)
+    image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
     for i in range(len(planes)):
-        assert image.clipping_planes[i].position == planes[i]['position']
-        assert image.clipping_planes[i].normal == planes[i]['normal']
+        assert (
+            image.experimental_clipping_planes[i].position
+            == planes[i]['position']
+        )
+        assert (
+            image.experimental_clipping_planes[i].normal == planes[i]['normal']
+        )

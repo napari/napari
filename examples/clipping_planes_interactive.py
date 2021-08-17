@@ -21,7 +21,7 @@ plane_parameters = {
 
 volume_layer = viewer.add_image(
     blobs, rendering='mip', name='volume', blending='additive',
-    clipping_planes=[plane_parameters],
+    experimental_clipping_planes=[plane_parameters],
 )
 
 def point_in_bounding_box(point, bounding_box):
@@ -57,7 +57,7 @@ def shift_plane_along_normal(viewer, event):
     )
 
     # Calculate intersection of click with plane through data
-    intersection = volume_layer.clipping_planes[0].intersect_with_line(
+    intersection = volume_layer.experimental_clipping_planes[0].intersect_with_line(
         line_position=near_point, line_direction=event.view_direction
     )
 
@@ -67,8 +67,8 @@ def shift_plane_along_normal(viewer, event):
         return
 
     # Get plane parameters in vispy coordinates (zyx -> xyz)
-    plane_normal_data_vispy = np.array(volume_layer.clipping_planes[0].normal)[[2, 1, 0]]
-    plane_position_data_vispy = np.array(volume_layer.clipping_planes[0].position)[[2, 1, 0]]
+    plane_normal_data_vispy = np.array(volume_layer.experimental_clipping_planes[0].normal)[[2, 1, 0]]
+    plane_position_data_vispy = np.array(volume_layer.experimental_clipping_planes[0].position)[[2, 1, 0]]
 
     # Get transform which maps from data (vispy) to canvas
     visual2canvas = viewer.window.qt_viewer.layer_to_visual[volume_layer].node.get_transform(
@@ -89,7 +89,7 @@ def shift_plane_along_normal(viewer, event):
     volume_layer.interactive = False
 
     # Store original plane position and start position in canvas coordinates
-    original_plane_position = volume_layer.clipping_planes[0].position
+    original_plane_position = volume_layer.experimental_clipping_planes[0].position
     start_position_canv = event.pos
 
     yield
@@ -110,10 +110,10 @@ def shift_plane_along_normal(viewer, event):
         # only update if plane position is within data bounding box
         drag_distance_data = drag_projection_on_plane_normal / np.linalg.norm(plane_normal_canv)
         updated_position = original_plane_position + drag_distance_data * np.array(
-            volume_layer.clipping_planes[0].normal)
+            volume_layer.experimental_clipping_planes[0].normal)
 
         if point_in_bounding_box(updated_position, volume_layer.extent.data):
-            volume_layer.clipping_planes[0].position = updated_position
+            volume_layer.experimental_clipping_planes[0].position = updated_position
 
         yield
 

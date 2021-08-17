@@ -107,11 +107,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    slicing_plane : dict or Plane
+    experimental_slicing_plane : dict or Plane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
-    clipping_planes : list of dicts, list of Plane, or PlaneList
+    experimental_clipping_planes : list of dicts, list of Plane, or PlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
 
@@ -161,9 +161,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Threshold for isosurface.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
-    slicing_plane : Plane
+    experimental_slicing_plane : Plane
         Properties defining plane rendering in 3D.
-    clipping_planes : PlaneList
+    experimental_clipping_planes : PlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
@@ -201,8 +201,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
-        slicing_plane=None,
-        clipping_planes=None,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -285,8 +285,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._slicing_plane = Plane(thickness=10)
-        self._clipping_planes = PlaneList()
+        self._experimental_slicing_plane = Plane(thickness=10)
+        self._experimental_clipping_planes = PlaneList()
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
@@ -304,10 +304,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
-        if slicing_plane is not None:
-            self.slicing_plane = slicing_plane
-            self.slicing_plane.update(slicing_plane)
-        self.clipping_planes = clipping_planes
+        if experimental_slicing_plane is not None:
+            self.experimental_slicing_plane = experimental_slicing_plane
+            self.experimental_slicing_plane.update(experimental_slicing_plane)
+        self.experimental_clipping_planes = experimental_clipping_planes
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -514,25 +514,27 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.rendering()
 
     @property
-    def slicing_plane(self):
-        return self._slicing_plane
+    def experimental_slicing_plane(self):
+        return self._experimental_slicing_plane
 
-    @slicing_plane.setter
-    def slicing_plane(self, value: Union[dict, Plane]):
-        self._slicing_plane.update(value)
+    @experimental_slicing_plane.setter
+    def experimental_slicing_plane(self, value: Union[dict, Plane]):
+        self._experimental_slicing_plane.update(value)
 
     @property
-    def clipping_planes(self):
-        return self._clipping_planes
+    def experimental_clipping_planes(self):
+        return self._experimental_clipping_planes
 
-    @clipping_planes.setter
-    def clipping_planes(self, value: Union[List[Plane, dict], PlaneList]):
-        self._clipping_planes.clear()
+    @experimental_clipping_planes.setter
+    def experimental_clipping_planes(
+        self, value: Union[List[Plane, dict], PlaneList]
+    ):
+        self._experimental_clipping_planes.clear()
         if value is not None:
             for new_plane in value:
                 plane = Plane()
                 plane.update(new_plane)
-                self._clipping_planes.append(plane)
+                self._experimental_clipping_planes.append(plane)
 
     @property
     def loaded(self):
@@ -864,9 +866,9 @@ class Image(_ImageBase):
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
-                'slicing_plane': self.slicing_plane.dict(),
-                'clipping_planes': [
-                    plane.dict() for plane in self.clipping_planes
+                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
                 ],
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,

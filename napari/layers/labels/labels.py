@@ -116,11 +116,11 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    slicing_plane : dict
+    experimental_slicing_plane : dict
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
-    clipping_planes : list of dicts, list of Plane, or PlaneList
+    experimental_clipping_planes : list of dicts, list of Plane, or PlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
 
@@ -187,9 +187,9 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
-    slicing_plane : Plane
+    experimental_slicing_plane : Plane
         Properties defining plane rendering in 3D.
-    clipping_planes : PlaneList
+    experimental_clipping_planes : PlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
@@ -223,8 +223,8 @@ class Labels(_ImageBase):
         rendering='iso_categorical',
         visible=True,
         multiscale=None,
-        slicing_plane=None,
-        clipping_planes=None,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ):
 
         self._seed = seed
@@ -265,8 +265,8 @@ class Labels(_ImageBase):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
-            slicing_plane=slicing_plane,
-            clipping_planes=clipping_planes,
+            experimental_slicing_plane=experimental_slicing_plane,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -520,9 +520,9 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self._properties,
                 'rendering': self.rendering,
-                'slicing_plane': self.slicing_plane.dict(),
-                'clipping_planes': [
-                    plane.dict() for plane in self.clipping_planes
+                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
                 ],
                 'seed': self.seed,
                 'data': self.data,

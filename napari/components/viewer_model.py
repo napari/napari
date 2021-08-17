@@ -556,8 +556,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
-        slicing_plane=None,
-        clipping_planes=None,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -667,11 +667,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             should be the largest. Please note multiscale rendering is only
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
-        slicing_plane : dict
+        experimental_slicing_plane : dict
             Properties defining plane rendering in 3D. Properties are defined
             in data coordinates. Valid dictionary keys are
             {'position', 'normal_vector', 'thickness', and 'enabled'}.
-        clipping_planes : list of dicts, list of Plane, or PlaneList
+        experimental_clipping_planes : list of dicts, list of Plane, or PlaneList
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
 
@@ -712,8 +712,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'blending': blending,
             'visible': visible,
             'multiscale': multiscale,
-            'slicing_plane': slicing_plane,
-            'clipping_planes': clipping_planes,
+            'experimental_slicing_plane': experimental_slicing_plane,
+            'experimental_clipping_planes': experimental_clipping_planes,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -725,7 +725,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'affine',
             'contrast_limits',
             'metadata',
-            'clipping_planes',
+            'experimental_clipping_planes',
         }
 
         if channel_axis is None:
