@@ -90,7 +90,7 @@ def split_channels(
         'affine',
         'contrast_limits',
         'metadata',
-        'plane',
+        'slicing_plane',
         'clipping_planes',
     }
 

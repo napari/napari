@@ -116,7 +116,7 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    plane : dict
+    slicing_plane : dict
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal_vector', 'thickness', and 'enabled'}.
@@ -187,7 +187,7 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
-    plane : Plane
+    slicing_plane : Plane
         Properties defining plane rendering in 3D.
     clipping_planes : PlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
@@ -223,7 +223,7 @@ class Labels(_ImageBase):
         rendering='iso_categorical',
         visible=True,
         multiscale=None,
-        plane=None,
+        slicing_plane=None,
         clipping_planes=None,
     ):
 
@@ -265,7 +265,7 @@ class Labels(_ImageBase):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
-            plane=plane,
+            slicing_plane=slicing_plane,
             clipping_planes=clipping_planes,
         )
 
@@ -520,7 +520,7 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self._properties,
                 'rendering': self.rendering,
-                'plane': self.plane.dict(),
+                'slicing_plane': self.slicing_plane.dict(),
                 'clipping_planes': [
                     plane.dict() for plane in self.clipping_planes
                 ],

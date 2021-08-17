@@ -556,7 +556,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
-        plane=None,
+        slicing_plane=None,
         clipping_planes=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
@@ -667,7 +667,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             should be the largest. Please note multiscale rendering is only
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
-        plane : dict
+        slicing_plane : dict
             Properties defining plane rendering in 3D. Properties are defined
             in data coordinates. Valid dictionary keys are
             {'position', 'normal_vector', 'thickness', and 'enabled'}.
@@ -712,7 +712,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'blending': blending,
             'visible': visible,
             'multiscale': multiscale,
-            'plane': plane,
+            'slicing_plane': slicing_plane,
             'clipping_planes': clipping_planes,
         }
 

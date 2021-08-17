@@ -35,7 +35,7 @@ plane_layer = viewer.add_image(
     name='plane',
     blending='additive',
     opacity=0.5,
-    plane=plane_parameters
+    slicing_plane=plane_parameters
 )
 
 class PlaneWidget(QWidget):
@@ -68,11 +68,11 @@ class PlaneWidget(QWidget):
 
 def update_plane_y_position(widget):
     plane_position = [32, widget.position_slider.value(), 32]
-    viewer.layers['plane'].plane.position = plane_position
+    viewer.layers['plane'].slicing_plane.position = plane_position
 
 
 def update_plane_thickness(widget):
-    plane_layer.plane.thickness = widget.thickness_spinbox.value()
+    plane_layer.slicing_plane.thickness = widget.thickness_spinbox.value()
 
 
 def create_plane_widget():
