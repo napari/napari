@@ -46,6 +46,7 @@ from ._shapes_mouse_bindings import (
     add_path_polygon,
     add_path_polygon_creating,
     add_rectangle,
+    finish_drawing_shape,
     highlight,
     select,
     vertex_insert,
@@ -71,7 +72,9 @@ _REV_SHAPE_HELP = {
         Mode.ADD_ELLIPSE,
         Mode.ADD_LINE,
     },
-    trans._('hold <space> to pan/zoom, press <esc> to finish drawing'): {
+    trans._(
+        'hold <space> to pan/zoom, press <esc>, or double click to finish drawing'
+    ): {
         Mode.ADD_PATH,
         Mode.ADD_POLYGON,
     },
@@ -362,6 +365,20 @@ class Shapes(Layer):
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
     }
+
+    _double_click_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.SELECT: no_op,
+        Mode.DIRECT: no_op,
+        Mode.VERTEX_INSERT: no_op,
+        Mode.VERTEX_REMOVE: no_op,
+        Mode.ADD_RECTANGLE: no_op,
+        Mode.ADD_ELLIPSE: no_op,
+        Mode.ADD_LINE: no_op,
+        Mode.ADD_PATH: finish_drawing_shape,
+        Mode.ADD_POLYGON: finish_drawing_shape,
+    }
+
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
         Mode.SELECT: 'pointing',
@@ -1550,6 +1567,16 @@ class Shapes(Layer):
         mode, changed = self._mode_setter_helper(mode, Mode)
         if not changed:
             return
+
+        if mode.value not in Mode.keys():
+            raise ValueError(
+                trans._(
+                    "Mode not recognized: {mode}", deferred=True, mode=mode
+                )
+            )
+
+        old_mode = self._mode
+        self._mode = mode
 
         self.help = _FWD_SHAPE_HELP[mode]
 
