@@ -594,7 +594,16 @@ class EventEmitter:
     def _invoke_callback(self, cb: Callback, event: Event):
         try:
             cb(event)
-        except Exception:
+        except Exception as e:
+            # dead Qt object with living python pointer. not importing Qt
+            # here... but this error is consistent across backends
+            if (
+                isinstance(e, RuntimeError)
+                and str(e).startswith('wrapped')
+                and 'has been deleted' in str(e)
+            ):
+                self.disconnect(cb)
+                return
             _handle_exception(
                 self.ignore_callback_errors,
                 self.print_callback_errors,
