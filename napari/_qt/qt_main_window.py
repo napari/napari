@@ -149,52 +149,38 @@ class _QtMainWindow(QMainWindow):
         Load window layout settings from configuration.
         """
         settings = get_settings()
-        window_size = settings.application.window_size
-        window_state = settings.application.window_state
-        preferences_dialog_size = settings.application.preferences_size
         window_position = settings.application.window_position
 
-        # It's necessary to verify if the window/position value is valid with the current screen.
-        width, height = window_position
-        screen_shape = QApplication.desktop().geometry()
-        current_width = screen_shape.width()
-        current_height = screen_shape.height()
-        if current_width < width or current_height < height:
+        # It's necessary to verify if the window/position value is valid with
+        # the current screen.
+        if not window_position:
             window_position = (self.x(), self.y())
+        else:
+            width, height = window_position
+            screen_geo = QApplication.desktop().geometry()
+            if screen_geo.width() < width or screen_geo.height() < height:
+                window_position = (self.x(), self.y())
 
-        window_maximized = settings.application.window_maximized
-        window_fullscreen = settings.application.window_fullscreen
         return (
-            window_state,
-            window_size,
+            settings.application.window_state,
+            settings.application.window_size,
             window_position,
-            window_maximized,
-            window_fullscreen,
-            preferences_dialog_size,
+            settings.application.window_maximized,
+            settings.application.window_fullscreen,
+            settings.application.preferences_size,
         )
 
     def _get_window_settings(self):
-        """
-        Return current window settings.
+        """Return current window settings.
 
         Symmetric to the 'set_window_settings' setter.
         """
-        if self._window_size is None:
-            window_size = (self.width(), self.height())
-        else:
-            window_size = self._window_size
 
         window_fullscreen = self.isFullScreen()
-
         if window_fullscreen:
             window_maximized = self._maximized_flag
         else:
             window_maximized = self.isMaximized()
-
-        if self._window_pos is None:
-            window_position = (self.x(), self.y())
-        else:
-            window_position = self._window_pos
 
         preferences_dialog_size = (
             self._preferences_dialog_size.width(),
@@ -203,8 +189,8 @@ class _QtMainWindow(QMainWindow):
         window_state = qbytearray_to_str(self.saveState())
         return (
             window_state,
-            window_size,
-            window_position,
+            self._window_size or (self.width(), self.height()),
+            self._window_pos or (self.x(), self.y()),
             window_maximized,
             window_fullscreen,
             preferences_dialog_size,
