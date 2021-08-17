@@ -1546,18 +1546,19 @@ class Points(Layer):
         # per point, which is consistent with visualization.
         mean_radii = np.mean(self.size, axis=1, keepdims=True) / 2
 
-        # Always scale each radius by the geometric mean scale of the Points layer to
+        # Scale each radius by the geometric mean scale of the Points layer to
         # keep the balls isotropic when visualized in world coordinates.
-        # Then scale each radius by the mean scale of the output image mask
+        # Then scale each radius by the scale of the output image mask
         # using the geometric mean if isotropic output is desired.
-        # We use the geometric mean instead of the arithmetic mean
+        # The geometric means are used instead of the arithmetic mean
         # to maintain the volume scaling factor of the transforms.
-        mean_scale = gmean(self._data_to_world.scale)
-        radii_scale = mean_scale * (
+        point_data_to_world_scale = gmean(self._data_to_world.scale)
+        mask_world_to_data_scale = (
             gmean(mask_world_to_data.scale)
             if isotropic_output
             else mask_world_to_data.scale
         )
+        radii_scale = point_data_to_world_scale * mask_world_to_data_scale
 
         output_data_radii = mean_radii * np.atleast_2d(radii_scale)
 
@@ -1565,8 +1566,7 @@ class Points(Layer):
             points_in_mask_data_coords, output_data_radii
         ):
             # Define a minimal set of coordinates where the mask could be present
-            # by defining an inclusive lower and exclusive upper bound for each
-            # dimension.
+            # by defining an inclusive lower and exclusive upper bound for each dimension.
             lower_coords = np.maximum(np.floor(coords - radii), 0).astype(int)
             upper_coords = np.minimum(
                 np.ceil(coords + radii) + 1, shape
