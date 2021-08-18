@@ -26,6 +26,7 @@ from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
+from ..utils.interactivity_utils import mouse_events_to_projected_distance
 from ..utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
@@ -1291,6 +1292,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return start_point, end_point
         else:
             return None, None
+
+    def projected_distance_from_mouse_events(
+        self, start_event: Event, end_event: Event, vector: np.ndarray
+    ):
+        return mouse_events_to_projected_distance(
+            start_event, end_event, self, vector
+        )
 
     @property
     def _displayed_axes(self):

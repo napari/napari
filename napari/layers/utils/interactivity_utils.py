@@ -27,18 +27,20 @@ def mouse_events_to_projected_distance(start_event, end_event, layer, vector):
         Layer in which the vector on which to project the drag vector is
         defined.
     vector : np.ndarray
-        (3,) unit vector on which to project the drag vector, defined in data
+        (3,) unit vector or (n, 3) array thereof on which to project the drag
+        vector from start_event to end_event. This argument is defined in data
         coordinates.
 
     Returns
     -------
     projected_distance : float
     """
+    # enforce at least 2d input
+    vector = np.atleast_2d(vector)
+
     # Store the start and end positions in world coordinates
     start_position = np.array(start_event.position)[layer._dims_displayed_mask]
     end_position = np.array(end_event.position)[layer._dims_displayed_mask]
-
-    print(np.allclose(start_position, end_position))
 
     # Project the start and end positions onto a pseudo-canvas, a plane
     # parallel to the rendered canvas in data coordinates.
@@ -47,7 +49,9 @@ def mouse_events_to_projected_distance(start_event, end_event, layer, vector):
         end_position, start_position_canvas, start_event.view_direction
     )
     # Calculate the drag vector on the pseudo-canvas.
-    drag_vector_canvas = end_position_canvas - start_position_canvas
+    drag_vector_canvas = np.squeeze(
+        end_position_canvas - start_position_canvas
+    )
 
     # Project the drag vector onto the specified axis and return the distance.
-    return np.dot(drag_vector_canvas, vector)
+    return np.einsum('j, ij -> ij', drag_vector_canvas, vector).squeeze()

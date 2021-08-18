@@ -2,8 +2,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ...utils.geometry import point_in_bounding_box
-from ..utils.interactivity_utils import mouse_events_to_projected_distance
+from ...utils.geometry import (
+    clamp_point_to_bounding_box,
+    point_in_bounding_box,
+)
 
 
 def on_plane_drag(layer, event):
@@ -42,7 +44,8 @@ def on_plane_drag(layer, event):
 
     # store the whole event from the beginning of a drag
     # can't copy/serialise mouse events... event ref gets updated
-    # temp solution, store necessary info in a simple dataclass
+    # temp solution until we figure out event serialisation is to store
+    # necessary info in a simple dataclass.
     @dataclass
     class FakeMouseEvent:
         position: tuple
@@ -57,18 +60,22 @@ def on_plane_drag(layer, event):
         drag_event = event
 
         # Project mouse drag onto plane normal
-        drag_distance = mouse_events_to_projected_distance(
+        drag_distance = layer.projected_distance_from_mouse_events(
             start_event=start_event,
             end_event=drag_event,
-            layer=layer,
             vector=layer.embedded_plane.normal,
         )
 
-        layer.embedded_plane.position = (
-            original_plane_position
-            + drag_distance * np.array(layer.embedded_plane.normal)
+        # Calculate updated plane position
+        updated_position = original_plane_position + (
+            drag_distance * np.array(layer.embedded_plane.normal)
         )
-        # TODO clamp position to data bbox
+
+        clamped_plane_position = clamp_point_to_bounding_box(
+            updated_position, layer._display_bounding_box
+        )
+
+        layer.embedded_plane.position = clamped_plane_position
         yield
 
     # Re-enable layer interactivity after the drag
