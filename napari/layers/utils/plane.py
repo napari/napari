@@ -18,9 +18,9 @@ class Plane(EventedModel):
     Attributes
     ----------
     position : 3-tuple
-        A 3D position on the plane, defined in data coordinates.
+        A 3D position on the plane, defined in sliced data coordinates (currently displayed dims).
     normal : 3-tuple
-        A 3D unit vector normal to the plane, defined in data coordinates.
+        A 3D unit vector normal to the plane, defined in sliced data coordinates (currently displayed dims).
     thickness : float
         Thickness of the slice.
     enabled : bool
