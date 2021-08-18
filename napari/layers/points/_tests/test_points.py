@@ -1884,6 +1884,26 @@ def test_to_mask_2d_with_isotropic_scale():
     np.testing.assert_array_equal(mask, expected_mask)
 
 
+def test_to_mask_2d_with_negative_isotropic_scale():
+    points = Points([[2, -8]], size=4)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(scale=(2, -2))
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
 def test_to_mask_2d_with_anisotropic_scale_isotropic_output():
     # With isotropic output, the size of the output ball is determined
     # by the geometric mean of the scale which is sqrt(2), so absorb that

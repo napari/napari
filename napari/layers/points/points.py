@@ -1552,11 +1552,11 @@ class Points(Layer):
         # using the geometric mean if isotropic output is desired.
         # The geometric means are used instead of the arithmetic mean
         # to maintain the volume scaling factor of the transforms.
-        point_data_to_world_scale = gmean(self._data_to_world.scale)
+        point_data_to_world_scale = gmean(np.abs(self._data_to_world.scale))
         mask_world_to_data_scale = (
-            gmean(mask_world_to_data.scale)
+            gmean(np.abs(mask_world_to_data.scale))
             if isotropic_output
-            else mask_world_to_data.scale
+            else np.abs(mask_world_to_data.scale)
         )
         radii_scale = point_data_to_world_scale * mask_world_to_data_scale
 
