@@ -320,12 +320,15 @@ class _QtMainWindow(QMainWindow):
 
     def resizeEvent(self, event):
         """Override to handle original size before maximizing."""
-        self._old_size = event.oldSize()
-        self._positions.append((self.x(), self.y()))
+        # the first resize event will have nonsense positions that we dont
+        # want to store (and potentially restore)
+        if event.oldSize().isValid():
+            self._old_size = event.oldSize()
+            self._positions.append((self.x(), self.y()))
 
-        if self._positions and len(self._positions) >= 2:
-            self._window_pos = self._positions[-2]
-            self._positions = self._positions[-2:]
+            if self._positions and len(self._positions) >= 2:
+                self._window_pos = self._positions[-2]
+                self._positions = self._positions[-2:]
 
         super().resizeEvent(event)
 
