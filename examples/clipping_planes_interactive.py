@@ -1,10 +1,11 @@
 """
-Display a 3D image with a clipping plane and interactive controls
+Display a 3D image (plus labels) with a clipping plane and interactive controls
 for moving the plane
 """
 import napari
 import numpy as np
 from skimage import data
+from scipy import ndimage
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -13,6 +14,8 @@ blobs = data.binary_blobs(
     length=64, volume_fraction=0.1, n_dim=3
 ).astype(float)
 
+labeled = ndimage.label(blobs)[0]
+
 plane_parameters = {
     'position': (32, 32, 32),
     'normal': (1, 1, 1),
@@ -20,9 +23,15 @@ plane_parameters = {
 }
 
 volume_layer = viewer.add_image(
-    blobs, rendering='mip', name='volume', blending='additive',
+    blobs, rendering='mip', name='volume',
     experimental_clipping_planes=[plane_parameters],
 )
+
+labels_layer = viewer.add_labels(
+    labeled, name='labels', blending='translucent',
+    experimental_clipping_planes=[plane_parameters],
+)
+
 
 def point_in_bounding_box(point, bounding_box):
     if np.all(point > bounding_box[0]) and np.all(point < bounding_box[1]):
@@ -87,6 +96,7 @@ def shift_plane_along_normal(viewer, event):
 
     # Disable interactivity during plane drag
     volume_layer.interactive = False
+    labels_layer.interactive = False
 
     # Store original plane position and start position in canvas coordinates
     original_plane_position = volume_layer.experimental_clipping_planes[0].position
@@ -114,11 +124,13 @@ def shift_plane_along_normal(viewer, event):
 
         if point_in_bounding_box(updated_position, volume_layer.extent.data):
             volume_layer.experimental_clipping_planes[0].position = updated_position
+            labels_layer.experimental_clipping_planes[0].position = updated_position
 
         yield
 
     # Re-enable
     volume_layer.interactive = True
+    labels_layer.interactive = True
 
 
 viewer.axes.visible = True
