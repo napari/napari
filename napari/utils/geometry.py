@@ -345,7 +345,7 @@ def intersect_line_with_multiple_planes_3d(
     plane_position: np.ndarray,
     plane_normal: np.ndarray,
 ) -> np.ndarray:
-    """Find the intersection of a line with an arbitrarily oriented plane in 3D.
+    """Find the intersection of a line with multiple arbitrarily oriented planes in 3D.
     The line is defined by a position and a direction vector.
     The plane is defined by a position and a normal vector.
     https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
@@ -357,9 +357,9 @@ def intersect_line_with_multiple_planes_3d(
     line_direction : np.ndarray
         direction of the 3D line with shape (3,).
     plane_position : np.ndarray
-        a position on a plane in 3D with shape (3,).
+        point on a plane in 3D with shape (n, 3) for n planes.
     plane_normal : np.ndarray
-        a vector normal to the plane in 3D with shape (3,).
+        a vector normal to the plane in 3D with shape (n,3) for n planes.
 
     Returns
     -------
@@ -401,6 +401,29 @@ def intersect_line_with_multiple_planes_3d(
 def intersect_ray_with_triangle(
     ray_position: np.ndarray, ray_direction: np.ndarray, triangles: np.ndarray
 ):
+    """Find the intersection of a ray with a set of triangles.
+
+    This function does not test whether the ray intersects the triangles, so you should
+    have tested for intersection first. See ray_in_triangle_3d() for testing for
+    intersection.
+
+    Parameters
+    ----------
+    ray_position: np.ndarray
+        The (3,) array containing the starting point of the ray.
+    ray_direction : np.ndarray
+        The (3,) array containing the unit vector in the direction of the ray.
+    triangles : np.ndarray
+        The 3D vertices of the triangles. Should be (n, 3, 3) for n triangles. Axis 1
+        indexes each vertex and axis 2 contains the coordinates. That to access the
+        0th vertex from triangle index 3, one would use: triangles[3, 0, :].
+
+    Returns
+    -------
+    intersection_points : np.ndarray
+        (n, 3) array containing the point at which the specified ray intersects
+        the each triangle.
+    """
     edge_1 = triangles[:, 1, :] - triangles[:, 0, :]
     edge_2 = triangles[:, 2, :] - triangles[:, 0, :]
     triangle_normals = np.cross(edge_1, edge_2)
@@ -414,9 +437,6 @@ def intersect_ray_with_triangle(
         plane_position=triangles[:, 0, :],
         plane_normal=triangle_normals,
     )
-    # ray_start_to_triangle = intersected_triangles[:, 0, :] - ray_position
-    # t = np.sum(ray_start_to_triangle * triangle_normals) / np.sum(ray_direction * triangle_normals)
-    # intersection_points = ray_position + t * ray_direction
 
     return intersection_points
 
