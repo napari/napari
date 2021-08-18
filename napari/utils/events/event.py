@@ -51,6 +51,7 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 import inspect
 import weakref
 from collections import Counter
+from functools import partial
 from typing import (
     Any,
     Callable,
@@ -241,6 +242,8 @@ class EventEmitter:
     event_class : subclass of Event
         The class of events that this emitter will generate.
     """
+
+    _callbacks = []
 
     def __init__(
         self,
@@ -488,6 +491,14 @@ class EventEmitter:
         # actually add the callback
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
+
+        if isinstance(callback, tuple):
+            from qtpy.QtCore import QObject
+
+            obj = callback[0]()
+            if isinstance(obj, QObject):
+                obj.destroyed.connect(partial(self.disconnect, callback))
+
         return callback  # allows connect to be used as a decorator
 
     def disconnect(self, callback: Union[Callback, CallbackRef, None] = None):
