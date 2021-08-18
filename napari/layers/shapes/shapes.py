@@ -2704,7 +2704,7 @@ class Shapes(Layer):
         vertex : None
             Index of vertex if any that is at the coordinates. Always returns `None`.
         """
-        value, _ = self._get_value_and_intersection_3d(
+        value, _ = self.get_value_and_intersection(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,
@@ -2712,14 +2712,17 @@ class Shapes(Layer):
 
         return (value, None)
 
-    def _get_value_and_intersection_3d(
+    def get_value_and_intersection(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: List[int],
     ) -> Tuple[Union[float, int], None]:
         """Get the shape index and intersection point of the first shape
-        (i.e., closest to start_point) along the specified line segment.
+        (i.e., closest to start_point) along the specified 3D line segment.
+
+        Note: this method is meant to be used for 3D intersection and returns
+        (None, None) when used in 2D (i.e., len(dims_displayed) is 2).
 
         Parameters
         ----------
@@ -2741,32 +2744,35 @@ class Shapes(Layer):
             (i.e., the shape most in the foreground). The coordinate is in layer
             coordinates.
         """
-        if (start_point is not None) and (end_point is not None):
-            # Get the normal vector of the click plane
-            start_position_view = start_point[dims_displayed]
-            end_position_view = end_point[dims_displayed]
-            ray_direction = end_position_view - start_position_view
-            ray_direction_normed = ray_direction / np.linalg.norm(
-                ray_direction
-            )
-            # step the start position back a little bit to be able to detect shapes
-            # that contain the start_position
-            start_position_view = (
-                start_position_view - 0.1 * ray_direction_normed
-            )
-            value, intersection = self._data_view._inside_3d(
-                start_position_view, ray_direction_normed
-            )
+        if len(dims_displayed) == 3:
+            if (start_point is not None) and (end_point is not None):
+                # Get the normal vector of the click plane
+                start_position_view = start_point[dims_displayed]
+                end_position_view = end_point[dims_displayed]
+                ray_direction = end_position_view - start_position_view
+                ray_direction_normed = ray_direction / np.linalg.norm(
+                    ray_direction
+                )
+                # step the start position back a little bit to be able to detect shapes
+                # that contain the start_position
+                start_position_view = (
+                    start_position_view - 0.1 * ray_direction_normed
+                )
+                value, intersection = self._data_view._inside_3d(
+                    start_position_view, ray_direction_normed
+                )
 
-            # add the full nD coords to intersection
-            intersection_point = start_point.copy()
-            intersection_point[dims_displayed] = intersection
+                # add the full nD coords to intersection
+                intersection_point = start_point.copy()
+                intersection_point[dims_displayed] = intersection
 
+            else:
+                value = None
+                intersection_point = None
         else:
             value = None
             intersection_point = None
-
-        return (value, intersection_point)
+        return value, intersection_point
 
     def move_to_front(self):
         """Moves selected objects to be displayed in front of all others."""
