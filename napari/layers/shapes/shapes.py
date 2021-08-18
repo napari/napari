@@ -2718,14 +2718,17 @@ class Shapes(Layer):
         end_point: np.ndarray,
         dims_displayed: List[int],
     ) -> Tuple[Union[float, int], None]:
-        """Get the layer data value along a ray
+        """Get the shape index and intersection point of the first shape
+        (i.e., closest to start_point) along the specified line segment.
 
         Parameters
         ----------
         start_point : np.ndarray
-            The start position of the ray used to interrogate the data.
+            The start position of the ray used to interrogate the data in
+            layer coordinates.
         end_point : np.ndarray
-            The end position of the ray used to interrogate the data.
+            The end position of the ray used to interrogate the data in
+            layer coordinates.
         dims_displayed : List[int]
             The indices of the dimensions currently displayed in the Viewer.
 
@@ -2733,8 +2736,10 @@ class Shapes(Layer):
         -------
         value
             The data value along the supplied ray.
-        vertex : None
-            Index of vertex if any that is at the coordinates. Always returns `None`.
+        intersection_point : np.ndarray
+            (n,) array containing the point where the ray intersects the first shape
+            (i.e., the shape most in the foreground). The coordinate is in layer
+            coordinates.
         """
         if (start_point is not None) and (end_point is not None):
             # Get the normal vector of the click plane
@@ -2753,11 +2758,15 @@ class Shapes(Layer):
                 start_position_view, ray_direction_normed
             )
 
+            # add the full nD coords to intersection
+            intersection_point = start_point.copy()
+            intersection_point[dims_displayed] = intersection
+
         else:
             value = None
-            intersection = None
+            intersection_point = None
 
-        return (value, intersection)
+        return (value, intersection_point)
 
     def move_to_front(self):
         """Moves selected objects to be displayed in front of all others."""
