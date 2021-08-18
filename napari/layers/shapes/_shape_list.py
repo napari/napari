@@ -2,8 +2,8 @@ import numpy as np
 
 from ...utils.geometry import (
     inside_triangles,
-    intersect_ray_with_triangle,
-    ray_in_triangle_3d,
+    intersect_line_with_triangles,
+    line_in_triangles_3d,
 )
 from ...utils.translations import trans
 from ._mesh import Mesh
@@ -813,9 +813,9 @@ class ShapeList:
             no intersection, returns None.
         """
         triangles = self._mesh.vertices[self._mesh.displayed_triangles]
-        inside = ray_in_triangle_3d(
-            ray_position=ray_position,
-            ray_direction=ray_direction,
+        inside = line_in_triangles_3d(
+            line_point=ray_position,
+            line_direction=ray_direction,
             triangles=triangles,
         )
         intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
@@ -862,9 +862,9 @@ class ShapeList:
         """
         triangles = self._mesh.vertices[self._mesh.displayed_triangles]
         intersected_triangles = triangles[triangle_indices]
-        intersection_points = intersect_ray_with_triangle(
-            ray_position=ray_position,
-            ray_direction=ray_direction,
+        intersection_points = intersect_line_with_triangles(
+            line_point=ray_position,
+            line_direction=ray_direction,
             triangles=intersected_triangles,
         )
         return intersection_points

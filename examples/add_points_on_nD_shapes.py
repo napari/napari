@@ -51,7 +51,7 @@ def on_click(layer, event):
         event.dims_displayed
     )
     if (start_point is not None) and (end_point is not None):
-        shape_index, intersection_point = layer.get_value_and_intersection(
+        shape_index, intersection_point = layer.get_index_and_intersection(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=event.dims_displayed

@@ -16,7 +16,7 @@ from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
     find_front_back_face,
-    intersect_ray_with_axis_aligned_bounding_box_3d,
+    intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
@@ -1259,12 +1259,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             # Get the locations in the plane where the ray intersects
             if front_face_normal is not None and back_face_normal is not None:
                 start_point_disp_dims = (
-                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                    intersect_line_with_axis_aligned_bounding_box_3d(
                         click_pos_data, view_dir, bbox, front_face_normal
                     )
                 )
                 end_point_disp_dims = (
-                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                    intersect_line_with_axis_aligned_bounding_box_3d(
                         click_pos_data, view_dir, bbox, back_face_normal
                     )
                 )

@@ -2704,7 +2704,7 @@ class Shapes(Layer):
         vertex : None
             Index of vertex if any that is at the coordinates. Always returns `None`.
         """
-        value, _ = self.get_value_and_intersection(
+        value, _ = self.get_index_and_intersection(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,
@@ -2712,7 +2712,7 @@ class Shapes(Layer):
 
         return (value, None)
 
-    def get_value_and_intersection(
+    def get_index_and_intersection(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
