@@ -56,6 +56,14 @@ _defaults = {
 _app_ref = None
 
 
+def qt_breakpointhook():
+    from .utils import event_hook_removed
+
+    # QApplication.processEvents()
+    with event_hook_removed():
+        sys.__breakpointhook__()
+
+
 def get_app(
     *,
     app_name: str = None,
@@ -178,6 +186,8 @@ def get_app(
         # this will register all of our resources (icons) with Qt, so that they
         # can be used in qss files and elsewhere.
         _register_napari_resources()
+
+        sys.breakpointhook = qt_breakpointhook
 
     _app_ref = app  # prevent garbage collection
 

@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import warnings
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -419,7 +420,6 @@ class Window:
     """
 
     def __init__(self, viewer: Viewer, *, show: bool = True):
-        settings = get_settings()
 
         # create QApplication if it doesn't already exist
         get_app()
@@ -433,12 +433,6 @@ class Window:
         self.events = EmitterGroup(self, False, closed=None)
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
-
-        # since we initialize canvas before window, we need to manually connect them again.
-        if self._qt_window.windowHandle() is not None:
-            self._qt_window.windowHandle().screenChanged.connect(
-                self.qt_viewer.canvas._backend.screen_changed
-            )
 
         # set the grid options on start up
         self._update_widget_states()
@@ -455,21 +449,15 @@ class Window:
         self._status_bar.addPermanentWidget(self._help)
 
         self._activity_item = ActivityToggleItem()
-        self._activity_item._activityBtn.clicked.connect(
-            self._toggle_activity_dock
-        )
         self._qt_window._activity_dialog._toggleButton = self._activity_item
 
         canvas_widg = self.qt_viewer._canvas_overlay
         self._qt_window._activity_dialog.setParent(canvas_widg)
-        self.qt_viewer._canvas_overlay.resized.connect(
-            self._qt_window._activity_dialog.move_to_bottom_right
-        )
         self._qt_window._activity_dialog.move_to_bottom_right()
         self._qt_window._activity_dialog.hide()
         self._status_bar.addPermanentWidget(self._activity_item)
 
-        self.qt_viewer.viewer.theme = settings.appearance.theme
+        viewer.theme = get_settings().appearance.theme
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -481,6 +469,64 @@ class Window:
         )
         self.window_menu.addSeparator()
 
+        if perf.USE_PERFMON:
+            # Add DebugMenu and dockPerformance if using perfmon.
+            self._debug_menu = DebugMenu(self)
+            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+        else:
+            self._debug_menu = None
+
+        self._connect(viewer)
+        self._qt_window.destroyed.connect(partial(self._disconnect, viewer))
+
+        if show:
+            self.show()
+
+    def _disconnect(self, viewer):
+        settings = get_settings()
+        settings.appearance.events.theme.disconnect(self._update_theme)
+        settings.application.events.playback_fps.disconnect(
+            self._update_widget_states
+        )
+        settings.application.events.playback_mode.disconnect(
+            self._update_widget_states
+        )
+        plugin_manager.events.disabled.disconnect(self._rebuild_plugins_menu)
+        plugin_manager.events.disabled.disconnect(self._rebuild_samples_menu)
+        plugin_manager.events.registered.disconnect(self._rebuild_plugins_menu)
+        plugin_manager.events.registered.disconnect(self._rebuild_samples_menu)
+        plugin_manager.events.unregistered.disconnect(
+            self._rebuild_plugins_menu
+        )
+        plugin_manager.events.unregistered.disconnect(
+            self._rebuild_samples_menu
+        )
+        viewer.events.status.disconnect(self._status_changed)
+        viewer.events.help.disconnect(self._help_changed)
+        viewer.events.title.disconnect(self._title_changed)
+        viewer.events.theme.disconnect(self._update_theme)
+        self._activity_item._activityBtn.clicked.disconnect(
+            self._toggle_activity_dock
+        )
+        # self.qt_viewer._canvas_overlay.resized.disconnect(
+        #     self._qt_window._activity_dialog.move_to_bottom_right
+        # )
+
+    def _connect(self, viewer):
+        # since we initialize canvas before window, we need to manually connect them again.
+        if self._qt_window.windowHandle() is not None:
+            self._qt_window.windowHandle().screenChanged.connect(
+                self.qt_viewer.canvas._backend.screen_changed
+            )
+
+        self._activity_item._activityBtn.clicked.connect(
+            self._toggle_activity_dock
+        )
+        self.qt_viewer._canvas_overlay.resized.connect(
+            self._qt_window._activity_dialog.move_to_bottom_right
+        )
+
+        settings = get_settings()
         settings.appearance.events.theme.connect(self._update_theme)
         settings.application.events.playback_fps.connect(
             self._update_widget_states
@@ -495,52 +541,11 @@ class Window:
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
+
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
-
-        @self._qt_window.destroyed.connect
-        def _disconnect():
-            settings.appearance.events.theme.disconnect(self._update_theme)
-            settings.application.events.playback_fps.disconnect(
-                self._update_widget_states
-            )
-            settings.application.events.playback_mode.disconnect(
-                self._update_widget_states
-            )
-            plugin_manager.events.disabled.disconnect(
-                self._rebuild_plugins_menu
-            )
-            plugin_manager.events.disabled.disconnect(
-                self._rebuild_samples_menu
-            )
-            plugin_manager.events.registered.disconnect(
-                self._rebuild_plugins_menu
-            )
-            plugin_manager.events.registered.disconnect(
-                self._rebuild_samples_menu
-            )
-            plugin_manager.events.unregistered.disconnect(
-                self._rebuild_plugins_menu
-            )
-            plugin_manager.events.unregistered.disconnect(
-                self._rebuild_samples_menu
-            )
-            viewer.events.status.disconnect(self._status_changed)
-            viewer.events.help.disconnect(self._help_changed)
-            viewer.events.title.disconnect(self._title_changed)
-            viewer.events.theme.disconnect(self._update_theme)
-
-        if perf.USE_PERFMON:
-            # Add DebugMenu and dockPerformance if using perfmon.
-            self._debug_menu = DebugMenu(self)
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
-        else:
-            self._debug_menu = None
-
-        if show:
-            self.show()
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -1633,6 +1638,6 @@ class Window:
         if hasattr(self, '_qt_window'):
             self.qt_viewer.close()
             self._qt_window.close()
-            del self._qt_window
             get_app().processEvents()
             self.events.closed()
+            del self._qt_window

@@ -208,9 +208,9 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         if root is current_root:
             return
 
-        if current_root is not None:
-            # we're changing roots... disconnect previous root
-            self._disconnectRoot()
+        # if current_root is not None:
+        #     # we're changing roots... disconnect previous root
+        #     self._disconnectRoot()
 
         self._root = root
         self._root.events.removing.connect(self._on_begin_removing)
