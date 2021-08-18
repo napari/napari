@@ -2774,6 +2774,46 @@ class Shapes(Layer):
             intersection_point = None
         return value, intersection_point
 
+    def get_index_and_intersection_from_event(
+        self, event
+    ) -> Tuple[Union[float, int], None]:
+        """Get the shape index and intersection point of the first shape
+        (i.e., closest to start_point) "under" a mouse click.
+
+        Note: this method only works with a mouse click event with the following
+        properties: position, view_direction, and dims_displayed
+
+        See examples/add_points_on_nD_shapes.py for example usage.
+
+        Parameters
+        ----------
+        event : Event
+            The mouse click event to determine the shape index and intersection
+            point from.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        intersection_point : np.ndarray
+            (n,) array containing the point where the ray intersects the first shape
+            (i.e., the shape most in the foreground). The coordinate is in layer
+            coordinates.
+        """
+        start_point, end_point = self.get_ray_intersections(
+            event.position, event.view_direction, event.dims_displayed
+        )
+        if (start_point is not None) and (end_point is not None):
+            shape_index, intersection_point = self.get_index_and_intersection(
+                start_point=start_point,
+                end_point=end_point,
+                dims_displayed=event.dims_displayed,
+            )
+        else:
+            shape_index = (None,)
+            intersection_point = None
+        return shape_index, intersection_point
+
     def move_to_front(self):
         """Moves selected objects to be displayed in front of all others."""
         if len(self.selected_data) == 0:

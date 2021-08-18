@@ -45,20 +45,12 @@ shapes_layer = viewer.add_shapes(
 @shapes_layer.mouse_drag_callbacks.append
 def on_click(layer, event):
 
-    start_point, end_point = layer.get_ray_intersections(
-        event.position,
-        event.view_direction,
-        event.dims_displayed
+    shape_index, intersection_point = layer.get_index_and_intersection_from_event(
+        event
     )
-    if (start_point is not None) and (end_point is not None):
-        shape_index, intersection_point = layer.get_index_and_intersection(
-            start_point=start_point,
-            end_point=end_point,
-            dims_displayed=event.dims_displayed
-        )
 
-        if (shape_index is not None) and (intersection_point is not None):
-            points_layer.add(intersection_point)
+    if (shape_index is not None) and (intersection_point is not None):
+        points_layer.add(intersection_point)
 
 
 # set the viewer to 3D rendering mode
