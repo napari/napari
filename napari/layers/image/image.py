@@ -286,7 +286,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._experimental_slicing_plane = Plane(thickness=10)
+        self._experimental_slicing_plane = Plane(thickness=1, enabled=False)
         self._experimental_clipping_planes = PlaneList()
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()

@@ -29,8 +29,8 @@ class Plane(EventedModel):
 
     position: Tuple[float, float, float] = (0, 0, 0)
     normal: Tuple[float, float, float] = (1, 0, 0)
-    enabled: bool = False
-    thickness: float = 10.0
+    enabled: bool = True
+    thickness: float = 0.0
 
     @validator('normal')
     def _normalise_vector(cls, v):
