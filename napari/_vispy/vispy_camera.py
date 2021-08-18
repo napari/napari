@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from vispy.scene import ArcballCamera, PanZoomCamera
 
 from .quaternion import quaternion2euler
+
+if TYPE_CHECKING:
+    from vispy.scene.widgets.viewbox import ViewBox
 
 
 class VispyCamera:
@@ -17,7 +22,7 @@ class VispyCamera:
         napari dims model.
     """
 
-    def __init__(self, view, camera, dims):
+    def __init__(self, view: 'ViewBox', camera, dims):
         self._view = view
         self._camera = camera
         self._dims = dims
