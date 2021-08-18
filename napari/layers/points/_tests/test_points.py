@@ -372,6 +372,26 @@ def test_removing_selected_points():
     assert len(layer.data) == shape[0] - 3
 
 
+def test_deleting_selected_value_changes():
+    """Test deleting selected points appropriately sets self._value"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # removing with self._value selected resets self._value to None
+    layer._value = 1
+    layer.selected_data = {1, 2}
+    layer.remove_selected()
+    assert layer._value is None
+
+    # removing with self._value outside selection doesn't change self._value
+    layer._value = 3
+    layer.selected_data = {4}
+    layer.remove_selected()
+    assert layer._value == 3
+
+
 def test_move():
     """Test moving points."""
     shape = (10, 2)
