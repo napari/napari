@@ -528,7 +528,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @experimental_clipping_planes.setter
     def experimental_clipping_planes(
-        self, value: Union[List[Plane, dict], PlaneList]
+        self, value: Union[List[Union[Plane, dict]], PlaneList]
     ):
         self._experimental_clipping_planes.clear()
         if value is not None:

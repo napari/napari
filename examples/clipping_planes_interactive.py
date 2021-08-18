@@ -6,6 +6,7 @@ import napari
 import numpy as np
 from skimage import data
 from scipy import ndimage
+from meshzoo import icosa_sphere
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -29,6 +30,19 @@ volume_layer = viewer.add_image(
 
 labels_layer = viewer.add_labels(
     labeled, name='labels', blending='translucent',
+    experimental_clipping_planes=[plane_parameters],
+)
+
+points_layer = viewer.add_points(
+    np.random.rand(20, 3) * 64, size=5,
+    experimental_clipping_planes=[plane_parameters],
+)
+
+sphere_vert, sphere_faces = icosa_sphere(10)
+sphere_vert *= 20
+sphere_vert += 32
+surface_layer = viewer.add_surface(
+    (sphere_vert, sphere_faces),
     experimental_clipping_planes=[plane_parameters],
 )
 
@@ -97,6 +111,9 @@ def shift_plane_along_normal(viewer, event):
     # Disable interactivity during plane drag
     volume_layer.interactive = False
     labels_layer.interactive = False
+    labels_layer.interactive = False
+    points_layer.interactive = False
+    surface_layer.interactive = False
 
     # Store original plane position and start position in canvas coordinates
     original_plane_position = volume_layer.experimental_clipping_planes[0].position
@@ -125,12 +142,16 @@ def shift_plane_along_normal(viewer, event):
         if point_in_bounding_box(updated_position, volume_layer.extent.data):
             volume_layer.experimental_clipping_planes[0].position = updated_position
             labels_layer.experimental_clipping_planes[0].position = updated_position
+            points_layer.experimental_clipping_planes[0].position = updated_position
+            surface_layer.experimental_clipping_planes[0].position = updated_position
 
         yield
 
     # Re-enable
     volume_layer.interactive = True
     labels_layer.interactive = True
+    points_layer.interactive = True
+    surface_layer.interactive = True
 
 
 viewer.axes.visible = True

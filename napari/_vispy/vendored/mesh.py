@@ -7,6 +7,7 @@
 """A MeshVisual Visual that uses the new shader Function."""
 
 from __future__ import division
+from functools import lru_cache
 
 import numpy as np
 
@@ -15,13 +16,16 @@ from vispy.visuals.shaders import Function, FunctionChain
 from vispy.gloo import VertexBuffer
 from vispy.geometry import MeshData
 from vispy.color import Color, get_colormap
+from vispy.color.colormap import CubeHelixColormap
 from vispy.util.event import Event
 
 
 vertex_template = """
 varying vec4 v_base_color;
+varying float v_is_shown;
 
 void main() {
+    v_is_shown = $clip_by_planes($position);
     v_base_color = $color_transform($base_color);
     gl_Position = $transform($to_vec4($position));
 }
@@ -29,7 +33,11 @@ void main() {
 
 fragment_template = """
 varying vec4 v_base_color;
+varying float v_is_shown;
+
 void main() {
+    if (v_is_shown < 0.)
+        discard;
     gl_FragColor = v_base_color;
 }
 """
@@ -106,20 +114,37 @@ class MeshVisual(Visual):
     This class emits a `data_updated` event when the mesh data is updated. This
     is used for example by filters for synchronization.
 
+    Examples
+    --------
+    Create a primitive shape from a helper function:
+
+    >>> from vispy.geometry import create_sphere
+    >>> meshdata = create_sphere()
+    >>> mesh = MeshVisual(meshdata=meshdata)
+
+    Create a custom shape:
+
+    >>> # A rectangle made out of two triangles.
+    >>> vertices = [(0, 0, 0), (1, 0, 1), (1, 1, 1), (0, 1, 0)]
+    >>> faces = [(0, 1, 2), (0, 2, 3)]
+    >>> mesh = MeshVisual(vertices=vertices, faces=faces)
     """
 
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), vertex_values=None,
-                 meshdata=None, shading=None, mode='triangles', **kwargs):
+                 meshdata=None, shading=None, mode='triangles',
+                 clipping_planes=None, **kwargs):
         Visual.__init__(self, vcode=vertex_template, fcode=fragment_template,
                         **kwargs)
         self.set_gl_state('translucent', depth_test=True, cull_face=False)
 
         self.events.add(data_updated=Event)
 
+        self._meshdata = None
+
         # Define buffers
         self._vertices = VertexBuffer(np.zeros((0, 3), dtype=np.float32))
-        self._cmap = get_colormap('cubehelix')
+        self._cmap = CubeHelixColormap()
         self._clim = 'auto'
 
         # Uniform color
@@ -140,6 +165,7 @@ class MeshVisual(Visual):
 
         # primitive mode
         self._draw_mode = mode
+        self.clipping_planes = clipping_planes
 
         self.freeze()
 
@@ -158,9 +184,9 @@ class MeshVisual(Visual):
         if self.shading_filter is None:
             from .filters import ShadingFilter
             self.shading_filter = ShadingFilter(shading=shading)
+            self.attach(self.shading_filter)
         else:
             self.shading_filter.shading = shading
-        self.attach(self.shading_filter)
 
     def set_data(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=None, vertex_values=None,
@@ -310,8 +336,7 @@ class MeshVisual(Visual):
 
         self.shared_program.vert['position'] = self._vertices
 
-        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut() \
-            if (hasattr(self._cmap, 'texture_lut')) else None
+        self.shared_program['texture2D_LUT'] = self._cmap.texture_lut()
 
         # Position input handling
         if v.shape[-1] == 2:
@@ -336,14 +361,58 @@ class MeshVisual(Visual):
 
         self.events.data_updated()
 
+    @staticmethod
+    @lru_cache(maxsize=10)
+    def _build_clipping_planes_func(n_planes):
+        """Build the code snippet used to clip the mesh based on self.clipping_planes."""
+        func = Function(
+            '$vars\nfloat clip_planes(vec3 loc) { float is_shown = 1.0; $clips; return is_shown; }')
+        # each plane is defined by a position and a normal vector
+        # the vertex is considered clipped if on the "negative" side of the plane
+        vars_template = '''
+            uniform vec3 u_clipping_plane_pos{idx};
+            uniform vec3 u_clipping_plane_norm{idx};
+            '''
+        clip_template = '''
+            vec3 relative_vec{idx} = loc - ( u_clipping_plane_pos{idx} );
+            float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
+            is_shown = min(is_shown{idx}, is_shown);
+            '''
+        all_vars = []
+        all_clips = []
+        for idx in range(n_planes):
+            all_vars.append(vars_template.format(idx=idx))
+            all_clips.append(clip_template.format(idx=idx))
+        func['vars'] = ''.join(all_vars)
+        func['clips'] = ''.join(all_clips)
+        return func
+
+    @property
+    def clipping_planes(self):
+        """Get the set of planes used to clip the mesh.
+        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+        """
+        return self._clipping_planes[:, :, ::-1]
+
+    @clipping_planes.setter
+    def clipping_planes(self, value):
+        if value is None:
+            value = np.empty([0, 2, 3])
+        value = value[:, :, ::-1]
+        self._clipping_planes = value
+
+        self.shared_program.vert['clip_by_planes'] = self._build_clipping_planes_func(len(value))
+
+        for idx, plane in enumerate(value):
+            self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
+            self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+        self.update()
+
     def _prepare_draw(self, view):
         if self._data_changed:
             if self._update_data() is False:
                 return False
             self._data_changed = False
-
-    def draw(self, *args, **kwds):
-        Visual.draw(self, *args, **kwds)
 
     @staticmethod
     def _prepare_transforms(view):
