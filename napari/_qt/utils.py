@@ -1,10 +1,10 @@
 from contextlib import contextmanager
 from functools import lru_cache, partial
-from typing import Sequence, Union
+from typing import TYPE_CHECKING, Iterator, Sequence, Tuple, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtCore import QByteArray, QPropertyAnimation, QSize, Qt
+from qtpy.QtCore import QByteArray, QObject, QPropertyAnimation, QSize, Qt
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QGraphicsColorizeEffect,
@@ -19,6 +19,10 @@ from ..utils.colormaps.standardize_color import transform_color
 from ..utils.events.custom_types import Array
 from ..utils.misc import is_sequence
 from ..utils.translations import trans
+
+if TYPE_CHECKING:
+    from ..utils.events import CallbackRef, EmitterGroup, EventEmitter
+
 
 QBYTE_FLAG = "!QBYTE_"
 
@@ -302,3 +306,34 @@ def remove_flash_animation(widget: QWidget):
     """
     widget.setGraphicsEffect(None)
     del widget._flash_animation
+
+
+def iter_qt_connections(
+    emitter: 'EventEmitter',
+) -> Iterator[Tuple['EventEmitter', 'CallbackRef']]:
+    for cb in emitter.callbacks:
+        if isinstance(cb, tuple):
+            obj = cb[0]()
+            if isinstance(obj, QObject):
+                yield emitter, cb
+            elif obj is None:
+                emitter.disconnect(cb)
+    if hasattr(emitter, 'emitters'):  # isinstance(emitter, EmitterGroup):
+        for emitter in emitter.emitters.values():
+            yield from iter_qt_connections(emitter)
+
+
+def disconnect_qobjects(group: 'EmitterGroup', dead_only=True):
+    for emitter, cb in iter_qt_connections(group):
+        if dead_only and not qobject_is_alive(cb[0]()) or not dead_only:
+            emitter.disconnect(cb)
+
+
+def qobject_is_alive(qobj: QObject) -> bool:
+    try:
+        qobj.objectName()
+        return True
+    except RuntimeError as e:
+        if "has been deleted" in str(e):
+            return False
+        raise
