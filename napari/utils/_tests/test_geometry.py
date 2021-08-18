@@ -440,9 +440,9 @@ def test_distance_between_point_and_line_3d():
     np.testing.assert_allclose(distance, expected_distance)
 
 
-def test_ray_in_triangle_3d():
-    ray_position = np.array([0, 5, 5])
-    ray_direction = np.array([1, 0, 0])
+def test_line_in_triangles_3d():
+    line_point = np.array([0, 5, 5])
+    line_direction = np.array([1, 0, 0])
 
     triangles = np.array(
         [
@@ -450,5 +450,5 @@ def test_ray_in_triangle_3d():
             [[10, 4, 4], [10, 0, 0], [10, 4, 0]],
         ]
     )
-    in_triangle = line_in_triangles_3d(ray_position, ray_direction, triangles)
+    in_triangle = line_in_triangles_3d(line_point, line_direction, triangles)
     np.testing.assert_array_equal(in_triangle, [True, False])
