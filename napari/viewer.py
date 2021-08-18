@@ -52,6 +52,12 @@ class Viewer(ViewerModel):
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
     def window(self) -> Optional['qt_main_window.Window']:
+        if self._window is None:
+            from .window import Window
+
+            self._window = Window(self)
+            self._window.events.closed.connect(self._on_window_closed)
+
         return self._window
 
     def update_console(self, variables):
@@ -101,11 +107,6 @@ class Viewer(ViewerModel):
 
     def show(self, *, block=False):
         """Resize, show, and raise the viewer window."""
-        if self.window is None:
-            from .window import Window
-
-            self._window = Window(self)
-            self._window.events.closed.connect(self._on_window_closed)
 
         self.window.show(block=block)
         # having this import here makes all of Qt imported lazily, upon
