@@ -1004,9 +1004,16 @@ class VolumeVisual(Visual):
 
     @property
     def clipping_planes(self):
-        """Get the set of planes used to clip the volume.
+        """Get the set of planes used to clip the volume. Values on the negative side of the normal are discarded.
 
         Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+
+        Example: one plane in position (0, 0, 0) and with normal (0, 0, 1),
+                 and a plane in position (1, 1, 1) with normal (0, 1, 0):
+                 volume.clipping_planes = np.array([
+                     [[0, 0, 0], [0, 0, 1]],
+                     [[1, 1, 1], [0, 1, 0]],
+                 ])
         """
         return self._clipping_planes[:, :, ::-1]
 

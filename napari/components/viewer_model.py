@@ -674,6 +674,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         experimental_clipping_planes : list of dicts, list of Plane, or PlaneList
             Each dict defines a clipping plane in 3D in data coordinates.
             Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
+            Values on the negative side of the normal are discarded if the plane is enabled.
 
         Returns
         -------
