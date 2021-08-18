@@ -1973,7 +1973,7 @@ def test_value_3d(
     if expected is None:
         assert value is None
     else:
-        value == expected
+        assert value == expected
 
 
 def test_message():
