@@ -61,13 +61,13 @@ def project_point_onto_plane(
 def rotation_matrix_from_vectors(vec_1, vec_2):
     """Calculate the rotation matrix that aligns vec1 to vec2.
 
-
     Parameters
     ----------
     vec_1 : np.ndarray
         The vector you want to rotate
     vec_2 : np.ndarray
         The vector you would like to align to.
+
     Returns
     -------
     rotation_matrix : np.ndarray
@@ -111,7 +111,7 @@ def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
     point : np.ndarray
         n-dimensional point as an (n,) ndarray. Multiple points can
         be passed as an (n, D) array.
-    bounding_box: np.ndarray
+    bounding_box : np.ndarray
         n-dimensional bounding box as a (n, 2) ndarray
 
     Returns
@@ -133,7 +133,7 @@ def face_coordinate_from_bounding_box(
 
     Parameters
     ----------
-    bounding_box: np.ndarray
+    bounding_box : np.ndarray
         n-dimensional bounding box as a (n, 2) ndarray.
         Each row should contain the [min, max] extents for the
         axis.
@@ -168,7 +168,7 @@ def intersect_line_with_axis_aligned_plane(
 
     Parameters
     ----------
-    plane_intercept: float
+    plane_intercept : float
         The coordinate that the plane intersects on the axis to which plane is
         normal.
         For example, if the plane is described by y=42, plane_intercept is 42.

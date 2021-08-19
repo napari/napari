@@ -25,6 +25,7 @@ class ExperimentalSettings(EventedSettings):
             "Renders images asynchronously using tiles. \nYou must restart napari for changes of this setting to apply."
         ),
         type='boolean',  # need to specify to build checkbox in preferences.
+        requires_restart=True,
     )
 
     async_: bool = Field(
@@ -34,16 +35,8 @@ class ExperimentalSettings(EventedSettings):
             "Asynchronous loading of image data. \nThis setting partially loads data while viewing. \nYou must restart napari for changes of this setting to apply."
         ),
         env="napari_async",
+        requires_restart=True,
     )
-
-    def __setattr__(self, name, value):
-        super().__setattr__(name, value)
-        if name in ('async_', 'experimental'):
-            import warnings
-
-            warnings.warn(
-                trans._('Restart required for changes to take effect')
-            )
 
     class NapariConfig:
         # Napari specific configuration
