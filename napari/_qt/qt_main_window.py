@@ -405,9 +405,6 @@ class Window:
                 self.qt_viewer.canvas._backend.screen_changed
             )
 
-        # set the grid options on start up
-        self._update_widget_states()
-
         self._add_menubar()
         self.main_menu.addMenu(FileMenu(self))
         self._add_view_menu()
@@ -447,12 +444,6 @@ class Window:
         self.window_menu.addSeparator()
 
         settings.appearance.events.theme.connect(self._update_theme)
-        settings.application.events.playback_fps.connect(
-            self._update_widget_states
-        )
-        settings.application.events.playback_mode.connect(
-            self._update_widget_states
-        )
 
         plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
         plugin_manager.events.registered.connect(self._rebuild_plugins_menu)
@@ -503,16 +494,6 @@ class Window:
         else:
             self.main_menu.setVisible(True)
             self._main_menu_shortcut.setEnabled(False)
-
-    def _update_widget_states(self, e=None):
-        """Keep widgets in napari up to date with settings values."""
-
-        settings = get_settings()
-
-        # update playback settings
-        for widget in self.qt_viewer.dims.slider_widgets:
-            setattr(widget, 'fps', settings.application.playback_fps)
-            setattr(widget, 'loop_mode', settings.application.playback_mode)
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""

@@ -36,6 +36,15 @@ class ExperimentalSettings(EventedSettings):
         env="napari_async",
     )
 
+    def __setattr__(self, name, value):
+        super().__setattr__(name, value)
+        if name in ('async_', 'experimental'):
+            import warnings
+
+            warnings.warn(
+                trans._('Restart required for changes to take effect')
+            )
+
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ['schema_version']
