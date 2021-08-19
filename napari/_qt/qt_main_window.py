@@ -10,7 +10,7 @@ import warnings
 from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
-from qtpy.QtGui import QIcon, QKeySequence
+from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -401,13 +401,14 @@ class Window:
             )
 
         self._add_menubar()
-        self.main_menu.addMenu(FileMenu(self))
-        self.main_menu.addMenu(ViewMenu(self))
+        mm = self._qt_window.menuBar()
         self.window_menu = WindowMenu(self)
-        self.main_menu.addMenu(self.window_menu)
-        self.main_menu.addMenu(PluginsMenu(self))
         self.help_menu = HelpMenu(self)
-        self.main_menu.addMenu(self.help_menu)
+        mm.addMenu(FileMenu(self))
+        mm.addMenu(ViewMenu(self))
+        mm.addMenu(self.window_menu)
+        mm.addMenu(PluginsMenu(self))
+        mm.addMenu(self.help_menu)
 
         self._status_bar.showMessage(trans._('Ready'))
         self._help = QLabel('')
@@ -466,9 +467,7 @@ class Window:
         # shortcut, we disable it, and only enable it when the menubar is
         # hidden. See this stackoverflow link for details:
         # https://stackoverflow.com/questions/50537642/how-to-keep-the-shortcuts-of-a-hidden-widget-in-pyqt5
-        self._main_menu_shortcut = QShortcut(
-            QKeySequence('Ctrl+M'), self._qt_window
-        )
+        self._main_menu_shortcut = QShortcut('Ctrl+M', self._qt_window)
         self._main_menu_shortcut.activated.connect(
             self._toggle_menubar_visible
         )
@@ -481,12 +480,8 @@ class Window:
         show the menubar, since menubar shortcuts are only available while the
         menubar is visible.
         """
-        if self.main_menu.isVisible():
-            self.main_menu.setVisible(False)
-            self._main_menu_shortcut.setEnabled(True)
-        else:
-            self.main_menu.setVisible(True)
-            self._main_menu_shortcut.setEnabled(False)
+        self.main_menu.setVisible(not self.main_menu.isVisible())
+        self._main_menu_shortcut.setEnabled(self.main_menu.isVisible())
 
     def _tooltip_visibility_toggle(self, value):
         get_settings().appearance.layer_tooltip_visibility = value
@@ -849,11 +844,7 @@ class Window:
         widget = magicgui(function, **magic_kwargs or {})
 
         if area is None:
-            if str(widget.layout) == 'vertical':
-                area = 'right'
-            else:
-                area = 'bottom'
-
+            area = 'right' if str(widget.layout) == 'vertical' else 'bottom'
         if allowed_areas is None:
             allowed_areas = [area]
         if shortcut is not _sentinel:
@@ -967,10 +958,7 @@ class Window:
 
         try:
             self._qt_window.setStyleSheet(get_stylesheet(value))
-        except AttributeError:
-            pass
-        except RuntimeError:
-            # wrapped C/C++ object may have been deleted
+        except (AttributeError, RuntimeError):
             pass
 
     def _status_changed(self, event):
