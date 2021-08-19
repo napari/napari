@@ -12,14 +12,12 @@ from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
-    QAction,
     QApplication,
     QDialog,
     QDockWidget,
     QHBoxLayout,
     QLabel,
     QMainWindow,
-    QMenu,
     QShortcut,
     QWidget,
 )
@@ -27,17 +25,14 @@ from qtpy.QtWidgets import (
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
-from ..utils import config, perf
+from ..utils import perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.translations import trans
 from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
-from .dialogs.qt_about import QtAbout
 from .dialogs.qt_notification import NapariQtNotification
-from .dialogs.qt_plugin_dialog import QtPluginDialog
-from .dialogs.qt_plugin_report import QtPluginErrReporter
-from .menus.file_menu import FileMenu
+from .menus import FileMenu, HelpMenu, PluginsMenu, ViewMenu, WindowMenu
 from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
@@ -407,10 +402,12 @@ class Window:
 
         self._add_menubar()
         self.main_menu.addMenu(FileMenu(self))
-        self._add_view_menu()
-        self._add_window_menu()
-        self._add_plugins_menu()
-        self._add_help_menu()
+        self.main_menu.addMenu(ViewMenu(self))
+        self.window_menu = WindowMenu(self)
+        self.main_menu.addMenu(self.window_menu)
+        self.main_menu.addMenu(PluginsMenu(self))
+        self.help_menu = HelpMenu(self)
+        self.main_menu.addMenu(self.help_menu)
 
         self._status_bar.showMessage(trans._('Ready'))
         self._help = QLabel('')
@@ -444,10 +441,6 @@ class Window:
         self.window_menu.addSeparator()
 
         settings.appearance.events.theme.connect(self._update_theme)
-
-        plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
-        plugin_manager.events.registered.connect(self._rebuild_plugins_menu)
-        plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -495,158 +488,6 @@ class Window:
             self.main_menu.setVisible(True)
             self._main_menu_shortcut.setEnabled(False)
 
-    def _add_view_menu(self):
-        """Add 'View' menu to app menubar."""
-        settings = get_settings()
-        toggle_visible = QAction(
-            trans._('Toggle Menubar Visibility'), self._qt_window
-        )
-        toggle_visible.setShortcut('Ctrl+M')
-        toggle_visible.setStatusTip(trans._('Hide Menubar'))
-        toggle_visible.triggered.connect(self._toggle_menubar_visible)
-        toggle_fullscreen = QAction(
-            trans._('Toggle Full Screen'), self._qt_window
-        )
-        toggle_fullscreen.setShortcut('Ctrl+F')
-        toggle_fullscreen.setStatusTip(trans._('Toggle full screen'))
-        toggle_fullscreen.triggered.connect(self._toggle_fullscreen)
-        toggle_play = QAction(trans._('Toggle Play'), self._qt_window)
-        toggle_play.triggered.connect(self._toggle_play)
-        toggle_play.setShortcut('Ctrl+Alt+P')
-        toggle_play.setStatusTip(trans._('Toggle Play'))
-
-        self.view_menu = self.main_menu.addMenu(trans._('&View'))
-        self.view_menu.addAction(toggle_fullscreen)
-        self.view_menu.addAction(toggle_visible)
-        self.view_menu.addAction(toggle_play)
-        self.view_menu.addSeparator()
-
-        # Add octree actions.
-        if config.async_octree:
-            toggle_outline = QAction(
-                trans._('Toggle Chunk Outlines'), self._qt_window
-            )
-            toggle_outline.triggered.connect(
-                self.qt_viewer._toggle_chunk_outlines
-            )
-            toggle_outline.setShortcut('Ctrl+Alt+O')
-            toggle_outline.setStatusTip(trans._('Toggle Chunk Outlines'))
-            self.view_menu.addAction(toggle_outline)
-
-        # Add axes menu
-        axes = self.qt_viewer.viewer.axes
-        axes_menu = QMenu(trans._('Axes'), parent=self._qt_window)
-        axes_visible_action = QAction(
-            trans._('Visible'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=self.qt_viewer.viewer.axes.visible,
-        )
-        axes_visible_action.triggered.connect(self._toggle_axes_visible)
-        self._event_to_action(axes_visible_action, axes.events.visible)
-        axes_colored_action = QAction(
-            trans._('Colored'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=self.qt_viewer.viewer.axes.colored,
-        )
-        axes_colored_action.triggered.connect(self._toggle_axes_colored)
-        self._event_to_action(axes_colored_action, axes.events.colored)
-        axes_labels_action = QAction(
-            trans._('Labels'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=self.qt_viewer.viewer.axes.labels,
-        )
-        axes_labels_action.triggered.connect(self._toggle_axes_labels)
-        self._event_to_action(axes_labels_action, axes.events.labels)
-        axes_dashed_action = QAction(
-            trans._('Dashed'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=self.qt_viewer.viewer.axes.dashed,
-        )
-        axes_dashed_action.triggered.connect(self._toggle_axes_dashed)
-        self._event_to_action(axes_dashed_action, axes.events.dashed)
-        axes_arrows_action = QAction(
-            trans._('Arrows'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=self.qt_viewer.viewer.axes.arrows,
-        )
-        axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
-        self._event_to_action(axes_arrows_action, axes.events.arrows)
-
-        axes_menu.addAction(axes_visible_action)
-        axes_menu.addAction(axes_colored_action)
-        axes_menu.addAction(axes_labels_action)
-        axes_menu.addAction(axes_dashed_action)
-        axes_menu.addAction(axes_arrows_action)
-        self.view_menu.addMenu(axes_menu)
-
-        # Add scale bar menu
-        scale_bar = self.qt_viewer.viewer.scale_bar
-        scale_bar_menu = QMenu(trans._('Scale Bar'), parent=self._qt_window)
-        scale_bar_visible_action = QAction(
-            trans._('Visible'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=self.qt_viewer.viewer.scale_bar.visible,
-        )
-        scale_bar_visible_action.triggered.connect(
-            self._toggle_scale_bar_visible
-        )
-        self._event_to_action(
-            scale_bar_visible_action, scale_bar.events.visible
-        )
-        scale_bar_colored_action = QAction(
-            trans._('Colored'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=self.qt_viewer.viewer.scale_bar.colored,
-        )
-        scale_bar_colored_action.triggered.connect(
-            self._toggle_scale_bar_colored
-        )
-        self._event_to_action(
-            scale_bar_colored_action, scale_bar.events.colored
-        )
-        scale_bar_ticks_action = QAction(
-            trans._('Ticks'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=self.qt_viewer.viewer.scale_bar.ticks,
-        )
-        scale_bar_ticks_action.triggered.connect(self._toggle_scale_bar_ticks)
-        self._event_to_action(scale_bar_ticks_action, scale_bar.events.ticks)
-
-        scale_bar_menu.addAction(scale_bar_visible_action)
-        scale_bar_menu.addAction(scale_bar_colored_action)
-        scale_bar_menu.addAction(scale_bar_ticks_action)
-        self.view_menu.addMenu(scale_bar_menu)
-        self.tooltip_menu = QAction(
-            trans._('Layer Tooltip visibility'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=settings.appearance.layer_tooltip_visibility,
-        )
-        self.tooltip_menu.triggered.connect(self._tooltip_visibility_toggle)
-        settings.appearance.events.layer_tooltip_visibility.connect(
-            self._tooltip_visibility_toggled
-        )
-        self.view_menu.addAction(self.tooltip_menu)
-
-        self.view_activity_menu = QAction(
-            trans._('Activity Dock'),
-            parent=self._qt_window,
-            checkable=True,
-            checked=self._qt_window._activity_dialog.isVisible(),
-        )
-        self.view_activity_menu.triggered.connect(self._toggle_activity_dock)
-        self.view_menu.addAction(self.view_activity_menu)
-
-        self.view_menu.addSeparator()
-
     def _tooltip_visibility_toggle(self, value):
         get_settings().appearance.layer_tooltip_visibility = value
 
@@ -654,102 +495,6 @@ class Window:
         self.tooltip_menu.setChecked(
             get_settings().appearance.layer_tooltip_visibility
         )
-
-    def _event_to_action(self, action, event):
-        """Connect triggered event in model to respective action in menu."""
-        # TODO: use action manager to keep in sync
-        event.connect(lambda e: action.setChecked(e.value))
-
-    def _add_window_menu(self):
-        """Add 'Window' menu to app menubar."""
-        clear_action = QAction(trans._("Remove Dock Widgets"), self._qt_window)
-        clear_action.setStatusTip(trans._('Remove all dock widgets'))
-        clear_action.triggered.connect(
-            lambda e: self.remove_dock_widget('all')
-        )
-
-        self.window_menu = self.main_menu.addMenu(trans._('&Window'))
-        self.window_menu.addAction(clear_action)
-        self.window_menu.addSeparator()
-
-    def _add_plugins_menu(self):
-        """Add 'Plugins' menu to app menubar."""
-        self.plugins_menu = self.main_menu.addMenu(trans._('&Plugins'))
-
-        plugin_manager.discover_widgets()
-        self._rebuild_plugins_menu()
-
-    def _rebuild_plugins_menu(self, event=None):
-
-        self.plugins_menu.clear()
-
-        pip_install_action = QAction(
-            trans._("Install/Uninstall Plugins..."), self._qt_window
-        )
-        pip_install_action.triggered.connect(self._show_plugin_install_dialog)
-        self.plugins_menu.addAction(pip_install_action)
-
-        report_plugin_action = QAction(
-            trans._("Plugin Errors..."), self._qt_window
-        )
-        report_plugin_action.setStatusTip(
-            trans._(
-                'Review stack traces for plugin exceptions and notify developers'
-            )
-        )
-        report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
-
-        self.plugins_menu.addAction(report_plugin_action)
-
-        self.plugins_menu.addSeparator()
-
-        # Add a menu item (QAction) for each available plugin widget
-        for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
-            multiprovider = len(widgets) > 1
-            if multiprovider:
-                menu = QMenu(plugin_name, self._qt_window)
-                self.plugins_menu.addMenu(menu)
-            else:
-                menu = self.plugins_menu
-
-            for wdg_name in widgets:
-                key = (plugin_name, wdg_name)
-                if multiprovider:
-                    action = QAction(wdg_name, parent=self._qt_window)
-                else:
-                    full_name = plugin_menu_item_template.format(*key)
-                    action = QAction(full_name, parent=self._qt_window)
-
-                def _add_widget(*args, key=key, hook_type=hook_type):
-                    if hook_type == 'dock':
-                        self.add_plugin_dock_widget(*key)
-                    else:
-                        self._add_plugin_function_widget(*key)
-
-                menu.addAction(action)
-                action.triggered.connect(_add_widget)
-
-    def _show_plugin_install_dialog(self):
-        """Show dialog that allows users to sort the call order of plugins."""
-
-        self.plugin_dialog = QtPluginDialog(self._qt_window)
-        self.plugin_dialog.exec_()
-
-    def _show_plugin_err_reporter(self):
-        """Show dialog that allows users to review and report plugin errors."""
-        QtPluginErrReporter(parent=self._qt_window).exec_()
-
-    def _add_help_menu(self):
-        """Add 'Help' menu to app menubar."""
-        self.help_menu = self.main_menu.addMenu(trans._('&Help'))
-
-        about_action = QAction(trans._("napari Info"), self._qt_window)
-        about_action.setShortcut("Ctrl+/")
-        about_action.setStatusTip(trans._('About napari'))
-        about_action.triggered.connect(
-            lambda e: QtAbout.showAbout(self.qt_viewer, self._qt_window)
-        )
-        self.help_menu.addAction(about_action)
 
     def _toggle_activity_dock(self, event):
         is_currently_visible = self._qt_window._activity_dialog.isVisible()
@@ -763,38 +508,14 @@ class Window:
             self._activity_item._activityBtn.setArrowType(Qt.UpArrow)
             self.view_activity_menu.setChecked(False)
 
-    def _toggle_scale_bar_visible(self, state):
-        self.qt_viewer.viewer.scale_bar.visible = state
-
-    def _toggle_scale_bar_colored(self, state):
-        self.qt_viewer.viewer.scale_bar.colored = state
-
-    def _toggle_scale_bar_ticks(self, state):
-        self.qt_viewer.viewer.scale_bar.ticks = state
-
-    def _toggle_axes_visible(self, state):
-        self.qt_viewer.viewer.axes.visible = state
-
-    def _toggle_axes_colored(self, state):
-        self.qt_viewer.viewer.axes.colored = state
-
-    def _toggle_axes_labels(self, state):
-        self.qt_viewer.viewer.axes.labels = state
-
-    def _toggle_axes_dashed(self, state):
-        self.qt_viewer.viewer.axes.dashed = state
-
-    def _toggle_axes_arrows(self, state):
-        self.qt_viewer.viewer.axes.arrows = state
-
-    def _toggle_fullscreen(self, event):
+    def _toggle_fullscreen(self, event=None):
         """Toggle fullscreen mode."""
         if self._qt_window.isFullScreen():
             self._qt_window.showNormal()
         else:
             self._qt_window.showFullScreen()
 
-    def _toggle_play(self, state):
+    def _toggle_play(self, state=None):
         """Toggle play."""
         if self.qt_viewer.dims.is_playing:
             self.qt_viewer.dims.stop()

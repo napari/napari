@@ -1,7 +1,6 @@
-from functools import partial
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QSize
+from qtpy.QtCore import QSize
 from qtpy.QtWidgets import QAction, QMenu
 
 from ...plugins import menu_item_template, plugin_manager
@@ -11,6 +10,7 @@ from ...utils.misc import running_as_bundled_app
 from ...utils.translations import trans
 from ..dialogs.preferences_dialog import PreferencesDialog
 from ..dialogs.screenshot_dialog import ScreenshotDialog
+from ._util import populate_menu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
@@ -19,8 +19,7 @@ if TYPE_CHECKING:
 class FileMenu(QMenu):
     def __init__(self, window: 'Window'):
         self._win = window
-        super().__init__(window._qt_window)
-        self.setTitle(trans._('&File'))
+        super().__init__(trans._('&File'), window._qt_window)
         self.open_sample_menu = QMenu('Open Sample')
         ACTIONS = [
             {
@@ -108,20 +107,7 @@ class FileMenu(QMenu):
                 'menuRole': QAction.QuitRole,
             },
         ]
-        for ax in ACTIONS:
-            if not ax:
-                self.addSeparator()
-                continue
-            if not ax.get("when", True):
-                continue
-            if 'menu' in ax:
-                self.addMenu(ax['menu'])
-                continue
-            action = self.addAction(ax['text'], ax['slot'])
-            action.setShortcut(ax.get('shortcut', ''))
-            action.setStatusTip(ax.get('statusTip', ''))
-            if 'menuRole' in ax:
-                action.setMenuRole(ax['menuRole'])
+        populate_menu(self, ACTIONS)
 
         self._pref_dialog = None
         self._pref_dialog_size = QSize()
@@ -143,16 +129,17 @@ class FileMenu(QMenu):
 
     def _open_preferences(self):
         """Edit preferences from the menubar."""
+        # TODO: store pref dialog size in settings
         if self._pref_dialog is None:
-            win = PreferencesDialog(parent=self)
-            # win.resized.connect(partial(setattr, self, '_pref_dialog_size'))
-            win.valueChanged.connect(self._reset_preference_states)
-            win.updatedValues.connect(self._win._update_widget_states)
-            win.closed.connect(partial(setattr, self, '_pref_dialog', None))
-            # if self._pref_dialog_size.isValid():
-            # win.resize(self._pref_dialog_size)
-            win.show()
+            win = PreferencesDialog(parent=self._win._qt_window)
             self._pref_dialog = win
+            if self._pref_dialog_size:
+                win.resize(self._pref_dialog_size)
+            win.resized.connect(
+                lambda e: setattr(self, '_pref_dialog_size', e)
+            )
+            win.finished.connect(lambda e: setattr(self, '_pref_dialog', None))
+            win.show()
         else:
             self._pref_dialog.raise_()
 
@@ -177,8 +164,7 @@ class FileMenu(QMenu):
                     action = QAction(full_name, parent=self)
 
                 def _add_sample(*args, plg=plugin_name, smp=samp_name):
-                    # window.qt_viewer.viewer.open_sample(plg, smp)
-                    ...
+                    self._win.qt_viewer.viewer.open_sample(plg, smp)
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
