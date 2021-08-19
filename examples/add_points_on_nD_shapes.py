@@ -45,8 +45,10 @@ shapes_layer = viewer.add_shapes(
 @shapes_layer.mouse_drag_callbacks.append
 def on_click(layer, event):
 
-    shape_index, intersection_point = layer.get_index_and_intersection_from_event(
-        event
+    shape_index, intersection_point = layer.get_index_and_intersection(
+        event.position,
+        event.view_direction,
+        event.dims_displayed
     )
 
     if (shape_index is not None) and (intersection_point is not None):

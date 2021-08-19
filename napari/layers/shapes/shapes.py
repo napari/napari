@@ -2704,7 +2704,7 @@ class Shapes(Layer):
         vertex : None
             Index of vertex if any that is at the coordinates. Always returns `None`.
         """
-        value, _ = self.get_index_and_intersection(
+        value, _ = self._get_index_and_intersection(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,
@@ -2712,7 +2712,7 @@ class Shapes(Layer):
 
         return (value, None)
 
-    def get_index_and_intersection(
+    def _get_index_and_intersection(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
@@ -2774,8 +2774,11 @@ class Shapes(Layer):
             intersection_point = None
         return value, intersection_point
 
-    def get_index_and_intersection_from_event(
-        self, event
+    def get_index_and_intersection(
+        self,
+        position: np.ndarray,
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
     ) -> Tuple[Union[float, int], None]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) "under" a mouse click.
@@ -2787,9 +2790,14 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        event : Event
-            The mouse click event to determine the shape index and intersection
-            point from.
+        position : tuple
+            Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
 
         Returns
         -------
@@ -2801,13 +2809,13 @@ class Shapes(Layer):
             coordinates.
         """
         start_point, end_point = self.get_ray_intersections(
-            event.position, event.view_direction, event.dims_displayed
+            position, view_direction, dims_displayed
         )
         if (start_point is not None) and (end_point is not None):
-            shape_index, intersection_point = self.get_index_and_intersection(
+            shape_index, intersection_point = self._get_index_and_intersection(
                 start_point=start_point,
                 end_point=end_point,
-                dims_displayed=event.dims_displayed,
+                dims_displayed=dims_displayed,
             )
         else:
             shape_index = (None,)
