@@ -80,7 +80,7 @@ class QtDimSliderWidget(QWidget):
         self._minframe = None
         self._maxframe = None
         self._loop_mode = settings.application.playback_mode
-        settings.application.events.playback_fps.connect(
+        settings.application.events.playback_mode.connect(
             lambda e: setattr(self, 'loop_mode', e.value)
         )
 
