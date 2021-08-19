@@ -274,10 +274,6 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
-    def _update_preferences_dialog_size(self, size):
-        """Save preferences dialog size."""
-        self._preferences_dialog_size = size
-
     def close(self, quit_app=False):
         """Override to handle closing app or just the window."""
         self._quit_app = quit_app
@@ -687,13 +683,14 @@ class Window:
         """Edit preferences from the menubar."""
         if self._qt_window._preferences_dialog is None:
             win = PreferencesDialog(parent=self._qt_window)
-            win.resized.connect(
-                self._qt_window._update_preferences_dialog_size
-            )
+            self._qt_window._preferences_dialog = win
             if self._qt_window._preferences_dialog_size:
                 win.resize(self._qt_window._preferences_dialog_size)
-
-            self._qt_window._preferences_dialog = win
+            win.resized.connect(
+                lambda e: setattr(
+                    self._qt_window, '_preferences_dialog_size', e
+                )
+            )
             win.finished.connect(
                 lambda e: setattr(self._qt_window, '_preferences_dialog', None)
             )
