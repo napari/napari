@@ -1,3 +1,5 @@
+from typing import Callable
+
 import napari._qt.qt_event_loop
 import napari.plugins.io
 import napari.utils.notifications

@@ -2,6 +2,11 @@
 
 napari is a consensus-based community project. Anyone with an interest in the project can join the community, contribute to the project design, and participate in the decision making process. You can learn more about how the project is run by reading our [governance model](https://napari.org/community/governance.html). This page lists our current and emeritus [core developers](https://napari.org/community/governance.html#core-developers). Core developers are community members that have demonstrated a sustained commitment to the project through ongoing contributions and that they can maintain napari with care.
 
+We hold regular meetings, the timings of which are available on our [public calendar](https://calendar.google.com/calendar/embed?src=c_35r93ec6vtp8smhm7dv5uot0v4%40group.calendar.google.com). 
+
+<iframe src="https://calendar.google.com/calendar/embed?src=c_35r93ec6vtp8smhm7dv5uot0v4%40group.calendar.google.com" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
+
+If you are using napari or interested in how napari could be used in your work, please join one of our regular 'community & dev sync' meetings. 
 
 ## Current Core Developers
 
@@ -46,7 +51,7 @@ The napari project and community have been generously supported by the [CZI Scie
 
 - Since late 2018, Juan Nunez-Iglesias has been supported by a CZI Imaging Software Fellowship.
 - The CZI Imaging Technology Team, under the leadership of Nicholas Sofroniew and engineering management of Justine Larsen, has been making direct engineering and design contributions to improve and expand napari.
-- The CZI Imaging Tech Team has supported contractors, both independent and in collaboration with [Quansight Labs](https://www.quansight.com/labs), to improve and expand napari.
+- The CZI Imaging Tech Team has supported [Quansight Labs](https://www.quansight.com/labs) and independent contractors to improve and expand napari.
 - The CZI Imaging Tech Team, through an effort led by Justin Kiggins, has created [napari-hub.org](https://www.napari-hub.org/), a site to make discovering and sharing napari plugins easier.
 - CZI has launched a [grant program](https://chanzuckerberg.com/rfa/napari-plugin-accelerator-grants/) to help accelerate the napari plugin developer community.
 

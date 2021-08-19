@@ -7,7 +7,6 @@ import qtpy
 from qtpy.QtCore import QByteArray, QPropertyAnimation, QSize, Qt
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
-    QApplication,
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
     QHBoxLayout,
@@ -303,23 +302,3 @@ def remove_flash_animation(widget: QWidget):
     """
     widget.setGraphicsEffect(None)
     del widget._flash_animation
-
-
-def delete_qapp(app):
-    """Delete a QApplication
-
-    Parameters
-    ----------
-    app : qtpy.QApplication
-    """
-    try:
-        # Pyside2
-        from shiboken2 import delete
-    except ImportError:
-        # PyQt5
-        from sip import delete
-
-    delete(app)
-    # calling a second time is necessary on PySide2...
-    # see: https://bugreports.qt.io/browse/PYSIDE-1470
-    QApplication.instance()
