@@ -670,10 +670,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         experimental_slicing_plane : dict
             Properties defining plane rendering in 3D. Properties are defined
             in data coordinates. Valid dictionary keys are
-            {'position', 'normal_vector', 'thickness', and 'enabled'}.
+            {'position', 'normal', 'thickness', and 'enabled'}.
         experimental_clipping_planes : list of dicts, list of Plane, or PlaneList
             Each dict defines a clipping plane in 3D in data coordinates.
-            Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
+            Valid dictionary keys are {'position', 'normal', and 'enabled'}.
             Values on the negative side of the normal are discarded if the plane is enabled.
 
         Returns
