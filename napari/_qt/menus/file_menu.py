@@ -194,9 +194,7 @@ class FileMenu(QMenu):
         """
         from qtpy.QtGui import QGuiApplication
 
-        img = self._screenshot(flash)
-        cb = QGuiApplication.clipboard()
-        cb.setImage(img)
+        QGuiApplication.clipboard().setImage(self._screenshot(flash))
 
     def _screenshot(self, flash=True):
         """Capture screenshot of the currently displayed viewer.
@@ -207,11 +205,11 @@ class FileMenu(QMenu):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
-        img = self.grab().toImage()
+        img = self._win._qt_window.grab().toImage()
         if flash:
             from ..utils import add_flash_animation
 
-            add_flash_animation(self)
+            add_flash_animation(self._win._qt_window)
         return img
 
     def _reset_preference_states(self):

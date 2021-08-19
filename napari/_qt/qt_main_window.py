@@ -37,7 +37,7 @@ from .dialogs.qt_about import QtAbout
 from .dialogs.qt_notification import NapariQtNotification
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
-from .menus.file import FileMenu
+from .menus.file_menu import FileMenu
 from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
