@@ -149,12 +149,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         are_equal = self.__eq_operators__.get(name, operator.eq)
         if not are_equal(after, before):
             getattr(self.events, name)(value=after)  # emit event
-            if self.__fields__[name].field_info.extra.get('requires_restart'):
-                import warnings
-
-                warnings.warn(
-                    "Restart required for this change to take effect."
-                )
 
     # expose the private EmitterGroup publically
     @property
