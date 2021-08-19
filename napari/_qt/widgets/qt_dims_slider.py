@@ -298,6 +298,7 @@ class QtDimSliderWidget(QWidget):
                 reversing direction when the maximum or minimum frame
                 has been reached.
         """
+        value = LoopMode(value)
         self._loop_mode = value
         self.play_button.mode_combo.setCurrentText(
             str(value).replace('_', ' ')

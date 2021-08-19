@@ -756,7 +756,7 @@ class Labels(_ImageBase):
             maximum label value in data
 
         Returns
-        ----------
+        -------
         lookup_func : function
             function to use for mapping label values to colors
         """
