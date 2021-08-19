@@ -2783,9 +2783,6 @@ class Shapes(Layer):
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) "under" a mouse click.
 
-        Note: this method only works with a mouse click event with the following
-        properties: position, view_direction, and dims_displayed
-
         See examples/add_points_on_nD_shapes.py for example usage.
 
         Parameters
