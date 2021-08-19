@@ -24,7 +24,7 @@ from .color_transformations import (
     transform_color,
     transform_color_with_defaults,
 )
-from .property_manager import Property, PropertyManager
+from .property_table import PropertyColumn, PropertyTable
 
 
 class ColorManager(EventedModel):
@@ -43,7 +43,7 @@ class ColorManager(EventedModel):
         ColorMode.CYCLE: colors are set vie the categorical_colormap appied to the
                          color_properties. This should be used for categorical
                          properties only.
-     color_properties : Optional[Property]
+     color_properties : Optional[PropertyColumn]
         The property values that are used for setting colors in ColorMode.COLORMAP
         and ColorMode.CYCLE. The Property dataclass has 3 fields: name,
         values, and current_value. name (str) is the name of the property being used.
@@ -71,7 +71,7 @@ class ColorManager(EventedModel):
 
     current_color: Optional[Array[float, (4,)]] = None
     color_mode: ColorMode = ColorMode.DIRECT
-    color_properties: Optional[Property] = None
+    color_properties: Optional[PropertyColumn] = None
     continuous_colormap: Colormap = 'viridis'
     contrast_limits: Optional[Tuple[float, float]] = None
     categorical_colormap: CategoricalColormap = [0, 0, 0, 1]
@@ -126,7 +126,7 @@ class ColorManager(EventedModel):
         self,
         color: ColorType,
         n_colors: int,
-        properties: PropertyManager,
+        properties: PropertyTable,
     ):
         """Set a color property. This is convenience function
 
@@ -136,7 +136,7 @@ class ColorManager(EventedModel):
             The value for setting edge or face_color
         n_colors : int
             The number of colors that needs to be set. Typically len(data).
-        properties : PropertyManager
+        properties : PropertyTable
             The layer property values
         """
         # if the provided color is a string, first check if it is a key in the properties.
@@ -162,7 +162,7 @@ class ColorManager(EventedModel):
 
     def _refresh_colors(
         self,
-        properties: PropertyManager,
+        properties: PropertyTable,
         update_color_mapping: bool = False,
     ):
         """Calculate and update colors if using a cycle or color map
@@ -227,7 +227,7 @@ class ColorManager(EventedModel):
                 (self.color_properties.values, np.repeat(color, n_colors)),
                 axis=0,
             )
-            self.color_properties = Property.from_values(
+            self.color_properties = PropertyColumn.from_values(
                 color_property_name, new_color_property_values
             )
 
@@ -246,7 +246,7 @@ class ColorManager(EventedModel):
             if self.color_mode == ColorMode.DIRECT:
                 self.colors = np.delete(self.colors, selected_indices, axis=0)
             else:
-                self.color_properties = Property.from_values(
+                self.color_properties = PropertyColumn.from_values(
                     self.color_properties.name,
                     np.delete(self.color_properties.values, selected_indices),
                 )
@@ -274,7 +274,7 @@ class ColorManager(EventedModel):
         else:
             old_properties = self.color_properties.values
             new_properties = properties[self.color_properties.name]
-            self.color_properties = Property.from_values(
+            self.color_properties = PropertyColumn.from_values(
                 self.color_properties.name,
                 np.concatenate((old_properties, new_properties), axis=0),
             )
@@ -346,7 +346,7 @@ class ColorManager(EventedModel):
 
     def _set_color_mode(
         self,
-        property_manager: PropertyManager,
+        property_table: PropertyTable,
         color_mode: Union[ColorMode, str],
         attribute: str,
     ):
@@ -355,7 +355,7 @@ class ColorManager(EventedModel):
         if color_mode == ColorMode.DIRECT:
             self.color_mode = color_mode
         elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
-            properties = property_manager.all_values
+            properties = property_table.all_values
             if self.color_properties is not None:
                 color_property = self.color_properties.name
             else:
@@ -363,9 +363,7 @@ class ColorManager(EventedModel):
             if color_property == '':
                 if properties:
                     new_color_property = next(iter(properties))
-                    self.color_properties = property_manager[
-                        new_color_property
-                    ]
+                    self.color_properties = property_table[new_color_property]
                     warnings.warn(
                         trans._(
                             '_{attribute}_color_property was not set, setting to: {new_color_property}',
@@ -400,7 +398,7 @@ class ColorManager(EventedModel):
     def _from_layer_kwargs(
         cls,
         colors: Union[dict, str, np.ndarray],
-        properties: PropertyManager,
+        properties: PropertyTable,
         n_colors: Optional[int] = None,
         continuous_colormap: Optional[Union[str, Colormap]] = None,
         contrast_limits: Optional[Tuple[float, float]] = None,

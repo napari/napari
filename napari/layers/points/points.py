@@ -13,7 +13,7 @@ from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.property_manager import PropertyManager
+from ..utils.property_table import PropertyTable
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -293,7 +293,7 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        self._properties = PropertyManager.from_layer_kwargs(
+        self._properties = PropertyTable.from_layer_kwargs(
             properties=properties,
             property_choices=property_choices,
             expected_len=len(data),
@@ -455,7 +455,7 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
-        self._properties = PropertyManager.from_layer_kwargs(
+        self._properties = PropertyTable.from_layer_kwargs(
             properties=properties, expected_len=len(self._data)
         )
         self._face._update_properties(self._properties, "face_color")

@@ -12,7 +12,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.property_manager import PropertyManager
+from ..utils.property_table import PropertyTable
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 
 
@@ -202,7 +202,7 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._properties = PropertyManager.from_layer_kwargs(
+        self._properties = PropertyTable.from_layer_kwargs(
             properties=properties,
             property_choices=property_choices,
             expected_len=len(self.data),
@@ -278,7 +278,7 @@ class Vectors(Layer):
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties = PropertyManager.from_layer_kwargs(
+        self._properties = PropertyTable.from_layer_kwargs(
             properties=properties,
             expected_len=len(self.data),
         )

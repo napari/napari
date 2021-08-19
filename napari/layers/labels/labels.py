@@ -21,7 +21,7 @@ from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.property_manager import PropertyManager
+from ..utils.property_table import PropertyTable
 from ._labels_constants import LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -427,8 +427,8 @@ class Labels(_ImageBase):
     @classmethod
     def _prepare_properties(
         cls, properties: Optional[Dict[str, Array]]
-    ) -> Tuple[PropertyManager, Dict[int, int]]:
-        manager = PropertyManager.from_layer_kwargs(properties=properties)
+    ) -> Tuple[PropertyTable, Dict[int, int]]:
+        manager = PropertyTable.from_layer_kwargs(properties=properties)
         label_index = {}
         if 'index' in manager:
             label_index = {i: k for k, i in enumerate(manager['index'].values)}

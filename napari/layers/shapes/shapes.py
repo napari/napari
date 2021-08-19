@@ -19,7 +19,7 @@ from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils.color_manager import ColorManager
 from ..utils.color_manager_utils import map_property
-from ..utils.property_manager import PropertyManager
+from ..utils.property_table import PropertyTable
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -447,7 +447,7 @@ class Shapes(Layer):
         self._ndisplay_stored = self._ndisplay
 
         num_shapes = number_of_shapes(data)
-        self._properties = PropertyManager.from_layer_kwargs(
+        self._properties = PropertyTable.from_layer_kwargs(
             properties=properties,
             property_choices=property_choices,
             expected_len=num_shapes,
@@ -602,7 +602,7 @@ class Shapes(Layer):
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties = PropertyManager.from_layer_kwargs(
+        self._properties = PropertyTable.from_layer_kwargs(
             properties=properties,
             expected_len=self.nshapes,
         )

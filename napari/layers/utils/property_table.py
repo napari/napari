@@ -7,7 +7,7 @@ from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 
 
-class Property(EventedModel):
+class PropertyColumn(EventedModel):
     """A property defined by a name and values.
 
     Attributes
@@ -64,11 +64,11 @@ class Property(EventedModel):
         )
 
 
-class PropertyManager(EventedDict):
+class PropertyTable(EventedDict):
     """Manages a collection of properties."""
 
     def __init__(self, properties=None):
-        super().__init__(data=properties, basetype=Property)
+        super().__init__(data=properties, basetype=PropertyColumn)
 
     def resize(self, size):
         for prop in self.values():
@@ -100,7 +100,7 @@ class PropertyManager(EventedDict):
     @classmethod
     def from_property_arrays(cls, property_arrays):
         properties = {
-            name: Property.from_values(name, array)
+            name: PropertyColumn.from_values(name, array)
             for name, array in property_arrays.items()
         }
         return cls(properties=properties)
@@ -108,7 +108,7 @@ class PropertyManager(EventedDict):
     @classmethod
     def from_property_choices(cls, property_choices):
         properties = {
-            name: Property.from_choices(name, choices)
+            name: PropertyColumn.from_choices(name, choices)
             for name, choices in property_choices.items()
         }
         return cls(properties=properties)
@@ -124,7 +124,7 @@ class PropertyManager(EventedDict):
         cls, *, properties=None, property_choices=None, expected_len=None
     ):
         if properties is not None:
-            if isinstance(properties, PropertyManager):
+            if isinstance(properties, PropertyTable):
                 manager = properties
             elif isinstance(properties, dict):
                 manager = cls.from_property_arrays(properties)

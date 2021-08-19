@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from napari.layers.utils.color_manager import ColorManager
-from napari.layers.utils.property_manager import Property, PropertyManager
+from napari.layers.utils.property_table import PropertyColumn, PropertyTable
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -84,7 +84,7 @@ c_prop_dict = {
     'choices': np.array(['A', 'B', 'C']),
     'default_value': np.array(['C']),
 }
-c_prop_obj = Property(**c_prop_dict)
+c_prop_obj = PropertyColumn(**c_prop_dict)
 
 
 @pytest.mark.parametrize(
@@ -182,7 +182,7 @@ def test_set_color_direct(color):
     cm._set_color(
         color,
         n_colors=len(color),
-        properties=PropertyManager(),
+        properties=PropertyTable(),
     )
     np.testing.assert_almost_equal(cm.colors, expected_colors)
 
@@ -190,7 +190,7 @@ def test_set_color_direct(color):
 def test_continuous_colormap():
     # create ColorManager with a continuous colormap
     n_colors = 10
-    properties = Property.from_values(
+    properties = PropertyColumn.from_values(
         'point_type', _make_cycled_properties([0, 1.5], n_colors)
     )
     cm = ColorManager(
@@ -252,7 +252,7 @@ def test_continuous_colormap():
 
 def test_set_color_colormap():
     # make an empty colormanager
-    init_color_properties = Property.from_choices('point_type', [1.5])
+    init_color_properties = PropertyColumn.from_choices('point_type', [1.5])
     cm = ColorManager(
         color_properties=init_color_properties,
         continuous_colormap='gray',
@@ -261,7 +261,7 @@ def test_set_color_colormap():
 
     # use the set_color method to update the colors
     n_colors = 10
-    updated_properties = PropertyManager.from_property_arrays(
+    updated_properties = PropertyTable.from_property_arrays(
         {
             'point_type': _make_cycled_properties([0, 1.5], n_colors),
         }
@@ -288,7 +288,7 @@ def test_color_cycle(color_cycle):
     """Test setting color with a color cycle list"""
     # create Points using list color cycle
     n_colors = 10
-    properties = Property.from_values(
+    properties = PropertyColumn.from_values(
         'point_type', _make_cycled_properties(['A', 'B'], n_colors)
     )
     cm = ColorManager(
@@ -338,7 +338,7 @@ def test_color_cycle(color_cycle):
 
 def test_set_color_cycle():
     # make an empty colormanager
-    init_color_properties = Property.from_choices('point_type', ['A'])
+    init_color_properties = PropertyColumn.from_choices('point_type', ['A'])
     cm = ColorManager(
         color_properties=init_color_properties,
         categorical_colormap=['black', 'white'],
@@ -347,7 +347,7 @@ def test_set_color_cycle():
 
     # use the set_color method to update the colors
     n_colors = 10
-    updated_properties = PropertyManager.from_property_arrays(
+    updated_properties = PropertyTable.from_property_arrays(
         {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
     )
     cm._set_color(
@@ -363,7 +363,7 @@ def test_set_color_cycle():
 def test_init_color_manager_direct(n_colors):
     color_manager = ColorManager._from_layer_kwargs(
         colors='red',
-        properties=PropertyManager(),
+        properties=PropertyTable(),
         n_colors=n_colors,
         continuous_colormap='viridis',
         contrast_limits=None,
@@ -383,7 +383,7 @@ def test_init_color_manager_direct(n_colors):
     # test that colormanager state can be saved and loaded
     cm_dict = color_manager.dict()
     color_manager_2 = ColorManager._from_layer_kwargs(
-        colors=cm_dict, properties=PropertyManager(), n_colors=n_colors
+        colors=cm_dict, properties=PropertyTable(), n_colors=n_colors
     )
     assert color_manager == color_manager_2
 
@@ -391,7 +391,7 @@ def test_init_color_manager_direct(n_colors):
     json_str = color_manager.json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager._from_layer_kwargs(
-        colors=cm_json_dict, properties=PropertyManager(), n_colors=n_colors
+        colors=cm_json_dict, properties=PropertyTable(), n_colors=n_colors
     )
     assert color_manager == color_manager_3
 
@@ -399,7 +399,7 @@ def test_init_color_manager_direct(n_colors):
 def test_init_color_manager_cycle():
     n_colors = 10
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
-    properties = PropertyManager.from_property_arrays(
+    properties = PropertyTable.from_property_arrays(
         {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
     )
     color_manager = ColorManager._from_layer_kwargs(
@@ -430,7 +430,7 @@ def test_init_color_manager_cycle():
     json_str = color_manager.json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager._from_layer_kwargs(
-        colors=cm_json_dict, properties=PropertyManager(), n_colors=n_colors
+        colors=cm_json_dict, properties=PropertyTable(), n_colors=n_colors
     )
     assert color_manager == color_manager_3
 
@@ -442,7 +442,7 @@ def test_init_color_manager_cycle_with_colors_dict():
     """
     n_colors = 10
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
-    properties = PropertyManager.from_property_arrays(
+    properties = PropertyTable.from_property_arrays(
         {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
     )
     colors_dict = {
@@ -469,7 +469,7 @@ def test_init_color_manager_cycle_with_colors_dict():
 def test_init_empty_color_manager_cycle():
     n_colors = 0
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
-    properties = PropertyManager.from_property_choices(
+    properties = PropertyTable.from_property_choices(
         {'point_type': ['A', 'B']}
     )
     color_manager = ColorManager._from_layer_kwargs(
@@ -507,7 +507,7 @@ def test_init_empty_color_manager_cycle():
 def test_init_color_manager_colormap():
     n_colors = 10
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
-    properties = PropertyManager.from_property_arrays(
+    properties = PropertyTable.from_property_arrays(
         {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
     )
     color_manager = ColorManager._from_layer_kwargs(
@@ -538,7 +538,7 @@ def test_init_color_manager_colormap():
     json_str = color_manager.json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager._from_layer_kwargs(
-        colors=cm_json_dict, properties=PropertyManager(), n_colors=n_colors
+        colors=cm_json_dict, properties=PropertyTable(), n_colors=n_colors
     )
     assert color_manager == color_manager_3
 
@@ -550,7 +550,7 @@ def test_init_color_manager_colormap_with_colors_dict():
     """
     n_colors = 10
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
-    properties = PropertyManager.from_property_arrays(
+    properties = PropertyTable.from_property_arrays(
         {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
     )
     colors_dict = {
@@ -575,7 +575,7 @@ def test_init_color_manager_colormap_with_colors_dict():
 def test_init_empty_color_manager_colormap():
     n_colors = 0
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
-    properties = PropertyManager.from_property_choices({'point_type': [0]})
+    properties = PropertyTable.from_property_choices({'point_type': [0]})
     color_manager = ColorManager._from_layer_kwargs(
         colors='point_type',
         properties=properties,
@@ -615,7 +615,7 @@ def test_color_manager_invalid_color_properties():
     """
     n_colors = 10
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
-    properties = PropertyManager.from_property_arrays(
+    properties = PropertyTable.from_property_arrays(
         {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
     )
     colors_dict = {
@@ -633,7 +633,7 @@ def test_color_manager_invalid_color_properties():
 def test_refresh_colors():
     # create ColorManager with a continuous colormap
     n_colors = 4
-    properties = Property.from_values(
+    properties = PropertyColumn.from_values(
         'point_type', _make_cycled_properties([0, 1.5], n_colors)
     )
     cm = ColorManager(
@@ -652,7 +652,7 @@ def test_refresh_colors():
     # update the color mapping, the other values should remain
     # unchanged even though we added a value that extends the range
     # of values
-    new_properties = PropertyManager.from_property_list([properties])
+    new_properties = PropertyTable.from_property_list([properties])
     properties.values[0] = 3
     cm._refresh_colors(new_properties, update_color_mapping=False)
     new_colors = color_array.copy()

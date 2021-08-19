@@ -6,7 +6,7 @@ from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.property_manager import Property, PropertyManager
+from ..utils.property_table import PropertyColumn, PropertyTable
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -146,12 +146,12 @@ class TrackManager:
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-        self._properties = PropertyManager.from_layer_kwargs(
+        self._properties = PropertyTable.from_layer_kwargs(
             properties=properties,
             expected_len=len(self.data),
         )
         if 'track_id' not in self._properties:
-            self._properties['track_id'] = Property.from_values(
+            self._properties['track_id'] = PropertyColumn.from_values(
                 'track_id', self.track_ids
             )
         for prop in self._properties.values():
