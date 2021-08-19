@@ -14,8 +14,6 @@ class QRangeSliderPopup(QtPopup):
         parent : QWidget, optional
             Will like be an instance of QtLayerControls.  Note, providing
             parent can be useful to inherit stylesheets.
-        decimals : int, optional
-            Number of decimal values in the labels, by default 0
 
         Attributes
         ----------

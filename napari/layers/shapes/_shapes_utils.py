@@ -998,7 +998,7 @@ def get_default_shape_type(current_type):
         list of current shape types
 
     Returns
-    ----------
+    -------
     default_type : str
         default shape type
     """

@@ -1174,9 +1174,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ----------
         vector : tuple, list, 1D array
             A vector in world coordinates.
-        dims_displayed: List[int]
-            The indices of the displayed dimensions. This is used to slice the
-            affine transform parameters.
 
         Returns
         -------
@@ -1205,13 +1202,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Parameters
         ----------
-        position :
+        position
             the position of the point in nD coordinates. World vs. data
             is set by the world keyword argument.
         view_direction : np.ndarray
             a unit vector giving the direction of the ray in nD coordinates.
             World vs. data is set by the world keyword argument.
-        dims_displayed :
+        dims_displayed
             a list of the dimensions currently being displayed in the viewer.
         world : bool
             True if the provided coordinates are in world coordinates.

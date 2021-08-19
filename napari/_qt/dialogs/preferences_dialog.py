@@ -85,8 +85,8 @@ class PreferencesDialog(QDialog):
     def _restart_dialog(self, event=None, extra_str=""):
         """Displays the dialog informing user a restart is required.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         event : Event
         extra_str : str
             Extra information to add to the message about needing a restart.
@@ -204,16 +204,7 @@ class PreferencesDialog(QDialog):
             self._reset_widgets()
 
     def _reset_widgets(self):
-        """Deletes the widgets and rebuilds with defaults.
-
-        Parameter
-        ---------
-        event: bool
-            Indicates whether to restore the defaults.  When a user clicks "Restore", the signal
-            event emitted will be True.  If "Cancel" is selected, event will be False and nothing
-            is done.
-
-        """
+        """Deletes the widgets and rebuilds with defaults."""
 
         get_settings().reset()
         self.accept()
