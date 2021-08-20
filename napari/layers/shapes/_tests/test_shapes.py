@@ -114,7 +114,7 @@ def test_adding_properties(attribute):
     assert isinstance(layer.properties['shape_type'], np.ndarray)
 
     # removing a property that was the _*_color_property should give a warning
-    setattr(layer, f'{attribute}_color', 'shape_type')
+    setattr(layer, f'_{attribute}_color_property', 'shape_type')
     properties_2 = {
         'not_shape_type': _make_cycled_properties(['A', 'B'], shape[0])
     }
@@ -1356,17 +1356,16 @@ def test_switch_color_mode(attribute):
         layer_color, np.repeat([initial_color], shape[0], axis=0)
     )
 
-    color_manager = getattr(layer, f'_{attribute}')
-    assert color_manager.color_properties is None
+    color_property = getattr(layer, f'_{attribute}_color_property')
+    assert color_property == ''
 
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
     # the first property in shapes.properties is being automatically selected
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
-    color_manager = getattr(layer, f'_{attribute}')
-    color_property_name = color_manager.color_properties.name
-    assert color_property_name == next(iter(properties))
+    color_property = getattr(layer, f'_{attribute}_color_property')
+    assert color_property == next(iter(properties))
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(layer_color[-1], [1, 1, 1, 1])
 
@@ -1521,8 +1520,7 @@ def test_color_cycle(attribute, color_cycle):
     layer.current_properties = current_properties
     new_shape_2 = np.random.random((1, 4, 2))
     layer.add(new_shape_2)
-    color_manager = getattr(layer, f'_{attribute}')
-    color_cycle_map = color_manager.categorical_colormap.colormap
+    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
 
     assert 'new' in color_cycle_map
     np.testing.assert_allclose(
@@ -1546,9 +1544,8 @@ def test_add_color_cycle_to_empty_layer(attribute):
     layer = Shapes(**shapes_kwargs)
 
     # verify the current_edge_color is correct
-    expected_color = transform_color(color_cycle[0])[0]
-    color_manager = getattr(layer, f'_{attribute}')
-    current_color = color_manager.current_color
+    expected_color = transform_color(color_cycle[0])
+    current_color = getattr(layer, f'_current_{attribute}_color')
     np.testing.assert_allclose(current_color, expected_color)
 
     # add a shape
@@ -1598,8 +1595,7 @@ def test_adding_value_color_cycle(attribute):
     layer.properties['shape_type'] = shape_types
     layer.refresh_colors(update_color_mapping=False)
 
-    color_manager = getattr(layer, f'_{attribute}')
-    color_cycle_map = color_manager.categorical_colormap.colormap
+    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
     color_map_keys = [*color_cycle_map]
     assert 'C' in color_map_keys
 

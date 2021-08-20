@@ -481,7 +481,6 @@ class Points(Layer):
             prop.default_value = value
             if update_values:
                 prop.values[list(self.selected_data)] = value
-
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
 

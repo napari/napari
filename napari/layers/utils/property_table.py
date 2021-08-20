@@ -27,14 +27,16 @@ class PropertyColumn(EventedModel):
     choices: Array
     default_value: Any
 
+    def add(self, value, num_to_add=1):
+        new_values = np.repeat(value, num_to_add, axis=0)
+        self.values = np.concatenate((self.values, new_values), axis=0)
+
     def resize(self, size):
         num_values = len(self.values)
         if size < num_values:
             self.values = np.resize(self.values, size)
         elif size > num_values:
-            self.values = np.append(
-                self.values, [self.default_value] * (size - num_values)
-            )
+            self.add(self.default_value, size - num_values)
 
     def remove(self, indices):
         self.values = np.delete(self.values, indices, axis=0)
@@ -69,6 +71,10 @@ class PropertyTable(EventedDict):
 
     def __init__(self, properties=None):
         super().__init__(data=properties, basetype=PropertyColumn)
+
+    def add_defaults(self, num_to_add=1):
+        for prop in self.values():
+            prop.add(prop.default_value, num_to_add)
 
     def resize(self, size):
         for prop in self.values():

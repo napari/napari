@@ -25,11 +25,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    coerce_current_properties,
-    get_current_properties,
-    prepare_properties,
-)
+from ..utils.property_table import PropertyTable
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -326,8 +322,6 @@ class Shapes(Layer):
     _thumbnail_update_thresh : int
         If there are more than this number of shapes, the thumbnail
         won't update during interactive events
-    _property_choices : dict {str: array (N,)}
-        Possible values for the properties in Shapes.properties.
     """
 
     _colors = get_color_names()
@@ -475,8 +469,10 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        self._properties, self._property_choices = prepare_properties(
-            properties, property_choices, num_data=len(data)
+        self._properties = PropertyTable.from_layer_kwargs(
+            properties=properties,
+            property_choices=property_choices,
+            expected_len=number_of_shapes(data),
         )
 
         # make the text
@@ -572,9 +568,6 @@ class Shapes(Layer):
                 elem_name="face_color",
                 default="black",
             )
-        self.current_properties = get_current_properties(
-            self._properties, self._property_choices, len(data)
-        )
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -607,14 +600,14 @@ class Shapes(Layer):
 
             # add the new color cycle mapping
             color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self._property_choices[color_property][0]
+            prop_value = self.property_choices[color_property][0]
             color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
             color_cycle_map[prop_value] = np.squeeze(curr_color)
             setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
         elif color_mode == ColorMode.COLORMAP:
             color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self._property_choices[color_property][0]
+            prop_value = self.property_choices[color_property][0]
             colormap = getattr(self, f'{attribute}_colormap')
             contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
             curr_color, _ = map_property(
@@ -695,15 +688,15 @@ class Shapes(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return self._properties
+        return self._properties.all_values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties, self._property_choices = prepare_properties(
-            properties, self._property_choices, num_data=len(self.data)
+        self._properties = PropertyTable.from_layer_kwargs(
+            properties=properties, expected_len=self.nshapes
         )
         if self._face_color_property and (
-            self._face_color_property not in self._properties
+            self._face_color_property not in self.properties
         ):
             self._face_color_property = ''
             warnings.warn(
@@ -715,7 +708,7 @@ class Shapes(Layer):
             )
 
         if self._edge_color_property and (
-            self._edge_color_property not in self._properties
+            self._edge_color_property not in self.properties
         ):
             self._edge_color_property = ''
             warnings.warn(
@@ -732,7 +725,7 @@ class Shapes(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_choices
+        return self._properties.all_choices
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -811,24 +804,21 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return self._current_properties
+        return self._properties.all_default_values
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = coerce_current_properties(
-            current_properties
-        )
-
-        if (
+        update_values = (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
-        ):
-            props = self.properties
-            for k in props:
-                props[k][list(self.selected_data)] = current_properties[k]
-            self.properties = props
-
+            and self._mode in (Mode.SELECT, Mode.PAN_ZOOM)
+        )
+        for name, value in current_properties.items():
+            prop = self._properties[name]
+            prop.default_value = value
+            if update_values:
+                prop.values[list(self.selected_data)] = value
+        if update_values:
             self.refresh_colors()
         self.events.current_properties()
 
@@ -1483,7 +1473,7 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
-                'property_choices': self._property_choices,
+                'property_choices': self.property_choices,
                 'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
@@ -1915,7 +1905,7 @@ class Shapes(Layer):
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes. Overriden by data shape_type, if present.
+            shapes. Overridden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1967,19 +1957,11 @@ class Shapes(Layer):
             else:
                 n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
+            self._properties.resize(total_shapes)
             if total_shapes > n_prop_values:
                 n_props_to_add = total_shapes - n_prop_values
-                for k in self.properties:
-                    new_property = np.repeat(
-                        self.current_properties[k], n_props_to_add, axis=0
-                    )
-                    self.properties[k] = np.concatenate(
-                        (self.properties[k], new_property), axis=0
-                    )
                 self.text.add(self.current_properties, n_props_to_add)
             if total_shapes < n_prop_values:
-                for k in self.properties:
-                    self.properties[k] = self.properties[k][:total_shapes]
                 n_props_to_remove = n_prop_values - total_shapes
                 indices_to_remove = np.arange(n_prop_values)[
                     -n_props_to_remove:
@@ -2526,10 +2508,7 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
-            for k in self.properties:
-                self.properties[k] = np.delete(
-                    self.properties[k], index, axis=0
-                )
+            self._properties.remove(index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2897,10 +2876,10 @@ class Shapes(Layer):
                 for i in self._dims_not_displayed
             ]
 
-            for k in self.properties:
-                self.properties[k] = np.concatenate(
-                    (self.properties[k], self._clipboard['properties'][k]),
-                    axis=0,
+            for name in self._clipboard['properties']:
+                prop = self._properties[name]
+                prop.values = np.concatenate(
+                    (prop.values, self._clipboard['properties'][name]), axis=0
                 )
 
             # Add new shape data
