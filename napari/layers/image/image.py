@@ -16,7 +16,7 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ..utils.plane import Plane, PlaneList
+from ..utils.plane import ClippingPlaneList, SlicingPlane
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
@@ -107,13 +107,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    experimental_slicing_plane : dict or Plane
+    experimental_slicing_plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
-        {'position', 'normal_vector', 'thickness', and 'enabled'}.
+        {'position', 'normal', 'thickness', and 'enabled'}.
     experimental_clipping_planes : list of dicts, list of Plane, or PlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
-        Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
 
     Attributes
@@ -162,9 +162,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Threshold for isosurface.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
-    experimental_slicing_plane : Plane
-        Properties defining plane rendering in 3D.
-    experimental_clipping_planes : PlaneList
+    experimental_slicing_plane : SlicingPlane or dict
+        Properties defining plane rendering in 3D. Valid dictionary keys are
+        {'position', 'normal', 'thickness', and 'enabled'}.
+    experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
@@ -286,8 +287,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._experimental_slicing_plane = Plane(thickness=1, enabled=False)
-        self._experimental_clipping_planes = PlaneList()
+        self._experimental_slicing_plane = SlicingPlane(
+            thickness=1, enabled=False
+        )
+        self._experimental_clipping_planes = ClippingPlaneList()
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
@@ -519,7 +522,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._experimental_slicing_plane
 
     @experimental_slicing_plane.setter
-    def experimental_slicing_plane(self, value: Union[dict, Plane]):
+    def experimental_slicing_plane(self, value: Union[dict, SlicingPlane]):
         self._experimental_slicing_plane.update(value)
 
     @property
@@ -528,12 +531,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @experimental_clipping_planes.setter
     def experimental_clipping_planes(
-        self, value: Union[List[Plane, dict], PlaneList]
+        self, value: Union[List[SlicingPlane, dict], ClippingPlaneList]
     ):
         self._experimental_clipping_planes.clear()
         if value is not None:
             for new_plane in value:
-                plane = Plane()
+                plane = SlicingPlane()
                 plane.update(new_plane)
                 self._experimental_clipping_planes.append(plane)
 

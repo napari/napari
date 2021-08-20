@@ -9,28 +9,8 @@ from ...utils.translations import trans
 
 
 class Plane(EventedModel):
-    """Defines a plane in 3D (with optional thickness) and provides utility methods
-    and events to handle it.
-
-    A plane is defined by a position, a normal vector and a thickness value, and can
-    be enabled or disabled.
-
-    Attributes
-    ----------
-    position : 3-tuple
-        A 3D position on the plane, defined in sliced data coordinates (currently displayed dims).
-    normal : 3-tuple
-        A 3D unit vector normal to the plane, defined in sliced data coordinates (currently displayed dims).
-    thickness : float
-        Thickness of the slice.
-    enabled : bool
-        Whether the plane is considered enabled.
-    """
-
-    position: Tuple[float, float, float] = (0, 0, 0)
     normal: Tuple[float, float, float] = (1, 0, 0)
-    enabled: bool = True
-    thickness: float = 0.0
+    position: Tuple[float, float, float] = (0, 0, 0)
 
     @validator('normal')
     def _normalise_vector(cls, v):
@@ -67,7 +47,7 @@ class Plane(EventedModel):
 
         Returns
         -------
-        plane : Plane
+        plane : SlicingPlane
         """
         a = np.array(a)
         b = np.array(b)
@@ -81,34 +61,87 @@ class Plane(EventedModel):
         return cls(position=plane_position, normal=plane_normal)
 
     def as_array(self):
-        """
-        return a (2, 3) array representing the plane
+        """Return a (2, 3) array representing the plane.
+
+        [0, :] : plane position
+        [1, :] : plane normal
         """
         return np.stack([self.position, self.normal])
 
     @classmethod
-    def from_array(cls, array, enabled=True):
+    def from_array(cls, array):
+        """Construct a plane from a (2, 3) array.
+
+        [0, :] : plane position
+        [1, :] : plane normal
         """
-        construct the plane from a (2, 3) array
-        """
-        return cls(
-            position=array[0],
-            normal=array[1],
-            enabled=enabled,
-        )
+        return cls(position=array[0], normal=array[1])
+
+
+class SlicingPlane(Plane):
+    """Defines a plane in 3D with a defined thickness.
+
+    A slicing plane is defined by a position, a normal vector and a thickness
+    value. It can also be toggled on or off.
+
+    Attributes
+    ----------
+    position : 3-tuple
+        A 3D position on the plane, defined in sliced data coordinates (currently displayed dims).
+    normal : 3-tuple
+        A 3D unit vector normal to the plane, defined in sliced data coordinates (currently displayed dims).
+    thickness : float
+        Thickness of the slice.
+    enabled : bool
+        Whether the plane is considered enabled.
+    """
+
+    enabled: bool = True
+    thickness: float = 0.0
 
     def __hash__(self):
         return id(self)
 
 
-class PlaneList(SelectableEventedList):
-    """
-    A list of planes providing some utility methods
+class ClippingPlane(Plane):
+    """Defines a clipping plane in 3D.
+
+    A clipping plane is defined by a position, a normal vector and can
+    be toggled on or off.
+
+    Attributes
+    ----------
+    position : 3-tuple
+        A 3D position on the plane, defined in sliced data coordinates (currently displayed dims).
+    normal : 3-tuple
+        A 3D unit vector normal to the plane, defined in sliced data coordinates (currently displayed dims).
+    enabled : bool
+        Whether the plane is considered enabled.
     """
 
-    def as_array(self):
+    enabled: bool = True
+
+    @classmethod
+    def from_array(cls, array, enabled=True):
+        """Construct a clipping plane from a (2, 3) array.
+
+        [0, :] : plane position
+        [1, :] : plane normal
         """
-        return a (N, 2, 3) array representing the planes
+        return cls(position=array[0], normal=array[1], enabled=enabled)
+
+    def __hash__(self):
+        return id(self)
+
+
+class ClippingPlaneList(SelectableEventedList):
+    """A list of planes with some utility methods."""
+
+    def as_array(self):
+        """Return a (N, 2, 3) array of clipping planes.
+
+        [i, 0, :] : ith plane position
+        [i, 1, :] : ith plane normal
         """
         arrays = []
         for plane in self:
@@ -120,8 +153,10 @@ class PlaneList(SelectableEventedList):
 
     @classmethod
     def from_array(cls, array):
-        """
-        construct the PlaneList from an array of shape (N, 2, 3)
+        """Construct the PlaneList from an (N, 2, 3) array.
+
+        [i, 0, :] : ith plane position
+        [i, 1, :] : ith plane normal
         """
         if array.ndim != 3 or array.shape[1:] != (2, 3):
             raise ValueError(
@@ -131,7 +166,7 @@ class PlaneList(SelectableEventedList):
                     shape=array.shape,
                 )
             )
-        planes = [Plane.from_array(sub_arr) for sub_arr in array]
+        planes = [SlicingPlane.from_array(sub_arr) for sub_arr in array]
         return cls(planes)
 
     @classmethod
@@ -148,7 +183,7 @@ class PlaneList(SelectableEventedList):
 
         Returns
         -------
-        list : PlaneList
+        list : ClippingPlaneList
         """
         planes = []
         for axis in range(3):
@@ -161,6 +196,8 @@ class PlaneList(SelectableEventedList):
                 normal[axis] = -direction
 
                 planes.append(
-                    Plane(position=position, normal=normal, enabled=True)
+                    SlicingPlane(
+                        position=position, normal=normal, enabled=True
+                    )
                 )
         return cls(planes)

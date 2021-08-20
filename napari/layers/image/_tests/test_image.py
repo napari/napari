@@ -5,7 +5,7 @@ import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
-from napari.layers.utils.plane import Plane, PlaneList
+from napari.layers.utils.plane import ClippingPlaneList, SlicingPlane
 from napari.utils import Colormap
 from napari.utils.transforms.transform_utils import rotate_to_matrix
 
@@ -756,14 +756,14 @@ def test_instiantiate_with_experimental_slicing_plane():
     """Test that an image layer can be instantiated with plane parameters
     in a Plane.
     """
-    plane = Plane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
+    plane = SlicingPlane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
     image = Image(np.ones((32, 32, 32)), experimental_slicing_plane=plane)
     for k, v in plane.dict().items():
         assert v == getattr(image.experimental_slicing_plane, k, v)
 
 
 def test_instantiate_with_clipping_planelist():
-    planes = PlaneList.from_array(np.ones((2, 2, 3)))
+    planes = ClippingPlaneList.from_array(np.ones((2, 2, 3)))
     image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
     assert len(image.experimental_clipping_planes) == 2
 
