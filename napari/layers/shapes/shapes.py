@@ -811,7 +811,7 @@ class Shapes(Layer):
         update_values = (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode in (Mode.SELECT, Mode.PAN_ZOOM)
+            and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         )
         for name, value in current_properties.items():
             prop = self._properties[name]
@@ -2876,10 +2876,12 @@ class Shapes(Layer):
                 for i in self._dims_not_displayed
             ]
 
-            for name in self._clipboard['properties']:
-                prop = self._properties[name]
-                prop.values = np.concatenate(
-                    (prop.values, self._clipboard['properties'][name]), axis=0
+            for property_name, pasted_values in self._clipboard[
+                'properties'
+            ].items():
+                property_column = self._properties[property_name]
+                property_column.values = np.concatenate(
+                    (property_column.values, pasted_values), axis=0
                 )
 
             # Add new shape data

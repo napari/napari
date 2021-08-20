@@ -151,7 +151,7 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
     np.testing.assert_allclose(colors, [color_cycle[1]])
     assert len(layer.data) == 1
     cm = getattr(layer, f'_{feature_name}')
-    assert cm.color_properties.current_value == 'paw'
+    assert cm.color_properties.default_value == 'paw'
 
 
 def test_empty_layer_with_text_properties():

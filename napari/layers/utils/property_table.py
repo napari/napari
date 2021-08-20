@@ -41,6 +41,10 @@ class PropertyColumn(EventedModel):
     def remove(self, indices):
         self.values = np.delete(self.values, indices, axis=0)
 
+    @property
+    def num_values(self):
+        return len(self.values)
+
     @classmethod
     def from_values(cls, name, values):
         values = np.asarray(values)
@@ -83,6 +87,14 @@ class PropertyTable(EventedDict):
     def remove(self, indices):
         for prop in self.values():
             prop.remove(indices)
+
+    @property
+    def num_values(self):
+        return 0 if len(self) == 0 else next(iter(self.values())).num_values
+
+    @property
+    def num_properties(self):
+        return len(self)
 
     @property
     def all_values(self):

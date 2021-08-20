@@ -434,14 +434,15 @@ class Labels(_ImageBase):
     def _prepare_properties(
         cls, properties: Optional[Dict[str, Array]]
     ) -> Tuple[PropertyTable, Dict[int, int]]:
-        manager = PropertyTable.from_layer_kwargs(properties=properties)
+        property_table = PropertyTable.from_layer_kwargs(properties=properties)
         label_index = {}
-        if 'index' in manager:
-            label_index = {i: k for k, i in enumerate(manager['index'].values)}
-        elif len(manager) > 0:
-            max_len = max(len(x) for x in manager.all_values.values())
-            label_index = {i: i for i in range(max_len)}
-        return manager, label_index
+        if 'index' in property_table:
+            label_index = {
+                i: k for k, i in enumerate(property_table['index'].values)
+            }
+        elif property_table.num_properties > 0:
+            label_index = {i: i for i in range(property_table.num_values)}
+        return property_table, label_index
 
     @property
     def color(self):
@@ -1266,12 +1267,15 @@ class Labels(_ImageBase):
 
         idx = self._label_index[label_value]
         return [
-            f'{k}: {v[idx]}'
-            for k, v in self.properties.items()
-            if k != 'index'
-            and len(v) > idx
-            and v[idx] is not None
-            and not (isinstance(v[idx], float) and np.isnan(v[idx]))
+            f'{name}: {column.values[idx]}'
+            for name, column in self._properties.items()
+            if name != 'index'
+            and len(column.values) > idx
+            and column.values[idx] is not None
+            and not (
+                isinstance(column.values[idx], float)
+                and np.isnan(column.values[idx])
+            )
         ]
 
 

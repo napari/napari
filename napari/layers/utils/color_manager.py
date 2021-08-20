@@ -1,4 +1,3 @@
-import warnings
 from copy import deepcopy
 from typing import Dict, Optional, Tuple, Union
 
@@ -279,24 +278,6 @@ class ColorManager(EventedModel):
                 np.concatenate((old_properties, new_properties), axis=0),
             )
 
-    def _update_properties(self, properties, name):
-        if self.color_properties is not None:
-            color_name = self.color_properties.name
-            if color_name not in properties:
-                self.color_mode = ColorMode.DIRECT
-                self.color_properties = None
-                warnings.warn(
-                    trans._(
-                        'property used for {name} dropped',
-                        deferred=True,
-                        name=name,
-                    ),
-                    RuntimeWarning,
-                )
-            else:
-                # TODO: ideally this would not be necessary.
-                self.color_properties = properties[color_name]
-
     def _update_current_properties(
         self, current_properties: Dict[str, np.ndarray]
     ):
@@ -348,56 +329,6 @@ class ColorManager(EventedModel):
             cur_colors = self.colors.copy()
             cur_colors[update_indices] = self.current_color
             self.colors = cur_colors
-
-    def _set_color_mode(
-        self,
-        property_table: PropertyTable,
-        color_mode: Union[ColorMode, str],
-        attribute: str,
-    ):
-        color_mode = ColorMode(color_mode)
-
-        if color_mode == ColorMode.DIRECT:
-            self.color_mode = color_mode
-        elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
-            properties = property_table.all_values
-            if self.color_properties is not None:
-                color_property = self.color_properties.name
-            else:
-                color_property = ''
-            if color_property == '':
-                if properties:
-                    new_color_property = next(iter(properties))
-                    self.color_properties = property_table[new_color_property]
-                    warnings.warn(
-                        trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
-                            deferred=True,
-                            attribute=attribute,
-                            new_color_property=new_color_property,
-                        )
-                    )
-                else:
-                    raise ValueError(
-                        trans._(
-                            'There must be a valid property to use {color_mode}',
-                            deferred=True,
-                            color_mode=color_mode,
-                        )
-                    )
-
-            # ColorMode.COLORMAP can only be applied to numeric properties
-            color_property = self.color_properties.name
-            if (color_mode == ColorMode.COLORMAP) and not issubclass(
-                properties[color_property].dtype.type, np.number
-            ):
-                raise TypeError(
-                    trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
-                        deferred=True,
-                    )
-                )
-            self.color_mode = color_mode
 
     @classmethod
     def _from_layer_kwargs(
