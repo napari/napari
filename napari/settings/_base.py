@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
+from warnings import warn
 
 from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.error_wrappers import display_errors
@@ -44,10 +44,17 @@ class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
         self.events.add(changed=None)
 
         # re-emit subfield
-        for name in self.__fields__:
+        for name, field in self.__fields__.items():
             attr = getattr(self, name)
             if isinstance(getattr(attr, 'events', None), EmitterGroup):
                 attr.events.connect(partial(self._on_sub_event, field=name))
+
+            if field.field_info.extra.get('requires_restart'):
+                emitter = getattr(self.events, name)
+
+                @emitter.connect
+                def _warn_restart(*_):
+                    warn("Restart required for this change to take effect.")
 
     def _on_sub_event(self, event: Event, field=None):
         """emit the field.attr name and new value"""
@@ -346,7 +353,7 @@ def config_file_settings_source(
         elif str(path).endswith(".json"):
             load = __import__('json').load
         else:
-            warnings.warn(
+            warn(
                 trans._(
                     "Unrecognized file extension for config_path: {path}",
                     path=path,

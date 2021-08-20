@@ -202,7 +202,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         with self.events.blocker() as block:
             for key, value in values.items():
-                setattr(self, key, value)
+                field = getattr(self, key)
+                if isinstance(field, EventedModel):
+                    field.update(value)
+                else:
+                    setattr(self, key, value)
 
         if block.count:
             self.events(Event(self))
