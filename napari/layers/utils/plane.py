@@ -9,8 +9,24 @@ from ...utils.translations import trans
 
 
 class Plane(EventedModel):
+    """Defines a Plane in 3D.
+
+    A Plane is defined by a position, a normal vector and can
+    be toggled on or off.
+
+    Attributes
+    ----------
+    position : 3-tuple
+        A 3D position on the plane, defined in sliced data coordinates (currently displayed dims).
+    normal : 3-tuple
+        A 3D unit vector normal to the plane, defined in sliced data coordinates (currently displayed dims).
+    enabled : bool
+        Whether the plane is considered enabled.
+    """
+
     normal: Tuple[float, float, float] = (1, 0, 0)
     position: Tuple[float, float, float] = (0, 0, 0)
+    enabled: bool = True
 
     @validator('normal')
     def _normalise_vector(cls, v):
@@ -33,7 +49,7 @@ class Plane(EventedModel):
         )
 
     @classmethod
-    def from_points(cls, a, b, c):
+    def from_points(cls, a, b, c, enabled=True):
         """Derive a Plane from three points.
 
         Parameters
@@ -47,7 +63,7 @@ class Plane(EventedModel):
 
         Returns
         -------
-        plane : SlicingPlane
+        plane : Plane
         """
         a = np.array(a)
         b = np.array(b)
@@ -58,7 +74,9 @@ class Plane(EventedModel):
 
         plane_normal = np.cross(ab, ac)
         plane_position = np.mean(abc, axis=0)
-        return cls(position=plane_position, normal=plane_normal)
+        return cls(
+            position=plane_position, normal=plane_normal, enabled=enabled
+        )
 
     def as_array(self):
         """Return a (2, 3) array representing the plane.
@@ -69,13 +87,16 @@ class Plane(EventedModel):
         return np.stack([self.position, self.normal])
 
     @classmethod
-    def from_array(cls, array):
+    def from_array(cls, array, enabled=True):
         """Construct a plane from a (2, 3) array.
 
         [0, :] : plane position
         [1, :] : plane normal
         """
-        return cls(position=array[0], normal=array[1])
+        return cls(position=array[0], normal=array[1], enabled=enabled)
+
+    def __hash__(self):
+        return id(self)
 
 
 class SlicingPlane(Plane):
@@ -96,11 +117,7 @@ class SlicingPlane(Plane):
         Whether the plane is considered enabled.
     """
 
-    enabled: bool = True
     thickness: float = 0.0
-
-    def __hash__(self):
-        return id(self)
 
 
 class ClippingPlane(Plane):
@@ -118,20 +135,6 @@ class ClippingPlane(Plane):
     enabled : bool
         Whether the plane is considered enabled.
     """
-
-    enabled: bool = True
-
-    @classmethod
-    def from_array(cls, array, enabled=True):
-        """Construct a clipping plane from a (2, 3) array.
-
-        [0, :] : plane position
-        [1, :] : plane normal
-        """
-        return cls(position=array[0], normal=array[1], enabled=enabled)
-
-    def __hash__(self):
-        return id(self)
 
 
 class ClippingPlaneList(SelectableEventedList):
@@ -152,7 +155,7 @@ class ClippingPlaneList(SelectableEventedList):
         return np.stack(arrays)
 
     @classmethod
-    def from_array(cls, array):
+    def from_array(cls, array, enabled=True):
         """Construct the PlaneList from an (N, 2, 3) array.
 
         [i, 0, :] : ith plane position
@@ -166,11 +169,14 @@ class ClippingPlaneList(SelectableEventedList):
                     shape=array.shape,
                 )
             )
-        planes = [SlicingPlane.from_array(sub_arr) for sub_arr in array]
+        planes = [
+            SlicingPlane.from_array(sub_arr, enabled=enabled)
+            for sub_arr in array
+        ]
         return cls(planes)
 
     @classmethod
-    def from_bounding_box(cls, center, dimensions):
+    def from_bounding_box(cls, center, dimensions, enabled=True):
         """
         generate 6 planes positioned to form a bounding box, with normals towards the center
 
@@ -197,7 +203,7 @@ class ClippingPlaneList(SelectableEventedList):
 
                 planes.append(
                     SlicingPlane(
-                        position=position, normal=normal, enabled=True
+                        position=position, normal=normal, enabled=enabled
                     )
                 )
         return cls(planes)
