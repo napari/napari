@@ -202,7 +202,7 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._properties = PropertyTable.from_layer_kwargs(
+        self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
             property_choices=property_choices,
             expected_len=len(self.data),
@@ -214,7 +214,7 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self._properties,
+            property_table=self._property_table,
         )
 
         # Data containing vectors in the currently viewed slice
@@ -252,7 +252,7 @@ class Vectors(Layer):
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
-                self._properties.resize(n_vectors)
+                self._property_table.resize(n_vectors)
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the
                     # extra ones
@@ -274,11 +274,11 @@ class Vectors(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return self._properties.all_values
+        return self._property_table.all_values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties = PropertyTable.from_layer_kwargs(
+        self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
             expected_len=len(self.data),
         )
@@ -305,7 +305,7 @@ class Vectors(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._properties.all_choices
+        return self._property_table.all_choices
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -406,7 +406,7 @@ class Vectors(Layer):
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
-            properties=self._properties,
+            property_table=self._property_table,
         )
         self.events.edge_color()
 
@@ -424,7 +424,7 @@ class Vectors(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        self._edge._refresh_colors(self._properties, update_color_mapping)
+        self._edge._refresh_colors(self._property_table, update_color_mapping)
 
     @property
     def edge_color_mode(self) -> ColorMode:
@@ -452,7 +452,7 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    self._edge.color_properties = self._properties[
+                    self._edge.color_properties = self._property_table[
                         color_property
                     ]
                     warnings.warn(

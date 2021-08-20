@@ -6,7 +6,11 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
+from ...utils.colormaps.standardize_color import (
+    get_color_namelist,
+    hex_to_name,
+    rgb_to_hex,
+)
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
@@ -291,10 +295,12 @@ class Points(Layer):
             highlight=Event,
         )
 
+        self._colors = get_color_namelist()
+
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        self._properties = PropertyTable.from_layer_kwargs(
+        self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
             property_choices=property_choices,
             expected_len=len(data),
@@ -358,7 +364,7 @@ class Points(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self._properties,
+            property_table=self._property_table,
         )
         self._face = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -366,7 +372,7 @@ class Points(Layer):
             continuous_colormap=face_colormap,
             contrast_limits=face_contrast_limits,
             categorical_colormap=face_color_cycle,
-            properties=self._properties,
+            property_table=self._property_table,
         )
 
         self.size = size
@@ -389,7 +395,7 @@ class Points(Layer):
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
-                    self._properties.resize(len(data))
+                    self._property_table.resize(len(data))
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones
@@ -443,12 +449,12 @@ class Points(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._properties.all_choices
+        return self._property_table.all_choices
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
-        return self._properties.all_values
+        return self._property_table.all_values
 
     @staticmethod
     def _update_color_manager(color_manager, property_table, name):
@@ -472,11 +478,15 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
-        self._properties = PropertyTable.from_layer_kwargs(
+        self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties, expected_len=len(self._data)
         )
-        self._update_color_manager(self._face, self._properties, "face_color")
-        self._update_color_manager(self._edge, self._properties, "edge_color")
+        self._update_color_manager(
+            self._face, self._property_table, "face_color"
+        )
+        self._update_color_manager(
+            self._edge, self._property_table, "edge_color"
+        )
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
@@ -484,7 +494,7 @@ class Points(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        return self._properties.all_default_values
+        return self._property_table.all_default_values
 
     @current_properties.setter
     def current_properties(self, current_properties):
@@ -494,7 +504,7 @@ class Points(Layer):
             and self._mode != Mode.ADD
         )
         for name, value in current_properties.items():
-            prop = self._properties[name]
+            prop = self._property_table[name]
             prop.default_value = value
             if update_values:
                 prop.values[list(self.selected_data)] = value
@@ -629,7 +639,7 @@ class Points(Layer):
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
-            properties=self._properties,
+            property_table=self._property_table,
         )
         self.events.edge_color()
 
@@ -719,7 +729,7 @@ class Points(Layer):
         self._face._set_color(
             color=face_color,
             n_colors=len(self.data),
-            properties=self._properties,
+            property_table=self._property_table,
         )
         self.events.face_color()
 
@@ -803,6 +813,7 @@ class Points(Layer):
         self, color_mode: Union[ColorMode, str], attribute: str
     ):
         """Set the face_color_mode or edge_color_mode property
+
         Parameters
         ----------
         color_mode : str, ColorMode
@@ -823,9 +834,9 @@ class Points(Layer):
             else:
                 color_property = ''
             if color_property == '':
-                if self._properties.num_properties > 0:
-                    new_color_property = next(iter(self._properties))
-                    color_manager.color_properties = self._properties[
+                if self._property_table.num_properties > 0:
+                    new_color_property = next(iter(self._property_table))
+                    color_manager.color_properties = self._property_table[
                         new_color_property
                     ]
                     warnings.warn(
@@ -870,8 +881,8 @@ class Points(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        self._edge._refresh_colors(self._properties, update_color_mapping)
-        self._face._refresh_colors(self._properties, update_color_mapping)
+        self._edge._refresh_colors(self._property_table, update_color_mapping)
+        self._face._refresh_colors(self._property_table, update_color_mapping)
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -1327,7 +1338,7 @@ class Points(Layer):
                 self._edge._remove(indices_to_remove=index)
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
-            self._properties.remove(index)
+            self._property_table.remove(index)
             self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
@@ -1385,7 +1396,7 @@ class Points(Layer):
             )
 
             for name in self._clipboard['properties']:
-                prop = self._properties[name]
+                prop = self._property_table[name]
                 prop.values = np.concatenate(
                     (prop.values, self._clipboard['properties'][name]), axis=0
                 )

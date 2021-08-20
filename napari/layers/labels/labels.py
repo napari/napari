@@ -234,7 +234,7 @@ class Labels(_ImageBase):
         data = self._ensure_int_labels(data)
         self._color_lookup_func = None
 
-        self._properties, self._label_index = self._prepare_properties(
+        self._property_table, self._label_index = self._prepare_properties(
             properties
         )
 
@@ -421,11 +421,11 @@ class Labels(_ImageBase):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return self._properties.all_values
+        return self._property_table.all_values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties, self._label_index = self._prepare_properties(
+        self._property_table, self._label_index = self._prepare_properties(
             properties
         )
         self.events.properties()
@@ -510,7 +510,7 @@ class Labels(_ImageBase):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
-                'properties': self._properties,
+                'properties': self._property_table,
                 'rendering': self.rendering,
                 'plane': self.experimental_slicing_plane.dict(),
                 'seed': self.seed,
@@ -1253,7 +1253,7 @@ class Labels(_ImageBase):
         return "\n".join(self._get_properties(position, world))
 
     def _get_properties(self, position, world) -> list:
-        if not (self._label_index and self._properties):
+        if not (self._label_index and self._property_table):
             return []
 
         value = self.get_value(position, world=world)
@@ -1268,7 +1268,7 @@ class Labels(_ImageBase):
         idx = self._label_index[label_value]
         return [
             f'{name}: {column.values[idx]}'
-            for name, column in self._properties.items()
+            for name, column in self._property_table.items()
             if name != 'index'
             and len(column.values) > idx
             and column.values[idx] is not None

@@ -125,7 +125,7 @@ class ColorManager(EventedModel):
         self,
         color: ColorType,
         n_colors: int,
-        properties: PropertyTable,
+        property_table: PropertyTable,
     ):
         """Set a color property. This is convenience function
 
@@ -135,13 +135,13 @@ class ColorManager(EventedModel):
             The value for setting edge or face_color
         n_colors : int
             The number of colors that needs to be set. Typically len(data).
-        properties : PropertyTable
-            The layer property values
+        property_table : PropertyTable
+            The layer's property table.
         """
         # if the provided color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
-        if is_color_mapped(color, properties):
-            self.color_properties = properties[color]
+        if is_color_mapped(color, property_table):
+            self.color_properties = property_table[color]
             if guess_continuous(self.color_properties.values):
                 self.color_mode = ColorMode.COLORMAP
             else:
@@ -161,14 +161,14 @@ class ColorManager(EventedModel):
 
     def _refresh_colors(
         self,
-        properties: PropertyTable,
+        property_table: PropertyTable,
         update_color_mapping: bool = False,
     ):
         """Calculate and update colors if using a cycle or color map
         Parameters
         ----------
-        properties : Dict[str, np.ndarray]
-           The layer properties to use to update the colors.
+        property_table : PropertyTable
+           The layer property table to use to update the colors.
         update_color_mapping : bool
            If set to True, the function will recalculate the color cycle map
            or colormap (whichever is being used). If set to False, the function
@@ -179,7 +179,7 @@ class ColorManager(EventedModel):
            Default value is False.
         """
         if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
-            self.color_properties = properties[self.color_properties.name]
+            self.color_properties = property_table[self.color_properties.name]
             if update_color_mapping is True:
                 self.contrast_limits = None
             self.events.color_properties()
@@ -334,7 +334,7 @@ class ColorManager(EventedModel):
     def _from_layer_kwargs(
         cls,
         colors: Union[dict, str, np.ndarray],
-        properties: PropertyTable,
+        property_table: PropertyTable,
         n_colors: Optional[int] = None,
         continuous_colormap: Optional[Union[str, Colormap]] = None,
         contrast_limits: Optional[Tuple[float, float]] = None,
@@ -368,7 +368,7 @@ class ColorManager(EventedModel):
 
             if isinstance(color_properties, str):
                 try:
-                    color_properties = properties[color_properties]
+                    color_properties = property_table[color_properties]
                 except KeyError:
                     raise KeyError(
                         trans._(
@@ -389,8 +389,8 @@ class ColorManager(EventedModel):
         }
 
         if color_properties is None:
-            if is_color_mapped(color_values, properties):
-                color_properties = properties[color_values]
+            if is_color_mapped(color_values, property_table):
+                color_properties = property_table[color_values]
                 if color_mode is None:
                     if guess_continuous(color_properties.values):
                         color_mode = ColorMode.COLORMAP

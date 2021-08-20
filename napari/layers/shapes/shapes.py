@@ -469,7 +469,7 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        self._properties = PropertyTable.from_layer_kwargs(
+        self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
             property_choices=property_choices,
             expected_len=number_of_shapes(data),
@@ -688,11 +688,11 @@ class Shapes(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return self._properties.all_values
+        return self._property_table.all_values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties = PropertyTable.from_layer_kwargs(
+        self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties, expected_len=self.nshapes
         )
         if self._face_color_property and (
@@ -725,7 +725,7 @@ class Shapes(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._properties.all_choices
+        return self._property_table.all_choices
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -804,7 +804,7 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return self._properties.all_default_values
+        return self._property_table.all_default_values
 
     @current_properties.setter
     def current_properties(self, current_properties):
@@ -814,7 +814,7 @@ class Shapes(Layer):
             and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         )
         for name, value in current_properties.items():
-            prop = self._properties[name]
+            prop = self._property_table[name]
             prop.default_value = value
             if update_values:
                 prop.values[list(self.selected_data)] = value
@@ -1957,7 +1957,7 @@ class Shapes(Layer):
             else:
                 n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
-            self._properties.resize(total_shapes)
+            self._property_table.resize(total_shapes)
             if total_shapes > n_prop_values:
                 n_props_to_add = total_shapes - n_prop_values
                 self.text.add(self.current_properties, n_props_to_add)
@@ -2508,7 +2508,7 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
-            self._properties.remove(index)
+            self._property_table.remove(index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2879,7 +2879,7 @@ class Shapes(Layer):
             for property_name, pasted_values in self._clipboard[
                 'properties'
             ].items():
-                property_column = self._properties[property_name]
+                property_column = self._property_table[property_name]
                 property_column.values = np.concatenate(
                     (property_column.values, pasted_values), axis=0
                 )

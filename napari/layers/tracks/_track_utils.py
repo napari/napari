@@ -66,7 +66,7 @@ class TrackManager:
 
         # store the raw data here
         self._data = None
-        self._properties = None
+        self._property_table = None
         self._order = None
 
         # use a kdtree to help with fast lookup of the nearest track
@@ -141,20 +141,20 @@ class TrackManager:
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return self._properties.all_values
+        return self._property_table.all_values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-        self._properties = PropertyTable.from_layer_kwargs(
+        self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
             expected_len=len(self.data),
         )
-        if 'track_id' not in self._properties:
-            self._properties['track_id'] = PropertyColumn.from_values(
+        if 'track_id' not in self._property_table:
+            self._property_table['track_id'] = PropertyColumn.from_values(
                 'track_id', self.track_ids
             )
-        for prop in self._properties.values():
+        for prop in self._property_table.values():
             prop.values = prop.values[self._order]
 
     @property
