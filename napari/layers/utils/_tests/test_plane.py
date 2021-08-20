@@ -63,7 +63,7 @@ def test_plane_3_tuple():
     with pytest.raises(ValidationError):
         plane = SlicingPlane(  # noqa: F841
             position=(32, 32, 32, 32),
-            normal_vector=(1, 0, 0, 0),
+            normal=(1, 0, 0, 0),
         )
 
 

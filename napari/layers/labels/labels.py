@@ -116,13 +116,13 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    experimental_slicing_plane : dict
+    experimental_slicing_plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
-        {'position', 'normal_vector', 'thickness', and 'enabled'}.
-    experimental_clipping_planes : list of dicts, list of Plane, or PlaneList
+        {'position', 'normal', 'thickness', and 'enabled'}.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
-        Valid dictionary keys are {'position', 'normal_vector', and 'enabled'}.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
         Values on the negative side of the normal are discarded if the plane is enabled.
 
     Attributes
@@ -188,9 +188,9 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
-    experimental_slicing_plane : Plane
+    experimental_slicing_plane : SlicingPlane
         Properties defining plane rendering in 3D.
-    experimental_clipping_planes : PlaneList
+    experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
