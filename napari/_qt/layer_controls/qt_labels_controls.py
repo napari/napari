@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from superqt import QLabeledSlider as QSlider
+from superqt import QLargeIntSpinBox
 
 from ...layers.image._image_constants import Rendering
 from ...layers.labels._labels_constants import (
@@ -18,12 +19,12 @@ from ...layers.labels._labels_constants import (
     Mode,
 )
 from ...layers.labels._labels_utils import get_dtype
+from ...utils._dtype import get_dtype_limits
 from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity
-from ..widgets.qt_large_int_spinbox import QtLargeIntSpinBox
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
@@ -63,7 +64,7 @@ class QtLabelsControls(QtLayerControls):
         Button to select PICKER mode on Labels layer.
     erase_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
-    selectionSpinBox : napari._qt.widgets.qt_large_int_spinbox.QtLargeIntSpinBox
+    selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
 
@@ -96,9 +97,9 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.color_mode.connect(self._on_color_mode_change)
 
         # selection spinbox
-        self.selectionSpinBox = QtLargeIntSpinBox()
-        layer_dtype = get_dtype(layer)
-        self.selectionSpinBox.set_dtype(layer_dtype)
+        self.selectionSpinBox = QLargeIntSpinBox()
+        dtype_lims = get_dtype_limits(get_dtype(layer))
+        self.selectionSpinBox.setRange(*dtype_lims)
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
@@ -129,8 +130,8 @@ class QtLabelsControls(QtLayerControls):
         ndim_sb.setAlignment(Qt.AlignCenter)
         self._on_n_edit_dimensions_change()
 
-        self.contourSpinBox = QtLargeIntSpinBox()
-        self.contourSpinBox.set_dtype(layer_dtype)
+        self.contourSpinBox = QLargeIntSpinBox()
+        self.contourSpinBox.setRange(*dtype_lims)
         self.contourSpinBox.setToolTip(trans._('display contours of labels'))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
@@ -222,8 +223,8 @@ class QtLabelsControls(QtLayerControls):
         button_row.addStretch(1)
         button_row.addWidget(self.colormapUpdate)
         button_row.addWidget(self.erase_button)
-        button_row.addWidget(self.fill_button)
         button_row.addWidget(self.paint_button)
+        button_row.addWidget(self.fill_button)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.panzoom_button)
         button_row.setSpacing(4)
@@ -526,9 +527,24 @@ class QtLabelsControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method.
         """
+        # In 3D mode, we need to disable all buttons other than picking
+        # (only picking works in 3D)
+        widget_list = [
+            'pick_button',
+            'fill_button',
+            'paint_button',
+            'erase_button',
+        ]
+        widgets_to_toggle = {
+            (2, True): widget_list,
+            (2, False): widget_list,
+            (3, True): widget_list,
+            (3, False): widget_list,
+        }
+
         disable_with_opacity(
             self,
-            ['pick_button', 'paint_button', 'fill_button'],
+            widgets_to_toggle[(self.layer._ndisplay, self.layer.editable)],
             self.layer.editable,
         )
 
@@ -560,6 +576,8 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.renderComboBox.show()
             self.renderLabel.show()
+
+        self._on_editable_change()
 
 
 class QtColorBox(QWidget):

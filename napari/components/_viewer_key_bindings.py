@@ -1,5 +1,5 @@
+from ..settings import get_settings
 from ..utils.action_manager import action_manager
-from ..utils.settings import get_settings
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from .viewer_model import ViewerModel

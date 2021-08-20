@@ -17,9 +17,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ...settings import get_settings
+from ...settings._constants import LoopMode
 from ...utils.events import Event
-from ...utils.settings import get_settings
-from ...utils.settings._constants import LoopMode
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from ..qthreading import _new_worker_qthread
@@ -292,6 +292,7 @@ class QtDimSliderWidget(QWidget):
                 reversing direction when the maximum or minimum frame
                 has been reached.
         """
+        value = LoopMode(value)
         self._loop_mode = value
         self.play_button.mode_combo.setCurrentText(
             str(value).replace('_', ' ')

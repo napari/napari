@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QLabel, QPushButton
+from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 from superqt import QDoubleRangeSlider
 from superqt import QLabeledDoubleSlider as QSlider
 
@@ -87,6 +87,7 @@ class QtBaseImageControls(QtLayerControls):
         self.contrastLimitsSlider.rangeChanged.connect(
             lambda *a: setattr(self.layer, 'contrast_limits_range', a)
         )
+        self.autoScaleBar = AutoScaleButtons(layer, self)
 
         # gamma slider
         sld = QSlider(Qt.Horizontal, parent=self)
@@ -199,6 +200,32 @@ class QtBaseImageControls(QtLayerControls):
         self.clim_popup.setParent(self)
         self.clim_popup.move_to('top', min_length=650)
         self.clim_popup.show()
+
+
+class AutoScaleButtons(QWidget):
+    def __init__(self, layer: Image, parent=None) -> None:
+        super().__init__(parent=parent)
+
+        self.setLayout(QHBoxLayout())
+        self.layout().setSpacing(2)
+        self.layout().setContentsMargins(0, 0, 0, 0)
+        once_btn = QPushButton('once')
+        once_btn.setFocusPolicy(Qt.NoFocus)
+
+        auto_btn = QPushButton('continuous')
+        auto_btn.setCheckable(True)
+        auto_btn.setFocusPolicy(Qt.NoFocus)
+        once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
+        once_btn.clicked.connect(lambda: layer.reset_contrast_limits())
+        auto_btn.toggled.connect(
+            lambda e: setattr(layer, '_keep_autoscale', e)
+        )
+        auto_btn.clicked.connect(
+            lambda e: layer.reset_contrast_limits() if e else None
+        )
+
+        self.layout().addWidget(once_btn)
+        self.layout().addWidget(auto_btn)
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):

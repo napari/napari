@@ -6,6 +6,7 @@ from glob import glob
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
+import imageio
 import numpy as np
 from dask import array as da
 from dask import delayed
@@ -13,6 +14,9 @@ from dask import delayed
 from ..types import FullLayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
+
+IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
+READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm'})
 
 
 def imsave(filename: str, data: np.ndarray):

@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QKeySequenceEdit,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -20,11 +21,10 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
+from ...settings import get_settings
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
-from ...utils.settings import get_settings
 from ...utils.translations import trans
-from ..dialogs.qt_message_dialogs import ConfirmDialog
 from ..qt_resources import get_stylesheet
 
 # Dict used to format strings returned from converted key press events.
@@ -72,7 +72,7 @@ class ShortcutEditor(QWidget):
         self._table.setSelectionBehavior(QAbstractItemView.SelectItems)
         self._table.setSelectionMode(QAbstractItemView.SingleSelection)
         self._table.setShowGrid(False)
-        self._restore_button = QPushButton(trans._("Reset All Keybindings"))
+        self._restore_button = QPushButton(trans._("Restore All Keybindings"))
 
         # Set up dictionary for layers and associated actions.
         all_actions = action_manager._actions.copy()
@@ -119,43 +119,37 @@ class ShortcutEditor(QWidget):
     def restore_defaults(self):
         """Launches dialog to confirm restore choice."""
 
-        self._reset_dialog = ConfirmDialog(
-            parent=self,
-            text=trans._(
-                "Are you sure you want to restore default shortcuts?"
-            ),
+        response = QMessageBox.question(
+            self,
+            trans._("Restore Shortcuts"),
+            trans._("Are you sure you want to restore default shortcuts?"),
+            QMessageBox.RestoreDefaults | QMessageBox.Cancel,
+            QMessageBox.RestoreDefaults,
         )
-        self._reset_dialog.valueChanged.connect(self._reset_shortcuts)
-        self._reset_dialog.exec_()
 
-    def _reset_shortcuts(self, event=None):
-        """Reset shortcuts to default settings.
+        if response == QMessageBox.RestoreDefaults:
+            self._reset_shortcuts()
 
-        Parameters
-        ----------
-        event: Bool
-            Event will indicate whether user confirmed resetting shortcuts.
-        """
+    def _reset_shortcuts(self):
+        """Reset shortcuts to default settings."""
 
-        # event is True if the user confirmed reset shortcuts
-        if event is True:
-            get_settings().reset(sections=['shortcuts'])
-            for (
-                action,
-                shortcuts,
-            ) in get_settings().shortcuts.shortcuts.items():
-                action_manager.unbind_shortcut(action)
-                for shortcut in shortcuts:
-                    action_manager.bind_shortcut(action, shortcut)
+        get_settings().shortcuts.reset()
+        for (
+            action,
+            shortcuts,
+        ) in get_settings().shortcuts.shortcuts.items():
+            action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, shortcut)
 
-            self._set_table(layer_str=self.layer_combo_box.currentText())
+        self._set_table(layer_str=self.layer_combo_box.currentText())
 
-    def _set_table(self, layer_str=''):
+    def _set_table(self, layer_str: str = ''):
         """Builds and populates keybindings table.
 
         Parameters
         ----------
-        layer_str = str
+        layer_str : str
             If layer_str is not empty, then show the specified layers'
             keybinding shortcut table.
         """
@@ -261,9 +255,9 @@ class ShortcutEditor(QWidget):
 
         Parameters
         ----------
-        row: int
+        row : int
             Row in keybindings table that is being edited.
-        col: int
+        col : int
             Column being edited (shortcut column).
         """
 
@@ -425,7 +419,7 @@ class ShortcutEditor(QWidget):
 
         Parameters
         ----------
-        rows: list[int]
+        rows : list[int]
             List of row numbers that should have the icon.
         """
 
@@ -440,9 +434,9 @@ class ShortcutEditor(QWidget):
     def _cleanup_warning_icons(self, rows):
         """Remove the warning icons from the shortcut table.
 
-        Paramters
-        ---------
-        rows: list[int]
+        Parameters
+        ----------
+        rows : list[int]
             List of row numbers to remove warning icon from.
 
         """
@@ -454,13 +448,13 @@ class ShortcutEditor(QWidget):
 
         Parameters
         ----------
-        new_shortcut: str
+        new_shortcut : str
             The new shortcut attempting to be set.
-        action: Action
+        action : Action
             Action that is already assigned with the shortcut.
-        row: int
+        row : int
             Row in table where the shortcut is attempting to be set.
-        message: str
+        message : str
             Message to be displayed in warning pop up.
         """
 
@@ -496,7 +490,6 @@ class ShortcutEditor(QWidget):
         Returns
         -------
         value: dict
-
             Dictionary of action names and shortcuts assigned to them.
         """
 

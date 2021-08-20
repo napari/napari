@@ -16,6 +16,7 @@ from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import clamp_point_to_bounding_box
+from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
 from ..base import no_op
 from ..image._image_utils import guess_multiscale
@@ -37,7 +38,6 @@ _REV_SHAPE_HELP = {
     ): {Mode.PAINT},
     trans._('hold <space> to pan/zoom, drag to erase a label'): {Mode.ERASE},
 }
-
 
 # This avoid duplicating the trans._ help messages above
 # as some modes have the same help.
@@ -116,6 +116,10 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    plane : dict
+        Properties defining plane rendering in 3D. Properties are defined in
+        data coordinates. Valid dictionary keys are
+        {'position', 'normal_vector', 'thickness', and 'enabled'}.
 
     Attributes
     ----------
@@ -212,6 +216,7 @@ class Labels(_ImageBase):
         rendering='iso_categorical',
         visible=True,
         multiscale=None,
+        plane=None,
     ):
 
         self._seed = seed
@@ -252,6 +257,7 @@ class Labels(_ImageBase):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            plane=plane,
         )
 
         self.events.add(
@@ -379,10 +385,10 @@ class Labels(_ImageBase):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self._selected_color = self.get_color(self.selected_label)
         # invalidate _all_vals to trigger re-generation
         # in _raw_to_displayed
         self._all_vals = np.array([])
+        self._selected_color = self.get_color(self.selected_label)
         self.refresh()
         self.events.selected_label()
 
@@ -505,6 +511,7 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self._properties,
                 'rendering': self.rendering,
+                'plane': self.experimental_slicing_plane.dict(),
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,
@@ -658,7 +665,7 @@ class Labels(_ImageBase):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.multiscale or self._ndisplay == 3:
+            if self.multiscale:
                 self.editable = False
             else:
                 self.editable = True
@@ -749,7 +756,7 @@ class Labels(_ImageBase):
             maximum label value in data
 
         Returns
-        ----------
+        -------
         lookup_func : function
             function to use for mapping label values to colors
         """
@@ -883,6 +890,8 @@ class Labels(_ImageBase):
             (n,) array containing the start point of the ray in data coordinates.
         end_point : np.ndarray
             (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
 
         Returns
         -------
@@ -890,6 +899,8 @@ class Labels(_ImageBase):
             The first non-zero value encountered along the ray. If none
             was encountered or the viewer is in 2D mode, None is returned.
         """
+        if start_point is None or end_point is None:
+            return None
         if len(dims_displayed) == 3:
             # only use get_value_ray on 3D for now
             # we use dims_displayed because the image slice
@@ -915,16 +926,41 @@ class Labels(_ImageBase):
 
         return None
 
-    def _reset_history(self, event=None):
-        self._undo_history = deque()
-        self._redo_history = deque()
+    def _get_value_3d(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
 
-    def _trim_history(self):
-        while (
-            len(self._undo_history) + len(self._redo_history)
-            > self._history_limit
-        ):
-            self._undo_history.popleft()
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
+
+        Returns
+        -------
+        value : int
+            The first non-zero value encountered along the ray. If a
+            non-zero value is not encountered, returns 0 (the background value).
+        """
+        return (
+            self._get_value_ray(
+                start_point=start_point,
+                end_point=end_point,
+                dims_displayed=dims_displayed,
+            )
+            or 0
+        )
+
+    def _reset_history(self, event=None):
+        self._undo_history = deque(maxlen=self._history_limit)
+        self._redo_history = deque(maxlen=self._history_limit)
 
     def _save_history(self, value):
         """Save a history "atom" to the undo history.
@@ -949,7 +985,6 @@ class Labels(_ImageBase):
         self._redo_history = deque()
         if not self._block_saving:
             self._undo_history.append([value])
-            self._trim_history()
         else:
             self._undo_history[-1].append(value)
 
@@ -1153,13 +1188,26 @@ class Labels(_ImageBase):
         if refresh is True:
             self.refresh()
 
-    def get_status(self, position=None, *, world=False):
+    def get_status(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ) -> str:
         """Status message of the data at a coordinate position.
 
         Parameters
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.
@@ -1169,7 +1217,13 @@ class Labels(_ImageBase):
         msg : string
             String containing a message that can be used as a status update.
         """
-        msg = super().get_status(position, world=world)
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+        msg = generate_layer_status(self.name, position, value)
 
         # if this labels layer has properties
         properties = self._get_properties(position, world)
