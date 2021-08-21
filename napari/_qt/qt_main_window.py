@@ -7,7 +7,16 @@ import os
 import sys
 import time
 import warnings
-from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
@@ -45,6 +54,9 @@ from .widgets.qt_viewer_status_bar import ViewerStatusBar
 
 _sentinel = object()
 
+if TYPE_CHECKING:
+    from ..viewer import Viewer
+
 
 class _QtMainWindow(QMainWindow):
     # This was added so that someone can patch
@@ -58,10 +70,10 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
-    def __init__(self, qt_viewer: QtViewer, parent=None) -> None:
+    def __init__(self, viewer: 'Viewer', parent=None) -> None:
         super().__init__(parent)
         self._ev = None
-        self.qt_viewer = qt_viewer
+        self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
 
         self._quit_app = False
         self.setWindowIcon(QIcon(self._window_icon))
@@ -69,11 +81,11 @@ class _QtMainWindow(QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
-        center.layout().addWidget(qt_viewer)
+        center.layout().addWidget(self.qt_viewer)
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
 
-        self.setWindowTitle(qt_viewer.viewer.title)
+        self.setWindowTitle(self.qt_viewer.viewer.title)
 
         self._maximized_flag = False
         self._window_size = None
@@ -81,8 +93,10 @@ class _QtMainWindow(QMainWindow):
         self._old_size = None
         self._positions = []
 
-        act_dlg = ActivityDialog(qt_viewer._canvas_overlay)
-        qt_viewer._canvas_overlay.resized.connect(act_dlg.move_to_bottom_right)
+        act_dlg = ActivityDialog(self.qt_viewer._canvas_overlay)
+        self.qt_viewer._canvas_overlay.resized.connect(
+            act_dlg.move_to_bottom_right
+        )
         act_dlg.hide()
         self._activity_dialog = act_dlg
 
@@ -105,7 +119,7 @@ class _QtMainWindow(QMainWindow):
         handle = self.windowHandle()
         if handle is not None:
             handle.screenChanged.connect(
-                qt_viewer.canvas._backend.screen_changed
+                self.qt_viewer.canvas._backend.screen_changed
             )
 
     def statusBar(self) -> 'ViewerStatusBar':
@@ -393,7 +407,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer, *, show: bool = True):
+    def __init__(self, viewer: 'Viewer', *, show: bool = True):
 
         # create QApplication if it doesn't already exist
         get_app()
@@ -403,20 +417,21 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
-        qt_viewer = QtViewer(viewer, show_welcome_screen=True)
-        self.qt_viewer = qt_viewer
-        self._qt_window = _QtMainWindow(self.qt_viewer)
-        self._status_bar = self._qt_window.statusBar()
+        self._qt_window = _QtMainWindow(viewer)
 
         self._add_menus()
         self._update_theme()
         get_settings().appearance.events.theme.connect(self._update_theme)
 
-        self._add_viewer_dock_widget(qt_viewer.dockConsole, tabify=False)
-        self._add_viewer_dock_widget(qt_viewer.dockLayerControls, tabify=False)
-        self._add_viewer_dock_widget(qt_viewer.dockLayerList, tabify=False)
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerControls, tabify=False
+        )
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerList, tabify=False
+        )
         if perf.USE_PERFMON:
-            self._add_viewer_dock_widget(qt_viewer.dockPerformance)
+            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -426,8 +441,23 @@ class Window:
         if show:
             self.show()
 
+    @property
+    def qt_viewer(self):
+        # we should eventually choose what we'd like to be "public" here
+        # and provide a "window API" that gives access to it... rather than
+        # just giving the qt_viewer.
+        return self._qt_window.qt_viewer
+
+    @property
+    def _status_bar(self):
+        # TODO: remove from window
+        return self._qt_window.statusBar()
+
     def _add_menus(self):
         """Add menubar to napari app."""
+        # TODO: move this to _QMainWindow... but then all of the Menu()
+        # items will not have easy access to the methods on this Window obj.
+
         self.main_menu = self._qt_window.menuBar()
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar

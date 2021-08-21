@@ -18,6 +18,7 @@ class ViewMenu(QMenu):
         super().__init__(trans._('&View'), window._qt_window)
 
         def _toggle_dict(text, name, prop):
+            # helper func to make a Action dict for togglers
             obj = getattr(window.qt_viewer.viewer, name)
             return {
                 'text': text,
@@ -26,6 +27,8 @@ class ViewMenu(QMenu):
                 'checked': getattr(obj, prop),
                 'check_on': getattr(obj.events, prop),
             }
+
+        settings = get_settings()
 
         ACTIONS = [
             {
@@ -71,9 +74,10 @@ class ViewMenu(QMenu):
             },
             {
                 'text': trans._('Layer Tooltip visibility'),
-                'slot': window._tooltip_visibility_toggle,
+                'slot': self._tooltip_visibility_toggle,
                 'checkable': True,
-                'checked': get_settings().appearance.layer_tooltip_visibility,
+                'checked': settings.appearance.layer_tooltip_visibility,
+                'check_on': settings.appearance.events.layer_tooltip_visibility,
             },
             {
                 'text': trans._('Activity Dock'),
@@ -87,6 +91,5 @@ class ViewMenu(QMenu):
 
         populate_menu(self, ACTIONS)
 
-        get_settings().appearance.events.layer_tooltip_visibility.connect(
-            window._tooltip_visibility_toggled
-        )
+    def _tooltip_visibility_toggle(self, value):
+        get_settings().appearance.layer_tooltip_visibility = value

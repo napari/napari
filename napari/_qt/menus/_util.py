@@ -96,9 +96,8 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
             action.setCheckable(True)
             action.setChecked(ax.get("checked", False))
             if 'check_on' in ax:
-                ax['check_on'].connect(
-                    # work for both Qt signals and EventEmitter signals
-                    lambda e: action.setChecked(
-                        e.value if hasattr(e, 'value') else e
-                    )
-                )
+                emitter = ax['check_on']
+
+                @emitter.connect
+                def _setchecked(e, action=action):
+                    action.setChecked(e.value if hasattr(e, 'value') else e)
