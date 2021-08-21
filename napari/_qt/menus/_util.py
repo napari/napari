@@ -7,6 +7,11 @@ if TYPE_CHECKING:
 
     from ...utils.events import EventEmitter
 
+    try:
+        from qtpy.QtCore import SignalInstance
+    except ImportError:
+        from qtpy.QtCore import pyqtBoundSignal as SignalInstance
+
     class ActionDict(TypedDict):
         text: str
         # these are optional
@@ -16,7 +21,7 @@ if TYPE_CHECKING:
         menuRole: QAction.MenuRole
         checkable: bool
         checked: bool
-        check_on: EventEmitter
+        check_on: Union[EventEmitter, SignalInstance]
 
     class MenuDict(TypedDict):
         menu: str
@@ -91,4 +96,9 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
             action.setCheckable(True)
             action.setChecked(ax.get("checked", False))
             if 'check_on' in ax:
-                ax['check_on'].connect(lambda e: action.setChecked(e.value))
+                ax['check_on'].connect(
+                    # work for both Qt signals and EventEmitter signals
+                    lambda e: action.setChecked(
+                        e.value if hasattr(e, 'value') else e
+                    )
+                )

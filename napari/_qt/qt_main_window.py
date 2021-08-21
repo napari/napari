@@ -16,7 +16,6 @@ from qtpy.QtWidgets import (
     QDialog,
     QDockWidget,
     QHBoxLayout,
-    QLabel,
     QMainWindow,
     QShortcut,
     QWidget,
@@ -30,7 +29,7 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.translations import trans
-from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
+from .dialogs.activity_dialog import ActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .menus import FileMenu, HelpMenu, PluginsMenu, ViewMenu, WindowMenu
 from .perf.qt_debug_menu import DebugMenu
@@ -38,6 +37,7 @@ from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
+from .widgets.qt_status_bar import ViewerStatusBar
 from .widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
     QtViewerDockWidget,
@@ -81,8 +81,14 @@ class _QtMainWindow(QMainWindow):
         self._old_size = None
         self._positions = []
 
-        self._activity_dialog = ActivityDialog()
-        self._status_bar = self.statusBar()
+        self._activity_dialog = ActivityDialog(qt_viewer._canvas_overlay)
+        qt_viewer._canvas_overlay.resized.connect(
+            self._activity_dialog.move_to_bottom_right
+        )
+        self._activity_dialog.move_to_bottom_right()
+        self._activity_dialog.hide()
+        self._activity_dialog.resize(500, self._activity_dialog.height())
+        self.setStatusBar(ViewerStatusBar(self))
 
         settings = get_settings()
 
@@ -95,6 +101,9 @@ class _QtMainWindow(QMainWindow):
 
         _QtMainWindow._instances.append(self)
         self.qt_viewer.viewer.tooltip.events.text.connect(self.update_tooltip)
+
+    def statusBar(self) -> 'ViewerStatusBar':
+        return super().statusBar()
 
     def update_tooltip(self, event):
         if self.qt_viewer.viewer.tooltip.visible:
@@ -233,7 +242,7 @@ class _QtMainWindow(QMainWindow):
             settings.application.window_position = window_position
             settings.application.window_size = window_size
             settings.application.window_statusbar = (
-                not self._status_bar.isHidden()
+                not self.statusBar().isHidden()
             )
 
         if settings.application.save_window_state:
@@ -384,15 +393,14 @@ class Window:
         # create QApplication if it doesn't already exist
         get_app()
 
+        # Dictionary holding dock widgets
+        self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
         self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._qt_window = _QtMainWindow(self.qt_viewer)
         self._status_bar = self._qt_window.statusBar()
-
-        # Dictionary holding dock widgets
-        self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
 
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
@@ -401,28 +409,8 @@ class Window:
             )
 
         self._add_menus()
-
-        self._status_bar.showMessage(trans._('Ready'))
-        self._help = QLabel('')
-        self._status_bar.addPermanentWidget(self._help)
-
-        self._activity_item = ActivityToggleItem()
-        self._activity_item._activityBtn.clicked.connect(
-            self._toggle_activity_dock
-        )
-        self._qt_window._activity_dialog._toggleButton = self._activity_item
-
-        canvas_widg = self.qt_viewer._canvas_overlay
-        self._qt_window._activity_dialog.setParent(canvas_widg)
-        self.qt_viewer._canvas_overlay.resized.connect(
-            self._qt_window._activity_dialog.move_to_bottom_right
-        )
-        self._qt_window._activity_dialog.move_to_bottom_right()
-        self._qt_window._activity_dialog.hide()
-        self._status_bar.addPermanentWidget(self._activity_item)
-
-        self.qt_viewer.viewer.theme = settings.appearance.theme
         self._update_theme()
+        settings.appearance.events.theme.connect(self._update_theme)
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
@@ -431,21 +419,13 @@ class Window:
         self._add_viewer_dock_widget(
             self.qt_viewer.dockLayerList, tabify=False
         )
-        self.window_menu.addSeparator()
-
-        settings.appearance.events.theme.connect(self._update_theme)
+        if perf.USE_PERFMON:
+            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
-
-        if perf.USE_PERFMON:
-            # Add DebugMenu and dockPerformance if using perfmon.
-            self._debug_menu = DebugMenu(self)
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
-        else:
-            self._debug_menu = None
 
         if show:
             self.show()
@@ -476,6 +456,8 @@ class Window:
         self.help_menu = HelpMenu(self)
         self.main_menu.addMenu(self.help_menu)
 
+        self._debug_menu = DebugMenu(self) if perf.USE_PERFMON else None
+
     def _toggle_menubar_visible(self):
         """Toggle visibility of app menubar.
 
@@ -493,18 +475,6 @@ class Window:
         self.tooltip_menu.setChecked(
             get_settings().appearance.layer_tooltip_visibility
         )
-
-    def _toggle_activity_dock(self, event):
-        is_currently_visible = self._qt_window._activity_dialog.isVisible()
-        if not is_currently_visible:
-            self._qt_window._activity_dialog.show()
-            self._qt_window._activity_dialog.raise_()
-            self._activity_item._activityBtn.setArrowType(Qt.DownArrow)
-            self.view_activity_menu.setChecked(True)
-        else:
-            self._qt_window._activity_dialog.hide()
-            self._activity_item._activityBtn.setArrowType(Qt.UpArrow)
-            self.view_activity_menu.setChecked(False)
 
     def _toggle_fullscreen(self, event=None):
         """Toggle fullscreen mode."""
@@ -993,7 +963,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._help.setText(event.value)
+        self._status_bar.setHelpText(event.value)
 
     def _restart(self):
         """Restart the napari application."""

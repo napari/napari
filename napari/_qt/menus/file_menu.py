@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QSize
 from qtpy.QtWidgets import QAction, QMenu
 
+from ...settings import get_settings
 from ...utils.history import get_save_history, update_save_history
 from ...utils.misc import running_as_bundled_app
-from ...utils.settings import get_settings
 from ...utils.translations import trans
 from ..dialogs.preferences_dialog import PreferencesDialog
 from ..dialogs.screenshot_dialog import ScreenshotDialog

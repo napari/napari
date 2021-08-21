@@ -77,9 +77,10 @@ class ViewMenu(QMenu):
             },
             {
                 'text': trans._('Activity Dock'),
-                'slot': window._toggle_activity_dock,
+                'slot': window._status_bar._toggle_activity_dock,
                 'checkable': True,
                 'checked': window._qt_window._activity_dialog.isVisible(),
+                'check_on': window._status_bar._activity_item._activityBtn.toggled,
             },
             {},
         ]
