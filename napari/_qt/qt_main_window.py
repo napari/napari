@@ -962,6 +962,7 @@ class Window:
         try:
             self._qt_window.setStyleSheet(get_stylesheet(value))
         except (AttributeError, RuntimeError):
+            # wrapped C/C++ object may have been deleted?
             pass
 
     def _status_changed(self, event):
