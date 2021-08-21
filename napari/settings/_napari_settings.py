@@ -13,7 +13,8 @@ from ._experimental import ExperimentalSettings
 from ._plugins import PluginsSettings
 from ._shortcuts import ShortcutsSettings
 
-_CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
+_DEFAULT_CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
+_DEFAULT_CFG_PATH = Path(_DEFAULT_CFG_PATH) if _DEFAULT_CFG_PATH else None
 
 
 class NapariSettings(EventedConfigFileSettings):
@@ -46,16 +47,20 @@ class NapariSettings(EventedConfigFileSettings):
     )
 
     # private attributes and ClassVars will not appear in the schema
-    _config_path: Optional[Path] = Path(_CFG_PATH)
+    _config_path: Optional[Path] = _DEFAULT_CFG_PATH
 
     class Config:
         env_prefix = 'napari_'
         use_enum_values = False
+        # all of these fields are evented models, so we don't want to break
+        # connections by setting the top-level field itself
+        # (you can still mutate attributes in the subfields)
+        allow_mutation = False
 
     def __str__(self):
         out = 'NapariSettings (defaults excluded)\n'
         out += '----------------------------------\n'
-        out += self.yaml(exclude_defaults=True)
+        out += self._yaml_dump(self._save_dict())
         return out
 
     def __repr__(self):

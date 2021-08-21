@@ -131,13 +131,7 @@ class ShortcutEditor(QWidget):
             self._reset_shortcuts()
 
     def _reset_shortcuts(self):
-        """Reset shortcuts to default settings.
-
-        Parameters
-        ----------
-        event: Bool
-            Event will indicate whether user confirmed resetting shortcuts.
-        """
+        """Reset shortcuts to default settings."""
 
         get_settings().shortcuts.reset()
         for (
@@ -150,12 +144,12 @@ class ShortcutEditor(QWidget):
 
         self._set_table(layer_str=self.layer_combo_box.currentText())
 
-    def _set_table(self, layer_str=''):
+    def _set_table(self, layer_str: str = ''):
         """Builds and populates keybindings table.
 
         Parameters
         ----------
-        layer_str = str
+        layer_str : str
             If layer_str is not empty, then show the specified layers'
             keybinding shortcut table.
         """
@@ -261,9 +255,9 @@ class ShortcutEditor(QWidget):
 
         Parameters
         ----------
-        row: int
+        row : int
             Row in keybindings table that is being edited.
-        col: int
+        col : int
             Column being edited (shortcut column).
         """
 
@@ -425,7 +419,7 @@ class ShortcutEditor(QWidget):
 
         Parameters
         ----------
-        rows: list[int]
+        rows : list[int]
             List of row numbers that should have the icon.
         """
 
@@ -440,9 +434,9 @@ class ShortcutEditor(QWidget):
     def _cleanup_warning_icons(self, rows):
         """Remove the warning icons from the shortcut table.
 
-        Paramters
-        ---------
-        rows: list[int]
+        Parameters
+        ----------
+        rows : list[int]
             List of row numbers to remove warning icon from.
 
         """
@@ -454,13 +448,13 @@ class ShortcutEditor(QWidget):
 
         Parameters
         ----------
-        new_shortcut: str
+        new_shortcut : str
             The new shortcut attempting to be set.
-        action: Action
+        action : Action
             Action that is already assigned with the shortcut.
-        row: int
+        row : int
             Row in table where the shortcut is attempting to be set.
-        message: str
+        message : str
             Message to be displayed in warning pop up.
         """
 
@@ -496,7 +490,6 @@ class ShortcutEditor(QWidget):
         Returns
         -------
         value: dict
-
             Dictionary of action names and shortcuts assigned to them.
         """
 

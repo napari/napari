@@ -292,15 +292,24 @@ def show_info(message: str):
 
 
 def show_console_notification(notification: Notification):
-    from ..settings import get_settings
+    try:
+        from ..settings import get_settings
 
-    if (
-        notification.severity
-        < get_settings().application.console_notification_level
-    ):
-        return
+        if (
+            notification.severity
+            < get_settings().application.console_notification_level
+        ):
+            return
 
-    print(notification)
+        print(notification)
+    except Exception:
+        print(
+            "An error occurred while trying to format an error and show it in console.\n"
+            "You can try to uninstall IPython to disable rich traceback formatting\n"
+            "And/or report a bug to napari"
+        )
+        # this will likely get silenced by QT.
+        raise
 
 
 def _setup_thread_excepthook():
