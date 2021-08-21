@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, Union
+from typing import TYPE_CHECKING, List, Sequence, Union, cast
 
 from qtpy.QtWidgets import QMenu
 
 if TYPE_CHECKING:
 
-    from ...layers._layer_actions import ActionDict
+    from ...layers._layer_actions import MenuItem, SubMenu
 
 
 class QtActionContextMenu(QMenu):
@@ -73,12 +73,12 @@ class QtActionContextMenu(QMenu):
     """
 
     def __init__(
-        self, actions: Union[ActionDict, Sequence[ActionDict]], parent=None
+        self, actions: Union[MenuItem, Sequence[MenuItem]], parent=None
     ):
         super().__init__(parent)
-        if not isinstance(actions, (list, tuple)):
+        if not isinstance(actions, Sequence):
             actions = [actions]
-        self._submenus = []
+        self._submenus: List[QtActionContextMenu] = []
         self._build_menu(actions)
 
     # make menus behave like actions so we can add `enable_when` and stuff
@@ -110,20 +110,19 @@ class QtActionContextMenu(QMenu):
             if visible and not isinstance(item.parentWidget(), QMenu):
                 item.setVisible(eval(visible, {}, ctx))
 
-    def _build_menu(self, actions: Sequence[ActionDict]):
+    def _build_menu(self, actions: Sequence[MenuItem]):
         # recursively build menu with submenus and sections
         for n, action in enumerate(actions):
             for val in action.values():
                 if val.get('action_group'):
-                    sub = QtActionContextMenu(
-                        val.get('action_group'), parent=self
-                    )
+                    val = cast('SubMenu', val)
+                    sub = QtActionContextMenu(val['action_group'], parent=self)  # type: ignore
                     sub.setTitle(val['description'])
                     sub.setData(val)
                     self.addMenu(sub)
                     self._submenus.append(sub)  # save pointer
                 else:
-                    action = self.addAction(val['description'])
-                    action.setData(val)
+                    axtn = self.addAction(val['description'])
+                    axtn.setData(val)
             if n < len(actions):
                 self.addSeparator()

@@ -6,7 +6,15 @@ on a layer in the LayerList.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Dict, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    Mapping,
+    Sequence,
+    Union,
+    cast,
+)
 
 import numpy as np
 from typing_extensions import TypedDict
@@ -20,6 +28,7 @@ from .utils import stack_utils
 
 if TYPE_CHECKING:
     from napari.components import LayerList
+    from napari.layers import Image
 
 
 def _duplicate_layer(ll: LayerList):
@@ -57,7 +66,16 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
     data = (getattr(np, mode)(layer.data, axis=axis, keepdims=True),)
-    meta = {'name': f'{layer} {mode}-proj', 'scale': layer.scale}
+    layer = cast('Image', layer)
+    meta = {
+        'name': f'{layer} {mode}-proj',
+        'scale': layer.scale,
+        'colormap': layer.colormap.name,
+        'contrast_limits': layer.contrast_limits,
+        'interpolation': layer.interpolation,
+        'rendering': layer.rendering,
+        'gamma': layer.gamma,
+    }
     new = Layer.create(data, meta, layer._type_string)
     ll.append(new)
 
@@ -119,12 +137,10 @@ class ContextAction(_MenuItem):
 
 
 class SubMenu(_MenuItem):
-    action_group: ActionDict
+    action_group: Mapping[str, ContextAction]
 
 
-ActionDict = Dict[str, ContextAction]
-SubMenuDict = Dict[str, SubMenu]
-MenuItem = Union[ActionDict, SubMenuDict]
+MenuItem = Dict[str, Union[ContextAction, SubMenu]]
 
 # Each item in LAYER_ACTIONS will be added to the `QtActionContextMenu` created
 # in _qt.containers._layer_delegate.LayerDelegate (i.e. they are options in the
