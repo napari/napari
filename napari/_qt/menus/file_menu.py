@@ -3,8 +3,6 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QSize
 from qtpy.QtWidgets import QAction, QMenu
 
-from ...plugins import menu_item_template, plugin_manager
-from ...settings import get_settings
 from ...utils.history import get_save_history, update_save_history
 from ...utils.misc import running_as_bundled_app
 from ...utils.translations import trans
@@ -20,7 +18,7 @@ class FileMenu(QMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
-        self.open_sample_menu = QMenu('Open Sample')
+        self.open_sample_menu = QMenu('Open Sample', self)
         ACTIONS = [
             {
                 'text': trans._('Open File(s)...'),
@@ -112,6 +110,8 @@ class FileMenu(QMenu):
         self._pref_dialog = None
         self._pref_dialog_size = QSize()
 
+        from ...plugins import plugin_manager
+
         plugin_manager.discover_sample_data()
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
@@ -144,6 +144,8 @@ class FileMenu(QMenu):
             self._pref_dialog.raise_()
 
     def _rebuild_samples_menu(self, event=None):
+        from ...plugins import menu_item_template, plugin_manager
+
         self.open_sample_menu.clear()
 
         for plugin_name, samples in plugin_manager._sample_data.items():
@@ -168,46 +170,3 @@ class FileMenu(QMenu):
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
-
-    def clipboard(self, flash=True):
-        """Take a screenshot of the currently displayed viewer and copy the image to the clipboard.
-
-        Parameters
-        ----------
-        flash : bool
-            Flag to indicate whether flash animation should be shown after
-            the screenshot was captured.
-        """
-        from qtpy.QtGui import QGuiApplication
-
-        QGuiApplication.clipboard().setImage(self._screenshot(flash))
-
-    def _screenshot(self, flash=True):
-        """Capture screenshot of the currently displayed viewer.
-
-        Parameters
-        ----------
-        flash : bool
-            Flag to indicate whether flash animation should be shown after
-            the screenshot was captured.
-        """
-        img = self._win._qt_window.grab().toImage()
-        if flash:
-            from ..utils import add_flash_animation
-
-            add_flash_animation(self._win._qt_window)
-        return img
-
-    def _reset_preference_states(self):
-        # resetting plugin states in plugin manager
-        plugin_manager.discover()
-
-        # need to reset call order to defaults
-        settings = get_settings()
-        plugin_manager.set_call_order(
-            settings.plugins.call_order
-            or settings.plugins._defaults.get('call_order', {})
-        )
-
-        # reset the keybindings in action manager
-        self._win.qt_viewer._bind_shortcuts()

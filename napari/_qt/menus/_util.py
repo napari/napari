@@ -14,6 +14,7 @@ def populate_menu(menu: QMenu, actions: List[dict]):
             sub = ax['menu']
             if isinstance(sub, QMenu):
                 menu.addMenu(sub)
+                sub.setParent(menu)
             else:
                 sub = menu.addMenu(sub)
             populate_menu(sub, ax.get("items", []))

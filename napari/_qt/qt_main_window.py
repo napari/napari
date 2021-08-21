@@ -400,15 +400,7 @@ class Window:
                 self.qt_viewer.canvas._backend.screen_changed
             )
 
-        self._add_menubar()
-        mm = self._qt_window.menuBar()
-        self.window_menu = WindowMenu(self)
-        self.help_menu = HelpMenu(self)
-        mm.addMenu(FileMenu(self))
-        mm.addMenu(ViewMenu(self))
-        mm.addMenu(self.window_menu)
-        mm.addMenu(PluginsMenu(self))
-        mm.addMenu(self.help_menu)
+        self._add_menus()
 
         self._status_bar.showMessage(trans._('Ready'))
         self._help = QLabel('')
@@ -458,7 +450,7 @@ class Window:
         if show:
             self.show()
 
-    def _add_menubar(self):
+    def _add_menus(self):
         """Add menubar to napari app."""
         self.main_menu = self._qt_window.menuBar()
         # Menubar shortcuts are only active when the menubar is visible.
@@ -468,10 +460,21 @@ class Window:
         # hidden. See this stackoverflow link for details:
         # https://stackoverflow.com/questions/50537642/how-to-keep-the-shortcuts-of-a-hidden-widget-in-pyqt5
         self._main_menu_shortcut = QShortcut('Ctrl+M', self._qt_window)
+        self._main_menu_shortcut.setEnabled(False)
         self._main_menu_shortcut.activated.connect(
             self._toggle_menubar_visible
         )
-        self._main_menu_shortcut.setEnabled(False)
+
+        self.file_menu = FileMenu(self)
+        self.main_menu.addMenu(self.file_menu)
+        self.view_menu = ViewMenu(self)
+        self.main_menu.addMenu(self.view_menu)
+        self.window_menu = WindowMenu(self)
+        self.main_menu.addMenu(self.window_menu)
+        self.plugins_menu = PluginsMenu(self)
+        self.main_menu.addMenu(self.plugins_menu)
+        self.help_menu = HelpMenu(self)
+        self.main_menu.addMenu(self.help_menu)
 
     def _toggle_menubar_visible(self):
         """Toggle visibility of app menubar.
@@ -995,6 +998,22 @@ class Window:
         """Restart the napari application."""
         self._qt_window.restart()
 
+    def _screenshot(self, flash=True):
+        """Capture screenshot of the currently displayed viewer.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        img = self._qt_window.grab().toImage()
+        if flash:
+            from .utils import add_flash_animation
+
+            add_flash_animation(self._qt_window)
+        return img
+
     def screenshot(self, path=None, flash=True):
         """Take currently displayed viewer and convert to an image array.
 
@@ -1016,6 +1035,19 @@ class Window:
         if path is not None:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
+
+    def clipboard(self, flash=True):
+        """Take a screenshot of the currently displayed viewer and copy the image to the clipboard.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        from qtpy.QtGui import QGuiApplication
+
+        QGuiApplication.clipboard().setImage(self._screenshot(flash))
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
