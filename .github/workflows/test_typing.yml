@@ -21,7 +21,7 @@ jobs:
           pip install -e .[all]
           pip install -e .[testing]
           pip install mypy types-PyYAML
-          pip uninstall xarray  # currently breaking mypy
+          pip uninstall -y xarray  # currently breaking mypy
       - name: Run mypy on typed modules
         run: |
           mypy napari/settings
