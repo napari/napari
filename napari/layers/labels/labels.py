@@ -116,10 +116,14 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
-    plane : dict
+    experimental_slicing_plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
-        {'position', 'normal_vector', 'thickness', and 'enabled'}.
+        {'position', 'normal', 'thickness', and 'enabled'}.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
 
     Attributes
     ----------
@@ -184,6 +188,10 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
+    experimental_slicing_plane : SlicingPlane
+        Properties defining plane rendering in 3D.
+    experimental_clipping_planes : ClippingPlaneList
+        Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
     -----
@@ -216,7 +224,8 @@ class Labels(_ImageBase):
         rendering='iso_categorical',
         visible=True,
         multiscale=None,
-        plane=None,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ):
 
         self._seed = seed
@@ -257,7 +266,8 @@ class Labels(_ImageBase):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
-            plane=plane,
+            experimental_slicing_plane=experimental_slicing_plane,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -511,7 +521,10 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self._properties,
                 'rendering': self.rendering,
-                'plane': self.experimental_slicing_plane.dict(),
+                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
+                ],
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,
@@ -928,8 +941,8 @@ class Labels(_ImageBase):
 
     def _get_value_3d(
         self,
-        start_position: np.ndarray,
-        end_position: np.ndarray,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
         dims_displayed: List[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
@@ -951,8 +964,8 @@ class Labels(_ImageBase):
         """
         return (
             self._get_value_ray(
-                start_point=start_position,
-                end_point=end_position,
+                start_point=start_point,
+                end_point=end_point,
                 dims_displayed=dims_displayed,
             )
             or 0
@@ -1059,7 +1072,7 @@ class Labels(_ImageBase):
         ):
             return
 
-        dims_to_fill = self._dims_order[-self.n_edit_dimensions :]
+        dims_to_fill = sorted(self._dims_order[-self.n_edit_dimensions :])
         data_slice_list = list(int_coord)
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
@@ -1093,7 +1106,11 @@ class Labels(_ImageBase):
             match_indices = match_indices_local
 
         self._save_history(
-            (match_indices, self.data[match_indices], new_label)
+            (
+                match_indices,
+                np.array(self.data[match_indices], copy=True),
+                new_label,
+            )
         )
 
         # Replace target pixels with new_label
@@ -1118,8 +1135,8 @@ class Labels(_ImageBase):
             calls.
         """
         shape = self.data.shape
-        dims_to_paint = self._dims_order[-self.n_edit_dimensions :]
-        dims_not_painted = self._dims_order[: -self.n_edit_dimensions]
+        dims_to_paint = sorted(self._dims_order[-self.n_edit_dimensions :])
+        dims_not_painted = sorted(self._dims_order[: -self.n_edit_dimensions])
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
@@ -1180,7 +1197,13 @@ class Labels(_ImageBase):
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         # save the existing values to the history
-        self._save_history((slice_coord, self.data[slice_coord], new_label))
+        self._save_history(
+            (
+                slice_coord,
+                np.array(self.data[slice_coord], copy=True),
+                new_label,
+            )
+        )
 
         # update the labels image
         self.data[slice_coord] = new_label
