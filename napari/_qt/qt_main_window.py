@@ -1042,9 +1042,7 @@ class Window:
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
-        from qtpy.QtGui import QGuiApplication
-
-        QGuiApplication.clipboard().setImage(self._screenshot(flash))
+        QApplication.clipboard().setImage(self._screenshot(flash))
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
