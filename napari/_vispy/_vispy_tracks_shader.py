@@ -27,7 +27,7 @@ class TrackShader(Filter):
         the lower limit on length of the 'tail'
     head_length : int, float
         the upper limit on length of the 'tail'
-     use_fade : bool
+    use_fade : bool
         this will enable/disable tail fading with time
     vertex_time : 1D array, list
         a vector describing the time associated with each vertex

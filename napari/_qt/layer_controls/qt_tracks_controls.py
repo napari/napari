@@ -1,4 +1,3 @@
-import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QSlider
 
@@ -6,9 +5,6 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from .qt_layer_controls_base import QtLayerControls
-
-MAX_TAIL_LENGTH = 300
-MAX_TAIL_WIDTH = 40
 
 
 class QtTracksControls(QtLayerControls):
@@ -53,21 +49,21 @@ class QtTracksControls(QtLayerControls):
         self.head_length_slider = QSlider(Qt.Horizontal)
         self.head_length_slider.setFocusPolicy(Qt.NoFocus)
         self.head_length_slider.setMinimum(0)
-        self.head_length_slider.setMaximum(MAX_TAIL_LENGTH)
+        self.head_length_slider.setMaximum(self.layer._max_length)
         self.head_length_slider.setSingleStep(1)
 
         # slider for track tail length
         self.tail_length_slider = QSlider(Qt.Horizontal)
         self.tail_length_slider.setFocusPolicy(Qt.NoFocus)
         self.tail_length_slider.setMinimum(1)
-        self.tail_length_slider.setMaximum(MAX_TAIL_LENGTH)
+        self.tail_length_slider.setMaximum(self.layer._max_length)
         self.tail_length_slider.setSingleStep(1)
 
         # slider for track edge width
         self.tail_width_slider = QSlider(Qt.Horizontal)
         self.tail_width_slider.setFocusPolicy(Qt.NoFocus)
         self.tail_width_slider.setMinimum(1)
-        self.tail_width_slider.setMaximum(MAX_TAIL_WIDTH)
+        self.tail_width_slider.setMaximum(2.0 * self.layer._max_width)
         self.tail_width_slider.setSingleStep(1)
 
         # checkboxes for display
@@ -99,9 +95,9 @@ class QtTracksControls(QtLayerControls):
         self.grid_layout.addWidget(self.opacitySlider, 3, 1)
         self.grid_layout.addWidget(QLabel(trans._('tail width:')), 4, 0)
         self.grid_layout.addWidget(self.tail_width_slider, 4, 1)
-        self.grid_layout.addWidget(QLabel(trans._('- tail length:')), 5, 0)
+        self.grid_layout.addWidget(QLabel(trans._('tail length:')), 5, 0)
         self.grid_layout.addWidget(self.tail_length_slider, 5, 1)
-        self.grid_layout.addWidget(QLabel(trans._('+ tail length:')), 6, 0)
+        self.grid_layout.addWidget(QLabel(trans._('head length:')), 6, 0)
         self.grid_layout.addWidget(self.head_length_slider, 6, 1)
         self.grid_layout.addWidget(QLabel(trans._('tail:')), 7, 0)
         self.grid_layout.addWidget(self.tail_checkbox, 7, 1)
@@ -127,8 +123,7 @@ class QtTracksControls(QtLayerControls):
             Event from the Qt context, by default None.
         """
         with self.layer.events.tail_width.blocker():
-            value = self.layer.tail_width
-            value = np.clip(int(2 * value), 1, MAX_TAIL_WIDTH)
+            value = int(2 * self.layer.tail_width)
             self.tail_width_slider.setValue(value)
 
     def _on_tail_length_change(self, event=None):
@@ -141,7 +136,6 @@ class QtTracksControls(QtLayerControls):
         """
         with self.layer.events.tail_length.blocker():
             value = self.layer.tail_length
-            value = np.clip(value, 1, MAX_TAIL_LENGTH)
             self.tail_length_slider.setValue(value)
 
     def _on_head_length_change(self, event=None):
@@ -154,7 +148,6 @@ class QtTracksControls(QtLayerControls):
         """
         with self.layer.events.head_length.blocker():
             value = self.layer.head_length
-            value = np.clip(value, 0, MAX_TAIL_LENGTH)
             self.head_length_slider.setValue(value)
 
     def _on_properties_change(self, event=None):
