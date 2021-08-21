@@ -20,8 +20,8 @@ jobs:
         run: |
           pip install -e .[all]
           pip install -e .[testing]
-          pip install mypy
+          pip install mypy types-PyYAML
+
       - name: Run mypy on typed modules
         run: |
-          mypy --install-types
           mypy napari/settings
