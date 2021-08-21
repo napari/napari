@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Sequence, Union, cast
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
-from qtpy.QtWidgets import QMenu
+from qtpy.QtWidgets import QAction, QMenu
 
 if TYPE_CHECKING:
 
@@ -48,7 +48,7 @@ class QtActionContextMenu(QMenu):
     call menu.update_from_context to update the menu state:
 
     >>> menu.update_from_context({'count': 0, 'is_ready': True})
-    >>> menu._menu_actions['add_one'].isEnabled()
+    >>> menu._get_action('add_one').isEnabled()
     True
 
     We directly created the dict above, but a mapping of
@@ -68,7 +68,7 @@ class QtActionContextMenu(QMenu):
     `add_one` becomes disabled
 
     >>> menu.update_from_context(ctx)
-    >>> menu._menu_actions['add_one'].isEnabled()
+    >>> menu._get_action('add_one').isEnabled()
     False
     """
 
@@ -97,32 +97,50 @@ class QtActionContextMenu(QMenu):
         in the menu. *ALL variables used in these expressions must either be
         present in the `ctx` dict, or be builtins*.
         """
-        from itertools import chain
-
-        for item in chain(self.actions(), self._submenus):
+        for item in self.actions():
+            if item.menu() is not None:
+                item = item.menu()
             d = item.data()
             if not d:
                 continue
             enabled = eval(d['enable_when'], {}, ctx)
             item.setEnabled(enabled)
-            visible = d.get("show_when")
-            # let QMenus handle their own children
-            if visible and not isinstance(item.parentWidget(), QMenu):
-                item.setVisible(eval(visible, {}, ctx))
+            # if it's a menu, iterate (but don't toggle visibility)
+            if isinstance(item, QtActionContextMenu):
+                if enabled:
+                    item.update_from_context(ctx)
+            else:
+                visible = d.get("show_when")
+                if visible:
+                    item.setVisible(eval(visible, {}, ctx))
 
     def _build_menu(self, actions: Sequence[MenuItem]):
-        # recursively build menu with submenus and sections
+        """recursively build menu with submenus and sections.
+
+        Parameters
+        ----------
+        actions : Sequence[MenuItem]
+            A sequence of `MenuItem` dicts.
+            see `layers._layer_actions.MenuItem` for details and keys
+        """
         for n, action in enumerate(actions):
-            for val in action.values():
+            for key, val in action.items():
                 if val.get('action_group'):
                     val = cast('SubMenu', val)
                     sub = QtActionContextMenu(val['action_group'], parent=self)  # type: ignore
                     sub.setTitle(val['description'])
-                    sub.setData(val)
+                    sub.setData({**val, 'key': key})
                     self.addMenu(sub)
                     self._submenus.append(sub)  # save pointer
                 else:
                     axtn = self.addAction(val['description'])
-                    axtn.setData(val)
+                    axtn.setData({**val, 'key': key})
             if n < len(actions):
                 self.addSeparator()
+
+    def _get_action(self, key: str) -> Optional[QAction]:
+        """Get a QAction by the key that provided the `MenuItem` in _build_menu."""
+        for action in self.actions():
+            data = action.data() or {}
+            if data.get('key') == key:
+                return action

@@ -68,13 +68,11 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     data = (getattr(np, mode)(layer.data, axis=axis, keepdims=True),)
     layer = cast('Image', layer)
     meta = {
+        **layer._get_base_state(),
         'name': f'{layer} {mode}-proj',
-        'scale': layer.scale,
         'colormap': layer.colormap.name,
-        'contrast_limits': layer.contrast_limits,
         'interpolation': layer.interpolation,
         'rendering': layer.rendering,
-        'gamma': layer.gamma,
     }
     new = Layer.create(data, meta, layer._type_string)
     ll.append(new)
