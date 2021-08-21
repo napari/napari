@@ -355,6 +355,7 @@ _CONTEXT_KEYS = {
         lambda s: bool(s and all(isinstance(x, Labels) for x in s))
     ),
     'image_active': lambda s: isinstance(s.active, Image),
+    'ndim': lambda s: s.active and getattr(s.active.data, 'ndim', None),
     'active_layer_shape': (
         lambda s: s.active and getattr(s.active.data, 'shape', None)
     ),
