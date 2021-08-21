@@ -13,8 +13,7 @@ from ._experimental import ExperimentalSettings
 from ._plugins import PluginsSettings
 from ._shortcuts import ShortcutsSettings
 
-_DEFAULT_CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
-_DEFAULT_CFG_PATH = Path(_DEFAULT_CFG_PATH) if _DEFAULT_CFG_PATH else None
+_CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
 
 class NapariSettings(EventedConfigFileSettings):
@@ -47,7 +46,7 @@ class NapariSettings(EventedConfigFileSettings):
     )
 
     # private attributes and ClassVars will not appear in the schema
-    _config_path: Optional[Path] = _DEFAULT_CFG_PATH
+    _config_path: Optional[Path] = Path(_CFG_PATH) if _CFG_PATH else None
 
     class Config:
         env_prefix = 'napari_'

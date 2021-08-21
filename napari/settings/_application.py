@@ -145,19 +145,19 @@ class ApplicationSettings(EventedModel):
         description=trans._("Loop mode for playback."),
     )
 
-    grid_stride: GridStride = Field(
+    grid_stride: GridStride = Field(  # type: ignore [valid-type]
         default=1,
         title=trans._("Grid Stride"),
         description=trans._("Number of layers to place in each grid square."),
     )
 
-    grid_width: GridWidth = Field(
+    grid_width: GridWidth = Field(  # type: ignore [valid-type]
         default=-1,
         title=trans._("Grid Width"),
         description=trans._("Number of columns in the grid."),
     )
 
-    grid_height: GridHeight = Field(
+    grid_height: GridHeight = Field(  # type: ignore [valid-type]
         default=-1,
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),
