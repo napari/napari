@@ -102,9 +102,11 @@ class _QtMainWindow(QMainWindow):
 
         # since we initialize canvas before window,
         # we need to manually connect them again.
-        self.windowHandle().screenChanged.connect(
-            qt_viewer.canvas._backend.screen_changed
-        )
+        handle = self.windowHandle()
+        if handle is not None:
+            handle.screenChanged.connect(
+                qt_viewer.canvas._backend.screen_changed
+            )
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
