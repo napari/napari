@@ -5,6 +5,7 @@ from qtpy.QtWidgets import QAction, QMenu
 
 from ...utils.history import get_save_history, update_save_history
 from ...utils.misc import running_as_bundled_app
+from ...utils.settings import get_settings
 from ...utils.translations import trans
 from ..dialogs.preferences_dialog import PreferencesDialog
 from ..dialogs.screenshot_dialog import ScreenshotDialog
@@ -73,13 +74,13 @@ class FileMenu(QMenu):
             },
             {
                 'text': trans._('Copy Screenshot to Clipboard'),
-                'slot': lambda: window.qt_viewer.clipboard(),
+                'slot': window.qt_viewer.clipboard,
                 'shortcut': 'Alt+Shift+S',
                 'statusTip': 'Copy screenshot of current display to the clipboard',
             },
             {
                 'text': trans._('Copy Screenshot with Viewer to Clipboard'),
-                'slot': lambda: self.clipboard(),
+                'slot': window.clipboard,
                 'shortcut': 'Alt+Shift+S',
                 'statusTip': trans._(
                     'Copy screenshot of current display with the viewer to the clipboard'
@@ -108,7 +109,6 @@ class FileMenu(QMenu):
         populate_menu(self, ACTIONS)
 
         self._pref_dialog = None
-        self._pref_dialog_size = QSize()
 
         from ...plugins import plugin_manager
 
@@ -122,22 +122,25 @@ class FileMenu(QMenu):
         """Save screenshot of current display with viewer, default .png"""
         hist = get_save_history()
         dial = ScreenshotDialog(
-            self.screenshot, self.window.qt_viewer, hist[0], hist
+            self._win.screenshot, self._win.qt_viewer, hist[0], hist
         )
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
     def _open_preferences(self):
         """Edit preferences from the menubar."""
-        # TODO: store pref dialog size in settings
         if self._pref_dialog is None:
             win = PreferencesDialog(parent=self._win._qt_window)
             self._pref_dialog = win
-            if self._pref_dialog_size:
-                win.resize(self._pref_dialog_size)
-            win.resized.connect(
-                lambda e: setattr(self, '_pref_dialog_size', e)
-            )
+
+            app_pref = get_settings().application
+            if app_pref.preferences_size:
+                win.resize(*app_pref.preferences_size)
+
+            @win.resized.connect
+            def _save_size(sz: QSize):
+                app_pref.preferences_size = (sz.width(), sz.height())
+
             win.finished.connect(lambda e: setattr(self, '_pref_dialog', None))
             win.show()
         else:
