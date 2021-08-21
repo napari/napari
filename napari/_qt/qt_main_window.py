@@ -37,11 +37,11 @@ from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
-from .widgets.qt_status_bar import ViewerStatusBar
 from .widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
     QtViewerDockWidget,
 )
+from .widgets.qt_viewer_status_bar import ViewerStatusBar
 
 _sentinel = object()
 
@@ -81,13 +81,11 @@ class _QtMainWindow(QMainWindow):
         self._old_size = None
         self._positions = []
 
-        self._activity_dialog = ActivityDialog(qt_viewer._canvas_overlay)
-        qt_viewer._canvas_overlay.resized.connect(
-            self._activity_dialog.move_to_bottom_right
-        )
-        self._activity_dialog.move_to_bottom_right()
-        self._activity_dialog.hide()
-        self._activity_dialog.resize(500, self._activity_dialog.height())
+        act_dlg = ActivityDialog(qt_viewer._canvas_overlay)
+        qt_viewer._canvas_overlay.resized.connect(act_dlg.move_to_bottom_right)
+        act_dlg.hide()
+        self._activity_dialog = act_dlg
+
         self.setStatusBar(ViewerStatusBar(self))
 
         settings = get_settings()
@@ -101,6 +99,12 @@ class _QtMainWindow(QMainWindow):
 
         _QtMainWindow._instances.append(self)
         self.qt_viewer.viewer.tooltip.events.text.connect(self.update_tooltip)
+
+        # since we initialize canvas before window,
+        # we need to manually connect them again.
+        self.windowHandle().screenChanged.connect(
+            qt_viewer.canvas._backend.screen_changed
+        )
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -388,7 +392,6 @@ class Window:
     """
 
     def __init__(self, viewer, *, show: bool = True):
-        settings = get_settings()
 
         # create QApplication if it doesn't already exist
         get_app()
@@ -398,29 +401,20 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
-        self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
+        qt_viewer = QtViewer(viewer, show_welcome_screen=True)
+        self.qt_viewer = qt_viewer
         self._qt_window = _QtMainWindow(self.qt_viewer)
         self._status_bar = self._qt_window.statusBar()
 
-        # since we initialize canvas before window, we need to manually connect them again.
-        if self._qt_window.windowHandle() is not None:
-            self._qt_window.windowHandle().screenChanged.connect(
-                self.qt_viewer.canvas._backend.screen_changed
-            )
-
         self._add_menus()
         self._update_theme()
-        settings.appearance.events.theme.connect(self._update_theme)
+        get_settings().appearance.events.theme.connect(self._update_theme)
 
-        self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
-        self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerControls, tabify=False
-        )
-        self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerList, tabify=False
-        )
+        self._add_viewer_dock_widget(qt_viewer.dockConsole, tabify=False)
+        self._add_viewer_dock_widget(qt_viewer.dockLayerControls, tabify=False)
+        self._add_viewer_dock_widget(qt_viewer.dockLayerList, tabify=False)
         if perf.USE_PERFMON:
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+            self._add_viewer_dock_widget(qt_viewer.dockPerformance)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
