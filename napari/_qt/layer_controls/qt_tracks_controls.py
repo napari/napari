@@ -63,7 +63,7 @@ class QtTracksControls(QtLayerControls):
         self.tail_width_slider = QSlider(Qt.Horizontal)
         self.tail_width_slider.setFocusPolicy(Qt.NoFocus)
         self.tail_width_slider.setMinimum(1)
-        self.tail_width_slider.setMaximum(2.0 * self.layer._max_width)
+        self.tail_width_slider.setMaximum(int(2 * self.layer._max_width))
         self.tail_width_slider.setSingleStep(1)
 
         # checkboxes for display
