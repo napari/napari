@@ -6,7 +6,7 @@ on a layer in the LayerList.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Dict, Sequence
+from typing import TYPE_CHECKING, Callable, Dict, Sequence, Union
 
 import numpy as np
 from typing_extensions import TypedDict
@@ -49,7 +49,9 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     if not layer:
         return
     if layer._type_string != 'image':
-        raise NotImplementedError
+        raise NotImplementedError(
+            "Projections are only implemented for images"
+        )
 
     # this is not the desired behavior for coordinate-based layers
     # but the action is currently only enabled for 'image_active and ndim > 2'
@@ -84,15 +86,13 @@ def _select_linked_layers(ll: LayerList):
     ll.selection.update(get_linked_layers(*ll.selection))
 
 
-class ContextAction(TypedDict):
-    """An object that encapsulates a QAction in a QtActionContextMenu.
+class _MenuItem(TypedDict):
+    """An object that encapsulates an Item in a QtActionContextMenu.
 
     Parameters
     ----------
     description : str
         The words that appear in the menu
-    action : callable
-        A function that may be called if the item is selected in the menu
     enable_when : str
         An expression that evaluates to a boolean (in namespace of some
         context) and controls whether the menu item is enabled.
@@ -102,10 +102,29 @@ class ContextAction(TypedDict):
     """
 
     description: str
-    action: Callable
     enable_when: str
     show_when: str
 
+
+class ContextAction(_MenuItem):
+    """An object that encapsulates a QAction in a QtActionContextMenu.
+
+    Parameters
+    ----------
+    action : callable
+        A function that may be called if the item is selected in the menu
+    """
+
+    action: Callable
+
+
+class SubMenu(_MenuItem):
+    action_group: ActionDict
+
+
+ActionDict = Dict[str, ContextAction]
+SubMenuDict = Dict[str, SubMenu]
+MenuItem = Union[ActionDict, SubMenuDict]
 
 # Each item in LAYER_ACTIONS will be added to the `QtActionContextMenu` created
 # in _qt.containers._layer_delegate.LayerDelegate (i.e. they are options in the
@@ -125,10 +144,8 @@ class ContextAction(TypedDict):
 
 # To add a separator, add any key with a value of _SEPARATOR
 
-ActionDict = Dict[str, ContextAction]
 
-
-def _projdict(key):
+def _projdict(key) -> ContextAction:
     return {
         'description': key,
         'action': partial(_project, mode=key),
@@ -137,7 +154,7 @@ def _projdict(key):
     }
 
 
-_LAYER_ACTIONS: Sequence[ActionDict] = [
+_LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:duplicate_layer': {
             'description': trans._('Duplicate Layer'),
@@ -158,6 +175,7 @@ _LAYER_ACTIONS: Sequence[ActionDict] = [
             'show_when': 'True',
         },
     },
+    # (each new dict creates a seperated section in the menu)
     {
         'napari:group:projections': {
             'description': trans._('Make Projection'),
