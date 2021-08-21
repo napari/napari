@@ -26,6 +26,7 @@ from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -33,7 +34,6 @@ from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
-from ..utils.settings import SETTINGS
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -60,8 +60,10 @@ EXCLUDE_DICT = {
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
-    from ..types import FullLayerData, LayerData, PathOrPaths
+    from ..types import FullLayerData, LayerData
 
+PathLike = Union[str, Path]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
@@ -130,9 +132,22 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
-        self.tooltip.visible = SETTINGS.appearance.layer_tooltip_visibility
-        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
+
+        settings = get_settings()
+        self.tooltip.visible = settings.appearance.layer_tooltip_visibility
+        settings.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visible_update
+        )
+
+        self._update_viewer_grid()
+        settings.application.events.grid_stride.connect(
+            self._update_viewer_grid
+        )
+        settings.application.events.grid_width.connect(
+            self._update_viewer_grid
+        )
+        settings.application.events.grid_height.connect(
+            self._update_viewer_grid
         )
 
         # Add extra events - ideally these will be removed too!
@@ -169,6 +184,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
+
+    def _update_viewer_grid(self, e=None):
+        """Keep viewer grid settings up to date with settings values."""
+
+        settings = get_settings()
+
+        self.grid.stride = settings.application.grid_stride
+        self.grid.shape = (
+            settings.application.grid_height,
+            settings.application.grid_width,
+        )
 
     @validator('theme')
     def _valid_theme(cls, v):
@@ -344,7 +370,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.dims.ndim = ndim
             for i in range(ndim):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
-        self.cursor.position = (0,) * self.dims.ndim
+
+        new_dim = self.dims.ndim
+        dim_diff = new_dim - len(self.cursor.position)
+        if dim_diff < 0:
+            self.cursor.position = self.cursor.position[:new_dim]
+        elif dim_diff > 0:
+            self.cursor.position = tuple(
+                list(self.cursor.position) + [0] * dim_diff
+            )
         self.events.layers_change()
 
     def _update_interactive(self, event):
@@ -375,7 +409,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Update status and help bar based on active layer
         active = self.layers.selection.active
         if active is not None:
-            self.status = active.get_status(self.cursor.position, world=True)
+            self.status = active.get_status(
+                self.cursor.position,
+                view_direction=self.cursor._view_direction,
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
@@ -517,6 +556,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -626,6 +667,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             should be the largest. Please note multiscale rendering is only
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
+        experimental_slicing_plane : dict or SlicingPlane
+            Properties defining plane rendering in 3D. Properties are defined in
+            data coordinates. Valid dictionary keys are
+            {'position', 'normal', 'thickness', and 'enabled'}.
+        experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+            Each dict defines a clipping plane in 3D in data coordinates.
+            Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+            Values on the negative side of the normal are discarded if the plane is enabled.
 
         Returns
         -------
@@ -664,6 +713,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'blending': blending,
             'visible': visible,
             'multiscale': multiscale,
+            'experimental_slicing_plane': experimental_slicing_plane,
+            'experimental_clipping_planes': experimental_clipping_planes,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -675,6 +726,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'affine',
             'contrast_limits',
             'metadata',
+            'experimental_clipping_planes',
         }
 
         if channel_axis is None:

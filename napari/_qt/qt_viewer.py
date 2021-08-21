@@ -21,6 +21,7 @@ from ..utils.history import (
 )
 from ..utils.interactions import (
     ReadOnlyWrapper,
+    mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
@@ -28,10 +29,10 @@ from ..utils.interactions import (
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
+from ..utils.misc import in_ipython
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
-from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
@@ -49,11 +50,12 @@ from .._vispy import (  # isort:skip
     create_vispy_visual,
 )
 
+
 if TYPE_CHECKING:
     from ..viewer import Viewer
 
+from ..settings import get_settings
 from ..utils.io import imsave_extensions
-from ..utils.settings import get_settings
 
 
 class QtViewer(QSplitter):
@@ -120,7 +122,6 @@ class QtViewer(QSplitter):
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
-        self._key_bindings_dialog = None
         self._console = None
 
         layerList = QWidget()
@@ -273,6 +274,7 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.draw.connect(self.dims.enable_play)
 
+        self.canvas.connect(self.on_mouse_double_click)
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
         self.canvas.connect(self.on_mouse_release)
@@ -326,7 +328,6 @@ class QtViewer(QSplitter):
                 QtPerformance(),
                 name=trans._('performance'),
                 area='bottom',
-                shortcut='Ctrl+Shift+P',
             )
         return None
 
@@ -386,10 +387,6 @@ class QtViewer(QSplitter):
             if self.viewer.layers.selection.active is None
             else [self.viewer.layers.selection.active, self.viewer]
         )
-
-        # If a QtAboutKeyBindings exists, update its text.
-        if self._key_bindings_dialog is not None:
-            self._key_bindings_dialog.update_active_layer()
 
     def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
@@ -517,6 +514,11 @@ class QtViewer(QSplitter):
             caption=trans._('Save {msg} layers', msg=msg),
             directory=hist[0],  # home dir by default,
             filter=ext_str,
+            options=(
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
+            ),
         )
 
         if filename:
@@ -616,10 +618,16 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_open_history()
         dlg.setHistory(hist)
+
         filenames, _ = dlg.getOpenFileNames(
             parent=self,
             caption=trans._('Select file(s)...'),
             directory=hist[0],
+            options=(
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
+            ),
         )
 
         if (filenames != []) and (filenames is not None):
@@ -631,11 +639,18 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_open_history()
         dlg.setHistory(hist)
+
         filenames, _ = dlg.getOpenFileNames(
             parent=self,
             caption=trans._('Select files...'),
             directory=hist[0],  # home dir by default
+            options=(
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
+            ),
         )
+
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames, stack=True)
             update_open_history(filenames[0])
@@ -645,11 +660,18 @@ class QtViewer(QSplitter):
         dlg = QFileDialog()
         hist = get_open_history()
         dlg.setHistory(hist)
+
         folder = dlg.getExistingDirectory(
             parent=self,
             caption=trans._('Select folder...'),
             directory=hist[0],  # home dir by default
+            options=(
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
+            ),
         )
+
         if folder not in {'', None}:
             self.viewer.open([folder])
             update_open_history(folder)
@@ -729,17 +751,6 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def show_key_bindings_dialog(self, event=None):
-        if self._key_bindings_dialog is None:
-            self._key_bindings_dialog = QtAboutKeyBindings(
-                self.viewer, self._key_map_handler, parent=self
-            )
-        # make sure the dialog is shown
-        self._key_bindings_dialog.show()
-        # make sure the the dialog gets focus
-        self._key_bindings_dialog.raise_()  # for macOS
-        self._key_bindings_dialog.activateWindow()  # for Windows
-
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
 
@@ -755,8 +766,8 @@ class QtViewer(QSplitter):
             of the viewer.
         """
         nd = self.viewer.dims.ndisplay
-        transform = self.view.camera.transform.inverse
-        mapped_position = transform.map(list(position))[:nd]
+        transform = self.view.scene.transform
+        mapped_position = transform.imap(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
 
         position_world = list(self.viewer.dims.point)
@@ -788,7 +799,21 @@ class QtViewer(QSplitter):
         self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
     def _process_mouse_event(self, mouse_callbacks, event):
-        """Called whenever mouse pressed in canvas.
+        """Add properties to the mouse event before passing the event to the
+        napari events system. Called whenever the mouse moves or is clicked.
+        As such, care should be taken to reduce the overhead in this function.
+        In future work, we should consider limiting the frequency at which
+        it is called.
+
+        This method adds following:
+            position: the position of the click in world coordinates.
+            view_direction: a unit vector giving the direction of the camera in
+                world coordinates.
+            dims_displayed: a list of the dimensions currently being displayed
+                in the viewer. This comes from viewer.dims.displayed.
+            dims_point: the indices for the data in view in world coordinates.
+                This comes from viewer.dims.point
+
         Parameters
         ----------
         mouse_callbacks : function
@@ -799,11 +824,23 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        # Add the view ray to the event
+        event.view_direction = self.viewer.camera.calculate_nd_view_direction(
+            self.viewer.dims.ndim, self.viewer.dims.displayed
+        )
+
         # Update the cursor position
+        self.viewer.cursor._view_direction = event.view_direction
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
 
         # Add the cursor position to the event
         event.position = self.viewer.cursor.position
+
+        # Add the displayed dimensions to the event
+        event.dims_displayed = list(self.viewer.dims.displayed)
+
+        # Add the current dims indices
+        event.dims_point = list(self.viewer.dims.point)
 
         # Put a read only wrapper on the event
         event = ReadOnlyWrapper(event)
@@ -822,6 +859,27 @@ class QtViewer(QSplitter):
             The vispy event that triggered this method.
         """
         self._process_mouse_event(mouse_wheel_callbacks, event)
+
+    def on_mouse_double_click(self, event):
+        """Called whenever a mouse double-click happen on the canvas
+
+        Parameters
+        ----------
+        event : vispy.event.Event
+            The vispy event that triggered this method. The `event.type` will always be `mouse_double_click`
+
+        Notes
+        -----
+
+        Note that this triggers in addition to the usual mouse press and mouse release.
+        Therefore a double click from the user will likely triggers the following event in sequence:
+
+             - mouse_press
+             - mouse_release
+             - mouse_double_click
+             - mouse_release
+        """
+        self._process_mouse_event(mouse_double_click_callbacks, event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -863,8 +921,8 @@ class QtViewer(QSplitter):
             if layer.ndim <= self.viewer.dims.ndim:
                 layer._update_draw(
                     scale_factor=1 / self.viewer.camera.zoom,
-                    corner_pixels=self._canvas_corners_in_world[
-                        :, -layer.ndim :
+                    corner_pixels_displayed=self._canvas_corners_in_world[
+                        :, layer._displayed_axes
                     ],
                     shape_threshold=self.canvas.size,
                 )

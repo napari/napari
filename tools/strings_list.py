@@ -443,7 +443,6 @@ SKIP_WORDS = {
         'slice_label',
         'slice_label_sep',
     ],
-    'napari/_qt/widgets/qt_eliding_label.py': [],
     'napari/_qt/widgets/qt_highlight_preview.py': [
         'border: 1px solid white;',
         'px',
@@ -2250,6 +2249,7 @@ SKIP_WORDS = {
     'napari/utils/transforms/transform_utils.py': [],
     'napari/utils/transforms/transforms.py': [
         'Affine',
+        'CompositeAffine',
         'ScaleTranslate',
         'Transform',
         'TransformChain',

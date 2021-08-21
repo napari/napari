@@ -9,8 +9,10 @@ from vispy.color import get_colormap
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.transforms import CompositeAffine
 
 
 def _make_cycled_properties(values, length):
@@ -118,6 +120,39 @@ def test_empty_layer_with_edge_colormap():
     # verify the current_face_color is correct
     edge_color = np.array([1, 1, 1, 1])
     np.testing.assert_allclose(layer._edge.current_color, edge_color)
+
+
+@pytest.mark.parametrize('feature_name', ('edge', 'face'))
+def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
+    """Test setting current_properties an empty layer where the face/edge color
+    is a color cycle.
+
+    See: https://github.com/napari/napari/pull/3110
+    """
+    default_properties = {'annotation': np.array(['tail', 'nose', 'paw'])}
+    color_cycle = [[0, 1, 0, 1], [1, 0, 1, 1]]
+    color_parameters = {
+        'colors': 'annotation',
+        'categorical_colormap': color_cycle,
+        'mode': 'cycle',
+    }
+    color_name = f'{feature_name}_color'
+    points_kwargs = {
+        'property_choices': default_properties,
+        color_name: color_parameters,
+    }
+    layer = Points(**points_kwargs)
+
+    color_mode = getattr(layer, f'{feature_name}_color_mode')
+    assert color_mode == 'cycle'
+    layer.current_properties = {'annotation': np.array(['paw'])}
+
+    layer.add([10, 10])
+    colors = getattr(layer, color_name)
+    np.testing.assert_allclose(colors, [color_cycle[1]])
+    assert len(layer.data) == 1
+    cm = getattr(layer, f'_{feature_name}')
+    assert cm.color_properties.current_value == 'paw'
 
 
 def test_empty_layer_with_text_properties():
@@ -330,11 +365,32 @@ def test_removing_selected_points():
     assert len(layer.selected_data) == 0
     keep = [1, 2] + list(range(4, 10))
     assert np.all(layer.data == data[keep])
+    assert layer._value is None
 
     # Select another point and remove it
     layer.selected_data = {4}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 3
+
+
+def test_deleting_selected_value_changes():
+    """Test deleting selected points appropriately sets self._value"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # removing with self._value selected resets self._value to None
+    layer._value = 1
+    layer.selected_data = {1, 2}
+    layer.remove_selected()
+    assert layer._value is None
+
+    # removing with self._value outside selection doesn't change self._value
+    layer._value = 3
+    layer.selected_data = {4}
+    layer.remove_selected()
+    assert layer._value == 3
 
 
 def test_move():
@@ -589,6 +645,39 @@ def test_updating_points_properties():
     np.testing.assert_equal(layer.properties, updated_properties)
 
 
+def test_setting_current_properties():
+    shape = (2, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {
+        'annotation': ['paw', 'leg'],
+        'confidence': [0.5, 0.75],
+        'annotator': ['jane', 'ash'],
+        'model': ['worst', 'best'],
+    }
+    layer = Points(data, properties=copy(properties))
+    current_properties = {
+        'annotation': ['leg'],
+        'confidence': 1,
+        'annotator': 'ash',
+        'model': np.array(['best']),
+    }
+    layer.current_properties = current_properties
+
+    expected_current_properties = {
+        'annotation': np.array(['leg']),
+        'confidence': np.array([1]),
+        'annotator': np.array(['ash']),
+        'model': np.array(['best']),
+    }
+
+    coerced_current_properties = layer.current_properties
+    for k, v in coerced_current_properties.items():
+        value = coerced_current_properties[k]
+        assert isinstance(value, np.ndarray)
+        np.testing.assert_equal(value, expected_current_properties[k])
+
+
 properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
 properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
@@ -644,7 +733,7 @@ def test_set_text_with_kwarg_dict(properties):
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
-        'anchor': 'upper_left',
+        'anchor': Anchor.UPPER_LEFT,
         'size': 10,
         'visible': True,
     }
@@ -672,6 +761,16 @@ def test_text_error(properties):
     # try adding text as the wrong type
     with pytest.raises(TypeError):
         Points(data, properties=copy(properties), text=123)
+
+
+def test_select_properties_object_dtype():
+    """selecting points when they have a property of object dtype should not fail"""
+    # pandas uses object as dtype for strings by default
+    properties = pd.DataFrame({'color': ['red', 'green']})
+    pl = Points(np.ones((2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
 
 
 def test_refresh_text():
@@ -1373,6 +1472,29 @@ def test_value():
     assert value is None
 
 
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
+        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
+    """Currently get_value should return None in 3D"""
+    np.random.seed(0)
+    data = np.random.random((10, 3))
+    layer = Points(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    value = layer.get_value(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
+    )
+    assert value is None
+
+
 def test_message():
     """Test converting value and coords to message."""
     shape = (10, 2)
@@ -1381,6 +1503,18 @@ def test_message():
     data[-1] = [0, 0]
     layer = Points(data)
     msg = layer.get_status((0,) * 2)
+    assert type(msg) == str
+
+
+def test_message_3d():
+    """Test converting values and coords to message in 3D."""
+    shape = (10, 3)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    msg = layer.get_status(
+        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    )
     assert type(msg) == str
 
 
@@ -1578,3 +1712,364 @@ def test_set_face_color_mode_after_set_properties():
         current_value=first_property_values[-1],
     )
     assert points._face.color_properties == expected_properties
+
+
+def test_to_mask_2d_with_size_1():
+    points = Points([[1, 4]], size=1)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_2():
+    points = Points([[1, 4]], size=2)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_4():
+    points = Points([[1, 4]], size=4)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_4_top_left():
+    points = Points([[0, 0]], size=4)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [1, 1, 1, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_4_bottom_right():
+    points = Points([[4, 6]], size=4)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 1, 1],
+            [0, 0, 0, 0, 1, 1, 1],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_diff_sizes():
+    points = Points([[2, 2], [1, 4]], size=[[1, 1], [2, 2]])
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_overlap():
+    points = Points([[1, 3], [1, 4]], size=2)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 1, 0],
+            [0, 0, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_translate():
+    points = Points([[1, 4]], size=2)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(translate=(-1, 2))
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0],
+            [0, 1, 1, 1, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_rotate():
+    # Make the size just over 2, instead of exactly 2, to ensure that all expected pixels are
+    # included, despite floating point imprecision caused by applying the rotation.
+    points = Points([[-4, 1]], size=2.1)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(rotate=90)
+    )
+
+    # The point [-4, 1] is defined in world coordinates, so after applying
+    # the inverse data_to_world transform will become [1, 4].
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_isotropic_scale():
+    points = Points([[2, 8]], size=4)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(scale=(2, 2))
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_negative_isotropic_scale():
+    points = Points([[2, -8]], size=4)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(scale=(2, -2))
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_anisotropic_scale_isotropic_output():
+    # With isotropic output, the size of the output ball is determined
+    # by the geometric mean of the scale which is sqrt(2), so absorb that
+    # into the size to keep the math simple.
+    points = Points([[2, 4]], size=2 * np.sqrt(2))
+
+    mask = points.to_mask(
+        shape=(5, 7),
+        data_to_world=CompositeAffine(scale=(2, 1)),
+        isotropic_output=True,
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_anisotropic_scale_anisotropic_output():
+    points = Points([[2, 4]], size=4)
+
+    mask = points.to_mask(
+        shape=(5, 7),
+        data_to_world=CompositeAffine(scale=(2, 1)),
+        isotropic_output=False,
+    )
+
+    # With anisotropic output, the output ball will be squashed
+    # in the dimension with scaling, so that after adding it back as an image
+    # with the same scaling, it should be roughly isotropic.
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_points_scale_but_no_mask_scale():
+    points = Points([[1, 4]], size=2, scale=(2, 2))
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_same_points_and_mask_scale():
+    scale = (2, 2)
+    points = Points([[1, 4]], size=2, scale=scale)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(scale=scale)
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_3d_with_size_1():
+    points = Points([[1, 2, 3]], size=1)
+
+    mask = points.to_mask(shape=(3, 4, 5))
+
+    expected_mask = np.array(
+        [
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_3d_with_size_2():
+    points = Points([[1, 2, 3]], size=2)
+
+    mask = points.to_mask(shape=(3, 4, 5))
+
+    expected_mask = np.array(
+        [
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 1, 1, 1],
+                [0, 0, 0, 1, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0],
+            ],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)

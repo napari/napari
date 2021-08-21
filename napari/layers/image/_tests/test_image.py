@@ -5,7 +5,9 @@ import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
+from napari.layers.utils.plane import ClippingPlaneList, SlicingPlane
 from napari.utils import Colormap
+from napari.utils.transforms.transform_utils import rotate_to_matrix
 
 
 def test_random_image():
@@ -514,12 +516,46 @@ def test_value():
     assert value == data[0, 0]
 
 
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
+        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
+    """Currently get_value should return None in 3D"""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 15))
+    layer = Image(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    value = layer.get_value(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
+    )
+    assert value is None
+
+
 def test_message():
     """Test converting value and coords to message."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     msg = layer.get_status((0,) * 2)
+    assert type(msg) == str
+
+
+def test_message_3d():
+    """Test converting values and coords to message in 3D."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 15))
+    layer = Image(data)
+    msg = layer.get_status(
+        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    )
     assert type(msg) == str
 
 
@@ -646,3 +682,103 @@ def test_data_to_world_2d_scale_translate_affine_composed():
         image._data_to_world.affine_matrix,
         ((12, 0, -16), (0, 3, 12), (0, 0, 1)),
     )
+
+
+@pytest.mark.parametrize('scale', ((1, 1), (-1, 1), (1, -1), (-1, -1)))
+@pytest.mark.parametrize('angle_degrees', range(-180, 180, 30))
+def test_rotate_with_reflections_in_scale(scale, angle_degrees):
+    # See the GitHub issue for more details:
+    # https://github.com/napari/napari/issues/2984
+    data = np.ones((4, 3))
+    rotate = rotate_to_matrix(angle_degrees, ndim=2)
+
+    image = Image(data, scale=scale, rotate=rotate)
+
+    np.testing.assert_array_equal(image.scale, scale)
+    np.testing.assert_array_equal(image.rotate, rotate)
+
+
+def test_2d_image_with_channels_and_2d_scale_translate_then_scale_translate_padded():
+    # See the GitHub issue for more details:
+    # https://github.com/napari/napari/issues/2973
+    image = Image(np.ones((20, 20, 2)), scale=(1, 1), translate=(3, 4))
+
+    np.testing.assert_array_equal(image.scale, (1, 1, 1))
+    np.testing.assert_array_equal(image.translate, (0, 3, 4))
+
+
+@pytest.mark.parametrize('affine_size', range(3, 6))
+def test_2d_image_with_channels_and_affine_broadcasts(affine_size):
+    # For more details, see the GitHub issue:
+    # https://github.com/napari/napari/issues/3045
+    image = Image(np.ones((1, 1, 1, 100, 100)), affine=np.eye(affine_size))
+    np.testing.assert_array_equal(image.affine, np.eye(6))
+
+
+@pytest.mark.parametrize('affine_size', range(3, 6))
+def test_2d_image_with_channels_and_affine_assignment_broadcasts(affine_size):
+    # For more details, see the GitHub issue:
+    # https://github.com/napari/napari/issues/3045
+    image = Image(np.ones((1, 1, 1, 100, 100)))
+    image.affine = np.eye(affine_size)
+    np.testing.assert_array_equal(image.affine, np.eye(6))
+
+
+def test_image_state_update():
+    """Test that an image can be updated from the output of its
+    _get_state method()
+    """
+    image = Image(np.ones((32, 32, 32)))
+    state = image._get_state()
+    for k, v in state.items():
+        setattr(image, k, v)
+
+
+def test_instiantiate_with_experimental_slicing_plane_dict():
+    """Test that an image layer can be instantiated with plane parameters
+    in a dictionary.
+    """
+    plane_parameters = {
+        'position': (32, 32, 32),
+        'normal': (1, 1, 1),
+        'thickness': 22,
+    }
+    image = Image(
+        np.ones((32, 32, 32)), experimental_slicing_plane=plane_parameters
+    )
+    for k, v in plane_parameters.items():
+        if k == 'normal':
+            v = tuple(v / np.linalg.norm(v))
+        assert v == getattr(image.experimental_slicing_plane, k, v)
+
+
+def test_instiantiate_with_experimental_slicing_plane():
+    """Test that an image layer can be instantiated with plane parameters
+    in a Plane.
+    """
+    plane = SlicingPlane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
+    image = Image(np.ones((32, 32, 32)), experimental_slicing_plane=plane)
+    for k, v in plane.dict().items():
+        assert v == getattr(image.experimental_slicing_plane, k, v)
+
+
+def test_instantiate_with_clipping_planelist():
+    planes = ClippingPlaneList.from_array(np.ones((2, 2, 3)))
+    image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
+    assert len(image.experimental_clipping_planes) == 2
+
+
+def test_instantiate_with_experimental_clipping_planes_dict():
+    planes = [
+        {'position': (0, 0, 0), 'normal': (0, 0, 1)},
+        {'position': (0, 1, 0), 'normal': (1, 0, 0)},
+    ]
+    image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
+    for i in range(len(planes)):
+        assert (
+            image.experimental_clipping_planes[i].position
+            == planes[i]['position']
+        )
+        assert (
+            image.experimental_clipping_planes[i].normal == planes[i]['normal']
+        )

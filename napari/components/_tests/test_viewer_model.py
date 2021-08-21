@@ -47,7 +47,7 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='green')
 
     # as string that is valid, but not a default colormap
-    assert viewer.add_image(data, colormap='cubehelix')
+    assert viewer.add_image(data, colormap='fire')
 
     # as tuple
     cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
@@ -560,6 +560,23 @@ def test_active_layer_cursor_size():
     # Labels layer has a default cursor size of 10
     # due to paintbrush
     assert viewer.cursor.size == 10
+
+
+def test_cursor_ndim_matches_layer():
+    """Test cursor position ndim matches viewer ndim after update."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    im = viewer.add_image(np.random.random((10, 10)))
+    assert viewer.dims.ndim == 2
+    assert len(viewer.cursor.position) == 2
+
+    im.data = np.random.random((10, 10, 10))
+    assert viewer.dims.ndim == 3
+    assert len(viewer.cursor.position) == 3
+
+    im.data = np.random.random((10, 10))
+    assert viewer.dims.ndim == 2
+    assert len(viewer.cursor.position) == 2
 
 
 def test_sliced_world_extent():

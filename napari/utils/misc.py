@@ -148,7 +148,9 @@ def is_sequence(arg):
     return False
 
 
-def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
+def ensure_sequence_of_iterables(
+    obj, length: Optional[int] = None, repeat_empty: bool = False
+):
     """Ensure that ``obj`` behaves like a (nested) sequence of iterables.
 
     If length is provided and the object is already a sequence of iterables,
@@ -160,6 +162,8 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
         the object to check
     length : int, optional
         If provided, assert that obj has len ``length``, by default None
+    repeat_empty : bool
+        whether to repeat an empty sequence (otherwise return the empty sequence itself)
 
     Returns
     -------
@@ -179,19 +183,34 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
 
     In [4]: ensure_sequence_of_iterables(None)
     Out[4]: repeat(None)
+
+    In [5]: ensure_sequence_of_iterables([])
+    Out[5]: repeat([])
+
+    In [6]: ensure_sequence_of_iterables([], repeat_empty=False)
+    Out[6]: []
     """
 
-    if obj is not None and is_sequence(obj) and is_iterable(obj[0]):
+    if (
+        obj is not None
+        and is_sequence(obj)
+        and all(is_iterable(el) for el in obj)
+    ):
         if length is not None and len(obj) != length:
-            raise ValueError(
-                trans._(
-                    "length of {obj} must equal {length}",
-                    deferred=True,
-                    obj=obj,
-                    length=length,
+            if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
+                # sequence of iterables of wrong length
+                raise ValueError(
+                    trans._(
+                        "length of {obj} must equal {length}",
+                        deferred=True,
+                        obj=obj,
+                        length=length,
+                    )
                 )
-            )
-        return obj
+
+        if len(obj) > 0 or not repeat_empty:
+            return obj
+
     return itertools.repeat(obj)
 
 
@@ -266,6 +285,16 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
         string of the Enum name
         """
         return self.value
+
+    def __eq__(self, other):
+        if type(self) is type(other):
+            return self is other
+        elif isinstance(other, str):
+            return str(self) == other
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(str(self))
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
@@ -510,3 +539,14 @@ def _combine_signatures(
         key=lambda p: p.kind,
     )
     return inspect.Signature(new_params, return_annotation=return_annotation)
+
+
+def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
+    """Merge possibly nested dicts"""
+    _dct = dct.copy() if copy else dct
+    for k, v in merge_dct.items():
+        if k in _dct and isinstance(dct[k], dict) and isinstance(v, dict):
+            deep_update(_dct[k], v, copy=False)
+        else:
+            _dct[k] = v
+    return _dct

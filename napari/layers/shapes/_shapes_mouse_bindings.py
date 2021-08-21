@@ -7,16 +7,6 @@ from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 from ._shapes_utils import point_to_lines
 
 
-def no_op(layer, even):
-    """
-    A convenient no-op event for the shape mouse binding.
-
-    This makes it easier to handle many cases by inserting this as
-    as place holder
-    """
-    return None
-
-
 def highlight(layer, event):
     """Highlight hovered shapes."""
     layer._set_highlight()
@@ -67,6 +57,10 @@ def select(layer, event):
         if layer._is_moving:
             update_thumbnail = True
         yield
+
+    # only emit data once dragging has finished
+    if layer._is_moving:
+        layer.events.data(value=layer.data)
 
     # on release
     shift = 'Shift' in event.modifiers
@@ -163,6 +157,13 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
         yield
 
     # on release
+    layer._finish_drawing()
+
+
+def finish_drawing_shape(layer, event):
+    """
+    finish drawing the current shape
+    """
     layer._finish_drawing()
 
 

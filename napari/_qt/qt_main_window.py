@@ -3,6 +3,7 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import inspect
+import os
 import sys
 import time
 import warnings
@@ -25,12 +26,12 @@ from qtpy.QtWidgets import (
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
+from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
-from ..utils.settings import get_settings
 from ..utils.translations import trans
 from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -84,12 +85,18 @@ class _QtMainWindow(QMainWindow):
         self._maximized_flag = False
         self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
+        self._window_size = None
+        self._window_pos = None
+        self._old_size = None
+        self._positions = []
 
         self._activity_dialog = ActivityDialog()
         self._status_bar = self.statusBar()
 
         settings = get_settings()
-        settings._defaults['plugins'].call_order = plugin_manager.call_order()
+
+        # TODO:
+        # settings.plugins.defaults.call_order = plugin_manager.call_order()
 
         # set the values in plugins to match the ones saved in settings
         if settings.plugins.call_order is not None:
@@ -116,6 +123,11 @@ class _QtMainWindow(QMainWindow):
     def current(cls):
         return cls._instances[-1] if cls._instances else None
 
+    @classmethod
+    def current_viewer(cls):
+        window = cls.current()
+        return window.qt_viewer.viewer if window else None
+
     def event(self, e):
         if e.type() == QEvent.Close:
             # when we close the MainWindow, remove it from the instances list
@@ -137,45 +149,39 @@ class _QtMainWindow(QMainWindow):
         Load window layout settings from configuration.
         """
         settings = get_settings()
-        window_size = settings.application.window_size
-        window_state = settings.application.window_state
-        preferences_dialog_size = settings.application.preferences_size
         window_position = settings.application.window_position
 
-        # It's necessary to verify if the window/position value is valid with the current screen.
-        width, height = window_position
-        screen_shape = QApplication.desktop().geometry()
-        current_width = screen_shape.width()
-        current_height = screen_shape.height()
-        if current_width < width or current_height < height:
+        # It's necessary to verify if the window/position value is valid with
+        # the current screen.
+        if not window_position:
             window_position = (self.x(), self.y())
+        else:
+            width, height = window_position
+            screen_geo = QApplication.desktop().geometry()
+            if screen_geo.width() < width or screen_geo.height() < height:
+                window_position = (self.x(), self.y())
 
-        window_maximized = settings.application.window_maximized
-        window_fullscreen = settings.application.window_fullscreen
         return (
-            window_state,
-            window_size,
+            settings.application.window_state,
+            settings.application.window_size,
             window_position,
-            window_maximized,
-            window_fullscreen,
-            preferences_dialog_size,
+            settings.application.window_maximized,
+            settings.application.window_fullscreen,
+            settings.application.preferences_size,
         )
 
     def _get_window_settings(self):
-        """
-        Return current window settings.
+        """Return current window settings.
 
         Symmetric to the 'set_window_settings' setter.
         """
-        window_size = (self.width(), self.height())
-        window_fullscreen = self.isFullScreen()
 
+        window_fullscreen = self.isFullScreen()
         if window_fullscreen:
             window_maximized = self._maximized_flag
         else:
             window_maximized = self.isMaximized()
 
-        window_position = (self.x(), self.y())
         preferences_dialog_size = (
             self._preferences_dialog_size.width(),
             self._preferences_dialog_size.height(),
@@ -183,8 +189,8 @@ class _QtMainWindow(QMainWindow):
         window_state = qbytearray_to_str(self.saveState())
         return (
             window_state,
-            window_size,
-            window_position,
+            self._window_size or (self.width(), self.height()),
+            self._window_pos or (self.x(), self.y()),
             window_maximized,
             window_fullscreen,
             preferences_dialog_size,
@@ -254,10 +260,6 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
-    def _update_preferences_dialog_size(self, size):
-        """Save preferences dialog size."""
-        self._preferences_dialog_size = size
-
     def close(self, quit_app=False):
         """Override to handle closing app or just the window."""
         self._quit_app = quit_app
@@ -286,6 +288,46 @@ class _QtMainWindow(QMainWindow):
             self._ev = QEventLoop()
             self._ev.exec()
 
+    def changeEvent(self, event):
+        """Handle window state changes."""
+        if event.type() == QEvent.WindowStateChange:
+            # TODO: handle maximization issue. When double clicking on the
+            # title bar on Mac the resizeEvent is called an varying amount
+            # of times which makes it hard to track the original size before
+            # maximization.
+            condition = (
+                self.isMaximized() if os.name == "nt" else self.isFullScreen()
+            )
+            if condition:
+                if self._positions and len(self._positions) > 1:
+                    self._window_pos = self._positions[-2]
+
+                self._window_size = (
+                    self._old_size.width(),
+                    self._old_size.height(),
+                )
+            else:
+                self._old_size = None
+                self._window_pos = None
+                self._window_size = None
+                self._positions = []
+
+        super().changeEvent(event)
+
+    def resizeEvent(self, event):
+        """Override to handle original size before maximizing."""
+        # the first resize event will have nonsense positions that we dont
+        # want to store (and potentially restore)
+        if event.oldSize().isValid():
+            self._old_size = event.oldSize()
+            self._positions.append((self.x(), self.y()))
+
+            if self._positions and len(self._positions) >= 2:
+                self._window_pos = self._positions[-2]
+                self._positions = self._positions[-2:]
+
+        super().resizeEvent(event)
+
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
 
@@ -293,6 +335,7 @@ class _QtMainWindow(QMainWindow):
         """
         if self._ev and self._ev.isRunning():
             self._ev.quit()
+
         # Close any floating dockwidgets
         for dock in self.findChildren(QtViewerDockWidget):
             if dock.isFloating():
@@ -629,41 +672,20 @@ class Window:
         """Edit preferences from the menubar."""
         if self._qt_window._preferences_dialog is None:
             win = PreferencesDialog(parent=self._qt_window)
-            win.resized.connect(
-                self._qt_window._update_preferences_dialog_size
-            )
-
+            self._qt_window._preferences_dialog = win
             if self._qt_window._preferences_dialog_size:
                 win.resize(self._qt_window._preferences_dialog_size)
-
-            self._qt_window._preferences_dialog = win
-            win.valueChanged.connect(self._reset_preference_states)
-            win.closed.connect(self._on_preferences_closed)
+            win.resized.connect(
+                lambda e: setattr(
+                    self._qt_window, '_preferences_dialog_size', e
+                )
+            )
+            win.finished.connect(
+                lambda e: setattr(self._qt_window, '_preferences_dialog', None)
+            )
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
-
-    def _reset_preference_states(self):
-        # resetting plugin states in plugin manager
-        plugin_manager._blocked.clear()
-
-        plugin_manager.discover()
-
-        settings = get_settings()
-        # need to reset call order to defaults
-        if settings.plugins.call_order is not None:
-            plugin_manager.set_call_order(get_settings().plugins.call_order)
-        else:
-            plugin_manager.set_call_order(
-                settings._defaults['plugins'].call_order
-            )
-
-        # reset the keybindings in action manager
-        self.qt_viewer._bind_shortcuts()
-
-    def _on_preferences_closed(self):
-        """Reset preferences dialog variable."""
-        self._qt_window._preferences_dialog = None
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
@@ -854,7 +876,7 @@ class Window:
         self.plugins_menu.clear()
 
         pip_install_action = QAction(
-            trans._("Install/Uninstall Package(s)..."), self._qt_window
+            trans._("Install/Uninstall Plugins..."), self._qt_window
         )
         pip_install_action.triggered.connect(self._show_plugin_install_dialog)
         self.plugins_menu.addAction(pip_install_action)
@@ -920,17 +942,6 @@ class Window:
             lambda e: QtAbout.showAbout(self.qt_viewer, self._qt_window)
         )
         self.help_menu.addAction(about_action)
-
-        about_key_bindings = QAction(
-            trans._("Show Key Bindings"), self._qt_window
-        )
-        about_key_bindings.setShortcut("Ctrl+Alt+/")
-        about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
-        about_key_bindings.setStatusTip(trans._('key_bindings'))
-        about_key_bindings.triggered.connect(
-            self.qt_viewer.show_key_bindings_dialog
-        )
-        self.help_menu.addAction(about_key_bindings)
 
     def _toggle_activity_dock(self, event):
         is_currently_visible = self._qt_window._activity_dialog.isVisible()

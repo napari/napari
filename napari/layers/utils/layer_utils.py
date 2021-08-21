@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import dask
 import numpy as np
@@ -224,11 +224,11 @@ def prepare_properties(
     ----------
     properties : dict[str, Array] or DataFrame
         The property values.
-    choices: dict[str, Array]
+    choices : dict[str, Array]
         The property value choices.
-    num_data: int
+    num_data : int
         The length of data that the properties represent (e.g. number of points).
-    save_choices: bool
+    save_choices : bool
         If true, always return all of the properties in choices.
 
     Returns
@@ -298,9 +298,9 @@ def get_current_properties(
     ----------
     properties : dict[str, np.ndarray]
         The property values.
-    choices: dict[str, np.ndarray]
+    choices : dict[str, np.ndarray]
         The property value choices.
-    num_data: int
+    num_data : int
         The length of data that the properties represent (e.g. number of points).
 
     Returns
@@ -319,6 +319,57 @@ def get_current_properties(
             k: np.asarray([v[0]]) for k, v in choices.items()
         }
     return current_properties
+
+
+def _coerce_current_properties_value(
+    value: Union[float, str, int, bool, list, tuple, np.ndarray]
+) -> np.ndarray:
+    """Coerce a value in a current_properties dictionary into the correct type.
+
+    Parameters
+    ----------
+    value : Union[float, str, int, bool, list, tuple, np.ndarray]
+        The value to be coerced.
+
+    Returns
+    -------
+    coerced_value : np.ndarray
+        The value in a 1D numpy array with length 1.
+    """
+    if isinstance(value, (np.ndarray, list, tuple)):
+        if len(value) != 1:
+            raise ValueError('current_properties values should have length 1.')
+        coerced_value = np.asarray(value)
+    else:
+        coerced_value = np.array([value])
+
+    return coerced_value
+
+
+def coerce_current_properties(
+    current_properties: Dict[
+        str, Union[float, str, int, bool, list, tuple, np.ndarray]
+    ]
+) -> Dict[str, np.ndarray]:
+    """Coerce a current_properties dictionary into the correct type.
+
+
+    Parameters
+    ----------
+    current_properties : Dict[str, Union[float, str, int, bool, list, tuple, np.ndarray]]
+        The current_properties dictionary to be coerced.
+
+    Returns
+    -------
+    coerced_current_properties : Dict[str, np.ndarray]
+        The current_properties dictionary with string keys and 1D numpy array with length 1 values.
+    """
+    coerced_current_properties = {
+        k: _coerce_current_properties_value(v)
+        for k, v in current_properties.items()
+    }
+
+    return coerced_current_properties
 
 
 def dataframe_to_properties(
@@ -461,19 +512,19 @@ def compute_multiscale_level_and_corners(
     return level, corners
 
 
-def coerce_affine(affine, ndim, name=None):
+def coerce_affine(affine, *, ndim, name=None):
     """Coerce a user input into an affine transform object.
 
     If the input is already an affine transform object, that same object is returned
     with a name change if the given name is not None. If the input is None, an identity
     affine transform object of the given dimensionality is returned.
 
-     Parameters
+    Parameters
     ----------
     affine : array-like or napari.utils.transforms.Affine
         An existing affine transform object or an array-like that is its transform matrix.
     ndim : int
-        The desired dimensionality of the transform. Ignored if implied by affine.
+        The desired dimensionality of the transform. Ignored is affine is an Affine transform object.
     name : str
         The desired name of the transform.
 
@@ -483,11 +534,11 @@ def coerce_affine(affine, ndim, name=None):
         The input coerced into an affine transform object.
     """
     if affine is None:
-        affine = Affine(affine_matrix=np.eye(ndim + 1))
+        affine = Affine(affine_matrix=np.eye(ndim + 1), ndim=ndim)
     elif isinstance(affine, np.ndarray):
-        affine = Affine(affine_matrix=affine)
+        affine = Affine(affine_matrix=affine, ndim=ndim)
     elif isinstance(affine, list):
-        affine = Affine(affine_matrix=np.array(affine))
+        affine = Affine(affine_matrix=np.array(affine), ndim=ndim)
     elif not isinstance(affine, Affine):
         raise TypeError(
             trans._(
@@ -499,3 +550,46 @@ def coerce_affine(affine, ndim, name=None):
     if name is not None:
         affine.name = name
     return affine
+
+
+def dims_displayed_world_to_layer(
+    dims_displayed_world: List[int],
+    ndim_world: int,
+    ndim_layer: int,
+) -> List[int]:
+    """Convert the dims_displayed from world dims to the layer dims.
+
+    This accounts differences in the number of dimensions in the world
+    dims versus the layer and for transpose and rolls.
+
+    Parameters
+    ----------
+    dims_displayed_world : List[int]
+        The dims_displayed in world coordinates (i.e., from viewer.dims.displayed).
+    ndim_world : int
+        The number of dimensions in the world coordinates (i.e., viewer.dims.ndim)
+    ndim_layer : int
+        The number of dimensions in layer the layer (i.e., layer.ndim).
+    """
+    if ndim_world > len(dims_displayed_world):
+        all_dims = list(range(ndim_world))
+        not_in_dims_displayed = [
+            d for d in all_dims if d not in dims_displayed_world
+        ]
+        order = not_in_dims_displayed + dims_displayed_world
+    else:
+        order = dims_displayed_world
+    offset = ndim_world - ndim_layer
+    order = np.array(order)
+    if offset <= 0:
+        order = list(range(-offset)) + list(order - offset)
+    else:
+        order = list(order[order >= offset] - offset)
+    n_display_world = len(dims_displayed_world)
+    if n_display_world > ndim_layer:
+        n_display_layer = ndim_layer
+    else:
+        n_display_layer = n_display_world
+    dims_displayed = order[-n_display_layer:]
+
+    return dims_displayed

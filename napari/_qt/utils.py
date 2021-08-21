@@ -7,7 +7,6 @@ import qtpy
 from qtpy.QtCore import QByteArray, QPropertyAnimation, QSize, Qt
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
-    QApplication,
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
     QHBoxLayout,
@@ -126,13 +125,13 @@ def event_hook_removed():
             QtCore.pyqtRestoreInputHook()
 
 
-def disable_with_opacity(obj, widget_list, disabled):
-    """Set enabled state on a list of widgets. If disabled, decrease opacity"""
-    for wdg in widget_list:
-        widget = getattr(obj, wdg)
-        widget.setEnabled(obj.layer.editable)
+def disable_with_opacity(obj, widget_list, enabled):
+    """Set enabled state on a list of widgets. If not enabled, decrease opacity."""
+    for widget_name in widget_list:
+        widget = getattr(obj, widget_name)
+        widget.setEnabled(enabled)
         op = QGraphicsOpacityEffect(obj)
-        op.setOpacity(1 if obj.layer.editable else 0.5)
+        op.setOpacity(1 if enabled else 0.5)
         widget.setGraphicsEffect(op)
 
 
@@ -290,7 +289,7 @@ def add_flash_animation(
 
     # now  set an actual time for the flashing and an intermediate color
     widget._flash_animation.setDuration(duration)
-    widget._flash_animation.setKeyValueAt(0.5, QColor(*color))
+    widget._flash_animation.setKeyValueAt(0.1, QColor(*color))
 
 
 def remove_flash_animation(widget: QWidget):
@@ -303,23 +302,3 @@ def remove_flash_animation(widget: QWidget):
     """
     widget.setGraphicsEffect(None)
     del widget._flash_animation
-
-
-def delete_qapp(app):
-    """Delete a QApplication
-
-    Parameters
-    ----------
-    app : qtpy.QApplication
-    """
-    try:
-        # Pyside2
-        from shiboken2 import delete
-    except ImportError:
-        # PyQt5
-        from sip import delete
-
-    delete(app)
-    # calling a second time is necessary on PySide2...
-    # see: https://bugreports.qt.io/browse/PYSIDE-1470
-    QApplication.instance()

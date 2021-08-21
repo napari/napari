@@ -11,13 +11,13 @@ from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
+from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
     notification_manager,
     show_console_notification,
 )
 from ..utils.perf import perf_config
-from ..utils.settings import get_settings
 from ..utils.translations import trans
 from .dialogs.qt_notification import (
     NapariQtNotification,
@@ -104,11 +104,6 @@ def get_app(
     Substitutes QApplicationWithTracing when the NAPARI_PERFMON env variable
     is set.
 
-    If the QApplication already exists, we call convert_app_for_tracing() which
-    deletes the QApplication and creates a new one. However here with get_app
-    we need to create the correct QApplication up front, or we will crash
-    because we'd be deleting the QApplication after we created QWidgets with
-    it, such as we do for the splash screen.
     """
     # napari defaults are all-or nothing.  If any of the keywords are used
     # then they are all used.
@@ -129,10 +124,13 @@ def get_app(
                 )
             )
         if perf_config and perf_config.trace_qt_events:
-            from .perf.qt_event_tracing import convert_app_for_tracing
+            warn(
+                trans._(
+                    "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
+                    deferred=True,
+                )
+            )
 
-            # no-op if app is already a QApplicationWithTracing
-            app = convert_app_for_tracing(app)
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
@@ -387,6 +385,5 @@ def run(
             )
         )
         return
-
     with notification_manager:
         app.exec_()

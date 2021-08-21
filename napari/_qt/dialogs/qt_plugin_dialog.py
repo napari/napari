@@ -4,8 +4,16 @@ from pathlib import Path
 from typing import Sequence
 
 from napari_plugin_engine.dist import standard_metadata
-from napari_plugin_engine.exceptions import PluginError
-from qtpy.QtCore import QEvent, QProcess, QProcessEnvironment, QSize, Qt, Slot
+from qtpy.QtCore import (
+    QEvent,
+    QObject,
+    QProcess,
+    QProcessEnvironment,
+    QSize,
+    Qt,
+    Signal,
+    Slot,
+)
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -23,6 +31,8 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt import QElidingLabel
+from typing_extensions import Literal
 
 import napari.resources
 
@@ -36,24 +46,48 @@ from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
 from ..qthreading import create_worker
-from ..widgets.qt_eliding_label import ElidingLabel
-from ..widgets.qt_plugin_sorter import QtPluginSorter
-from .qt_plugin_report import QtPluginErrReporter
+
+InstallerTypes = Literal['pip', 'conda', 'mamba']
+
 
 # TODO: add error icon and handle pip install errors
+class Installer(QObject):
+    started = Signal()
+    finished = Signal(int)
 
+    def __init__(
+        self,
+        output_widget: QTextEdit = None,
+        installer: InstallerTypes = "pip",
+    ):
+        super().__init__()
+        self._queue = []
+        self._processes = []
+        self._exit_code = 0
+        self._conda_env_path = None
 
-# TODO: add queue to handle clicks when already processing
-class Installer:
-    def __init__(self, output_widget: QTextEdit = None):
-        from ...plugins import plugin_manager
+        if installer != "pip" and (Path(sys.prefix) / "conda-meta").is_dir():
+            self._conda_env_path = sys.prefix
 
         # create install process
-        self._output_widget = None
-        self.process = QProcess()
-        self.process.setProgram(sys.executable)
-        self.process.setProcessChannelMode(QProcess.MergedChannels)
-        self.process.readyReadStandardOutput.connect(self._on_stdout_ready)
+        self._output_widget = output_widget
+        self.process = None
+
+    def _create_process(
+        self,
+        installer: InstallerTypes = "pip",
+    ):
+        process = QProcess()
+        if installer != "pip":
+            process.setProgram(installer)
+        else:
+            process.setProgram(sys.executable)
+
+        process.setProcessChannelMode(QProcess.MergedChannels)
+        process.readyReadStandardOutput.connect(
+            lambda process=process: self._on_stdout_ready(process)
+        )
+
         # setup process path
         env = QProcessEnvironment()
         combined_paths = os.pathsep.join(
@@ -64,43 +98,159 @@ class Installer:
         env.insert(
             "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
         )
-        self.process.setProcessEnvironment(env)
-        self.process.finished.connect(lambda: plugin_manager.discover())
-        self.process.finished.connect(lambda: plugin_manager.prune())
-        self.set_output_widget(output_widget)
+        process.setProcessEnvironment(env)
+        self._processes.append(process)
+        self.set_output_widget(self._output_widget)
+        process.finished.connect(
+            lambda ec, es: self._on_process_finished(process, ec, es)
+        )
+        return process
 
     def set_output_widget(self, output_widget: QTextEdit):
         if output_widget:
             self._output_widget = output_widget
-            self.process.setParent(output_widget)
 
-    def _on_stdout_ready(self):
+    def _on_process_finished(self, process, exit_code, exit_status):
+        if exit_code != 0:
+            self._exit_code = 0
+
+        if process in self._processes:
+            self._processes.remove(process)
+            process.terminate()
+
+        self._handle_action()
+
+    def _on_stdout_ready(self, process):
         if self._output_widget:
-            text = self.process.readAllStandardOutput().data().decode()
+            text = process.readAllStandardOutput().data().decode()
             self._output_widget.append(text)
 
-    def install(self, pkg_list: Sequence[str]):
-        cmd = ['-m', 'pip', 'install', '--upgrade']
-        if running_as_bundled_app() and sys.platform.startswith('linux'):
+    def _handle_action(self):
+        if self._queue:
+            func = self._queue.pop()
+            self.started.emit()
+            func()
+
+        if not self._processes:
+            from ...plugins import plugin_manager
+
+            plugin_manager.discover()
+            plugin_manager.prune()
+            self.finished.emit(self._exit_code)
+
+    def install(
+        self,
+        pkg_list: Sequence[str],
+        installer: InstallerTypes = "pip",
+        channels: Sequence[str] = ("conda-forge",),
+    ):
+        self._queue.insert(
+            0, lambda: self._install(pkg_list, installer, channels)
+        )
+        self._handle_action()
+
+    def _install(
+        self,
+        pkg_list: Sequence[str],
+        installer: InstallerTypes = "pip",
+        channels: Sequence[str] = ("conda-forge",),
+    ):
+        if installer != "pip":
+            cmd = [
+                'install',
+                '-y',
+                '--prefix',
+                self._conda_env_path,
+            ]
+            for channel in channels:
+                cmd.extend(["-c", channel])
+        else:
+            cmd = ['-m', 'pip', 'install', '--upgrade']
+
+        if (
+            running_as_bundled_app()
+            and sys.platform.startswith('linux')
+            and not self._use_conda
+        ):
             cmd += [
                 '--no-warn-script-location',
                 '--prefix',
                 user_plugin_dir(),
             ]
-        self.process.setArguments(cmd + list(pkg_list))
-        if self._output_widget:
-            self._output_widget.clear()
-        self.process.start()
 
-    def uninstall(self, pkg_list: Sequence[str]):
-        args = ['-m', 'pip', 'uninstall', '-y']
-        self.process.setArguments(args + list(pkg_list))
-        if self._output_widget:
+        process = self._create_process(installer)
+        process.setArguments(cmd + list(pkg_list))
+        if self._output_widget and self._queue:
             self._output_widget.clear()
-        self.process.start()
+
+        process.start()
+
+    def uninstall(
+        self,
+        pkg_list: Sequence[str],
+        installer: InstallerTypes = "pip",
+        channels: Sequence[str] = ("conda-forge",),
+    ):
+        self._queue.insert(
+            0, lambda: self._uninstall(pkg_list, installer, channels)
+        )
+        self._handle_action()
+
+    def _uninstall(
+        self,
+        pkg_list: Sequence[str],
+        installer: InstallerTypes = "pip",
+        channels: Sequence[str] = ("conda-forge",),
+    ):
+        if installer != "pip":
+            args = [
+                'remove',
+                '-y',
+                '--prefix',
+                self._conda_env_path,
+            ]
+
+            for channel in channels:
+                args.extend(["-c", channel])
+        else:
+            args = ['-m', 'pip', 'uninstall', '-y']
+
+        process = self._create_process(installer)
+        process.setArguments(args + list(pkg_list))
+        if self._output_widget and self._queue:
+            self._output_widget.clear()
+
+        process.start()
 
         for pkg in pkg_list:
             plugin_manager.unregister(pkg)
+
+    @staticmethod
+    def _is_installed_with_conda():
+        """
+        Check if conda was used to install qt and napari.
+        """
+        from qtpy import QT_VERSION
+
+        from ..._version import version_tuple
+
+        parts = [str(part) for part in version_tuple[:3]]
+        napari_version_string = f"napari-{'.'.join(parts)}-"
+        qt_version_string = f"qt-{QT_VERSION}-"
+        conda_meta_path = Path(sys.prefix) / "conda-meta"
+        if conda_meta_path.is_dir():
+            for file in conda_meta_path.iterdir():
+                fname = file.parts[-1]
+                if fname.startswith(napari_version_string) and fname.endswith(
+                    ".json"
+                ):
+                    return True
+                elif fname.startswith(qt_version_string) and fname.endswith(
+                    ".json"
+                ):
+                    return True
+            else:
+                return False
 
 
 class PluginListItem(QFrame):
@@ -116,48 +266,36 @@ class PluginListItem(QFrame):
         plugin_name: str = None,
         parent: QWidget = None,
         enabled: bool = True,
+        installed: bool = False,
     ):
         super().__init__(parent)
         self.setup_ui(enabled)
-        if plugin_name:
-            self.plugin_name.setText(plugin_name)
-            self.package_name.setText(f"{package_name} {version}")
-            self.summary.setText(summary)
-            self.package_author.setText(author)
+        self.plugin_name.setText(package_name)
+        self.package_name.setText(version)
+        self.summary.setText(summary)
+        self.package_author.setText(author)
+
+        if installed:
+            self.enabled_checkbox.show()
             self.action_button.setText(trans._("uninstall"))
             self.action_button.setObjectName("remove_button")
-            self.enabled_checkbox.setChecked(enabled)
-            if PluginError.get(plugin_name=plugin_name):
-
-                def _show_error():
-                    rep = QtPluginErrReporter(
-                        parent=self._get_dialog(), initial_plugin=plugin_name
-                    )
-                    rep.setWindowFlags(Qt.Sheet)
-                    close = QPushButton(trans._("close"), rep)
-                    rep.layout.addWidget(close)
-                    rep.plugin_combo.hide()
-                    close.clicked.connect(rep.close)
-                    rep.open()
-
-                self.error_indicator.clicked.connect(_show_error)
-                self.error_indicator.show()
-                self.summary.setIndent(18)
-            else:
-                self.summary.setIndent(38)
         else:
-            self.plugin_name.setText(package_name)
-            self.package_name.setText(version)
-            self.summary.setText(summary)
-            self.package_author.setText(author)
-            self.action_button.setText(trans._("install"))
             self.enabled_checkbox.hide()
+            self.action_button.setText(trans._("install"))
+            self.action_button.setObjectName("install_button")
 
     def _get_dialog(self) -> QDialog:
         p = self.parent()
         while not isinstance(p, QDialog) and p.parent():
             p = p.parent()
         return p
+
+    def set_busy(self, text: str):
+        self.action_button.setText(text)
+        self.action_button.setDisabled(True)
+        self.action_button.setObjectName("busy_button")
+        self.action_button.style().unpolish(self.action_button)
+        self.action_button.style().polish(self.action_button)
 
     def setup_ui(self, enabled=True):
         self.v_lay = QVBoxLayout(self)
@@ -213,7 +351,7 @@ class PluginListItem(QFrame):
         self.error_indicator.hide()
         self.row2.addWidget(self.error_indicator)
         self.row2.setContentsMargins(-1, 4, 0, -1)
-        self.summary = ElidingLabel(parent=self)
+        self.summary = QElidingLabel(parent=self)
         sizePolicy = QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
         )
@@ -239,7 +377,11 @@ class PluginListItem(QFrame):
 
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
-        plugin_manager.set_blocked(self.plugin_name.text(), not state)
+        enabled = bool(state)
+        current_distname = self.plugin_name.text()
+        for plugin_name, _, distname in plugin_manager.iter_available():
+            if distname and distname == current_distname:
+                plugin_manager.set_blocked(plugin_name, not enabled)
 
 
 class QPluginList(QListWidget):
@@ -247,10 +389,15 @@ class QPluginList(QListWidget):
         super().__init__(parent)
         self.installer = installer
         self.setSortingEnabled(True)
+        self._remove_list = []
 
     @Slot(ProjectInfo)
     def addItem(
-        self, project_info: ProjectInfo, plugin_name=None, enabled=True
+        self,
+        project_info: ProjectInfo,
+        installed=False,
+        plugin_name=None,
+        enabled=True,
     ):
         # don't add duplicates
         if (
@@ -270,14 +417,28 @@ class QPluginList(QListWidget):
             parent=self,
             plugin_name=plugin_name,
             enabled=enabled,
+            installed=installed,
         )
-        method = getattr(
-            self.installer, 'uninstall' if plugin_name else 'install'
+        item.widget = widg
+        action_name = 'uninstall' if installed else 'install'
+        widg.action_button.clicked.connect(
+            lambda: self.handle_action(item, project_info.name, action_name)
         )
-        widg.action_button.clicked.connect(lambda: method([project_info.name]))
 
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
+
+    def handle_action(self, item, pkg_name, action_name):
+        widget = item.widget
+        method = getattr(self.installer, action_name)
+        self._remove_list.append((pkg_name, item))
+
+        if action_name == "install":
+            widget.set_busy(trans._("installing..."))
+            method([pkg_name])
+        elif action_name == "uninstall":
+            widget.set_busy(trans._("uninstalling..."))
+            method([pkg_name])
 
     @Slot(ProjectInfo)
     def tag_outdated(self, project_info: ProjectInfo):
@@ -314,23 +475,20 @@ class QtPluginDialog(QDialog):
         self.installer = Installer()
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
-        self.installer.process.started.connect(self._on_installer_start)
-        self.installer.process.finished.connect(self._on_installer_done)
+        self.installer.started.connect(self._on_installer_start)
+        self.installer.finished.connect(self._on_installer_done)
         self.refresh()
 
     def _on_installer_start(self):
-        self.show_status_btn.setChecked(True)
         self.working_indicator.show()
         self.process_error_indicator.hide()
 
-    def _on_installer_done(self, exit_code, exit_status):
+    def _on_installer_done(self, exit_code):
         self.working_indicator.hide()
         if exit_code:
             self.process_error_indicator.show()
-        else:
-            self.show_status_btn.setChecked(False)
+
         self.refresh()
-        self.plugin_sorter.refresh()
 
     def refresh(self):
         self.installed_list.clear()
@@ -347,11 +505,16 @@ class QtPluginDialog(QDialog):
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
+
+            if distname in already_installed:
+                continue
+
             if distname:
                 already_installed.add(distname)
                 meta = standard_metadata(distname)
             else:
                 meta = {}
+
             self.installed_list.addItem(
                 ProjectInfo(
                     normalized_name(distname or ''),
@@ -361,9 +524,14 @@ class QtPluginDialog(QDialog):
                     meta.get('author', ''),
                     meta.get('license', ''),
                 ),
-                plugin_name=plugin_name,
-                enabled=plugin_name in plugin_manager.plugins,
+                installed=True,
+                enabled=not plugin_manager.is_blocked(plugin_name),
             )
+        self.installed_label.setText(
+            trans._(
+                "Installed Plugins ({amount})", amount=len(already_installed)
+            )
+        )
         # self.v_splitter.setSizes([70 * self.installed_list.count(), 10, 10])
 
         # fetch available plugins
@@ -389,9 +557,6 @@ class QtPluginDialog(QDialog):
         self.v_splitter = QSplitter(self.h_splitter)
         self.v_splitter.setOrientation(Qt.Vertical)
         self.v_splitter.setMinimumWidth(500)
-        self.plugin_sorter = QtPluginSorter(parent=self.h_splitter)
-        self.plugin_sorter.layout().setContentsMargins(2, 0, 0, 0)
-        self.plugin_sorter.hide()
 
         installed = QWidget(self.v_splitter)
         lay = QVBoxLayout(installed)
@@ -457,7 +622,6 @@ class QtPluginDialog(QDialog):
 
         self.show_status_btn = QPushButton(trans._("Show Status"), self)
         self.show_status_btn.setFixedWidth(100)
-        self.show_sorter_btn = QPushButton(trans._("<< Show Sorter"), self)
         self.close_btn = QPushButton(trans._("Close"), self)
         self.close_btn.clicked.connect(self.accept)
         buttonBox.addWidget(self.show_status_btn)
@@ -466,7 +630,6 @@ class QtPluginDialog(QDialog):
         buttonBox.addWidget(self.direct_entry_btn)
         buttonBox.addWidget(self.process_error_indicator)
         buttonBox.addSpacing(60)
-        buttonBox.addWidget(self.show_sorter_btn)
         buttonBox.addWidget(self.close_btn)
         buttonBox.setContentsMargins(0, 0, 4, 0)
         vlay_1.addLayout(buttonBox)
@@ -474,10 +637,6 @@ class QtPluginDialog(QDialog):
         self.show_status_btn.setCheckable(True)
         self.show_status_btn.setChecked(False)
         self.show_status_btn.toggled.connect(self._toggle_status)
-
-        self.show_sorter_btn.setCheckable(True)
-        self.show_sorter_btn.setChecked(False)
-        self.show_sorter_btn.toggled.connect(self._toggle_sorter)
 
         self.v_splitter.setStretchFactor(1, 2)
         self.h_splitter.setStretchFactor(0, 2)
@@ -503,14 +662,6 @@ class QtPluginDialog(QDialog):
                 return True
         return super().eventFilter(watched, event)
 
-    def _toggle_sorter(self, show):
-        if show:
-            self.show_sorter_btn.setText(trans._(">> Hide Sorter"))
-            self.plugin_sorter.show()
-        else:
-            self.show_sorter_btn.setText(trans._("<< Show Sorter"))
-            self.plugin_sorter.hide()
-
     def _toggle_status(self, show):
         if show:
             self.show_status_btn.setText(trans._("Hide Status"))
@@ -527,6 +678,7 @@ class QtPluginDialog(QDialog):
             else:
                 packages = _packages.split()
             self.direct_entry_edit.clear()
+
         if packages:
             self.installer.install(packages)
 
