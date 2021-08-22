@@ -102,7 +102,7 @@ def generate_images():
     QTimer.singleShot(1000, pref.close)
 
     for idx, (name, field) in enumerate(NapariSettings.__fields__.items()):
-        pref.set_current_index(idx)
+        pref._stack.setCurrentIndex(idx)
         pixmap = pref.grab()
         title = field.field_info.title or name
         pixmap.save(str(IMAGES_PATH / f"preferences-{title.lower()}.png"))

@@ -183,6 +183,8 @@ class LayerDelegate(QStyledItemDelegate):
         layer_list: LayerList = model.sourceModel()._root
         self._context_menu.update_from_context(layer_list._selection_context())
         action = self._context_menu.exec_(pos)
-        if action is not None:
+        if action is not None and isinstance(action.data(), dict):
             # action.data will be a callable that accepts a layer_list instance
-            QTimer.singleShot(0, partial(action.data(), layer_list))
+            action = action.data().get('action')
+            if action:
+                QTimer.singleShot(0, partial(action, layer_list))
