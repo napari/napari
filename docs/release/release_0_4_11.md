@@ -29,7 +29,7 @@ Last but not least, some common operations are now much more accessible from the
 - Add positive tail length to tracks layer (#3138)
 - Arbitrary clipping planes for volumes in the image layer (#3140)
 - Mask image from points layer (#3151)
-
+- Add projections to layer context menu, allow grouping and nesting of menu items (#3028)
 
 ## Improvements
 - Add `assign_[plugin]_to_extension` methods on plugin_manager.  (#2695)
