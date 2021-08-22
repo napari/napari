@@ -54,7 +54,6 @@ Last but not least, some common operations are now much more accessible from the
 - Add isosurface rendering to Labels (#3006)
 - Remove mentions of _mode_history (2987) (#3008)
 - Change opacity slider to float slider (#3016)
-- Add projections to layer context menu, allow grouping and nesting of menu items (#3028)
 - Refactor the Point, Label and Shape Layer Mode logic. (#3050)
 - Make flash effect feel more instant (#3060)
 - Use enum values internally for settings. (#3063)
