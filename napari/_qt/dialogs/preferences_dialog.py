@@ -2,6 +2,7 @@ import json
 from enum import EnumMeta
 from typing import TYPE_CHECKING, Tuple, cast
 
+from pydantic.main import BaseModel
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QDialog,
@@ -17,7 +18,6 @@ from ...utils.translations import trans
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
-    from pydantic.main import BaseModel
     from qtpy.QtGui import QCloseEvent, QKeyEvent
 
 
@@ -86,14 +86,15 @@ class PreferencesDialog(QDialog):
     def _rebuild_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
 
-        self._starting_values = self._settings.dict()
+        self._starting_values = self._settings.dict(exclude={'schema_version'})
 
         self._list.clear()
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
         for field in self._settings.__fields__.values():
-            self._add_page(field)
+            if isinstance(field.type_, BaseModel):
+                self._add_page(field)
 
         self._list.setCurrentRow(0)
 
@@ -194,5 +195,6 @@ class PreferencesDialog(QDialog):
 
     def reject(self):
         """Restores the settings in place when dialog was launched."""
+        print(self._starting_values)
         self._settings.update(self._starting_values)
         super().reject()

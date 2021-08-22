@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 from qtpy.QtCore import Qt
 
@@ -6,6 +8,9 @@ from napari._qt.dialogs.preferences_dialog import (
     QMessageBox,
 )
 from napari.settings import get_settings
+
+if TYPE_CHECKING:
+    from napari.plugins import NapariPluginManager
 
 
 @pytest.fixture
@@ -56,3 +61,10 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     )
     pref._restore_default_dialog()
     assert get_settings().appearance.theme == 'dark'
+
+
+def test_cancel_plugins(qtbot, pref, napari_plugin_manager):
+    pm: NapariPluginManager = napari_plugin_manager
+    print(pm.call_order())
+    with qtbot.waitSignal(pref.finished):
+        pref._button_cancel.click()
