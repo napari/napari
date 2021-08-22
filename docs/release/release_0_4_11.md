@@ -11,7 +11,11 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
+We've known for a while that 3D interactivity is one of the areas where napari needed improvement (#515). This release introduces ways to use the mouse to interact with data in 3D (#3037). Features like label picking (#3074) and label painting/erasing (#3108) in 3D are just the beginning and we're excited to see where this takes us! For more details, please see the documentation at [https://napari.org/guides/stable/3D_interactivity.html](https://napari.org/guides/stable/3D_interactivity.html).
 
+Our volume rendering functionality has been significantly improved and now includes the ability to render arbitrary planes through volumes (#3023) and add clipping planes to restrict rendering to a region of interest (#3140). For now, these features are marked as `experimental` and the API around their use is likely to change in future versions of napari.
+
+Last but not least, some common operations are now much more accessible from the GUI thanks to a new context menu on the layer list (#2556) and buttons for controlling how autoscaling is performed for images (#3022).
 
 ## New Features
 - Add context menu on layer list, introduce `QtActionContextMenu`. (#2556)
