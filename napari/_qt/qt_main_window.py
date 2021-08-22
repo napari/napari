@@ -38,10 +38,9 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.translations import trans
+from . import menus
 from .dialogs.activity_dialog import ActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
-from .menus import FileMenu, HelpMenu, PluginsMenu, ViewMenu, WindowMenu
-from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
@@ -471,18 +470,20 @@ class Window:
             self._toggle_menubar_visible
         )
 
-        self.file_menu = FileMenu(self)
+        self.file_menu = menus.FileMenu(self)
         self.main_menu.addMenu(self.file_menu)
-        self.view_menu = ViewMenu(self)
+        self.view_menu = menus.ViewMenu(self)
         self.main_menu.addMenu(self.view_menu)
-        self.window_menu = WindowMenu(self)
+        self.window_menu = menus.WindowMenu(self)
         self.main_menu.addMenu(self.window_menu)
-        self.plugins_menu = PluginsMenu(self)
+        self.plugins_menu = menus.PluginsMenu(self)
         self.main_menu.addMenu(self.plugins_menu)
-        self.help_menu = HelpMenu(self)
+        self.help_menu = menus.HelpMenu(self)
         self.main_menu.addMenu(self.help_menu)
 
-        self._debug_menu = DebugMenu(self) if perf.USE_PERFMON else None
+        if perf.USE_PERFMON:
+            self._debug_menu = menus.DebugMenu(self)
+            self.main_menu.addMenu(self._debug_menu)
 
     def _toggle_menubar_visible(self):
         """Toggle visibility of app menubar.
