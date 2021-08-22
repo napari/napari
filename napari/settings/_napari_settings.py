@@ -29,6 +29,7 @@ class NapariSettings(EventedConfigFileSettings):
     schema_version: Tuple[int, int, int] = Field(
         (0, 3, 0),
         description=trans._("Napari settings schema version."),
+        allow_mutation=False,
     )
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings,

@@ -1,16 +1,12 @@
-from typing import TYPE_CHECKING
-
 import pytest
+from pydantic import BaseModel
 from qtpy.QtCore import Qt
 
 from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,
 )
-from napari.settings import get_settings
-
-if TYPE_CHECKING:
-    from napari.plugins import NapariPluginManager
+from napari.settings import NapariSettings, get_settings
 
 
 @pytest.fixture
@@ -22,6 +18,14 @@ def pref(qtbot):
     dlg._settings.appearance.theme = 'light'
     assert get_settings().appearance.theme == 'light'
     yield dlg
+
+
+def test_prefdialog_populated(pref):
+    subfields = filter(
+        lambda f: isinstance(f.type_, type) and issubclass(f.type_, BaseModel),
+        NapariSettings.__fields__.values(),
+    )
+    assert pref._stack.count() == len(list(subfields))
 
 
 def test_preferences_dialog_accept(qtbot, pref):
@@ -61,10 +65,3 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     )
     pref._restore_default_dialog()
     assert get_settings().appearance.theme == 'dark'
-
-
-def test_cancel_plugins(qtbot, pref, napari_plugin_manager):
-    pm: NapariPluginManager = napari_plugin_manager
-    print(pm.call_order())
-    with qtbot.waitSignal(pref.finished):
-        pref._button_cancel.click()

@@ -1,14 +1,11 @@
-from typing import Tuple, Union
-
 from pydantic import Field
 
 from ..utils.events.evented_model import EventedModel
 from ..utils.translations import trans
-from ._fields import SchemaVersion, Theme
+from ._fields import Theme
 
 
 class AppearanceSettings(EventedModel):
-    schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 1, 1)
     theme: Theme = Field(
         "dark",
         title=trans._("Theme"),
