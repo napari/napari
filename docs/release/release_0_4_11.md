@@ -15,7 +15,7 @@ We've known for a while that 3D interactivity is one of the areas where napari n
 
 Our volume rendering functionality has been significantly improved and now includes the ability to render arbitrary planes through volumes (#3023) and add clipping planes to restrict rendering to a region of interest (#3140). For now, these features are marked as `experimental` and the API around their use is likely to change in future versions of napari.
 
-Last but not least, some common operations are now much more accessible from the GUI thanks to a new context menu on the layer list (#2556) and buttons for controlling how autoscaling is performed for images (#3022).
+Last but not least, some common operations are now much more accessible from the GUI thanks to a new context menu on the layer list (#2556 and #3028) and buttons for controlling image contrast limit scaling (#3022).
 
 ## New Features
 - Add context menu on layer list, introduce `QtActionContextMenu`. (#2556)
