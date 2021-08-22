@@ -34,6 +34,7 @@ from ``Layer.data``, and a ``meta`` dict that will correspond to the layer's
 .. autofunction:: napari_write_points
 .. autofunction:: napari_write_shapes
 .. autofunction:: napari_write_surface
+.. autofunction:: napari_write_tracks
 .. autofunction:: napari_write_vectors
 
 Analysis hooks

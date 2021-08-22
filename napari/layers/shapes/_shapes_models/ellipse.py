@@ -18,7 +18,7 @@ class Ellipse(Shape):
     data : (4, D) array or (2, 2) array.
         Either a (2, 2) array specifying the center and radii of an axis
         aligned ellipse, or a (4, D) array specifying the four corners of a
-        boudning box that contains the ellipse. These need not be axis aligned.
+        bounding box that contains the ellipse. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
     opacity : float

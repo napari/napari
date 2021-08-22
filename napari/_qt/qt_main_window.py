@@ -278,10 +278,6 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
-    def _update_preferences_dialog_size(self, size):
-        """Save preferences dialog size."""
-        self._preferences_dialog_size = size
-
     def close(self, quit_app=False):
         """Override to handle closing app or just the window."""
         self._quit_app = quit_app
@@ -338,12 +334,15 @@ class _QtMainWindow(QMainWindow):
 
     def resizeEvent(self, event):
         """Override to handle original size before maximizing."""
-        self._old_size = event.oldSize()
-        self._positions.append((self.x(), self.y()))
+        # the first resize event will have nonsense positions that we dont
+        # want to store (and potentially restore)
+        if event.oldSize().isValid():
+            self._old_size = event.oldSize()
+            self._positions.append((self.x(), self.y()))
 
-        if self._positions and len(self._positions) >= 2:
-            self._window_pos = self._positions[-2]
-            self._positions = self._positions[-2:]
+            if self._positions and len(self._positions) >= 2:
+                self._window_pos = self._positions[-2]
+                self._positions = self._positions[-2:]
 
         super().resizeEvent(event)
 
@@ -434,8 +433,11 @@ class Window:
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
 
-        # set the grid options on start up
-        self._update_widget_states()
+        # since we initialize canvas before window, we need to manually connect them again.
+        if self._qt_window.windowHandle() is not None:
+            self._qt_window.windowHandle().screenChanged.connect(
+                self.qt_viewer.canvas._backend.screen_changed
+            )
 
         self._add_menubar()
         self._add_file_menu()
@@ -485,12 +487,6 @@ class Window:
     def _disconnect(self, viewer):
         settings = get_settings()
         settings.appearance.events.theme.disconnect(self._update_theme)
-        settings.application.events.playback_fps.disconnect(
-            self._update_widget_states
-        )
-        settings.application.events.playback_mode.disconnect(
-            self._update_widget_states
-        )
         plugin_manager.events.disabled.disconnect(self._rebuild_plugins_menu)
         plugin_manager.events.disabled.disconnect(self._rebuild_samples_menu)
         plugin_manager.events.registered.disconnect(self._rebuild_plugins_menu)
@@ -528,12 +524,6 @@ class Window:
 
         settings = get_settings()
         settings.appearance.events.theme.connect(self._update_theme)
-        settings.application.events.playback_fps.connect(
-            self._update_widget_states
-        )
-        settings.application.events.playback_mode.connect(
-            self._update_widget_states
-        )
 
         plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
@@ -736,48 +726,20 @@ class Window:
         """Edit preferences from the menubar."""
         if self._qt_window._preferences_dialog is None:
             win = PreferencesDialog(parent=self._qt_window)
-            win.resized.connect(
-                self._qt_window._update_preferences_dialog_size
-            )
-
+            self._qt_window._preferences_dialog = win
             if self._qt_window._preferences_dialog_size:
                 win.resize(self._qt_window._preferences_dialog_size)
-
-            self._qt_window._preferences_dialog = win
-            win.valueChanged.connect(self._reset_preference_states)
-            win.updatedValues.connect(self._update_widget_states)
-            win.closed.connect(self._on_preferences_closed)
+            win.resized.connect(
+                lambda e: setattr(
+                    self._qt_window, '_preferences_dialog_size', e
+                )
+            )
+            win.finished.connect(
+                lambda e: setattr(self._qt_window, '_preferences_dialog', None)
+            )
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
-
-    def _update_widget_states(self, e=None):
-        """Keep widgets in napari up to date with settings values."""
-
-        settings = get_settings()
-
-        # update playback settings
-        for widget in self.qt_viewer.dims.slider_widgets:
-            setattr(widget, 'fps', settings.application.playback_fps)
-            setattr(widget, 'loop_mode', settings.application.playback_mode)
-
-    def _reset_preference_states(self):
-        # resetting plugin states in plugin manager
-        plugin_manager.discover()
-
-        # need to reset call order to defaults
-        settings = get_settings()
-        plugin_manager.set_call_order(
-            settings.plugins.call_order
-            or settings.plugins._defaults.get('call_order', {})
-        )
-
-        # reset the keybindings in action manager
-        self.qt_viewer._bind_shortcuts()
-
-    def _on_preferences_closed(self):
-        """Reset preferences dialog variable."""
-        self._qt_window._preferences_dialog = None
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""

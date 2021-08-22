@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import logging
 import os
-import warnings
 from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
+from warnings import warn
 
 from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.error_wrappers import display_errors
@@ -14,6 +14,7 @@ from pydantic.error_wrappers import display_errors
 from ..utils.events import EmitterGroup, EventedModel
 from ..utils.misc import deep_update
 from ..utils.translations import trans
+from ._yaml import PydanticYamlMixin
 
 _logger = logging.getLogger(__name__)
 
@@ -43,10 +44,17 @@ class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
         self.events.add(changed=None)
 
         # re-emit subfield
-        for name in self.__fields__:
+        for name, field in self.__fields__.items():
             attr = getattr(self, name)
             if isinstance(getattr(attr, 'events', None), EmitterGroup):
                 attr.events.connect(partial(self._on_sub_event, field=name))
+
+            if field.field_info.extra.get('requires_restart'):
+                emitter = getattr(self.events, name)
+
+                @emitter.connect
+                def _warn_restart(*_):
+                    warn("Restart required for this change to take effect.")
 
     def _on_sub_event(self, event: Event, field=None):
         """emit the field.attr name and new value"""
@@ -59,7 +67,7 @@ class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
 _NOT_SET = object()
 
 
-class EventedConfigFileSettings(EventedSettings):
+class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     """This adds config read/write and yaml support to EventedSettings.
 
     If your settings class *only* needs to read variables from the environment,
@@ -69,6 +77,9 @@ class EventedConfigFileSettings(EventedSettings):
 
     _config_path: Optional[Path] = None
     _save_on_change: bool = True
+    # this dict stores the data that came specifically from the config file.
+    # it's populated in `config_file_settings_source` and
+    # used in `_remove_env_settings`
     _config_file_settings: dict
 
     # provide config_path=None to prevent reading from disk.
@@ -92,9 +103,10 @@ class EventedConfigFileSettings(EventedSettings):
 
     @property
     def config_path(self):
+        """Return the path to/from which settings be saved/loaded."""
         return self._config_path
 
-    def dict(  # type: ignore
+    def dict(
         self,
         *,
         include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
@@ -105,6 +117,10 @@ class EventedConfigFileSettings(EventedSettings):
         exclude_none: bool = False,
         exclude_env: bool = False,
     ) -> DictStrAny:
+        """Return dict representation of the model.
+
+        May optionally specify which fields to include or exclude.
+        """
         data = super().dict(
             include=include,
             exclude=exclude,
@@ -114,64 +130,50 @@ class EventedConfigFileSettings(EventedSettings):
             exclude_none=exclude_none,
         )
         if exclude_env:
-            eset = getattr(self.__config__, '_env_settings', None)
-            if callable(eset):
-                env_data: dict = eset(type(self))
-                if env_data:
-                    cfg_data = getattr(self, '_config_file_settings', {})
-                    _restore_config_data(data, env_data, cfg_data)
+            self._remove_env_settings(data)
         return data
 
-    def yaml(
-        self,
-        *,
-        include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        exclude: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        exclude_env: bool = False,
-        **dumps_kwargs: Any,
-    ) -> str:
-        import json
+    def _save_dict(self, **dict_kwargs):
+        """The minimal dict representation that will be persisted to disk.
 
-        import yaml
-
-        data = self.dict(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            exclude_env=exclude_env,
-        )
+        By default, this will exclude settings values that match the default
+        value, and will exclude values that were provided by environment
+        variables.  Empty dicts will also be removed.
+        """
+        dict_kwargs.setdefault('exclude_defaults', True)
+        dict_kwargs.setdefault('exclude_env', True)
+        data = self.dict(**dict_kwargs)
         _remove_empty_dicts(data)
+        return data
 
-        # We roundtrip to keep custom string objects (like SchemaVersion)
-        # yaml representable
-        # FIXME: should provide yaml serializer on field itself (as for json)
-        _json = self.__config__.json_dumps(data, default=self.__json_encoder__)
-        return yaml.safe_dump(json.loads(_json), **dumps_kwargs)
+    def save(self, path: Union[str, Path] = None, **dict_kwargs):
+        """Save current settings to path.
 
-    def save(self, path=None, **dict_kwargs):
+        By default, this will exclude settings values that match the default
+        value, and will exclude values that were provided by environment
+        variables.  (see `_save_dict` method.)
+        """
         path = path or self.config_path
         if not path:
             raise ValueError("No path provided in config or save argument.")
 
         path = Path(path).expanduser().resolve()
         path.parent.mkdir(exist_ok=True, parents=True)
+        self._dump(path, self._save_dict(**dict_kwargs))
 
-        dict_kwargs.setdefault('exclude_defaults', True)
-        dict_kwargs.setdefault('exclude_env', True)
-        data = self.dict(**dict_kwargs)
-        _remove_empty_dicts(data)
-
-        dump = _get_io_func_for_path(path, 'dump')
-        if dump is not None:
-            with open(path, 'w') as target:
-                dump(data, target)
+    def _dump(self, path: str, data: dict):
+        """Encode and dump `data` to `path` using a path-appropriate encoder."""
+        if str(path).endswith(('.yaml', '.yml')):
+            data = self._yaml_dump(data)
+        elif str(path).endswith(".json"):
+            json_dumps = self.__config__.json_dumps
+            data = json_dumps(data, default=self.__json_encoder__)
+        else:
+            raise NotImplementedError(
+                f"Can only currently dump to `.json` or `.yaml`, not {path!r}"
+            )
+        with open(path, 'w') as target:
+            target.write(data)
 
     def env_settings(self) -> Dict[str, Any]:
         """Get a dict of fields that were provided as environment vars."""
@@ -179,6 +181,19 @@ class EventedConfigFileSettings(EventedSettings):
         if callable(env_settings):
             env_settings = env_settings(self)
         return env_settings
+
+    def _remove_env_settings(self, data):
+        """Remove key:values from `data` that match settings from env vars.
+
+        This is handy when we want to persist settings to disk without
+        including settings that were provided by environment variables (which
+        are usually more temporary).
+        """
+        env_data = self.env_settings()
+        if env_data:
+            _restore_config_data(
+                data, env_data, getattr(self, '_config_file_settings', {})
+            )
 
     class Config:
         # If True: validation errors in a config file will raise an exception
@@ -279,7 +294,9 @@ def nested_env_settings(
     return _inner
 
 
-def config_file_settings_source(settings: BaseSettings) -> Dict[str, Any]:
+def config_file_settings_source(
+    settings: EventedConfigFileSettings,
+) -> Dict[str, Any]:
     """Read config files during init of an EventedConfigFileSettings obj.
 
     The two important values are the `settings._config_path`
@@ -331,8 +348,17 @@ def config_file_settings_source(settings: BaseSettings) -> Dict[str, Any]:
             continue
 
         # get loader for yaml/json
-        load = _get_io_func_for_path(_path, 'load')
-        if load is None:
+        if str(path).endswith(('.yaml', '.yml')):
+            load = __import__('yaml').safe_load
+        elif str(path).endswith(".json"):
+            load = __import__('json').load
+        else:
+            warn(
+                trans._(
+                    "Unrecognized file extension for config_path: {path}",
+                    path=path,
+                )
+            )
             continue
 
         try:
@@ -383,7 +409,8 @@ def config_file_settings_source(settings: BaseSettings) -> Dict[str, Any]:
                 )
             )
             data = {}
-    setattr(settings, '_config_file_settings', data)
+    # store data at this state for potential later recovery
+    settings._config_file_settings = data
     return data
 
 
@@ -449,19 +476,3 @@ def _remove_empty_dicts(dct: dict, recurse=True) -> dict:
         if v == {}:
             del dct[k]
     return dct
-
-
-def _get_io_func_for_path(path: Union[str, Path], mode='dump'):
-    """get json/yaml [safe_]load/[safe_]dump for `path`"""
-    assert mode in {'dump', 'load'}
-    if str(path).endswith(('.yaml', '.yml')):
-        return getattr(__import__('yaml'), f'safe_{mode}')
-    if str(path).endswith(".json"):
-        return getattr(__import__('json'), mode)
-
-    warnings.warn(
-        trans._(
-            "Unrecognized file extension for config_path: {path}", path=path
-        )
-    )
-    return None

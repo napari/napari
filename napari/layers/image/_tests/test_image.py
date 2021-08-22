@@ -5,7 +5,7 @@ import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
-from napari.layers.utils.plane_manager import PlaneManager
+from napari.layers.utils.plane import ClippingPlaneList, SlicingPlane
 from napari.utils import Colormap
 from napari.utils.transforms.transform_utils import rotate_to_matrix
 
@@ -734,7 +734,7 @@ def test_image_state_update():
         setattr(image, k, v)
 
 
-def test_instiantiate_with_plane_dict():
+def test_instiantiate_with_experimental_slicing_plane_dict():
     """Test that an image layer can be instantiated with plane parameters
     in a dictionary.
     """
@@ -743,20 +743,42 @@ def test_instiantiate_with_plane_dict():
         'normal': (1, 1, 1),
         'thickness': 22,
     }
-    image = Image(np.ones((32, 32, 32)), plane=plane_parameters)
+    image = Image(
+        np.ones((32, 32, 32)), experimental_slicing_plane=plane_parameters
+    )
     for k, v in plane_parameters.items():
         if k == 'normal':
             v = tuple(v / np.linalg.norm(v))
-        assert v == getattr(image.plane, k, v)
+        assert v == getattr(image.experimental_slicing_plane, k, v)
 
 
-def test_instiantiate_with_plane_manager():
+def test_instiantiate_with_experimental_slicing_plane():
     """Test that an image layer can be instantiated with plane parameters
-    in a PlaneManager.
+    in a Plane.
     """
-    plane_manager = PlaneManager(
-        position=(32, 32, 32), normal=(1, 1, 1), thickness=22
-    )
-    image = Image(np.ones((32, 32, 32)), plane=plane_manager)
-    for k, v in plane_manager.dict().items():
-        assert v == getattr(image.plane, k, v)
+    plane = SlicingPlane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
+    image = Image(np.ones((32, 32, 32)), experimental_slicing_plane=plane)
+    for k, v in plane.dict().items():
+        assert v == getattr(image.experimental_slicing_plane, k, v)
+
+
+def test_instantiate_with_clipping_planelist():
+    planes = ClippingPlaneList.from_array(np.ones((2, 2, 3)))
+    image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
+    assert len(image.experimental_clipping_planes) == 2
+
+
+def test_instantiate_with_experimental_clipping_planes_dict():
+    planes = [
+        {'position': (0, 0, 0), 'normal': (0, 0, 1)},
+        {'position': (0, 1, 0), 'normal': (1, 0, 0)},
+    ]
+    image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
+    for i in range(len(planes)):
+        assert (
+            image.experimental_clipping_planes[i].position
+            == planes[i]['position']
+        )
+        assert (
+            image.experimental_clipping_planes[i].normal == planes[i]['normal']
+        )

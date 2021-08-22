@@ -1,19 +1,21 @@
 import numpy as np
 import pytest
 
-from ..geometry import (
+from napari.utils.geometry import (
     bounding_box_to_face_vertices,
     clamp_point_to_bounding_box,
     distance_between_point_and_line_3d,
     face_coordinate_from_bounding_box,
     find_front_back_face,
     inside_triangles,
+    intersect_line_with_axis_aligned_bounding_box_3d,
     intersect_line_with_axis_aligned_plane,
+    intersect_line_with_multiple_planes_3d,
     intersect_line_with_plane_3d,
-    intersect_ray_with_axis_aligned_bounding_box_3d,
+    line_in_quadrilateral_3d,
+    line_in_triangles_3d,
     point_in_quadrilateral_2d,
     project_point_onto_plane,
-    ray_in_quadrilateral_3d,
     rotation_matrix_from_vectors,
 )
 
@@ -76,6 +78,22 @@ def test_intersect_line_with_plane_3d(
         line_position, line_direction, plane_position, plane_normal
     )
     np.testing.assert_allclose(expected, intersection)
+
+
+def test_intersect_line_with_multiple_planes_3d():
+    """Test intersecting a ray with multiple planes and getting the intersection
+    with each one.
+    """
+    line_position = [0, 0, 1]
+    line_direction = [0, 0, -1]
+    plane_positions = [[0, 0, 0], [0, 0, 1]]
+    plane_normals = [[0, 0, 1], [0, 0, 1]]
+    intersections = intersect_line_with_multiple_planes_3d(
+        line_position, line_direction, plane_positions, plane_normals
+    )
+
+    expected = np.array([[0, 0, 0], [0, 0, 1]])
+    np.testing.assert_allclose(intersections, expected)
 
 
 @pytest.mark.parametrize(
@@ -300,8 +318,8 @@ def test_click_in_quadrilateral_3d(
     of a 3D point onto a plane falls within a 3d quadrilateral projected
     onto the same plane
     """
-    in_quadrilateral = ray_in_quadrilateral_3d(
-        click_position, quadrilateral, view_dir
+    in_quadrilateral = line_in_quadrilateral_3d(
+        click_position, view_dir, quadrilateral
     )
     assert in_quadrilateral == expected
 
@@ -395,7 +413,7 @@ def test_intersect_line_with_axis_aligned_bounding_box_3d(
     """Test that intersections between lines and axis aligned
     bounding boxes are correctly computed.
     """
-    result = intersect_ray_with_axis_aligned_bounding_box_3d(
+    result = intersect_line_with_axis_aligned_bounding_box_3d(
         line_position, line_direction, bounding_box, face_normal
     )
     np.testing.assert_allclose(expected, result)
@@ -420,3 +438,17 @@ def test_distance_between_point_and_line_3d():
     )
 
     np.testing.assert_allclose(distance, expected_distance)
+
+
+def test_line_in_triangles_3d():
+    line_point = np.array([0, 5, 5])
+    line_direction = np.array([1, 0, 0])
+
+    triangles = np.array(
+        [
+            [[10, 0, 0], [19, 10, 5], [5, 5, 10]],
+            [[10, 4, 4], [10, 0, 0], [10, 4, 0]],
+        ]
+    )
+    in_triangle = line_in_triangles_3d(line_point, line_direction, triangles)
+    np.testing.assert_array_equal(in_triangle, [True, False])
