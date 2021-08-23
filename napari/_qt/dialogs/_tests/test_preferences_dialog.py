@@ -1,11 +1,12 @@
 import pytest
+from pydantic import BaseModel
 from qtpy.QtCore import Qt
 
 from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,
 )
-from napari.settings import get_settings
+from napari.settings import NapariSettings, get_settings
 
 
 @pytest.fixture
@@ -17,6 +18,14 @@ def pref(qtbot):
     dlg._settings.appearance.theme = 'light'
     assert get_settings().appearance.theme == 'light'
     yield dlg
+
+
+def test_prefdialog_populated(pref):
+    subfields = filter(
+        lambda f: isinstance(f.type_, type) and issubclass(f.type_, BaseModel),
+        NapariSettings.__fields__.values(),
+    )
+    assert pref._stack.count() == len(list(subfields))
 
 
 def test_preferences_dialog_accept(qtbot, pref):

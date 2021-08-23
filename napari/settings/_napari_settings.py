@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 from pydantic import Field
 
@@ -20,6 +20,17 @@ _DEFAULT_CFG_PATH = Path(_DEFAULT_CFG_PATH) if _DEFAULT_CFG_PATH else None
 class NapariSettings(EventedConfigFileSettings):
     """Schema for napari settings."""
 
+    # 1. If you want to *change* the default value of a current option, you need to
+    #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
+    # 2. If you want to *remove* options that are no longer needed in the codebase,
+    #    or if you want to *rename* options, then you need to do a MAJOR update in
+    #    version, e.g. from 3.0.0 to 4.0.0
+    # 3. You don't need to touch this value if you're just adding a new option
+    schema_version: Tuple[int, int, int] = Field(
+        (0, 3, 0),
+        description=trans._("Napari settings schema version."),
+        allow_mutation=False,
+    )
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings,
         title=trans._("Application"),

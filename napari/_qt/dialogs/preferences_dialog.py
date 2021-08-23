@@ -2,6 +2,7 @@ import json
 from enum import EnumMeta
 from typing import TYPE_CHECKING, Tuple, cast
 
+from pydantic.main import BaseModel
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QDialog,
@@ -17,7 +18,6 @@ from ...utils.translations import trans
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
-    from pydantic.main import BaseModel
     from qtpy.QtGui import QCloseEvent, QKeyEvent
 
 
@@ -66,7 +66,6 @@ class PreferencesDialog(QDialog):
         self.layout().addWidget(self._stack, 3)
 
         # Build dialog from settings
-        self._starting_values = {}
         self._rebuild_dialog()
 
     def keyPressEvent(self, e: 'QKeyEvent'):
@@ -85,15 +84,21 @@ class PreferencesDialog(QDialog):
 
     def _rebuild_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
+        # FIXME: this dialog should not need to know about the plugin manager
+        from ...plugins import plugin_manager
 
-        self._starting_values = self._settings.dict()
+        self._starting_pm_order = plugin_manager.call_order()
+        self._starting_values = self._settings.dict(exclude={'schema_version'})
 
         self._list.clear()
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
         for field in self._settings.__fields__.values():
-            self._add_page(field)
+            if isinstance(field.type_, type) and issubclass(
+                field.type_, BaseModel
+            ):
+                self._add_page(field)
 
         self._list.setCurrentRow(0)
 
@@ -160,8 +165,8 @@ class PreferencesDialog(QDialog):
         napari_config = getattr(setting, "NapariConfig", None)
         if hasattr(napari_config, 'preferences_exclude'):
             for val in napari_config.preferences_exclude:
-                schema['properties'].pop(val)
-                values.pop(val)
+                schema['properties'].pop(val, None)
+                values.pop(val, None)
 
         return schema, values
 
@@ -195,4 +200,10 @@ class PreferencesDialog(QDialog):
     def reject(self):
         """Restores the settings in place when dialog was launched."""
         self._settings.update(self._starting_values)
+
+        # FIXME: this dialog should not need to know about the plugin manager
+        if self._starting_pm_order:
+            from ...plugins import plugin_manager
+
+            plugin_manager.set_call_order(self._starting_pm_order)
         super().reject()
