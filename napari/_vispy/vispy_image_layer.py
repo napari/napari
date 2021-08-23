@@ -64,6 +64,10 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_experimental_slicing_plane_normal_change
         )
 
+        self.layer.experimental_clipping_planes.events.connect(
+            self._on_experimental_clipping_planes_change
+        )
+
         self._on_display_change()
         self._on_data_change()
 
@@ -183,6 +187,12 @@ class VispyImageLayer(VispyBaseLayer):
                 self.layer.experimental_slicing_plane.normal
             )
 
+    def _on_experimental_clipping_planes_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.clipping_planes = (
+                self.layer.experimental_clipping_planes.as_array()
+            )
+
     def reset(self, event=None):
         self._reset_base()
         self._on_interpolation_change()
@@ -194,6 +204,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_experimental_slicing_plane_position_change()
         self._on_experimental_slicing_plane_normal_change()
         self._on_experimental_slicing_plane_thickness_change()
+        self._on_experimental_clipping_planes_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.

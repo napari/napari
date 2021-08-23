@@ -31,7 +31,7 @@ plane_layer = viewer.add_image(
     name='plane',
     blending='additive',
     opacity=0.5,
-    plane=plane_parameters
+    experimental_slicing_plane=plane_parameters
 )
 
 # add a points layer for interactively adding points

@@ -181,6 +181,8 @@ def test_model_fields_are_annotated(test_settings):
     errors = []
     for field in test_settings.__fields__.values():
         model = field.type_
+        if not hasattr(model, '__fields__'):
+            continue
         difference = set(model.__fields__) - set(model.__annotations__)
         if difference:
             errors.append(
