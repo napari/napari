@@ -1,4 +1,9 @@
 import weakref
+from functools import partial
+from typing import TYPE_CHECKING, Callable, Iterator, Optional, Tuple, Type
+
+if TYPE_CHECKING:
+    from .event import EmitterGroup
 
 
 def disconnect_events(emitter, listener):
@@ -24,3 +29,25 @@ def disconnect_events(emitter, listener):
             ):
                 em.disconnect(callback)
     emitter.disconnect()
+
+
+def iter_connections(
+    group: 'EmitterGroup', seen=None
+) -> Iterator[Tuple[Type, Optional[str], Optional[object], str, Callable]]:
+    """Yields (SourceType, event_name, receiver, method_name, disconnector)
+    for all connections in the EmitterGroup, recursively
+    """
+    from .event import EmitterGroup
+
+    seen = seen or set()
+    for emitter in group.emitters.values():
+        for cb in emitter.callbacks:
+            if isinstance(cb, EmitterGroup):
+                if id(cb) not in seen:
+                    seen.add(id(cb))
+                    iter_connections(cb, seen)
+            elif isinstance(cb, tuple):
+                source_type = type(group.source)
+                ev_type = emitter.default_args.get("type")
+                disconnect = partial(emitter.disconnect, cb)
+                yield (source_type, ev_type, cb[0](), cb[1], disconnect)

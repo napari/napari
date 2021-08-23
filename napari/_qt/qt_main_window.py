@@ -36,6 +36,7 @@ from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
 from ..utils import perf
+from ..utils.events import EmitterGroup
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
@@ -342,7 +343,6 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
-        self._window.events.closed()
         if self._ev and self._ev.isRunning():
             self._ev.quit()
 
@@ -435,6 +435,8 @@ class Window:
         if perf.USE_PERFMON:
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
 
+        self.events = EmitterGroup(self, False, closed=None)
+        self._qt_window.destroyed.connect(lambda: self.events.closed())
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
@@ -1053,8 +1055,5 @@ class Window:
         # Someone is closing us twice? Only try to delete self._qt_window
         # if we still have one.
         if hasattr(self, '_qt_window'):
-            self.qt_viewer.close()
             self._qt_window.close()
             get_app().processEvents()
-            self.events.closed()
-            del self._qt_window

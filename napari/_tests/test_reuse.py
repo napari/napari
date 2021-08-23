@@ -29,3 +29,11 @@ def test_add_then_show():
     v.add_points()
     v.add_image(np.random.rand(4, 4))
     v.show()
+
+
+def test_qt_disconnected(make_napari_viewer):
+    v = napari.Viewer()
+    v.add_points()
+    v.add_image(np.random.rand(8, 8))
+    v.add_labels(np.random.rand(8, 8).astype(int))
+    v.close()

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, Tuple, Type
 
 from .components.viewer_model import ViewerModel
 from .utils import _magicgui, config
@@ -52,12 +52,6 @@ class Viewer(ViewerModel):
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
     def window(self) -> Optional['qt_main_window.Window']:
-        if self._window is None:
-            from .window import Window
-
-            self._window = Window(self)
-            self._window.events.closed.connect(self._on_window_closed)
-
         return self._window
 
     def update_console(self, variables):
@@ -107,6 +101,11 @@ class Viewer(ViewerModel):
 
     def show(self, *, block=False):
         """Resize, show, and raise the viewer window."""
+        if self._window is None:
+            from .window import Window
+
+            self._window = Window(self)
+            self._window.events.closed.connect(self._on_window_closed)
 
         self.window.show(block=block)
         # having this import here makes all of Qt imported lazily, upon
@@ -114,11 +113,24 @@ class Viewer(ViewerModel):
 
     def _on_window_closed(self, e=None):
         self._window = None
+        self._disconnect_ui()
+
+    def _disconnect_ui(self):
+        from qtpy.QtCore import QObject
+
+        from ._qt.qt_main_window import Window
+
+        for cnx in _iter_viewer_connections(self):
+            _, _, receiver, _, disconnect = cnx
+            if (
+                isinstance(receiver, (QObject, Window))
+                or 'vispy' in type(receiver).__name__.lower()
+            ):
+                disconnect()
 
     def close(self):
         """Close the viewer window."""
-        # Remove all the layers from the viewer
-        self.layers.clear()
+
         # Close the main window
         if self.window:
             self.window.close()
@@ -142,3 +154,19 @@ def current_viewer() -> Viewer:
         return _QtMainWindow.current_viewer()
     except ImportError:
         return None
+
+
+def _iter_viewer_connections(
+    viewer: Viewer,
+) -> Iterator[Tuple[Type, str, Type, str]]:
+    from .utils.events import EmitterGroup, iter_connections
+
+    yield from iter_connections(viewer.events)
+
+    for n in viewer.__fields__:
+        attr = getattr(viewer, n)
+        if isinstance(getattr(attr, 'events', None), EmitterGroup):
+            yield from iter_connections(attr.events)
+
+    for layer in viewer.layers:
+        yield from iter_connections(layer.events)
