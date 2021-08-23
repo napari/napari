@@ -155,6 +155,6 @@ action_widget.setObjectName("Segmentation")
 viewer.window.add_dock_widget(action_widget)
 
 # showing the activity dock so we can see the progress bars
-viewer.window._toggle_activity_dock(True)
+viewer.window._status_bar._toggle_activity_dock(True)
 
 napari.run()
