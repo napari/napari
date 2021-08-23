@@ -81,9 +81,9 @@ class QtBaseImageControls(QtLayerControls):
         self.clim_popup = None
 
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
-        set_clim = partial(setattr, self.layer, 'contrast_limits')
+        # set_clim = partial(setattr, self.layer, 'contrast_limits')
 
-        self.contrastLimitsSlider.valueChanged.connect(set_clim)
+        self.contrastLimitsSlider.valueChanged.connect(self.layer._set_contrast_limits)
         self.contrastLimitsSlider.rangeChanged.connect(
             lambda *a: setattr(self.layer, 'contrast_limits_range', a)
         )
@@ -193,6 +193,7 @@ class QtBaseImageControls(QtLayerControls):
 
     def closeEvent(self, event):
         self.deleteLater()
+        self.layer.events.disconnect(self)
         event.accept()
 
     def show_clim_popupup(self):
@@ -250,10 +251,8 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         self.slider.setValue(layer.contrast_limits)
 
         set_values = partial(setattr, layer, 'contrast_limits')
-        self.slider.valueChanged.connect(set_values)
-        self.slider.rangeChanged.connect(
-            lambda *a: setattr(layer, 'contrast_limits_range', a)
-        )
+        self.slider.valueChanged.connect(layer._set_contrast_limits)
+        self.slider.rangeChanged.connect(layer._set_contrast_limits_range)
 
         def reset():
             layer.reset_contrast_limits()

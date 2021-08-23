@@ -88,6 +88,10 @@ class IntensityVisualizationMixin:
         self._update_thumbnail()
         self.events.contrast_limits()
 
+    def _set_contrast_limits(self, value):
+        """for binding"""
+        self.contrast_limits = value
+
     @property
     def contrast_limits_range(self):
         """The current valid range of the contrast limits."""
@@ -116,6 +120,10 @@ class IntensityVisualizationMixin:
             new_max = max(min(value[1], cur_max), value[0])
             self.contrast_limits = (new_min, new_max)
             self.events.contrast_limits()
+
+    def _set_contrast_limits_range(self, value):
+        """for binding"""
+        self.contrast_limits_range = value
 
     @property
     def gamma(self):
