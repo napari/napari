@@ -350,7 +350,7 @@ class EventEmitter:
         position: Union[Literal['first'], Literal['last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
-        disconnect_on: Optional['EventEmitter'] = None,
+        until: Optional['EventEmitter'] = None,
     ):
         """Connect this emitter to a new callback.
 
@@ -377,6 +377,10 @@ class EventEmitter:
         after : str | callback | list of str or callback | None
             List of callbacks that the current callback should follow.
             Can be None if no after-criteria should be used.
+        until : EventEmitter | None
+            Optional event emitter. If provided, this connection will
+            disconnect itself when `until` is emitted.
+            `until.connect(lambda *a: self.disconnect(callback))`
 
         Notes
         -----
@@ -493,8 +497,8 @@ class EventEmitter:
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
 
-        if disconnect_on is not None:
-            disconnect_on.connect(partial(self.disconnect, callback))
+        if until is not None:
+            until.connect(lambda *a: self.disconnect(callback))
         elif isinstance(callback, tuple):
             obj = callback[0]()
             if any(i.__name__ == 'QObject' for i in type(obj).__mro__):

@@ -483,7 +483,6 @@ class Window:
             self.show()
 
     def _connect(self, viewer):
-        D = self._qt_window.destroyed
 
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
@@ -498,21 +497,20 @@ class Window:
             self._qt_window._activity_dialog.move_to_bottom_right
         )
 
-        get_settings().appearance.events.theme.connect(
-            self._update_theme, disconnect_on=D
-        )
-
+        D = self._qt_window.destroyed
+        settings = get_settings()
+        settings.appearance.events.theme.connect(self._update_theme, until=D)
         pme = plugin_manager.events
-        pme.disabled.connect(self._rebuild_plugins_menu, disconnect_on=D)
-        pme.disabled.connect(self._rebuild_samples_menu, disconnect_on=D)
-        pme.registered.connect(self._rebuild_plugins_menu, disconnect_on=D)
-        pme.registered.connect(self._rebuild_samples_menu, disconnect_on=D)
-        pme.unregistered.connect(self._rebuild_plugins_menu, disconnect_on=D)
-        pme.unregistered.connect(self._rebuild_samples_menu, disconnect_on=D)
-        viewer.events.status.connect(self._status_changed, disconnect_on=D)
-        viewer.events.help.connect(self._help_changed, disconnect_on=D)
-        viewer.events.title.connect(self._title_changed, disconnect_on=D)
-        viewer.events.theme.connect(self._update_theme, disconnect_on=D)
+        pme.disabled.connect(self._rebuild_plugins_menu, until=D)
+        pme.disabled.connect(self._rebuild_samples_menu, until=D)
+        pme.registered.connect(self._rebuild_plugins_menu, until=D)
+        pme.registered.connect(self._rebuild_samples_menu, until=D)
+        pme.unregistered.connect(self._rebuild_plugins_menu, until=D)
+        pme.unregistered.connect(self._rebuild_samples_menu, until=D)
+        viewer.events.status.connect(self._status_changed, until=D)
+        viewer.events.help.connect(self._help_changed, until=D)
+        viewer.events.title.connect(self._title_changed, until=D)
+        viewer.events.theme.connect(self._update_theme, until=D)
 
     def _add_menubar(self):
         """Add menubar to napari app."""
