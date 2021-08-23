@@ -62,17 +62,10 @@ class LayerList(SelectableEventedList[Layer]):
         new_name : str
             Coerced, unique name.
         """
-        existing_layers = {x.name for x in self}
-        if layer is None:
-            for i in range(len(self)):
-                if name in existing_layers:
-                    name = inc_name_count(name)
-        else:
-            for _layer in sorted(self, key=lambda x: x.name):
-                if _layer is layer:
-                    continue
-                if name in existing_layers:
-                    name = inc_name_count(name)
+        existing_layers = {x.name for x in self if x is not layer}
+        for i in range(len(self)):
+            if name in existing_layers:
+                name = inc_name_count(name)
         return name
 
     def _update_name(self, event):
