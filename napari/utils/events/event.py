@@ -350,6 +350,7 @@ class EventEmitter:
         position: Union[Literal['first'], Literal['last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
+        disconnect_on: Optional['EventEmitter'] = None,
     ):
         """Connect this emitter to a new callback.
 
@@ -492,12 +493,12 @@ class EventEmitter:
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
 
-        if isinstance(callback, tuple):
-            from qtpy.QtCore import QObject
-
+        if disconnect_on is not None:
+            disconnect_on.connect(partial(self.disconnect, callback))
+        elif isinstance(callback, tuple):
             obj = callback[0]()
-            if isinstance(obj, QObject):
-                obj.destroyed.connect(partial(self.disconnect, callback))
+            if any(i.__name__ == 'QObject' for i in type(obj).__mro__):
+                obj.destroyed.connect(partial(self.disconnect, callback))  # type: ignore
 
         return callback  # allows connect to be used as a decorator
 

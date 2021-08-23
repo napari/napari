@@ -9,7 +9,6 @@ import os
 import sys
 import time
 import warnings
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -479,36 +478,13 @@ class Window:
             self._debug_menu = None
 
         self._connect(viewer)
-        self._qt_window.destroyed.connect(partial(self._disconnect, viewer))
 
         if show:
             self.show()
 
-    def _disconnect(self, viewer):
-        settings = get_settings()
-        settings.appearance.events.theme.disconnect(self._update_theme)
-        plugin_manager.events.disabled.disconnect(self._rebuild_plugins_menu)
-        plugin_manager.events.disabled.disconnect(self._rebuild_samples_menu)
-        plugin_manager.events.registered.disconnect(self._rebuild_plugins_menu)
-        plugin_manager.events.registered.disconnect(self._rebuild_samples_menu)
-        plugin_manager.events.unregistered.disconnect(
-            self._rebuild_plugins_menu
-        )
-        plugin_manager.events.unregistered.disconnect(
-            self._rebuild_samples_menu
-        )
-        viewer.events.status.disconnect(self._status_changed)
-        viewer.events.help.disconnect(self._help_changed)
-        viewer.events.title.disconnect(self._title_changed)
-        viewer.events.theme.disconnect(self._update_theme)
-        self._activity_item._activityBtn.clicked.disconnect(
-            self._toggle_activity_dock
-        )
-        # self.qt_viewer._canvas_overlay.resized.disconnect(
-        #     self._qt_window._activity_dialog.move_to_bottom_right
-        # )
-
     def _connect(self, viewer):
+        D = self._qt_window.destroyed
+
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
             self._qt_window.windowHandle().screenChanged.connect(
@@ -522,20 +498,21 @@ class Window:
             self._qt_window._activity_dialog.move_to_bottom_right
         )
 
-        settings = get_settings()
-        settings.appearance.events.theme.connect(self._update_theme)
+        get_settings().appearance.events.theme.connect(
+            self._update_theme, disconnect_on=D
+        )
 
-        plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
-        plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
-        plugin_manager.events.registered.connect(self._rebuild_plugins_menu)
-        plugin_manager.events.registered.connect(self._rebuild_samples_menu)
-        plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
-        plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
-
-        viewer.events.status.connect(self._status_changed)
-        viewer.events.help.connect(self._help_changed)
-        viewer.events.title.connect(self._title_changed)
-        viewer.events.theme.connect(self._update_theme)
+        pme = plugin_manager.events
+        pme.disabled.connect(self._rebuild_plugins_menu, disconnect_on=D)
+        pme.disabled.connect(self._rebuild_samples_menu, disconnect_on=D)
+        pme.registered.connect(self._rebuild_plugins_menu, disconnect_on=D)
+        pme.registered.connect(self._rebuild_samples_menu, disconnect_on=D)
+        pme.unregistered.connect(self._rebuild_plugins_menu, disconnect_on=D)
+        pme.unregistered.connect(self._rebuild_samples_menu, disconnect_on=D)
+        viewer.events.status.connect(self._status_changed, disconnect_on=D)
+        viewer.events.help.connect(self._help_changed, disconnect_on=D)
+        viewer.events.title.connect(self._title_changed, disconnect_on=D)
+        viewer.events.theme.connect(self._update_theme, disconnect_on=D)
 
     def _add_menubar(self):
         """Add menubar to napari app."""
