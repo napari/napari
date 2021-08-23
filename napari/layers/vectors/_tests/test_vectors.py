@@ -194,6 +194,7 @@ def test_properties_dataframe():
 
 def test_adding_properties():
     """test adding properties to a Vectors layer"""
+    shape = (10, 2)
     np.random.seed(0)
     shape = (10, 2, 2)
     data = np.random.random(shape)

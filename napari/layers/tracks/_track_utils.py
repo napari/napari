@@ -148,7 +148,7 @@ class TrackManager:
         """set track properties"""
         self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
-            expected_len=len(self.data),
+            num_data=len(self.data),
         )
         if 'track_id' not in self._property_table:
             self._property_table['track_id'] = PropertyColumn.from_values(

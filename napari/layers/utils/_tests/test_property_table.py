@@ -8,6 +8,61 @@ def test_property_table_empty():
     assert len(manager) == 0
 
 
+def test_property_table_from_layer_kwargs_values_and_choices_some_data():
+    class_values = ['sky', 'person', 'building', 'person']
+    class_choices = ['building', 'person', 'sky']
+    properties = {'class': class_values}
+    property_choices = {'class': class_choices}
+
+    property_table = PropertyTable.from_layer_kwargs(
+        properties=properties, property_choices=property_choices, num_data=4
+    )
+
+    assert property_table['class'] == PropertyColumn(
+        name='class',
+        values=class_values,
+        choices=class_choices,
+        # Default value comes from last value.
+        default_value='person',
+    )
+
+
+def test_property_table_from_layer_kwargs_values_and_choices_no_data():
+    class_values = []
+    class_choices = ['building', 'person', 'sky']
+    properties = {'class': class_values}
+    property_choices = {'class': class_choices}
+
+    property_table = PropertyTable.from_layer_kwargs(
+        properties=properties, property_choices=property_choices, num_data=0
+    )
+
+    assert property_table['class'] == PropertyColumn(
+        name='class',
+        values=class_values,
+        choices=class_choices,
+        # Default value comes from first choice.
+        default_value='building',
+    )
+
+
+def test_property_table_from_layer_kwargs_and_choices_no_data():
+    class_choices = ['building', 'person', 'sky']
+    property_choices = {'class': class_choices}
+
+    property_table = PropertyTable.from_layer_kwargs(
+        property_choices=property_choices, num_data=0
+    )
+
+    assert property_table['class'] == PropertyColumn(
+        name='class',
+        values=np.empty((0,), dtype=str),
+        choices=class_choices,
+        # Default value comes from first choice.
+        default_value='building',
+    )
+
+
 def test_property_table_from_property_list():
     property_list = [
         PropertyColumn.from_values(

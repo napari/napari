@@ -44,13 +44,7 @@ class ColorManager(EventedModel):
                          properties only.
      color_properties : Optional[PropertyColumn]
         The property values that are used for setting colors in ColorMode.COLORMAP
-        and ColorMode.CYCLE. The Property dataclass has 3 fields: name,
-        values, and current_value. name (str) is the name of the property being used.
-        values (np.ndarray) is an array containing the property values.
-        current_value contains the value for the next item to be added. color_properties
-        can be set as either a ColorProperties object or a dictionary where the keys are
-        the field values and the values are the field values (i.e., a dictionary that would
-        be valid in ColorProperties(**input_dictionary) ).
+        and ColorMode.CYCLE.
     continuous_colormap : Colormap
         The napari colormap object used in ColorMode.COLORMAP mode. This can also be set
         using the name of a known colormap as a string.

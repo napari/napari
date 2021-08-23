@@ -303,7 +303,7 @@ class Points(Layer):
         self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
             property_choices=property_choices,
-            expected_len=len(data),
+            num_data=len(data),
         )
 
         # make the text
@@ -479,7 +479,7 @@ class Points(Layer):
         self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
         self._property_table = PropertyTable.from_layer_kwargs(
-            properties=properties, expected_len=len(self._data)
+            properties=properties, num_data=len(self._data)
         )
         self._update_color_manager(
             self._face, self._property_table, "face_color"

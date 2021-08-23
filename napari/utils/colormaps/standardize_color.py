@@ -409,8 +409,10 @@ def _create_hex_to_name_dict():
 def get_color_namelist():
     """A wrapper around vispy's get_color_names designed to add a
     "transparent" (alpha = 0) color to it.
+
     Once https://github.com/vispy/vispy/pull/1794 is merged this
     function is no longer necessary.
+
     Returns
     -------
     color_dict : list

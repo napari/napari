@@ -1,10 +1,13 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import numpy as np
 
 from ...utils.events import EventedDict, EventedModel
 from ...utils.events.custom_types import Array
-from ...utils.translations import trans
+from .layer_utils import get_current_properties, prepare_properties
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 
 class PropertyColumn(EventedModel):
@@ -27,16 +30,15 @@ class PropertyColumn(EventedModel):
     choices: Array
     default_value: Any
 
-    def add(self, value, num_to_add=1):
-        new_values = np.repeat(value, num_to_add, axis=0)
-        self.values = np.concatenate((self.values, new_values), axis=0)
-
     def resize(self, size):
         num_values = len(self.values)
         if size < num_values:
             self.values = np.resize(self.values, size)
         elif size > num_values:
-            self.add(self.default_value, size - num_values)
+            new_values = np.repeat(
+                self.default_value, size - num_values, axis=0
+            )
+            self.values = np.concatenate((self.values, new_values), axis=0)
 
     def remove(self, indices):
         self.values = np.delete(self.values, indices, axis=0)
@@ -75,10 +77,6 @@ class PropertyTable(EventedDict):
 
     def __init__(self, properties=None):
         super().__init__(data=properties, basetype=PropertyColumn)
-
-    def add_defaults(self, num_to_add=1):
-        for prop in self.values():
-            prop.add(prop.default_value, num_to_add)
 
     def resize(self, size):
         for prop in self.values():
@@ -139,27 +137,29 @@ class PropertyTable(EventedDict):
 
     @classmethod
     def from_layer_kwargs(
-        cls, *, properties=None, property_choices=None, expected_len=None
+        cls,
+        *,
+        properties: Optional[Union[Dict[str, Array], 'DataFrame']] = None,
+        property_choices: Optional[Dict[str, Array]] = None,
+        num_data: Optional[int] = None,
     ):
-        if properties is not None:
-            if isinstance(properties, PropertyTable):
-                manager = properties
-            elif isinstance(properties, dict):
-                manager = cls.from_property_arrays(properties)
-            else:
-                manager = cls.from_dataframe(properties)
-        elif property_choices is not None:
-            manager = cls.from_property_choices(property_choices)
-        else:
-            manager = cls()
-        lens = [len(v) for v in manager.all_values.values()]
-        if expected_len is None and len(lens) > 0:
-            expected_len = lens[0]
-        if any(v != expected_len for v in lens):
-            raise ValueError(
-                trans._(
-                    "the number of items must be equal for all properties",
-                    deferred=True,
+        properties, property_choices = prepare_properties(
+            properties=properties,
+            choices=property_choices,
+            num_data=num_data,
+            save_choices=True,
+        )
+        current_properties = get_current_properties(
+            properties, property_choices
+        )
+        return cls.from_property_list(
+            [
+                PropertyColumn(
+                    name=name,
+                    values=properties[name],
+                    choices=property_choices[name],
+                    default_value=current_properties[name][0],
                 )
-            )
-        return manager
+                for name in properties
+            ]
+        )

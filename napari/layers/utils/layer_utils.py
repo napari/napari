@@ -215,7 +215,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
 def prepare_properties(
     properties: Optional[Union[Dict[str, Array], DataFrame]],
     choices: Optional[Dict[str, Array]] = None,
-    num_data: int = 0,
+    num_data: Optional[int] = None,
     save_choices: bool = False,
 ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
     """Prepare properties and choices into standard forms.
@@ -241,7 +241,13 @@ def prepare_properties(
         is an ndarray of unique property value choices.
     """
     # If there is no data, non-empty properties represent choices as a deprecated behavior.
-    if num_data == 0 and properties:
+    # We need to call this first, and handle both dict and DataFrame when checking how many property values are stored.
+    no_property_values = (
+        properties is None
+        or len(properties) == 0
+        or len(properties[next(iter(properties.keys()))]) == 0
+    )
+    if num_data == 0 and not no_property_values:
         warnings.warn(
             trans._(
                 "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
@@ -267,7 +273,7 @@ def prepare_properties(
     if len(new_choices) == 0:
         new_choices = {k: np.unique(v) for k, v in choices.items()}
         if len(new_choices) > 0:
-            if num_data > 0:
+            if num_data is not None and num_data > 0:
                 properties = {
                     k: np.array([None] * num_data) for k in new_choices
                 }
@@ -290,7 +296,6 @@ def prepare_properties(
 def get_current_properties(
     properties: Dict[str, np.ndarray],
     choices: Dict[str, np.ndarray],
-    num_data: int = 0,
 ) -> Dict[str, Any]:
     """Get the current property values from the properties or choices.
 
@@ -300,8 +305,6 @@ def get_current_properties(
         The property values.
     choices : dict[str, np.ndarray]
         The property value choices.
-    num_data : int
-        The length of data that the properties represent (e.g. number of points).
 
     Returns
     -------
@@ -309,16 +312,11 @@ def get_current_properties(
         A dictionary where the key is the property name and the value is the current
         value of that property.
     """
-    current_properties = {}
-    if num_data > 0:
-        current_properties = {
-            k: np.asarray([v[-1]]) for k, v in properties.items()
-        }
-    elif num_data == 0 and len(choices) > 0:
-        current_properties = {
-            k: np.asarray([v[0]]) for k, v in choices.items()
-        }
-    return current_properties
+    if len(properties) > 0 and len(next(iter(properties.values()))) > 0:
+        return {k: np.asarray([v[-1]]) for k, v in properties.items()}
+    elif len(choices) > 0 and len(next(iter(choices.values()))) > 0:
+        return {k: np.asarray([v[0]]) for k, v in choices.items()}
+    return {k: np.asarray([None]) for k in properties}
 
 
 def _coerce_current_properties_value(

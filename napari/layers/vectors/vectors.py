@@ -205,7 +205,7 @@ class Vectors(Layer):
         self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
             property_choices=property_choices,
-            expected_len=len(self.data),
+            num_data=len(self.data),
         )
 
         self._edge = ColorManager._from_layer_kwargs(
@@ -280,7 +280,7 @@ class Vectors(Layer):
     def properties(self, properties: Dict[str, Array]):
         self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
-            expected_len=len(self.data),
+            num_data=len(self.data),
         )
 
         if self._edge.color_properties is not None:

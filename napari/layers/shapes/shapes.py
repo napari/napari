@@ -472,7 +472,7 @@ class Shapes(Layer):
         self._property_table = PropertyTable.from_layer_kwargs(
             properties=properties,
             property_choices=property_choices,
-            expected_len=number_of_shapes(data),
+            num_data=number_of_shapes(data),
         )
 
         # make the text
@@ -693,7 +693,7 @@ class Shapes(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         self._property_table = PropertyTable.from_layer_kwargs(
-            properties=properties, expected_len=self.nshapes
+            properties=properties, num_data=self.nshapes
         )
         if self._face_color_property and (
             self._face_color_property not in self.properties

@@ -180,7 +180,7 @@ def test_get_current_properties_with_properties_then_last_values():
         "angle": np.array([0.5, 1.5, 1.5]),
     }
 
-    current_properties = get_current_properties(properties, {}, 3)
+    current_properties = get_current_properties(properties, {})
 
     assert current_properties == {
         "face_color": "red",
@@ -199,7 +199,8 @@ def test_get_current_properties_with_property_choices_then_first_values():
     }
 
     current_properties = get_current_properties(
-        properties, property_choices, 0
+        properties,
+        property_choices,
     )
 
     assert current_properties == {
