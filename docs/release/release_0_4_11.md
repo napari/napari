@@ -86,6 +86,8 @@ Last but not least, some common operations are now much more accessible from the
 - Add checkbox to handle global plugin enable/disabled state (#3194)
 - Print warning if error formatting in the console fails instead of ignoring errors. (#3201)
 - Ensure we save a copy of existing value for undo (#3203)
+- Pull main window menu creation off of Window (#3204)
+
 
 ## Bug Fixes
 - Fix notification manager threading test (#2892)
@@ -172,6 +174,9 @@ Last but not least, some common operations are now much more accessible from the
 - Add napari_write_tracks to hook spec reference (#3209)
 - Add 3d interactivity docs (#3210)
 - Fix docs build again (#3211)
+- Fix CI typing tests (#3212)
+- Fix typo, add proper note markdown (#3216)
+- Pooch bugfix (#3218)
 
 
 ## 21 authors added to this release (alphabetical)
