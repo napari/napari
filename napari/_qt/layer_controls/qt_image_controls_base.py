@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import partial
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -83,7 +82,9 @@ class QtBaseImageControls(QtLayerControls):
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
         # set_clim = partial(setattr, self.layer, 'contrast_limits')
 
-        self.contrastLimitsSlider.valueChanged.connect(self.layer._set_contrast_limits)
+        self.contrastLimitsSlider.valueChanged.connect(
+            self.layer._set_contrast_limits
+        )
         self.contrastLimitsSlider.rangeChanged.connect(
             lambda *a: setattr(self.layer, 'contrast_limits_range', a)
         )
@@ -250,7 +251,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         self.slider.setSingleStep(10 ** -decimals)
         self.slider.setValue(layer.contrast_limits)
 
-        set_values = partial(setattr, layer, 'contrast_limits')
+        # set_values = partial(setattr, layer, 'contrast_limits')
         self.slider.valueChanged.connect(layer._set_contrast_limits)
         self.slider.rangeChanged.connect(layer._set_contrast_limits_range)
 

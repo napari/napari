@@ -894,6 +894,7 @@ if config.async_octree:
 class _weakref_hide:
     def __init__(self, obj):
         import weakref
+
         self.obj = weakref.ref(obj)
 
     def _raw_to_displayed(self, *args, **kwarg):
