@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 from pydantic import Field, validator
 
@@ -10,7 +10,7 @@ from ..utils.events.evented_model import EventedModel
 from ..utils.notifications import NotificationSeverity
 from ..utils.translations import trans
 from ._constants import LoopMode
-from ._fields import Language, SchemaVersion
+from ._fields import Language
 
 GridStride = conint(ge=-50, le=50, ne=0)
 GridWidth = conint(ge=-1, ne=0)
@@ -18,13 +18,6 @@ GridHeight = conint(ge=-1, ne=0)
 
 
 class ApplicationSettings(EventedModel):
-    # 1. If you want to *change* the default value of a current option, you need to
-    #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
-    # 2. If you want to *remove* options that are no longer needed in the codebase,
-    #    or if you want to *rename* options, then you need to do a MAJOR update in
-    #    version, e.g. from 3.0.0 to 4.0.0
-    # 3. You don't need to touch this value if you're just adding a new option
-    schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 2, 1)
     first_time: bool = Field(
         True,
         title=trans._('First time'),
@@ -145,19 +138,19 @@ class ApplicationSettings(EventedModel):
         description=trans._("Loop mode for playback."),
     )
 
-    grid_stride: GridStride = Field(
+    grid_stride: GridStride = Field(  # type: ignore [valid-type]
         default=1,
         title=trans._("Grid Stride"),
         description=trans._("Number of layers to place in each grid square."),
     )
 
-    grid_width: GridWidth = Field(
+    grid_width: GridWidth = Field(  # type: ignore [valid-type]
         default=-1,
         title=trans._("Grid Width"),
         description=trans._("Number of columns in the grid."),
     )
 
-    grid_height: GridHeight = Field(
+    grid_height: GridHeight = Field(  # type: ignore [valid-type]
         default=-1,
         title=trans._("Grid Height"),
         description=trans._("Number of rows in the grid."),

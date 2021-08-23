@@ -127,6 +127,7 @@ Last but not least, some common operations are now much more accessible from the
 - Fix missing import in napari.__init__.pyi (#3183)
 - Fix incorrect window position storage (#3196)
 - Fix incorrect use of dims_order when 3D painting (#3202)
+- Fix plugin settings restore and schema_version validation error in preferences dialog (#3215)
 
 
 ## API Changes

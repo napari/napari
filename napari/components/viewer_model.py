@@ -68,6 +68,10 @@ PathOrPaths = Union[PathLike, Sequence[PathLike]]
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
 
+def _current_theme() -> str:
+    return get_settings().appearance.theme
+
+
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -114,7 +118,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     help: str = ''
     status: str = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
-    theme: str = DEFAULT_THEME
+    theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
 
     # 2-tuple indicating height and width

@@ -106,7 +106,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """Return the path to/from which settings be saved/loaded."""
         return self._config_path
 
-    def dict(
+    def dict(  # type: ignore [override]
         self,
         *,
         include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
@@ -146,7 +146,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         _remove_empty_dicts(data)
         return data
 
-    def save(self, path: Union[str, Path] = None, **dict_kwargs):
+    def save(self, path: Union[str, Path, None] = None, **dict_kwargs):
         """Save current settings to path.
 
         By default, this will exclude settings values that match the default
@@ -159,21 +159,21 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
 
         path = Path(path).expanduser().resolve()
         path.parent.mkdir(exist_ok=True, parents=True)
-        self._dump(path, self._save_dict(**dict_kwargs))
+        self._dump(str(path), self._save_dict(**dict_kwargs))
 
-    def _dump(self, path: str, data: dict):
+    def _dump(self, path: str, data: Dict) -> None:
         """Encode and dump `data` to `path` using a path-appropriate encoder."""
         if str(path).endswith(('.yaml', '.yml')):
-            data = self._yaml_dump(data)
+            _data = self._yaml_dump(data)
         elif str(path).endswith(".json"):
             json_dumps = self.__config__.json_dumps
-            data = json_dumps(data, default=self.__json_encoder__)
+            _data = json_dumps(data, default=self.__json_encoder__)
         else:
             raise NotImplementedError(
                 f"Can only currently dump to `.json` or `.yaml`, not {path!r}"
             )
         with open(path, 'w') as target:
-            target.write(data)
+            target.write(_data)
 
     def env_settings(self) -> Dict[str, Any]:
         """Get a dict of fields that were provided as environment vars."""
@@ -222,7 +222,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             the return list to change the priority of sources.
             """
             cls._env_settings = nested_env_settings(env_settings)
-            return (
+            return (  # type: ignore [return-value]
                 init_settings,
                 cls._env_settings,
                 config_file_settings_source,
