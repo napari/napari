@@ -121,7 +121,7 @@ class IntensityVisualizationMixin:
             self.contrast_limits = (new_min, new_max)
             self.events.contrast_limits()
 
-    def _set_contrast_limits_range(self, value):
+    def _set_contrast_limits_range(self, *value):
         """for binding"""
         self.contrast_limits_range = value
 
