@@ -466,7 +466,7 @@ def test_memory_leaking(make_napari_viewer):
 @skip_local_popups
 @pytest.mark.xfail(qtpy.API == "pyside2", reason="PySide problem")
 def test_leaks_image(make_napari_viewer, tmp_path):
-    import objgraph
+    # import objgraph
 
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
@@ -475,9 +475,9 @@ def test_leaks_image(make_napari_viewer, tmp_path):
     viewer.layers.clear()
     gc.collect()
     assert not gc.collect()
-    objgraph.show_backrefs(
-        lr(), max_depth=10, filename=str(tmp_path / "test.png"), refcounts=True
-    )
+    # objgraph.show_backrefs(
+    #     lr(), max_depth=10, filename=str(tmp_path / "test.png"), refcounts=True
+    # )
     assert not lr()
     assert not dr()
 
@@ -485,7 +485,7 @@ def test_leaks_image(make_napari_viewer, tmp_path):
 @skip_local_popups
 @pytest.mark.xfail(qtpy.API == "pyside2", reason="PySide problem")
 def test_leaks_labels(make_napari_viewer, tmp_path):
-    import objgraph
+    # import objgraph
 
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(
@@ -496,8 +496,8 @@ def test_leaks_labels(make_napari_viewer, tmp_path):
     viewer.layers.clear()
     gc.collect()
     assert not gc.collect()
-    objgraph.show_backrefs(
-        lr(), max_depth=10, filename=str(tmp_path / "test.png"), refcounts=True
-    )
+    # objgraph.show_backrefs(
+    #     lr(), max_depth=10, filename=str(tmp_path / "test.png"), refcounts=True
+    # )
     assert not lr()
     assert not dr()
