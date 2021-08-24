@@ -451,12 +451,12 @@ class Points(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_table.all_choices
+        return self._property_table.choices
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
-        return self._property_table.all_values
+        return self._property_table.values
 
     @staticmethod
     def _update_color_manager(color_manager, property_table, name):
@@ -474,7 +474,9 @@ class Points(Layer):
                     RuntimeWarning,
                 )
             else:
-                color_manager.color_properties = property_table[color_name]
+                color_manager.color_properties = property_table.data[
+                    color_name
+                ]
 
     @properties.setter
     def properties(
@@ -496,7 +498,7 @@ class Points(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        return self._property_table.all_default_values
+        return self._property_table.default_values
 
     @current_properties.setter
     def current_properties(self, current_properties):

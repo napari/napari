@@ -6,7 +6,7 @@ from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.property_table import PropertyColumn, PropertyTable
+from ..utils.property_table import PropertyTable
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -151,11 +151,12 @@ class TrackManager:
             num_data=len(self.data),
         )
         if 'track_id' not in self._property_table:
-            self._property_table['track_id'] = PropertyColumn.from_values(
-                'track_id', self.track_ids
-            )
-        for prop in self._property_table.values():
-            prop.values = prop.values[self._order]
+            self._property_table.data['track_id'] = self.track_ids
+        for name in self._property_table:
+            # TODO: I'm not sure if this supports non-integer labels well.
+            self._property_table[name] = self._property_table[name].array[
+                self._order
+            ]
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:

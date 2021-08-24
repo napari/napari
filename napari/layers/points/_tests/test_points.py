@@ -10,7 +10,7 @@ from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._text_constants import Anchor
-from napari.layers.utils.property_table import PropertyColumn
+from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.transforms import CompositeAffine
 
@@ -152,7 +152,7 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
     np.testing.assert_allclose(colors, [color_cycle[1]])
     assert len(layer.data) == 1
     cm = getattr(layer, f'_{feature_name}')
-    assert cm.color_properties.default_value == 'paw'
+    assert cm.color_properties.current_value == 'paw'
 
 
 def test_empty_layer_with_text_properties():
@@ -588,9 +588,11 @@ def test_adding_properties(attribute):
 
     # removing a property that was the _*_color_property should give a warning
     color_manager = getattr(layer, f'_{attribute}')
-    color_manager.color_properties = PropertyColumn.from_choices(
-        'point_type', ['A', 'B']
-    )
+    color_manager.color_properties = {
+        'name': 'point_type',
+        'values': np.empty(0),
+        'current_value': 'A',
+    }
     properties_2 = {
         'not_point_type': _make_cycled_properties(['A', 'B'], shape[0])
     }
@@ -1704,8 +1706,10 @@ def test_set_face_color_mode_after_set_properties():
     first_property_key, first_property_values = next(
         iter(points.properties.items())
     )
-    expected_properties = PropertyColumn.from_values(
-        first_property_key, first_property_values
+    expected_properties = ColorProperties(
+        name=first_property_key,
+        values=first_property_values,
+        current_value=first_property_values[-1],
     )
     assert points._face.color_properties == expected_properties
 
