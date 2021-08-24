@@ -1,4 +1,6 @@
+import gc
 import os
+import weakref
 from dataclasses import dataclass
 from typing import List
 from unittest import mock
@@ -441,3 +443,20 @@ def test_process_mouse_event(make_napari_viewer):
 
     viewer.dims.ndisplay = 3
     view._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+def test_memory_leaking(make_napari_viewer):
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    viewer = make_napari_viewer()
+    image = weakref.ref(
+        viewer.add_image(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
+    )
+    # TODO uncomment when Layer leak fix
+    # labels = weakref.ref(viewer.add_labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5)))
+    del viewer.layers[0]
+    del viewer.layers[0]
+    gc.collect()
+    assert image() is None
+    # TODO uncomment when Layer leak fix
+    # assert labels() is None
