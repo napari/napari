@@ -77,6 +77,6 @@ class PydanticYamlMixin(BaseModel):
             data = data[ROOT_KEY]
         return self._yaml_dump(data, dumper, **dumps_kwargs)
 
-    def _yaml_dump(self, data, dumper: Optional[Dumper] = None, **kw):
+    def _yaml_dump(self, data, dumper: Optional[Dumper] = None, **kw) -> str:
         dumper = dumper or getattr(self.__config__, 'yaml_dumper', YamlDumper)
         return dump_all([data], Dumper=dumper, **kw)
