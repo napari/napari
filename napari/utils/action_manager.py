@@ -97,7 +97,7 @@ class ButtonWrapper:
 
     @property
     def destroyed(self):
-        return self._button().destroyed
+        return self._button() and self._button().destroyed
 
 
 class Context:

@@ -80,7 +80,6 @@ class QtBaseImageControls(QtLayerControls):
         self.clim_popup = None
 
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
-        # set_clim = partial(setattr, self.layer, 'contrast_limits')
 
         self.contrastLimitsSlider.valueChanged.connect(
             self.layer._set_contrast_limits
@@ -251,7 +250,6 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         self.slider.setSingleStep(10 ** -decimals)
         self.slider.setValue(layer.contrast_limits)
 
-        # set_values = partial(setattr, layer, 'contrast_limits')
         self.slider.valueChanged.connect(layer._set_contrast_limits)
         self.slider.rangeChanged.connect(layer._set_contrast_limits_range)
 
