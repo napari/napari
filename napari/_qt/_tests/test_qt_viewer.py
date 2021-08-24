@@ -454,7 +454,7 @@ def test_memory_leaking(make_napari_viewer):
     )
     # TODO uncomment when Layer leak fix
     # labels = weakref.ref(viewer.add_labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5)))
-    del viewer.layers[0]
+    # del viewer.layers[0]
     del viewer.layers[0]
     gc.collect()
     assert image() is None
