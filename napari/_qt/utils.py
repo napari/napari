@@ -1,3 +1,4 @@
+import weakref
 from contextlib import contextmanager
 from functools import lru_cache, partial
 from typing import Sequence, Union
@@ -302,3 +303,23 @@ def remove_flash_animation(widget: QWidget):
     """
     widget.setGraphicsEffect(None)
     del widget._flash_animation
+
+
+def connect_setattr(emitter, obj, attr):
+    ref = weakref.ref(obj)
+
+    def _cb(*value):
+        setattr(ref(), attr, value)
+
+    emitter.connect(_cb)
+    weakref.finalize(obj, emitter.disconnect, _cb)
+
+
+def connect_no_arg(emitter, obj, attr):
+    ref = weakref.ref(obj)
+
+    def _cb(_value):
+        getattr(ref(), attr)()
+
+    emitter.connect(_cb)
+    weakref.finalize(obj, emitter.disconnect, _cb)

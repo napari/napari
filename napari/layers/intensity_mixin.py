@@ -37,8 +37,12 @@ class IntensityVisualizationMixin:
 
     def reset_contrast_limits(self: 'Image', mode=None):
         """Scale contrast limits to data range"""
+        print("aaa", mode)
         mode = mode or self._autoscale_source
         self.contrast_limits = self._calc_data_range(mode)
+
+    def _reset_contrast_limits_signal(self):
+        self.reset_contrast_limits()
 
     def reset_contrast_limits_range(self):
         """Scale contrast limits range to data type.
@@ -88,10 +92,6 @@ class IntensityVisualizationMixin:
         self._update_thumbnail()
         self.events.contrast_limits()
 
-    def _set_contrast_limits(self, value):
-        """for binding"""
-        self.contrast_limits = value
-
     @property
     def contrast_limits_range(self):
         """The current valid range of the contrast limits."""
@@ -120,10 +120,6 @@ class IntensityVisualizationMixin:
             new_max = max(min(value[1], cur_max), value[0])
             self.contrast_limits = (new_min, new_max)
             self.events.contrast_limits()
-
-    def _set_contrast_limits_range(self, *value):
-        """for binding"""
-        self.contrast_limits_range = value
 
     @property
     def gamma(self):

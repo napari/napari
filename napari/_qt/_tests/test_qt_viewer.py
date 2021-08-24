@@ -14,6 +14,7 @@ from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
     layer_test_data,
+    skip_local_popups,
 )
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
@@ -445,7 +446,8 @@ def test_process_mouse_event(make_napari_viewer):
     view._process_mouse_event(mouse_press_callbacks, mouse_event)
 
 
-def test_memory_leaking(make_napari_viewer, tmp_path):
+@skip_local_popups
+def test_memory_leaking(make_napari_viewer):
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
     viewer = make_napari_viewer()
@@ -463,6 +465,7 @@ def test_memory_leaking(make_napari_viewer, tmp_path):
     assert labels() is None
 
 
+@skip_local_popups
 def test_leaks_image(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
@@ -475,6 +478,7 @@ def test_leaks_image(make_napari_viewer):
     assert not dr()
 
 
+@skip_local_popups
 def test_leaks_labels(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(
