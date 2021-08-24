@@ -445,18 +445,45 @@ def test_process_mouse_event(make_napari_viewer):
     view._process_mouse_event(mouse_press_callbacks, mouse_event)
 
 
-def test_memory_leaking(make_napari_viewer):
+def test_memory_leaking(make_napari_viewer, tmp_path):
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
     viewer = make_napari_viewer()
     image = weakref.ref(
         viewer.add_image(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
     )
-    # TODO uncomment when Layer leak fix
-    # labels = weakref.ref(viewer.add_labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5)))
-    # del viewer.layers[0]
+    labels = weakref.ref(
+        viewer.add_labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
+    )
+    del viewer.layers[0]
     del viewer.layers[0]
     gc.collect()
+    gc.collect()
     assert image() is None
-    # TODO uncomment when Layer leak fix
-    # assert labels() is None
+    assert labels() is None
+
+
+def test_leaks_image(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
+    dr = weakref.ref(lr().data)
+
+    viewer.layers.clear()
+    gc.collect()
+    assert not gc.collect()
+    assert not lr()
+    assert not dr()
+
+
+def test_leaks_labels(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    lr = weakref.ref(
+        viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+    )
+    dr = weakref.ref(lr().data)
+
+    viewer.layers.clear()
+    gc.collect()
+    assert not gc.collect()
+    assert not lr()
+    assert not dr()
