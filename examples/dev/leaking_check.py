@@ -6,28 +6,40 @@ import objgraph
 
 import napari
 import numpy as np
+import qtpy
 
 process = psutil.Process(os.getpid())
 viewer = napari.Viewer()
 
 print("mem", process.memory_info().rss)
 
-for i in range(0):
+for _ in range(0):
     print(viewer.add_image(np.random.random((60, 1000, 1000))).name)
-for i in range(15):
-    print(viewer.add_labels((np.random.random((60, 1000, 1000)) * 10).astype(np.uint8)).name)
+for _ in range(2):
+    print(viewer.add_labels((np.random.random((2, 1000, 1000)) * 10).astype(np.uint8)).name)
 
 print("mem", process.memory_info().rss)
 
-napari.run()
+# napari.run()
 
-
+print("controls", viewer.window.qt_viewer.controls.widgets)
 li = weakref.ref(viewer.layers[0])
+data_li = weakref.ref(li()._data)
+controls = weakref.ref(viewer.window.qt_viewer.controls.widgets[li()])
 objgraph.show_backrefs(li(), filename="base.png")
 del viewer.layers[0]
+qtpy.QtGui.QGuiApplication.processEvents()
 gc.collect()
 gc.collect()
 print(li())
-objgraph.show_backrefs(li(), filename="test.png")
-ref_li = gc.get_referrers(li())
-ref_li2 = gc.get_referrers(ref_li[0])
+objgraph.show_backrefs(li(), max_depth=10, filename="test.png", refcounts=True)
+objgraph.show_backrefs(controls(), max_depth=10, filename="controls.png", refcounts=True)
+objgraph.show_backrefs(data_li(), max_depth=10,  filename="test_data.png")
+print("controls", viewer.window.qt_viewer.controls.widgets)
+print("controls", gc.get_referrers(controls()))
+print(gc.get_referrers(li()))
+print(gc.get_referrers(li())[1])
+print(gc.get_referrers(gc.get_referrers(gc.get_referrers(li())[0])))
+res = gc.get_referrers(gc.get_referrers(gc.get_referrers(li())[0])[0])
+print(res)
+#print(type(res[0]))
