@@ -119,4 +119,4 @@ class QtLayerControls(QFrame):
             close_method = getattr(child, 'close', None)
             if close_method is not None:
                 close_method()
-        super().close()
+        return super().close()

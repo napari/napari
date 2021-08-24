@@ -451,12 +451,8 @@ def test_memory_leaking(make_napari_viewer):
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
     viewer = make_napari_viewer()
-    image = weakref.ref(
-        viewer.add_image(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
-    )
-    labels = weakref.ref(
-        viewer.add_labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
-    )
+    image = weakref.ref(viewer.add_image(data))
+    labels = weakref.ref(viewer.add_labels(data))
     del viewer.layers[0]
     del viewer.layers[0]
     gc.collect()
@@ -466,7 +462,9 @@ def test_memory_leaking(make_napari_viewer):
 
 
 @skip_local_popups
-def test_leaks_image(make_napari_viewer):
+def test_leaks_image(make_napari_viewer, tmp_path):
+    import objgraph
+
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
     dr = weakref.ref(lr().data)
@@ -474,12 +472,17 @@ def test_leaks_image(make_napari_viewer):
     viewer.layers.clear()
     gc.collect()
     assert not gc.collect()
+    objgraph.show_backrefs(
+        lr(), max_depth=10, filename=str(tmp_path / "test.png"), refcounts=True
+    )
     assert not lr()
     assert not dr()
 
 
 @skip_local_popups
-def test_leaks_labels(make_napari_viewer):
+def test_leaks_labels(make_napari_viewer, tmp_path):
+    import objgraph
+
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(
         viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
@@ -489,5 +492,8 @@ def test_leaks_labels(make_napari_viewer):
     viewer.layers.clear()
     gc.collect()
     assert not gc.collect()
+    objgraph.show_backrefs(
+        lr(), max_depth=10, filename=str(tmp_path / "test.png"), refcounts=True
+    )
     assert not lr()
     assert not dr()

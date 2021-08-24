@@ -162,7 +162,7 @@ class QtLabelsControls(QtLayerControls):
         )
 
         self.panzoom_button = QtModeRadioButton(
-            layer,
+            self.layer,
             'zoom',
             Mode.PAN_ZOOM,
             checked=True,
@@ -171,18 +171,18 @@ class QtLabelsControls(QtLayerControls):
             'napari:activate_label_pan_zoom_mode', self.panzoom_button
         )
 
-        self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)
+        self.pick_button = QtModeRadioButton(self.layer, 'picker', Mode.PICK)
         action_manager.bind_button(
             'napari:activate_label_picker_mode', self.pick_button
         )
 
-        self.paint_button = QtModeRadioButton(layer, 'paint', Mode.PAINT)
+        self.paint_button = QtModeRadioButton(self.layer, 'paint', Mode.PAINT)
         action_manager.bind_button(
             'napari:activate_paint_mode', self.paint_button
         )
 
         self.fill_button = QtModeRadioButton(
-            layer,
+            self.layer,
             'fill',
             Mode.FILL,
         )
@@ -196,7 +196,7 @@ class QtLabelsControls(QtLayerControls):
         )
 
         self.erase_button = QtModeRadioButton(
-            layer,
+            self.layer,
             'erase',
             Mode.ERASE,
         )
