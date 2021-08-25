@@ -19,6 +19,7 @@ def platform_simulate_ctrl_c():
         return partial(os.kill, os.getpid(), signal.SIGINT)
 
 
+@pytest.mark.skipif(os.name != "Windows", reason="Windows specific")
 def test_sigint(qapp, platform_simulate_ctrl_c, make_napari_viewer):
     def fire_signal():
         platform_simulate_ctrl_c()
