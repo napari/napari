@@ -130,7 +130,7 @@ Last but not least, some common operations are now much more accessible from the
 - Fix incorrect window position storage (#3196)
 - Fix incorrect use of dims_order when 3D painting (#3202)
 - Fix plugin settings restore and schema_version validation error in preferences dialog (#3215)
-
+- Prevent greedy dask array calculation when creating an Image layer #3248
 
 ## API Changes
 - Remove brush shape (#3047)
