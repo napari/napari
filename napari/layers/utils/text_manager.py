@@ -1,5 +1,6 @@
 import warnings
-from typing import Optional, Tuple, Union
+from copy import deepcopy
+from typing import Tuple
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -9,29 +10,21 @@ from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
-from ._text_constants import Anchor, TextMode
-from ._text_utils import format_text_properties, get_text_anchors
+from ._text_constants import Anchor
+from ._text_utils import get_text_anchors
+from .property_map import (
+    ConstantPropertyMap,
+    NamedPropertyMap,
+    PropertyMapStore,
+    TextFormatPropertyMap,
+)
 
 
 class TextManager(EventedModel):
     """Manages properties related to text displayed in conjunction with the layer.
 
-    Parameters
-    ----------
-    text : array or str
-        The strings to be displayed, or a format string that will be filled out
-        n_text times using data in properties.
-    n_text : int
-        The number of the strings to be displayed. This may be different to the
-        if text is a format string, or if text should be repeated.
-    properties: dict
-        Stores properties data that will be used to generate strings when text
-        is a format a string.
-
     Attributes
     ----------
-    values : np.ndarray
-        The text values to be displayed.
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
@@ -53,7 +46,6 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     """
 
-    values: Array[str] = []
     visible: bool = True
     size: PositiveInt = 12
     color: Array[float, (4,)] = 'cyan'
@@ -62,81 +54,40 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    _mode: TextMode = TextMode.NONE
-    _text_format_string: str = ''
+    mapping: PropertyMapStore = ConstantPropertyMap(constant='')
 
-    def __init__(self, text=None, n_text=None, properties=None, **kwargs):
-        super().__init__(**kwargs)
-        if 'values' in kwargs:
-            text = kwargs['values']
-            n_text = len(text)
-        self._set_text(text, n_text, properties=properties)
+    @property
+    def values(self):
+        return np.array(self.mapping.values, dtype=str)
 
-    def _set_text(
-        self,
-        text: Optional[str],
-        n_text: int,
-        properties: Optional[dict] = None,
-    ):
-        if properties is None:
-            properties = {}
-        if text is None:
-            text = np.empty(0)
-        if len(properties) == 0 or len(text) == 0:
-            # set text mode to NONE if no props/text are provided
-            self._mode = TextMode.NONE
-            self._text_format_string = ''
-            self.values = np.empty(0)
-        else:
-            formatted_text, text_mode = format_text_properties(
-                text, n_text, properties
-            )
-            self._text_format_string = text
-            self._mode = text_mode
-            self.values = formatted_text
+    def refresh_text(self, properties, num_values=None):
+        """Updates all or some text values from the given properties."""
+        self.mapping.refresh(properties, num_values)
 
-    def refresh_text(self, properties: dict):
-        """Refresh all of the current text elements using updated properties values
+    def add(self, properties, num_add):
+        """Adds a number of a new text values based on the given properties."""
+        self.mapping.add(properties, num_add)
+
+    def remove(self, indices):
+        """Removes some text values."""
+        self.mapping.remove(indices)
+
+    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
+        """Get the values of the text elements in view
 
         Parameters
         ----------
-        properties : dict
-            The new properties from the layer
+        indices_view : (N x 1) np.ndarray
+            Indices of the text elements in view
+        Returns
+        -------
+        text : (N x 1) np.ndarray
+            Array of text strings for the N text elements in view
         """
-        self._set_text(
-            self._text_format_string,
-            n_text=len(self.values),
-            properties=properties,
-        )
-
-    def add(self, properties: dict, n_text: int):
-        """Add a text element using the current format string
-
-        Parameters
-        ----------
-        properties : dict
-            The properties to draw the text from
-        n_text : int
-            The number of text elements to add
-        """
-        if self._mode in (TextMode.PROPERTY, TextMode.FORMATTED):
-            new_text, _ = format_text_properties(
-                self._text_format_string, n_text=n_text, properties=properties
-            )
-            self.values = np.concatenate((self.values, new_text))
-
-    def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
-        """Remove the indicated text elements
-
-        Parameters
-        ----------
-        indices_to_remove : set, list, np.ndarray
-            The indices of the text elements to remove.
-        """
-        if self._mode != TextMode.NONE:
-            selected_indices = list(indices_to_remove)
-            if len(selected_indices) > 0:
-                self.values = np.delete(self.values, selected_indices, axis=0)
+        if len(indices_view) > 0:
+            return self.values[indices_view]
+        # if no points in this slice send dummy data
+        return np.array([''])
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -159,7 +110,7 @@ class TextManager(EventedModel):
         anchor_y : str
             The vispy text anchor for the y axis
         """
-        if len(self.values) > 0:
+        if len(view_data) > 0:
             anchor_coords, anchor_x, anchor_y = get_text_anchors(
                 view_data, ndisplay, self.anchor
             )
@@ -169,27 +120,6 @@ class TextManager(EventedModel):
             anchor_x = 'center'
             anchor_y = 'center'
         return text_coords, anchor_x, anchor_y
-
-    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
-        """Get the values of the text elements in view
-
-        Parameters
-        ----------
-        indices_view : (N x 1) np.ndarray
-            Indices of the text elements in view
-
-        Returns
-        -------
-        text : (N x 1) np.ndarray
-            Array of text strings for the N text elements in view
-        """
-        if len(indices_view) > 0 and self._mode in [
-            TextMode.FORMATTED,
-            TextMode.PROPERTY,
-        ]:
-            return self.values[indices_view]
-        # if no points in this slice send dummy data
-        return np.array([''])
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
@@ -213,6 +143,12 @@ class TextManager(EventedModel):
 
         return blending_mode
 
+    @validator('mapping', pre=True, always=True)
+    def _check_mapping(cls, mapping):
+        if callable(mapping):
+            mapping = PropertyMapStore(mapping=mapping)
+        return mapping
+
     def _connect_update_events(
         self, text_update_function, blending_update_function
     ):
@@ -221,7 +157,8 @@ class TextManager(EventedModel):
         This is typically used in the vispy view file.
         """
         # connect the function for updating the text node
-        self.events.values.connect(text_update_function)
+        self.mapping.events.values.connect(text_update_function)
+        self.events.mapping.connect(text_update_function)
         self.events.rotation.connect(text_update_function)
         self.events.translation.connect(text_update_function)
         self.events.anchor.connect(text_update_function)
@@ -231,3 +168,43 @@ class TextManager(EventedModel):
 
         # connect the function for updating the text node blending
         self.events.blending.connect(blending_update_function)
+
+    @staticmethod
+    def _mapping_from_text(text, properties):
+        if text in properties:
+            return NamedPropertyMap(name=text)
+        elif ('{' in text) and ('}' in text):
+            return TextFormatPropertyMap(format_string=text)
+        # TODO: consider issuing a warning.
+        return ConstantPropertyMap(constant='')
+
+    @classmethod
+    def from_layer_kwargs(cls, text, n_text, properties, **kwargs):
+        if isinstance(text, TextManager):
+            manager = text
+        else:
+            if isinstance(text, dict):
+                kwargs = deepcopy(text)
+                if 'text' in kwargs:
+                    kwargs['mapping'] = cls._mapping_from_text(
+                        kwargs['text'], properties
+                    )
+                    kwargs.pop('text')
+            elif isinstance(text, str):
+                kwargs['mapping'] = cls._mapping_from_text(text, properties)
+            elif isinstance(text, (list, np.ndarray, tuple)):
+                # This is direct mode where we add text as a column in the property table.
+                properties['text'] = text
+                kwargs['mapping'] = NamedPropertyMap(name='text')
+            elif text is None:
+                kwargs['mapping'] = ConstantPropertyMap(constant='')
+            else:
+                raise TypeError(
+                    trans._(
+                        'text should be a string, array, or dict',
+                        deferred=True,
+                    )
+                )
+            manager = cls(**kwargs)
+        manager.refresh_text(properties, n_text)
+        return manager

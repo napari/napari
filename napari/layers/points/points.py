@@ -314,21 +314,7 @@ class Points(Layer):
             properties, property_choices, len(self.data), save_choices=True
         )
 
-        # make the text
-        if text is None or isinstance(text, (list, np.ndarray, str)):
-            self._text = TextManager(text, len(data), self.properties)
-        elif isinstance(text, dict):
-            copied_text = deepcopy(text)
-            copied_text['properties'] = self.properties
-            copied_text['n_text'] = len(data)
-            self._text = TextManager(**copied_text)
-        else:
-            raise TypeError(
-                trans._(
-                    'text should be a string, array, or dict',
-                    deferred=True,
-                )
-            )
+        self.text = text
 
         # Save the point style params
         self.symbol = symbol
@@ -461,7 +447,7 @@ class Points(Layer):
                             np.arange(cur_npoints, len(data))
                         )
 
-                        self.text.add(self.current_properties, adding)
+                        self.text.add(self.properties, adding)
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -570,8 +556,8 @@ class Points(Layer):
 
     @text.setter
     def text(self, text):
-        self._text._set_text(
-            text, n_text=len(self.data), properties=self.properties
+        self._text = TextManager.from_layer_kwargs(
+            text, len(self.data), self.properties
         )
 
     def refresh_text(self):
@@ -967,7 +953,7 @@ class Points(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
                 'property_choices': self._property_choices,
-                'text': self.text.dict(),
+                'text': self.text,
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
                 'ndim': self.ndim,
@@ -1463,18 +1449,14 @@ class Points(Layer):
                     (self.properties[k], self._clipboard['properties'][k]),
                     axis=0,
                 )
+            self.text.add(self.properties, len(self._clipboard['data']))
+
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
             self._selected_data = set(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
-
-            if len(self._clipboard['text']) > 0:
-                self.text.values = np.concatenate(
-                    (self.text.values, self._clipboard['text']), axis=0
-                )
-
             self.refresh()
 
     def _copy_data(self):
@@ -1491,13 +1473,6 @@ class Points(Layer):
                 },
                 'indices': self._slice_indices,
             }
-
-            if len(self.text.values) == 0:
-                self._clipboard['text'] = np.empty(0)
-
-            else:
-                self._clipboard['text'] = deepcopy(self.text.values[index])
-
         else:
             self._clipboard = {}
 

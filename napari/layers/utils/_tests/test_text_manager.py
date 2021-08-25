@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from napari.layers.utils._text_constants import TextMode
 from napari.layers.utils.text_manager import TextManager
 
 
@@ -10,10 +9,9 @@ def test_empty_text_manager_property():
     This is for creating an empty layer with text initialized.
     """
     properties = {'confidence': np.empty(0, dtype=float)}
-    text_manager = TextManager(
+    text_manager = TextManager.from_layer_kwargs(
         text='confidence', n_text=0, properties=properties
     )
-    assert text_manager._mode == TextMode.PROPERTY
     assert text_manager.values.size == 0
 
     # add a text element
@@ -28,8 +26,9 @@ def test_empty_text_manager_format():
     """
     properties = {'confidence': np.empty(0, dtype=float)}
     text = 'confidence: {confidence:.2f}'
-    text_manager = TextManager(text=text, n_text=0, properties=properties)
-    assert text_manager._mode == TextMode.FORMATTED
+    text_manager = TextManager.from_layer_kwargs(
+        text=text, n_text=0, properties=properties
+    )
     assert text_manager.values.size == 0
 
     # add a text element
@@ -43,9 +42,10 @@ def test_text_manager_property():
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
+    text_manager = TextManager.from_layer_kwargs(
+        text=text, n_text=n_text, properties=properties
+    )
     np.testing.assert_equal(text_manager.values, classes)
-    assert text_manager._mode == TextMode.PROPERTY
 
     # add new text with properties
     new_properties = {'class': np.array(['A']), 'confidence': np.array([0.5])}
@@ -66,9 +66,10 @@ def test_text_manager_format():
     expected_text = np.array(
         ['confidence: 0.50', 'confidence: 0.30', 'confidence: 1.00']
     )
-    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
+    text_manager = TextManager.from_layer_kwargs(
+        text=text, n_text=n_text, properties=properties
+    )
     np.testing.assert_equal(text_manager.values, expected_text)
-    assert text_manager._mode == TextMode.FORMATTED
 
     # add new text with properties
     new_properties = {'class': np.array(['A']), 'confidence': np.array([0.5])}
@@ -99,7 +100,9 @@ def test_refresh_text():
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
+    text_manager = TextManager.from_layer_kwargs(
+        text=text, n_text=n_text, properties=properties
+    )
 
     new_classes = np.array(['D', 'E', 'F'])
     new_properties = {
@@ -115,10 +118,10 @@ def test_equality():
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager_1 = TextManager(
+    text_manager_1 = TextManager.from_layer_kwargs(
         text=text, n_text=n_text, properties=properties, color='red'
     )
-    text_manager_2 = TextManager(
+    text_manager_2 = TextManager.from_layer_kwargs(
         text=text, n_text=n_text, properties=properties, color='red'
     )
 

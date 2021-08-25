@@ -479,22 +479,6 @@ class Shapes(Layer):
             properties, property_choices, num_data=len(data)
         )
 
-        # make the text
-        if text is None or isinstance(text, (list, np.ndarray, str)):
-            self._text = TextManager(text, len(data), self.properties)
-        elif isinstance(text, dict):
-            copied_text = deepcopy(text)
-            copied_text['properties'] = self.properties
-            copied_text['n_text'] = len(data)
-            self._text = TextManager(**copied_text)
-        else:
-            raise TypeError(
-                trans._(
-                    'text should be a string, array, or dict',
-                    deferred=True,
-                )
-            )
-
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
         # value for itself
@@ -575,6 +559,8 @@ class Shapes(Layer):
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(data)
         )
+
+        self.text = text
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -1484,7 +1470,7 @@ class Shapes(Layer):
                 'ndim': self.ndim,
                 'properties': self.properties,
                 'property_choices': self._property_choices,
-                'text': self.text.dict(),
+                'text': self.text,
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
@@ -1976,7 +1962,7 @@ class Shapes(Layer):
                     self.properties[k] = np.concatenate(
                         (self.properties[k], new_property), axis=0
                     )
-                self.text.add(self.current_properties, n_props_to_add)
+                self.text.add(self.properties, n_props_to_add)
             if total_shapes < n_prop_values:
                 for k in self.properties:
                     self.properties[k] = self.properties[k][:total_shapes]
@@ -2223,8 +2209,8 @@ class Shapes(Layer):
 
     @text.setter
     def text(self, text):
-        self._text._set_text(
-            text, n_text=len(self.data), properties=self.properties
+        self._text = TextManager.from_layer_kwargs(
+            text, self.nshapes, self.properties
         )
 
     def refresh_text(self):
@@ -2880,10 +2866,6 @@ class Shapes(Layer):
                 },
                 'indices': self._slice_indices,
             }
-            if len(self.text.values) == 0:
-                self._clipboard['text'] = np.empty(0)
-            else:
-                self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
             self._clipboard = {}
 
@@ -2916,11 +2898,7 @@ class Shapes(Layer):
                 self._data_view.add(
                     shape, face_color=face_color, edge_color=edge_color
                 )
-
-            if len(self._clipboard['text']) > 0:
-                self.text.values = np.concatenate(
-                    (self.text.values, self._clipboard['text']), axis=0
-                )
+            self.text.add(self.properties, len(self._clipboard['data']))
 
             self.selected_data = set(
                 range(cur_shapes, cur_shapes + len(self._clipboard['data']))
