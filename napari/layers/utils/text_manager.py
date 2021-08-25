@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Tuple
+from typing import Dict, Tuple
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -44,6 +44,8 @@ class TextManager(EventedModel):
         Offset from the anchor point.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
+    mapping : PropertyMapStore
+        A mapping from layer properties to text values. Also stores previously generated values for performance reasons.
     """
 
     visible: bool = True
@@ -60,34 +62,37 @@ class TextManager(EventedModel):
     def values(self):
         return np.array(self.mapping.values, dtype=str)
 
-    def refresh_text(self, properties, num_values=None):
-        """Updates all or some text values from the given properties."""
-        self.mapping.refresh(properties, num_values)
-
-    def add(self, properties, num_add):
-        """Adds a number of a new text values based on the given properties."""
-        self.mapping.add(properties, num_add)
-
-    def remove(self, indices):
-        """Removes some text values."""
-        self.mapping.remove(indices)
-
-    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
-        """Get the values of the text elements in view
+    def refresh_text(self, properties: Dict[str, Array]):
+        """Refresh all text values from the given layer properties.
 
         Parameters
         ----------
-        indices_view : (N x 1) np.ndarray
-            Indices of the text elements in view
-        Returns
-        -------
-        text : (N x 1) np.ndarray
-            Array of text strings for the N text elements in view
+        properties : Dict[str, Array]
+            The properties of a layer.
         """
-        if len(indices_view) > 0:
-            return self.values[indices_view]
-        # if no points in this slice send dummy data
-        return np.array([''])
+        self.mapping.refresh(properties)
+
+    def add(self, properties, num_to_add):
+        """Adds a number of a new text values based on the given layer properties.
+
+        Parameters
+        ----------
+        properties : Dict[str, Array]
+            The properties of a layer.
+        num_to_add : int
+            The number of text values to add.
+        """
+        self.mapping.add(properties, num_to_add)
+
+    def remove(self, indices):
+        """Removes some text values by index.
+
+        Parameters
+        ----------
+        indices : Sequence[int]
+            The indices to remove.
+        """
+        self.mapping.remove(indices)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -120,6 +125,23 @@ class TextManager(EventedModel):
             anchor_x = 'center'
             anchor_y = 'center'
         return text_coords, anchor_x, anchor_y
+
+    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
+        """Get the values of the text elements in view
+
+        Parameters
+        ----------
+        indices_view : (N x 1) np.ndarray
+            Indices of the text elements in view
+        Returns
+        -------
+        text : (N x 1) np.ndarray
+            Array of text strings for the N text elements in view
+        """
+        if len(indices_view) > 0:
+            return self.values[indices_view]
+        # if no points in this slice send dummy data
+        return np.array([''])
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
@@ -201,10 +223,10 @@ class TextManager(EventedModel):
             else:
                 raise TypeError(
                     trans._(
-                        'text should be a string, array, or dict',
+                        'text should be a string, array, dict, or TextManager',
                         deferred=True,
                     )
                 )
             manager = cls(**kwargs)
-        manager.refresh_text(properties, n_text)
+        manager.refresh_text(properties)
         return manager

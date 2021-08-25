@@ -1449,13 +1449,15 @@ class Points(Layer):
                     (self.properties[k], self._clipboard['properties'][k]),
                     axis=0,
                 )
-            self.text.add(self.properties, len(self._clipboard['data']))
+
+            num_pasted_points = len(self._clipboard['data'])
+            self.text.add(self.properties, num_pasted_points)
 
             self._selected_view = list(
-                range(npoints, npoints + len(self._clipboard['data']))
+                range(npoints, npoints + num_pasted_points)
             )
             self._selected_data = set(
-                range(totpoints, totpoints + len(self._clipboard['data']))
+                range(totpoints, totpoints + num_pasted_points)
             )
             self.refresh()
 

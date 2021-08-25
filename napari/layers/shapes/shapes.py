@@ -2898,10 +2898,12 @@ class Shapes(Layer):
                 self._data_view.add(
                     shape, face_color=face_color, edge_color=edge_color
                 )
-            self.text.add(self.properties, len(self._clipboard['data']))
+
+            num_pasted_shapes = len(self._clipboard['data'])
+            self.text.add(self.properties, num_pasted_shapes)
 
             self.selected_data = set(
-                range(cur_shapes, cur_shapes + len(self._clipboard['data']))
+                range(cur_shapes, cur_shapes + num_pasted_shapes)
             )
 
             self.move_to_front()

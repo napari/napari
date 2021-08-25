@@ -1404,7 +1404,8 @@ SKIP_WORDS = {
         'translate',
         '{name} layer {i}',
     ],
-    'napari/layers/utils/text.py': [
+    'napari/layers/utils/text_manager.py': [
+        'TextManager',
         'center',
         'color',
         'cyan',
