@@ -71,7 +71,6 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
         **layer._get_base_state(),
         'name': f'{layer} {mode}-proj',
         'colormap': layer.colormap.name,
-        'interpolation': layer.interpolation,
         'rendering': layer.rendering,
     }
     new = Layer.create(data, meta, layer._type_string)
