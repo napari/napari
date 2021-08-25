@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Napari 0.4.x
-Exec=/bin/bash -c "exec napari"
+Name=napari 0.4.x
+Exec=napari
 Icon=/home/jovyan/resources/icon.ico
 Path=/home/jovyan/Desktop
