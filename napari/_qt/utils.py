@@ -334,6 +334,8 @@ def _maybe_allow_interrupt(qapp):
     We do this only if the old handler for SIGINT was not None, which means
     that a non-python handler was installed, i.e. in Julia, and not SIG_IGN
     which means we should ignore the interrupts.
+
+    code from https://github.com/matplotlib/matplotlib/pull/13306
     """
     old_sigint_handler = signal.getsignal(signal.SIGINT)
     handler_args = None
