@@ -1,15 +1,19 @@
+from __future__ import annotations
+
 import weakref
-from typing import Callable
+from typing import TYPE_CHECKING
 
-from typing_extensions import Protocol
+if TYPE_CHECKING:
+    from typing import Callable
 
+    from typing_extensions import Protocol
 
-class Emitter(Protocol):
-    def connect(self, callback: Callable):
-        ...
+    class Emitter(Protocol):
+        def connect(self, callback: Callable):
+            ...
 
-    def disconnect(self, callback: Callable):
-        ...
+        def disconnect(self, callback: Callable):
+            ...
 
 
 def disconnect_events(emitter, listener):
