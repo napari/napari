@@ -13,8 +13,10 @@ from napari import layers, utils, viewer
 @pytest.mark.sync_only
 def test_dask_not_greedy():
     """Make sure that we don't immediately calculate dask arrays."""
-    # minreq seems to add one more fetch
-    FETCH_COUNT = int(bool(os.environ.get('MIN_REQ')))
+
+    FETCH_COUNT = 0
+    # the min requirements seems to add one more fetch
+    MINREQ = int(bool(os.environ.get('MIN_REQ')))
 
     def get_plane(block_id):
         if block_id:
@@ -28,7 +30,7 @@ def test_dask_not_greedy():
         dtype=float,
     )
     layer = layers.Image(arr)
-    assert FETCH_COUNT == 1
+    assert FETCH_COUNT == 1 + MINREQ
     assert tuple(layer.contrast_limits) == (0, 1)
 
     arr2 = da.map_blocks(
@@ -37,7 +39,7 @@ def test_dask_not_greedy():
         dtype='uint8',
     )
     layer = layers.Image(arr2)
-    assert FETCH_COUNT == 2
+    assert FETCH_COUNT == 2 + MINREQ
     assert tuple(layer.contrast_limits) == (0, 2 ** 8 - 1)
 
 
