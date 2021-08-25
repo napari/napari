@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QPushButton,
     QSlider,
+    QToolTip,
     QVBoxLayout,
 )
 
@@ -14,6 +15,17 @@ from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from .qt_spinbox import QtSpinBox
+
+
+class ToolTipLabel(QLabel):
+    """A QLabel that provides instant tooltips on mouser hover."""
+
+    def enterEvent(self, event):
+        """Override to show tooltips instantly."""
+        pos = self.mapToGlobal(self.contentsRect().center())
+        QToolTip.showText(pos, self.toolTip(), self)
+
+        super().enterEvent(event)
 
 
 class QtLayerButtons(QFrame):
@@ -218,8 +230,8 @@ class QtViewerButtons(QFrame):
         grid_stride = QtSpinBox(popup)
         grid_width = QtSpinBox(popup)
         grid_height = QtSpinBox(popup)
-        shape_help_symbol = QLabel(self)
-        stride_help_symbol = QLabel(self)
+        shape_help_symbol = ToolTipLabel(self)
+        stride_help_symbol = ToolTipLabel(self)
         blank = QLabel(self)  # helps with placing help symbols.
 
         shape_help_msg = trans._(
