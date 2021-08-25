@@ -37,6 +37,8 @@ objgraph.show_backrefs(controls(), max_depth=10, filename="controls.png", refcou
 objgraph.show_backrefs(data_li(), max_depth=10,  filename="test_data.png")
 print("controls", viewer.window.qt_viewer.controls.widgets)
 print("controls", gc.get_referrers(controls()))
+print("controls", controls().parent())
+#print("controls", controls().parent().indexOf(controls()))
 print(gc.get_referrers(li()))
 print(gc.get_referrers(li())[1])
 print(gc.get_referrers(gc.get_referrers(gc.get_referrers(li())[0])))

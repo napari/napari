@@ -448,7 +448,7 @@ def test_process_mouse_event(make_napari_viewer):
 
 
 @skip_local_popups
-@pytest.mark.xfail(qtpy.API == "pyside2", reason="PySide problem")
+@pytest.mark.skipif(qtpy.API == "pyside2", reason="PySide problem")
 def test_memory_leaking(make_napari_viewer):
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
@@ -464,7 +464,7 @@ def test_memory_leaking(make_napari_viewer):
 
 
 @skip_local_popups
-@pytest.mark.xfail(qtpy.API == "pyside2", reason="PySide problem")
+@pytest.mark.skipif(qtpy.API == "pyside2", reason="PySide problem")
 def test_leaks_image(make_napari_viewer, tmp_path):
     # import objgraph
 
@@ -483,7 +483,7 @@ def test_leaks_image(make_napari_viewer, tmp_path):
 
 
 @skip_local_popups
-@pytest.mark.xfail(qtpy.API == "pyside2", reason="PySide problem")
+@pytest.mark.skipif(qtpy.API == "pyside2", reason="PySide problem")
 def test_leaks_labels(make_napari_viewer, tmp_path):
     # import objgraph
 
