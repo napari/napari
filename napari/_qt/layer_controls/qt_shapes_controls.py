@@ -3,7 +3,6 @@ from collections.abc import Iterable
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QLabel
-from superqt import QLabeledSlider as QSlider
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.action_manager import action_manager
@@ -11,6 +10,7 @@ from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
+from ..widgets._slider_compat import QSlider
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
