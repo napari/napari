@@ -1,9 +1,9 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout
-from superqt import QLabeledDoubleSlider
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
+from ..widgets._slider_compat import QDoubleSlider
 
 
 class QtLayerControls(QFrame):
@@ -47,7 +47,7 @@ class QtLayerControls(QFrame):
         self.grid_layout.setColumnStretch(1, 1)
         self.setLayout(self.grid_layout)
 
-        sld = QLabeledDoubleSlider(Qt.Horizontal, parent=self)
+        sld = QDoubleSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(1)
