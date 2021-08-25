@@ -1,4 +1,5 @@
 import numpy as np
+from qtpy import QT_VERSION
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
 from qtpy.QtWidgets import (
@@ -7,10 +8,14 @@ from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QSlider,
     QSpinBox,
     QWidget,
 )
-from superqt import QLabeledSlider as QSlider
+
+if tuple(int(x) for x in QT_VERSION.split(".")) >= (5, 13):
+    from superqt import QLabeledSlider as QSlider  # noqa
+
 from superqt import QLargeIntSpinBox
 
 from ...layers.image._image_constants import Rendering

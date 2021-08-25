@@ -1,9 +1,18 @@
 from collections.abc import Iterable
 
 import numpy as np
+from qtpy import QT_VERSION
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QLabel
-from superqt import QLabeledSlider as QSlider
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QGridLayout,
+    QLabel,
+    QSlider,
+)
+
+if tuple(int(x) for x in QT_VERSION.split(".")) >= (5, 13):
+    from superqt import QLabeledSlider as QSlider  # noqa
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.action_manager import action_manager

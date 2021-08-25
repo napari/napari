@@ -1,4 +1,5 @@
 import numpy as np
+from qtpy import QT_VERSION
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -6,8 +7,11 @@ from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QSlider,
 )
-from superqt import QLabeledSlider as QSlider
+
+if tuple(int(x) for x in QT_VERSION.split(".")) >= (5, 13):
+    from superqt import QLabeledSlider as QSlider  # noqa
 
 from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
 from ...utils.action_manager import action_manager
