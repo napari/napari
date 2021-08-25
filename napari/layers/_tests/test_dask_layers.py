@@ -1,3 +1,4 @@
+import os
 from contextlib import contextmanager
 from distutils.version import LooseVersion
 
@@ -12,7 +13,8 @@ from napari import layers, utils, viewer
 @pytest.mark.sync_only
 def test_dask_not_greedy():
     """Make sure that we don't immediately calculate dask arrays."""
-    FETCH_COUNT = 0
+    # minreq seems to add one more fetch
+    FETCH_COUNT = int(bool(os.environ.get('MIN_REQ')))
 
     def get_plane(block_id):
         if block_id:
