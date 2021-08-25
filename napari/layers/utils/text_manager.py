@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Dict, Tuple
+from typing import Collection, Dict, Tuple
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -72,7 +72,7 @@ class TextManager(EventedModel):
         """
         self.mapping.refresh(properties)
 
-    def add(self, properties, num_to_add):
+    def add(self, properties: Dict[str, Array], num_to_add: int):
         """Adds a number of a new text values based on the given layer properties.
 
         Parameters
@@ -84,12 +84,12 @@ class TextManager(EventedModel):
         """
         self.mapping.add(properties, num_to_add)
 
-    def remove(self, indices):
+    def remove(self, indices: Collection[int]):
         """Removes some text values by index.
 
         Parameters
         ----------
-        indices : Sequence[int]
+        indices : Collection[int]
             The indices to remove.
         """
         self.mapping.remove(indices)
@@ -192,7 +192,7 @@ class TextManager(EventedModel):
         self.events.blending.connect(blending_update_function)
 
     @staticmethod
-    def _mapping_from_text(text, properties):
+    def _mapping_from_text(text: str, properties: Dict[str, Array]):
         if text in properties:
             return NamedPropertyMap(name=text)
         elif ('{' in text) and ('}' in text):
@@ -201,7 +201,20 @@ class TextManager(EventedModel):
         return ConstantPropertyMap(constant='')
 
     @classmethod
-    def from_layer_kwargs(cls, text, n_text, properties, **kwargs):
+    def from_layer_kwargs(cls, text, properties, **kwargs):
+        """Create a TextManager from layer keyword arguments and attributes.
+
+        Parameters
+        ----------
+        text : array or str
+            The strings to be displayed, or a format string that will be filled out
+            n_text times using data in properties.
+        properties: dict
+            Stores properties data that will be used to generate strings when text
+            is a format a string.
+        **kwargs
+            The other accepted keyword arguments as named and described as TextManager's attributes.
+        """
         if isinstance(text, TextManager):
             manager = text
         else:
@@ -216,8 +229,8 @@ class TextManager(EventedModel):
                 kwargs['mapping'] = cls._mapping_from_text(text, properties)
             elif isinstance(text, (list, np.ndarray, tuple)):
                 # This is direct mode where we add text as a column in the property table.
-                properties['text'] = text
-                kwargs['mapping'] = NamedPropertyMap(name='text')
+                properties['_text'] = text
+                kwargs['mapping'] = NamedPropertyMap(name='_text')
             elif text is None:
                 kwargs['mapping'] = ConstantPropertyMap(constant='')
             else:

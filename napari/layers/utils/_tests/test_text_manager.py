@@ -10,7 +10,7 @@ def test_empty_text_manager_property():
     """
     properties = {'confidence': np.empty(0, dtype=float)}
     text_manager = TextManager.from_layer_kwargs(
-        text='confidence', n_text=0, properties=properties
+        text='confidence', properties=properties
     )
     assert text_manager.values.size == 0
 
@@ -27,7 +27,7 @@ def test_empty_text_manager_format():
     properties = {'confidence': np.empty(0, dtype=float)}
     text = 'confidence: {confidence:.2f}'
     text_manager = TextManager.from_layer_kwargs(
-        text=text, n_text=0, properties=properties
+        text=text, properties=properties
     )
     assert text_manager.values.size == 0
 
@@ -38,12 +38,11 @@ def test_empty_text_manager_format():
 
 
 def test_text_manager_property():
-    n_text = 3
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager = TextManager.from_layer_kwargs(
-        text=text, n_text=n_text, properties=properties
+        text=text, properties=properties
     )
     np.testing.assert_equal(text_manager.values, classes)
 
@@ -59,7 +58,6 @@ def test_text_manager_property():
 
 
 def test_text_manager_format():
-    n_text = 3
     text = 'confidence: {confidence:.2f}'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
@@ -67,7 +65,7 @@ def test_text_manager_format():
         ['confidence: 0.50', 'confidence: 0.30', 'confidence: 1.00']
     )
     text_manager = TextManager.from_layer_kwargs(
-        text=text, n_text=n_text, properties=properties
+        text=text, properties=properties
     )
     np.testing.assert_equal(text_manager.values, expected_text)
 
@@ -95,13 +93,42 @@ def test_text_manager_format():
     np.testing.assert_equal(text_manager.values, expected_text_2[1::])
 
 
+def test_direct():
+    values = ['one', 'two', 'three']
+    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
+    np.testing.assert_array_equal(text_manager.values, values)
+
+
+def test_direct_add():
+    values = ['one', 'two', 'three']
+    properties = {}
+    text_manager = TextManager.from_layer_kwargs(
+        text=values, properties=properties
+    )
+
+    properties['_text'] = values + ['four', 'five']
+    text_manager.add(properties, 2)
+
+    np.testing.assert_array_equal(
+        text_manager.values, ['one', 'two', 'three', 'four', 'five']
+    )
+
+
+def test_direct_remove():
+    values = ['one', 'two', 'three', 'four']
+    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
+
+    text_manager.remove([1, 3])
+
+    np.testing.assert_array_equal(text_manager.values, ['one', 'three'])
+
+
 def test_refresh_text():
-    n_text = 3
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager = TextManager.from_layer_kwargs(
-        text=text, n_text=n_text, properties=properties
+        text=text, properties=properties
     )
 
     new_classes = np.array(['D', 'E', 'F'])
@@ -114,15 +141,14 @@ def test_refresh_text():
 
 
 def test_equality():
-    n_text = 3
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager_1 = TextManager.from_layer_kwargs(
-        text=text, n_text=n_text, properties=properties, color='red'
+        text=text, properties=properties, color='red'
     )
     text_manager_2 = TextManager.from_layer_kwargs(
-        text=text, n_text=n_text, properties=properties, color='red'
+        text=text, properties=properties, color='red'
     )
 
     assert text_manager_1 == text_manager_2
@@ -134,13 +160,11 @@ def test_equality():
 
 
 def test_blending_modes():
-    n_text = 3
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager = TextManager(
         text=text,
-        n_text=n_text,
         properties=properties,
         color='red',
         blending='translucent',

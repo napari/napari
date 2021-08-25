@@ -2209,9 +2209,7 @@ class Shapes(Layer):
 
     @text.setter
     def text(self, text):
-        self._text = TextManager.from_layer_kwargs(
-            text, self.nshapes, self.properties
-        )
+        self._text = TextManager.from_layer_kwargs(text, self.properties)
 
     def refresh_text(self):
         """Refresh the text values.

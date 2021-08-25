@@ -556,9 +556,7 @@ class Points(Layer):
 
     @text.setter
     def text(self, text):
-        self._text = TextManager.from_layer_kwargs(
-            text, len(self.data), self.properties
-        )
+        self._text = TextManager.from_layer_kwargs(text, self.properties)
 
     def refresh_text(self):
         """Refresh the text values.
@@ -589,7 +587,7 @@ class Points(Layer):
 
     @property
     def n_dimensional(self) -> bool:
-        """bool: renders points as n-dimensionsal."""
+        """bool: renders points as n-dimensional."""
         return self._n_dimensional
 
     @n_dimensional.setter
