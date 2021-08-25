@@ -8,11 +8,11 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 from superqt import QDoubleRangeSlider
-from superqt import QLabeledDoubleSlider as QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
+from ..widgets._slider_compat import QDoubleSlider
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
 from .qt_colormap_combobox import QtColormapComboBox
 from .qt_layer_controls_base import QtLayerControls
@@ -90,7 +90,7 @@ class QtBaseImageControls(QtLayerControls):
         self.autoScaleBar = AutoScaleButtons(layer, self)
 
         # gamma slider
-        sld = QSlider(Qt.Horizontal, parent=self)
+        sld = QDoubleSlider(Qt.Horizontal, parent=self)
         sld.setMinimum(0.2)
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
