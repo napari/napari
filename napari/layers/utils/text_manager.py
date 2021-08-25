@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Collection, Dict, Tuple
+from typing import Collection, Dict, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -201,15 +201,19 @@ class TextManager(EventedModel):
         return ConstantPropertyMap(constant='')
 
     @classmethod
-    def from_layer_kwargs(cls, text, properties, **kwargs):
-        """Create a TextManager from layer keyword arguments and attributes.
+    def from_layer_kwargs(
+        cls,
+        text: Union['TextManager', dict, str, Sequence[str], None],
+        properties: Dict[str, Array],
+        **kwargs,
+    ):
+        """Create a TextManager from layer keyword arguments and TextManager attributes.
 
         Parameters
         ----------
-        text : array or str
-            The strings to be displayed, or a format string that will be filled out
-            n_text times using data in properties.
-        properties: dict
+        text : Union[TextManager, dict, str, Sequence[str], None]
+            The strings to be displayed, or a format string to be filled out using properties.
+        properties: Dict[str, Array]
             Stores properties data that will be used to generate strings when text
             is a format a string.
         **kwargs
@@ -229,7 +233,7 @@ class TextManager(EventedModel):
                 kwargs['mapping'] = cls._mapping_from_text(text, properties)
             elif isinstance(text, (list, np.ndarray, tuple)):
                 # This is direct mode where we add text as a column in the property table.
-                properties['_text'] = text
+                properties['_text'] = np.array(text)
                 kwargs['mapping'] = NamedPropertyMap(name='_text')
             elif text is None:
                 kwargs['mapping'] = ConstantPropertyMap(constant='')
