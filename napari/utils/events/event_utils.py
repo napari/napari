@@ -1,4 +1,15 @@
 import weakref
+from typing import Callable
+
+from typing_extensions import Protocol
+
+
+class Emitter(Protocol):
+    def connect(self, callback: Callable):
+        ...
+
+    def disconnect(self, callback: Callable):
+        ...
 
 
 def disconnect_events(emitter, listener):
@@ -23,3 +34,23 @@ def disconnect_events(emitter, listener):
                 listener
             ):
                 em.disconnect(callback)
+
+
+def connect_setattr(emitter: Emitter, obj, attr: str):
+    ref = weakref.ref(obj)
+
+    def _cb(*value):
+        setattr(ref(), attr, value)
+
+    emitter.connect(_cb)
+    # weakref.finalize(obj, emitter.disconnect, _cb)
+
+
+def connect_no_arg(emitter: Emitter, obj, attr: str):
+    ref = weakref.ref(obj)
+
+    def _cb(*_value):
+        getattr(ref(), attr)()
+
+    emitter.connect(_cb)
+    # weakref.finalize(obj, emitter.disconnect, _cb)

@@ -10,8 +10,9 @@ from superqt import QDoubleRangeSlider
 from superqt import QLabeledDoubleSlider as QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
+from ...utils.events.event_utils import connect_no_arg, connect_setattr
 from ...utils.translations import trans
-from ..utils import connect_no_arg, connect_setattr, qt_signals_blocked
+from ..utils import qt_signals_blocked
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
 from .qt_colormap_combobox import QtColormapComboBox
 from .qt_layer_controls_base import QtLayerControls
