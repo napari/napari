@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Collection, Dict, Sequence, Tuple, Union
+from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -84,12 +84,12 @@ class TextManager(EventedModel):
         """
         self.mapping.add(properties, num_to_add)
 
-    def remove(self, indices: Collection[int]):
+    def remove(self, indices: Iterable[int]):
         """Removes some text values by index.
 
         Parameters
         ----------
-        indices : Collection[int]
+        indices : Iterable[int]
             The indices to remove.
         """
         self.mapping.remove(indices)

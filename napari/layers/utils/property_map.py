@@ -1,6 +1,7 @@
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Iterable, List
 
 from ...utils.events import EventedModel
+from ...utils.events.custom_types import Array
 
 
 class ConstantPropertyMap(EventedModel):
@@ -63,7 +64,7 @@ class PropertyMapStore(EventedModel):
     mapping: Callable[[Dict[str, Any]], Any]
     values: List[Any] = []
 
-    def refresh(self, properties):
+    def refresh(self, properties: Dict[str, Array]):
         """Updates all values from the given properties.
 
         Parameters
@@ -74,7 +75,7 @@ class PropertyMapStore(EventedModel):
         num_values = PropertyMapStore._num_values(properties)
         self.values = self._apply(properties, range(0, num_values))
 
-    def add(self, properties, num_to_add):
+    def add(self, properties: Dict[str, Array], num_to_add: int):
         """Adds a number of a new text values based on the given properties
 
         Parameters
@@ -88,12 +89,12 @@ class PropertyMapStore(EventedModel):
         indices = range(num_values - num_to_add, num_values)
         self.values.extend(self._apply(properties, indices))
 
-    def remove(self, indices):
+    def remove(self, indices: Iterable[int]):
         """Removes some text values by index.
 
         Parameters
         ----------
-        indices : Sequence[int]
+        indices : Iterable[int]
             The indices to remove.
         """
         indices = set(indices)
@@ -101,7 +102,7 @@ class PropertyMapStore(EventedModel):
             self.values[i] for i in range(len(self.values)) if i not in indices
         ]
 
-    def _apply(self, properties, indices):
+    def _apply(self, properties: Dict[str, Array], indices: Iterable[int]):
         return [
             self.mapping(
                 {name: column[index] for name, column in properties.items()}
