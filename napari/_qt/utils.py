@@ -354,7 +354,7 @@ def _maybe_allow_interrupt(qapp):
         def handle(*args):
             nonlocal handler_args
             handler_args = args
-            qapp.quit()
+            qapp.exit()
 
         signal.signal(signal.SIGINT, handle)
     try:

@@ -20,11 +20,10 @@ def platform_simulate_ctrl_c():
 
 
 def test_sigint(qapp, platform_simulate_ctrl_c, make_napari_viewer):
-    make_napari_viewer()
-
     def fire_signal():
         platform_simulate_ctrl_c()
 
+    make_napari_viewer()
     QTimer.singleShot(100, fire_signal)
     with pytest.raises(KeyboardInterrupt):
         with _maybe_allow_interrupt(qapp):
