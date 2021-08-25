@@ -9,6 +9,7 @@ import pytest
 from napari import layers, utils, viewer
 
 
+@pytest.mark.sync_only
 def test_dask_not_greedy():
     """Make sure that we don't immediately calculate dask arrays."""
     FETCH_COUNT = 0
