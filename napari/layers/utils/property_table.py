@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict, Optional, Union
 
 import pandas as pd
@@ -8,15 +9,22 @@ from napari.utils.events.custom_types import Array
 class PropertyTable:
     """Manages a collection of properties."""
 
-    def __init__(self, data=None, default_values=None):
+    def __init__(self, data=None):
         self.data = pd.DataFrame(data)
-        if default_values is None:
-            self._default_values = {
-                name: self.data[name].iloc[-1] if self.num_values > 0 else None
-                for name in self.data
-            }
-        else:
-            self._default_values = default_values
+        self._default_values = {
+            name: PropertyTable._get_default_value_from_series(series)
+            for name, series in self.data.items()
+        }
+
+    @staticmethod
+    def _get_default_value_from_series(series):
+        if series.size > 0:
+            return series.iloc[-1]
+        if isinstance(series.dtype, pd.CategoricalDtype):
+            choices = series.dtype.categories
+            if choices.size > 0:
+                return choices[0]
+        return None
 
     def resize(self, size):
         if size < self.num_values:
@@ -66,7 +74,18 @@ class PropertyTable:
         property_choices: Optional[Dict[str, Array]] = None,
         num_data: Optional[int] = None,
     ):
-        # TODO: do something with property_choices even if it just means issuing a warning.
+        if property_choices is not None:
+            if isinstance(properties, pd.DataFrame):
+                warnings.warn(
+                    'property_choices should not be specified when properties is a DataFrame'
+                )
+            else:
+                properties = pd.DataFrame(data=properties)
+                for name, choices in property_choices.items():
+                    values = properties[name] if name in properties else []
+                    properties[name] = pd.Series(
+                        values, dtype=pd.CategoricalDtype(categories=choices)
+                    )
         index = None if num_data is None else range(num_data)
         data = pd.DataFrame(data=properties, index=index)
         return cls(data)
