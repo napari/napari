@@ -197,8 +197,12 @@ class TextManager(EventedModel):
             return NamedPropertyMap(name=text)
         elif ('{' in text) and ('}' in text):
             return TextFormatPropertyMap(format_string=text)
-        # TODO: consider issuing a warning.
-        return ConstantPropertyMap(constant='')
+        raise ValueError(
+            trans._(
+                'text string should either be a property name or a format string containing property names',
+                deferred=True,
+            )
+        )
 
     @classmethod
     def from_layer_kwargs(
