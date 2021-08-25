@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from qtpy.QtWidgets import QToolTip, QLabel
+from qtpy.QtWidgets import QLabel, QToolTip
 
 
 class QtToolTipLabel(QLabel):
