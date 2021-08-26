@@ -7,7 +7,6 @@ from unittest import mock
 
 import numpy as np
 import pytest
-import qtpy
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
@@ -448,8 +447,7 @@ def test_process_mouse_event(make_napari_viewer):
 
 
 @skip_local_popups
-@pytest.mark.skipif(qtpy.API == "pyside2", reason="PySide problem")
-def test_memory_leaking(make_napari_viewer):
+def test_memory_leaking(qtbot, make_napari_viewer):
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
     viewer = make_napari_viewer()
@@ -457,6 +455,7 @@ def test_memory_leaking(make_napari_viewer):
     labels = weakref.ref(viewer.add_labels(data))
     del viewer.layers[0]
     del viewer.layers[0]
+    qtbot.wait(100)
     gc.collect()
     gc.collect()
     assert image() is None
@@ -464,40 +463,30 @@ def test_memory_leaking(make_napari_viewer):
 
 
 @skip_local_popups
-@pytest.mark.skipif(qtpy.API == "pyside2", reason="PySide problem")
-def test_leaks_image(make_napari_viewer, tmp_path):
-    # import objgraph
+def test_leaks_image(qtbot, make_napari_viewer):
 
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
     dr = weakref.ref(lr().data)
 
     viewer.layers.clear()
+    qtbot.wait(100)
     gc.collect()
     assert not gc.collect()
-    # objgraph.show_backrefs(
-    #     lr(), max_depth=10, filename=str(tmp_path / "test.png"), refcounts=True
-    # )
     assert not lr()
     assert not dr()
 
 
 @skip_local_popups
-@pytest.mark.skipif(qtpy.API == "pyside2", reason="PySide problem")
-def test_leaks_labels(make_napari_viewer, tmp_path):
-    # import objgraph
-
+def test_leaks_labels(qtbot, make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(
         viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
     )
     dr = weakref.ref(lr().data)
-
     viewer.layers.clear()
+    qtbot.wait(100)
     gc.collect()
     assert not gc.collect()
-    # objgraph.show_backrefs(
-    #     lr(), max_depth=10, filename=str(tmp_path / "test.png"), refcounts=True
-    # )
     assert not lr()
     assert not dr()

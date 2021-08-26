@@ -21,6 +21,14 @@ if TYPE_CHECKING:
     from napari.layers import Image
 
 
+class _QDoubleRangeSlider(QDoubleRangeSlider):
+    def mousePressEvent(self, event):
+        if event.button() == Qt.RightButton:
+            self.parent().show_clim_popupup()
+        else:
+            super().mousePressEvent(event)
+
+
 class QtBaseImageControls(QtLayerControls):
     """Superclass for classes requiring colormaps, contrast & gamma sliders.
 
@@ -70,7 +78,7 @@ class QtBaseImageControls(QtLayerControls):
         self.colormapComboBox = comboBox
 
         # Create contrast_limits slider
-        self.contrastLimitsSlider = QDoubleRangeSlider(Qt.Horizontal, self)
+        self.contrastLimitsSlider = _QDoubleRangeSlider(Qt.Horizontal, self)
         self.contrastLimitsSlider.setSingleStep(0.01)
         self.contrastLimitsSlider.setRange(*self.layer.contrast_limits_range)
         self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
@@ -80,7 +88,7 @@ class QtBaseImageControls(QtLayerControls):
 
         self.clim_popup = None
 
-        self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
+        # self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
 
         connect_setattr(
             self.contrastLimitsSlider.valueChanged,
