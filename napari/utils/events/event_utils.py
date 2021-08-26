@@ -26,6 +26,7 @@ def disconnect_events(emitter, listener):
     listener : Object
         Any object that has been connected to.
     """
+    weak_listener = weakref.ref(listener)
     for em in emitter.emitters.values():
         for callback in em.callbacks:
             # *callback* may be either a callable object or a tuple
@@ -34,9 +35,7 @@ def disconnect_events(emitter, listener):
             # will be kept. If *callback* is a callable object then it is
             # not attached to the listener and does not need to be
             # disconnected
-            if isinstance(callback, tuple) and callback[0] is weakref.ref(
-                listener
-            ):
+            if isinstance(callback, tuple) and callback[0] is weak_listener:
                 em.disconnect(callback)
 
 

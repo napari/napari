@@ -207,7 +207,7 @@ class QtBaseImageControls(QtLayerControls):
     def closeEvent(self, event):
         self.deleteLater()
         self.layer.events.disconnect(self)
-        event.accept()
+        super().closeEvent(event)
 
     def show_clim_popupup(self):
         self.clim_popup = QContrastLimitsPopup(self.layer, self)
