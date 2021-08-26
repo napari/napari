@@ -173,10 +173,10 @@ class ActionManager:
             self._update_gui_elements(name)
 
     def _validate_action_name(self, name):
-        if ":" not in name:
+        if len(name.split(':')) != 2:
             raise ValueError(
                 trans._(
-                    'Action names need to be in the form `package:name`, got {name}',
+                    'Action names need to be in the form `package:name`, got {name!r}',
                     name=name,
                     deferred=True,
                 )
