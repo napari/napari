@@ -65,7 +65,13 @@ ignore = [
   "tools/minreq.py",
   "tox.ini",
   "napari/_qt/qt_resources/_qt_resources_*.py",
-  "*.pyi"  # added by make typestubs
+  "*.pyi",  # added by make typestubs
+  "binder/Desktop/napari.desktop",
+  "binder/apt.txt",
+  "binder/environment.yml",
+  "binder/postBuild",
+  "binder/xfce4-panel.xml",
+  "binder/xsettings.xml",
 ]
 
 [tool.isort]
