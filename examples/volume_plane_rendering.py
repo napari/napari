@@ -4,8 +4,8 @@ with a simple widget for modifying plane parameters
 """
 import napari
 import numpy as np
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout
 from skimage import data
 from superqt import QLabeledDoubleSlider
 

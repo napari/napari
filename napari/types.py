@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     import dask.array
     import zarr
     from magicgui.widgets import FunctionGui
-    from qtpy.QtWidgets import QWidget
+    from superqt.qtcompat.QtWidgets import QWidget
 
 
 # This is a WOEFULLY inadequate stub for a duck-array type.

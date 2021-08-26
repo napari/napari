@@ -5,7 +5,7 @@ import napari.layers
 
 def test_add_function_widget(make_napari_viewer):
     """Test basic add_function_widget functionality"""
-    from qtpy.QtWidgets import QDockWidget
+    from superqt.qtcompat.QtWidgets import QDockWidget
 
     viewer = make_napari_viewer()
 

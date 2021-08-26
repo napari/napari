@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from qtpy.QtCore import Qt
+from superqt.qtcompat.QtCore import Qt
 
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari.layers import Tracks

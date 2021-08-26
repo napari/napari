@@ -38,9 +38,9 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QPoint, QSize, Qt, QTimer
-from qtpy.QtGui import QPixmap
-from qtpy.QtWidgets import QStyledItemDelegate
+from superqt.qtcompat.QtCore import QPoint, QSize, Qt, QTimer
+from superqt.qtcompat.QtGui import QPixmap
+from superqt.qtcompat.QtWidgets import QStyledItemDelegate
 
 from ...layers._layer_actions import _LAYER_ACTIONS
 from ..qt_resources import QColoredSVGIcon
@@ -49,9 +49,9 @@ from ._base_item_model import ItemRole
 from .qt_layer_model import ThumbnailRole
 
 if TYPE_CHECKING:
-    from qtpy import QtCore
-    from qtpy.QtGui import QPainter
-    from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
+    from superqt.qtcompat import QtCore
+    from superqt.qtcompat.QtGui import QPainter
+    from superqt.qtcompat.QtWidgets import QStyleOptionViewItem, QWidget
 
     from ...components.layerlist import LayerList
 

@@ -42,7 +42,7 @@ below explains this in more detail.
 Strings that need to provide a 1:1 translation, can use the `trans._` method:
 
 ```python
-from qtpy.QtWidgets import QComboBox, QWidget
+from superqt.qtcompat.QtWidgets import QComboBox, QWidget
 
 from napari.utils.translations import trans
 
@@ -89,7 +89,7 @@ The word **Tab** can mean different things in the english language:
   * A user interface graphical element, like the one provide by `QTabWidget`.
 
 ```python
-from qtpy.QtWidgets import QComboBox, QWidget
+from superqt.qtcompat.QtWidgets import QComboBox, QWidget
 
 from napari.utils.translations import trans
 
@@ -130,7 +130,7 @@ pluralization, that is depending on the amount of items included in the
 string.
 
 ```python
-from qtpy.QtWidgets import QLabel, QWidget
+from superqt.qtcompat.QtWidgets import QLabel, QWidget
 
 from napari.utils.translations import trans
 

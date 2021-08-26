@@ -2,8 +2,8 @@ import webbrowser
 
 import pytest
 from napari_plugin_engine import PluginError
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QGuiApplication
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtGui import QGuiApplication
 
 from napari._qt.dialogs import qt_plugin_report
 

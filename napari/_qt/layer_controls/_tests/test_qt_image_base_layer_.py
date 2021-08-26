@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QPushButton
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import QPushButton
 
 from napari._qt.layer_controls.qt_image_controls_base import (
     QContrastLimitsPopup,

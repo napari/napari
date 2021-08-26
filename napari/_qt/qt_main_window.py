@@ -18,9 +18,17 @@ from typing import (
     Tuple,
 )
 
-from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
-from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import (
+    QEvent,
+    QEventLoop,
+    QPoint,
+    QProcess,
+    QSize,
+    Qt,
+    Slot,
+)
+from superqt.qtcompat.QtGui import QIcon
+from superqt.qtcompat.QtWidgets import (
     QApplication,
     QDialog,
     QDockWidget,
@@ -392,17 +400,17 @@ class Window:
 
     Attributes
     ----------
-    file_menu : qtpy.QtWidgets.QMenu
+    file_menu : QtWidgets.QMenu
         File menu.
-    help_menu : qtpy.QtWidgets.QMenu
+    help_menu : QtWidgets.QMenu
         Help menu.
-    main_menu : qtpy.QtWidgets.QMainWindow.menuBar
+    main_menu : QtWidgets.QMainWindow.menuBar
         Main menubar.
     qt_viewer : QtViewer
         Contained viewer widget.
-    view_menu : qtpy.QtWidgets.QMenu
+    view_menu : QtWidgets.QMenu
         View menu.
-    window_menu : qtpy.QtWidgets.QMenu
+    window_menu : QtWidgets.QMenu
         Window menu.
     """
 

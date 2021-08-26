@@ -1,6 +1,6 @@
 """VispyCanvas class.
 """
-from qtpy.QtCore import QSize
+from superqt.qtcompat.QtCore import QSize
 from vispy.scene import SceneCanvas
 
 from .utils_gl import get_max_texture_sizes

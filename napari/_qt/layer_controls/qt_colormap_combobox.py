@@ -1,6 +1,6 @@
-from qtpy.QtCore import QModelIndex, QRect
-from qtpy.QtGui import QImage, QPainter
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import QModelIndex, QRect
+from superqt.qtcompat.QtGui import QImage, QPainter
+from superqt.qtcompat.QtWidgets import (
     QComboBox,
     QListView,
     QStyledItemDelegate,

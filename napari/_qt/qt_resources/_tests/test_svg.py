@@ -1,4 +1,4 @@
-from qtpy.QtGui import QIcon
+from superqt.qtcompat.QtGui import QIcon
 
 from napari._qt.qt_resources import QColoredSVGIcon
 

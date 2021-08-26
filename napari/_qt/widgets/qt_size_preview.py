@@ -1,6 +1,6 @@
-from qtpy.QtCore import QSize, Qt, Signal
-from qtpy.QtGui import QFont, QIntValidator
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import QSize, Qt, Signal
+from superqt.qtcompat.QtGui import QFont, QIntValidator
+from superqt.qtcompat.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -77,7 +77,7 @@ class QtSizeSliderPreviewWidget(QWidget):
 
     Parameters
     ----------
-    parent : qtpy.QtWidgets.QWidget, optional
+    parent : QtWidgets.QWidget, optional
         Default is None.
     description : str, optional
         Default is "".

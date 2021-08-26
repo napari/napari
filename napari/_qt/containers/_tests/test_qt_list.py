@@ -1,8 +1,8 @@
 from unittest.mock import Mock
 
 import pytest
-from qtpy.QtCore import QEvent, QModelIndex, Qt
-from qtpy.QtGui import QKeyEvent
+from superqt.qtcompat.QtCore import QEvent, QModelIndex, Qt
+from superqt.qtcompat.QtGui import QKeyEvent
 
 from napari._qt.containers import QtListModel, QtListView
 from napari.utils.events._tests.test_evented_list import BASIC_INDICES

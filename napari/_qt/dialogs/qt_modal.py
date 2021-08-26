@@ -1,6 +1,6 @@
-from qtpy.QtCore import QPoint, QRect, Qt
-from qtpy.QtGui import QCursor, QGuiApplication
-from qtpy.QtWidgets import QDialog, QFrame, QVBoxLayout
+from superqt.qtcompat.QtCore import QPoint, QRect, Qt
+from superqt.qtcompat.QtGui import QCursor, QGuiApplication
+from superqt.qtcompat.QtWidgets import QDialog, QFrame, QVBoxLayout
 
 from ...utils.translations import trans
 
@@ -23,14 +23,14 @@ class QtPopup(QDialog):
 
     Parameters
     ----------
-    parent : qtpy.QtWidgets:QWidget
+    parent : QtWidgets:QWidget
         Parent widget of the popup dialog box.
 
     Attributes
     ----------
-    frame : qtpy.QtWidgets.QFrame
+    frame : QtWidgets.QFrame
         Frame of the popup dialog box.
-    layout : qtpy.QtWidgets.QVBoxLayout
+    layout : QtWidgets.QVBoxLayout
         Layout of the popup dialog box.
     """
 
@@ -145,7 +145,7 @@ class QtPopup(QDialog):
             ).geometry()
         else:
             # This widget is deprecated since Qt 5.11
-            from qtpy.QtWidgets import QDesktopWidget
+            from superqt.qtcompat.QtWidgets import QDesktopWidget
 
             screen_num = QDesktopWidget().screenNumber(QCursor.pos())
             screen_geometry = QGuiApplication.screens()[screen_num].geometry()
@@ -163,7 +163,7 @@ class QtPopup(QDialog):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):

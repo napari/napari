@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QFrame, QStackedWidget
+from superqt.qtcompat.QtWidgets import QFrame, QStackedWidget
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
 from ...utils import config
@@ -67,7 +67,7 @@ class QtLayerControlsContainer(QStackedWidget):
 
     Attributes
     ----------
-    empty_widget : qtpy.QtWidgets.QFrame
+    empty_widget : QtWidgets.QFrame
         Empty placeholder frame for when no layer is selected.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.

@@ -1,7 +1,8 @@
 import numpy as np
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QColor, QPainter
-from qtpy.QtWidgets import (
+from superqt import QLargeIntSpinBox
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtGui import QColor, QPainter
+from superqt.qtcompat.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
@@ -10,7 +11,6 @@ from qtpy.QtWidgets import (
     QSpinBox,
     QWidget,
 )
-from superqt import QLargeIntSpinBox
 
 from ...layers.image._image_constants import Rendering
 from ...layers.labels._labels_constants import (
@@ -41,28 +41,28 @@ class QtLabelsControls(QtLayerControls):
 
     Attributes
     ----------
-    button_group : qtpy.QtWidgets.QButtonGroup
+    button_group : QtWidgets.QButtonGroup
         Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, ERASE, or
         FILL.
-    colormapUpdate : qtpy.QtWidgets.QPushButton
+    colormapUpdate : QtWidgets.QPushButton
         Button to update colormap of label layer.
-    contigCheckBox : qtpy.QtWidgets.QCheckBox
+    contigCheckBox : QtWidgets.QCheckBox
         Checkbox to control if label layer is contiguous.
-    fill_button : qtpy.QtWidgets.QtModeRadioButton
+    fill_button : QtWidgets.QtModeRadioButton
         Button to select FILL mode on Labels layer.
-    grid_layout : qtpy.QtWidgets.QGridLayout
+    grid_layout : QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Labels
         An instance of a napari Labels layer.
-    ndimCheckBox : qtpy.QtWidgets.QCheckBox
+    ndimCheckBox : QtWidgets.QCheckBox
         Checkbox to control if label layer is n-dimensional.
-    paint_button : qtpy.QtWidgets.QtModeRadioButton
+    paint_button : QtWidgets.QtModeRadioButton
         Button to select PAINT mode on Labels layer.
-    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+    panzoom_button : QtWidgets.QtModeRadioButton
         Button to select PAN_ZOOM mode on Labels layer.
-    pick_button : qtpy.QtWidgets.QtModeRadioButton
+    pick_button : QtWidgets.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
-    erase_button : qtpy.QtWidgets.QtModeRadioButton
+    erase_button : QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
     selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
@@ -630,7 +630,7 @@ class QtColorBox(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         painter = QPainter(self)

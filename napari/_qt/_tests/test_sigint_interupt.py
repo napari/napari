@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from qtpy.QtCore import QTimer
+from superqt.qtcompat.QtCore import QTimer
 
 from napari._qt.utils import _maybe_allow_interrupt
 

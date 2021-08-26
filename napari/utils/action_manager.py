@@ -11,7 +11,7 @@ from .key_bindings import KeymapProvider
 from .translations import trans
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QPushButton
+    from superqt.qtcompat.QtWidgets import QPushButton
 
     from napari.qt import QtStateButton
 

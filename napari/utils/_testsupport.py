@@ -98,7 +98,7 @@ def make_napari_viewer(
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
     """
-    from qtpy.QtWidgets import QApplication
+    from superqt.qtcompat.QtWidgets import QApplication
 
     from napari import Viewer
     from napari.settings import get_settings

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from qtpy.QtCore import Qt, Signal
-from qtpy.QtGui import QKeySequence, QPainter
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import Qt, Signal
+from superqt.qtcompat.QtGui import QKeySequence, QPainter
+from superqt.qtcompat.QtWidgets import (
     QFormLayout,
     QLabel,
     QStackedWidget,
@@ -80,7 +80,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         option = QStyleOption()
@@ -109,7 +109,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         self._update_property("drag", True)
@@ -125,7 +125,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         self._update_property("drag", False)
@@ -137,7 +137,7 @@ class QtWelcomeWidget(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         self._update_property("drag", False)

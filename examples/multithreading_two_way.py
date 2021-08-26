@@ -1,6 +1,6 @@
 import time
 
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtWidgets import (
     QGridLayout,
     QLabel,
     QProgressBar,

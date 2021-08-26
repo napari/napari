@@ -1,7 +1,7 @@
 """Copy screenshot of the canvas or the whole viewer to clipboard."""
 from skimage import data
 
-from qtpy.QtWidgets import QVBoxLayout, QPushButton, QWidget
+from superqt.qtcompat.QtWidgets import QVBoxLayout, QPushButton, QWidget
 
 import napari
 

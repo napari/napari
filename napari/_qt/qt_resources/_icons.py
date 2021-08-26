@@ -35,7 +35,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 
-import qtpy
+from superqt import qtcompat
 
 from ...utils.translations import trans
 
@@ -221,13 +221,15 @@ def _compile_qrc_pyside2(qrc) -> bytes:
 
 def compile_qrc(qrc) -> bytes:
     """Compile a qrc file into a resources.py bytes"""
-    if qtpy.API_NAME == 'PyQt5':
-        return _compile_qrc_pyqt5(qrc).replace(b'PyQt5', b'qtpy')
-    elif qtpy.API_NAME == 'PySide2':
-        return _compile_qrc_pyside2(qrc).replace(b'PySide2', b'qtpy')
+    if qtcompat.API_NAME == 'PyQt5':
+        return _compile_qrc_pyqt5(qrc).replace(b'PyQt5', b'superqt.qtcompat')
+    elif qtcompat.API_NAME == 'PySide2':
+        return _compile_qrc_pyside2(qrc).replace(
+            b'PySide2', b'superqt.qtcompat'
+        )
     else:
         raise RuntimeError(
-            f"Cannot compile QRC. Unexpected qtpy API name: {qtpy.API_NAME}"
+            f"Cannot compile QRC. Unexpected API name: {qtcompat.API_NAME}"
         )
 
 
@@ -357,7 +359,9 @@ def _register_napari_resources(persist=True, force_rebuild=False):
     from ...utils.misc import dir_hash
 
     icon_hash = dir_hash(ICON_PATH)  # get hash of icons folder contents
-    key = f'_qt_resources_{qtpy.API_NAME}_{qtpy.QT_VERSION}_{icon_hash}'
+    key = (
+        f'_qt_resources_{qtcompat.API_NAME}_{qtcompat.QT_VERSION}_{icon_hash}'
+    )
     key = key.replace(".", "_")
     save_path = Path(__file__).parent / f"{key}.py"
 

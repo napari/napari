@@ -1,5 +1,5 @@
-from qtpy.QtCore import QPoint, Qt
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import QPoint, Qt
+from superqt.qtcompat.QtWidgets import (
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -382,7 +382,7 @@ class QtDeleteButton(QPushButton):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         event.accept()
@@ -398,7 +398,7 @@ class QtDeleteButton(QPushButton):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         event.ignore()
@@ -410,7 +410,7 @@ class QtDeleteButton(QPushButton):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         event.accept()
@@ -502,7 +502,7 @@ class QtStateButton(QtViewerPushButton):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         with self._events.blocker():

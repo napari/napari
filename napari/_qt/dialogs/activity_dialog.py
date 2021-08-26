@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from qtpy.QtCore import QPoint, QSize, Qt
-from qtpy.QtGui import QMovie
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import QPoint, QSize, Qt
+from superqt.qtcompat.QtGui import QMovie
+from superqt.qtcompat.QtWidgets import (
     QDialog,
     QFrame,
     QGraphicsOpacityEffect,

@@ -2,8 +2,8 @@ from pathlib import Path
 
 from jinja2 import Template
 from pydantic import BaseModel
-from qtpy.QtCore import QTimer
-from qtpy.QtWidgets import QMessageBox
+from superqt.qtcompat.QtCore import QTimer
+from superqt.qtcompat.QtWidgets import QMessageBox
 
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.qt_event_loop import get_app

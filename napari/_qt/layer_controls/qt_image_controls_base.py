@@ -4,10 +4,15 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 import numpy as np
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 from superqt import QDoubleRangeSlider
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtGui import QImage, QPixmap
+from superqt.qtcompat.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QWidget,
+)
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
@@ -36,13 +41,13 @@ class QtBaseImageControls(QtLayerControls):
     ----------
     clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
         Popup widget launching the contrast range slider.
-    colorbarLabel : qtpy.QtWidgets.QLabel
+    colorbarLabel : QtWidgets.QLabel
         Label text of colorbar widget.
-    colormapComboBox : qtpy.QtWidgets.QComboBox
+    colormapComboBox : QtWidgets.QComboBox
         Dropdown widget for selecting the layer colormap.
     contrastLimitsSlider : superqt.QRangeSlider
         Contrast range slider widget.
-    gammaSlider : qtpy.QtWidgets.QSlider
+    gammaSlider : QtWidgets.QSlider
         Gamma adjustment slider widget.
     layer : napari.layers.Layer
         An instance of a napari layer.

@@ -3,9 +3,9 @@
 from typing import Optional
 
 from napari_plugin_engine import standard_metadata
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtGui import QGuiApplication
+from superqt.qtcompat.QtWidgets import (
     QComboBox,
     QDialog,
     QHBoxLayout,
@@ -33,19 +33,19 @@ class QtPluginErrReporter(QDialog):
 
     Attributes
     ----------
-    text_area : qtpy.QtWidgets.QTextEdit
+    text_area : QtWidgets.QTextEdit
         The text area where traceback information will be shown.
-    plugin_combo : qtpy.QtWidgets.QComboBox
+    plugin_combo : QtWidgets.QComboBox
         The dropdown menu used to select the current plugin
-    github_button : qtpy.QtWidgets.QPushButton
+    github_button : QtWidgets.QPushButton
         A button that, when pressed, will open an issue at the current plugin's
         github issue tracker, prepopulated with a formatted traceback.  Button
         is only visible if a github URL is detected in the package metadata for
         the current plugin.
-    clipboard_button : qtpy.QtWidgets.QPushButton
+    clipboard_button : QtWidgets.QPushButton
         A button that, when pressed, copies the current traceback information
         to the clipboard.  (HTML tags are removed in the copied text.)
-    plugin_meta : qtpy.QtWidgets.QLabel
+    plugin_meta : QtWidgets.QLabel
         A label that will show available plugin metadata (such as home page).
     """
 

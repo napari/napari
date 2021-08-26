@@ -2,9 +2,9 @@ import re
 from typing import Optional, Union
 
 import numpy as np
-from qtpy.QtCore import QEvent, Qt, Signal, Slot
-from qtpy.QtGui import QColor, QKeyEvent
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import QEvent, Qt, Signal, Slot
+from superqt.qtcompat.QtGui import QColor, QKeyEvent
+from superqt.qtcompat.QtWidgets import (
     QColorDialog,
     QCompleter,
     QFrame,

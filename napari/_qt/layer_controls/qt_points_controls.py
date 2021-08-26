@@ -1,6 +1,6 @@
 import numpy as np
-from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import Qt, Slot
+from superqt.qtcompat.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
@@ -29,33 +29,33 @@ class QtPointsControls(QtLayerControls):
 
     Attributes
     ----------
-    addition_button : qtpy.QtWidgets.QtModeRadioButton
+    addition_button : QtWidgets.QtModeRadioButton
         Button to add points to layer.
-    button_group : qtpy.QtWidgets.QButtonGroup
+    button_group : QtWidgets.QButtonGroup
         Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
-    delete_button : qtpy.QtWidgets.QtModePushButton
+    delete_button : QtWidgets.QtModePushButton
         Button to delete points from layer.
-    edgeColorSwatch : qtpy.QtWidgets.QFrame
+    edgeColorSwatch : QtWidgets.QFrame
         Color swatch showing shapes edge display color.
-    edgeComboBox : qtpy.QtWidgets.QComboBox
+    edgeComboBox : QtWidgets.QComboBox
         Dropdown widget to select display color for shape edges.
-    faceColorSwatch : qtpy.QtWidgets.QFrame
+    faceColorSwatch : QtWidgets.QFrame
         Color swatch showing shapes face display color.
-    faceComboBox : qtpy.QtWidgets.QComboBox
+    faceComboBox : QtWidgets.QComboBox
         Dropdown widget to select display color for shape faces.
-    grid_layout : qtpy.QtWidgets.QGridLayout
+    grid_layout : QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Points
         An instance of a napari Points layer.
-    ndimCheckBox : qtpy.QtWidgets.QCheckBox
+    ndimCheckBox : QtWidgets.QCheckBox
         Checkbox to indicate whether layer is n-dimensional.
-    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+    panzoom_button : QtWidgets.QtModeRadioButton
         Button for pan/zoom mode.
-    select_button : qtpy.QtWidgets.QtModeRadioButton
+    select_button : QtWidgets.QtModeRadioButton
         Button to select points from layer.
-    sizeSlider : qtpy.QtWidgets.QSlider
+    sizeSlider : QtWidgets.QSlider
         Slider controlling size of points.
-    symbolComboBox : qtpy.QtWidgets.QComboBox
+    symbolComboBox : QtWidgets.QComboBox
         Drop down list of symbol options for points markers.
 
     Raises
@@ -278,7 +278,7 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         with self.layer.text.events.visible.blocker():

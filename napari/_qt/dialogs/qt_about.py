@@ -1,6 +1,6 @@
-from qtpy import QtGui
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
+from superqt.qtcompat import QtGui
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -26,17 +26,17 @@ class QtAbout(QDialog):
     ----------
     citationCopyButton : napari._qt.qt_about.QtCopyToClipboardButton
         Button to copy citation information to the clipboard.
-    citationTextBox : qtpy.QtWidgets.QTextEdit
+    citationTextBox : QtWidgets.QTextEdit
         Text box containing napari citation information.
-    citation_layout : qtpy.QtWidgets.QHBoxLayout
+    citation_layout : QtWidgets.QHBoxLayout
         Layout widget for napari citation information.
     infoCopyButton : napari._qt.qt_about.QtCopyToClipboardButton
         Button to copy napari version information to the clipboard.
-    info_layout : qtpy.QtWidgets.QHBoxLayout
+    info_layout : QtWidgets.QHBoxLayout
         Layout widget for napari version information.
-    infoTextBox : qtpy.QtWidgets.QTextEdit
+    infoTextBox : QtWidgets.QTextEdit
         Text box containing napari version information.
-    layout : qtpy.QtWidgets.QVBoxLayout
+    layout : QtWidgets.QVBoxLayout
         Layout widget for the entire 'About napari' dialog.
     """
 
@@ -107,12 +107,12 @@ class QtCopyToClipboardButton(QPushButton):
 
     Parameters
     ----------
-    text_edit : qtpy.QtWidgets.QTextEdit
+    text_edit : QtWidgets.QTextEdit
         The text box contents linked to copy to clipboard button.
 
     Attributes
     ----------
-    text_edit : qtpy.QtWidgets.QTextEdit
+    text_edit : QtWidgets.QTextEdit
         The text box contents linked to copy to clipboard button.
     """
 

@@ -3,14 +3,14 @@ from __future__ import annotations
 from collections.abc import MutableSequence
 from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
 
-from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
+from superqt.qtcompat.QtCore import QAbstractItemModel, QModelIndex, Qt
 
 from ...utils.events import disconnect_events
 from ...utils.events.containers import SelectableEventedList
 from ...utils.translations import trans
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget
+    from superqt.qtcompat.QtWidgets import QWidget
 
 
 ItemType = TypeVar("ItemType")

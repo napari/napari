@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from qtpy.QtCore import Qt
+from superqt.qtcompat.QtCore import Qt
 
 from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims

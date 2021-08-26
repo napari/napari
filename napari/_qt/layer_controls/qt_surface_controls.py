@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel
+from superqt.qtcompat.QtWidgets import QComboBox, QHBoxLayout, QLabel
 
 from ...layers.surface._surface_constants import SHADING_TRANSLATION
 from ...utils.translations import trans
@@ -15,7 +15,7 @@ class QtSurfaceControls(QtBaseImageControls):
 
     Attributes
     ----------
-    grid_layout : qtpy.QtWidgets.QGridLayout
+    grid_layout : QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Surface
         An instance of a napari Surface layer.

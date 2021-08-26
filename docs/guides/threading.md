@@ -260,7 +260,7 @@ emphasize-lines: 20,30
 import time
 import napari
 from napari.qt.threading import thread_worker
-from qtpy.QtWidgets import QPushButton
+from superqt.qtcompat.QtWidgets import QPushButton
 
 viewer = napari.Viewer()
 
@@ -330,8 +330,8 @@ import napari
 import time
 
 from napari.qt.threading import thread_worker
-from qtpy.QtWidgets import QLineEdit, QLabel, QWidget, QVBoxLayout
-from qtpy.QtGui import QDoubleValidator
+from superqt.qtcompat.QtWidgets import QLineEdit, QLabel, QWidget, QVBoxLayout
+from superqt.qtcompat.QtGui import QDoubleValidator
 
 
 @thread_worker
@@ -521,7 +521,7 @@ worker namespace).  To add custom signals to a
 `QObject` with signals as class attributes:
 
 ```python
-from qtpy.QtCore import QObject, Signal
+from superqt.qtcompat.QtCore import QObject, Signal
 
 class MyWorkerSignals(QObject):
     signal_name = Signal()

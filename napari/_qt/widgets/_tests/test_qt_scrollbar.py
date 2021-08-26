@@ -1,4 +1,4 @@
-from qtpy.QtCore import QPoint, Qt
+from superqt.qtcompat.QtCore import QPoint, Qt
 
 from napari._qt.widgets.qt_scrollbar import ModifiedScrollBar
 

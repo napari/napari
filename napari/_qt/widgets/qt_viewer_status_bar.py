@@ -1,8 +1,8 @@
 """Status bar widget on the viewer MainWindow"""
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QStatusBar
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import QLabel, QStatusBar
 
 from ...utils.translations import trans
 from ..dialogs.activity_dialog import ActivityToggleItem

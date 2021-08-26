@@ -11,7 +11,7 @@ from napari._tests.utils import skip_local_popups
 # if you don't show the viewer...
 PERFMON_SCRIPT = """
 import napari
-from qtpy.QtCore import QTimer
+from superqt.qtcompat.QtCore import QTimer
 
 v = napari.view_points()
 QTimer.singleShot(100, napari._qt.qt_event_loop.quit_app)

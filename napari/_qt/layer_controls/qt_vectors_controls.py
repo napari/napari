@@ -1,6 +1,6 @@
 import numpy as np
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QDoubleSpinBox, QLabel
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import QComboBox, QDoubleSpinBox, QLabel
 
 from ...layers.utils._color_manager_constants import ColorMode
 from ...utils.translations import trans
@@ -19,26 +19,26 @@ class QtVectorsControls(QtLayerControls):
 
     Attributes
     ----------
-    edge_color_label : qtpy.QtWidgets.QLabel
+    edge_color_label : QtWidgets.QLabel
         Label for edgeColorSwatch
-    edgeColorSwatch : qtpy.QtWidgets.QFrame
+    edgeColorSwatch : QtWidgets.QFrame
         Color swatch showing display color of vectors.
-    edgeComboBox : qtpy.QtWidgets.QComboBox
+    edgeComboBox : QtWidgets.QComboBox
         Dropdown widget to select display color for vectors.
-    color_mode_comboBox : qtpy.QtWidgets.QComboBox
+    color_mode_comboBox : QtWidgets.QComboBox
         Dropdown widget to select edge_color_mode for the vectors.
-    color_prop_box : qtpy.QtWidgets.QComboBox
+    color_prop_box : QtWidgets.QComboBox
         Dropdown widget to select _edge_color_property for the vectors.
-    edge_prop_label : qtpy.QtWidgets.QLabel
+    edge_prop_label : QtWidgets.QLabel
         Label for color_prop_box
-    grid_layout : qtpy.QtWidgets.QGridLayout
+    grid_layout : QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Vectors
         An instance of a napari Vectors layer.
-    lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
+    lengthSpinBox : QtWidgets.QDoubleSpinBox
         Spin box widget controlling line length of vectors.
         Multiplicative factor on projections for length of all vectors.
-    widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
+    widthSpinBox : QtWidgets.QDoubleSpinBox
         Spin box widget controlling edge line width of vectors.
     """
 

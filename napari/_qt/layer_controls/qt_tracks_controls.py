@@ -1,5 +1,5 @@
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QSlider
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import QCheckBox, QComboBox, QLabel, QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
@@ -17,7 +17,7 @@ class QtTracksControls(QtLayerControls):
 
     Attributes
     ----------
-    grid_layout : qtpy.QtWidgets.QGridLayout
+    grid_layout : QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : layers.Tracks
         An instance of a Tracks layer.
@@ -119,7 +119,7 @@ class QtTracksControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.tail_width.blocker():
@@ -131,7 +131,7 @@ class QtTracksControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.tail_length.blocker():
@@ -143,7 +143,7 @@ class QtTracksControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.head_length.blocker():
@@ -163,7 +163,7 @@ class QtTracksControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.colormap.blocker():
@@ -176,7 +176,7 @@ class QtTracksControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.color_by.blocker():

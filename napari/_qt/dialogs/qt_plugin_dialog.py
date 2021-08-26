@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Sequence
 
 from napari_plugin_engine.dist import standard_metadata
-from qtpy.QtCore import (
+from superqt import QElidingLabel
+from superqt.qtcompat.QtCore import (
     QEvent,
     QObject,
     QProcess,
@@ -14,8 +15,8 @@ from qtpy.QtCore import (
     Signal,
     Slot,
 )
-from qtpy.QtGui import QFont, QMovie
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtGui import QFont, QMovie
+from superqt.qtcompat.QtWidgets import (
     QCheckBox,
     QDialog,
     QFrame,
@@ -31,7 +32,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QElidingLabel
 from typing_extensions import Literal
 
 import napari.resources
@@ -230,7 +230,7 @@ class Installer(QObject):
         """
         Check if conda was used to install qt and napari.
         """
-        from qtpy import QT_VERSION
+        from superqt.qtcompat import QT_VERSION
 
         from ..._version import version_tuple
 
@@ -684,7 +684,7 @@ class QtPluginDialog(QDialog):
 
 
 if __name__ == "__main__":
-    from qtpy.QtWidgets import QApplication
+    from superqt.qtcompat.QtWidgets import QApplication
 
     app = QApplication([])
     w = QtPluginDialog()

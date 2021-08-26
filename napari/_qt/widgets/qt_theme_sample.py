@@ -16,8 +16,9 @@ To generate a screenshot within python:
 >>> screenshot = widg.screenshot()
 """
 
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
+from superqt import QRangeSlider
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
@@ -39,7 +40,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QRangeSlider
 
 from ...utils.io import imsave
 from ..qt_resources import get_stylesheet

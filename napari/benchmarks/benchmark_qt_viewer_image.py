@@ -3,7 +3,7 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
 import numpy as np
-from qtpy.QtWidgets import QApplication
+from superqt.qtcompat.QtWidgets import QApplication
 
 import napari
 

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QMenu
+from superqt.qtcompat.QtWidgets import QMenu
 
 from ...utils.translations import trans
 from ..dialogs.qt_about import QtAbout

@@ -5,9 +5,14 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, Qt
-from qtpy.QtGui import QCursor, QGuiApplication
-from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from superqt.qtcompat.QtCore import QCoreApplication, QObject, Qt
+from superqt.qtcompat.QtGui import QCursor, QGuiApplication
+from superqt.qtcompat.QtWidgets import (
+    QFileDialog,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
@@ -937,7 +942,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         self.canvas._backend._keyEvent(self.canvas.events.key_press, event)
@@ -948,7 +953,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         self.canvas._backend._keyEvent(self.canvas.events.key_release, event)
@@ -963,7 +968,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         if event.mimeData().hasUrls():
@@ -976,7 +981,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         shift_down = QGuiApplication.keyboardModifiers() & Qt.ShiftModifier
@@ -994,7 +999,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         self.layers.close()

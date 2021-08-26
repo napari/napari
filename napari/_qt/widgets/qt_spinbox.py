@@ -1,5 +1,5 @@
-from qtpy.QtGui import QValidator
-from qtpy.QtWidgets import QSpinBox
+from superqt.qtcompat.QtGui import QValidator
+from superqt.qtcompat.QtWidgets import QSpinBox
 
 
 class QtSpinBox(QSpinBox):

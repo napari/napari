@@ -1,6 +1,6 @@
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QHBoxLayout
 from superqt import QLabeledDoubleRangeSlider
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import QApplication, QHBoxLayout
 
 from ..dialogs.qt_modal import QtPopup
 
@@ -41,7 +41,7 @@ class QRangeSliderPopup(QtPopup):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         # we override the parent keyPressEvent so that hitting enter does not

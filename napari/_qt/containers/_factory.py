@@ -8,7 +8,7 @@ from ...utils.translations import trans
 from ...utils.tree import Group
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget
+    from superqt.qtcompat.QtWidgets import QWidget
 
 
 def create_view(

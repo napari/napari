@@ -25,7 +25,7 @@ examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
 
 @pytest.fixture
 def qapp():
-    from qtpy.QtCore import QTimer
+    from superqt.qtcompat.QtCore import QTimer
 
     from napari._qt.qt_event_loop import get_app
 

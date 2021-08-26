@@ -1,9 +1,9 @@
 import re
 from typing import List, Optional
 
-from qtpy.QtCore import QSize, Slot
-from qtpy.QtGui import QFont
-from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
+from superqt.qtcompat.QtCore import QSize, Slot
+from superqt.qtcompat.QtGui import QFont
+from superqt.qtcompat.QtWidgets import QTableWidget, QTableWidgetItem
 
 from ...utils.translations import trans
 

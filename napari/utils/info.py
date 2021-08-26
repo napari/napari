@@ -92,7 +92,12 @@ def sys_info(as_html=False):
     text += f"<b>Python</b>: {sys_version}<br>"
 
     try:
-        from qtpy import API_NAME, PYQT_VERSION, PYSIDE_VERSION, QtCore
+        from superqt.qtcompat import (
+            API_NAME,
+            PYQT_VERSION,
+            PYSIDE_VERSION,
+            QtCore,
+        )
 
         if API_NAME == 'PySide2':
             API_VERSION = PYSIDE_VERSION
@@ -144,7 +149,7 @@ def sys_info(as_html=False):
     text += "<br><b>Screens:</b><br>"
 
     try:
-        from qtpy.QtGui import QGuiApplication
+        from superqt.qtcompat.QtGui import QGuiApplication
 
         screen_list = QGuiApplication.screens()
         for i, screen in enumerate(screen_list, start=1):

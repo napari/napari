@@ -6,9 +6,9 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import QApplication
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtGui import QIcon
+from superqt.qtcompat.QtWidgets import QApplication
 
 from .. import __version__
 from ..settings import get_settings
@@ -359,7 +359,7 @@ def run(
     if not app:
         raise RuntimeError(
             trans._(
-                'No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`',
+                'No Qt app has been created. One can be created by calling `get_app()` or `QtWidgets.QApplication([])`',
                 deferred=True,
             )
         )

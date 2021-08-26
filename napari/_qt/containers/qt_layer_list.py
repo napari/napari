@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSortFilterProxyModel, Qt
+from superqt.qtcompat.QtCore import QSortFilterProxyModel, Qt
 
 from ...layers import Layer
 from ...utils.translations import trans
@@ -11,8 +11,8 @@ from ._layer_delegate import LayerDelegate
 from .qt_list_view import QtListView
 
 if TYPE_CHECKING:
-    from qtpy.QtGui import QKeyEvent
-    from qtpy.QtWidgets import QWidget
+    from superqt.qtcompat.QtGui import QKeyEvent
+    from superqt.qtcompat.QtWidgets import QWidget
 
     from ...components.layerlist import LayerList
 

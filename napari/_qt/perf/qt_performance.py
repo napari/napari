@@ -2,9 +2,9 @@
 """
 import time
 
-from qtpy.QtCore import Qt, QTimer
-from qtpy.QtGui import QTextCursor
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import Qt, QTimer
+from superqt.qtcompat.QtGui import QTextCursor
+from superqt.qtcompat.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,

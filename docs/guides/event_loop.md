@@ -101,7 +101,7 @@ Application:
    instantiating any widgets.
 
    ```python
-   from qtpy.QtWidgets import QApplication
+   from superqt.qtcompat.QtWidgets import QApplication
 
    app = QApplication([])  # where [] is a list of args passed to the App
    ```

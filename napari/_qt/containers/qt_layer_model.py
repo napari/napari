@@ -1,5 +1,5 @@
-from qtpy.QtCore import QModelIndex, QSize, Qt
-from qtpy.QtGui import QImage
+from superqt.qtcompat.QtCore import QModelIndex, QSize, Qt
+from superqt.qtcompat.QtGui import QImage
 
 from ...layers import Layer
 from .qt_list_model import QtListModel

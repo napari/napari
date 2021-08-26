@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar
 
-from qtpy.QtWidgets import QListView
+from superqt.qtcompat.QtWidgets import QListView
 
 from ._base_item_view import _BaseEventedItemView
 from .qt_list_model import QtListModel
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget
+    from superqt.qtcompat.QtWidgets import QWidget
 
     from ...utils.events.containers import SelectableEventedList
 

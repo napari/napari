@@ -5,7 +5,7 @@ the napari viewer.
 import napari
 from time import sleep
 from napari.qt import progress
-from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
+from superqt.qtcompat.QtWidgets import QPushButton, QVBoxLayout, QWidget
 import numpy as np
 from random import choice
 

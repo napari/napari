@@ -5,8 +5,8 @@ from unittest import mock
 
 import numpy as np
 import pytest
-from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import QMessageBox
+from superqt.qtcompat.QtGui import QGuiApplication
+from superqt.qtcompat.QtWidgets import QMessageBox
 
 from napari._tests.utils import (
     add_layer_by_type,

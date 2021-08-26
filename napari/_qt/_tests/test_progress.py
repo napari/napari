@@ -5,7 +5,9 @@ from contextlib import contextmanager
 import numpy as np
 import pytest
 
-pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
+pytest.importorskip(
+    'superqt.qtcompat', reason='Cannot test progress without superqt.qtcompat.'
+)
 
 from napari._qt.widgets.qt_progress_bar import (  # noqa
     ProgressBar,

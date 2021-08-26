@@ -5,7 +5,7 @@ from functools import partial, wraps
 from typing import Any, Callable, Dict, Optional, Sequence, Set, Type, Union
 
 import toolz as tz
-from qtpy.QtCore import (
+from superqt.qtcompat.QtCore import (
     QObject,
     QRunnable,
     QThread,

@@ -4,9 +4,15 @@ A Class for generating QIcons from SVGs with arbitrary colors at runtime.
 from functools import lru_cache
 from typing import Optional, Union
 
-from qtpy.QtCore import QByteArray, QPoint, QRect, QRectF, Qt
-from qtpy.QtGui import QIcon, QIconEngine, QImage, QPainter, QPixmap
-from qtpy.QtSvg import QSvgRenderer
+from superqt.qtcompat.QtCore import QByteArray, QPoint, QRect, QRectF, Qt
+from superqt.qtcompat.QtGui import (
+    QIcon,
+    QIconEngine,
+    QImage,
+    QPainter,
+    QPixmap,
+)
+from superqt.qtcompat.QtSvg import QSvgRenderer
 
 
 class QColoredSVGIcon(QIcon):
@@ -25,7 +31,7 @@ class QColoredSVGIcon(QIcon):
     Examples
     --------
     >>> from napari._qt.qt_resources import QColoredSVGIcon
-    >>> from qtpy.QtWidgets import QLabel
+    >>> from superqt.qtcompat.QtWidgets import QLabel
 
     # Create icon with specific color
     >>> label = QLabel()

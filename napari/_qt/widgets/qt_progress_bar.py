@@ -1,5 +1,5 @@
-from qtpy import QtCore
-from qtpy.QtWidgets import (
+from superqt.qtcompat import QtCore
+from superqt.qtcompat.QtWidgets import (
     QApplication,
     QFrame,
     QHBoxLayout,

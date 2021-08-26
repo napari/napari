@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
-from qtpy.QtWidgets import QFileDialog, QMessageBox
+from superqt.qtcompat.QtWidgets import QFileDialog, QMessageBox
 
 from ...utils.misc import in_ipython
 from ...utils.translations import trans

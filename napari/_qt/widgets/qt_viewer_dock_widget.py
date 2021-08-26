@@ -4,8 +4,8 @@ from itertools import count
 from operator import ior
 from typing import List, Optional
 
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import (
     QDockWidget,
     QFrame,
     QHBoxLayout,

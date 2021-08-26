@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 
-from qtpy import QtCore, QtGui, QtWidgets
+from superqt.qtcompat import QtCore, QtGui, QtWidgets
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 

@@ -5,16 +5,23 @@ from functools import lru_cache, partial
 from typing import Sequence, Union
 
 import numpy as np
-import qtpy
-from qtpy.QtCore import (
+from superqt import qtcompat
+from superqt.qtcompat.QtCore import (
     QByteArray,
     QPropertyAnimation,
     QSize,
     QSocketNotifier,
     Qt,
 )
-from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtGui import (
+    QColor,
+    QCursor,
+    QDrag,
+    QImage,
+    QPainter,
+    QPixmap,
+)
+from superqt.qtcompat.QtWidgets import (
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
     QHBoxLayout,
@@ -81,7 +88,7 @@ def QImg2array(img):
 
     Parameters
     ----------
-    img : qtpy.QtGui.QImage
+    img : QtGui.QImage
         QImage to be converted.
 
     Returns
@@ -96,10 +103,10 @@ def QImg2array(img):
     b = img.constBits()
     h, w, c = img.height(), img.width(), 4
 
-    # As vispy doesn't use qtpy we need to reconcile the differences
+    # As vispy doesn't use qtcompat we need to reconcile the differences
     # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
     # a QImage to a numpy array.
-    if qtpy.API_NAME == 'PySide2':
+    if qtcompat.API_NAME == 'PySide2':
         arr = np.array(b).reshape(h, w, c)
     else:
         b.setsize(h * w * c)
@@ -122,7 +129,7 @@ def qt_signals_blocked(obj):
 @contextmanager
 def event_hook_removed():
     """Context manager to temporarily remove the PyQt5 input hook"""
-    from qtpy import QtCore
+    from superqt.qtcompat import QtCore
 
     if hasattr(QtCore, 'pyqtRemoveInputHook'):
         QtCore.pyqtRemoveInputHook()

@@ -2,7 +2,7 @@ import logging
 import pickle
 from typing import List, Optional, Sequence, TypeVar
 
-from qtpy.QtCore import QMimeData, QModelIndex, Qt
+from superqt.qtcompat.QtCore import QMimeData, QModelIndex, Qt
 
 from ._base_item_model import _BaseEventedItemModel
 

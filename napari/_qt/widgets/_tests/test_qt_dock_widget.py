@@ -1,5 +1,5 @@
 import pytest
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
     QPushButton,

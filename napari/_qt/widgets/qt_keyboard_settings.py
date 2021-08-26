@@ -1,9 +1,9 @@
 import re
 from collections import OrderedDict
 
-from qtpy.QtCore import QEvent, QPoint, Qt, Signal
-from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import QEvent, QPoint, Qt, Signal
+from superqt.qtcompat.QtGui import QKeySequence
+from superqt.qtcompat.QtWidgets import (
     QAbstractItemView,
     QComboBox,
     QDialog,

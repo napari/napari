@@ -1,8 +1,13 @@
 from collections.abc import Iterable
 
 import numpy as np
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QLabel
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QGridLayout,
+    QLabel,
+)
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.action_manager import action_manager
@@ -26,49 +31,49 @@ class QtShapesControls(QtLayerControls):
 
     Attributes
     ----------
-    button_group : qtpy.QtWidgets.QButtonGroup
+    button_group : QtWidgets.QButtonGroup
         Button group for shapes layer modes
         (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
         ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE).
-    delete_button : qtpy.QtWidgets.QtModePushButton
+    delete_button : QtWidgets.QtModePushButton
         Button to delete selected shapes
-    direct_button : qtpy.QtWidgets.QtModeRadioButton
+    direct_button : QtWidgets.QtModeRadioButton
         Button to select individual vertices in shapes.
-    edgeColorSwatch : qtpy.QtWidgets.QFrame
+    edgeColorSwatch : QtWidgets.QFrame
         Thumbnail display of points edge color.
-    edgeComboBox : qtpy.QtWidgets.QComboBox
+    edgeComboBox : QtWidgets.QComboBox
         Drop down list allowing user to set edge color of points.
-    ellipse_button : qtpy.QtWidgets.QtModeRadioButton
+    ellipse_button : QtWidgets.QtModeRadioButton
         Button to add ellipses to shapes layer.
-    faceColorSwatch : qtpy.QtWidgets.QFrame
+    faceColorSwatch : QtWidgets.QFrame
         Thumbnail display of points face color.
-    faceComboBox : qtpy.QtWidgets.QComboBox
+    faceComboBox : QtWidgets.QComboBox
         Drop down list allowing user to set face color of points.
-    grid_layout : qtpy.QtWidgets.QGridLayout
+    grid_layout : QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Shapes
         An instance of a napari Shapes layer.
-    line_button : qtpy.QtWidgets.QtModeRadioButton
+    line_button : QtWidgets.QtModeRadioButton
         Button to add lines to shapes layer.
-    move_back_button : qtpy.QtWidgets.QtModePushButton
+    move_back_button : QtWidgets.QtModePushButton
         Button to move selected shape(s) to the back.
-    move_front_button : qtpy.QtWidgets.QtModePushButton
+    move_front_button : QtWidgets.QtModePushButton
         Button to move shape(s) to the front.
-    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+    panzoom_button : QtWidgets.QtModeRadioButton
         Button to pan/zoom shapes layer.
-    path_button : qtpy.QtWidgets.QtModeRadioButton
+    path_button : QtWidgets.QtModeRadioButton
         Button to add paths to shapes layer.
-    polygon_button : qtpy.QtWidgets.QtModeRadioButton
+    polygon_button : QtWidgets.QtModeRadioButton
         Button to add polygons to shapes layer.
-    rectangle_button : qtpy.QtWidgets.QtModeRadioButton
+    rectangle_button : QtWidgets.QtModeRadioButton
         Button to add rectangles to shapes layer.
-    select_button : qtpy.QtWidgets.QtModeRadioButton
+    select_button : QtWidgets.QtModeRadioButton
         Button to select shapes.
-    vertex_insert_button : qtpy.QtWidgets.QtModeRadioButton
+    vertex_insert_button : QtWidgets.QtModeRadioButton
         Button to insert vertex into shape.
-    vertex_remove_button : qtpy.QtWidgets.QtModeRadioButton
+    vertex_remove_button : QtWidgets.QtModeRadioButton
         Button to remove vertex from shapes.
-    widthSlider : qtpy.QtWidgets.QSlider
+    widthSlider : QtWidgets.QSlider
         Slider controlling line edge width of shapes.
 
     Raises
@@ -403,7 +408,7 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         with self.layer.text.events.visible.blocker():

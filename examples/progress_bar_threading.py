@@ -2,7 +2,7 @@
 @thread_worker to report progress.
 """
 from time import sleep
-from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
+from superqt.qtcompat.QtWidgets import QPushButton, QVBoxLayout, QWidget
 import napari
 from napari.qt import thread_worker
 

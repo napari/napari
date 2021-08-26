@@ -1,6 +1,6 @@
 """QtChunkReceiver and QtGuiEvent classes.
 """
-from qtpy.QtCore import QObject, Signal
+from superqt.qtcompat.QtCore import QObject, Signal
 
 from ...components.experimental.chunk import chunk_loader
 from ...utils.events import EmitterGroup, Event, EventEmitter

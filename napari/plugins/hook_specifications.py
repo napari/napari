@@ -439,7 +439,7 @@ def napari_experimental_provide_dock_widget() -> Union[
     result : callable or tuple or list of callables or list of tuples
         A "callable" in this context is a class or function that, when
         called, returns an instance of either a
-        :class:`~qtpy.QtWidgets.QWidget` or a
+        :class:`~superqt.qtcompat.QtWidgets.QWidget` or a
         :class:`~magicgui.widgets.FunctionGui`.
 
         Implementations of this hook specification must return a callable, or a
@@ -456,7 +456,7 @@ def napari_experimental_provide_dock_widget() -> Union[
     --------
     An example with a QtWidget:
 
-    >>> from qtpy.QtWidgets import QWidget
+    >>> from superqt.qtcompat.QtWidgets import QWidget
     >>> from napari_plugin_engine import napari_hook_implementation
     >>>
     >>> class MyWidget(QWidget):

@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from qtpy.QtWidgets import QSpinBox
+from superqt.qtcompat.QtWidgets import QSpinBox
 
 from napari.utils.events import EmitterGroup
 

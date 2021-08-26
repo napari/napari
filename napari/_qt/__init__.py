@@ -7,7 +7,7 @@ from warnings import warn
 from ..utils.translations import trans
 
 try:
-    from qtpy import API_NAME, QtCore
+    from superqt.qtcompat import API_NAME, QtCore
 except Exception as e:
     if 'No Qt bindings could be found' in str(e):
         raise type(e)(

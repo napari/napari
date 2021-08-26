@@ -455,7 +455,7 @@ using it with
 {func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget`.
 
 `viewer.window.add_dock_widget` expects an *instance* of a widget, like a
-{class}`magicgui.widgets.Widget` or a {class}`qtpy.QtWidgets.QWidget`.
+{class}`magicgui.widgets.Widget` or a {class}`QtWidgets.QWidget`.
 {func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget`,
 on the other hand, expects a widget *class* (or, more broadly, a `callable` that
 returns a widget instance).  There are two ways to acheive this with `magicgui`.

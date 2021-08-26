@@ -1,5 +1,5 @@
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
 
 from ...layers.image._image_constants import (
     Interpolation,
@@ -20,25 +20,25 @@ class QtImageControls(QtBaseImageControls):
 
     Attributes
     ----------
-    attenuationSlider : qtpy.QtWidgets.QSlider
+    attenuationSlider : QtWidgets.QSlider
         Slider controlling attenuation rate for `attenuated_mip` mode.
-    attenuationLabel : qtpy.QtWidgets.QLabel
+    attenuationLabel : QtWidgets.QLabel
         Label for the attenuation slider widget.
-    grid_layout : qtpy.QtWidgets.QGridLayout
+    grid_layout : QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
-    interpComboBox : qtpy.QtWidgets.QComboBox
+    interpComboBox : QtWidgets.QComboBox
         Dropdown menu to select the interpolation mode for image display.
-    interpLabel : qtpy.QtWidgets.QLabel
+    interpLabel : QtWidgets.QLabel
         Label for the interpolation dropdown menu.
-    isoThresholdSlider : qtpy.QtWidgets.QSlider
+    isoThresholdSlider : QtWidgets.QSlider
         Slider controlling the isosurface threshold value for rendering.
-    isoThresholdLabel : qtpy.QtWidgets.QLabel
+    isoThresholdLabel : QtWidgets.QLabel
         Label for the isosurface threshold slider widget.
     layer : napari.layers.Image
         An instance of a napari Image layer.
-    renderComboBox : qtpy.QtWidgets.QComboBox
+    renderComboBox : QtWidgets.QComboBox
         Dropdown menu to select the rendering mode for image display.
-    renderLabel : qtpy.QtWidgets.QLabel
+    renderLabel : QtWidgets.QLabel
         Label for the rendering mode dropdown menu.
     """
 

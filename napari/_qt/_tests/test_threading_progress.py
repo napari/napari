@@ -3,7 +3,8 @@ import pytest
 from napari._qt import qthreading
 
 pytest.importorskip(
-    'qtpy', reason='Cannot test threading progress without qtpy.'
+    'superqt.qtcompat',
+    reason='Cannot test threading progress without superqt.qtcompat.',
 )
 
 

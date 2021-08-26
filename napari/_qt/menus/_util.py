@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Callable, List, Union
 
-from qtpy.QtWidgets import QAction, QMenu
+from superqt.qtcompat.QtWidgets import QAction, QMenu
 
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
@@ -8,9 +8,9 @@ if TYPE_CHECKING:
     from ...utils.events import EventEmitter
 
     try:
-        from qtpy.QtCore import SignalInstance
+        from superqt.qtcompat.QtCore import SignalInstance
     except ImportError:
-        from qtpy.QtCore import pyqtBoundSignal as SignalInstance
+        from superqt.qtcompat.QtCore import pyqtBoundSignal as SignalInstance
 
     class ActionDict(TypedDict):
         text: str

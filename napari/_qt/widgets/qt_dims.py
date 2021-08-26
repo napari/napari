@@ -2,8 +2,13 @@ import warnings
 from typing import Optional, Tuple
 
 import numpy as np
-from qtpy.QtGui import QFont, QFontMetrics
-from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
+from superqt.qtcompat.QtGui import QFont, QFontMetrics
+from superqt.qtcompat.QtWidgets import (
+    QLineEdit,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ...components.dims import Dims
 from ...settings._constants import LoopMode

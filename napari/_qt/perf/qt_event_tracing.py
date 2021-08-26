@@ -6,8 +6,8 @@ enabled to time Qt Events.
 When using perfmon there is a debug menu "Start Tracing" command as well as a
 dockable QtPerformance widget.
 """
-from qtpy.QtCore import QEvent
-from qtpy.QtWidgets import QApplication, QWidget
+from superqt.qtcompat.QtCore import QEvent
+from superqt.qtcompat.QtWidgets import QApplication, QWidget
 
 from ...utils import perf
 from ...utils.translations import trans

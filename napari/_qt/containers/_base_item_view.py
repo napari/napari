@@ -3,8 +3,8 @@ from __future__ import annotations
 from itertools import chain, repeat
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from qtpy.QtCore import QItemSelection, QModelIndex, Qt
-from qtpy.QtWidgets import QAbstractItemView
+from superqt.qtcompat.QtCore import QItemSelection, QModelIndex, Qt
+from superqt.qtcompat.QtWidgets import QAbstractItemView
 
 from ._base_item_model import ItemRole
 from ._factory import create_model
@@ -12,8 +12,8 @@ from ._factory import create_model
 ItemType = TypeVar("ItemType")
 
 if TYPE_CHECKING:
-    from qtpy.QtCore import QAbstractItemModel
-    from qtpy.QtGui import QKeyEvent
+    from superqt.qtcompat.QtCore import QAbstractItemModel
+    from superqt.qtcompat.QtGui import QKeyEvent
 
     from ...utils.events import Event
     from ...utils.events.containers import SelectableEventedList

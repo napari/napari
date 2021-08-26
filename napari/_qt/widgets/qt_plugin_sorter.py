@@ -6,8 +6,9 @@ import re
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from napari_plugin_engine import HookCaller, HookImplementation
-from qtpy.QtCore import QEvent, Qt, Signal, Slot
-from qtpy.QtWidgets import (
+from superqt import QElidingLabel
+from superqt.qtcompat.QtCore import QEvent, Qt, Signal, Slot
+from superqt.qtcompat.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFrame,
@@ -20,7 +21,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QElidingLabel
 
 from ...plugins import plugin_manager as napari_plugin_manager
 from ...settings import get_settings

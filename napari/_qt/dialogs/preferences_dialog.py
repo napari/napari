@@ -3,8 +3,8 @@ from enum import EnumMeta
 from typing import TYPE_CHECKING, Tuple, cast
 
 from pydantic.main import BaseModel
-from qtpy.QtCore import QSize, Qt, Signal
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import QSize, Qt, Signal
+from superqt.qtcompat.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QListWidget,
@@ -18,7 +18,7 @@ from ...utils.translations import trans
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
-    from qtpy.QtGui import QCloseEvent, QKeyEvent
+    from superqt.qtcompat.QtGui import QCloseEvent, QKeyEvent
 
 
 class PreferencesDialog(QDialog):

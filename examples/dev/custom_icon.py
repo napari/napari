@@ -4,7 +4,7 @@ saved, or immediately registered for use in qss style sheets.
 """
 from pathlib import Path
 
-from qtpy.QtWidgets import QLabel
+from superqt.qtcompat.QtWidgets import QLabel
 
 import napari
 from napari.qt import compile_qt_svgs

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Callable, Optional, Sequence, Tuple, Union
 
-from qtpy.QtCore import (
+from superqt import QElidingLabel
+from superqt.qtcompat.QtCore import (
     QEasingCurve,
     QObject,
     QPoint,
@@ -14,7 +15,7 @@ from qtpy.QtCore import (
     QTimer,
     Signal,
 )
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtWidgets import (
     QApplication,
     QDialog,
     QGraphicsOpacityEffect,
@@ -26,7 +27,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QElidingLabel
 
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans

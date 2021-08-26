@@ -1,9 +1,9 @@
 from typing import Optional, Tuple
 
 import numpy as np
-from qtpy.QtCore import QObject, Qt, QTimer, Signal, Slot
-from qtpy.QtGui import QIntValidator
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import QObject, Qt, QTimer, Signal, Slot
+from superqt.qtcompat.QtGui import QIntValidator
+from superqt.qtcompat.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
@@ -464,7 +464,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the Qt context.
         """
         # this is here to intercept Return/Enter keys when editing the FPS
@@ -539,7 +539,7 @@ class QtPlayButton(QPushButton):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : QtCore.QEvent
             Event from the qt context.
         """
         # using this instead of self.customContextMenuRequested.connect and

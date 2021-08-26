@@ -1,6 +1,6 @@
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QPixmap
-from qtpy.QtWidgets import QSplashScreen
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtGui import QPixmap
+from superqt.qtcompat.QtWidgets import QSplashScreen
 
 from ..qt_event_loop import NAPARI_ICON_PATH, get_app
 

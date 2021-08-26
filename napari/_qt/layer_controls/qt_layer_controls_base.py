@@ -1,5 +1,5 @@
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import QComboBox, QFrame, QGridLayout
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
@@ -18,13 +18,13 @@ class QtLayerControls(QFrame):
 
     Attributes
     ----------
-    blendComboBox : qtpy.QtWidgets.QComboBox
+    blendComboBox : QtWidgets.QComboBox
         Drowpdown widget to select blending mode of layer.
-    grid_layout : qtpy.QtWidgets.QGridLayout
+    grid_layout : QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Layer
         An instance of a napari layer.
-    opacitySlider : qtpy.QtWidgets.QSlider
+    opacitySlider : QtWidgets.QSlider
         Slider controlling opacity of the layer.
     """
 

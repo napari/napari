@@ -1,6 +1,6 @@
 import pytest
 from napari_plugin_engine import napari_hook_implementation
-from qtpy.QtWidgets import QWidget
+from superqt.qtcompat.QtWidgets import QWidget
 
 import napari
 from napari import Viewer

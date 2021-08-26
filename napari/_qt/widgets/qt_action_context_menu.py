@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
-from qtpy.QtWidgets import QAction, QMenu
+from superqt.qtcompat.QtWidgets import QAction, QMenu
 
 if TYPE_CHECKING:
 

@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import dask.array as da
 import pytest
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QPushButton
+from superqt.qtcompat.QtCore import Qt
+from superqt.qtcompat.QtWidgets import QPushButton
 
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari.utils.notifications import (

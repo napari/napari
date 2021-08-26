@@ -1,6 +1,6 @@
 import pytest
-from qtpy.QtCore import QObject, Signal
-from qtpy.QtWidgets import QMainWindow
+from superqt.qtcompat.QtCore import QObject, Signal
+from superqt.qtcompat.QtWidgets import QMainWindow
 
 from napari._qt.utils import (
     QBYTE_FLAG,

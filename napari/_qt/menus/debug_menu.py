@@ -6,8 +6,8 @@ easy-to-use and discoverable, but which is not for the average user.
 """
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QTimer
-from qtpy.QtWidgets import QFileDialog, QMenu
+from superqt.qtcompat.QtCore import QTimer
+from superqt.qtcompat.QtWidgets import QFileDialog, QMenu
 
 from ...utils import perf
 from ...utils.history import get_save_history, update_save_history

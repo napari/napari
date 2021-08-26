@@ -1,7 +1,13 @@
 import numpy as np
-from qtpy.QtCore import QSize, Qt, Signal
-from qtpy.QtGui import QColor, QIntValidator, QPainter, QPainterPath, QPen
-from qtpy.QtWidgets import (
+from superqt.qtcompat.QtCore import QSize, Qt, Signal
+from superqt.qtcompat.QtGui import (
+    QColor,
+    QIntValidator,
+    QPainter,
+    QPainterPath,
+    QPen,
+)
+from superqt.qtcompat.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,

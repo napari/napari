@@ -12,9 +12,12 @@ from napari.layers import Image, Labels, Layer
 from napari.utils.misc import all_subclasses
 
 try:
-    import qtpy  # noqa
+    import superqt.qtcompat  # noqa
 except ImportError:
-    pytest.skip('Cannot test magicgui without qtpy.', allow_module_level=True)
+    pytest.skip(
+        'Cannot test magicgui without superqt.qtcompat.',
+        allow_module_level=True,
+    )
 except RuntimeError:
     pytest.skip(
         'Cannot test magicgui without Qt bindings.', allow_module_level=True
@@ -25,7 +28,7 @@ if (
     os.getenv("CI")
     and sys.platform.startswith("linux")
     and sys.version_info[:2] == (3, 7)
-    and qtpy.API_NAME == 'PySide2'
+    and superqt.qtcompat.API_NAME == 'PySide2'
 ):
     pytest.skip(
         "magicgui tests and example tests causing segfault",

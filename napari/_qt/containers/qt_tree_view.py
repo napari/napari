@@ -3,15 +3,15 @@ from __future__ import annotations
 from collections.abc import MutableSequence
 from typing import TYPE_CHECKING, TypeVar
 
-from qtpy.QtWidgets import QTreeView
+from superqt.qtcompat.QtWidgets import QTreeView
 
 from ...utils.tree import Group, Node
 from ._base_item_view import _BaseEventedItemView
 from .qt_tree_model import QtNodeTreeModel
 
 if TYPE_CHECKING:
-    from qtpy.QtCore import QModelIndex
-    from qtpy.QtWidgets import QWidget
+    from superqt.qtcompat.QtCore import QModelIndex
+    from superqt.qtcompat.QtWidgets import QWidget
 
 
 NodeType = TypeVar("NodeType", bound=Node)

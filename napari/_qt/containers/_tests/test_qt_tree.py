@@ -1,5 +1,5 @@
 import pytest
-from qtpy.QtCore import QModelIndex, Qt
+from superqt.qtcompat.QtCore import QModelIndex, Qt
 
 from napari._qt.containers import QtNodeTreeModel, QtNodeTreeView
 from napari._qt.containers._base_item_view import index_of

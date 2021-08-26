@@ -49,7 +49,7 @@ Take for example the ``ViewImageSuite`` benchmark:
 ```python
 import numpy as np
 import napari
-from qtpy.QtWidgets import QApplication
+from superqt.qtcompat.QtWidgets import QApplication
 
 
 class ViewImageSuite:

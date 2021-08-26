@@ -5,7 +5,7 @@ import warnings
 from ast import literal_eval
 
 try:
-    from qtpy import QT_VERSION
+    from superqt.qtcompat import QT_VERSION
 
     major, minor, *rest = QT_VERSION.split('.')
     use_gradients = (int(major) >= 5) and (int(minor) >= 12)

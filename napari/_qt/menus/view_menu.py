@@ -1,7 +1,7 @@
 from functools import partial
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QMenu
+from superqt.qtcompat.QtWidgets import QMenu
 
 from ...settings import get_settings
 from ...utils import config as async_config
