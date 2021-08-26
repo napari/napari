@@ -37,9 +37,9 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):
         self, root: SelectableEventedList[ItemType], parent: QWidget = None
     ):
         super().__init__(parent)
-        self.setDragDropMode(QListView.InternalMove)
+        self.setDragDropMode(QListView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(QListView.ExtendedSelection)
+        self.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
     def model(self) -> QtListModel[ItemType]:

@@ -71,7 +71,8 @@ class QtBaseImageControls(QtLayerControls):
             if name in self.layer.colormaps:
                 comboBox.addItem(cm._display_name, name)
 
-        comboBox.activated[str].connect(self.changeColor)
+        # TODO:
+        # comboBox.activated[str].connect(self.changeColor)
         self.colormapComboBox = comboBox
 
         # Create contrast_limits slider
@@ -181,7 +182,7 @@ class QtBaseImageControls(QtLayerControls):
             cbar,
             cbar.shape[1],
             cbar.shape[0],
-            QImage.Format_RGBA8888,
+            QImage.Format.Format_RGBA8888,
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 

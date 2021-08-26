@@ -171,7 +171,8 @@ class QtDimSliderWidget(QWidget):
         self.play_button.setToolTip(
             trans._('Right click on button for playback setting options.')
         )
-        self.play_button.mode_combo.activated[str].connect(
+        # FIXME
+        self.play_button.mode_combo.activated.connect(
             lambda x: self.__class__.loop_mode.fset(
                 self, LoopMode(x.replace(' ', '_'))
             )
@@ -509,7 +510,9 @@ class QtPlayButton(QPushButton):
         fpsspin.setValue(self.fps)
         if hasattr(fpsspin, 'setStepType'):
             # this was introduced in Qt 5.12.  Totally optional, just nice.
-            fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+            fpsspin.setStepType(
+                QDoubleSpinBox.StepType.AdaptiveDecimalStepType
+            )
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
         form_layout.insertRow(

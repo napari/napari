@@ -63,7 +63,8 @@ class QtLayerControls(QFrame):
             if data == self.layer.blending:
                 blend_comboBox.setCurrentIndex(index)
 
-        blend_comboBox.activated[str].connect(self.changeBlending)
+        # TODO:
+        # blend_comboBox.activated[str].connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
 
     def changeOpacity(self, value):

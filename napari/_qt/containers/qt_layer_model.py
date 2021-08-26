@@ -29,7 +29,7 @@ class QtLayerListModel(QtListModel[Layer]):
                 thumbnail,
                 thumbnail.shape[1],
                 thumbnail.shape[0],
-                QImage.Format_RGBA8888,
+                QImage.Format.Format_RGBA8888,
             )
         # normally you'd put the icon in DecorationRole, but we do that in the
         # # LayerDelegate which is aware of the theme.

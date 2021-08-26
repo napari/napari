@@ -43,7 +43,7 @@ class FileMenu(QMenu):
                 'slot': self._open_preferences,
                 'shortcut': 'Ctrl+Shift+P',
                 'statusTip': trans._('Open preferences dialog'),
-                'menuRole': QAction.PreferencesRole,
+                'menuRole': QAction.MenuRole.PreferencesRole,
             },
             {},
             {
@@ -103,7 +103,7 @@ class FileMenu(QMenu):
                 'text': trans._('Exit'),
                 'slot': lambda: window._qt_window.close(quit_app=True),
                 'shortcut': 'Ctrl+Q',
-                'menuRole': QAction.QuitRole,
+                'menuRole': QAction.MenuRole.QuitRole,
             },
         ]
         populate_menu(self, ACTIONS)

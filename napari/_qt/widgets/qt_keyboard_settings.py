@@ -92,7 +92,8 @@ class ShortcutEditor(QWidget):
 
         # Widget set up
         self.layer_combo_box.addItems(list(self.key_bindings_strs))
-        self.layer_combo_box.activated[str].connect(self._set_table)
+        # TODO
+        # self.layer_combo_box.activated[str].connect(self._set_table)
         self.layer_combo_box.setCurrentText(self.VIEWER_KEYBINDINGS)
         self._set_table()
         self._label.setText("Group")

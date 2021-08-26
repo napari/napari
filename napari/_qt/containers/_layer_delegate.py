@@ -102,11 +102,13 @@ class LayerDelegate(QStyledItemDelegate):
         except ValueError:
             return
         # guessing theme rather than passing it through.
-        bg = option.palette.color(option.palette.Background).red()
+        bg = option.palette.color(option.palette.ColorRole.Window).red()
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
         option.decorationSize = QSize(18, 18)
-        option.decorationPosition = option.Right  # put icon on the right
-        option.features |= option.HasDecoration
+        option.decorationPosition = (
+            option.Position.Right
+        )  # put icon on the right
+        option.features |= option.ViewItemFeature.HasDecoration
 
     def _paint_thumbnail(self, painter, option, index):
         """paint the layer thumbnail."""
@@ -118,7 +120,8 @@ class LayerDelegate(QStyledItemDelegate):
         thumb_rect.setWidth(h)
         thumb_rect.setHeight(h)
         image = index.data(ThumbnailRole)
-        painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
+        if image is not None:
+            painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
 
     def createEditor(
         self,

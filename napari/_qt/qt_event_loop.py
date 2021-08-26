@@ -23,7 +23,8 @@ from .dialogs.qt_notification import (
     NapariQtNotification,
     NotificationDispatcher,
 )
-from .qt_resources import _register_napari_resources
+
+# from .qt_resources import _register_napari_resources  # TODO
 from .qthreading import wait_for_workers_to_quit
 from .utils import _maybe_allow_interrupt
 
@@ -135,7 +136,10 @@ def get_app(
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        try:
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        except AttributeError:
+            pass
 
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import QApplicationWithTracing
@@ -178,7 +182,7 @@ def get_app(
 
         # this will register all of our resources (icons) with Qt, so that they
         # can be used in qss files and elsewhere.
-        _register_napari_resources()
+        # _register_napari_resources()
 
     _app_ref = app  # prevent garbage collection
 

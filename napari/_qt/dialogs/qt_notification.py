@@ -133,7 +133,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setDuration(self.FADE_IN_RATE)
         self.geom_anim.setStartValue(geom.translated(0, 20))
         self.geom_anim.setEndValue(geom)
-        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        self.geom_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
         # fade in
         self.opacity_anim.setDuration(self.FADE_IN_RATE)
         self.opacity_anim.setStartValue(0)
@@ -185,7 +185,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setEndValue(
             QRect(curr.x(), curr.y() - delta, curr.width(), new_height)
         )
-        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        self.geom_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self.geom_anim.start()
         self.setProperty('expanded', True)
         self.style().unpolish(self.expand_button)
@@ -200,7 +200,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setEndValue(
             QRect(geom.x(), geom.y() + dlt, geom.width(), geom.height() - dlt)
         )
-        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        self.geom_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self.geom_anim.start()
         self.setProperty('expanded', False)
         self.style().unpolish(self.expand_button)

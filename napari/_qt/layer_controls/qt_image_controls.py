@@ -52,7 +52,8 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events._ndisplay.connect(self._on_ndisplay_change)
 
         self.interpComboBox = QComboBox(self)
-        self.interpComboBox.activated[str].connect(self.changeInterpolation)
+        # TODO:
+        # self.interpComboBox.activated[str].connect(self.changeInterpolation)
         self.interpLabel = QLabel(trans._('interpolation:'))
 
         renderComboBox = QComboBox(self)
@@ -62,7 +63,8 @@ class QtImageControls(QtBaseImageControls):
             self.layer.rendering, Qt.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
-        renderComboBox.activated[str].connect(self.changeRendering)
+        # TODO:
+        # renderComboBox.activated[str].connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
 

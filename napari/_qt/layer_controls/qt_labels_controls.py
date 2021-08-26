@@ -237,7 +237,8 @@ class QtLabelsControls(QtLayerControls):
             self.layer.rendering, Qt.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
-        renderComboBox.activated[str].connect(self.changeRendering)
+        # TODO
+        # renderComboBox.activated[str].connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
         self._on_ndisplay_change()
@@ -252,7 +253,8 @@ class QtLabelsControls(QtLayerControls):
             if self.layer.color_mode == data:
                 color_mode_comboBox.setCurrentIndex(index)
 
-        color_mode_comboBox.activated[str].connect(self.change_color_mode)
+        # TODO
+        # color_mode_comboBox.activated[str].connect(self.change_color_mode)
         self.colorModeComboBox = color_mode_comboBox
         self._on_color_mode_change()
 

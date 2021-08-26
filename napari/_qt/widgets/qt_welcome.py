@@ -53,12 +53,16 @@ class QtWelcomeWidget(QWidget):
 
         # TODO: Use action manager for shortcut query and handling
         shortcut_layout = QFormLayout()
-        sc = QKeySequence('Ctrl+O').toString(QKeySequence.NativeText)
+        sc = QKeySequence('Ctrl+O').toString(
+            QKeySequence.SequenceFormat.NativeText
+        )
         shortcut_layout.addRow(
             QtShortcutLabel(sc),
             QtShortcutLabel(trans._("open image(s)")),
         )
-        sc = QKeySequence('Ctrl+Alt+/').toString(QKeySequence.NativeText)
+        sc = QKeySequence('Ctrl+Alt+/').toString(
+            QKeySequence.SequenceFormat.NativeText
+        )
         shortcut_layout.addRow(
             QtShortcutLabel(sc),
             QtShortcutLabel(trans._("show all key bindings")),

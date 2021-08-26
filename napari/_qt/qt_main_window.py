@@ -184,9 +184,10 @@ class _QtMainWindow(QMainWindow):
             window_position = (self.x(), self.y())
         else:
             width, height = window_position
-            screen_geo = QApplication.desktop().geometry()
-            if screen_geo.width() < width or screen_geo.height() < height:
-                window_position = (self.x(), self.y())
+            # https://doc.qt.io/qt-6/widgets-changes-qt6.html#qdesktopwidget-and-qapplication-desktop
+            # screen_geo = QApplication.desktop().geometry()
+            # if screen_geo.width() < width or screen_geo.height() < height:
+            # window_position = (self.x(), self.y())
 
         return (
             settings.application.window_state,

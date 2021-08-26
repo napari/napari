@@ -197,12 +197,13 @@ class QtViewerDockWidget(QDockWidget):
         return self.qt_viewer.keyPressEvent(event)
 
     def _set_title_orientation(self, area):
+        vert_title = self.DockWidgetFeature.DockWidgetVerticalTitleBar
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
             features = self._features
-            if features & self.DockWidgetVerticalTitleBar:
-                features = features ^ self.DockWidgetVerticalTitleBar
+            if features & vert_title:
+                features = features ^ vert_title
         else:
-            features = self._features | self.DockWidgetVerticalTitleBar
+            features = self._features | vert_title
         self.setFeatures(features)
 
     @property
