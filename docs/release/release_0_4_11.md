@@ -87,6 +87,8 @@ Last but not least, some common operations are now much more accessible from the
 - Print warning if error formatting in the console fails instead of ignoring errors. (#3201)
 - Ensure we save a copy of existing value for undo (#3203)
 - Pull main window menu creation off of Window (#3204)
+- Remove extra box on plugin dialog (#3235)
+- Add instant hover tooltips (#3242)
 
 
 ## Bug Fixes
@@ -130,7 +132,12 @@ Last but not least, some common operations are now much more accessible from the
 - Fix incorrect window position storage (#3196)
 - Fix incorrect use of dims_order when 3D painting (#3202)
 - Fix plugin settings restore and schema_version validation error in preferences dialog (#3215)
-- Prevent greedy dask array calculation when creating an Image layer #3248
+- Disable space bar on layer list (#3234)
+- Close napari window on Ctrl+C without geting window focus (#3239)
+- Skip labeled sliders for <5.14 (#3243)
+- Don't pass interpolation when creating a new projection layer (#3247)
+- Prevent greedy dask array calculation when creating an Image layer (#3248)
+
 
 ## API Changes
 - Remove brush shape (#3047)
@@ -142,9 +149,6 @@ Last but not least, some common operations are now much more accessible from the
 - Remove keybindings dialog from help menu (#3048)
 - Remove plugin sorter from plugin install dialog (#3069)
 - Update Labels layer keybindings to be more ergonomic (#3072)
-
-
-## Deprecations
 
 
 ## Build Tools, Tests, Documentation, and other Tasks
@@ -177,6 +181,8 @@ Last but not least, some common operations are now much more accessible from the
 - Fix CI typing tests (#3212)
 - Fix typo, add proper note markdown (#3216)
 - Pooch bugfix (#3218)
+- Update team.md (#3237)
+- Add binder to repository and badge on README (#3244)
 
 
 ## 21 authors added to this release (alphabetical)
