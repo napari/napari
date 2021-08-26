@@ -2,6 +2,7 @@ import os
 from functools import partial
 
 import numpy as np
+import pooch
 import pytest
 
 from napari.components import LayerList
@@ -14,6 +15,9 @@ from napari.plugins._builtins import (
 )
 from napari.utils import io
 from napari.utils.config import async_loading
+
+if not hasattr(pooch.utils, 'file_hash'):
+    setattr(pooch.utils, 'file_hash', pooch.hashes.file_hash)
 
 try:
     from skimage.data import image_fetcher
@@ -321,17 +325,6 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
     @pytest.hookimpl(tryfirst=True)
     def pytest_internalerror(excinfo):
         raise excinfo.value
-
-
-def pytest_collection_modifyitems(session, config, items):
-
-    put_at_end = ('test_trace_on_start',)
-    at_end = []
-    for i, item in enumerate(items):
-        if item.name in put_at_end:
-            at_end.append(items.pop(i))
-
-    items.extend([x for _, x in sorted(zip(put_at_end, at_end))])
 
 
 @pytest.fixture(autouse=True)

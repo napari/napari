@@ -5,7 +5,9 @@ docs:
 	find docs/api ! -name 'index.rst' -type f -exec rm -f {} +
 	pip install -qr docs/requirements.txt
 	python docs/update_docs.py
+	NAPARI_APPLICATION_IPY_INTERACTIVE=0
 	jb build docs
+	unset NAPARI_APPLICATION_IPY_INTERACTIVE
 
 typestubs:
 	python -m napari.utils.stubgen

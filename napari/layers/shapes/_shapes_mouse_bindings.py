@@ -160,6 +160,13 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     layer._finish_drawing()
 
 
+def finish_drawing_shape(layer, event):
+    """
+    finish drawing the current shape
+    """
+    layer._finish_drawing()
+
+
 def add_path_polygon(layer, event):
     """Add a path or polygon."""
     # on press

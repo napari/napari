@@ -79,6 +79,6 @@ pbar_widget.setObjectName("Threading Examples")
 viewer.window.add_dock_widget(pbar_widget, allowed_areas=["right"])
 
 # showing the activity dock so we can see the progress bars
-viewer.window._toggle_activity_dock(True)
+viewer.window._status_bar._toggle_activity_dock(True)
 
 napari.run()

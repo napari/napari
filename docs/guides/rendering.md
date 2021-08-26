@@ -73,6 +73,12 @@ class will use the same
 instead of the Vispy `ImageVisual` class that napari's
 {class}`~napari.layers.Image` class uses.
 
+```{note}
+The current `OCTREE` implementation only fully supports a single 2D image and
+may not function with 3D images or multiple images. Improving support
+for 3D and multiple images is part of future work on the `OCTREE`.
+```
+
 See {ref}`octree-config` for Octree configuration options.
 
 ### Octree Visuals
