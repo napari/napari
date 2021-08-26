@@ -224,11 +224,11 @@ def prepare_properties(
     ----------
     properties : dict[str, Array] or DataFrame
         The property values.
-    choices: dict[str, Array]
+    choices : dict[str, Array]
         The property value choices.
-    num_data: int
+    num_data : int
         The length of data that the properties represent (e.g. number of points).
-    save_choices: bool
+    save_choices : bool
         If true, always return all of the properties in choices.
 
     Returns
@@ -298,9 +298,9 @@ def get_current_properties(
     ----------
     properties : dict[str, np.ndarray]
         The property values.
-    choices: dict[str, np.ndarray]
+    choices : dict[str, np.ndarray]
         The property value choices.
-    num_data: int
+    num_data : int
         The length of data that the properties represent (e.g. number of points).
 
     Returns

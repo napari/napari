@@ -90,7 +90,8 @@ def split_channels(
         'affine',
         'contrast_limits',
         'metadata',
-        'plane',
+        'experimental_slicing_plane',
+        'experimental_clipping_planes',
     }
 
     # turn the kwargs dict into a mapping of {key: iterator}
@@ -110,7 +111,11 @@ def split_channels(
         elif key in iterable_kwargs or (
             key == 'colormap' and isinstance(val, Colormap)
         ):
-            kwargs[key] = iter(ensure_sequence_of_iterables(val, n_channels))
+            kwargs[key] = iter(
+                ensure_sequence_of_iterables(
+                    val, n_channels, repeat_empty=True
+                )
+            )
         else:
             kwargs[key] = iter(ensure_iterable(val))
 

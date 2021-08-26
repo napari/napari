@@ -37,6 +37,12 @@ There are two ways to enable performance monitoring. Set the environment
 variable `NAPARI_PERFMON=1` or set `NAPARI_PERFMON` to the path of 
 a JSON configuration file, for example `NAPARI_PERFMON=/tmp/perfmon.json`.
 
+```{note}
+Note: when using `NAPARI_PERFMON`, napari must create the Qt Application.
+If you are using `NAPARI_PERFMON=1 ipython`, do not use `%gui qt` before
+creating a napari `Viewer`.
+```
+
 Setting `NAPARI_PERFMON=1` does three things:
 
 1. Times Qt Events

@@ -11,9 +11,9 @@ class QtSpinBox(QSpinBox):
     def setProhibitValue(self, value: int):
         """Set value that should not be used in QSpinBox.
 
-        Parameter
-        ---------
-        value: int
+        Parameters
+        ----------
+        value : int
             Value to be excluded from QSpinBox.
         """
         self.prohibit = value

@@ -2,6 +2,7 @@ import os
 from functools import partial
 
 import numpy as np
+import pooch
 import pytest
 
 from napari.components import LayerList
@@ -14,6 +15,9 @@ from napari.plugins._builtins import (
 )
 from napari.utils import io
 from napari.utils.config import async_loading
+
+if not hasattr(pooch.utils, 'file_hash'):
+    setattr(pooch.utils, 'file_hash', pooch.hashes.file_hash)
 
 try:
     from skimage.data import image_fetcher

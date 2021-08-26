@@ -461,11 +461,6 @@ NapariQtNotification::hover{
   background: {{ lighten(background, 5) }};
 }
 
-MultilineElidedLabel{
-  background: none;
-  color: {{ icon }};
-  font-size: 12px;
-}
 
 NapariQtNotification #expand_button {
   background: none;

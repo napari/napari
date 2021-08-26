@@ -52,5 +52,8 @@ class QtLayerList(QtListView[Layer]):
         self.setModel(ReverseProxyModel(self.model()))
 
     def keyPressEvent(self, e: QKeyEvent) -> None:
-        super().keyPressEvent(e)
+        """Override Qt event to pass events to the viewer."""
+        if e.key() != Qt.Key_Space:
+            super().keyPressEvent(e)
+
         e.ignore()  # pass key events up to viewer

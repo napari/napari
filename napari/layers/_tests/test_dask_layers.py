@@ -1,3 +1,4 @@
+import os
 from contextlib import contextmanager
 from distutils.version import LooseVersion
 
@@ -7,6 +8,39 @@ import numpy as np
 import pytest
 
 from napari import layers, utils, viewer
+
+
+@pytest.mark.sync_only
+def test_dask_not_greedy():
+    """Make sure that we don't immediately calculate dask arrays."""
+
+    FETCH_COUNT = 0
+    # the min requirements seems to double the number of fetches
+    MINREQ = int(bool(os.environ.get('MIN_REQ'))) + 1
+
+    def get_plane(block_id):
+        if block_id:
+            nonlocal FETCH_COUNT
+            FETCH_COUNT += 1
+        return np.random.rand(1, 1, 1, 10, 10)
+
+    arr = da.map_blocks(
+        get_plane,
+        chunks=((1,) * 4, (1,) * 2, (1,) * 8, (10,), (10,)),
+        dtype=float,
+    )
+    layer = layers.Image(arr)
+    assert FETCH_COUNT == 1 * MINREQ
+    assert tuple(layer.contrast_limits) == (0, 1)
+
+    arr2 = da.map_blocks(
+        get_plane,
+        chunks=((1,) * 4, (1,) * 4, (1,) * 4, (10,), (10,)),
+        dtype='uint8',
+    )
+    layer = layers.Image(arr2)
+    assert FETCH_COUNT == 2 * MINREQ
+    assert tuple(layer.contrast_limits) == (0, 2 ** 8 - 1)
 
 
 def test_dask_array_doesnt_create_cache():
