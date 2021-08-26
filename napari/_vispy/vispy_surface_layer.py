@@ -27,9 +27,6 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.shading.connect(self._on_shading_change)
-        self.layer.experimental_clipping_planes.events.connect(
-            self._on_experimental_clipping_planes_change
-        )
 
         self.reset()
         self._on_data_change()
@@ -103,13 +100,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             self.node.shading = self.layer.shading
         self.node.mesh_data_changed()
 
-    def _on_experimental_clipping_planes_change(self, event=None):
-        self.node.clipping_planes = (
-            self.layer.experimental_clipping_planes.as_array()
-        )
-
     def reset(self, event=None):
         self._reset_base()
         self._on_colormap_change()
         self._on_contrast_limits_change()
-        self._on_experimental_clipping_planes_change()

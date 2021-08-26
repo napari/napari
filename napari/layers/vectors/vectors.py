@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
 
@@ -13,126 +13,124 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import get_current_properties, prepare_properties
-from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 
 
 class Vectors(Layer):
     """
-        Vectors layer renders lines onto the canvas.
+    Vectors layer renders lines onto the canvas.
 
-        Parameters
-        ----------
-        data : (N, 2, D) or (N1, N2, ..., ND, D) array
-            An (N, 2, D) array is interpreted as "coordinate-like" data and a
-            list of N vectors with start point and projections of the vector in
-            D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
-            "image-like" data where there is a length D vector of the
-            projections at each pixel.
-        properties : dict {str: array (N,)}, DataFrame
-            Properties for each vector. Each property should be an array of length N,
-            where N is the number of vectors.
-        property_choices : dict {str: array (N,)}
-            possible values for each property.
-        edge_width : float
-            Width for all vectors in pixels.
-        length : float
-             Multiplicative factor on projections for length of all vectors.
-        edge_color : str
-            Color of all of the vectors.
-        edge_color_cycle : np.ndarray, list
-            Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
-            categorical attribute is used color the vectors.
-        edge_colormap : str, napari.utils.Colormap
-            Colormap to set vector color if a continuous attribute is used to set edge_color.
-        edge_contrast_limits : None, (float, float)
-            clims for mapping the property to a color map. These are the min and max value
-            of the specified property that are mapped to 0 and 1, respectively.
-            The default value is None. If set the none, the clims will be set to
-            (property.min(), property.max())
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        rotate : float, 3-tuple of float, or n-D array.
-    from ..utils.plane import ClippingPlane, ClippingPlaneList
-            If a float convert into a 2D rotation matrix using that value as an
-            angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-            pitch, roll convention. Otherwise assume an nD rotation. Angles are
-            assumed to be in degrees. They can be converted from radians with
-            np.degrees if needed.
-        shear : 1-D array or n-D array
-            Either a vector of upper triangular values, or an nD shear matrix with
-            ones along the main diagonal.
-        affine : n-D array or napari.utils.transforms.Affine
-            (N+1, N+1) affine transformation matrix in homogeneous coordinates.
-            The first (N, N) entries correspond to a linear transform and
-            the final column is a lenght N translation vector and a 1 or a napari
-            AffineTransform object. If provided then translate, scale, rotate, and
-            shear values are ignored.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
+    Parameters
+    ----------
+    data : (N, 2, D) or (N1, N2, ..., ND, D) array
+        An (N, 2, D) array is interpreted as "coordinate-like" data and a
+        list of N vectors with start point and projections of the vector in
+        D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
+        "image-like" data where there is a length D vector of the
+        projections at each pixel.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each vector. Each property should be an array of length N,
+        where N is the number of vectors.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
+    edge_width : float
+        Width for all vectors in pixels.
+    length : float
+         Multiplicative factor on projections for length of all vectors.
+    edge_color : str
+        Color of all of the vectors.
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+        categorical attribute is used color the vectors.
+    edge_colormap : str, napari.utils.Colormap
+        Colormap to set vector color if a continuous attribute is used to set edge_color.
+    edge_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine : n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
 
-        Attributes
-        ----------
-        data : (N, 2, D) array
-            The start point and projections of N vectors in D dimensions.
-        properties : dict {str: array (N,)}, DataFrame
-            Properties for each vector. Each property should be an array of length N,
-            where N is the number of vectors.
-        edge_width : float
-            Width for all vectors in pixels.
-        length : float
-             Multiplicative factor on projections for length of all vectors.
-        edge_color : str
-            Color of all of the vectors.
-        edge_color_cycle : np.ndarray, list
-            Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
-            categorical attribute is used color the vectors.
-        edge_colormap : str, napari.utils.Colormap
-            Colormap to set vector color if a continuous attribute is used to set edge_color.
-        edge_contrast_limits : None, (float, float)
-            clims for mapping the property to a color map. These are the min and max value
-            of the specified property that are mapped to 0 and 1, respectively.
-            The default value is None. If set the none, the clims will be set to
-            (property.min(), property.max())
+    Attributes
+    ----------
+    data : (N, 2, D) array
+        The start point and projections of N vectors in D dimensions.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each vector. Each property should be an array of length N,
+        where N is the number of vectors.
+    edge_width : float
+        Width for all vectors in pixels.
+    length : float
+         Multiplicative factor on projections for length of all vectors.
+    edge_color : str
+        Color of all of the vectors.
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+        categorical attribute is used color the vectors.
+    edge_colormap : str, napari.utils.Colormap
+        Colormap to set vector color if a continuous attribute is used to set edge_color.
+    edge_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
 
-        Notes
-        -----
-        _view_data : (M, 2, 2) array
-            The start point and projections of N vectors in 2D for vectors whose
-            start point is in the currently viewed slice.
-        _view_face_color : (M, 4) np.ndarray
-            colors for the M in view vectors
-        _view_indices : (1, M) array
-            indices for the M in view vectors
-        _view_vertices : (4M, 2) or (8M, 2) np.ndarray
-            the corner points for the M in view faces. Shape is (4M, 2) for 2D and (8M, 2) for 3D.
-        _view_faces : (2M, 3) or (4M, 3) np.ndarray
-            indices of the _mesh_vertices that form the faces of the M in view vectors.
-            Shape is (2M, 2) for 2D and (4M, 2) for 3D.
-        _property_choices : dict {str: array (N,)}
-            Possible values for the properties in Vectors.properties.
-        _mesh_vertices : (4N, 2) array
-            The four corner points for the mesh representation of each vector as as
-            rectangle in the slice that it starts in.
-        _mesh_triangles : (2N, 3) array
-            The integer indices of the `_mesh_vertices` that form the two triangles
-            for the mesh representation of the vectors.
-        _max_vectors_thumbnail : int
-            The maximum number of vectors that will ever be used to render the
-            thumbnail. If more vectors are present then they are randomly
-            subsampled.
+    Notes
+    -----
+    _view_data : (M, 2, 2) array
+        The start point and projections of N vectors in 2D for vectors whose
+        start point is in the currently viewed slice.
+    _view_face_color : (M, 4) np.ndarray
+        colors for the M in view vectors
+    _view_indices : (1, M) array
+        indices for the M in view vectors
+    _view_vertices : (4M, 2) or (8M, 2) np.ndarray
+        the corner points for the M in view faces. Shape is (4M, 2) for 2D and (8M, 2) for 3D.
+    _view_faces : (2M, 3) or (4M, 3) np.ndarray
+        indices of the _mesh_vertices that form the faces of the M in view vectors.
+        Shape is (2M, 2) for 2D and (4M, 2) for 3D.
+    _property_choices : dict {str: array (N,)}
+        Possible values for the properties in Vectors.properties.
+    _mesh_vertices : (4N, 2) array
+        The four corner points for the mesh representation of each vector as as
+        rectangle in the slice that it starts in.
+    _mesh_triangles : (2N, 3) array
+        The integer indices of the `_mesh_vertices` that form the two triangles
+        for the mesh representation of the vectors.
+    _max_vectors_thumbnail : int
+        The maximum number of vectors that will ever be used to render the
+        thumbnail. If more vectors are present then they are randomly
+        subsampled.
     """
 
     # The max number of vectors that will ever be used to render the thumbnail
@@ -177,6 +175,7 @@ class Vectors(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         # events for non-napari calculations
@@ -226,9 +225,6 @@ class Vectors(Layer):
         self._view_vertices = []
         self._view_faces = []
         self._view_indices = []
-
-        self._experimental_clipping_planes = ClippingPlaneList()
-        self.experimental_clipping_planes = experimental_clipping_planes
 
         # now that everything is set up, make the layer visible (if set to visible)
         self._update_dims()
@@ -344,9 +340,6 @@ class Vectors(Layer):
                 'data': self.data,
                 'properties': self.properties,
                 'property_choices': self._property_choices,
-                'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
-                ],
             }
         )
         return state
@@ -558,21 +551,6 @@ class Vectors(Layer):
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
         self._edge.contrast_limits = contrast_limits
-
-    @property
-    def experimental_clipping_planes(self):
-        return self._experimental_clipping_planes
-
-    @experimental_clipping_planes.setter
-    def experimental_clipping_planes(
-        self, value: Union[List[Union[ClippingPlane, dict]], ClippingPlaneList]
-    ):
-        self._experimental_clipping_planes.clear()
-        if value is not None:
-            for new_plane in value:
-                plane = ClippingPlane()
-                plane.update(new_plane)
-                self._experimental_clipping_planes.append(plane)
 
     @property
     def _view_face_color(self) -> np.ndarray:

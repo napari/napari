@@ -10,9 +10,6 @@ class VispyVectorsLayer(VispyBaseLayer):
         super().__init__(layer, node)
 
         self.layer.events.edge_color.connect(self._on_data_change)
-        self.layer.experimental_clipping_planes.events.connect(
-            self._on_experimental_clipping_planes_change
-        )
 
         self.reset()
         self._on_data_change()
@@ -46,12 +43,6 @@ class VispyVectorsLayer(VispyBaseLayer):
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
 
-    def _on_experimental_clipping_planes_change(self, event=None):
-        self.node.clipping_planes = (
-            self.layer.experimental_clipping_planes.as_array()
-        )
-
     def reset(self):
         self._reset_base()
         self._on_data_change()
-        self._on_experimental_clipping_planes_change()

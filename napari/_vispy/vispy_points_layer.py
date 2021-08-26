@@ -35,9 +35,6 @@ class VispyPointsLayer(VispyBaseLayer):
             self._on_text_change, self._on_blending_change
         )
         self.layer.events.highlight.connect(self._on_highlight_change)
-        self.layer.experimental_clipping_planes.events.connect(
-            self._on_experimental_clipping_planes_change
-        )
 
         self._on_data_change()
 
@@ -172,18 +169,12 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node.set_gl_state(str(self.layer.text.blending))
         self.node.update()
 
-    def _on_experimental_clipping_planes_change(self, event=None):
-        self.node.clipping_planes = (
-            self.layer.experimental_clipping_planes.as_array()
-        )
-
     def reset(self, event=None):
         self._reset_base()
         self._on_blending_change()
         self._on_text_change()
         self._on_highlight_change()
         self._on_matrix_change()
-        self._on_experimental_clipping_planes_change()
 
     def close(self):
         """Vispy visual is closing."""

@@ -1,5 +1,4 @@
 import warnings
-from typing import List, Union
 
 import numpy as np
 
@@ -9,7 +8,6 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ._surface_constants import Shading
 
 
@@ -164,6 +162,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(interpolation=Event, rendering=Event, shading=Event)
@@ -198,9 +197,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._data_view = np.zeros((0, self._ndisplay))
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
-
-        self._experimental_clipping_planes = ClippingPlaneList()
-        self.experimental_clipping_planes = experimental_clipping_planes
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -323,21 +319,6 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._shading = Shading(shading)
         self.events.shading(value=self._shading)
 
-    @property
-    def experimental_clipping_planes(self):
-        return self._experimental_clipping_planes
-
-    @experimental_clipping_planes.setter
-    def experimental_clipping_planes(
-        self, value: Union[List[Union[ClippingPlane, dict]], ClippingPlaneList]
-    ):
-        self._experimental_clipping_planes.clear()
-        if value is not None:
-            for new_plane in value:
-                plane = ClippingPlane()
-                plane.update(new_plane)
-                self._experimental_clipping_planes.append(plane)
-
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -354,9 +335,6 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
-                'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
-                ],
             }
         )
         return state
