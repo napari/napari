@@ -94,36 +94,6 @@ def test_text_manager_format():
     np.testing.assert_equal(text_manager.values, expected_text_2[1::])
 
 
-def test_direct():
-    values = ['one', 'two', 'three']
-    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
-    np.testing.assert_array_equal(text_manager.values, values)
-
-
-def test_direct_add():
-    values = ['one', 'two', 'three']
-    properties = {}
-    text_manager = TextManager.from_layer_kwargs(
-        text=values, properties=properties
-    )
-
-    properties['_text'] = values + ['four', 'five']
-    text_manager.add(properties, 2)
-
-    np.testing.assert_array_equal(
-        text_manager.values, ['one', 'two', 'three', 'four', 'five']
-    )
-
-
-def test_direct_remove():
-    values = ['one', 'two', 'three', 'four']
-    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
-
-    text_manager.remove([1, 3])
-
-    np.testing.assert_array_equal(text_manager.values, ['one', 'three'])
-
-
 def test_refresh_text():
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
@@ -166,7 +136,7 @@ def test_blending_modes():
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager = TextManager(
+    text_manager = TextManager.from_layer_kwargs(
         text=text,
         properties=properties,
         color='red',
@@ -189,6 +159,7 @@ def test_multi_color_direct():
     classes = np.array(['A', 'B', 'C'])
     colors = ['red', 'green', 'blue']
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
+
     text_manager = TextManager.from_layer_kwargs(
         text=text, properties=properties, color=colors
     )
@@ -200,8 +171,67 @@ def test_multi_color_property():
     text = 'class'
     colors = ['red', 'green', 'blue']
     properties = {'class': colors, 'confidence': np.array([0.5, 0.3, 1])}
+
     text_manager = TextManager.from_layer_kwargs(
         text=text, properties=properties, color='class'
     )
 
     np.testing.assert_array_equal(text_manager.colors, transform_color(colors))
+
+
+def test_constant():
+    text_manager = TextManager.from_layer_kwargs(text='point', properties={})
+    assert len(text_manager.values) == 0
+
+
+def test_constant_add():
+    properties = {}
+    text_manager = TextManager.from_layer_kwargs(
+        text='point', properties=properties
+    )
+
+    text_manager.add(properties, 2)
+
+    np.testing.assert_equal(text_manager.values, ['point', 'point'])
+
+
+def test_constant_remove():
+    properties = {}
+    text_manager = TextManager.from_layer_kwargs(
+        text='point', properties=properties
+    )
+    text_manager.add(properties, 5)
+
+    text_manager.remove([1, 3])
+
+    np.testing.assert_equal(text_manager.values, ['point', 'point', 'point'])
+
+
+def test_direct():
+    values = ['one', 'two', 'three']
+    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
+    np.testing.assert_array_equal(text_manager.values, values)
+
+
+def test_direct_add():
+    values = ['one', 'two', 'three']
+    properties = {}
+    text_manager = TextManager.from_layer_kwargs(
+        text=values, properties=properties
+    )
+
+    properties['_text'] = values + ['four', 'five']
+    text_manager.add(properties, 2)
+
+    np.testing.assert_array_equal(
+        text_manager.values, ['one', 'two', 'three', 'four', 'five']
+    )
+
+
+def test_direct_remove():
+    values = ['one', 'two', 'three', 'four']
+    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
+
+    text_manager.remove([1, 3])
+
+    np.testing.assert_array_equal(text_manager.values, ['one', 'three'])

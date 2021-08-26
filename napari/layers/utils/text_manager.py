@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Dict, Iterable, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -25,6 +25,8 @@ class TextManager(EventedModel):
 
     Attributes
     ----------
+    values : np.ndarray
+        The text values to be displayed (read-only).
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
@@ -43,8 +45,8 @@ class TextManager(EventedModel):
         Offset from the anchor point.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
-    mapping : PropertyMapStore
-        A mapping from layer properties to text values. Also stores previously generated values for performance reasons.
+    mapping : Callable[[Dict[str, Any]], str]
+        A mapping from layer property table row to a text value.
     """
 
     visible: bool = True
@@ -55,11 +57,17 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    mapping: PropertyMapStore = ConstantPropertyMap(constant='')
+    mapping: Callable[[Dict[str, Any]], str] = ConstantPropertyMap(constant='')
+    _mapping_store: PropertyMapStore
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.events.mapping.connect(self._on_mapping_changed)
+        self._on_mapping_changed()
 
     @property
     def values(self):
-        return np.array(self.mapping.values, dtype=str)
+        return np.array(self._mapping_store.values, dtype=str)
 
     @property
     def colors(self):
@@ -73,6 +81,7 @@ class TextManager(EventedModel):
         properties : Dict[str, Array]
             The properties of a layer.
         """
+        self._mapping_store.refresh(properties)
         self.mapping.refresh(properties)
         self.color_mapping.refresh(properties)
 
@@ -86,7 +95,7 @@ class TextManager(EventedModel):
         num_to_add : int
             The number of text values to add.
         """
-        self.mapping.add(properties, num_to_add)
+        self._mapping_store.add(properties, num_to_add)
         self.color_mapping.add(properties, num_to_add)
 
     def remove(self, indices: Iterable[int]):
@@ -97,7 +106,7 @@ class TextManager(EventedModel):
         indices : Iterable[int]
             The indices to remove.
         """
-        self.mapping.remove(indices)
+        self._mapping_store.remove(indices)
         self.color_mapping.remove(indices)
 
     def compute_text_coords(
@@ -190,12 +199,6 @@ class TextManager(EventedModel):
 
         return blending_mode
 
-    @validator('mapping', pre=True, always=True)
-    def _check_mapping(cls, mapping):
-        if callable(mapping):
-            mapping = PropertyMapStore(mapping=mapping)
-        return mapping
-
     def _connect_update_events(
         self, text_update_function, blending_update_function
     ):
@@ -204,7 +207,7 @@ class TextManager(EventedModel):
         This is typically used in the vispy view file.
         """
         # connect the function for updating the text node
-        self.mapping.events.values.connect(text_update_function)
+        self._mapping_store.events.values.connect(text_update_function)
         self.events.mapping.connect(text_update_function)
         self.events.rotation.connect(text_update_function)
         self.events.translation.connect(text_update_function)
@@ -216,18 +219,16 @@ class TextManager(EventedModel):
         # connect the function for updating the text node blending
         self.events.blending.connect(blending_update_function)
 
+    def _on_mapping_changed(self):
+        self._mapping_store = PropertyMapStore(mapping=self.mapping)
+
     @staticmethod
     def _mapping_from_text(text: str, properties: Dict[str, Array]):
         if text in properties:
             return NamedPropertyMap(name=text)
         elif ('{' in text) and ('}' in text):
             return TextFormatPropertyMap(format_string=text)
-        raise ValueError(
-            trans._(
-                'text string should either be a property name or a format string containing property names',
-                deferred=True,
-            )
-        )
+        return ConstantPropertyMap(constant=text)
 
     @classmethod
     def from_layer_kwargs(
@@ -243,8 +244,7 @@ class TextManager(EventedModel):
         text : Union[TextManager, dict, str, Sequence[str], None]
             The strings to be displayed, or a format string to be filled out using properties.
         properties: Dict[str, Array]
-            Stores properties data that will be used to generate strings when text
-            is a format a string.
+            Stores properties data that will be used to generate strings.
         **kwargs
             The other accepted keyword arguments as named and described as TextManager's attributes.
         """
