@@ -23,8 +23,7 @@ from .dialogs.qt_notification import (
     NapariQtNotification,
     NotificationDispatcher,
 )
-
-# from .qt_resources import _register_napari_resources
+from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 
 if TYPE_CHECKING:
@@ -180,7 +179,7 @@ def get_app(
 
         # this will register all of our resources (icons) with Qt, so that they
         # can be used in qss files and elsewhere.
-        # _register_napari_resources()
+        _register_napari_resources()
 
     _app_ref = app  # prevent garbage collection
 

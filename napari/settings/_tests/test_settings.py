@@ -8,8 +8,7 @@ from yaml import safe_load
 
 from napari import settings
 from napari.settings import NapariSettings
-
-# from napari.utils.theme import get_theme, register_theme
+from napari.utils.theme import get_theme, register_theme
 
 
 @pytest.fixture
@@ -150,25 +149,25 @@ def test_settings_model(test_settings):
         test_settings.appearance.theme = "vaporwave"
 
 
-# def test_custom_theme_settings(test_settings):
-#     # See: https://github.com/napari/napari/issues/2340
-#     custom_theme_name = "_test_blue_"
-#
-#     # No theme registered yet, this should fail
-#     with pytest.raises(pydantic.error_wrappers.ValidationError):
-#         test_settings.appearance.theme = custom_theme_name
-#
-#     blue_theme = get_theme('dark')
-#     blue_theme.update(
-#         background='rgb(28, 31, 48)',
-#         foreground='rgb(45, 52, 71)',
-#         primary='rgb(80, 88, 108)',
-#         current='rgb(184, 112, 0)',
-#     )
-#     register_theme(custom_theme_name, blue_theme)
-#
-#     # Theme registered, should pass validation
-#     test_settings.appearance.theme = custom_theme_name
+def test_custom_theme_settings(test_settings):
+    # See: https://github.com/napari/napari/issues/2340
+    custom_theme_name = "_test_blue_"
+
+    # No theme registered yet, this should fail
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
+        test_settings.appearance.theme = custom_theme_name
+
+    blue_theme = get_theme('dark')
+    blue_theme.update(
+        background='rgb(28, 31, 48)',
+        foreground='rgb(45, 52, 71)',
+        primary='rgb(80, 88, 108)',
+        current='rgb(184, 112, 0)',
+    )
+    register_theme(custom_theme_name, blue_theme)
+
+    # Theme registered, should pass validation
+    test_settings.appearance.theme = custom_theme_name
 
 
 def test_settings_string(test_settings):
@@ -308,19 +307,19 @@ def test_no_save_path():
         NapariSettings.__original_save__(s)  # type: ignore
 
 
-# def test_settings_events(test_settings):
-#     """Test that NapariSettings emits dotted keys."""
-#     from unittest.mock import MagicMock
-#
-#     mock = MagicMock()
-#     test_settings.events.changed.connect(mock)
-#     test_settings.appearance.theme = 'light'
-#
-#     assert mock.called
-#     event = mock.call_args_list[0][0][0]
-#     assert event.key == 'appearance.theme'
-#     assert event.value == 'light'
-#
-#     mock.reset_mock()
-#     test_settings.appearance.theme = 'light'
-#     mock.assert_not_called()
+def test_settings_events(test_settings):
+    """Test that NapariSettings emits dotted keys."""
+    from unittest.mock import MagicMock
+
+    mock = MagicMock()
+    test_settings.events.changed.connect(mock)
+    test_settings.appearance.theme = 'light'
+
+    assert mock.called
+    event = mock.call_args_list[0][0][0]
+    assert event.key == 'appearance.theme'
+    assert event.value == 'light'
+
+    mock.reset_mock()
+    test_settings.appearance.theme = 'light'
+    mock.assert_not_called()
