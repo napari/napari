@@ -140,7 +140,7 @@ def add_rectangle(layer, event):
 
 
 def _add_line_rectangle_ellipse(layer, event, data, shape_type):
-    """Helper function for adding a a line, rectangle or ellipse."""
+    """Helper function for adding a line, rectangle or ellipse."""
 
     # on press
     # Start drawing rectangle / ellipse / line
@@ -497,6 +497,7 @@ def _move(layer, coordinates):
             layer.refresh()
     elif layer._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
         if vertex is not None:
+            layer._moving_coordinates = coordinates
             layer._is_moving = True
             index = layer._moving_value[0]
             shape_type = type(layer._data_view.shapes[index])
