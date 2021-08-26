@@ -1,27 +1,15 @@
 import numpy as np
 
-from ...layers.utils.layer_utils import register_layer_action
+from ...layers.utils.layer_utils import (
+    register_layer_action,
+    register_layer_alternate_hold_action,
+)
 from ...utils.translations import trans
 from ._shapes_constants import Box, Mode
 from ._shapes_mouse_bindings import _move
 from .shapes import Shapes
 
 
-@Shapes.bind_key('Space')
-def hold_to_pan_zoom(layer):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        prev_selected = layer.selected_data.copy()
-        layer.mode = Mode.PAN_ZOOM
-
-        yield
-
-        # on key release
-        layer.mode = prev_mode
-        layer.selected_data = prev_selected
-        layer._set_highlight()
 
 
 @Shapes.bind_key('Shift')
@@ -99,6 +87,23 @@ def activate_select_mode(layer):
 def activate_shape_pan_zoom_mode(layer):
     """Activate pan and zoom mode."""
     layer.mode = Mode.PAN_ZOOM
+
+
+@activate_shape_pan_zoom_mode.hold('Space')
+def hold_to_pan_zoom(layer):
+    """Hold to pan and zoom in the viewer."""
+    if layer._mode != Mode.PAN_ZOOM:
+        # on key press
+        prev_mode = layer.mode
+        prev_selected = layer.selected_data.copy()
+        layer.mode = Mode.PAN_ZOOM
+
+        yield
+
+        # on key release
+        layer.mode = prev_mode
+        layer.selected_data = prev_selected
+        layer._set_highlight()
 
 
 @register_shapes_action(trans._('Insert vertex'))

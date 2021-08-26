@@ -32,13 +32,13 @@ def rotate45(viewer: napari.Viewer):
     layer.rotate = layer.rotate @ r
     return original_rotation
 
-
-
 def rotate_unrotate_45(viewer: napari.Viewer):
     """
     identical to rotate_45, but unrotate when keypress is released
+
     """
     layer = viewer.layers[0]
+    # we use the rotate 45º function here to not repeat code.
     original_rotation = rotate45(viewer)
     yield 
     layer.rotate = original_rotation

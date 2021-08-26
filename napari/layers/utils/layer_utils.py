@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+import inspect
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import dask
@@ -42,13 +43,18 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     """
 
     def _inner(func):
+        if inspect.isgeneratorfunction(func):
+            func_, hold_ = None, func
+        else:
+            func_, hold_ = func, None
         nonlocal shortcuts
         name = 'napari:' + func.__name__
         action_manager.register_action(
             name=name,
-            command=func,
+            command=func_,
             description=description,
             keymapprovider=keymapprovider,
+            alternate_hold=hold_,
         )
         if shortcuts:
             if isinstance(shortcuts, str):
@@ -56,12 +62,19 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
 
             for shortcut in shortcuts:
                 action_manager.bind_shortcut(name, shortcut)
+
+        def _hold_bind_inner(shortcut):
+            return register_layer_alternate_hold_action(
+                func.__name__, shortcut
+            )
+
+        func.hold = _hold_bind_inner
         return func
 
     return _inner
 
 
-def register_layer_alternate_hold_action(n, shortcuts=None):
+def register_layer_alternate_hold_action(name, shortcuts=None):
     """
     Allow to register an action alternate that is undone when a key (button?) is
     released
@@ -70,7 +83,7 @@ def register_layer_alternate_hold_action(n, shortcuts=None):
 
     Parameters
     ----------
-    n : str
+    name : str
         name of the action this is an alternate for.
     shortcuts : str | List[str]
         Shortcut to bind by default to the action we are registering.
@@ -82,15 +95,14 @@ def register_layer_alternate_hold_action(n, shortcuts=None):
         function unmodified to allow decorator stacking.
 
     """
-
     def _inner(func):
-        nonlocal shortcuts
-        name = 'napari:' + n
-        action_manager._hold_actions[name] = func
+        nonlocal shortcuts, name
+        name_ = 'napari:' + name
+        action_manager._hold_actions[name_] = func
         if isinstance(shortcuts, str):
             shortcuts = [shortcuts]
         for shortcut in shortcuts:
-            action_manager.bind_hold_shortcut(name, shortcut)
+            action_manager.bind_hold_shortcut(name_, shortcut)
         return func
 
     return _inner
