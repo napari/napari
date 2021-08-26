@@ -6,7 +6,7 @@ from functools import lru_cache
 
 import numpy as np
 
-from ..shaders import Function, FunctionChain, Varying
+from vispy.visuals.shaders import Function, FunctionChain, Varying
 from .base_filter import Filter
 
 

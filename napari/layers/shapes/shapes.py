@@ -30,6 +30,7 @@ from ..utils.layer_utils import (
     get_current_properties,
     prepare_properties,
 )
+from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -425,6 +426,7 @@ class Shapes(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        experimental_clipping_planes=None,
     ):
         if data is None:
             if ndim is None:
@@ -530,6 +532,7 @@ class Shapes(Layer):
         self._drag_box_stored = None
         self._is_creating = False
         self._clipboard = {}
+        self._experimental_clipping_planes = ClippingPlaneList()
 
         # change mode once to trigger the
         # Mode setting logic
@@ -575,6 +578,8 @@ class Shapes(Layer):
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(data)
         )
+
+        self.experimental_clipping_planes = experimental_clipping_planes
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -1498,6 +1503,9 @@ class Shapes(Layer):
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
+                ],
             }
         )
         return state
@@ -1596,6 +1604,21 @@ class Shapes(Layer):
                 self._finish_drawing()
             else:
                 self.refresh()
+
+    @property
+    def experimental_clipping_planes(self):
+        return self._experimental_clipping_planes
+
+    @experimental_clipping_planes.setter
+    def experimental_clipping_planes(
+        self, value: Union[List[Union[ClippingPlane, dict]], ClippingPlaneList]
+    ):
+        self._experimental_clipping_planes.clear()
+        if value is not None:
+            for new_plane in value:
+                plane = ClippingPlane()
+                plane.update(new_plane)
+                self._experimental_clipping_planes.append(plane)
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""

@@ -25,6 +25,7 @@ from ..utils.layer_utils import (
     get_current_properties,
     prepare_properties,
 )
+from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -268,6 +269,7 @@ class Points(Layer):
         blending='translucent',
         visible=True,
         property_choices=None,
+        experimental_clipping_planes=None,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -365,6 +367,7 @@ class Points(Layer):
         self._is_selecting = False
         self._clipboard = {}
         self._round_index = False
+        self._experimental_clipping_planes = ClippingPlaneList()
 
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -392,6 +395,8 @@ class Points(Layer):
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(self.data)
         )
+
+        self.experimental_clipping_planes = experimental_clipping_planes
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -670,6 +675,21 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
+
+    @property
+    def experimental_clipping_planes(self):
+        return self._experimental_clipping_planes
+
+    @experimental_clipping_planes.setter
+    def experimental_clipping_planes(
+        self, value: Union[List[Union[ClippingPlane, dict]], ClippingPlaneList]
+    ):
+        self._experimental_clipping_planes.clear()
+        if value is not None:
+            for new_plane in value:
+                plane = ClippingPlane()
+                plane.update(new_plane)
+                self._experimental_clipping_planes.append(plane)
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -972,6 +992,9 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
+                ],
             }
         )
         return state
