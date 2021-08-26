@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from napari.layers.utils.text_manager import TextManager
+from napari.utils.colormaps.standardize_color import transform_color
 
 
 def test_empty_text_manager_property():
@@ -154,9 +155,11 @@ def test_equality():
     assert text_manager_1 == text_manager_2
     assert not (text_manager_1 != text_manager_2)
 
-    text_manager_2.color = 'blue'
-    assert text_manager_1 != text_manager_2
-    assert not (text_manager_1 == text_manager_2)
+    text_manager_3 = TextManager.from_layer_kwargs(
+        text=text, properties=properties, color='blue'
+    )
+    assert text_manager_1 != text_manager_3
+    assert not (text_manager_1 == text_manager_3)
 
 
 def test_blending_modes():
@@ -179,3 +182,26 @@ def test_blending_modes():
     with pytest.warns(RuntimeWarning):
         text_manager.blending = 'opaque'
         assert text_manager.blending == 'translucent'
+
+
+def test_multi_color_direct():
+    text = 'class'
+    classes = np.array(['A', 'B', 'C'])
+    colors = ['red', 'green', 'blue']
+    properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
+    text_manager = TextManager.from_layer_kwargs(
+        text=text, properties=properties, color=colors
+    )
+
+    np.testing.assert_array_equal(text_manager.colors, transform_color(colors))
+
+
+def test_multi_color_property():
+    text = 'class'
+    colors = ['red', 'green', 'blue']
+    properties = {'class': colors, 'confidence': np.array([0.5, 0.3, 1])}
+    text_manager = TextManager.from_layer_kwargs(
+        text=text, properties=properties, color='class'
+    )
+
+    np.testing.assert_array_equal(text_manager.colors, transform_color(colors))

@@ -29,9 +29,8 @@ class TextManager(EventedModel):
         True if the text should be displayed, false otherwise.
     size : float
         Font size of the text, which must be positive. Default value is 12.
-    color : array
-        Font color for the text as an [R, G, B, A] array. Can also be expressed
-        as a string on construction or setting.
+    color_mapping : PropertyMapStore
+        A mapping from layer properties to colors. Also store previously generated values for performance reasons.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
@@ -50,7 +49,7 @@ class TextManager(EventedModel):
 
     visible: bool = True
     size: PositiveInt = 12
-    color: Array[float, (4,)] = 'cyan'
+    color_mapping: PropertyMapStore = ConstantPropertyMap(constant='cyan')
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
@@ -62,6 +61,10 @@ class TextManager(EventedModel):
     def values(self):
         return np.array(self.mapping.values, dtype=str)
 
+    @property
+    def colors(self):
+        return transform_color(self.color_mapping.values)
+
     def refresh_text(self, properties: Dict[str, Array]):
         """Refresh all text values from the given layer properties.
 
@@ -71,6 +74,7 @@ class TextManager(EventedModel):
             The properties of a layer.
         """
         self.mapping.refresh(properties)
+        self.color_mapping.refresh(properties)
 
     def add(self, properties: Dict[str, Array], num_to_add: int):
         """Adds a number of a new text values based on the given layer properties.
@@ -83,6 +87,7 @@ class TextManager(EventedModel):
             The number of text values to add.
         """
         self.mapping.add(properties, num_to_add)
+        self.color_mapping.add(properties, num_to_add)
 
     def remove(self, indices: Iterable[int]):
         """Removes some text values by index.
@@ -93,6 +98,7 @@ class TextManager(EventedModel):
             The indices to remove.
         """
         self.mapping.remove(indices)
+        self.color_mapping.remove(indices)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -140,12 +146,31 @@ class TextManager(EventedModel):
         """
         if len(indices_view) > 0:
             return self.values[indices_view]
-        # if no points in this slice send dummy data
+        # if no elements in this slice send dummy data
         return np.array([''])
 
-    @validator('color', pre=True, always=True)
-    def _check_color(cls, color):
-        return transform_color(color)[0]
+    def view_colors(self, indices_view: np.ndarray) -> np.ndarray:
+        """Get the colors of the text elements in view
+
+        Parameters
+        ----------
+        indices_view : (N x 1) np.ndarray
+            Indices of the text elements in view
+        Returns
+        -------
+        colors : (N x 1) np.ndarray
+            Array of colors for the N text elements in view
+        """
+        if len(indices_view) > 0:
+            return self.colors[indices_view]
+        # if no elements in this slice send dummy data
+        return np.array([''])
+
+    @validator('color_mapping', pre=True, always=True)
+    def _check_color_mapping(cls, color_mapping):
+        if callable(color_mapping):
+            color_mapping = PropertyMapStore(mapping=color_mapping)
+        return color_mapping
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
@@ -184,7 +209,7 @@ class TextManager(EventedModel):
         self.events.rotation.connect(text_update_function)
         self.events.translation.connect(text_update_function)
         self.events.anchor.connect(text_update_function)
-        self.events.color.connect(text_update_function)
+        self.events.color_mapping.connect(text_update_function)
         self.events.size.connect(text_update_function)
         self.events.visible.connect(text_update_function)
 
@@ -230,9 +255,8 @@ class TextManager(EventedModel):
                 kwargs = deepcopy(text)
                 if 'text' in kwargs:
                     kwargs['mapping'] = cls._mapping_from_text(
-                        kwargs['text'], properties
+                        kwargs.pop('text'), properties
                     )
-                    kwargs.pop('text')
             elif isinstance(text, str):
                 kwargs['mapping'] = cls._mapping_from_text(text, properties)
             elif isinstance(text, (list, np.ndarray, tuple)):
@@ -248,6 +272,21 @@ class TextManager(EventedModel):
                         deferred=True,
                     )
                 )
+            if 'color' in kwargs:
+                color = kwargs.pop('color')
+                # TODO: list/tuple and especially ndarray can represent one or many colors
+                # so this needs extra care.
+                if isinstance(color, (list, np.ndarray, tuple)):
+                    properties['_text_color'] = np.array(color)
+                    kwargs['color_mapping'] = NamedPropertyMap(
+                        name='_text_color'
+                    )
+                elif color in properties:
+                    kwargs['color_mapping'] = NamedPropertyMap(name=color)
+                else:
+                    kwargs['color_mapping'] = ConstantPropertyMap(
+                        constant=color
+                    )
             manager = cls(**kwargs)
         manager.refresh_text(properties)
         return manager

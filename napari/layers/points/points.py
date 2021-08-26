@@ -1126,6 +1126,10 @@ class Points(Layer):
         return self.text.compute_text_coords(self._view_data, self._ndisplay)
 
     @property
+    def _view_text_colors(self) -> np.ndarray:
+        return self.text.view_colors(self._indices_view)
+
+    @property
     def _view_size(self) -> np.ndarray:
         """Get the sizes of the points in view
 
