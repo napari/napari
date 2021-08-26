@@ -58,19 +58,6 @@ def clean_current(monkeypatch, qtbot):
     monkeypatch.setattr(NapariQtNotification, "show", store_widget)
 
 
-@pytest.mark.skipif(PY37_OR_LOWER, reason="Fails on py37")
-def test_notifications_error_with_threading(make_napari_viewer):
-    """Test notifications of `threading` threads, using a dask example."""
-    random_image = da.random.random(size=(50, 50))
-    with notification_manager:
-        viewer = make_napari_viewer()
-        viewer.add_image(random_image)
-        result = da.divide(random_image, da.zeros(50, 50))
-        viewer.add_image(result)
-        assert len(notification_manager.records) >= 1
-        notification_manager.records = []
-
-
 @pytest.mark.parametrize(
     "raise_func,warn_func",
     [(_raise, _warn), (_threading_raise, _threading_warn)],
@@ -165,3 +152,17 @@ def test_notification_error(mock_show, monkeypatch, clean_current):
     mock_show.assert_not_called()
     bttn.click()
     mock_show.assert_called_once()
+
+
+@pytest.mark.sync_only
+@pytest.mark.skipif(PY37_OR_LOWER, reason="Fails on py37")
+def test_notifications_error_with_threading(make_napari_viewer):
+    """Test notifications of `threading` threads, using a dask example."""
+    random_image = da.random.random(size=(50, 50))
+    with notification_manager:
+        viewer = make_napari_viewer()
+        viewer.add_image(random_image)
+        result = da.divide(random_image, da.zeros(50, 50))
+        viewer.add_image(result)
+        assert len(notification_manager.records) >= 1
+        notification_manager.records = []
