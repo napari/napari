@@ -1,18 +1,17 @@
 import numpy as np
 
-from ...layers.utils.layer_utils import (
-    register_layer_action,
-    register_layer_alternate_hold_action,
-)
+from ...layers.utils.layer_utils import register_layer_action
 from ...utils.translations import trans
 from ._shapes_constants import Box, Mode
 from ._shapes_mouse_bindings import _move
 from .shapes import Shapes
 
 
+def register_shapes_action(description):
+    return register_layer_action(Shapes, description)
 
 
-@Shapes.bind_key('Shift')
+@register_shapes_action(trans._('Hold to lock aspect ratio'))
 def hold_to_lock_aspect_ratio(layer):
     """Hold to lock aspect ratio when resizing a shape."""
     # on key press
@@ -35,10 +34,6 @@ def hold_to_lock_aspect_ratio(layer):
     layer._fixed_aspect = False
     if layer._is_moving:
         _move(layer, layer._moving_coordinates)
-
-
-def register_shapes_action(description):
-    return register_layer_action(Shapes, description)
 
 
 @register_shapes_action(trans._('Add rectangles'))

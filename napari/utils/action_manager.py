@@ -3,8 +3,17 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from inspect import signature
-from typing import TYPE_CHECKING, Callable, Dict, List, Set, Tuple, Union
+from inspect import isgeneratorfunction, signature
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 from .interactions import Shortcut
 from .key_bindings import KeymapProvider
@@ -240,9 +249,9 @@ class ActionManager:
         self._validate_action_name(name)
         self._actions[name] = Action(command, description, keymapprovider)
         if alternate_hold:
-            if inspect.isgeneratorfunction(alternate_hold):
+            if not isgeneratorfunction(alternate_hold):
                 raise ValueError(
-                    'alternate_hold needs to be a generator function with a single yield.'
+                    f'alternate_hold needs to be a generator function with a single yield. Got {alternate_hold}'
                 )
             self._hold_actions[name] = alternate_hold
         self._update_shortcut_bindings(name)

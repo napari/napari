@@ -3,7 +3,7 @@ from typing import Dict, List
 from pydantic import Field
 
 from ..utils.events.evented_model import EventedModel
-from ..utils.shortcuts import default_shortcuts
+from ..utils.shortcuts import default_hold_shortcuts, default_shortcuts
 from ..utils.translations import trans
 
 
@@ -13,6 +13,14 @@ class ShortcutsSettings(EventedModel):
         title=trans._("shortcuts"),
         description=trans._(
             "Set keyboard shortcuts for actions.",
+        ),
+    )
+
+    hold_shortcuts: Dict[str, List[str]] = Field(
+        default_hold_shortcuts,
+        title=trans._("hold shortcuts"),
+        description=trans._(
+            "Set keyboard shortcuts for hold actions.",
         ),
     )
 

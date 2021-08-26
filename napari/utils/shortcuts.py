@@ -41,3 +41,7 @@ default_shortcuts = {
     'napari:delete_selected_shapes': ['Backspace', 'Delete', '3'],
     'napari:finish_drawing_shape': ['Escape'],
 }
+
+default_hold_shortcuts = {
+    'napari:hold_to_lock_aspect_ratio': ['Shift'],
+}

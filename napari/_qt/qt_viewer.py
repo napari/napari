@@ -264,6 +264,15 @@ class QtViewer(QSplitter):
             for shortcut in shortcuts:
                 action_manager.bind_shortcut(action, shortcut)
 
+        for (
+            action,
+            shortcuts,
+        ) in get_settings().shortcuts.hold_shortcuts.items():
+            action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                print('bind hold', action, 'to', shortcut)
+                action_manager.bind_hold_shortcut(action, shortcut)
+
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
         self.canvas = VispyCanvas(
