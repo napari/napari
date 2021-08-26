@@ -34,6 +34,7 @@ from ..qt_resources import get_stylesheet
 KEY_SUBS = {'Ctrl': 'Control'}
 
 
+# TODO handle the yields versions.
 class ShortcutEditor(QWidget):
     """Widget to edit keybindings for napari."""
 

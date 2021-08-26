@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import warnings
 import inspect
+import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import dask
@@ -95,6 +95,7 @@ def register_layer_alternate_hold_action(name, shortcuts=None):
         function unmodified to allow decorator stacking.
 
     """
+
     def _inner(func):
         nonlocal shortcuts, name
         name_ = 'napari:' + name
