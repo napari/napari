@@ -6,7 +6,6 @@ import types
 import warnings
 from typing import TYPE_CHECKING, List, Union
 
-import dask.array as da
 import numpy as np
 from scipy import ndimage as ndi
 
@@ -294,9 +293,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
         self._experimental_clipping_planes = ClippingPlaneList()
         if contrast_limits is None:
-            if isinstance(data, da.Array):
-                if np.issubdtype(data.dtype, np.integer):
-                    self.contrast_limits_range = get_dtype_limits(data.dtype)
+            if not isinstance(data, np.ndarray):
+                dtype = getattr(data, 'dtype', None)
+                if np.issubdtype(dtype, np.integer):
+                    self.contrast_limits_range = get_dtype_limits(dtype)
                 else:
                     self.contrast_limits_range = (0, 1)
             else:
