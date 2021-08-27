@@ -150,7 +150,6 @@ def template(css: str, **theme):
         stops = [i.strip() for i in matchobj.groups()[1].split('-')]
         return gradient(stops, horizontal)
 
-    print(theme)
     for k, v in theme.items():
         css = gradient_pattern.sub(gradient_match, css)
         css = darken_pattern.sub(darken_match, css)
