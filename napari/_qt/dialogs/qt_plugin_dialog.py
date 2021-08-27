@@ -81,7 +81,7 @@ class Installer(QObject):
         if installer != "pip":
             process.setProgram(installer)
         else:
-            process.setProgram(sys.executable)
+            process.setProgram(self._sys_executable_or_bundled_python())
 
         process.setProcessChannelMode(QProcess.MergedChannels)
         process.readyReadStandardOutput.connect(
@@ -105,6 +105,16 @@ class Installer(QObject):
             lambda ec, es: self._on_process_finished(process, ec, es)
         )
         return process
+
+    def _sys_executable_or_bundled_python(self):
+        # Note: is_bundled_app() returns False even if using a Briefcase bundle...
+        # Workaround: see if sys.executable is set to something something napari on Mac
+        if sys.executable.endswith("napari") and sys.platform == 'darwin':
+            # sys.prefix should be <napari.app>/Contents/Resources/Support/Python/Resources
+            python = os.path.join(sys.prefix, "bin", "python3")
+            if os.path.isfile(python):
+                return python
+        return sys.executable
 
     def set_output_widget(self, output_widget: QTextEdit):
         if output_widget:
