@@ -450,7 +450,13 @@ class Window:
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
-        to connect events to themes that have not been connected yet."""
+        to connect events to themes that have not been connected yet.
+
+        Parameters
+        ----------
+        connect : bool
+            Determines whether the `connect` or `disconnect` method should be used.
+        """
         for theme in _themes.values():
             if connect:
                 self._connect_theme(theme)
@@ -475,7 +481,8 @@ class Window:
             )
         )
         # connect console-specific attributes only if QtConsole
-        # is present
+        # is present. The `console` is called which might slow
+        # things down a little.
         if self.qt_viewer.console:
             theme.events.console.connect(self.qt_viewer.console._update_theme)
             theme.events.syntax_style.connect(
