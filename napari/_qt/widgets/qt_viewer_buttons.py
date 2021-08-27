@@ -14,6 +14,7 @@ from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from .qt_spinbox import QtSpinBox
+from .qt_tooltip import QtToolTipLabel
 
 
 class QtLayerButtons(QFrame):
@@ -218,8 +219,8 @@ class QtViewerButtons(QFrame):
         grid_stride = QtSpinBox(popup)
         grid_width = QtSpinBox(popup)
         grid_height = QtSpinBox(popup)
-        shape_help_symbol = QLabel(self)
-        stride_help_symbol = QLabel(self)
+        shape_help_symbol = QtToolTipLabel(self)
+        stride_help_symbol = QtToolTipLabel(self)
         blank = QLabel(self)  # helps with placing help symbols.
 
         shape_help_msg = trans._(

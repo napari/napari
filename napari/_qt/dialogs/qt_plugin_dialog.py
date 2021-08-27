@@ -81,7 +81,7 @@ class Installer(QObject):
         if installer != "pip":
             process.setProgram(installer)
         else:
-            process.setProgram(sys.executable)
+            process.setProgram(self._sys_executable_or_bundled_python())
 
         process.setProcessChannelMode(QProcess.MergedChannels)
         process.readyReadStandardOutput.connect(
@@ -105,6 +105,16 @@ class Installer(QObject):
             lambda ec, es: self._on_process_finished(process, ec, es)
         )
         return process
+
+    def _sys_executable_or_bundled_python(self):
+        # Note: is_bundled_app() returns False even if using a Briefcase bundle...
+        # Workaround: see if sys.executable is set to something something napari on Mac
+        if sys.executable.endswith("napari") and sys.platform == 'darwin':
+            # sys.prefix should be <napari.app>/Contents/Resources/Support/Python/Resources
+            python = os.path.join(sys.prefix, "bin", "python3")
+            if os.path.isfile(python):
+                return python
+        return sys.executable
 
     def set_output_widget(self, output_widget: QTextEdit):
         if output_widget:
@@ -562,35 +572,29 @@ class QtPluginDialog(QDialog):
         lay = QVBoxLayout(installed)
         lay.setContentsMargins(0, 2, 0, 2)
         self.installed_label = QLabel(trans._("Installed Plugins"))
-        self.installed_filter = QLineEdit()
-        self.installed_filter.setPlaceholderText("search...")
-        self.installed_filter.setMaximumWidth(350)
-        self.installed_filter.setClearButtonEnabled(True)
-        mid_layout = QHBoxLayout()
+        self.packages_filter = QLineEdit()
+        self.packages_filter.setPlaceholderText(trans._("filter..."))
+        self.packages_filter.setMaximumWidth(350)
+        self.packages_filter.setClearButtonEnabled(True)
+        mid_layout = QVBoxLayout()
+        mid_layout.addWidget(self.packages_filter)
         mid_layout.addWidget(self.installed_label)
-        mid_layout.addWidget(self.installed_filter)
-        mid_layout.addStretch()
         lay.addLayout(mid_layout)
 
         self.installed_list = QPluginList(installed, self.installer)
-        self.installed_filter.textChanged.connect(self.installed_list.filter)
+        self.packages_filter.textChanged.connect(self.installed_list.filter)
         lay.addWidget(self.installed_list)
 
         uninstalled = QWidget(self.v_splitter)
         lay = QVBoxLayout(uninstalled)
         lay.setContentsMargins(0, 2, 0, 2)
         self.avail_label = QLabel(trans._("Available Plugins"))
-        self.avail_filter = QLineEdit()
-        self.avail_filter.setPlaceholderText("search...")
-        self.avail_filter.setMaximumWidth(350)
-        self.avail_filter.setClearButtonEnabled(True)
         mid_layout = QHBoxLayout()
         mid_layout.addWidget(self.avail_label)
-        mid_layout.addWidget(self.avail_filter)
         mid_layout.addStretch()
         lay.addLayout(mid_layout)
         self.available_list = QPluginList(uninstalled, self.installer)
-        self.avail_filter.textChanged.connect(self.available_list.filter)
+        self.packages_filter.textChanged.connect(self.available_list.filter)
         lay.addWidget(self.available_list)
 
         self.stdout_text = QTextEdit(self.v_splitter)
@@ -641,7 +645,7 @@ class QtPluginDialog(QDialog):
         self.v_splitter.setStretchFactor(1, 2)
         self.h_splitter.setStretchFactor(0, 2)
 
-        self.avail_filter.setFocus()
+        self.packages_filter.setFocus()
 
     def _update_count_in_label(self):
         count = self.available_list.count()

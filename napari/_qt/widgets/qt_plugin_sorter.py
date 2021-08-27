@@ -26,6 +26,7 @@ from ...plugins import plugin_manager as napari_plugin_manager
 from ...settings import get_settings
 from ...utils.translations import trans
 from ..utils import drag_with_pixmap
+from .qt_tooltip import QtToolTipLabel
 
 if TYPE_CHECKING:
     from napari_plugin_engine import PluginManager
@@ -338,7 +339,7 @@ class QtPluginSorter(QWidget):
         instructions.setWordWrap(True)
 
         self.docstring = QLabel(self)
-        self.info = QLabel(self)
+        self.info = QtToolTipLabel(self)
         self.info.setObjectName("info_icon")
         doc_lay = QHBoxLayout()
         doc_lay.addWidget(self.docstring)

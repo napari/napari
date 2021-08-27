@@ -10,6 +10,7 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils import config
+from ...utils._dtype import get_dtype_limits
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
@@ -292,7 +293,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
         self._experimental_clipping_planes = ClippingPlaneList()
         if contrast_limits is None:
-            self.contrast_limits_range = self._calc_data_range()
+            if not isinstance(data, np.ndarray):
+                dtype = getattr(data, 'dtype', None)
+                if np.issubdtype(dtype, np.integer):
+                    self.contrast_limits_range = get_dtype_limits(dtype)
+                else:
+                    self.contrast_limits_range = (0, 1)
+            else:
+                self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)

@@ -154,6 +154,7 @@ def test_notification_error(mock_show, monkeypatch, clean_current):
     mock_show.assert_called_once()
 
 
+@pytest.mark.sync_only
 @pytest.mark.skipif(PY37_OR_LOWER, reason="Fails on py37")
 def test_notifications_error_with_threading(make_napari_viewer):
     """Test notifications of `threading` threads, using a dask example."""
