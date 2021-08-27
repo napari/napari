@@ -111,7 +111,9 @@ class Installer(QObject):
         # Workaround: see if sys.executable is set to something something napari on Mac
         if sys.executable.endswith("napari") and sys.platform == 'darwin':
             # sys.prefix should be <napari.app>/Contents/Resources/Support/Python/Resources
-            return os.path.join(sys.prefix, "bin", "python3")
+            python = os.path.join(sys.prefix, "bin", "python3")
+            if os.path.isfile(python):
+                return python
         return sys.executable
 
     def set_output_widget(self, output_widget: QTextEdit):
