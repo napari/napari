@@ -103,9 +103,13 @@ def patched_toml():
             (3, 8): 'b4',
             (3, 9): 'b1',
         }[sys.version_info[:2]]
-        toml['tool']['briefcase']['app'][APP].add('macOS', tomlkit.table())
-        toml['tool']['briefcase']['app'][APP]['macOS']['support_revision'] = revision
-        print("patching pyproject.toml to pin support package to revision:", revision)
+        app_table = toml['tool']['briefcase']['app'][APP]
+        app_table.add('macOS', tomlkit.table())
+        app_table['macOS']['support_revision'] = revision
+        print(
+            "patching pyproject.toml to pin support package to revision:",
+            revision,
+        )
 
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(tomlkit.dumps(toml))
@@ -185,7 +189,9 @@ def patch_wxs():
 
 def patch_python_lib_location():
     # must run after briefcase create
-    support = os.path.join(BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support")
+    support = os.path.join(
+        BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support"
+    )
     python_resources = os.path.join(support, "Python", "Resources")
     os.makedirs(python_resources, exist_ok=True)
     for subdir in ("bin", "lib"):
