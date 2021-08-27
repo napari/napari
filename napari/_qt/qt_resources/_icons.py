@@ -156,7 +156,7 @@ def generate_colorized_svgs(
 
     if svg_stems is None:
         svg_stems = [""] * len(svg_paths)
-    if len(svg_paths) == len(svg_stems):
+    if len(svg_paths) != len(svg_stems):
         raise ValueError(
             "Incorrect number of svg stems was provided. Expected exactly the same number"
             " as the number svg paths."
