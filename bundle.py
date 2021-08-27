@@ -90,8 +90,9 @@ def patched_toml():
 
     print("patching pyproject.toml to version: ", VERSION)
     print(
-        "patching pyproject.toml requirements to : \n",
-        "\n".join(toml['tool']['briefcase']['app'][APP]['requires']),
+        "patching pyproject.toml requirements to:",
+        *toml['tool']['briefcase']['app'][APP]['requires'],
+        sep="\n ",
     )
 
     if MACOS:
@@ -248,6 +249,7 @@ def bundle():
         elif MACOS:
             patch_python_lib_location()
 
+        sys.exit(0)
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
