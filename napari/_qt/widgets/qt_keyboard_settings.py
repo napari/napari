@@ -69,8 +69,12 @@ class ShortcutEditor(QWidget):
         self.layer_combo_box = QComboBox(self)
         self._label = QLabel(self)
         self._table = QTableWidget(self)
-        self._table.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self._table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectItems
+        )
+        self._table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
         self._table.setShowGrid(False)
         self._restore_button = QPushButton(trans._("Restore All Keybindings"))
 

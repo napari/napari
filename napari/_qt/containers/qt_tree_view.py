@@ -37,9 +37,9 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
     def __init__(self, root: Group[Node], parent: QWidget = None):
         super().__init__(parent)
         self.setHeaderHidden(True)
-        self.setDragDropMode(QTreeView.InternalMove)
+        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(QTreeView.ExtendedSelection)
+        self.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
     def setRoot(self, root: Group[Node]):

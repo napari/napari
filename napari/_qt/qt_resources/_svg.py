@@ -148,7 +148,7 @@ class SVGBufferIconEngine(QIconEngine):
 
     def pixmap(self, size, mode, state):
         """Return the icon as a pixmap with requested size, mode, and state."""
-        img = QImage(size, QImage.Format_ARGB32)
+        img = QImage(size, QImage.Format.Format_ARGB32)
         img.fill(Qt.transparent)
         pixmap = QPixmap.fromImage(img, Qt.NoFormatConversion)
         painter = QPainter(pixmap)

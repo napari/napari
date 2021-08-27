@@ -98,8 +98,8 @@ def QImg2array(img):
         upper-left corner of the rendered region.
     """
     # Fix when  image is provided in wrong format (ex. test on Azure pipelines)
-    if img.format() != QImage.Format_ARGB32:
-        img = img.convertToFormat(QImage.Format_ARGB32)
+    if img.format() != QImage.Format.Format_ARGB32:
+        img = img.convertToFormat(QImage.Format.Format_ARGB32)
     b = img.constBits()
     h, w, c = img.height(), img.width(), 4
 
