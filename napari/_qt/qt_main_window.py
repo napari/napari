@@ -421,10 +421,10 @@ class Window:
 
         # discover any themes provided by plugins
         plugin_manager.discover_themes()
+        self._setup_existing_themes()
 
         self._add_menus()
         self._update_theme()
-        self._setup_existing_themes()
         get_settings().appearance.events.theme.connect(self._update_theme)
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -456,11 +456,6 @@ class Window:
                 self._connect_theme(theme)
             else:
                 self._disconnect_theme(theme)
-
-    def _add_theme(self, event):
-        """Add new theme and connect events."""
-        theme = event.value
-        self._connect_theme(theme)
 
     def _connect_theme(self, theme):
         # connect events to update theme. Here, we don't want to pass the event
@@ -511,6 +506,11 @@ class Window:
             theme.events.syntax_style.disconnect(
                 self.qt_viewer.console._update_theme
             )
+
+    def _add_theme(self, event):
+        """Add new theme and connect events."""
+        theme = event.value
+        self._connect_theme(theme)
 
     def _remove_theme(self, event):
         """Remove theme and disconnect events."""

@@ -150,6 +150,7 @@ def template(css: str, **theme):
         stops = [i.strip() for i in matchobj.groups()[1].split('-')]
         return gradient(stops, horizontal)
 
+    print(theme)
     for k, v in theme.items():
         css = gradient_pattern.sub(gradient_match, css)
         css = darken_pattern.sub(darken_match, css)
@@ -162,7 +163,11 @@ def template(css: str, **theme):
 
 
 def get_theme(name, as_dict=True):
-    """Get a theme based on its name
+    """Get a copy of theme based on it's name.
+
+    If you get a copy of the theme, changes to the theme model will not be
+    reflected in the UI unless you replace or add the modified theme to
+    the `_themes` container.
 
     Parameters
     ----------
