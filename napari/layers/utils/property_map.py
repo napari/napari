@@ -1,7 +1,5 @@
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
-from pydantic import BaseModel
-
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 
@@ -52,7 +50,7 @@ class TextFormatPropertyMap(EventedModel):
         return self.format_string.format(**property_row)
 
 
-class StyleAttribute(BaseModel):
+class StyleAttribute(EventedModel):
     """Stores a style and its value for each element of a Layer directly.
 
     Attributes

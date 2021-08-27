@@ -34,7 +34,6 @@ class TextManager(EventedModel):
         True if the text should be displayed, false otherwise.
     size : float
         Font size of the text, which must be positive. Default value is 12.
-
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
@@ -201,8 +200,8 @@ class TextManager(EventedModel):
         This is typically used in the vispy view file.
         """
         # connect the function for updating the text node
-        # self.strings.events.values.connect(text_update_function)
-        # self.colors.events.values.connect(text_update_function)
+        self.strings.events.values.connect(text_update_function)
+        self.colors.events.values.connect(text_update_function)
         self.events.rotation.connect(text_update_function)
         self.events.translation.connect(text_update_function)
         self.events.anchor.connect(text_update_function)
