@@ -226,7 +226,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return super().json(exclude=exclude, **kwargs)
 
     def dict(self, **kwargs):
-        """Convert to a dictionaty."""
+        """Convert to a dictionary."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
         # https://github.com/samuelcolvin/pydantic/pull/2231
