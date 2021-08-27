@@ -164,7 +164,7 @@ class QtShapesControls(QtLayerControls):
             layer,
             'zoom',
             Mode.PAN_ZOOM,
-            "napari:activate_shape_pan_zoom_mode",
+            "activate_shape_pan_zoom_mode",
             extra_tooltip_text=trans._('(or hold Space)'),
             checked=True,
         )
