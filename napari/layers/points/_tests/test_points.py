@@ -164,12 +164,12 @@ def test_empty_layer_with_text_properties():
         text=text_kwargs,
     )
     assert layer.text.values.size == 0
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    assert layer.text.colors.size == 0
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])
     np.testing.assert_equal(layer.text.values, ['1.5'])
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.colors, [[1, 0, 0, 1]])
 
 
 def test_empty_layer_with_text_formatted():
