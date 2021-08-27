@@ -57,9 +57,10 @@ def patched_toml():
     toml = tomlkit.parse(original_toml)
 
     # Initialize EXTRA_REQS from setup.cfg 'options.extras_require.bundle_run'
+    bundle_run = parser.get("options.extras_require", "bundle_run")
     EXTRA_REQS = [
-        requirement.split('#')[0].strip() for requirement in
-        parser.get("options.extras_require", "bundle_run").splitlines()
+        requirement.split('#')[0].strip()
+        for requirement in bundle_run.splitlines()
         if requirement
     ]
 
