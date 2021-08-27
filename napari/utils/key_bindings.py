@@ -448,6 +448,9 @@ class KeymapHandler:
         if inspect.isgeneratorfunction(func):
             try:
                 next(gen)  # call function
+                assert (
+                    False
+                ), "We did not raise StopIteration, there is more than one yield"
             except StopIteration:  # only one statement
                 pass
             else:

@@ -1,4 +1,5 @@
 import os
+from inspect import isgeneratorfunction
 
 import numpy as np
 import pytest
@@ -22,7 +23,12 @@ def _get_all_keybinding_methods(type_):
     # need to get methods in action_manager
     am_methods = action_manager._get_layer_actions(type_)
     for name, action in am_methods.items():
-        obj_methods.add(action.command)
+        hold = action_manager._hold_actions.get(name)
+        assert (action.command is not None) or (hold is not None)
+        if action.command is not None:
+            obj_methods.add(action.command)
+        if hold is not None:
+            obj_methods.add(hold)
     return obj_methods
 
 
@@ -120,8 +126,17 @@ def test_add_layer(
     viewer = make_napari_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
-
-    func(layer)
+    if not isgeneratorfunction(func):
+        func(layer)
+    else:
+        gen = func(layer)
+        try:
+            next(gen)
+            assert (
+                False
+            ), "We did not raise StopIteration, there is more than one yield"
+        except StopIteration:  # only one statement
+            pass
 
     assert Nmeth == EXPECTED_NUMBER_OF_LAYER_METHODS[layer_class.__name__]
 
