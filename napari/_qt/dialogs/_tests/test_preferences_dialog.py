@@ -61,7 +61,9 @@ def test_preferences_dialog_cancel(qtbot, pref):
 def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     assert get_settings().appearance.theme == 'light'
     monkeypatch.setattr(
-        QMessageBox, 'question', lambda *a: QMessageBox.RestoreDefaults
+        QMessageBox,
+        'question',
+        lambda *a: QMessageBox.StandardButton.RestoreDefaults,
     )
     pref._restore_default_dialog()
     assert get_settings().appearance.theme == 'dark'

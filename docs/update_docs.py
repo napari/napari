@@ -111,7 +111,8 @@ def generate_images():
         QMessageBox.Icon.Question,
         "Restore Settings",
         "Are you sure you want to restore default settings?",
-        QMessageBox.RestoreDefaults | QMessageBox.Cancel,
+        QMessageBox.StandardButton.RestoreDefaults
+        | QMessageBox.StandardButton.Cancel,
         pref,
     )
     box.show()

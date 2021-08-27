@@ -165,16 +165,15 @@ class QtHookImplementationListWidget(QListWidget):
         hook_caller: Optional[HookCaller] = None,
     ):
         super().__init__(parent)
-        self.setDefaultDropAction(Qt.MoveAction)
+        self.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.setDragEnabled(True)
-        self.setDragDropMode(self.InternalMove)
-        self.setSelectionMode(self.SingleSelection)
+        self.setDragDropMode(self.DragDropMode.InternalMove)
+        self.setSelectionMode(self.SelectionMode.SingleSelection)
         self.setAcceptDrops(True)
         self.setSpacing(1)
         self.setMinimumHeight(1)
-        self.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
-        )
+        minexp = QSizePolicy.Policy.MinimumExpanding
+        self.setSizePolicy(minexp, minexp)
         self.order_changed.connect(self.permute_hook)
         self.hook_caller: Optional[HookCaller] = None
         self.set_hook_caller(hook_caller)

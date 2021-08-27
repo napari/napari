@@ -98,8 +98,11 @@ class QtActionContextMenu(QMenu):
         present in the `ctx` dict, or be builtins*.
         """
         for item in self.actions():
-            if item.menu() is not None:
-                item = item.menu()
+            if item.isSeparator():
+                continue
+            parent = item.parent()
+            if parent is not self:
+                item = parent  # submenu
             d = item.data()
             if not d:
                 continue

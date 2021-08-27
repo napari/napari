@@ -176,10 +176,11 @@ class PreferencesDialog(QDialog):
             self,
             trans._("Restore Settings"),
             trans._("Are you sure you want to restore default settings?"),
-            QMessageBox.RestoreDefaults | QMessageBox.Cancel,
-            QMessageBox.RestoreDefaults,
+            QMessageBox.StandardButton.RestoreDefaults
+            | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.RestoreDefaults,
         )
-        if response == QMessageBox.RestoreDefaults:
+        if response == QMessageBox.StandardButton.RestoreDefaults:
             self._settings.reset()
             self._rebuild_dialog()  # TODO: do we need this?
 

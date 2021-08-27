@@ -128,11 +128,12 @@ class ShortcutEditor(QWidget):
             self,
             trans._("Restore Shortcuts"),
             trans._("Are you sure you want to restore default shortcuts?"),
-            QMessageBox.RestoreDefaults | QMessageBox.Cancel,
-            QMessageBox.RestoreDefaults,
+            QMessageBox.StandardButton.RestoreDefaults
+            | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.RestoreDefaults,
         )
 
-        if response == QMessageBox.RestoreDefaults:
+        if response == QMessageBox.StandardButton.RestoreDefaults:
             self._reset_shortcuts()
 
     def _reset_shortcuts(self):
