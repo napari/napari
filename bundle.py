@@ -19,15 +19,8 @@ APP = 'napari'
 # PySide2:
 # python bundle.py --add 'PySide2==5.15.0' 'ome-zarr'
 
-EXTRA_REQS = [
-    "imagecodecs",
-    "pip",
-    "PySide2==5.15.2",
-    "scikit-image",
-    "zarr",
-    "pims",
-    "numpy==1.19.3",
-]
+# This is now defined in setup.cfg "options.extras_require.bundle_run"
+# EXTRA_REQS = []
 
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
@@ -62,6 +55,14 @@ def patched_toml():
         original_toml = f.read()
 
     toml = tomlkit.parse(original_toml)
+
+    # Initialize EXTRA_REQS from setup.cfg 'options.extras_require.bundle_run'
+    bundle_run = parser.get("options.extras_require", "bundle_run")
+    EXTRA_REQS = [
+        requirement.split('#')[0].strip()
+        for requirement in bundle_run.splitlines()
+        if requirement
+    ]
 
     # parse command line arguments
     if '--add' in sys.argv:
