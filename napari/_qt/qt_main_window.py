@@ -448,11 +448,14 @@ class Window:
         if show:
             self.show()
 
-    def _setup_existing_themes(self):
+    def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
         to connect events to themes that have not been connected yet."""
         for theme in _themes.values():
-            self._connect_theme(theme)
+            if connect:
+                self._connect_theme(theme)
+            else:
+                self._disconnect_theme(theme)
 
     def _add_theme(self, event):
         """Add new theme and connect events."""
@@ -484,9 +487,7 @@ class Window:
                 self.qt_viewer.console._update_theme
             )
 
-    def _remove_theme(self, event):
-        """Remove theme and disconnect events."""
-        theme = event.value
+    def _disconnect_theme(self, theme):
         theme.events.background.disconnect(lambda _: self._update_theme())
         theme.events.foreground.disconnect(lambda _: self._update_theme())
         theme.events.primary.disconnect(lambda _: self._update_theme())
@@ -510,6 +511,11 @@ class Window:
             theme.events.syntax_style.disconnect(
                 self.qt_viewer.console._update_theme
             )
+
+    def _remove_theme(self, event):
+        """Remove theme and disconnect events."""
+        theme = event.value
+        self._disconnect_theme(theme)
 
     def _theme_icon_changed(self, event=None):
         """Trigger rebuild of theme and all resources.
@@ -1036,14 +1042,14 @@ class Window:
     def _update_theme(self, event=None):
         """Update widget color theme."""
         settings = get_settings()
-        if event:
-            value = event.value
-            settings.appearance.theme = value
-            self.qt_viewer.viewer.theme = value
-        else:
-            value = self.qt_viewer.viewer.theme
-
         try:
+            if event:
+                value = event.value
+                settings.appearance.theme = value
+                self.qt_viewer.viewer.theme = value
+            else:
+                value = self.qt_viewer.viewer.theme
+
             self._qt_window.setStyleSheet(get_stylesheet(value))
         except (AttributeError, RuntimeError):
             # wrapped C/C++ object may have been deleted?
@@ -1132,11 +1138,19 @@ class Window:
         """
         QApplication.clipboard().setImage(self._screenshot(flash))
 
+    def _teardown(self):
+        """Carry out various teardown tasks such as event disconnection."""
+        self._setup_existing_themes(False)
+        _themes.events.added.disconnect(self._add_theme)
+        _themes.events.added.disconnect(register_napari_themes)
+        _themes.events.removed.disconnect(self._remove_theme)
+
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
         # Someone is closing us twice? Only try to delete self._qt_window
         # if we still have one.
         if hasattr(self, '_qt_window'):
+            self._teardown()
             self.qt_viewer.close()
             self._qt_window.close()
             del self._qt_window
