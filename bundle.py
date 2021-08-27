@@ -93,6 +93,20 @@ def patched_toml():
         "patching pyproject.toml requirements to : \n",
         "\n".join(toml['tool']['briefcase']['app'][APP]['requires']),
     )
+
+    if MACOS:
+        # Workaround https://github.com/napari/napari/issues/2965
+        # Pin revisions to releases _before_ they switched to static libs
+        revision = {
+            (3, 6): 'b11',
+            (3, 7): 'b5',
+            (3, 8): 'b4',
+            (3, 9): 'b1',
+        }[sys.version_info[:2]]
+        toml['tool']['briefcase']['app'][APP].add('macOS', tomlkit.table())
+        toml['tool']['briefcase']['app'][APP]['macOS']['support_revision'] = revision
+        print("patching pyproject.toml to pin support package to revision:", revision)
+
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(tomlkit.dumps(toml))
 
