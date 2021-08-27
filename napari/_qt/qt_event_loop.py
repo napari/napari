@@ -11,7 +11,7 @@ from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
-from ..plugins.resources import register_plugin_resources
+from .._qt.qt_resources import _register_napari_resources
 from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
@@ -182,7 +182,7 @@ def get_app(
         # can be used in qss files and elsewhere.
         plugin_manager.discover_icons()
         plugin_manager.discover_qss()
-        register_plugin_resources()
+        _register_napari_resources()
 
     _app_ref = app  # prevent garbage collection
 
