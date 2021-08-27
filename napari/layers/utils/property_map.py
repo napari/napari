@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Any, Callable, Dict, Iterable, List, Optional
+
+from pydantic import BaseModel
 
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
@@ -50,19 +52,18 @@ class TextFormatPropertyMap(EventedModel):
         return self.format_string.format(**property_row)
 
 
-class PropertyMapStore(EventedModel):
-    """Stores a property row map, as well the values generated from that map.
+class StyleAttribute(BaseModel):
+    """Stores a style and its value for each element of a Layer directly.
 
     Attributes
     ----------
-    mapping : Callable[[Dict[str, Any]], Any]
-        A mapping from a property row to any value.
     values : Array
-        The values generated from the mapping.
+        The style value for each element.
     """
 
-    mapping: Callable[[Dict[str, Any]], Any]
     values: List[Any] = []
+    default_value: Any = None
+    mapping: Optional[Callable[[Dict[str, Any]], Any]] = None
 
     def refresh(self, properties: Dict[str, Array]):
         """Updates all values from the given properties.
@@ -72,8 +73,9 @@ class PropertyMapStore(EventedModel):
         properties : Dict[str, Array]
             The properties of a layer.
         """
-        num_values = PropertyMapStore._num_values(properties)
-        self.values = self._apply(properties, range(0, num_values))
+        if self.mapping is not None:
+            num_values = StyleAttribute._num_values(properties)
+            self.values = self._apply(properties, range(0, num_values))
 
     def add(self, properties: Dict[str, Array], num_to_add: int):
         """Adds a number of a new text values based on the given properties
@@ -85,9 +87,12 @@ class PropertyMapStore(EventedModel):
         num_to_add : int
             The number of values to add.
         """
-        num_values = PropertyMapStore._num_values(properties)
-        indices = range(num_values - num_to_add, num_values)
-        self.values.extend(self._apply(properties, indices))
+        if self.mapping is None:
+            self.values.extend([self.default_value] * num_to_add)
+        else:
+            num_values = StyleAttribute._num_values(properties)
+            indices = range(num_values - num_to_add, num_values)
+            self.values.extend(self._apply(properties, indices))
 
     def remove(self, indices: Iterable[int]):
         """Removes some text values by index.

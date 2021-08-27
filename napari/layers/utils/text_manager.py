@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Any, Callable, Dict, Iterable, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -16,9 +16,11 @@ from .color_transformations import ColorType
 from .property_map import (
     ConstantPropertyMap,
     NamedPropertyMap,
-    PropertyMapStore,
+    StyleAttribute,
     TextFormatPropertyMap,
 )
+
+DEFAULT_COLOR = 'cyan'
 
 
 class TextManager(EventedModel):
@@ -32,8 +34,7 @@ class TextManager(EventedModel):
         True if the text should be displayed, false otherwise.
     size : float
         Font size of the text, which must be positive. Default value is 12.
-    colors : np.ndarray
-        An Nx4 array where each row is the RGBA color of a text element.
+
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
@@ -46,10 +47,10 @@ class TextManager(EventedModel):
         Offset from the anchor point.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
-    mapping : Callable[[Dict[str, Any]], str]
-        A mapping from a layer property table row to a text value.
-    color_mapping : Callable[[Dict[str, Any]], str]
-        A mapping from a layer property table row to a color.
+    colors : StyleAttribute
+        A style that defines the color for each text element in colors.values
+    strings : StyleAttribute
+        A style that defines the string for each text element in strings.values
     """
 
     visible: bool = True
@@ -59,27 +60,18 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    mapping: Callable[[Dict[str, Any]], str] = ConstantPropertyMap(constant='')
-    color_mapping: Callable[[Dict[str, any]], ColorType] = ConstantPropertyMap(
-        constant='cyan'
+    strings: StyleAttribute = StyleAttribute(default_value='')
+    colors: StyleAttribute = StyleAttribute(
+        mapping=ConstantPropertyMap(constant=DEFAULT_COLOR)
     )
-    _mapping_store: PropertyMapStore
-    _color_mapping_store: PropertyMapStore
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.events.mapping.connect(self._on_mapping_changed)
-        self._on_mapping_changed()
-        self.events.color_mapping.connect(self._on_color_mapping_changed)
-        self._on_color_mapping_changed()
 
     @property
     def values(self):
-        return np.array(self._mapping_store.values, dtype=str)
+        return np.array(self.strings.values, dtype=str)
 
     @property
-    def colors(self):
-        values = self._color_mapping_store.values
+    def color_values(self):
+        values = self.colors.values
         return np.empty((0,)) if len(values) == 0 else transform_color(values)
 
     def refresh_text(self, properties: Dict[str, Array]):
@@ -90,8 +82,8 @@ class TextManager(EventedModel):
         properties : Dict[str, Array]
             The properties of a layer.
         """
-        self._mapping_store.refresh(properties)
-        self._color_mapping_store.refresh(properties)
+        self.strings.refresh(properties)
+        self.colors.refresh(properties)
 
     def add(self, properties: Dict[str, Array], num_to_add: int):
         """Adds a number of a new text values based on the given layer properties.
@@ -103,8 +95,8 @@ class TextManager(EventedModel):
         num_to_add : int
             The number of text values to add.
         """
-        self._mapping_store.add(properties, num_to_add)
-        self._color_mapping_store.add(properties, num_to_add)
+        self.strings.add(properties, num_to_add)
+        self.colors.add(properties, num_to_add)
 
     def remove(self, indices: Iterable[int]):
         """Removes some text values by index.
@@ -114,8 +106,8 @@ class TextManager(EventedModel):
         indices : Iterable[int]
             The indices to remove.
         """
-        self._mapping_store.remove(indices)
-        self._color_mapping_store.remove(indices)
+        self.strings.remove(indices)
+        self.colors.remove(indices)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -179,7 +171,7 @@ class TextManager(EventedModel):
             Array of colors for the N text elements in view
         """
         if len(indices_view) > 0:
-            return self.colors[indices_view]
+            return self.color_values[indices_view]
         # if no elements in this slice send dummy data
         return np.array([''])
 
@@ -209,38 +201,21 @@ class TextManager(EventedModel):
         This is typically used in the vispy view file.
         """
         # connect the function for updating the text node
-        self._mapping_store.events.values.connect(text_update_function)
-        self._color_mapping_store.events.values.connect(text_update_function)
+        # self.strings.events.values.connect(text_update_function)
+        # self.colors.events.values.connect(text_update_function)
         self.events.rotation.connect(text_update_function)
         self.events.translation.connect(text_update_function)
         self.events.anchor.connect(text_update_function)
-        self.events.color_mapping.connect(text_update_function)
         self.events.size.connect(text_update_function)
         self.events.visible.connect(text_update_function)
 
         # connect the function for updating the text node blending
         self.events.blending.connect(blending_update_function)
 
-    def _on_mapping_changed(self):
-        self._mapping_store = PropertyMapStore(mapping=self.mapping)
-
-    def _on_color_mapping_changed(self):
-        self._color_mapping_store = PropertyMapStore(
-            mapping=self.color_mapping
-        )
-
-    @staticmethod
-    def _mapping_from_text(text: str, properties: Dict[str, Array]):
-        if text in properties:
-            return NamedPropertyMap(name=text)
-        elif ('{' in text) and ('}' in text):
-            return TextFormatPropertyMap(format_string=text)
-        return ConstantPropertyMap(constant=text)
-
     @classmethod
     def from_layer_kwargs(
         cls,
-        text: Union['TextManager', dict, str, Sequence[str], None],
+        text: Union['TextManager', dict, str, Iterable[str], None],
         properties: Dict[str, Array],
         **kwargs,
     ):
@@ -248,7 +223,7 @@ class TextManager(EventedModel):
 
         Parameters
         ----------
-        text : Union[TextManager, dict, str, Sequence[str], None]
+        text : Union[TextManager, dict, str, Iterable[str], None]
             The strings to be displayed, or a format string to be filled out using properties.
         properties: Dict[str, Array]
             Stores properties data that will be used to generate strings.
@@ -261,39 +236,72 @@ class TextManager(EventedModel):
             if isinstance(text, dict):
                 kwargs = deepcopy(text)
                 if 'text' in kwargs:
-                    kwargs['mapping'] = cls._mapping_from_text(
+                    kwargs['strings'] = cls._style_from_text(
                         kwargs.pop('text'), properties
                     )
-            elif isinstance(text, str):
-                kwargs['mapping'] = cls._mapping_from_text(text, properties)
-            elif isinstance(text, (list, np.ndarray, tuple)):
-                # This is direct mode where we add text as a column in the property table.
-                properties['_text'] = np.array(text)
-                kwargs['mapping'] = NamedPropertyMap(name='_text')
-            elif text is None:
-                kwargs['mapping'] = ConstantPropertyMap(constant='')
+            elif isinstance(text, (str, Iterable)) or text is None:
+                kwargs['strings'] = cls._style_from_text(text, properties)
             else:
                 raise TypeError(
                     trans._(
-                        'text should be a string, array, dict, or TextManager',
+                        'text should be a TextManager, dict, string, or iterable',
                         deferred=True,
                     )
                 )
             if 'color' in kwargs:
-                color = kwargs.pop('color')
-                # TODO: list/tuple and especially ndarray can represent one or many colors
-                # so this needs extra care.
-                if isinstance(color, (list, np.ndarray, tuple)):
-                    properties['_text_color'] = np.array(color)
-                    kwargs['color_mapping'] = NamedPropertyMap(
-                        name='_text_color'
-                    )
-                elif color in properties:
-                    kwargs['color_mapping'] = NamedPropertyMap(name=color)
-                else:
-                    kwargs['color_mapping'] = ConstantPropertyMap(
-                        constant=color
-                    )
+                kwargs['colors'] = cls._style_from_color(
+                    kwargs.pop('color'), properties
+                )
             manager = cls(**kwargs)
         manager.refresh_text(properties)
         return manager
+
+    @classmethod
+    def _mapping_from_text(
+        cls, text: str, properties: Dict[str, Array]
+    ) -> Callable[[Dict[str, Any]], Any]:
+        if text in properties:
+            return NamedPropertyMap(name=text)
+        elif ('{' in text) and ('}' in text):
+            return TextFormatPropertyMap(format_string=text)
+        return ConstantPropertyMap(constant=text)
+
+    @classmethod
+    def _style_from_text(
+        cls,
+        text: Union[str, Iterable[str], None],
+        properties: Dict[str, Array],
+    ) -> StyleAttribute:
+        if isinstance(text, str):
+            return StyleAttribute(
+                mapping=cls._mapping_from_text(text, properties)
+            )
+        if isinstance(text, Iterable):
+            return StyleAttribute(values=text, default_value='')
+        if text is None:
+            return StyleAttribute(mapping=ConstantPropertyMap(constant=''))
+        raise TypeError(
+            trans._(
+                'text should be a string, iterable, or None', deferred=True
+            )
+        )
+
+    @classmethod
+    def _style_from_color(
+        cls,
+        color: Union[ColorType, Iterable[ColorType], None],
+        properties: Dict[str, Array],
+    ) -> StyleAttribute:
+        if color is None:
+            return StyleAttribute(
+                mapping=ConstantPropertyMap(constant=DEFAULT_COLOR)
+            )
+        if isinstance(color, str) and color in properties:
+            return StyleAttribute(mapping=NamedPropertyMap(name=color))
+        color_array = transform_color(color)
+        n_colors = color_array.shape[0]
+        if n_colors > 1:
+            return StyleAttribute(
+                values=list(color), default_value=DEFAULT_COLOR
+            )
+        return StyleAttribute(mapping=ConstantPropertyMap(constant=color))

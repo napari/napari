@@ -164,7 +164,9 @@ def test_multi_color_direct():
         text=text, properties=properties, color=colors
     )
 
-    np.testing.assert_array_equal(text_manager.colors, transform_color(colors))
+    np.testing.assert_array_equal(
+        text_manager.color_values, transform_color(colors)
+    )
 
 
 def test_multi_color_property():
@@ -176,7 +178,9 @@ def test_multi_color_property():
         text=text, properties=properties, color='class'
     )
 
-    np.testing.assert_array_equal(text_manager.colors, transform_color(colors))
+    np.testing.assert_array_equal(
+        text_manager.color_values, transform_color(colors)
+    )
 
 
 def test_constant():
@@ -220,11 +224,10 @@ def test_direct_add():
         text=values, properties=properties
     )
 
-    properties['_text'] = values + ['four', 'five']
     text_manager.add(properties, 2)
 
     np.testing.assert_array_equal(
-        text_manager.values, ['one', 'two', 'three', 'four', 'five']
+        text_manager.values, ['one', 'two', 'three', '', '']
     )
 
 

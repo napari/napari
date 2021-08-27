@@ -164,12 +164,12 @@ def test_empty_layer_with_text_properties():
         text=text_kwargs,
     )
     assert layer.text.values.size == 0
-    assert layer.text.colors.size == 0
+    assert layer.text.color_values.size == 0
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])
     np.testing.assert_equal(layer.text.values, ['1.5'])
-    np.testing.assert_allclose(layer.text.colors, [[1, 0, 0, 1]])
+    np.testing.assert_allclose(layer.text.color_values, [[1, 0, 0, 1]])
 
 
 def test_empty_layer_with_text_formatted():
@@ -730,7 +730,6 @@ def test_text_from_property_fstring(properties):
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'text': 'type: {point_type}',
-        'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
         'anchor': Anchor.UPPER_LEFT,

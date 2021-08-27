@@ -202,12 +202,12 @@ def test_empty_layer_with_text_property_choices():
         text=text_kwargs,
     )
     assert layer.text.values.size == 0
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    assert layer.text.color_values.size == 0
 
     # add a shape and check that the appropriate text value was added
     layer.add(np.random.random((1, 4, 2)))
     np.testing.assert_equal(layer.text.values, ['1.5'])
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.color_values, [[1, 0, 0, 1]])
 
 
 def test_empty_layer_with_text_formatted():
@@ -272,7 +272,6 @@ def test_text_from_property_fstring(properties):
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'text': 'type: {shape_type}',
-        'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
         'anchor': Anchor.UPPER_LEFT,
