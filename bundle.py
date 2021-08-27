@@ -183,6 +183,18 @@ def patch_wxs():
             print("patched pythonw.exe -> python.exe")
 
 
+def patch_python_lib_location():
+    # must run after briefcase create
+    support = os.path.join(BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support")
+    python_resources = os.path.join(support, "Python", "Resources")
+    os.makedirs(python_resources, exist_ok=True)
+    for subdir in ("bin", "lib"):
+        orig = os.path.join(support, subdir)
+        dest = os.path.join(python_resources, subdir)
+        os.symlink("../../" + subdir, dest)
+        print("symlinking", orig, "to", dest)
+
+
 def make_zip():
     import glob
     import zipfile
@@ -227,6 +239,8 @@ def bundle():
 
         if WINDOWS:
             patch_wxs()
+        elif MACOS:
+            patch_python_lib_location()
 
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
