@@ -441,6 +441,7 @@ class QtViewer(QSplitter):
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer
+        del self.layer_to_visual[layer]
         self._reorder_layers(None)
 
     def _reorder_layers(self, event):
