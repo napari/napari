@@ -297,6 +297,8 @@ class TextManager(EventedModel):
             )
         if isinstance(color, str) and color in properties:
             return StyleAttribute(mapping=NamedPropertyMap(name=color))
+        if isinstance(color, Callable):
+            return StyleAttribute(mapping=color)
         color_array = transform_color(color)
         n_colors = color_array.shape[0]
         if n_colors > 1:

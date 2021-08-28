@@ -1,7 +1,9 @@
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
+from ...utils import Colormap
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
+from .color_transformations import ColorType
 
 
 class ConstantPropertyMap(EventedModel):
@@ -32,6 +34,42 @@ class NamedPropertyMap(EventedModel):
 
     def __call__(self, property_row: Dict[str, Any]) -> Any:
         return property_row[self.name]
+
+
+class NamedPropertyDiscreteMap(EventedModel):
+    """Maps from a property row to a property value by name to another value defined by a discrete mapping.
+
+    Attributes
+    ----------
+    name : str
+        The name of the property to select from a row.
+    discrete_map : dict
+        The map from the discrete named property value to the output value.
+    """
+
+    name: str
+    discrete_map: dict
+
+    def __call__(self, property_row: Dict[str, Any]) -> Any:
+        return self.discrete_map.get(property_row[self.name])
+
+
+class NamedPropertyColorMap(EventedModel):
+    """Maps from a property row to a property value by name to another value defined by a discrete mapping.
+
+    Attributes
+    ----------
+    name : str
+        The name of the property to select from a row.
+    colormap : Colormap
+        The map from the continuous named property value to the output color value.
+    """
+
+    name: str
+    colormap: Colormap
+
+    def __call__(self, property_row: Dict[str, Any]) -> ColorType:
+        return self.colormap.map(property_row[self.name])[0]
 
 
 class TextFormatPropertyMap(EventedModel):

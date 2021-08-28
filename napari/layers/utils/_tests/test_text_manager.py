@@ -1,7 +1,12 @@
 import numpy as np
 import pytest
 
+from napari.layers.utils.property_map import (
+    NamedPropertyColorMap,
+    NamedPropertyDiscreteMap,
+)
 from napari.layers.utils.text_manager import TextManager
+from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -154,35 +159,6 @@ def test_blending_modes():
         assert text_manager.blending == 'translucent'
 
 
-def test_multi_color_direct():
-    text = 'class'
-    classes = np.array(['A', 'B', 'C'])
-    colors = ['red', 'green', 'blue']
-    properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-
-    text_manager = TextManager.from_layer_kwargs(
-        text=text, properties=properties, color=colors
-    )
-
-    np.testing.assert_array_equal(
-        text_manager.color_values, transform_color(colors)
-    )
-
-
-def test_multi_color_property():
-    text = 'class'
-    colors = ['red', 'green', 'blue']
-    properties = {'class': colors, 'confidence': np.array([0.5, 0.3, 1])}
-
-    text_manager = TextManager.from_layer_kwargs(
-        text=text, properties=properties, color='class'
-    )
-
-    np.testing.assert_array_equal(
-        text_manager.color_values, transform_color(colors)
-    )
-
-
 def test_constant():
     text_manager = TextManager.from_layer_kwargs(text='point', properties={})
     assert len(text_manager.values) == 0
@@ -238,3 +214,69 @@ def test_direct_remove():
     text_manager.remove([1, 3])
 
     np.testing.assert_array_equal(text_manager.values, ['one', 'three'])
+
+
+def test_multi_color_direct():
+    classes = np.array(['A', 'B', 'C'])
+    colors = ['red', 'green', 'blue']
+    properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
+
+    text_manager = TextManager.from_layer_kwargs(
+        text='class', properties=properties, color=colors
+    )
+
+    np.testing.assert_array_equal(
+        text_manager.color_values, transform_color(colors)
+    )
+
+
+def test_multi_color_property():
+    colors = ['red', 'green', 'blue']
+    properties = {'class': colors, 'confidence': np.array([0.5, 0.3, 1])}
+
+    text_manager = TextManager.from_layer_kwargs(
+        text='class', properties=properties, color='class'
+    )
+
+    np.testing.assert_array_equal(
+        text_manager.color_values, transform_color(colors)
+    )
+
+
+def test_multi_color_property_discrete_map():
+    properties = {
+        'class': ['A', 'B', 'C'],
+        'confidence': np.array([0.5, 0.3, 1]),
+    }
+    color = NamedPropertyDiscreteMap(
+        name='class',
+        discrete_map={'A': 'red', 'B': 'green', 'C': 'blue'},
+    )
+
+    text_manager = TextManager.from_layer_kwargs(
+        text='class', properties=properties, color=color
+    )
+
+    np.testing.assert_array_equal(
+        text_manager.color_values, transform_color(['red', 'green', 'blue'])
+    )
+
+
+def test_multi_color_property_continuous_map():
+    properties = {
+        'class': ['A', 'B', 'C'],
+        'confidence': np.array([0.5, 0, 1]),
+    }
+    color = NamedPropertyColorMap(
+        name='confidence',
+        colormap=ensure_colormap('gray'),
+    )
+
+    text_manager = TextManager.from_layer_kwargs(
+        text='class', properties=properties, color=color
+    )
+
+    np.testing.assert_array_equal(
+        text_manager.color_values,
+        transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
+    )
