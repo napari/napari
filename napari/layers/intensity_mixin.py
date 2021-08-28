@@ -37,7 +37,6 @@ class IntensityVisualizationMixin:
 
     def reset_contrast_limits(self: 'Image', mode=None):
         """Scale contrast limits to data range"""
-        print("aaa", mode)
         mode = mode or self._autoscale_source
         self.contrast_limits = self._calc_data_range(mode)
 
