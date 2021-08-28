@@ -35,8 +35,6 @@ class QtLayerControls(QFrame):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
 
-        # self.setAttribute(Qt.WA_DeleteOnClose)
-
         self.setObjectName('layer')
         self.setMouseTracking(True)
 

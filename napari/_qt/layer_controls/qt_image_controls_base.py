@@ -23,6 +23,16 @@ if TYPE_CHECKING:
 
 class _QDoubleRangeSlider(QDoubleRangeSlider):
     def mousePressEvent(self, event):
+        """Update the slider, or, on right-click, pop-up an expanded slider.
+
+        The expanded slider provides finer control, directly editable values,
+        and the ability to change the available range of the sliders.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
         if event.button() == Qt.RightButton:
             self.parent().show_clim_popupup()
         else:
@@ -88,8 +98,6 @@ class QtBaseImageControls(QtLayerControls):
 
         self.clim_popup = None
 
-        # self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
-
         connect_setattr(
             self.contrastLimitsSlider.valueChanged,
             self.layer,
@@ -126,24 +134,6 @@ class QtBaseImageControls(QtLayerControls):
             Colormap name.
         """
         self.layer.colormap = self.colormapComboBox.currentData()
-
-    def _clim_mousepress(self, event):
-        """Update the slider, or, on right-click, pop-up an expanded slider.
-
-        The expanded slider provides finer control, directly editable values,
-        and the ability to change the available range of the sliders.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if event.button() == Qt.RightButton:
-            self.show_clim_popupup()
-        else:
-            QDoubleRangeSlider.mousePressEvent(
-                self.contrastLimitsSlider, event
-            )
 
     def _on_contrast_limits_change(self, event=None):
         """Receive layer model contrast limits change event and update slider.
