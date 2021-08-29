@@ -79,7 +79,7 @@ def test_remove_dock_widget_orphans_widget(make_napari_viewer):
     dw = viewer.window.add_dock_widget(widg, name='test')
     assert widg.parent() is dw
     assert dw.toggleViewAction() in viewer.window.window_menu.actions()
-    viewer.window.remove_dock_widget(dw)
+    viewer.window.remove_dock_widget(dw, menu=viewer.window.window_menu)
     assert dw.toggleViewAction() not in viewer.window.window_menu.actions()
     del dw
     # if dw didn't release widg, we'd get an exception when next accessing widg
