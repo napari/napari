@@ -845,9 +845,56 @@ class Window:
             shortcut = dock_widget.shortcut
         if shortcut is not None:
             action.setShortcut(shortcut)
+
+        # dock widgets can have a menu item on the window menu or the plugin menu.
+
+        # check for plugins menu first.  Need to check submenus too.  If the action in the
+        # plugin menu is toggled for the first time, it will be replaced with the toggleViewAction
+        # directly in the plugins menu.
+        actions = [a.text() for a in self.plugins_menu.actions()]
+        if dock_widget.name in actions:
+            idx = actions.index(dock_widget.name)
+            old_action = self.plugins_menu.actions()[idx]
+            dock_widget.setVisible(True)
+            self.plugins_menu.insertAction(old_action, action)
+            self.plugins_menu.removeAction(old_action)
+            return
+        else:
+            # if the action is not here, it may be in a submenu
+            for cnt, current_action in enumerate(self.plugins_menu.actions()):
+                if current_action.menu() is not None:
+                    sub_actions = [
+                        plugin_menu_item_template.format(
+                            current_action.text(), a.text()
+                        )
+                        for a in current_action.menu().actions()
+                    ]
+                    if dock_widget.name in sub_actions:
+                        idx = sub_actions.index(dock_widget.name)
+                        old_action = (
+                            self.plugins_menu.actions()[cnt]
+                            .menu()
+                            .actions()[idx]
+                        )
+                        self.plugins_menu.actions()[cnt].menu().insertAction(
+                            old_action, action
+                        )
+                        self.plugins_menu.actions()[cnt].menu().removeAction(
+                            old_action
+                        )
+                        return
+
         self.window_menu.addAction(action)
 
-    def remove_dock_widget(self, widget: QWidget):
+    def _remove_dock_widget(self, event=None):
+        names = list(self._dock_widgets.keys())
+        for widget_name in names:
+            if event.value in widget_name:
+                # remove this widget
+                widget = self._dock_widgets[widget_name]
+                self.remove_dock_widget(widget)
+
+    def remove_dock_widget(self, widget: QWidget, menu=None):
         """Removes specified dock widget.
 
         If a QDockWidget is not provided, the existing QDockWidgets will be
@@ -883,7 +930,8 @@ class Window:
         if _dw.widget():
             _dw.widget().setParent(None)
         self._qt_window.removeDockWidget(_dw)
-        self.window_menu.removeAction(_dw.toggleViewAction())
+        if menu is not None:
+            menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
         del self._dock_widgets[_dw.name]
