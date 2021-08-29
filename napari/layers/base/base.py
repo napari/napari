@@ -919,14 +919,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @experimental_clipping_planes.setter
     def experimental_clipping_planes(
-        self, value: Union[List[Union[ClippingPlane, dict]], ClippingPlaneList]
+        self,
+        value: Union[
+            dict,
+            ClippingPlane,
+            List[Union[ClippingPlane, dict]],
+            ClippingPlaneList,
+        ],
     ):
         self._experimental_clipping_planes.clear()
-        if value is not None:
-            for new_plane in value:
-                plane = ClippingPlane()
-                plane.update(new_plane)
-                self._experimental_clipping_planes.append(plane)
+        if value is None:
+            return
+
+        if isinstance(value, (ClippingPlane, dict)):
+            value = [value]
+        for new_plane in value:
+            plane = ClippingPlane()
+            plane.update(new_plane)
+            self._experimental_clipping_planes.append(plane)
 
     def set_view_slice(self):
         with self.dask_optimized_slicing():
