@@ -1,4 +1,6 @@
+import gc
 import os
+import weakref
 from dataclasses import dataclass
 from typing import List
 from unittest import mock
@@ -12,6 +14,7 @@ from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
     layer_test_data,
+    skip_local_popups,
 )
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
@@ -24,8 +27,6 @@ def test_qt_viewer(make_napari_viewer):
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
-    # Check no console is present before it is requested
-    assert view._console is None
 
     assert len(viewer.layers) == 0
     assert view.layers.model().rowCount() == 0
@@ -39,8 +40,6 @@ def test_qt_viewer_with_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
-    # Check no console is present before it is requested
-    assert view._console is None
     # Check console is created when requested
     assert view.console is not None
     assert view.dockConsole.widget() is view.console
@@ -50,8 +49,6 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
-    # Check no console is present before it is requested
-    assert view._console is None
     # Check console has been created when it is supposed to be shown
     view.toggle_console_visibility(None)
     assert view._console is not None
@@ -419,8 +416,9 @@ def test_process_mouse_event(make_napari_viewer):
     MouseEvent by _process_mouse_events.
     """
     # make a mock mouse event
+    new_pos = [25, 25]
     mouse_event = MouseEvent(
-        pos=[25, 25],
+        pos=new_pos,
     )
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
@@ -435,5 +433,54 @@ def test_process_mouse_event(make_napari_viewer):
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == 0
 
+        expected_position = view._map_canvas2world(new_pos)
+        np.testing.assert_almost_equal(expected_position, list(event.position))
+
     viewer.dims.ndisplay = 3
     view._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+@skip_local_popups
+def test_memory_leaking(qtbot, make_napari_viewer):
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    viewer = make_napari_viewer()
+    image = weakref.ref(viewer.add_image(data))
+    labels = weakref.ref(viewer.add_labels(data))
+    del viewer.layers[0]
+    del viewer.layers[0]
+    qtbot.wait(100)
+    gc.collect()
+    gc.collect()
+    assert image() is None
+    assert labels() is None
+
+
+@skip_local_popups
+def test_leaks_image(qtbot, make_napari_viewer):
+
+    viewer = make_napari_viewer(show=True)
+    lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
+    dr = weakref.ref(lr().data)
+
+    viewer.layers.clear()
+    qtbot.wait(100)
+    gc.collect()
+    assert not gc.collect()
+    assert not lr()
+    assert not dr()
+
+
+@skip_local_popups
+def test_leaks_labels(qtbot, make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    lr = weakref.ref(
+        viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+    )
+    dr = weakref.ref(lr().data)
+    viewer.layers.clear()
+    qtbot.wait(100)
+    gc.collect()
+    assert not gc.collect()
+    assert not lr()
+    assert not dr()

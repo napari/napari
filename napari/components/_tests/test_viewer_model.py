@@ -562,6 +562,23 @@ def test_active_layer_cursor_size():
     assert viewer.cursor.size == 10
 
 
+def test_cursor_ndim_matches_layer():
+    """Test cursor position ndim matches viewer ndim after update."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    im = viewer.add_image(np.random.random((10, 10)))
+    assert viewer.dims.ndim == 2
+    assert len(viewer.cursor.position) == 2
+
+    im.data = np.random.random((10, 10, 10))
+    assert viewer.dims.ndim == 3
+    assert len(viewer.cursor.position) == 3
+
+    im.data = np.random.random((10, 10))
+    assert viewer.dims.ndim == 2
+    assert len(viewer.cursor.position) == 2
+
+
 def test_sliced_world_extent():
     """Test world extent after adding layers and slicing."""
     np.random.seed(0)

@@ -90,7 +90,7 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
     'Surface': 0,
     'Tracks': 0,
     'Points': 8,
-    'Labels': 14,
+    'Labels': 11,
     'Shapes': 19,
 }
 
@@ -199,7 +199,7 @@ def test_changing_theme(make_napari_viewer):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_roll_traspose_update(make_napari_viewer, layer_class, data, ndim):
+def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
 
     viewer = make_napari_viewer()
@@ -302,3 +302,35 @@ def test_custom_layer(make_napari_viewer):
     # Make a viewer and add the custom layer
     viewer = make_napari_viewer(show=True)
     viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
+
+
+def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
+    """Test emitting data with no change doesn't change the layer _value."""
+    viewer = make_napari_viewer()
+
+    data = np.array([[0, 0], [10, 10], [20, 20]])
+    layer = viewer.add_points(data, size=2)
+    viewer.layers.selection.active = layer
+
+    assert layer._value is None
+    viewer.cursor.position = tuple(layer.data[1])
+    assert layer._value == 1
+
+    layer.events.data(value=layer.data)
+    assert layer._value == 1
+
+
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_emitting_data_doesnt_change_cursor_position(
+    make_napari_viewer, layer_class, data, ndim
+):
+    """Test emitting data event from layer doesn't change cursor position"""
+    viewer = make_napari_viewer()
+    layer = layer_class(data)
+    viewer.add_layer(layer)
+
+    new_position = (5,) * ndim
+    viewer.cursor.position = new_position
+    layer.events.data(value=layer.data)
+
+    assert viewer.cursor.position == new_position

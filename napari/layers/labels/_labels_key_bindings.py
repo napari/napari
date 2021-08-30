@@ -1,3 +1,5 @@
+import numpy as np
+
 from ...layers.utils.layer_utils import register_layer_action
 from ...utils.translations import trans
 from ._labels_constants import Mode
@@ -55,7 +57,7 @@ def activate_label_erase_mode(layer):
 )
 def new_label(layer):
     """Set the currently selected label to the largest used label plus one."""
-    layer.selected_label = layer.data.max() + 1
+    layer.selected_label = np.max(layer.data) + 1
 
 
 @register_label_action(
@@ -82,43 +84,3 @@ def undo(layer):
 def redo(layer):
     """Redo any previously undone actions."""
     layer.redo()
-
-
-@Labels.bind_key('Shift')
-def preserve_labels(layer):
-    """Toggle preserve label option when pressed."""
-    # on key press
-    layer.preserve_labels = not layer.preserve_labels
-
-    yield
-
-    # on key release
-    layer.preserve_labels = not layer.preserve_labels
-
-
-@Labels.bind_key('Control')
-def switch_fill(layer):
-    """Switch to fill mode temporarily when pressed."""
-    previous_mode = layer.mode
-
-    # on key press
-    layer.mode = Mode.FILL
-
-    yield
-
-    # on key release
-    layer.mode = previous_mode
-
-
-@Labels.bind_key('Alt')
-def switch_erase(layer):
-    """Switch to erase mode temporarily when pressed."""
-    previous_mode = layer.mode
-
-    # on key press
-    layer.mode = Mode.ERASE
-
-    yield
-
-    # on key release
-    layer.mode = previous_mode

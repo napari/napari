@@ -3,7 +3,6 @@ from collections.abc import Iterable
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QLabel
-from superqt import QLabeledSlider as QSlider
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.action_manager import action_manager
@@ -11,6 +10,7 @@ from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
+from ..widgets._slider_compat import QSlider
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -164,7 +164,7 @@ class QtShapesControls(QtLayerControls):
             layer,
             'zoom',
             Mode.PAN_ZOOM,
-            "napari:activate_shape_pan_zoom_mode",
+            "activate_shape_pan_zoom_mode",
             extra_tooltip_text=trans._('(or hold Space)'),
             checked=True,
         )
@@ -384,18 +384,6 @@ class QtShapesControls(QtLayerControls):
             Line width of shapes.
         """
         self.layer.current_edge_width = float(value) / 2
-
-    def changeOpacity(self, value):
-        """Change opacity value of shapes on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Opacity value for shapes.
-            Input range 0 - 100 (transparent to fully opaque).
-        """
-        with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value / 100
 
     def change_text_visibility(self, state):
         """Toggle the visibiltiy of the text.

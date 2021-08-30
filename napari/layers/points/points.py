@@ -4,6 +4,7 @@ from itertools import cycle
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+from scipy.stats import gmean
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import (
@@ -13,12 +14,17 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
+from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import get_current_properties, prepare_properties
+from ..utils.layer_utils import (
+    coerce_current_properties,
+    get_current_properties,
+    prepare_properties,
+)
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -539,7 +545,9 @@ class Points(Layer):
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = current_properties
+        self._current_properties = coerce_current_properties(
+            current_properties
+        )
 
         if (
             self._update_properties
@@ -1128,7 +1136,7 @@ class Points(Layer):
         Returns
         -------
         text_coords : (N x D) np.ndarray
-            Array of coordindates for the N text elements in view
+            Array of coordinates for the N text elements in view
         """
         # TODO check if it is used, as it has wrong signature and this not cause errors.
         return self.text.compute_text_coords(self._view_data, self._ndisplay)
@@ -1492,3 +1500,92 @@ class Points(Layer):
 
         else:
             self._clipboard = {}
+
+    def to_mask(
+        self,
+        *,
+        shape: tuple,
+        data_to_world: Optional[Affine] = None,
+        isotropic_output: bool = True,
+    ):
+        """Return a binary mask array of all the points as balls.
+
+        Parameters
+        ----------
+        shape : tuple
+            The shape of the mask to be generated.
+        data_to_world : Optional[Affine]
+            The data-to-world transform of the output mask image. This likely comes from a reference image.
+            If None, then this is the same as this layer's data-to-world transform.
+        isotropic_output : bool
+            If True, then force the output mask to always contain isotropic balls in data/pixel coordinates.
+            Otherwise, allow the anisotropy in the data-to-world transform to squash the balls in certain dimensions.
+            By default this is True, but you should set it to False if you are going to create a napari image
+            layer from the result with the same data-to-world transform and want the visualized balls to be
+            roughly isotropic.
+
+        Returns
+        -------
+        np.ndarray
+            The output binary mask array of the given shape containing this layer's points as balls.
+        """
+        if data_to_world is None:
+            data_to_world = self._data_to_world
+        mask = np.zeros(shape, dtype=bool)
+        mask_world_to_data = data_to_world.inverse
+        points_data_to_mask_data = self._data_to_world.compose(
+            mask_world_to_data
+        )
+        points_in_mask_data_coords = np.atleast_2d(
+            points_data_to_mask_data(self.data)
+        )
+
+        # Calculating the radii of the output points in the mask is complex.
+
+        # Points.size tells the size of the points in pixels in each dimension,
+        # so we take the arithmetic mean across dimensions to define a scalar size
+        # per point, which is consistent with visualization.
+        mean_radii = np.mean(self.size, axis=1, keepdims=True) / 2
+
+        # Scale each radius by the geometric mean scale of the Points layer to
+        # keep the balls isotropic when visualized in world coordinates.
+        # Then scale each radius by the scale of the output image mask
+        # using the geometric mean if isotropic output is desired.
+        # The geometric means are used instead of the arithmetic mean
+        # to maintain the volume scaling factor of the transforms.
+        point_data_to_world_scale = gmean(np.abs(self._data_to_world.scale))
+        mask_world_to_data_scale = (
+            gmean(np.abs(mask_world_to_data.scale))
+            if isotropic_output
+            else np.abs(mask_world_to_data.scale)
+        )
+        radii_scale = point_data_to_world_scale * mask_world_to_data_scale
+
+        output_data_radii = mean_radii * np.atleast_2d(radii_scale)
+
+        for coords, radii in zip(
+            points_in_mask_data_coords, output_data_radii
+        ):
+            # Define a minimal set of coordinates where the mask could be present
+            # by defining an inclusive lower and exclusive upper bound for each dimension.
+            lower_coords = np.maximum(np.floor(coords - radii), 0).astype(int)
+            upper_coords = np.minimum(
+                np.ceil(coords + radii) + 1, shape
+            ).astype(int)
+            # Generate every possible coordinate within the bounds defined above
+            # in a grid of size D1 x D2 x ... x Dd x D (e.g. for D=2, this might be 4x5x2).
+            submask_coords = [
+                range(lower_coords[i], upper_coords[i])
+                for i in range(self.ndim)
+            ]
+            submask_grids = np.stack(
+                np.meshgrid(*submask_coords, copy=False, indexing='ij'),
+                axis=-1,
+            )
+            # Update the mask coordinates based on the normalized square distance
+            # using a logical or to maintain any existing positive mask locations.
+            normalized_square_distances = np.sum(
+                ((submask_grids - coords) / radii) ** 2, axis=-1
+            )
+            mask[np.ix_(*submask_coords)] |= normalized_square_distances <= 1
+        return mask

@@ -1,5 +1,6 @@
 import importlib
 import sys
+import warnings
 from functools import partial
 from pathlib import Path
 from types import FunctionType
@@ -19,13 +20,15 @@ from warnings import warn
 from napari_plugin_engine import HookImplementation
 from napari_plugin_engine import PluginManager as PluginManager
 from napari_plugin_engine.hooks import HookCaller
+from pydantic import ValidationError
 from typing_extensions import TypedDict
 
+from ..settings import get_settings
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
 from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
-from ..utils.settings import get_settings
+from ..utils.theme import Theme, register_theme, unregister_theme
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -82,6 +85,7 @@ class NapariPluginManager(PluginManager):
             str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
         ] = {}
         self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
+        self._theme_data: Dict[str, Dict[str, Theme]] = dict()
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
@@ -94,11 +98,12 @@ class NapariPluginManager(PluginManager):
 
                 self.register(_skimage_data, name='scikit-image')
 
-            from ..utils.settings import SETTINGS
+            from ..settings import get_settings
 
             # dicts to store maps from extension -> plugin_name
-            self._extension2reader.update(SETTINGS.plugins.extension2reader)
-            self._extension2writer.update(SETTINGS.plugins.extension2writer)
+            plugin_settings = get_settings().plugins
+            self._extension2reader.update(plugin_settings.extension2reader)
+            self._extension2writer.update(plugin_settings.extension2writer)
 
     def register(
         self, namespace: Any, name: Optional[str] = None
@@ -120,10 +125,15 @@ class NapariPluginManager(PluginManager):
 
         plugin = super().unregister(name_or_object)
 
-        # remove widgets, sample data
+        # unregister any theme that was associated with the
+        # unregistered plugin
+        self.unregister_theme_colors(_name)
+
+        # remove widgets, sample data, theme data
         for _dict in (
             self._dock_widgets,
             self._sample_data,
+            self._theme_data,
             self._function_widgets,
         ):
             _dict.pop(_name, None)
@@ -296,6 +306,92 @@ class NapariPluginManager(PluginManager):
         """
         return tuple(
             (p, s) for p in self._sample_data for s in self._sample_data[p]
+        )
+
+    # THEME DATA ------------------------------------
+
+    def register_theme_colors(
+        self,
+        data: Dict[str, Dict[str, Union[str, Tuple, List]]],
+        hookimpl: HookImplementation,
+    ):
+        """Register theme data dict returned by `napari_experimental_provide_theme`.
+
+        The `theme` data should be provided as an iterable containing dictionary
+        of values, where the ``folder`` value will be used as theme name.
+        """
+        plugin_name = hookimpl.plugin_name
+        hook_name = '`napari_experimental_provide_theme`'
+        if not isinstance(data, Dict):
+            warn_message = trans._(
+                'Plugin {plugin_name!r} provided a non-dict object to {hook_name!r}: data ignored',
+                deferred=True,
+                plugin_name=plugin_name,
+                hook_name=hook_name,
+            )
+            warn(message=warn_message)
+            return
+
+        _data = {}
+        for theme_name, theme_colors in data.items():
+            try:
+                theme = Theme.parse_obj(theme_colors)
+                register_theme(theme_name, theme)
+                _data[theme_name] = theme
+            except (KeyError, ValidationError) as err:
+                warn_msg = trans._(
+                    "In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object"
+                    " for creating themes. {err!r}",
+                    deferred=True,
+                    hook_name=hook_name,
+                    plugin_name=plugin_name,
+                    err=err,
+                )
+                warn(message=warn_msg)
+                continue
+
+        if plugin_name not in self._theme_data:
+            self._theme_data[plugin_name] = {}
+        self._theme_data[plugin_name].update(_data)
+
+    def unregister_theme_colors(self, plugin_name: str):
+        """Unregister theme data from napari."""
+        if plugin_name not in self._theme_data:
+            return
+
+        # unregister all themes that were provided by the plugins
+        for theme_name in self._theme_data[plugin_name]:
+            unregister_theme(theme_name)
+
+        # since its possible that disabled/removed plugin was providing the
+        # current theme, we check for this explicitly and if this the case,
+        # theme is automatically changed to default `dark` theme
+        settings = get_settings()
+        current_theme = settings.appearance.theme
+        if current_theme in self._theme_data[plugin_name]:
+            settings.appearance.theme = "dark"
+            warnings.warn(
+                message=trans._(
+                    "The current theme {current_theme!r} was provided by the"
+                    " plugin {plugin_name!r} which was disabled or removed."
+                    " Switched theme to the default.",
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    current_theme=current_theme,
+                )
+            )
+
+    def discover_themes(self):
+        """Trigger discovery of theme plugins.
+
+        As a "historic" hook, this should only need to be called once.
+        (historic here means that even plugins that are discovered after this
+        is called will be added.)
+        """
+        if self._theme_data:
+            return
+        self.hook.napari_experimental_provide_theme.call_historic(
+            result_callback=partial(self.register_theme_colors), with_impl=True
         )
 
     # FUNCTION & DOCK WIDGETS -----------------------
@@ -520,10 +616,10 @@ class NapariPluginManager(PluginManager):
         extensions : Union[str, Iterable[str]]
             Name(s) of extensions to always write with `reader`
         """
-        from ..utils.settings import SETTINGS
+        from ..settings import get_settings
 
         self._assign_plugin_to_extensions(reader, extensions, type_='reader')
-        SETTINGS.plugins.extension2reader = self._extension2reader
+        get_settings().plugins.extension2reader = self._extension2reader
 
     def get_writer_for_extension(self, extension: str) -> Optional[str]:
         """Return writer plugin assigned to `extension`, or None."""
@@ -541,10 +637,10 @@ class NapariPluginManager(PluginManager):
         extensions : Union[str, Iterable[str]]
             Name(s) of extensions to always write with `writer`
         """
-        from ..utils.settings import SETTINGS
+        from ..settings import get_settings
 
         self._assign_plugin_to_extensions(writer, extensions, type_='writer')
-        SETTINGS.plugins.extension2writer = self._extension2writer
+        get_settings().plugins.extension2writer = self._extension2writer
 
     def _get_plugin_for_extension(
         self, extension: str, type_: str

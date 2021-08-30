@@ -1,3 +1,5 @@
+from typing import Tuple, Union
+
 import numpy as np
 
 _np_uints = {
@@ -77,3 +79,28 @@ def normalize_dtype(dtype_spec):
         return _normalize_str_by_bit_depth(dtype_str, 'complex')
     if 'bool' in dtype_str:
         return np.bool_
+
+
+def get_dtype_limits(dtype_spec) -> Tuple[float, float]:
+    """Return machine limits for numeric types.
+
+    Parameters
+    ----------
+    dtype_spec : numpy dtype, numpy type, torch dtype, tensorstore dtype, etc
+        A type that can be interpreted as a NumPy numeric data type, e.g.
+        'uint32', np.uint8, torch.float32, etc.
+
+    Returns
+    -------
+    limits : tuple
+        The smallest/largest numbers expressible by the type.
+    """
+    dtype = normalize_dtype(dtype_spec)
+    info: Union[np.iinfo, np.finfo]
+    if np.issubdtype(dtype, np.integer):
+        info = np.iinfo(dtype)
+    elif dtype and np.issubdtype(dtype, np.floating):
+        info = np.finfo(dtype)
+    else:
+        raise TypeError(f'Unrecognized or non-numeric dtype: {dtype_spec}')
+    return info.min, info.max

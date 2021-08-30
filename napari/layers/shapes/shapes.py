@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 from vispy.color import get_color_names
@@ -25,7 +25,11 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import get_current_properties, prepare_properties
+from ..utils.layer_utils import (
+    coerce_current_properties,
+    get_current_properties,
+    prepare_properties,
+)
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -42,6 +46,7 @@ from ._shapes_mouse_bindings import (
     add_path_polygon,
     add_path_polygon_creating,
     add_rectangle,
+    finish_drawing_shape,
     highlight,
     select,
     vertex_insert,
@@ -53,6 +58,7 @@ from ._shapes_utils import (
     get_default_shape_type,
     get_shape_ndim,
     number_of_shapes,
+    validate_num_vertices,
 )
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
@@ -66,7 +72,9 @@ _REV_SHAPE_HELP = {
         Mode.ADD_ELLIPSE,
         Mode.ADD_LINE,
     },
-    trans._('hold <space> to pan/zoom, press <esc> to finish drawing'): {
+    trans._(
+        'hold <space> to pan/zoom, press <esc>, or double click to finish drawing'
+    ): {
         Mode.ADD_PATH,
         Mode.ADD_POLYGON,
     },
@@ -357,6 +365,20 @@ class Shapes(Layer):
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
     }
+
+    _double_click_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.SELECT: no_op,
+        Mode.DIRECT: no_op,
+        Mode.VERTEX_INSERT: no_op,
+        Mode.VERTEX_REMOVE: no_op,
+        Mode.ADD_RECTANGLE: no_op,
+        Mode.ADD_ELLIPSE: no_op,
+        Mode.ADD_LINE: no_op,
+        Mode.ADD_PATH: finish_drawing_shape,
+        Mode.ADD_POLYGON: finish_drawing_shape,
+    }
+
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
         Mode.SELECT: 'pointing',
@@ -384,7 +406,7 @@ class Shapes(Layer):
         text=None,
         shape_type='rectangle',
         edge_width=1,
-        edge_color='black',
+        edge_color='#777777',
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
@@ -499,9 +521,13 @@ class Shapes(Layer):
         self._fixed_aspect = False
         self._aspect_ratio = 1
         self._is_moving = False
+
         # _moving_coordinates are needed for fixing aspect ratio during
-        # a resize
+        # a resize, it stores the last pointer coordinate value that happened
+        # during a mouse move to that pressing/releasing shift
+        # can trigger a redraw of the shape with a fixed aspect ratio.
         self._moving_coordinates = None
+
         self._fixed_index = 0
         self._is_selecting = False
         self._drag_box = None
@@ -793,7 +819,9 @@ class Shapes(Layer):
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = current_properties
+        self._current_properties = coerce_current_properties(
+            current_properties
+        )
 
         if (
             self._update_properties
@@ -1544,6 +1572,16 @@ class Shapes(Layer):
         if not changed:
             return
 
+        if mode.value not in Mode.keys():
+            raise ValueError(
+                trans._(
+                    "Mode not recognized: {mode}", deferred=True, mode=mode
+                )
+            )
+
+        old_mode = self._mode
+        self._mode = mode
+
         self.help = _FWD_SHAPE_HELP[mode]
 
         draw_modes = {
@@ -1574,6 +1612,288 @@ class Shapes(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
+    def add_rectangles(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add rectangles to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of rectangle data where each element is a (4, D) array of 4 vertices
+            in D dimensions, or a (2, D) array of 2 vertices in D dimensions, where
+            the vertices are top-left and bottom-right corners.
+            Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
+            vertices for a single shape.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+        # rectangles can have either 4 vertices or (top left, bottom right)
+        valid_vertices_per_shape = (2, 4)
+        validate_num_vertices(
+            data, 'rectangle', valid_vertices=valid_vertices_per_shape
+        )
+
+        self.add(
+            data,
+            shape_type='rectangle',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
+    def add_ellipses(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add ellipses to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of ellipse data where each element is a (4, D) array of 4 vertices
+            in D dimensions representing a bounding box, or a (2, D) array of
+            center position and radii magnitudes in D dimensions.
+            Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
+            vertices for a single shape.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+
+        valid_elem_per_shape = (2, 4)
+        validate_num_vertices(
+            data, 'ellipse', valid_vertices=valid_elem_per_shape
+        )
+
+        self.add(
+            data,
+            shape_type='ellipse',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
+    def add_polygons(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add polygons to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of polygon data where each element is a (V, D) array of V vertices
+            in D dimensions representing a polygon. Can be a 3-dimensional array if
+            polygons have same number of vertices, or a list of V vertices for a
+            single polygon.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+
+        min_vertices = 3
+        validate_num_vertices(data, 'polygon', min_vertices=min_vertices)
+
+        self.add(
+            data,
+            shape_type='polygon',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
+    def add_lines(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add lines to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of line data where each element is a (2, D) array of 2 vertices
+            in D dimensions representing a line. Can be a 3-dimensional array for
+            multiple shapes, or list of 2 vertices for a single shape.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+
+        valid_vertices_per_line = (2,)
+        validate_num_vertices(
+            data, 'line', valid_vertices=valid_vertices_per_line
+        )
+
+        self.add(
+            data,
+            shape_type='line',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
+    def add_paths(
+        self,
+        data,
+        *,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add paths to the current layer.
+
+        Parameters
+        ----------
+        data : Array | List[Array]
+            List of path data where each element is a (V, D) array of V vertices
+            in D dimensions representing a path. Can be a 3-dimensional array
+            if all paths have same number of vertices, or a list of V vertices
+            for a single path.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+
+        min_vertices_per_path = 2
+        validate_num_vertices(data, 'path', min_vertices=min_vertices_per_path)
+
+        self.add(
+            data,
+            shape_type='path',
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+        )
+
     def add(
         self,
         data,
@@ -1599,7 +1919,7 @@ class Shapes(Layer):
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes. Overriden by data shape_type, if present.
+            shapes. Overridden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -2391,6 +2711,145 @@ class Shapes(Layer):
 
         return value
 
+    def _get_value_3d(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Tuple[Union[float, int], None]:
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        vertex : None
+            Index of vertex if any that is at the coordinates. Always returns `None`.
+        """
+        value, _ = self._get_index_and_intersection(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        )
+
+        return (value, None)
+
+    def _get_index_and_intersection(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Tuple[Union[float, int], None]:
+        """Get the shape index and intersection point of the first shape
+        (i.e., closest to start_point) along the specified 3D line segment.
+
+        Note: this method is meant to be used for 3D intersection and returns
+        (None, None) when used in 2D (i.e., len(dims_displayed) is 2).
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data in
+            layer coordinates.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data in
+            layer coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        intersection_point : np.ndarray
+            (n,) array containing the point where the ray intersects the first shape
+            (i.e., the shape most in the foreground). The coordinate is in layer
+            coordinates.
+        """
+        if len(dims_displayed) == 3:
+            if (start_point is not None) and (end_point is not None):
+                # Get the normal vector of the click plane
+                start_position_view = start_point[dims_displayed]
+                end_position_view = end_point[dims_displayed]
+                ray_direction = end_position_view - start_position_view
+                ray_direction_normed = ray_direction / np.linalg.norm(
+                    ray_direction
+                )
+                # step the start position back a little bit to be able to detect shapes
+                # that contain the start_position
+                start_position_view = (
+                    start_position_view - 0.1 * ray_direction_normed
+                )
+                value, intersection = self._data_view._inside_3d(
+                    start_position_view, ray_direction_normed
+                )
+
+                # add the full nD coords to intersection
+                intersection_point = start_point.copy()
+                intersection_point[dims_displayed] = intersection
+
+            else:
+                value = None
+                intersection_point = None
+        else:
+            value = None
+            intersection_point = None
+        return value, intersection_point
+
+    def get_index_and_intersection(
+        self,
+        position: np.ndarray,
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Tuple[Union[float, int], None]:
+        """Get the shape index and intersection point of the first shape
+        (i.e., closest to start_point) "under" a mouse click.
+
+        See examples/add_points_on_nD_shapes.py for example usage.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        intersection_point : np.ndarray
+            (n,) array containing the point where the ray intersects the first shape
+            (i.e., the shape most in the foreground). The coordinate is in layer
+            coordinates.
+        """
+        start_point, end_point = self.get_ray_intersections(
+            position, view_direction, dims_displayed
+        )
+        if (start_point is not None) and (end_point is not None):
+            shape_index, intersection_point = self._get_index_and_intersection(
+                start_point=start_point,
+                end_point=end_point,
+                dims_displayed=dims_displayed,
+            )
+        else:
+            shape_index = (None,)
+            intersection_point = None
+        return shape_index, intersection_point
+
     def move_to_front(self):
         """Moves selected objects to be displayed in front of all others."""
         if len(self.selected_data) == 0:
@@ -2480,7 +2939,7 @@ class Shapes(Layer):
         ----------
         mask_shape : np.ndarray | tuple | None
             tuple defining shape of mask to be generated. If non specified,
-            takes the max of all the vertiecs
+            takes the max of all the vertices
 
         Returns
         -------

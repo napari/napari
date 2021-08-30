@@ -1,14 +1,25 @@
-.PHONY: docs typestubs pre watch 
+.PHONY: docs typestubs pre watch dist settings-schema
 
 docs:
 	rm -rf docs/_build/
 	find docs/api ! -name 'index.rst' -type f -exec rm -f {} +
 	pip install -qr docs/requirements.txt
 	python docs/update_docs.py
+	NAPARI_APPLICATION_IPY_INTERACTIVE=0
 	jb build docs
+	unset NAPARI_APPLICATION_IPY_INTERACTIVE
 
 typestubs:
 	python -m napari.utils.stubgen
+
+dist:
+	pip install -U check-manifest build
+	make typestubs
+	check-manifest
+	python -m build
+
+settings-schema:
+	python -m napari.settings._napari_settings
 
 pre:
 	pre-commit run -a

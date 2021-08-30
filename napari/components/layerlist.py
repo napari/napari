@@ -62,16 +62,10 @@ class LayerList(SelectableEventedList[Layer]):
         new_name : str
             Coerced, unique name.
         """
-        if layer is None:
-            for existing_name in sorted(x.name for x in self):
-                if name == existing_name:
-                    name = inc_name_count(name)
-        else:
-            for _layer in sorted(self, key=lambda x: x.name):
-                if _layer is layer:
-                    continue
-                if name == _layer.name:
-                    name = inc_name_count(name)
+        existing_layers = {x.name for x in self if x is not layer}
+        for i in range(len(self)):
+            if name in existing_layers:
+                name = inc_name_count(name)
         return name
 
     def _update_name(self, event):
@@ -355,6 +349,7 @@ _CONTEXT_KEYS = {
         lambda s: bool(s and all(isinstance(x, Labels) for x in s))
     ),
     'image_active': lambda s: isinstance(s.active, Image),
+    'ndim': lambda s: s.active and getattr(s.active.data, 'ndim', None),
     'active_layer_shape': (
         lambda s: s.active and getattr(s.active.data, 'shape', None)
     ),
