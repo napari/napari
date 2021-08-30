@@ -614,7 +614,7 @@ ISO_SNIPPETS = dict(
         }
         """,
     after_loop="""
-        if (surface_found == 0) {
+        if (surface_found == false) {
             discard;
         }
         """,
@@ -671,6 +671,9 @@ ISO_CATEGORICAL_SNIPPETS = dict(
         }
         """,
     after_loop="""
+        if (surface_found == false) {
+            discard;
+        }
         """,
 )
 
