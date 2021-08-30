@@ -475,14 +475,14 @@ class Labels(_ImageBase):
         self._color = colors
 
         # if colors just contains default colors for None and background
-        if self.is_default_colors(colors):
+        if self._is_default_colors(colors):
             color_mode = LabelColorMode.AUTO
         else:
             color_mode = LabelColorMode.DIRECT
 
         self.color_mode = color_mode
 
-    def is_default_colors(self, color):
+    def _is_default_colors(self, color):
         """Returns True if color contains only default colors, otherwise False.
 
         Default colors are black for `None` and transparent for
