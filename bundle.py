@@ -203,6 +203,10 @@ def patch_python_lib_location():
         print("symlinking", orig, "to", dest)
 
 
+def patch_environment_variables():
+    os.environ["ARCH"] = os.uname().machine
+
+
 def make_zip():
     import glob
     import zipfile
@@ -231,6 +235,9 @@ def bundle():
 
     if MACOS:
         patch_dmgbuild()
+
+    if LINUX:
+        patch_environment_variables()
 
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
