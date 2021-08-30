@@ -460,16 +460,11 @@ class Labels(_ImageBase):
 
     @color.setter
     def color(self, color):
-
         if not color:
             color = {}
-            color_mode = LabelColorMode.AUTO
-        else:
-            color_mode = LabelColorMode.DIRECT
 
         if self._background_label not in color:
             color[self._background_label] = 'transparent'
-
         if None not in color:
             color[None] = 'black'
 
@@ -477,9 +472,47 @@ class Labels(_ImageBase):
             label: transform_color(color_str)[0]
             for label, color_str in color.items()
         }
-
         self._color = colors
+
+        # if colors just contains default colors for None and background
+        if self.is_default_colors(colors):
+            color_mode = LabelColorMode.AUTO
+        else:
+            color_mode = LabelColorMode.DIRECT
+
         self.color_mode = color_mode
+
+    def is_default_colors(self, color):
+        """Returns True if color contains only default colors, otherwise False.
+
+        Default colors are black for `None` and transparent for
+        `self._background_label`.
+
+        Parameters
+        ----------
+        color : Dict
+            Dictionary of label value to color array
+
+        Returns
+        -------
+        bool
+            True if color contains only default colors, otherwise False.
+        """
+        if len(color) != 2:
+            return False
+
+        if not hasattr(self, '_color'):
+            return False
+
+        default_keys = [None, self._background_label]
+        if set(default_keys) != set(color.keys()):
+            return False
+
+        for key in default_keys:
+            if not np.allclose(self._color[key], color[key]):
+                return False
+
+        return True
 
     def _ensure_int_labels(self, data):
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""
