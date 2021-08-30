@@ -25,6 +25,7 @@ from .dialogs.qt_notification import (
 )
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
+from .utils import _maybe_allow_interrupt
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
@@ -385,5 +386,5 @@ def run(
             )
         )
         return
-    with notification_manager:
+    with notification_manager, _maybe_allow_interrupt(app):
         app.exec_()

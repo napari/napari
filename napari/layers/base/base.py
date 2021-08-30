@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import warnings
 from abc import ABC, abstractmethod
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from typing import List, Optional, Tuple, Union
 
@@ -16,7 +16,7 @@ from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
     find_front_back_face,
-    intersect_ray_with_axis_aligned_bounding_box_3d,
+    intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
@@ -357,6 +357,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
             (self.mouse_move_callbacks, self._move_modes),
+            (
+                self.mouse_double_click_callbacks,
+                getattr(
+                    self, '_double_click_modes', defaultdict(lambda: no_op)
+                ),
+            ),
         ]:
             if mode_dict[old_mode] in callback_list:
                 callback_list.remove(mode_dict[old_mode])
@@ -581,6 +587,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if self._position == _position:
             return
         self._position = _position
+
+    @property
+    def _is_moving(self):
+        return self._private_is_moving
+
+    @_is_moving.setter
+    def _is_moving(self, value):
+        assert value in (True, False)
+        if value:
+            assert self._moving_coordinates is not None
+        self._private_is_moving = value
 
     @property
     def _dims_displayed(self):
@@ -1036,22 +1053,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 position = self.world_to_data(position)
 
             if dims_displayed is not None:
-                if len(dims_displayed) == 2:
+                if len(dims_displayed) == 2 or self.ndim == 2:
                     value = self._get_value(position=tuple(position))
 
                 elif len(dims_displayed) == 3:
                     view_direction = self._world_to_data_ray(
                         list(view_direction)
                     )
-                    start_pos, end_pos = self.get_ray_intersections(
+                    start_point, end_point = self.get_ray_intersections(
                         position=position,
                         view_direction=view_direction,
                         dims_displayed=dims_displayed,
                         world=False,
                     )
                     value = self._get_value_3d(
-                        start_position=start_pos,
-                        end_position=end_pos,
+                        start_point=start_point,
+                        end_point=end_point,
                         dims_displayed=dims_displayed,
                     )
             else:
@@ -1066,17 +1083,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _get_value_3d(
         self,
-        start_position: np.ndarray,
-        end_position: np.ndarray,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
         dims_displayed: List[int],
     ) -> Union[float, int]:
         """Get the layer data value along a ray
 
         Parameters
         ----------
-        start_position : np.ndarray
+        start_point : np.ndarray
             The start position of the ray used to interrogate the data.
-        end_position : np.ndarray
+        end_point : np.ndarray
             The end position of the ray used to interrogate the data.
         dims_displayed : List[int]
             The indices of the dimensions currently displayed in the Viewer.
@@ -1168,9 +1185,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ----------
         vector : tuple, list, 1D array
             A vector in world coordinates.
-        dims_displayed: List[int]
-            The indices of the displayed dimensions. This is used to slice the
-            affine transform parameters.
 
         Returns
         -------
@@ -1199,13 +1213,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Parameters
         ----------
-        position :
+        position
             the position of the point in nD coordinates. World vs. data
             is set by the world keyword argument.
         view_direction : np.ndarray
             a unit vector giving the direction of the ray in nD coordinates.
             World vs. data is set by the world keyword argument.
-        dims_displayed :
+        dims_displayed
             a list of the dimensions currently being displayed in the viewer.
         world : bool
             True if the provided coordinates are in world coordinates.
@@ -1218,13 +1232,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             intersects with. This is the point closest to the camera.
             The point is the full nD coordinates of the layer data.
             If the click does not intersect the axis-aligned data bounding box,
-            an emtpy numpy array is returned (i.e., np.empty([]).
+            None is returned.
         end_point : np.ndarray
             The point on the axis-aligned data bounding box that the cursor click
             intersects with. This is the point farthest from the camera.
             The point is the full nD coordinates of the layer data.
             If the click does not intersect the axis-aligned data bounding box,
-            an emtpy numpy array is returned (i.e., np.empty([]).
+            None is returned.
         """
         if len(dims_displayed) == 3:
             # create a mask to select the in view dimensions
@@ -1259,12 +1273,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             # Get the locations in the plane where the ray intersects
             if front_face_normal is not None and back_face_normal is not None:
                 start_point_disp_dims = (
-                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                    intersect_line_with_axis_aligned_bounding_box_3d(
                         click_pos_data, view_dir, bbox, front_face_normal
                     )
                 )
                 end_point_disp_dims = (
-                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                    intersect_line_with_axis_aligned_bounding_box_3d(
                         click_pos_data, view_dir, bbox, back_face_normal
                     )
                 )

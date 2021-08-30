@@ -21,6 +21,7 @@ from ..utils.history import (
 )
 from ..utils.interactions import (
     ReadOnlyWrapper,
+    mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
@@ -273,6 +274,7 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.draw.connect(self.dims.enable_play)
 
+        self.canvas.connect(self.on_mouse_double_click)
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
         self.canvas.connect(self.on_mouse_release)
@@ -281,7 +283,9 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
-        self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
+        self.canvas.bgcolor = get_theme(
+            self.viewer.theme, False
+        ).canvas.as_rgb_tuple()
         theme = self.viewer.events.theme
 
         on_theme_change = self.canvas._on_theme_change
@@ -338,10 +342,12 @@ class QtViewer(QSplitter):
 
                 import napari
 
-                self.console = QtConsole(self.viewer)
-                self.console.push(
-                    {'napari': napari, 'action_manager': action_manager}
-                )
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore")
+                    self.console = QtConsole(self.viewer)
+                    self.console.push(
+                        {'napari': napari, 'action_manager': action_manager}
+                    )
             except ImportError:
                 warnings.warn(
                     trans._(
@@ -435,6 +441,7 @@ class QtViewer(QSplitter):
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer
+        del self.layer_to_visual[layer]
         self._reorder_layers(None)
 
     def _reorder_layers(self, event):
@@ -857,6 +864,27 @@ class QtViewer(QSplitter):
             The vispy event that triggered this method.
         """
         self._process_mouse_event(mouse_wheel_callbacks, event)
+
+    def on_mouse_double_click(self, event):
+        """Called whenever a mouse double-click happen on the canvas
+
+        Parameters
+        ----------
+        event : vispy.event.Event
+            The vispy event that triggered this method. The `event.type` will always be `mouse_double_click`
+
+        Notes
+        -----
+
+        Note that this triggers in addition to the usual mouse press and mouse release.
+        Therefore a double click from the user will likely triggers the following event in sequence:
+
+             - mouse_press
+             - mouse_release
+             - mouse_double_click
+             - mouse_release
+        """
+        self._process_mouse_event(mouse_double_click_callbacks, event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.

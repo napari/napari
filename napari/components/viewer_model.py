@@ -25,7 +25,6 @@ from .. import layers
 from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
-from ..layers.utils.plane_manager import PlaneManager
 from ..layers.utils.stack_utils import split_channels
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
@@ -67,6 +66,10 @@ PathLike = Union[str, Path]
 PathOrPaths = Union[PathLike, Sequence[PathLike]]
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
+
+
+def _current_theme() -> str:
+    return get_settings().appearance.theme
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -115,7 +118,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     help: str = ''
     status: str = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
-    theme: str = DEFAULT_THEME
+    theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
 
     # 2-tuple indicating height and width
@@ -223,7 +226,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return super().json(exclude=exclude, **kwargs)
 
     def dict(self, **kwargs):
-        """Convert to a dictionaty."""
+        """Convert to a dictionary."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
         # https://github.com/samuelcolvin/pydantic/pull/2231
@@ -557,7 +560,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
-        plane=PlaneManager(),
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -667,10 +671,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             should be the largest. Please note multiscale rendering is only
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
-        plane : dict
-            Properties defining plane rendering in 3D. Properties are defined
-            in data coordinates. Valid dictionary keys are
-            {'position', 'normal_vector', 'thickness', and 'enabled'}.
+        experimental_slicing_plane : dict or SlicingPlane
+            Properties defining plane rendering in 3D. Properties are defined in
+            data coordinates. Valid dictionary keys are
+            {'position', 'normal', 'thickness', and 'enabled'}.
+        experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+            Each dict defines a clipping plane in 3D in data coordinates.
+            Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+            Values on the negative side of the normal are discarded if the plane is enabled.
 
         Returns
         -------
@@ -709,7 +717,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'blending': blending,
             'visible': visible,
             'multiscale': multiscale,
-            'plane': plane,
+            'experimental_slicing_plane': experimental_slicing_plane,
+            'experimental_clipping_planes': experimental_clipping_planes,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -721,6 +730,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'affine',
             'contrast_limits',
             'metadata',
+            'experimental_clipping_planes',
         }
 
         if channel_axis is None:

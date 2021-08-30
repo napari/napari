@@ -83,7 +83,7 @@ class QColoredSVGIcon(QIcon):
         if not color and theme:
             from ...utils.theme import get_theme
 
-            color = get_theme(theme)[theme_key]
+            color = getattr(get_theme(theme, False), theme_key)
 
         return QColoredSVGIcon(self._svg, color, opacity)
 
