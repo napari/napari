@@ -474,16 +474,14 @@ class Labels(_ImageBase):
         }
         self._color = colors
 
-        """
-        `colors` may contain just the default None and background label
-        colors, in which case we need to be in AUTO color mode. Otherwise,
-        `colors` contains colors for all labels, and we should be in DIRECT
-        mode.
+        # `colors` may contain just the default None and background label
+        # colors, in which case we need to be in AUTO color mode. Otherwise,
+        # `colors` contains colors for all labels, and we should be in DIRECT
+        # mode.
 
-        For more information
-        - https://github.com/napari/napari/issues/2479
-        - https://github.com/napari/napari/issues/2953
-        """
+        # For more information
+        # - https://github.com/napari/napari/issues/2479
+        # - https://github.com/napari/napari/issues/2953
         if self._is_default_colors(colors):
             color_mode = LabelColorMode.AUTO
         else:
