@@ -644,10 +644,8 @@ ISO_CATEGORICAL_SNIPPETS = dict(
                 if (floatNotEqual(color.r, u_categorical_bg_value, u_equality_tolerance) ) {
                     // when the non-background value is reached
                     // calculate the color (apply lighting effects)
-                    if (color.r != 0.0) {
-                        value = (color.r * phi_mod + 0.5);
-                        value = mod(value, 1.0);
-                    }
+                    value = (color.r * phi_mod + 0.5);
+                    value = mod(value, 1.0);
                     color = applyColormap(value);
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
