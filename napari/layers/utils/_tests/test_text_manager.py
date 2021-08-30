@@ -6,7 +6,6 @@ from napari.layers.utils.property_map import (
     NamedPropertyDiscreteMap,
 )
 from napari.layers.utils.text_manager import TextManager
-from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -269,7 +268,7 @@ def test_multi_color_property_continuous_map():
     }
     color = NamedPropertyColorMap(
         name='confidence',
-        colormap=ensure_colormap('gray'),
+        colormap='gray',
     )
 
     text_manager = TextManager.from_layer_kwargs(

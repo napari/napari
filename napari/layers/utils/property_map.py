@@ -1,6 +1,9 @@
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
+from pydantic import validator
+
 from ...utils import Colormap
+from ...utils.colormaps import ensure_colormap
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from .color_transformations import ColorType
@@ -70,6 +73,10 @@ class NamedPropertyColorMap(EventedModel):
 
     def __call__(self, property_row: Dict[str, Any]) -> ColorType:
         return self.colormap.map(property_row[self.name])[0]
+
+    @validator('colormap', pre=True, always=True)
+    def _check_colormap(cls, colormap):
+        return ensure_colormap(colormap)
 
 
 class TextFormatPropertyMap(EventedModel):
