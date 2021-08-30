@@ -368,6 +368,10 @@ void main() {
     // Keep track of whether texture has been sampled
     int texture_sampled = 0;
     
+    // Keep track of wheter a surface was found (used for depth)
+    vec3 surface_point;
+    bool surface_found = false;
+
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
         {
@@ -394,16 +398,16 @@ void main() {
     
     $after_loop
 
-    /*Set depth value - from visvis TODO
-    int iter_depth = int(maxi);
-    // Calculate end position in world coordinates
-    vec4 position2 = vertexPosition;
-    position2.xyz += ray*shape*float(iter_depth);
-    // Project to device coordinates and set fragment depth
-    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
-    iproj.z /= iproj.w;
-    gl_FragDepth = (iproj.z+1.0)/2.0;
-    */
+    if (surface_found == true) {
+        // if a surface was found, use it to set the depth buffer
+        vec4 position2 = vec4(surface_point, 1);
+        vec4 iproj = $viewtransformf(position2);
+        iproj.z /= iproj.w;
+        gl_FragDepth = (iproj.z+1.0)/2.0;
+    }
+    else {
+        gl_FragDepth = gl_FragCoord.z;
+    }
 }
 
 
@@ -597,15 +601,12 @@ ISO_SNIPPETS = dict(
                 if (color.r > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color.r);
+
+                    // set the variables for the depth buffer                            
+                    surface_point = iloc * u_shape;
+                    surface_found = true;
+
                     iter = nsteps;
-                    
-                    //Set depth value
-                    float clip_distance = length(farpos - nearpos);
-                    vec3 surface_point = iloc * u_shape;
-                    float surface_dist = length(surface_point - nearpos);
-                    float depth = surface_dist / clip_distance;
-                    gl_FragDepth = depth;
-                    surface_found = 1;
                     break;
                 }
                 iloc += step * 0.1;
@@ -657,6 +658,11 @@ ISO_CATEGORICAL_SNIPPETS = dict(
                     color = applyColormap(color.g);
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
+
+                    // set the variables for the depth buffer                            
+                    surface_point = iloc * u_shape;
+                    surface_found = true;
+
                     iter = nsteps;
                     break;
                 }
