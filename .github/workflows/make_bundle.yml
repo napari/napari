@@ -5,7 +5,8 @@ on:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
     branches:
       - master
-    pull_request:
+  pull_request:
+    branches:
       - master
   schedule:
     - cron: "0 0 * * *"
