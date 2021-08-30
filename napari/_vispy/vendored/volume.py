@@ -630,7 +630,6 @@ ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
         float phi_mod = 0.6180339887498948482;
         float value = 0.0;
-        float margin = 1.0 / 256.0;
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
@@ -645,12 +644,10 @@ ISO_CATEGORICAL_SNIPPETS = dict(
                 if (floatNotEqual(color.r, u_categorical_bg_value, u_equality_tolerance) ) {
                     // when the non-background value is reached
                     // calculate the color (apply lighting effects)
-                    //if color.r != 0 {
-                    //    value = (color.r * phi_mod + 0.5);
-                    //    value = mod(value, 1.0);
-                    //    value = margin + (1.0 - 2.0*margin) * value;
-                    //}
-                    value = 0.5;
+                    if (color.r != 0.0) {
+                        value = (color.r * phi_mod + 0.5);
+                        value = mod(value, 1.0);
+                    }
                     color = applyColormap(value);
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
