@@ -590,7 +590,6 @@ ISO_SNIPPETS = dict(
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative
         gl_FragColor = vec4(0.0);
-        int surface_found = 0;
     """,
     in_loop="""
         if (val > u_threshold-0.2) {
@@ -1265,6 +1264,8 @@ class VolumeVisual(Visual):
         view_tr_i = view_tr_f.inverse
         view.view_program.vert['viewtransformf'] = view_tr_f
         view.view_program.vert['viewtransformi'] = view_tr_i
+
+        view.view_program.frag['viewtransformf'] = view_tr_f
 
     def _prepare_draw(self, view):
         if self._need_vertex_update:
