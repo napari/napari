@@ -250,7 +250,6 @@ def bundle():
         elif MACOS:
             patch_python_lib_location()
 
-        sys.exit(0)
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
