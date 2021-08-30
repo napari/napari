@@ -773,23 +773,10 @@ class Labels(_ImageBase):
         lookup_func : function
             function to use for mapping label values to colors
         """
+        return self._as_type
 
-        # low_discrepancy_image is slow for large images, but large labels can
-        # blow up memory usage of an index array of colors. If the index array
-        # would be larger than the image, we go back to computing the low
-        # discrepancy image on the whole input image. (Up to a minimum value of
-        # 1kB.)
-        nbytes_low_discrepancy = low_discrepancy_image(np.array([0])).nbytes
-        max_nbytes = max(data.nbytes, 1024)
-        if max_label_val * nbytes_low_discrepancy > max_nbytes:
-            return self._lookup_with_low_discrepancy_image
-        else:
-            if self._all_vals.size < max_label_val + 1:
-                self._all_vals = low_discrepancy_image(
-                    np.arange(max_label_val + 1), self._seed
-                )
-                self._all_vals[0] = 0
-            return self._lookup_with_index
+    def _as_type(self, data, selected_label=None):
+        return data.astype(np.float32)
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.

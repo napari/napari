@@ -628,6 +628,9 @@ AVG_SNIPPETS = dict(
 # This is an iso shader for categorical data (e.g., label images)
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
+        float phi_mod = 0.6180339887498948482;
+        float value = 0.0;
+        float margin = 1.0 / 256.0;
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
@@ -639,10 +642,16 @@ ISO_CATEGORICAL_SNIPPETS = dict(
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 color = $sample(u_volumetex, iloc);
-                if (floatNotEqual(color.g, u_categorical_bg_value, u_equality_tolerance) ) {
+                if (floatNotEqual(color.r, u_categorical_bg_value, u_equality_tolerance) ) {
                     // when the non-background value is reached
                     // calculate the color (apply lighting effects)
-                    color = applyColormap(color.g);
+                    //if color.r != 0 {
+                    //    value = (color.r * phi_mod + 0.5);
+                    //    value = mod(value, 1.0);
+                    //    value = margin + (1.0 - 2.0*margin) * value;
+                    //}
+                    value = 0.5;
+                    color = applyColormap(value);
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
                     iter = nsteps;
@@ -1082,8 +1091,9 @@ class VolumeVisual(Visual):
         self.shared_program.frag['sampler_type'] = self._texture.glsl_sampler_type
         self.shared_program.frag['sample'] = self._texture.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
-        self.shared_program['texture2D_LUT'] = self.cmap.texture_lut() \
-            if (hasattr(self.cmap, 'texture_lut')) else None
+        self.shared_program['texture2D_LUT'] = (
+            self.cmap.texture_lut() if (hasattr(self.cmap, 'texture_lut')) else None
+        )
         self.update()
 
     @property
