@@ -7,7 +7,8 @@ import dask.array as da
 import numpy as np
 import pytest
 
-from napari import layers, utils, viewer
+from napari import layers, utils
+from napari.components import ViewerModel
 
 
 @pytest.mark.sync_only
@@ -125,15 +126,16 @@ def delayed_dask_stack():
 def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     """Test that dask_configure reduces compute with dask stacks."""
 
-    # make sure we have a cache
-    # big enough for 10+ (10, 10, 10) "timepoints"
-    utils.resize_dask_cache(100000)
-
     # add dask stack to the viewer, making sure to pass multiscale and clims
-    v = viewer.ViewerModel()
+    v = ViewerModel()
     dask_stack = delayed_dask_stack['stack']
-    v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
+    layer = v.add_image(dask_stack)
     assert delayed_dask_stack['calls'] == 1  # the first stack will be loaded
+
+    with layer.dask_optimized_slicing() as (_, cache):
+        assert cache.cache.available_bytes > 0
+        # make sure the cache actually has been populated
+        assert len(cache.cache.heap.heap) > 0
 
     # changing the Z plane should never incur calls
     # since the stack has already been loaded (& it is chunked as a 3D array)
@@ -178,7 +180,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     monkeypatch.setattr(layers.base.base, 'configure_dask', mock_dask_config)
 
     # add dask stack to viewer.
-    v = viewer.ViewerModel()
+    v = ViewerModel()
     dask_stack = delayed_dask_stack['stack']
     v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
     assert delayed_dask_stack['calls'] == 1
@@ -215,7 +217,7 @@ def test_dask_cache_resizing(delayed_dask_stack):
 
     # add dask stack to the viewer, making sure to pass multiscale and clims
 
-    v = viewer.ViewerModel()
+    v = ViewerModel()
     dask_stack = delayed_dask_stack['stack']
 
     v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
@@ -254,7 +256,7 @@ def test_prevent_dask_cache(delayed_dask_stack):
     del utils.dask_cache
     utils.resize_dask_cache(0)
 
-    v = viewer.ViewerModel()
+    v = ViewerModel()
     dask_stack = delayed_dask_stack['stack']
     # adding a new stack will not increase the cache size
     v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))

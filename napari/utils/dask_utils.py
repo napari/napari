@@ -1,9 +1,9 @@
 """Dask cache utilities.
 """
+import contextlib
 import warnings
-from contextlib import contextmanager
 from distutils.version import LooseVersion
-from typing import Callable, ContextManager, Optional
+from typing import Callable, ContextManager, Optional, Tuple
 
 import dask
 import dask.array as da
@@ -123,7 +123,9 @@ def _is_dask_data(data) -> bool:
     )
 
 
-def configure_dask(data) -> Callable[[], ContextManager[dict]]:
+def configure_dask(
+    data, nbytes=4e9
+) -> Callable[[], ContextManager[Optional[Tuple[dict, Cache]]]]:
     """Spin up cache and return context manager that optimizes Dask indexing.
 
     This function determines whether data is a dask array or list of dask
@@ -170,23 +172,25 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
     >>> with optimized_slicing():
     ...    data[0, 2].compute()
     """
-    if _is_dask_data(data):
-        if dask.__version__ < LooseVersion('2.15.0'):
-            warnings.warn(
-                trans._(
-                    'For best performance with Dask arrays in napari, please upgrade Dask to v2.15.0 or later. Current version is {dask_version}',
-                    deferred=True,
-                    dask_version=dask.__version__,
-                )
+    if not _is_dask_data(data):
+        return contextlib.nullcontext
+
+    if dask.__version__ < LooseVersion('2.15.0'):
+        warnings.warn(
+            trans._(
+                'For best performance with Dask arrays in napari, please upgrade Dask to v2.15.0 or later. Current version is {dask_version}',
+                deferred=True,
+                dask_version=dask.__version__,
             )
+        )
 
-        def dask_optimized_slicing():
-            with dask.config.set({"optimization.fuse.active": False}) as cfg:
-                yield cfg
+    _cache = Cache(nbytes)
 
-    else:
+    @contextlib.contextmanager
+    def dask_optimized_slicing(memfrac=0.5):
+        with dask.config.set(
+            {"optimization.fuse.active": False}
+        ) as cfg, _cache as cache:
+            yield cfg, cache
 
-        def dask_optimized_slicing():
-            yield {}
-
-    return contextmanager(dask_optimized_slicing)
+    return dask_optimized_slicing
