@@ -36,7 +36,7 @@ def test_builtin_reader_plugin_npy():
 
     with NamedTemporaryFile(suffix='.npy', delete=False) as tmp:
         data = np.random.rand(20, 20)
-        utils.io.imsave(tmp.name, data)
+        np.save(tmp.name, data)
         tmp.seek(0)
         layer_data, _ = io.read_data_with_plugins(tmp.name)
 
