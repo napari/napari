@@ -16,6 +16,7 @@ from napari._tests.utils import (
     layer_test_data,
     skip_local_popups,
 )
+from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
 
@@ -484,3 +485,16 @@ def test_leaks_labels(qtbot, make_napari_viewer):
     assert not gc.collect()
     assert not lr()
     assert not dr()
+
+
+@pytest.mark.parametrize("theme", ("light", "dark"))
+def test_canvas_color(make_napari_viewer, theme):
+    """Test instantiating viewer with different themes.
+
+    See: https://github.com/napari/napari/issues/3278
+    """
+    # This test is to make sure the application starts with
+    # with different themes
+    get_settings().appearance.theme = theme
+    viewer = make_napari_viewer()
+    assert viewer.theme == theme
