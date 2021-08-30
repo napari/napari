@@ -21,7 +21,7 @@ We're developing **napari** in the open! But the project is in an **alpha** stag
 We're working on [tutorials](https://napari.org/tutorials/) (update), but you can also quickly get started by looking below.
 
 ## installation
-
+TODO: more testing
 ### which distribution to install
 If you want to contribute back to napari codebase, you need to install from source code: see the [from source](#from-source) section.
 
