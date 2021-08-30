@@ -628,7 +628,7 @@ AVG_SNIPPETS = dict(
 # This is an iso shader for categorical data (e.g., label images)
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
-        float phi_mod = 0.6180339887498948482;
+        float phi_mod = 0.6180339887498948482;  // phi - 1
         float value = 0.0;
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
