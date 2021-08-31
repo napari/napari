@@ -144,6 +144,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         blending='translucent',
         shading='flat',
         visible=True,
+        experimental_clipping_planes=None,
     ):
 
         ndim = data[0].shape[1]
@@ -161,6 +162,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(interpolation=Event, rendering=Event, shading=Event)
