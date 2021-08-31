@@ -37,12 +37,13 @@ from ..utils import perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
+from ..utils.theme import _themes
 from ..utils.translations import trans
 from . import menus
 from .dialogs.activity_dialog import ActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
-from .qt_resources import get_stylesheet
+from .qt_resources import get_stylesheet, register_napari_themes
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_viewer_dock_widget import (
@@ -418,6 +419,10 @@ class Window:
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer)
 
+        # discover any themes provided by plugins
+        plugin_manager.discover_themes()
+        self._setup_existing_themes()
+
         self._add_menus()
         self._update_theme()
         get_settings().appearance.events.theme.connect(self._update_theme)
@@ -436,9 +441,104 @@ class Window:
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
+        _themes.events.added.connect(self._add_theme)
+        _themes.events.added.connect(register_napari_themes)
+        _themes.events.removed.connect(self._remove_theme)
 
         if show:
             self.show()
+
+    def _setup_existing_themes(self, connect: bool = True):
+        """This function is only executed once at the startup of napari
+        to connect events to themes that have not been connected yet.
+
+        Parameters
+        ----------
+        connect : bool
+            Determines whether the `connect` or `disconnect` method should be used.
+        """
+        for theme in _themes.values():
+            if connect:
+                self._connect_theme(theme)
+            else:
+                self._disconnect_theme(theme)
+
+    def _connect_theme(self, theme):
+        # connect events to update theme. Here, we don't want to pass the event
+        # since it won't have the right `value` attribute.
+        theme.events.background.connect(lambda _: self._update_theme())
+        theme.events.foreground.connect(lambda _: self._update_theme())
+        theme.events.primary.connect(lambda _: self._update_theme())
+        theme.events.secondary.connect(lambda _: self._update_theme())
+        theme.events.highlight.connect(lambda _: self._update_theme())
+        theme.events.text.connect(lambda _: self._update_theme())
+        theme.events.warning.connect(lambda _: self._update_theme())
+        theme.events.current.connect(lambda _: self._update_theme())
+        theme.events.icon.connect(self._theme_icon_changed)
+        theme.events.canvas.connect(
+            lambda _: self.qt_viewer.canvas._set_theme_change(
+                get_settings().appearance.theme
+            )
+        )
+        # connect console-specific attributes only if QtConsole
+        # is present. The `console` is called which might slow
+        # things down a little.
+        if self.qt_viewer.console:
+            theme.events.console.connect(self.qt_viewer.console._update_theme)
+            theme.events.syntax_style.connect(
+                self.qt_viewer.console._update_theme
+            )
+
+    def _disconnect_theme(self, theme):
+        theme.events.background.disconnect(lambda _: self._update_theme())
+        theme.events.foreground.disconnect(lambda _: self._update_theme())
+        theme.events.primary.disconnect(lambda _: self._update_theme())
+        theme.events.secondary.disconnect(lambda _: self._update_theme())
+        theme.events.highlight.disconnect(lambda _: self._update_theme())
+        theme.events.text.disconnect(lambda _: self._update_theme())
+        theme.events.warning.disconnect(lambda _: self._update_theme())
+        theme.events.current.disconnect(lambda _: self._update_theme())
+        theme.events.icon.disconnect(self._theme_icon_changed)
+        theme.events.canvas.disconnect(
+            lambda _: self.qt_viewer.canvas._set_theme_change(
+                get_settings().appearance.theme
+            )
+        )
+        # disconnect console-specific attributes only if QtConsole
+        # is present and they were previously connected
+        if self.qt_viewer.console:
+            theme.events.console.disconnect(
+                self.qt_viewer.console._update_theme
+            )
+            theme.events.syntax_style.disconnect(
+                self.qt_viewer.console._update_theme
+            )
+
+    def _add_theme(self, event):
+        """Add new theme and connect events."""
+        theme = event.value
+        self._connect_theme(theme)
+
+    def _remove_theme(self, event):
+        """Remove theme and disconnect events."""
+        theme = event.value
+        self._disconnect_theme(theme)
+
+    def _theme_icon_changed(self, event=None):
+        """Trigger rebuild of theme and all resources.
+
+        This is really only required whenever there are changes to the `icon`
+        attribute on the `Theme` model. Most other attributes simply update
+        the stylesheet.
+        """
+        from .._qt.qt_resources import (
+            _register_napari_resources,
+            _unregister_napari_resources,
+        )
+
+        _unregister_napari_resources()
+        _register_napari_resources(True, force_rebuild=True)
+        self._update_theme()
 
     @property
     def qt_viewer(self):
@@ -745,9 +845,56 @@ class Window:
             shortcut = dock_widget.shortcut
         if shortcut is not None:
             action.setShortcut(shortcut)
+
+        # dock widgets can have a menu item on the window menu or the plugin menu.
+
+        # check for plugins menu first.  Need to check submenus too.  If the action in the
+        # plugin menu is toggled for the first time, it will be replaced with the toggleViewAction
+        # directly in the plugins menu.
+        actions = [a.text() for a in self.plugins_menu.actions()]
+        if dock_widget.name in actions:
+            idx = actions.index(dock_widget.name)
+            old_action = self.plugins_menu.actions()[idx]
+            dock_widget.setVisible(True)
+            self.plugins_menu.insertAction(old_action, action)
+            self.plugins_menu.removeAction(old_action)
+            return
+        else:
+            # if the action is not here, it may be in a submenu
+            for cnt, current_action in enumerate(self.plugins_menu.actions()):
+                if current_action.menu() is not None:
+                    sub_actions = [
+                        plugin_menu_item_template.format(
+                            current_action.text(), a.text()
+                        )
+                        for a in current_action.menu().actions()
+                    ]
+                    if dock_widget.name in sub_actions:
+                        idx = sub_actions.index(dock_widget.name)
+                        old_action = (
+                            self.plugins_menu.actions()[cnt]
+                            .menu()
+                            .actions()[idx]
+                        )
+                        self.plugins_menu.actions()[cnt].menu().insertAction(
+                            old_action, action
+                        )
+                        self.plugins_menu.actions()[cnt].menu().removeAction(
+                            old_action
+                        )
+                        return
+
         self.window_menu.addAction(action)
 
-    def remove_dock_widget(self, widget: QWidget):
+    def _remove_dock_widget(self, event=None):
+        names = list(self._dock_widgets.keys())
+        for widget_name in names:
+            if event.value in widget_name:
+                # remove this widget
+                widget = self._dock_widgets[widget_name]
+                self.remove_dock_widget(widget)
+
+    def remove_dock_widget(self, widget: QWidget, menu=None):
         """Removes specified dock widget.
 
         If a QDockWidget is not provided, the existing QDockWidgets will be
@@ -783,7 +930,8 @@ class Window:
         if _dw.widget():
             _dw.widget().setParent(None)
         self._qt_window.removeDockWidget(_dw)
-        self.window_menu.removeAction(_dw.toggleViewAction())
+        if menu is not None:
+            menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
         del self._dock_widgets[_dw.name]
@@ -949,14 +1097,14 @@ class Window:
     def _update_theme(self, event=None):
         """Update widget color theme."""
         settings = get_settings()
-        if event:
-            value = event.value
-            settings.appearance.theme = value
-            self.qt_viewer.viewer.theme = value
-        else:
-            value = self.qt_viewer.viewer.theme
-
         try:
+            if event:
+                value = event.value
+                settings.appearance.theme = value
+                self.qt_viewer.viewer.theme = value
+            else:
+                value = self.qt_viewer.viewer.theme
+
             self._qt_window.setStyleSheet(get_stylesheet(value))
         except (AttributeError, RuntimeError):
             # wrapped C/C++ object may have been deleted?
@@ -1045,11 +1193,19 @@ class Window:
         """
         QApplication.clipboard().setImage(self._screenshot(flash))
 
+    def _teardown(self):
+        """Carry out various teardown tasks such as event disconnection."""
+        self._setup_existing_themes(False)
+        _themes.events.added.disconnect(self._add_theme)
+        _themes.events.added.disconnect(register_napari_themes)
+        _themes.events.removed.disconnect(self._remove_theme)
+
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
         # Someone is closing us twice? Only try to delete self._qt_window
         # if we still have one.
         if hasattr(self, '_qt_window'):
+            self._teardown()
             self.qt_viewer.close()
             self._qt_window.close()
             del self._qt_window

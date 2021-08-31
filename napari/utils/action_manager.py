@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+import weakref
 from collections import defaultdict
 from dataclasses import dataclass
 from inspect import signature
@@ -75,18 +76,20 @@ class ButtonWrapper:
         wrapper around button to disconnect an action only
         if it has been connected before.
         """
-        self._button = button
+        self._button = weakref.ref(button)
         self._connected = None
         self._extra_tooltip_text: str = extra_tooltip_text
 
     def setToolTip(self, value):
-        return self._button.setToolTip(value + ' ' + self._extra_tooltip_text)
+        return self._button().setToolTip(
+            value + ' ' + self._extra_tooltip_text
+        )
 
     def clicked_maybe_connect(self, callback):
         if callback is not self._connected:
             if self._connected is not None:
-                self._button.clicked.disconnect(self._connected)
-            self._button.clicked.connect(callback)
+                self._button().clicked.disconnect(self._connected)
+            self._button().clicked.connect(callback)
             self._connected = callback
         else:
             # do nothing it's the same callback.
@@ -94,7 +97,7 @@ class ButtonWrapper:
 
     @property
     def destroyed(self):
-        return self._button.destroyed
+        return self._button() and self._button().destroyed
 
 
 class Context:
@@ -171,10 +174,10 @@ class ActionManager:
             self._update_gui_elements(name)
 
     def _validate_action_name(self, name):
-        if ":" not in name:
+        if len(name.split(':')) != 2:
             raise ValueError(
                 trans._(
-                    'Action names need to be in the form `package:name`, got {name}',
+                    'Action names need to be in the form `package:name`, got {name!r}',
                     name=name,
                     deferred=True,
                 )
@@ -321,7 +324,7 @@ class ActionManager:
         if hasattr(button, 'change'):
             button.clicked.disconnect(button.change)
         button = ButtonWrapper(button, extra_tooltip_text)
-        assert button not in [x._button for x in self._buttons['name']]
+        assert button not in [x._button() for x in self._buttons['name']]
 
         button.destroyed.connect(lambda: self._buttons[name].remove(button))
         self._buttons[name].add(button)

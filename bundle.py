@@ -19,15 +19,8 @@ APP = 'napari'
 # PySide2:
 # python bundle.py --add 'PySide2==5.15.0' 'ome-zarr'
 
-EXTRA_REQS = [
-    "imagecodecs",
-    "pip",
-    "PySide2==5.15.2",
-    "scikit-image",
-    "zarr",
-    "pims",
-    "numpy==1.19.3",
-]
+# This is now defined in setup.cfg "options.extras_require.bundle_run"
+# EXTRA_REQS = []
 
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
@@ -63,6 +56,14 @@ def patched_toml():
 
     toml = tomlkit.parse(original_toml)
 
+    # Initialize EXTRA_REQS from setup.cfg 'options.extras_require.bundle_run'
+    bundle_run = parser.get("options.extras_require", "bundle_run")
+    EXTRA_REQS = [
+        requirement.split('#')[0].strip()
+        for requirement in bundle_run.splitlines()
+        if requirement
+    ]
+
     # parse command line arguments
     if '--add' in sys.argv:
         for item in sys.argv[sys.argv.index('--add') + 1 :]:
@@ -90,9 +91,28 @@ def patched_toml():
 
     print("patching pyproject.toml to version: ", VERSION)
     print(
-        "patching pyproject.toml requirements to : \n",
-        "\n".join(toml['tool']['briefcase']['app'][APP]['requires']),
+        "patching pyproject.toml requirements to:",
+        *toml['tool']['briefcase']['app'][APP]['requires'],
+        sep="\n ",
     )
+
+    if MACOS:
+        # Workaround https://github.com/napari/napari/issues/2965
+        # Pin revisions to releases _before_ they switched to static libs
+        revision = {
+            (3, 6): 'b11',
+            (3, 7): 'b5',
+            (3, 8): 'b4',
+            (3, 9): 'b1',
+        }[sys.version_info[:2]]
+        app_table = toml['tool']['briefcase']['app'][APP]
+        app_table.add('macOS', tomlkit.table())
+        app_table['macOS']['support_revision'] = revision
+        print(
+            "patching pyproject.toml to pin support package to revision:",
+            revision,
+        )
+
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(tomlkit.dumps(toml))
 
@@ -169,6 +189,24 @@ def patch_wxs():
             print("patched pythonw.exe -> python.exe")
 
 
+def patch_python_lib_location():
+    # must run after briefcase create
+    support = os.path.join(
+        BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support"
+    )
+    python_resources = os.path.join(support, "Python", "Resources")
+    os.makedirs(python_resources, exist_ok=True)
+    for subdir in ("bin", "lib"):
+        orig = os.path.join(support, subdir)
+        dest = os.path.join(python_resources, subdir)
+        os.symlink("../../" + subdir, dest)
+        print("symlinking", orig, "to", dest)
+
+
+def patch_environment_variables():
+    os.environ["ARCH"] = os.uname().machine
+
+
 def make_zip():
     import glob
     import zipfile
@@ -198,6 +236,9 @@ def bundle():
     if MACOS:
         patch_dmgbuild()
 
+    if LINUX:
+        patch_environment_variables()
+
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
 
@@ -213,6 +254,8 @@ def bundle():
 
         if WINDOWS:
             patch_wxs()
+        elif MACOS:
+            patch_python_lib_location()
 
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
