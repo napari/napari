@@ -4,6 +4,7 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
@@ -300,7 +301,7 @@ def test_text_error(properties):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         Shapes(data, properties=copy(properties), text=123)
 
 

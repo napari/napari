@@ -1966,7 +1966,7 @@ class Shapes(Layer):
                     self.properties[k] = np.concatenate(
                         (self.properties[k], new_property), axis=0
                     )
-                self.text.add(self.properties, n_props_to_add)
+                self.text.add(n_props_to_add)
             if total_shapes < n_prop_values:
                 for k in self.properties:
                     self.properties[k] = self.properties[k][:total_shapes]
@@ -2902,7 +2902,7 @@ class Shapes(Layer):
                 )
 
             num_pasted_shapes = len(self._clipboard['data'])
-            self.text.add(self.properties, num_pasted_shapes)
+            self.text.add(num_pasted_shapes)
 
             self.selected_data = set(
                 range(cur_shapes, cur_shapes + num_pasted_shapes)

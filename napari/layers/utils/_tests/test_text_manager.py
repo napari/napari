@@ -20,8 +20,8 @@ def test_empty_text_manager_property():
     assert text_manager.values.size == 0
 
     # add a text element
-    new_properties = {'confidence': np.array([0.5])}
-    text_manager.add(new_properties, 1)
+    properties['confidence'] = np.array([0.5])
+    text_manager.add(1)
     np.testing.assert_equal(text_manager.values, ['0.5'])
 
 
@@ -37,8 +37,10 @@ def test_empty_text_manager_format():
     assert text_manager.values.size == 0
 
     # add a text element
-    new_properties = {'confidence': np.array([0.5])}
-    text_manager.add(new_properties, 1)
+    properties['confidence'] = np.concatenate(
+        (properties['confidence'], [0.5])
+    )
+    text_manager.add(1)
     np.testing.assert_equal(text_manager.values, ['confidence: 0.50'])
 
 
@@ -52,14 +54,16 @@ def test_text_manager_property():
     np.testing.assert_equal(text_manager.values, classes)
 
     # add new text with properties
-    new_properties = {'class': np.array(['A']), 'confidence': np.array([0.5])}
-    text_manager.add(new_properties, 1)
-    expected_text_2 = np.concatenate([classes, ['A']])
-    np.testing.assert_equal(text_manager.values, expected_text_2)
+    properties['class'] = np.concatenate((classes, ['A']))
+    properties['confidence'] = np.concatenate(
+        (properties['confidence'], [0.5])
+    )
+    text_manager.add(1)
+    np.testing.assert_equal(text_manager.values, properties['class'])
 
     # remove the first text element
     text_manager.remove({0})
-    np.testing.assert_equal(text_manager.values, expected_text_2[1::])
+    np.testing.assert_equal(text_manager.values, properties['class'][1::])
 
 
 def test_text_manager_format():
@@ -75,8 +79,11 @@ def test_text_manager_format():
     np.testing.assert_equal(text_manager.values, expected_text)
 
     # add new text with properties
-    new_properties = {'class': np.array(['A']), 'confidence': np.array([0.5])}
-    text_manager.add(new_properties, 1)
+    properties['class'] = np.concatenate((classes, ['A']))
+    properties['confidence'] = np.concatenate(
+        (properties['confidence'], [0.5])
+    )
+    text_manager.add(1)
     expected_text_2 = np.concatenate([expected_text, ['confidence: 0.50']])
     np.testing.assert_equal(text_manager.values, expected_text_2)
 
@@ -164,22 +171,14 @@ def test_constant():
 
 
 def test_constant_add():
-    properties = {}
-    text_manager = TextManager.from_layer_kwargs(
-        text='point', properties=properties
-    )
-
-    text_manager.add(properties, 2)
-
+    text_manager = TextManager.from_layer_kwargs(text='point', properties={})
+    text_manager.add(2)
     np.testing.assert_equal(text_manager.values, ['point', 'point'])
 
 
 def test_constant_remove():
-    properties = {}
-    text_manager = TextManager.from_layer_kwargs(
-        text='point', properties=properties
-    )
-    text_manager.add(properties, 5)
+    text_manager = TextManager.from_layer_kwargs(text='point', properties={})
+    text_manager.add(5)
 
     text_manager.remove([1, 3])
 
@@ -194,12 +193,9 @@ def test_direct():
 
 def test_direct_add():
     values = ['one', 'two', 'three']
-    properties = {}
-    text_manager = TextManager.from_layer_kwargs(
-        text=values, properties=properties
-    )
+    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
 
-    text_manager.add(properties, 2)
+    text_manager.add(2)
 
     np.testing.assert_array_equal(
         text_manager.values, ['one', 'two', 'three', '', '']

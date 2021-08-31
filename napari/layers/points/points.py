@@ -447,7 +447,7 @@ class Points(Layer):
                             np.arange(cur_npoints, len(data))
                         )
 
-                        self.text.add(self.properties, adding)
+                        self.text.add(adding)
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -1453,7 +1453,7 @@ class Points(Layer):
                 )
 
             num_pasted_points = len(self._clipboard['data'])
-            self.text.add(self.properties, num_pasted_points)
+            self.text.add(num_pasted_points)
 
             self._selected_view = list(
                 range(npoints, npoints + num_pasted_points)
