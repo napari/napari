@@ -26,7 +26,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-16.04, macos-latest, windows-latest]
+        include:
+          - platform: ubuntu-16.04
+            python-version: "3.9"
+          - platform: macos-latest
+            python-version: "3.9"
+          - platform: windows-latest
+            python-version: "3.8"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -35,7 +41,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: ${{ matrix.python-version }}
       - name: Start xvfb
         if: runner.os == 'Linux'
         run: |
