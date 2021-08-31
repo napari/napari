@@ -448,9 +448,6 @@ class KeymapHandler:
         if inspect.isgeneratorfunction(func):
             try:
                 next(gen)  # call function
-                assert (
-                    False
-                ), "We did not raise StopIteration, there is more than one yield"
             except StopIteration:  # only one statement
                 pass
             else:
@@ -466,9 +463,15 @@ class KeymapHandler:
             Key combination.
         """
         key, _ = parse_key_combo(key_combo)
+        if key not in self._key_release_generators:
+            return
         try:
             next(self._key_release_generators[key])  # call function
-        except (KeyError, StopIteration):
+            assert (
+                False
+            ), f"We did not raise StopIteration, is there more than one yield in `{self._key_release_generators[key]}`"
+        except StopIteration:
+            del self._key_release_generators[key]
             pass
 
     def on_key_press(self, event):

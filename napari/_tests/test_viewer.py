@@ -131,10 +131,13 @@ def test_add_layer(
     else:
         gen = func(layer)
         try:
-            next(gen)
+            next(gen)  # press button
+            next(
+                gen
+            )  # maybe release button (unless there is nothing to release)
             assert (
                 False
-            ), "We did not raise StopIteration, there is more than one yield"
+            ), f"We did not raise StopIteration, is there more than one yield in `{func=}` ?"
         except StopIteration:  # only one statement
             pass
 
