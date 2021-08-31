@@ -1,7 +1,7 @@
 # 3D interactivity
 
 ## Coordinate systems in napari
-In napari, there are three main coordinate systems: (1) canvas, (2) world, and (3) layer. The canvas coordinates system is the 2D coordinate system of the canvas on which the scene is rendered. World coordinates are the nD coordinates of the entire scene. As the name suggests, layer coordinates are the nD coordinate system of the data in a given layer. Layer coordinates are specific the each layer's data and are related to the world coordinate system via the layer transforms.
+In napari, there are three main coordinate systems: (1) canvas, (2) world, and (3) layer. The canvas coordinates system is the 2D coordinate system of the canvas on which the scene is rendered. World coordinates are the nD coordinates of the entire scene. As the name suggests, layer coordinates are the nD coordinate system of the data in a given layer. Layer coordinates are specific to each layer's data and are related to the world coordinate system via the layer transforms.
 
 ![coordinate-systems](images/3d_interaction_coordianates.png)
 
