@@ -1,5 +1,6 @@
 import configparser
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -28,6 +29,8 @@ LINUX = sys.platform.startswith("linux")
 HERE = os.path.abspath(os.path.dirname(__file__))
 PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
+ARCH = platform.machine() or "generic"
+
 
 if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
@@ -204,7 +207,7 @@ def patch_python_lib_location():
 
 
 def patch_environment_variables():
-    os.environ["ARCH"] = os.uname().machine
+    os.environ["ARCH"] = ARCH
 
 
 def make_zip():
@@ -218,7 +221,7 @@ def make_zip():
     elif MACOS:
         ext, OS = '*.dmg', 'macOS'
     artifact = glob.glob(os.path.join(BUILD_DIR, ext))[0]
-    dest = f'napari-{VERSION}-{OS}.zip'
+    dest = f'napari-{VERSION}-{OS}-{ARCH}.zip'
 
     with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(artifact, arcname=os.path.basename(artifact))

@@ -2,7 +2,7 @@
 
 # Performance Monitoring
 
-If napari is not performing well, you can use the
+If napari is not performing well, you can use
 {mod}`napari.utils.perf<napari.utils.perf>` to help
 diagnose the problem.
 
@@ -119,8 +119,8 @@ This is an example showing how you might use the
 ### Add a Sleep
 
 To simulate a performance problem in napari, add a `sleep()` call to the
-:meth:`Labels.paint<napari.layer.labels.Label.paint>` method, this 
-will make the method take at least 100ms:
+{meth}`Labels.paint<napari.layer.labels.Label.paint>` method, this
+will make the method take at least 100 ms:
 
 ```{code-block} python
 ---
@@ -187,10 +187,10 @@ the lower pane the `Wall Duration` field says it took over 100ms:
 ![example chrome output](https://user-images.githubusercontent.com/4163446/94200256-1fc17180-fe88-11ea-9935-bef4f818407d.png)
 
 So we can see that some events are running slow. The next questions is
-why are `MouseButtonPress` or `MouseMove` is running slow? To answer this
+why are `MouseButtonPress` and `MouseMove` running slow? To answer this
 question we can add more timers. In this case we know the answer, but often
 you will have to guess or experiment. You might add some timers and then
-find out they actually runs fast, so you can remove them.
+find out they actually run fast, so you can remove them.
 
 ### Add Paint Method
 
@@ -227,7 +227,7 @@ Drop `/tmp/latest.json` into Chrome again. Now we can see that
 {meth}`Labels.paint<napari.layers.Labels.paint>` is really responsible
 for most of the time. After clicking on the event press the `m` key, that
 will highlight the event duration with arrows and print the duration right
-on the timeline, in this case it says the even took  106.597ms:
+on the timeline, in this case it says the event took 106.597ms:
 
 ![highlighted event duration showing Labels.paint took 106.597ms to run](https://user-images.githubusercontent.com/4163446/94201049-66fc3200-fe89-11ea-9720-6a7ff3c7361a.png)
 
