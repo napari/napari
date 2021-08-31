@@ -166,7 +166,7 @@ class TextManager(EventedModel):
             Indices of the text elements in view
         Returns
         -------
-        colors : (N x 1) np.ndarray
+        colors : (N x 4) np.ndarray
             Array of colors for the N text elements in view
         """
         if len(indices_view) > 0:

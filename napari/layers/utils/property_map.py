@@ -95,10 +95,6 @@ class TextFormatPropertyMap(EventedModel):
         return self.format_string.format(**property_row)
 
 
-class PropertyTable(EventedModel):
-    properties: Dict[str, Array] = {}
-
-
 class StyleAttribute(EventedModel):
     """Stores a style and its value for each element of a Layer directly.
 
