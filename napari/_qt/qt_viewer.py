@@ -13,6 +13,7 @@ from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
 from ..utils.action_manager import action_manager
+from ..utils.colormaps.standardize_color import transform_color
 from ..utils.history import (
     get_open_history,
     get_save_history,
@@ -283,7 +284,9 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
-        self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
+        self.canvas.bgcolor = transform_color(
+            get_theme(self.viewer.theme, False).canvas.as_hex()
+        )[0]
         theme = self.viewer.events.theme
 
         on_theme_change = self.canvas._on_theme_change
@@ -340,10 +343,12 @@ class QtViewer(QSplitter):
 
                 import napari
 
-                self.console = QtConsole(self.viewer)
-                self.console.push(
-                    {'napari': napari, 'action_manager': action_manager}
-                )
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore")
+                    self.console = QtConsole(self.viewer)
+                    self.console.push(
+                        {'napari': napari, 'action_manager': action_manager}
+                    )
             except ImportError:
                 warnings.warn(
                     trans._(
@@ -437,6 +442,7 @@ class QtViewer(QSplitter):
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer
+        del self.layer_to_visual[layer]
         self._reorder_layers(None)
 
     def _reorder_layers(self, event):

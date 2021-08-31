@@ -7,6 +7,7 @@ from napari.layers.shapes import _shapes_key_bindings as key_bindings
 def test_lock_aspect_ratio():
     # Test a single four corner rectangle
     layer = Shapes(20 * np.random.random((1, 4, 2)))
+    layer._moving_coordinates = (0, 0, 0)
     layer._is_moving = True
     # need to go through the generator
     _ = list(key_bindings.hold_to_lock_aspect_ratio(layer))
@@ -17,6 +18,7 @@ def test_lock_aspect_ratio_selected_box():
     layer = Shapes(20 * np.random.random((1, 4, 2)))
     # select a shape
     layer._selected_box = layer.interaction_box(0)
+    layer._moving_coordinates = (0, 0, 0)
     layer._is_moving = True
     # need to go through the generator
     _ = list(key_bindings.hold_to_lock_aspect_ratio(layer))
@@ -27,6 +29,7 @@ def test_lock_aspect_ratio_selected_box_zeros():
     layer = Shapes(20 * np.zeros((1, 4, 2)))
     # select a shape
     layer._selected_box = layer.interaction_box(0)
+    layer._moving_coordinates = (0, 0, 0)
     layer._is_moving = True
     # need to go through the generator
     _ = list(key_bindings.hold_to_lock_aspect_ratio(layer))

@@ -326,8 +326,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image."""
+        wrapper = _weakref_hide(self)
         self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed, self.rgb
+            self._get_empty_image(), wrapper._raw_to_displayed, self.rgb
         )
         self._empty = True
 
@@ -896,3 +897,13 @@ if config.async_octree:
 
     class Image(Image, _OctreeImageBase):
         pass
+
+
+class _weakref_hide:
+    def __init__(self, obj):
+        import weakref
+
+        self.obj = weakref.ref(obj)
+
+    def _raw_to_displayed(self, *args, **kwarg):
+        return self.obj()._raw_to_displayed(*args, **kwarg)

@@ -12,12 +12,5 @@ if TYPE_CHECKING:
 class WindowMenu(QMenu):
     def __init__(self, window: 'Window'):
         super().__init__(trans._('&Window'), window._qt_window)
-        ACTIONS = [
-            {
-                'text': trans._('Remove Dock Widgets'),
-                'slot': lambda e: window.remove_dock_widget('all'),
-                'statusTip': 'Remove all dock widgets',
-            },
-            {},
-        ]
+        ACTIONS = []
         populate_menu(self, ACTIONS)

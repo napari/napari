@@ -6,9 +6,9 @@ more critical. Therefore performance is a core feature of napari.
 
 Inadequate performance will leave the user frustrated and discouraged and they
 will migrate to other tools or simply give up on interactive exploration of
-their data all together. In contrast excellent performance will create a joyful
-experience that encourages longer and more intensive exploration yielding better
-scientific results.
+their data altogether. In contrast, excellent performance will create a joyful
+experience that encourages longer and more intensive exploration, yielding
+better scientific results.
 
 There are two main types of performance:
 

@@ -589,6 +589,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._position = _position
 
     @property
+    def _is_moving(self):
+        return self._private_is_moving
+
+    @_is_moving.setter
+    def _is_moving(self, value):
+        assert value in (True, False)
+        if value:
+            assert self._moving_coordinates is not None
+        self._private_is_moving = value
+
+    @property
     def _dims_displayed(self):
         """To be removed displayed dimensions."""
         # Ultimately we aim to remove all slicing information from the layer
