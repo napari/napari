@@ -419,6 +419,12 @@ class Window:
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(viewer)
 
+        # connect theme events before collecting plugin-provided themes
+        # to ensure icons from the plugins are generated correctly.
+        _themes.events.added.connect(self._add_theme)
+        _themes.events.added.connect(register_napari_themes)
+        _themes.events.removed.connect(self._remove_theme)
+
         # discover any themes provided by plugins
         plugin_manager.discover_themes()
         self._setup_existing_themes()
@@ -441,9 +447,6 @@ class Window:
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
-        _themes.events.added.connect(self._add_theme)
-        _themes.events.added.connect(register_napari_themes)
-        _themes.events.removed.connect(self._remove_theme)
 
         if show:
             self.show()
