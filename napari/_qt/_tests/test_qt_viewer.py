@@ -487,7 +487,7 @@ def test_leaks_labels(qtbot, make_napari_viewer):
     assert not dr()
 
 
-@pytest.mark.parametrize("theme", ("light", "dark"))
+@pytest.mark.parametrize("theme", available_themes())
 def test_canvas_color(make_napari_viewer, theme):
     """Test instantiating viewer with different themes.
 
