@@ -19,6 +19,7 @@ from napari._tests.utils import (
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
+from napari.utils.theme import available_themes
 
 
 def test_qt_viewer(make_napari_viewer):
