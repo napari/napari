@@ -112,6 +112,7 @@ class Tracks(Layer):
         colormap='turbo',
         color_by='track_id',
         colormaps_dict=None,
+        experimental_clipping_planes=None,
     ):
 
         # if not provided with any data, set up an empty layer in 2D+t
@@ -141,6 +142,7 @@ class Tracks(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
