@@ -51,12 +51,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e '.[bundle_build]'
-      - name: get tag
+      - name: get tag / arch-suffix
         shell: bash
         run: |
           VER=`python bundle.py --version`
           echo "version=${VER}" >> $GITHUB_ENV
-          echo $VER
+          echo "Version: $VER"
+          ARCH_SUFFIX=`python -c "import platform; print(platform.machine())"`
+          echo "arch-suffix=${ARCH_SUFFIX}" >> $GITHUB_ENV
+          echo "Machine: ${ARCH_SUFFIX}"
       - name: Make Bundle
         run: python bundle.py
       - name: Upload Artifact
@@ -85,8 +88,8 @@ jobs:
           # nightly build release from https://api.github.com/repos/napari/napari/releases
           upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label}
           release_id: 34273071
-          asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
-          asset_name: napari-${{ runner.os }}.zip
+          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+          asset_name: napari-${{ runner.os }}-${{ env.arch-suffix }}.zip
           asset_content_type: application/zip
           max_releases: 1
       - name: Update latest tag
