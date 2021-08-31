@@ -268,6 +268,7 @@ class Points(Layer):
         blending='translucent',
         visible=True,
         property_choices=None,
+        experimental_clipping_planes=None,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -287,6 +288,7 @@ class Points(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(

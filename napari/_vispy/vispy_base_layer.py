@@ -64,6 +64,9 @@ class VispyBaseLayer(ABC):
         self.layer.events.rotate.connect(self._on_matrix_change)
         self.layer.events.shear.connect(self._on_matrix_change)
         self.layer.events.affine.connect(self._on_matrix_change)
+        self.layer.experimental_clipping_planes.events.connect(
+            self._on_experimental_clipping_planes_change
+        )
 
     @property
     def _master_transform(self):
@@ -149,11 +152,18 @@ class VispyBaseLayer(ABC):
             affine_matrix = affine_matrix @ affine_offset
         self._master_transform.matrix = affine_matrix
 
+    def _on_experimental_clipping_planes_change(self, event=None):
+        if hasattr(self.node, 'clipping_planes'):
+            self.node.clipping_planes = (
+                self.layer.experimental_clipping_planes.as_array()
+            )
+
     def _reset_base(self):
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
         self._on_matrix_change()
+        self._on_experimental_clipping_planes_change()
 
     def _on_poll(self, event=None):
         """Called when camera moves, before we are drawn.

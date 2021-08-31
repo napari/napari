@@ -1,16 +1,19 @@
-from vispy.scene.visuals import create_visual_node
+from vispy.scene.visuals import Compound, Line, Text
 
-from .vendored import MeshVisual
 from .vendored.filters.clipping_planes import PlanesClipper
 
-BaseMesh = create_visual_node(MeshVisual)
 
+class TracksVisual(Compound):
+    """
+    Compound vispy visual for Track visualization
+    """
 
-class Mesh(BaseMesh):
     def __init__(self):
         self._clip_filter = PlanesClipper()
-        super().__init__()
-        self.attach(self._clip_filter)
+        super().__init__([Line(), Text(), Line()])
+
+        for subv in self._subvisuals:
+            subv.attach(self._clip_filter)
 
     @property
     def clipping_planes(self):

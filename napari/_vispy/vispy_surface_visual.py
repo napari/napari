@@ -1,16 +1,15 @@
-from vispy.scene.visuals import create_visual_node
-
-from .vendored import MeshVisual
+from .mesh import Mesh
 from .vendored.filters.clipping_planes import PlanesClipper
 
-BaseMesh = create_visual_node(MeshVisual)
 
+class SurfaceVisual(Mesh):
+    """
+    Compound vispy visual with markers for
+    """
 
-class Mesh(BaseMesh):
     def __init__(self):
         self._clip_filter = PlanesClipper()
         super().__init__()
-        self.attach(self._clip_filter)
 
     @property
     def clipping_planes(self):

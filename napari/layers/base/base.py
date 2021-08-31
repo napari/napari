@@ -32,6 +32,7 @@ from ..utils.layer_utils import (
     convert_to_uint8,
     dims_displayed_world_to_layer,
 )
+from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ._base_constants import Blending
 
 Extent = namedtuple('Extent', 'data world step')
@@ -203,6 +204,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         blending='translucent',
         visible=True,
         multiscale=False,
+        experimental_clipping_planes=None,
     ):
         super().__init__()
 
@@ -224,6 +226,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._value = None
         self.scale_factor = 1
         self.multiscale = multiscale
+        self._experimental_clipping_planes = ClippingPlaneList()
 
         self._ndim = ndim
         self._ndisplay = 2
@@ -273,6 +276,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
+        self.experimental_clipping_planes = experimental_clipping_planes
+
         self.events = EmitterGroup(
             source=self,
             auto_connect=False,
@@ -785,6 +790,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             'opacity': self.opacity,
             'blending': self.blending,
             'visible': self.visible,
+            'experimental_clipping_planes': [
+                plane.dict() for plane in self.experimental_clipping_planes
+            ],
         }
         return base_dict
 
@@ -915,6 +923,31 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
+
+    @property
+    def experimental_clipping_planes(self):
+        return self._experimental_clipping_planes
+
+    @experimental_clipping_planes.setter
+    def experimental_clipping_planes(
+        self,
+        value: Union[
+            dict,
+            ClippingPlane,
+            List[Union[ClippingPlane, dict]],
+            ClippingPlaneList,
+        ],
+    ):
+        self._experimental_clipping_planes.clear()
+        if value is None:
+            return
+
+        if isinstance(value, (ClippingPlane, dict)):
+            value = [value]
+        for new_plane in value:
+            plane = ClippingPlane()
+            plane.update(new_plane)
+            self._experimental_clipping_planes.append(plane)
 
     def set_view_slice(self):
         with self.dask_optimized_slicing():

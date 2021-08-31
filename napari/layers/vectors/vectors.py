@@ -159,6 +159,7 @@ class Vectors(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        experimental_clipping_planes=None,
     ):
 
         super().__init__(
@@ -174,6 +175,7 @@ class Vectors(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         # events for non-napari calculations
