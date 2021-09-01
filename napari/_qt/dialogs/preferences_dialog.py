@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QStackedWidget,
     QVBoxLayout,
+    QWidget,
 )
 
 from ...utils.translations import trans
@@ -100,7 +101,24 @@ class PreferencesDialog(QDialog):
             ):
                 self._add_page(field)
 
+        self._add_plugins_page()
         self._list.setCurrentRow(0)
+
+    def _add_plugins_page(self):
+        from npe2 import plugin_manager as pm2
+
+        w = QWidget()
+        w.setLayout(QVBoxLayout())
+        for key, mf in pm2._manifests.items():
+            w.layout().addWidget(
+                self._build_json_form(
+                    key,
+                    mf.contributes.configuration.dict(exclude_unset=True),
+                    {},
+                )
+            )
+        self._list.addItem('Plugins')
+        self._stack.addWidget(w)
 
     def _add_page(self, field: 'ModelField'):
         """Builds the preferences widget using the json schema builder.
@@ -110,18 +128,23 @@ class PreferencesDialog(QDialog):
         field : ModelField
             subfield for which to create a page.
         """
-        from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
-
         schema, values = self._get_page_dict(field)
         name = field.field_info.title or field.name
+        self._list.addItem(name)
+
+        form = self._build_json_form(name, schema, values)
+        # make settings follow state of the form widget
+        _sub = getattr(self._settings, name.lower())
+        form.widget.on_changed.connect(lambda d: _sub.update(d))
+
+        self._stack.addWidget(form)
+
+    def _build_json_form(self, name, schema, values) -> QWidget:
+        from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 
         form = WidgetBuilder().create_form(schema, self.ui_schema)
         # set state values for widget
         form.widget.state = values
-        # make settings follow state of the form widget
-        form.widget.on_changed.connect(
-            lambda d: getattr(self._settings, name.lower()).update(d)
-        )
 
         # need to disable async if octree is enabled.
         # TODO: this shouldn't live here... if there is a coupling/dependency
@@ -141,11 +164,9 @@ class PreferencesDialog(QDialog):
                     wdg.opacity.setOpacity(0.3)
                     wdg.setDisabled(True)
                     break
+        return form
 
-        self._list.addItem(field.field_info.title or field.name)
-        self._stack.addWidget(form)
-
-    def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict, dict]:
+    def _get_page_dict(self, field: 'ModelField') -> Tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
         ftype = cast('BaseModel', field.type_)
