@@ -1,6 +1,7 @@
 import os
 import pathlib
 import warnings
+from collections import namedtuple
 from logging import getLogger
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
@@ -13,6 +14,23 @@ from ..utils.translations import trans
 from . import plugin_manager
 
 logger = getLogger(__name__)
+
+
+fake_hookimpl = namedtuple('fake_hookimpl', ('plugin_name'))
+
+
+def _read_with_npe2(path, plugin):
+    from npe2 import execute_command, plugin_manager
+
+    for rdr in plugin_manager.iter_compatible_readers(path):
+        read_func = execute_command(rdr.command, kwargs={'path': path})
+        if read_func:
+            try:
+                layer_data = read_func(path)  # try to read data
+                if layer_data:
+                    return layer_data, fake_hookimpl(rdr.command.split(".")[0])
+            except Exception:
+                continue
 
 
 def read_data_with_plugins(
@@ -53,6 +71,12 @@ def read_data_with_plugins(
     PluginCallError
         If ``plugin`` is specified but raises an Exception while reading.
     """
+
+    _ld = _read_with_npe2(path, plugin)
+    if _ld:
+        _ld, hookimpl = _ld
+        return [] if _is_null_layer_sentinel(_ld) else _ld or None, hookimpl
+
     hook_caller = plugin_manager.hook.napari_get_reader
     path = abspath_or_url(path)
     if not plugin and isinstance(path, (str, pathlib.Path)):
