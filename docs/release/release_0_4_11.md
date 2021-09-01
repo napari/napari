@@ -97,6 +97,7 @@ Last but not least, some common operations are now much more accessible from the
 - Clipping planes, generalized (#3252)
 - Improve behavior when holding "shift" while editing shapes (#3259)
 - Mesh depth (#3265)
+- Make notificatiomn text selectable (#3310)
 
 
 ## Bug Fixes
@@ -209,6 +210,7 @@ Last but not least, some common operations are now much more accessible from the
 - Update napari console dependency (#3297)
 - Bundle: use python 3.8 on Windows (#3300)
 - Bundle: add arch suffix to zip name (#3302)
+- Fix headless test failure (#3311)
 
 
 ## 21 authors added to this release (alphabetical)
