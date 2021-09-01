@@ -303,8 +303,8 @@ class Affine(Transform):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates [1]_.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        `Affine` transform object. Applied as an extra transform on top of the
-        provided scale, rotate, and shear values.
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     ndim : int
         The dimensionality of the transform. If None, this is inferred from the
         other parameters.
