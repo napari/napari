@@ -13,7 +13,7 @@ https://github.com/napari/napari
 ## Highlights
 We've known for a while that 3D interactivity is one of the areas where napari needed improvement (#515). This release introduces ways to use the mouse to interact with data in 3D (#3037). Features like label picking (#3074) and label painting/erasing (#3108) in 3D are just the beginning and we're excited to see where this takes us! For more details, please see the documentation at [https://napari.org/guides/stable/3D_interactivity.html](https://napari.org/guides/stable/3D_interactivity.html).
 
-Our volume rendering functionality has been significantly improved and now includes the ability to render arbitrary planes through volumes (#3023) and add clipping planes to restrict rendering to a region of interest (#3140). For now, these features are marked as `experimental` and the API around their use is likely to change in future versions of napari.
+Our volume rendering functionality has been significantly improved and now includes the ability to render arbitrary planes through volumes (#3023) and add clipping planes to restrict rendering to a region of interest (#3140). For now, these features are marked as `experimental` and the API around their use is likely to change in future versions of napari. We've also greatly improved how depth is handled across our visuals to fix some artifacts, see (#3181) and (#3265).
 
 Last but not least, some common operations are now much more accessible from the GUI thanks to a new context menu on the layer list (#2556 and #3028) and buttons for controlling image contrast limit scaling (#3022).
 
@@ -24,6 +24,8 @@ Last but not least, some common operations are now much more accessible from the
 - Refactor settings manager to allow setting all preferences with env vars and context managers (#2932)
 - Add autoscale modes to image layer model, and buttons to GUI (#3022)
 - Arbitrary plane rendering prototype (#3023)
+- Add projections to layer context menu, allow grouping and nesting of menu items (#3028)
+- Add napari_experimental_provide_theme hook specification (#3034)
 - Add view ray and labels selection in 3D (#3037)
 - Add `add_<shape_type>` method for each shape type (#3076)
 - Grid mode popup (#3084)
@@ -32,7 +34,8 @@ Last but not least, some common operations are now much more accessible from the
 - Add positive tail length to tracks layer (#3138)
 - Arbitrary clipping planes for volumes in the image layer (#3140)
 - Mask image from points layer (#3151)
-- Add projections to layer context menu, allow grouping and nesting of menu items (#3028)
+- Add .npy reader to builtin reader (#3271)
+
 
 ## Improvements
 - Add `assign_[plugin]_to_extension` methods on plugin_manager.  (#2695)
@@ -80,7 +83,9 @@ Last but not least, some common operations are now much more accessible from the
 - Move `get_color` call to after `all_vals` have been cleared (#3173)
 - Prevent highlight widget from emitting constant signals (#3175)
 - Refactor preferences dialog to take advantage of evented settings methods (#3178)
+- Set gl_FragDepth in volume visual isosurface rendering (#3181)
 - Use QElidingLabel from superqt (#3188)
+- Move dock widgets in menu (#3190)
 - Use `QLargeIntSpinBox` from superqt, remove internal one (#3191)
 - Catch and prune connections to stale Qt callbacks in events.py (#3193)
 - Add checkbox to handle global plugin enable/disabled state (#3194)
@@ -89,6 +94,10 @@ Last but not least, some common operations are now much more accessible from the
 - Pull main window menu creation off of Window (#3204)
 - Remove extra box on plugin dialog (#3235)
 - Add instant hover tooltips (#3242)
+- Clipping planes, generalized (#3252)
+- Improve behavior when holding "shift" while editing shapes (#3259)
+- Mesh depth (#3265)
+- Make notificatiomn text selectable (#3310)
 
 
 ## Bug Fixes
@@ -132,11 +141,19 @@ Last but not least, some common operations are now much more accessible from the
 - Fix incorrect window position storage (#3196)
 - Fix incorrect use of dims_order when 3D painting (#3202)
 - Fix plugin settings restore and schema_version validation error in preferences dialog (#3215)
+- Fix memory leak in napari (#3217)
 - Disable space bar on layer list (#3234)
 - Close napari window on Ctrl+C without geting window focus (#3239)
 - Skip labeled sliders for <5.14 (#3243)
 - Don't pass interpolation when creating a new projection layer (#3247)
 - Prevent greedy dask array calculation when creating an Image layer (#3248)
+- Fix plane normal inconsistency (#3264)
+- Remove accidental print statement (#3269)
+- Only change `labels` color mode in `color` setter if new `colors` are not default (#3275)
+- Fix updating of plugins (#3288)
+- Fix theme color setting on startup (#3293)
+- Fix incorrect theme registration (#3299)
+- Fix issubclass error in update_docs (#3305)
 
 
 ## API Changes
@@ -156,6 +173,7 @@ Last but not least, some common operations are now much more accessible from the
 - Make ordering of releases manual (#2921)
 - Add alister burt to team page (#2937)
 - Use briefcase 0.3.1 on all platforms (#2980)
+- Move to Python 3.9 in the bundled application (#2991)
 - Speedup one of the slowest test. (#2997)
 - Update plugin guide with references and instructions for napari-hub (#3055)
 - Skip progress indicator test when viewer is not shown (#3065)
@@ -183,6 +201,16 @@ Last but not least, some common operations are now much more accessible from the
 - Pooch bugfix (#3218)
 - Update team.md (#3237)
 - Add binder to repository and badge on README (#3244)
+- Add extras_require for bundle deps (#3255)
+- Pin support pkg revision macos (#3266)
+- Exclude vispy 0.8.0 (#3276)
+- Revert sys.exit(0) debugging (#3277)
+- Bundle: export ARCH on Linux (#3280)
+- DOC: misc edits/fixes in the developer guide (#3296)
+- Update napari console dependency (#3297)
+- Bundle: use python 3.8 on Windows (#3300)
+- Bundle: add arch suffix to zip name (#3302)
+- Fix headless test failure (#3311)
 
 
 ## 21 authors added to this release (alphabetical)
@@ -193,6 +221,7 @@ Last but not least, some common operations are now much more accessible from the
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
+- [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
@@ -206,6 +235,7 @@ Last but not least, some common operations are now much more accessible from the
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
+- [Thanushi Peiris](https://github.com/napari/napari/commits?author=thanushipeiris) - @thanushipeiris
 - [Volker Hilsenstein](https://github.com/napari/napari/commits?author=VolkerH) - @VolkerH
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
 
