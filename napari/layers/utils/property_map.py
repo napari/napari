@@ -1,18 +1,9 @@
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    TypeVar,
-)
+from typing import Any, Dict, Generic, Iterable, List, TypeVar
 
 from pydantic import validator
 
 from ...utils import Colormap
-from ...utils.colormaps import ensure_colormap
+from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from .color_transformations import ColorType
@@ -34,7 +25,7 @@ class PropertyMap(Generic[OutputType], EventedModel):
         properties : Dict[str, Array]
             The properties of a layer.
         """
-        num_values = StyleAttribute._num_values(properties)
+        num_values = _num_rows(properties)
         self.values = self._apply(properties, range(0, num_values))
 
     def add(self, properties: Dict[str, Array], num_to_add: int):
@@ -47,7 +38,7 @@ class PropertyMap(Generic[OutputType], EventedModel):
         num_to_add : int
             The number of values to add.
         """
-        num_values = StyleAttribute._num_values(properties)
+        num_values = _num_rows(properties)
         indices = range(num_values - num_to_add, num_values)
         self.values.extend(self._apply(properties, indices))
 
@@ -89,12 +80,28 @@ class PropertyMap(Generic[OutputType], EventedModel):
         return ConstantPropertyMap(constant=constant)
 
     @classmethod
+    def from_discrete_map(
+        cls, property_name: str, discrete_map: Dict[Any, OutputType]
+    ):
+        return NamedPropertyDiscreteMap(
+            name=property_name, discrete_map=discrete_map
+        )
+
+    @classmethod
+    def from_colormap(cls, property_name: str, colormap: ValidColormapArg):
+        return NamedPropertyColorMap(name=property_name, colormap=colormap)
+
+    @classmethod
     def from_iterable(
         cls, iterable: Iterable[OutputType], default_value: OutputType
     ):
         return DirectPropertyMap(
             values=list(iterable), default_value=default_value
         )
+
+
+def _num_rows(properties: Dict[str, Array]) -> int:
+    return len(next(iter(properties.values()))) if len(properties) > 0 else 0
 
 
 class DirectPropertyMap(PropertyMap[OutputType], EventedModel):
@@ -174,7 +181,7 @@ class NamedPropertyColorMap(PropertyMap[ColorType], EventedModel):
         return self.colormap.map(property_row[self.name])[0]
 
     @validator('colormap', pre=True, always=True)
-    def _check_colormap(cls, colormap):
+    def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
 
@@ -192,73 +199,3 @@ class TextFormatPropertyMap(PropertyMap[str], EventedModel):
 
     def __call__(self, property_row: Dict[str, Any]) -> str:
         return self.format_string.format(**property_row)
-
-
-class StyleAttribute(EventedModel):
-    """Stores a style and its value for each element of a Layer directly.
-
-    Attributes
-    ----------
-    values : Array
-        The style value for each element.
-    """
-
-    values: List[Any] = []
-    default_value: Any = None
-    mapping: Optional[Callable[[Dict[str, Any]], Any]] = None
-
-    def refresh(self, properties: Dict[str, Array]):
-        """Updates all values from the given properties.
-
-        Parameters
-        ----------
-        properties : Dict[str, Array]
-            The properties of a layer.
-        """
-        if self.mapping is not None:
-            num_values = StyleAttribute._num_values(properties)
-            self.values = self._apply(properties, range(0, num_values))
-
-    def add(self, properties: Dict[str, Array], num_to_add: int):
-        """Adds a number of a new text values based on the given properties
-
-        Parameters
-        ----------
-        properties : Dict[str, Array]
-            The properties of a layer.
-        num_to_add : int
-            The number of values to add.
-        """
-        if self.mapping is None:
-            self.values.extend([self.default_value] * num_to_add)
-        else:
-            num_values = StyleAttribute._num_values(properties)
-            indices = range(num_values - num_to_add, num_values)
-            self.values.extend(self._apply(properties, indices))
-
-    def remove(self, indices: Iterable[int]):
-        """Removes some text values by index.
-
-        Parameters
-        ----------
-        indices : Iterable[int]
-            The indices to remove.
-        """
-        indices = set(indices)
-        self.values = [
-            self.values[i] for i in range(len(self.values)) if i not in indices
-        ]
-
-    def _apply(self, properties: Dict[str, Array], indices: Iterable[int]):
-        return [
-            self.mapping(
-                {name: column[index] for name, column in properties.items()}
-            )
-            for index in indices
-        ]
-
-    @staticmethod
-    def _num_values(properties):
-        return (
-            len(next(iter(properties.values()))) if len(properties) > 0 else 0
-        )

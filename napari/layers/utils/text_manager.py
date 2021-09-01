@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Callable, Dict, Iterable, Tuple, Union
+from typing import Dict, Iterable, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -13,12 +13,7 @@ from ..base._base_constants import Blending
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .color_transformations import ColorType
-from .property_map import (
-    ConstantPropertyMap,
-    NamedPropertyMap,
-    PropertyMap,
-    StyleAttribute,
-)
+from .property_map import PropertyMap
 
 DEFAULT_COLOR = 'cyan'
 
@@ -48,10 +43,10 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     properties : Dict[str, Array]
         The property values, which typically come from a layer.
-    color : StyleAttribute
-        A style that defines the color for each text element in colors.values
-    text : StyleAttribute
-        A style that defines the string for each text element in strings.values
+    color : PropertyMap[ColorType]
+        Defines the color for each text element in colors.values
+    text : PropertyMap[str]
+        Defines the string for each text element in text.values
     """
 
     # Declare properties as a generic dict so that a copy is not made on validation
@@ -65,7 +60,7 @@ class TextManager(EventedModel):
     translation: Array[float] = 0
     rotation: float = 0
     text: PropertyMap[str] = ''
-    color: StyleAttribute = DEFAULT_COLOR
+    color: PropertyMap[ColorType] = DEFAULT_COLOR
 
     @property
     def values(self):
@@ -191,6 +186,9 @@ class TextManager(EventedModel):
             property_map = cls._mapping_from_text(text, properties)
         elif isinstance(text, Iterable):
             property_map = PropertyMap.from_iterable(text, '')
+        elif isinstance(text, PropertyMap):
+            # Make a defensive copy to store different values for different attributes that share a map.
+            property_map = text.copy(deep=True)
         elif text is None:
             property_map = PropertyMap.from_constant('')
         else:
@@ -210,34 +208,31 @@ class TextManager(EventedModel):
             return PropertyMap.from_property(text)
         elif ('{' in text) and ('}' in text):
             return PropertyMap.from_format_string(text)
-        return ConstantPropertyMap(constant=text)
+        return PropertyMap.from_constant(constant=text)
 
     @validator('color', pre=True, always=True)
     def _check_color(
         cls, color: Union[ColorType, Iterable[ColorType], None], values
-    ) -> StyleAttribute:
+    ) -> PropertyMap[ColorType]:
         properties = values['properties']
         if color is None:
-            style = StyleAttribute(
-                mapping=ConstantPropertyMap(constant=DEFAULT_COLOR)
-            )
+            property_map = PropertyMap.from_constant(DEFAULT_COLOR)
         elif isinstance(color, str) and color in properties:
-            style = StyleAttribute(mapping=NamedPropertyMap(name=color))
-        elif isinstance(color, Callable):
-            style = StyleAttribute(mapping=color)
+            property_map = PropertyMap.from_property(color)
+        elif isinstance(color, PropertyMap):
+            # Make a defensive copy to store different values for different attributes that share a map.
+            property_map = color.copy(deep=True)
         else:
             color_array = transform_color(color)
             n_colors = color_array.shape[0]
             if n_colors > 1:
-                style = StyleAttribute(
-                    values=list(color), default_value=DEFAULT_COLOR
+                property_map = PropertyMap.from_iterable(
+                    list(color), DEFAULT_COLOR
                 )
             else:
-                style = StyleAttribute(
-                    mapping=ConstantPropertyMap(constant=color)
-                )
-        style.refresh(properties)
-        return style
+                property_map = PropertyMap.from_constant(color)
+        property_map.refresh(properties)
+        return property_map
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):

@@ -1,10 +1,7 @@
 import numpy as np
 import pytest
 
-from napari.layers.utils.property_map import (
-    NamedPropertyColorMap,
-    NamedPropertyDiscreteMap,
-)
+from napari.layers.utils.property_map import PropertyMap
 from napari.layers.utils.text_manager import TextManager
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -243,8 +240,8 @@ def test_multi_color_property_discrete_map():
         'class': ['A', 'B', 'C'],
         'confidence': np.array([0.5, 0.3, 1]),
     }
-    color = NamedPropertyDiscreteMap(
-        name='class',
+    color = PropertyMap.from_discrete_map(
+        property_name='class',
         discrete_map={'A': 'red', 'B': 'green', 'C': 'blue'},
     )
 
@@ -262,8 +259,8 @@ def test_multi_color_property_continuous_map():
         'class': ['A', 'B', 'C'],
         'confidence': np.array([0.5, 0, 1]),
     }
-    color = NamedPropertyColorMap(
-        name='confidence',
+    color = PropertyMap.from_colormap(
+        property_name='confidence',
         colormap='gray',
     )
 
