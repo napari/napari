@@ -1,4 +1,13 @@
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    TypeVar,
+)
 
 from pydantic import validator
 
@@ -8,8 +17,98 @@ from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from .color_transformations import ColorType
 
+OutputType = TypeVar('OutputType')
 
-class ConstantPropertyMap(EventedModel):
+
+class PropertyMap(Generic[OutputType], EventedModel):
+    values: List[OutputType] = []
+
+    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
+        pass
+
+    def refresh(self, properties: Dict[str, Array]):
+        """Updates all values from the given properties.
+
+        Parameters
+        ----------
+        properties : Dict[str, Array]
+            The properties of a layer.
+        """
+        num_values = StyleAttribute._num_values(properties)
+        self.values = self._apply(properties, range(0, num_values))
+
+    def add(self, properties: Dict[str, Array], num_to_add: int):
+        """Adds a number of a new text values based on the given properties
+
+        Parameters
+        ----------
+        properties : Dict[str, Array]
+            The properties of a layer.
+        num_to_add : int
+            The number of values to add.
+        """
+        num_values = StyleAttribute._num_values(properties)
+        indices = range(num_values - num_to_add, num_values)
+        self.values.extend(self._apply(properties, indices))
+
+    def remove(self, indices: Iterable[int]):
+        """Removes some text values by index.
+
+        Parameters
+        ----------
+        indices : Iterable[int]
+            The indices to remove.
+        """
+        indices = set(indices)
+        self.values = [
+            self.values[i] for i in range(len(self.values)) if i not in indices
+        ]
+
+    def _apply(self, properties: Dict[str, Array], indices: Iterable[int]):
+        return [
+            self({name: column[index] for name, column in properties.items()})
+            for index in indices
+        ]
+
+    @staticmethod
+    def _num_values(properties):
+        return (
+            len(next(iter(properties.values()))) if len(properties) > 0 else 0
+        )
+
+    @classmethod
+    def from_format_string(cls, format_string: str):
+        return TextFormatPropertyMap(format_string=format_string)
+
+    @classmethod
+    def from_property(cls, property_name: OutputType):
+        return NamedPropertyMap(name=property_name)
+
+    @classmethod
+    def from_constant(cls, constant: OutputType):
+        return ConstantPropertyMap(constant=constant)
+
+    @classmethod
+    def from_iterable(
+        cls, iterable: Iterable[OutputType], default_value: OutputType
+    ):
+        return DirectPropertyMap(
+            values=list(iterable), default_value=default_value
+        )
+
+
+class DirectPropertyMap(PropertyMap[OutputType], EventedModel):
+    default_value: OutputType
+
+    def refresh(self, properties: Dict[str, Array]):
+        # May want to resize values based on size of properties.
+        pass
+
+    def add(self, properties: Dict[str, Array], num_to_add: int):
+        self.values.extend([self.default_value] * num_to_add)
+
+
+class ConstantPropertyMap(PropertyMap[OutputType], EventedModel):
     """Maps from a property row to a constant.
 
     Attributes
@@ -18,13 +117,13 @@ class ConstantPropertyMap(EventedModel):
         The constant value to always return.
     """
 
-    constant: Any
+    constant: OutputType
 
-    def __call__(self, property_row: Dict[str, Any]) -> Any:
+    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
         return self.constant
 
 
-class NamedPropertyMap(EventedModel):
+class NamedPropertyMap(PropertyMap[OutputType], EventedModel):
     """Maps from a property row to a property value by name.
 
     Attributes
@@ -35,11 +134,11 @@ class NamedPropertyMap(EventedModel):
 
     name: str
 
-    def __call__(self, property_row: Dict[str, Any]) -> Any:
+    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
         return property_row[self.name]
 
 
-class NamedPropertyDiscreteMap(EventedModel):
+class NamedPropertyDiscreteMap(PropertyMap[OutputType], EventedModel):
     """Maps from a property row to a property value by name to another value defined by a discrete mapping.
 
     Attributes
@@ -51,13 +150,13 @@ class NamedPropertyDiscreteMap(EventedModel):
     """
 
     name: str
-    discrete_map: dict
+    discrete_map: dict[Any, OutputType]
 
-    def __call__(self, property_row: Dict[str, Any]) -> Any:
+    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
         return self.discrete_map.get(property_row[self.name])
 
 
-class NamedPropertyColorMap(EventedModel):
+class NamedPropertyColorMap(PropertyMap[ColorType], EventedModel):
     """Maps from a property row to a property value by name to another value defined by a discrete mapping.
 
     Attributes
@@ -79,7 +178,7 @@ class NamedPropertyColorMap(EventedModel):
         return ensure_colormap(colormap)
 
 
-class TextFormatPropertyMap(EventedModel):
+class TextFormatPropertyMap(PropertyMap[str], EventedModel):
     """Maps from a property row to a formatted string containing property names.
 
     Attributes

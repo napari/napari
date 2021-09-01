@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Any, Callable, Dict, Iterable, Tuple, Union
+from typing import Callable, Dict, Iterable, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -16,8 +16,8 @@ from .color_transformations import ColorType
 from .property_map import (
     ConstantPropertyMap,
     NamedPropertyMap,
+    PropertyMap,
     StyleAttribute,
-    TextFormatPropertyMap,
 )
 
 DEFAULT_COLOR = 'cyan'
@@ -64,7 +64,7 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    text: StyleAttribute = ''
+    text: PropertyMap[str] = ''
     color: StyleAttribute = DEFAULT_COLOR
 
     @property
@@ -185,33 +185,31 @@ class TextManager(EventedModel):
     @validator('text', pre=True, always=True)
     def _check_text(
         cls, text: Union[str, Iterable[str], None], values
-    ) -> StyleAttribute:
+    ) -> PropertyMap[str]:
         properties = values['properties']
         if isinstance(text, str):
-            style = StyleAttribute(
-                mapping=cls._mapping_from_text(text, properties)
-            )
+            property_map = cls._mapping_from_text(text, properties)
         elif isinstance(text, Iterable):
-            style = StyleAttribute(values=text, default_value='')
+            property_map = PropertyMap.from_iterable(text, '')
         elif text is None:
-            style = StyleAttribute(mapping=ConstantPropertyMap(constant=''))
+            property_map = PropertyMap.from_constant('')
         else:
             raise TypeError(
                 trans._(
                     'text should be a string, iterable, or None', deferred=True
                 )
             )
-        style.refresh(properties)
-        return style
+        property_map.refresh(properties)
+        return property_map
 
     @classmethod
     def _mapping_from_text(
         cls, text: str, properties: Dict[str, Array]
-    ) -> Callable[[Dict[str, Any]], Any]:
+    ) -> PropertyMap[str]:
         if text in properties:
-            return NamedPropertyMap(name=text)
+            return PropertyMap.from_property(text)
         elif ('{' in text) and ('}' in text):
-            return TextFormatPropertyMap(format_string=text)
+            return PropertyMap.from_format_string(text)
         return ConstantPropertyMap(constant=text)
 
     @validator('color', pre=True, always=True)
