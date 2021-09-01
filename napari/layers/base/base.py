@@ -87,7 +87,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. Applied as an extra transform on top of the
+        `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
@@ -141,7 +141,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. Applied as an extra transform on top of the
+        `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
