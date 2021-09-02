@@ -63,7 +63,7 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
         )
 
     # this is not the desired behavior for coordinate-based layers
-    # but the action is currently only enabled for 'image_active and ndim > 2'
+    # but the action is currently only enabled for 'active_layer_is_image and ndim > 2'
     # before opening up to other layer types, this line should be updated.
     data = (getattr(np, mode)(layer.data, axis=axis, keepdims=True),)
     layer = cast('Image', layer)
@@ -162,7 +162,7 @@ def _projdict(key) -> ContextAction:
     return {
         'description': key,
         'action': partial(_project, mode=key),
-        'enable_when': 'image_active and ndim > 2',
+        'enable_when': 'active_layer_is_image and active_layer_ndim > 2',
         'show_when': 'True',
     }
 
@@ -192,7 +192,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:group:projections': {
             'description': trans._('Make Projection'),
-            'enable_when': 'image_active and ndim > 2',
+            'enable_when': 'active_layer_is_image and active_layer_ndim > 2',
             'show_when': 'True',
             'action_group': {
                 'napari:max_projection': _projdict('max'),
@@ -208,20 +208,20 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:split_stack': {
             'description': trans._('Split Stack'),
             'action': _split_stack,
-            'enable_when': 'image_active and active_layer_shape[0] < 10',
-            'show_when': 'not active_is_rgb',
+            'enable_when': 'active_layer_is_image and active_layer_shape[0] < 10',
+            'show_when': 'not active_layer_is_rgb',
         },
         'napari:split_rgb': {
             'description': trans._('Split RGB'),
             'action': _split_stack,
-            'enable_when': 'active_is_rgb',
-            'show_when': 'active_is_rgb',
+            'enable_when': 'active_layer_is_rgb',
+            'show_when': 'active_layer_is_rgb',
         },
         'napari:merge_stack': {
             'description': trans._('Merge to Stack'),
             'action': _merge_stack,
             'enable_when': (
-                'selection_count > 1 and only_images_selected and same_shape'
+                'layers_selection_count > 1 and only_images_selected and all_layers_same_shape'
             ),
             'show_when': 'True',
         },
@@ -230,7 +230,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:link_selected_layers': {
             'description': trans._('Link Layers'),
             'action': lambda ll: link_layers(ll.selection),
-            'enable_when': 'selection_count > 1 and not all_layers_linked',
+            'enable_when': 'layers_selection_count > 1 and not all_layers_linked',
             'show_when': 'not all_layers_linked',
         },
         'napari:unlink_selected_layers': {
@@ -242,7 +242,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:select_linked_layers': {
             'description': trans._('Select Linked Layers'),
             'action': _select_linked_layers,
-            'enable_when': 'linked_layers_unselected',
+            'enable_when': 'unselected_linked_layers',
             'show_when': 'True',
         },
     },
