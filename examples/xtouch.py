@@ -65,17 +65,9 @@ class XTouch:
             pass
 
     def receive_continuous(self, control_id, value):
-        print(control_id, value)
         control = self.table.loc[control_id]
-        current_value = control['value']
-        increment = value - current_value
-        new_value = int(np.clip(
-            current_value + increment * control['virtual2raw'],
-            0,
-            127,
-        ))
-        self.send_continuous(control_id, new_value)
-        control['fw'](new_value)
+        if control['fw'] is not None:
+            control['fw'](value)
 
     def send_continuous(self, control_id, value):
         self.midi_out.send_message((186, control_id, value))
@@ -112,10 +104,9 @@ class XTouch:
         self.viewer.dims.events.current_step.connect(process_current_step_event)
 
         def fw0(value):
-            print(value)
             prev_value = self.table.loc[rotary0_id, 'value']
             down = (prev_value > value) or (prev_value == value and value == 0)
-            increment = int(np.round(r2d))
+            increment = int(np.round(v2r))
             if down:
                 increment = -increment
             next_step = list(self.viewer.dims.current_step)
@@ -125,7 +116,6 @@ class XTouch:
         self.table.loc[rotary0_id, 'fw'] = fw0
 
         def fw1(value):
-            print(value)
             prev_value = self.table.loc[rotary1_id, 'value']
             up = (prev_value < value) or (prev_value == value and value == 127)
             next_step = list(self.viewer.dims.current_step)
@@ -135,9 +125,11 @@ class XTouch:
 
         self.table.loc[rotary1_id, 'fw'] = fw1
 
+
 if __name__ == '__main__':
     import napari
     image = np.random.random((100, 200, 200))
     v = napari.view_image(image)
     xt = XTouch(v)
     xt.bind_current_step('b', 0, 0, 1)
+    napari.run()
