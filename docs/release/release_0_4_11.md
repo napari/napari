@@ -11,11 +11,32 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-We've known for a while that 3D interactivity is one of the areas where napari needed improvement (#515). This release introduces ways to use the mouse to interact with data in 3D (#3037). Features like label picking (#3074) and label painting/erasing (#3108) in 3D are just the beginning and we're excited to see where this takes us! For more details, please see the documentation at [https://napari.org/guides/stable/3D_interactivity.html](https://napari.org/guides/stable/3D_interactivity.html).
 
-Our volume rendering functionality has been significantly improved and now includes the ability to render arbitrary planes through volumes (#3023) and add clipping planes to restrict rendering to a region of interest (#3140). For now, these features are marked as `experimental` and the API around their use is likely to change in future versions of napari. We've also greatly improved how depth is handled across our visuals to fix some artifacts, see (#3181) and (#3265).
+This release introduces ways to interact with data in 3D (#3037). Features like
+label picking (#3074) and label painting/erasing (#3108) now work in 3D, but
+these are just the beginning! We're excited to see new ways of annotating 3D
+data appear in napari! For more details, please see the documentation at
+[https://napari.org/guides/stable/3D_interactivity.html](https://napari.org/guides/stable/3D_interactivity.html).
+Many thanks to Alister Burt and Kevin Yamauchi for their foundational work
+setting up the infrastructure for these features.
 
-Last but not least, some common operations are now much more accessible from the GUI thanks to a new context menu on the layer list (#2556 and #3028) and buttons for controlling image contrast limit scaling (#3022).
+Our volume rendering functionality has been significantly improved and now
+includes the ability to render arbitrary planes through volumes (#3023) and add
+clipping planes to restrict rendering to a region of interest (#3140). For now,
+these features are marked as `experimental` and the API around their use is
+likely to change in future versions of napari. We've also greatly improved how
+depth is handled across our visuals to fix some artifacts, see #3181 and
+#3265. Thanks to Alister Burt, Lorenzo Gaifas, and Kevin Yamauchi for this
+work.
+
+Last but not least, some common operations are now much more accessible from
+the GUI thanks to a new context menu on the layer list (#2556 and #3028) and
+buttons for controlling image contrast limit scaling (#3022). Thanks to Talley
+Lambert for these features!
+
+Read on below for the full list of new features, improvements, bug fixes, and
+more! Thanks to our incredible user and contributor community.
+
 
 ## New Features
 - Add context menu on layer list, introduce `QtActionContextMenu`. (#2556)
