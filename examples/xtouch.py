@@ -184,8 +184,20 @@ class XTouch:
         event.connect(set_button)
         event(value=getattr(obj, attr), **{attr: getattr(obj, attr)})
 
+    def bind_action(self, control_layer, index, function, args=(), kwargs={}):
+        table = self.table
+        cond = (table['layer'] == control_layer) & (table['index'] == index)
+        button_id = table.loc[cond, 'id']
+
+        def func(val):
+            if val > 0:
+                function(*args, **kwargs)
+
+        table.loc[button_id, 'fw'] = func
+
 
 if __name__ == '__main__':
+    from napari.layers.labels._labels_key_bindings import new_label
     from skimage import data
     from scipy import ndimage as ndi
 
@@ -206,5 +218,6 @@ if __name__ == '__main__':
     xt.bind_button('b', (1, 1), labels_layer, 'mode', attr_value='fill')
     xt.bind_button('b', (2, 1), labels_layer, 'mode', attr_value='pick')
     xt.bind_button('b', (2, 2), labels_layer, 'mode', attr_value='pan_zoom')
+    xt.bind_action('b', (2, 3), new_label, (labels_layer,))
 
     napari.run()
