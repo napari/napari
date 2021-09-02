@@ -182,6 +182,7 @@ more! Thanks to our incredible user and contributor community.
 - Fix connect_setattr to handle single arguments better (#3324)
 - Fix objectName being an empty string (#3326)
 - Fix napari.run aborting due to IPython being imported during script (#3328)
+- Fix _old_size attribute error in main window (#3329)
 
 ## API Changes
 
