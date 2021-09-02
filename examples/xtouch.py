@@ -1,3 +1,4 @@
+import napari
 import numpy as np
 import pandas as pd
 import rtmidi.midiutil
@@ -69,8 +70,18 @@ class XTouch:
         if control['fw'] is not None:
             control['fw'](value)
 
+    def receive_button(self, control_id, value):
+        control = self.table.loc[control_id]
+        if control['fw'] is not None:
+            control['fw'](value)
+
     def send_continuous(self, control_id, value):
         self.midi_out.send_message((186, control_id, value))
+
+    def send_button(self, button_id, value):
+        sent_value = int(bool(value)) * 127
+        message_id = 154 if sent_value else 138
+        self.midi_out.send_message((message_id, button_id, sent_value))
 
     def bind_current_step(self, layer, axis, rotary0, rotary1):
         cond0 = (
@@ -136,11 +147,58 @@ class XTouch:
 
         table.loc[slider_id, 'fw'] = change_opacity
 
+    def bind_button(
+        self, control_layer, index, viewer_attr=None, layer_type=napari.layers.Layer,
+        layer_attr=None, attr_value=True
+    ):
+        if viewer_attr is not None:
+            obj = self.viewer
+            attr = viewer_attr
+        if layer_type is not None:
+            attr = layer_attr
+            for ly in self.viewer.layers:
+                if isinstance(ly, layer_type):
+                    obj = ly
+
+        def fw(val):
+            if val == 127:
+                setattr(ly, attr, attr_value)
+            elif type(attr_value) is bool:
+                setattr(ly, attr, False)
+
+        table = self.table
+        cond = (table['layer'] == control_layer) & (table['index'] == index)
+        button_id = table.loc[cond, 'id']
+        table.loc[button_id, 'fw'] = fw
+
+        def set_button(ev):
+            if hasattr(ev, 'value'):
+                value = ev.value
+            else:
+                value = getattr(ev.source, ev.type)
+            if value == attr_value:
+                self.send_button(button_id, 127)
+            else:
+                self.send_button(button_id, 0)
+
+        event = getattr(obj.events, attr)
+        event.connect(set_button)
+        event()
+
+
 if __name__ == '__main__':
-    import napari
-    image = np.random.random((100, 200, 200))
-    v = napari.view_image(image)
-    xt = XTouch(v)
+    from skimage import data
+    from scipy import ndimage as ndi
+
+    blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=3)
+    viewer = napari.view_image(blobs[::2].astype(float), name='blobs', scale=(2, 1, 1))
+    labeled = ndi.label(blobs)[0]
+    viewer.add_labels(labeled[::2], name='blob ID', scale=(2, 1, 1))
+
+    xt = XTouch(viewer)
     xt.bind_current_step('b', 0, 0, 1)
+    xt.bind_current_step('b', 1, 2, 3)
     xt.bind_slider('b')
+    xt.bind_button('b', (2, 0), layer_attr='visible')
+
     napari.run()
