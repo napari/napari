@@ -173,6 +173,8 @@ class TextManager(EventedModel):
 
     @validator('properties', pre=True, always=True)
     def _check_properties(cls, properties, values):
+        # TODO: may not be a good idea to rely on the instances in values?
+        # Instead we connect to the properties event to update these.
         if 'text' in values:
             values['text'].refresh(properties)
         if 'color' in values:
@@ -311,7 +313,7 @@ def _properties_equal(left, right):
     if left.keys() != right.keys():
         return False
     for key in left:
-        if any(left[key] != right[key]):
+        if np.any(left[key] != right[key]):
             return False
     return True
 
