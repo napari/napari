@@ -18,7 +18,7 @@ class IntensityVisualizationMixin:
 
     When used, this should come before the Layer in the inheritance, e.g.:
 
-        class Image(ImageSurfaceMixin, Layer):
+        class Image(IntensityVisualizationMixin, Layer):
             def __init__(self):
                 ...
     """
