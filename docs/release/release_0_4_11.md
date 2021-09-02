@@ -178,6 +178,7 @@ more! Thanks to our incredible user and contributor community.
 - Fix theme color setting on startup (#3293)
 - Fix incorrect theme registration (#3299)
 - Fix issubclass error in update_docs (#3305)
+- Fix some divide-by-zeros (#3320)
 
 
 ## API Changes
@@ -238,6 +239,8 @@ more! Thanks to our incredible user and contributor community.
 - Bundle: use python 3.8 on Windows (#3300)
 - Bundle: add arch suffix to zip name (#3302)
 - Fix headless test failure (#3311)
+- Pin furo version (#3315)
+- Update the affine parameter description in several classes (#3319)
 
 
 ## 21 authors added to this release (alphabetical)
