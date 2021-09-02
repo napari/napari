@@ -5,16 +5,12 @@ from typing import List, Optional
 
 import numpy as np
 
-from ..layers import Image, Labels, Layer
-from ..layers.utils._link_layers import get_linked_layers, layer_is_linked
+from ..layers import Layer
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
-
-from npe2._context2 import LayerListContextKeys
-from npe2._context import ContextKeyService
 
 
 class LayerList(SelectableEventedList[Layer]):
@@ -32,9 +28,6 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
-
-        self._ctx = LayerListContextKeys(ContextKeyService())
-        self._ctx.follow(self.selection.events.changed)
 
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
