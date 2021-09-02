@@ -14,7 +14,6 @@ skip = [
     'live_tiffs.py',  # requires files
     'tiled-rendering-2d.py',  # too slow
     'live_tiffs_generator.py',
-    'points-over-time.py',  # too resource hungry
     'embed_ipython.py',  # fails without monkeypatch
     'custom_key_bindings.py'  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
 ]

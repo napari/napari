@@ -29,6 +29,8 @@ def test_qt_viewer(make_napari_viewer):
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
+    # Check no console is present before it is requested
+    assert view._console is None
 
     assert len(viewer.layers) == 0
     assert view.layers.model().rowCount() == 0
@@ -42,6 +44,8 @@ def test_qt_viewer_with_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
+    # Check no console is present before it is requested
+    assert view._console is None
     # Check console is created when requested
     assert view.console is not None
     assert view.dockConsole.widget() is view.console
@@ -51,6 +55,8 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
+    # Check no console is present before it is requested
+    assert view._console is None
     # Check console has been created when it is supposed to be shown
     view.toggle_console_visibility(None)
     assert view._console is not None

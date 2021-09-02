@@ -45,5 +45,4 @@ Analysis hooks
 GUI hooks
 ---------
 
-.. autofunction:: napari_experimental_provide_theme
 .. autofunction:: napari_experimental_provide_dock_widget

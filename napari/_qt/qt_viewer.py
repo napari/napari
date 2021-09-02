@@ -13,7 +13,6 @@ from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
 from ..utils.action_manager import action_manager
-from ..utils.colormaps.standardize_color import transform_color
 from ..utils.history import (
     get_open_history,
     get_save_history,
@@ -284,9 +283,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
-        self.canvas.bgcolor = transform_color(
-            get_theme(self.viewer.theme, False).canvas.as_hex()
-        )[0]
+        self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
         theme = self.viewer.events.theme
 
         on_theme_change = self.canvas._on_theme_change
@@ -343,12 +340,10 @@ class QtViewer(QSplitter):
 
                 import napari
 
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore")
-                    self.console = QtConsole(self.viewer)
-                    self.console.push(
-                        {'napari': napari, 'action_manager': action_manager}
-                    )
+                self.console = QtConsole(self.viewer)
+                self.console.push(
+                    {'napari': napari, 'action_manager': action_manager}
+                )
             except ImportError:
                 warnings.warn(
                     trans._(
