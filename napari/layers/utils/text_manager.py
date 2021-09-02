@@ -62,10 +62,12 @@ class TextManager(EventedModel):
     text: PropertyMap[str] = ''
     color: PropertyMap[ColorType] = DEFAULT_COLOR
 
+    # TODO: apply str cast within the map store to avoid repeated compute.
     @property
     def values(self):
         return np.array(self.text.values, dtype=str)
 
+    # TODO: apply transform_color within the map store to avoid repeated compute.
     @property
     def color_values(self):
         values = self.color.values

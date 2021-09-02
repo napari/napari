@@ -31,7 +31,7 @@ class PropertyMap(ABC, Generic[OutputType], EventedModel):
         self.values = self._apply(properties, range(0, num_values))
 
     def add(self, properties: Dict[str, Array], num_to_add: int):
-        """Adds a number of a new text values based on the given properties
+        """Adds a number of a new values based on the given properties.
 
         Parameters
         ----------
@@ -45,7 +45,7 @@ class PropertyMap(ABC, Generic[OutputType], EventedModel):
         self.values.extend(self._apply(properties, indices))
 
     def remove(self, indices: Iterable[int]):
-        """Removes some text values by index.
+        """Removes some values by index.
 
         Parameters
         ----------
@@ -102,6 +102,8 @@ class PropertyMap(ABC, Generic[OutputType], EventedModel):
         )
 
 
+# TODO: if there are no property columns, this will return 0
+# even if there are some data.
 def _num_rows(properties: Dict[str, Array]) -> int:
     return len(next(iter(properties.values()))) if len(properties) > 0 else 0
 
@@ -109,12 +111,13 @@ def _num_rows(properties: Dict[str, Array]) -> int:
 class DirectPropertyMap(PropertyMap[OutputType], EventedModel):
     default_value: OutputType
 
-    # TODO: if the row had an index, we could look up the value.
+    # TODO: if the row had an index, we could look up the value,
+    # which might be more meaningful.
     def __call__(self, property_row: Dict[str, Any]) -> OutputType:
         return self.default_value
 
+    # TODO: May want to resize values based on size of properties.
     def refresh(self, properties: Dict[str, Array]):
-        # May want to resize values based on size of properties.
         pass
 
     def add(self, properties: Dict[str, Array], num_to_add: int):
