@@ -167,10 +167,12 @@ class XTouch:
         def fw(val):
             if val == 127:
                 if type(attr_value) is bool:
-                    existing_value = not getattr(obj, attr)
-                    setattr(obj, attr, existing_value)
+                    toggled_value = not getattr(obj, attr)
+                    setattr(obj, attr, toggled_value)
                 else:
                     setattr(ly, attr, attr_value)
+            elif type(attr_value) is bool:
+                self.send_button(button_id, getattr(obj, attr))
 
         table.loc[button_id, 'fw'] = fw
 
@@ -180,11 +182,9 @@ class XTouch:
             else:
                 value = getattr(ev.source, ev.type)
             if value == attr_value:
-                with obj.events.blocker():
-                    self.send_button(button_id, 127)
+                self.send_button(button_id, 127)
             else:
-                with obj.events.blocker():
-                    self.send_button(button_id, 0)
+                self.send_button(button_id, 0)
 
         event = getattr(obj.events, attr)
         event.connect(set_button)
