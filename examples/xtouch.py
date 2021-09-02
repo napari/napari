@@ -2,6 +2,7 @@ import napari
 import numpy as np
 import pandas as pd
 import rtmidi.midiutil
+import time
 
 
 class XTouch:
@@ -177,6 +178,7 @@ class XTouch:
         table.loc[button_id, 'fw'] = fw
 
         def set_button(ev):
+            time.sleep(0.3)
             if hasattr(ev, 'value'):
                 value = ev.value
             else:
@@ -188,7 +190,7 @@ class XTouch:
 
         event = getattr(obj.events, attr)
         event.connect(set_button)
-        event()
+        event(value=getattr(obj, attr), **{attr: getattr(obj, attr)})
 
 
 if __name__ == '__main__':
@@ -205,5 +207,7 @@ if __name__ == '__main__':
     xt.bind_current_step('b', 1, 2, 3)
     xt.bind_slider('b')
     xt.bind_button('b', (2, 0), layer_attr='visible')
+    xt.bind_button('b', (1, 0), layer_attr='mode', layer_type=napari.layers.Labels, attr_value='paint')
+    xt.bind_button('b', (1, 1), layer_attr='mode', layer_type=napari.layers.Labels, attr_value='pan_zoom')
 
     napari.run()
