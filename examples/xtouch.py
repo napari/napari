@@ -125,6 +125,16 @@ class XTouch:
 
         self.table.loc[rotary1_id, 'fw'] = fw1
 
+    def bind_slider(self, layer):
+        table = self.table
+        cond = (table['layer'] == layer) & (table['type'] == 'slider')
+        slider_id = table.loc[cond, 'id']
+
+        def change_opacity(value):
+            vlayer = self.viewer.layers[-1]
+            vlayer.opacity = value / 127
+
+        table.loc[slider_id, 'fw'] = change_opacity
 
 if __name__ == '__main__':
     import napari
@@ -132,4 +142,5 @@ if __name__ == '__main__':
     v = napari.view_image(image)
     xt = XTouch(v)
     xt.bind_current_step('b', 0, 0, 1)
+    xt.bind_slider('b')
     napari.run()
