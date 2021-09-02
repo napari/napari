@@ -39,6 +39,7 @@ more! Thanks to our incredible user and contributor community.
 
 
 ## New Features
+
 - Add context menu on layer list, introduce `QtActionContextMenu`. (#2556)
 - Add activity dialog and style progress bars (#2656)
 - Add playback options to settings (#2933)
@@ -59,6 +60,7 @@ more! Thanks to our incredible user and contributor community.
 
 
 ## Improvements
+
 - Add `assign_[plugin]_to_extension` methods on plugin_manager.  (#2695)
 - Use QDoubleRangeSlider from superqt package (#2752)
 - Use labeled sliders from superqt (#2753)
@@ -118,10 +120,11 @@ more! Thanks to our incredible user and contributor community.
 - Clipping planes, generalized (#3252)
 - Improve behavior when holding "shift" while editing shapes (#3259)
 - Mesh depth (#3265)
-- Make notificatiomn text selectable (#3310)
+- Make notification text selectable (#3310)
 
 
 ## Bug Fixes
+
 - Fix notification manager threading test (#2892)
 - Pycharm blocking fix (#2905)
 - Fix windows 37 test (#2909)
@@ -178,18 +181,21 @@ more! Thanks to our incredible user and contributor community.
 
 
 ## API Changes
+
 - Remove brush shape (#3047)
 - Enforce layer.metadata as dict (#3020)
 - Use enum objects in EventedModel (#3112)
 
 
 ## UI Changes
+
 - Remove keybindings dialog from help menu (#3048)
 - Remove plugin sorter from plugin install dialog (#3069)
 - Update Labels layer keybindings to be more ergonomic (#3072)
 
 
 ## Build Tools, Tests, Documentation, and other Tasks
+
 - Add imagecodecs to the bundle to open additional tiffs (#2895)
 - Make ordering of releases manual (#2921)
 - Add alister burt to team page (#2937)
