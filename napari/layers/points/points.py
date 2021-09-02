@@ -267,6 +267,7 @@ class Points(Layer):
         opacity=1,
         blending='translucent',
         visible=True,
+        cache=True,
         property_choices=None,
     ):
         if ndim is None and scale is not None:
@@ -287,6 +288,7 @@ class Points(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
         )
 
         self.events.add(

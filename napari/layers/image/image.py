@@ -204,6 +204,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
+        cache=True,
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
     ):
@@ -249,6 +250,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            cache=cache,
         )
 
         self.events.add(
