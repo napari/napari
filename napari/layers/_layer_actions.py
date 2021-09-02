@@ -30,6 +30,8 @@ if TYPE_CHECKING:
     from napari.components import LayerList
     from napari.layers import Image
 
+from napari.utils.context._layerlist_context import LayerListContextKeys as LLK
+
 
 def _duplicate_layer(ll: LayerList):
     from copy import deepcopy
@@ -162,7 +164,7 @@ def _projdict(key) -> ContextAction:
     return {
         'description': key,
         'action': partial(_project, mode=key),
-        'enable_when': 'image_active and ndim > 2',
+        'enable_when': f'{LLK.active_layer_is_image} and {LLK.active_layer_ndim} > 2',
         'show_when': 'True',
     }
 
@@ -178,13 +180,13 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:convert_to_labels': {
             'description': trans._('Convert to Labels'),
             'action': partial(_convert, type_='labels'),
-            'enable_when': 'only_images_selected',
+            'enable_when': LLK.only_images_selected,
             'show_when': 'True',
         },
         'napari:convert_to_image': {
             'description': trans._('Convert to Image'),
             'action': partial(_convert, type_='image'),
-            'enable_when': 'only_labels_selected',
+            'enable_when': LLK.only_labels_selected,
             'show_when': 'True',
         },
     },
@@ -192,7 +194,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:group:projections': {
             'description': trans._('Make Projection'),
-            'enable_when': 'image_active and ndim > 2',
+            'enable_when': f'{LLK.active_layer_is_image} and {LLK.active_layer_ndim} > 2',
             'show_when': 'True',
             'action_group': {
                 'napari:max_projection': _projdict('max'),
@@ -214,14 +216,16 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:split_rgb': {
             'description': trans._('Split RGB'),
             'action': _split_stack,
-            'enable_when': 'active_is_rgb',
-            'show_when': 'active_is_rgb',
+            'enable_when': LLK.active_layer_is_rgb,
+            'show_when': LLK.active_layer_is_rgb,
         },
         'napari:merge_stack': {
             'description': trans._('Merge to Stack'),
             'action': _merge_stack,
             'enable_when': (
-                'selection_count > 1 and only_images_selected and same_shape'
+                f'{LLK.layers_selection_count} > 1 and '
+                f'{LLK.only_images_selected} and '
+                f'{LLK.all_layers_same_shape}'
             ),
             'show_when': 'True',
         },
@@ -230,7 +234,10 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:link_selected_layers': {
             'description': trans._('Link Layers'),
             'action': lambda ll: link_layers(ll.selection),
-            'enable_when': 'selection_count > 1 and not all_layers_linked',
+            'enable_when': (
+                f'{LLK.layers_selection_count} > 1 and not '
+                f'{LLK.all_layers_linked}'
+            ),
             'show_when': 'not all_layers_linked',
         },
         'napari:unlink_selected_layers': {

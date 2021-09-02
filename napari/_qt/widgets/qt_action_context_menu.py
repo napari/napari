@@ -103,7 +103,7 @@ class QtActionContextMenu(QMenu):
             d = item.data()
             if not d:
                 continue
-            enabled = eval(d['enable_when'], {}, ctx)
+            enabled = eval(str(d['enable_when']), {}, ctx)
             item.setEnabled(enabled)
             # if it's a menu, iterate (but don't toggle visibility)
             if isinstance(item, QtActionContextMenu):
