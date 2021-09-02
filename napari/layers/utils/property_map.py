@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, Iterable, List, TypeVar
 
 from pydantic import validator
@@ -11,9 +12,10 @@ from .color_transformations import ColorType
 OutputType = TypeVar('OutputType')
 
 
-class PropertyMap(Generic[OutputType], EventedModel):
+class PropertyMap(ABC, Generic[OutputType], EventedModel):
     values: List[OutputType] = []
 
+    @abstractmethod
     def __call__(self, property_row: Dict[str, Any]) -> OutputType:
         pass
 
@@ -106,6 +108,10 @@ def _num_rows(properties: Dict[str, Array]) -> int:
 
 class DirectPropertyMap(PropertyMap[OutputType], EventedModel):
     default_value: OutputType
+
+    # TODO: if the row had an index, we could look up the value.
+    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
+        return self.default_value
 
     def refresh(self, properties: Dict[str, Array]):
         # May want to resize values based on size of properties.
