@@ -149,18 +149,8 @@ class XTouch:
         table.loc[slider_id, 'fw'] = change_opacity
 
     def bind_button(
-        self, control_layer, index, viewer_attr=None, layer_type=napari.layers.Layer,
-        layer_attr=None, attr_value=True
+        self, control_layer, index, obj, attr, attr_value=True
     ):
-        if viewer_attr is not None:
-            obj = self.viewer
-            attr = viewer_attr
-        if layer_type is not None:
-            attr = layer_attr
-            for ly in self.viewer.layers:
-                if isinstance(ly, layer_type):
-                    obj = ly
-
         table = self.table
         cond = (table['layer'] == control_layer) & (table['index'] == index)
         button_id = table.loc[cond, 'id']
@@ -171,7 +161,7 @@ class XTouch:
                     toggled_value = not getattr(obj, attr)
                     setattr(obj, attr, toggled_value)
                 else:
-                    setattr(ly, attr, attr_value)
+                    setattr(obj, attr, attr_value)
             elif type(attr_value) is bool:
                 self.send_button(button_id, getattr(obj, attr))
 
@@ -202,14 +192,19 @@ if __name__ == '__main__':
     blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=3)
     viewer = napari.view_image(blobs[::2].astype(float), name='blobs', scale=(2, 1, 1))
     labeled = ndi.label(blobs)[0]
-    viewer.add_labels(labeled[::2], name='blob ID', scale=(2, 1, 1))
+    labels_layer = viewer.add_labels(labeled[::2], name='blob ID', scale=(2, 1, 1))
 
     xt = XTouch(viewer)
     xt.bind_current_step('b', 0, 0, 1)
     xt.bind_current_step('b', 1, 2, 3)
     xt.bind_slider('b')
-    xt.bind_button('b', (2, 0), layer_attr='visible')
-    xt.bind_button('b', (1, 0), layer_attr='mode', layer_type=napari.layers.Labels, attr_value='paint')
-    xt.bind_button('b', (1, 1), layer_attr='mode', layer_type=napari.layers.Labels, attr_value='pan_zoom')
+    xt.bind_button('b', (0, 0), viewer.dims, attr='ndisplay', attr_value=3)
+    xt.bind_button('b', (0, 1), viewer.dims, attr='ndisplay', attr_value=2)
+    xt.bind_button('b', (1, 2), labels_layer, attr='visible')
+    xt.bind_button('b', (1, 0), labels_layer, 'mode', attr_value='erase')
+    xt.bind_button('b', (2, 0), labels_layer, 'mode', attr_value='paint')
+    xt.bind_button('b', (1, 1), labels_layer, 'mode', attr_value='fill')
+    xt.bind_button('b', (2, 1), labels_layer, 'mode', attr_value='pick')
+    xt.bind_button('b', (2, 2), labels_layer, 'mode', attr_value='pan_zoom')
 
     napari.run()
