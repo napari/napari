@@ -35,6 +35,7 @@ class VispyPointsLayer(VispyBaseLayer):
             self._on_text_change, self._on_blending_change
         )
         self.layer.events.highlight.connect(self._on_highlight_change)
+        self.layer.events.antialias.connect(self._on_antialias_change)
 
         self._on_data_change()
 
@@ -168,6 +169,9 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_node.set_gl_state(str(self.layer.text.blending))
         self.node.update()
+
+    def _on_antialias_change(self, event=None):
+        self.node.antialias = self.layer.antialias
 
     def reset(self, event=None):
         self._reset_base()

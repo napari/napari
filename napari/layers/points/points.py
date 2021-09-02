@@ -269,6 +269,7 @@ class Points(Layer):
         visible=True,
         property_choices=None,
         experimental_clipping_planes=None,
+        antialias=1,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -304,6 +305,7 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
+            antialias=Event,
         )
 
         self._colors = get_color_namelist()
@@ -390,6 +392,7 @@ class Points(Layer):
         )
 
         self.size = size
+        self.antialias = antialias
 
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(self.data)
@@ -672,6 +675,15 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
+
+    @property
+    def antialias(self):
+        return self._antialias
+
+    @antialias.setter
+    def antialias(self, value) -> Union[int, float]:
+        self._antialias = value
+        self.events.antialias()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
