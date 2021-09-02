@@ -55,6 +55,7 @@ _defaults = {
 
 # store reference to QApplication to prevent garbage collection
 _app_ref = None
+_IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
 
 
 def get_app(
@@ -165,7 +166,8 @@ def get_app(
 
     if ipy_interactive is None:
         ipy_interactive = get_settings().application.ipy_interactive
-    _try_enable_ipython_gui('qt' if ipy_interactive else None)
+    if _IPYTHON_WAS_HERE_FIRST:
+        _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
