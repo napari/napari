@@ -281,8 +281,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if np.max(size) == 0:
             self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
+            scale = np.array(size[-2:])
+            scale[np.isclose(scale, 0)] = 1
             self.camera.zoom = 0.95 * np.min(
-                np.array(self._canvas_size) / np.array(size[-2:])
+                np.array(self._canvas_size) / scale
             )
         self.camera.angles = (0, 0, 90)
 
