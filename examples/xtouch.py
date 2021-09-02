@@ -61,9 +61,9 @@ class XTouch:
         if msg_type == 186:  # rotary or slider
             self.receive_continuous(control_id, value)
         elif msg_type == 154:  # button press down
-            pass
+            self.receive_button(control_id, value)
         elif msg_type == 138:  # button press up
-            pass
+            self.receive_button(control_id, value)
 
     def receive_continuous(self, control_id, value):
         control = self.table.loc[control_id]
@@ -160,15 +160,18 @@ class XTouch:
                 if isinstance(ly, layer_type):
                     obj = ly
 
-        def fw(val):
-            if val == 127:
-                setattr(ly, attr, attr_value)
-            elif type(attr_value) is bool:
-                setattr(ly, attr, False)
-
         table = self.table
         cond = (table['layer'] == control_layer) & (table['index'] == index)
         button_id = table.loc[cond, 'id']
+
+        def fw(val):
+            if val == 127:
+                if type(attr_value) is bool:
+                    existing_value = not getattr(obj, attr)
+                    setattr(obj, attr, existing_value)
+                else:
+                    setattr(ly, attr, attr_value)
+
         table.loc[button_id, 'fw'] = fw
 
         def set_button(ev):
@@ -177,9 +180,11 @@ class XTouch:
             else:
                 value = getattr(ev.source, ev.type)
             if value == attr_value:
-                self.send_button(button_id, 127)
+                with obj.events.blocker():
+                    self.send_button(button_id, 127)
             else:
-                self.send_button(button_id, 0)
+                with obj.events.blocker():
+                    self.send_button(button_id, 0)
 
         event = getattr(obj.events, attr)
         event.connect(set_button)
