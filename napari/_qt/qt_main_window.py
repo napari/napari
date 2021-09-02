@@ -754,12 +754,15 @@ class Window:
             try:
                 name = widget.objectName()
             except AttributeError:
-                name = trans._(
-                    "Dock widget {number}",
-                    number=self._unnamed_dockwidget_count,
-                )
+                pass
+
+            name = name or trans._(
+                "Dock widget {number}",
+                number=self._unnamed_dockwidget_count,
+            )
 
             self._unnamed_dockwidget_count += 1
+
         if shortcut is not _sentinel:
             warnings.warn(
                 _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
