@@ -179,6 +179,8 @@ more! Thanks to our incredible user and contributor community.
 - Fix incorrect theme registration (#3299)
 - Fix issubclass error in update_docs (#3305)
 - Fix some divide-by-zeros (#3320)
+- Fix connect_setattr to handle single arguments better (#3324)
+- Fix objectName being an empty string (#3326)
 
 
 ## API Changes
