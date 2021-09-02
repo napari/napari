@@ -11,13 +11,35 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-We've known for a while that 3D interactivity is one of the areas where napari needed improvement (#515). This release introduces ways to use the mouse to interact with data in 3D (#3037). Features like label picking (#3074) and label painting/erasing (#3108) in 3D are just the beginning and we're excited to see where this takes us! For more details, please see the documentation at [https://napari.org/guides/stable/3D_interactivity.html](https://napari.org/guides/stable/3D_interactivity.html).
 
-Our volume rendering functionality has been significantly improved and now includes the ability to render arbitrary planes through volumes (#3023) and add clipping planes to restrict rendering to a region of interest (#3140). For now, these features are marked as `experimental` and the API around their use is likely to change in future versions of napari. We've also greatly improved how depth is handled across our visuals to fix some artifacts, see (#3181) and (#3265).
+This release introduces ways to interact with data in 3D (#3037). Features like
+label picking (#3074) and label painting/erasing (#3108) now work in 3D, but
+these are just the beginning! We're excited to see new ways of annotating 3D
+data appear in napari! For more details, please see the documentation at
+[https://napari.org/guides/stable/3D_interactivity.html](https://napari.org/guides/stable/3D_interactivity.html).
+Many thanks to Alister Burt and Kevin Yamauchi for their foundational work
+setting up the infrastructure for these features.
 
-Last but not least, some common operations are now much more accessible from the GUI thanks to a new context menu on the layer list (#2556 and #3028) and buttons for controlling image contrast limit scaling (#3022).
+Our volume rendering functionality has been significantly improved and now
+includes the ability to render arbitrary planes through volumes (#3023) and add
+clipping planes to restrict rendering to a region of interest (#3140). For now,
+these features are marked as `experimental` and the API around their use is
+likely to change in future versions of napari. We've also greatly improved how
+depth is handled across our visuals to fix some artifacts, see #3181 and
+#3265. Thanks to Alister Burt, Lorenzo Gaifas, and Kevin Yamauchi for this
+work.
+
+Last but not least, some common operations are now much more accessible from
+the GUI thanks to a new context menu on the layer list (#2556 and #3028) and
+buttons for controlling image contrast limit scaling (#3022). Thanks to Talley
+Lambert for these features!
+
+Read on below for the full list of new features, improvements, bug fixes, and
+more! Thanks to our incredible user and contributor community.
+
 
 ## New Features
+
 - Add context menu on layer list, introduce `QtActionContextMenu`. (#2556)
 - Add activity dialog and style progress bars (#2656)
 - Add playback options to settings (#2933)
@@ -38,6 +60,7 @@ Last but not least, some common operations are now much more accessible from the
 
 
 ## Improvements
+
 - Add `assign_[plugin]_to_extension` methods on plugin_manager.  (#2695)
 - Use QDoubleRangeSlider from superqt package (#2752)
 - Use labeled sliders from superqt (#2753)
@@ -97,10 +120,11 @@ Last but not least, some common operations are now much more accessible from the
 - Clipping planes, generalized (#3252)
 - Improve behavior when holding "shift" while editing shapes (#3259)
 - Mesh depth (#3265)
-- Make notificatiomn text selectable (#3310)
+- Make notification text selectable (#3310)
 
 
 ## Bug Fixes
+
 - Fix notification manager threading test (#2892)
 - Pycharm blocking fix (#2905)
 - Fix windows 37 test (#2909)
@@ -154,21 +178,27 @@ Last but not least, some common operations are now much more accessible from the
 - Fix theme color setting on startup (#3293)
 - Fix incorrect theme registration (#3299)
 - Fix issubclass error in update_docs (#3305)
-
+- Fix some divide-by-zeros (#3320)
+- Fix connect_setattr to handle single arguments better (#3324)
+- Fix objectName being an empty string (#3326)
+- Fix napari.run aborting due to IPython being imported during script (#3328)
 
 ## API Changes
+
 - Remove brush shape (#3047)
 - Enforce layer.metadata as dict (#3020)
 - Use enum objects in EventedModel (#3112)
 
 
 ## UI Changes
+
 - Remove keybindings dialog from help menu (#3048)
 - Remove plugin sorter from plugin install dialog (#3069)
 - Update Labels layer keybindings to be more ergonomic (#3072)
 
 
 ## Build Tools, Tests, Documentation, and other Tasks
+
 - Add imagecodecs to the bundle to open additional tiffs (#2895)
 - Make ordering of releases manual (#2921)
 - Add alister burt to team page (#2937)
@@ -211,6 +241,8 @@ Last but not least, some common operations are now much more accessible from the
 - Bundle: use python 3.8 on Windows (#3300)
 - Bundle: add arch suffix to zip name (#3302)
 - Fix headless test failure (#3311)
+- Pin furo version (#3315)
+- Update the affine parameter description in several classes (#3319)
 
 
 ## 21 authors added to this release (alphabetical)
