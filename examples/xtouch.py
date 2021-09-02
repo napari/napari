@@ -178,6 +178,8 @@ class XTouch:
         table.loc[button_id, 'fw'] = fw
 
         def set_button(ev):
+            # this function can get called on a separate thread before the
+            # attribute has been updated, so we sleep to wait for the update
             time.sleep(0.3)
             if hasattr(ev, 'value'):
                 value = ev.value
