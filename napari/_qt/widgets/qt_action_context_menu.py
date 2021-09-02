@@ -112,7 +112,7 @@ class QtActionContextMenu(QMenu):
             else:
                 visible = d.get("show_when")
                 if visible:
-                    item.setVisible(eval(visible, {}, ctx))
+                    item.setVisible(eval(str(visible), {}, ctx))
 
     def _build_menu(self, actions: Sequence[MenuItem]):
         """recursively build menu with submenus and sections.

@@ -104,6 +104,8 @@ class CtxKeys:
                     self._updaters[k] = v._updater
 
     def follow(self, on: EventEmitter, until: Optional[EventEmitter] = None):
+        from napari.utils.events import Event
+
         on.connect(self._update)
         e = Event(type='null')
         e._push_source(on.source)

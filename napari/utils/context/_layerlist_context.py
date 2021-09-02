@@ -101,13 +101,13 @@ class LayerListContextKeys(CtxKeys):
         "True when the active layer is an image",
         _img_active,
     )
-    active_layer_ndim = RawContextKey[LayerSel, OptInt](
+    active_layer_ndim = RawContextKey['LayerSel', 'OptInt'](
         "active_layer_ndim",
         0,
         "Number of dimensions in the active layer, or None if nothing is active",
         _active_ndim,
     )
-    active_layer_shape = RawContextKey[LayerSel, OptTupleInt](
+    active_layer_shape = RawContextKey['LayerSel', 'OptTupleInt'](
         "active_layer_shape",
         (),
         "Shape of the active layer, or None if nothing is active.",

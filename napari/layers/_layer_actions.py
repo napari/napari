@@ -210,8 +210,8 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:split_stack': {
             'description': trans._('Split Stack'),
             'action': _split_stack,
-            'enable_when': 'image_active and active_layer_shape[0] < 10',
-            'show_when': 'not active_is_rgb',
+            'enable_when': f'{LLK.active_layer_is_image} and {LLK.active_layer_shape}[0] < 10',
+            'show_when': f'not {LLK.active_layer_is_rgb}',
         },
         'napari:split_rgb': {
             'description': trans._('Split RGB'),
@@ -238,18 +238,18 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
                 f'{LLK.layers_selection_count} > 1 and not '
                 f'{LLK.all_layers_linked}'
             ),
-            'show_when': 'not all_layers_linked',
+            'show_when': f'not {LLK.all_layers_linked}',
         },
         'napari:unlink_selected_layers': {
             'description': trans._('Unlink Layers'),
             'action': lambda ll: unlink_layers(ll.selection),
-            'enable_when': 'all_layers_linked',
-            'show_when': 'all_layers_linked',
+            'enable_when': f'{LLK.all_layers_linked}',
+            'show_when': f'{LLK.all_layers_linked}',
         },
         'napari:select_linked_layers': {
             'description': trans._('Select Linked Layers'),
             'action': _select_linked_layers,
-            'enable_when': 'linked_layers_unselected',
+            'enable_when': LLK.unselected_linked_layers,
             'show_when': 'True',
         },
     },
