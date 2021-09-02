@@ -62,21 +62,21 @@ class RawContextKey(Generic[A, T]):
         service.create_key(self.key, self._default_value)
 
     def __set_name__(self, owner: Type, name):
-        self.public_name = name
-
-    @property
-    def _private_name(self):
-        return "_" + self.public_name
+        if name != self.key:
+            raise ValueError(
+                "Please use the same name for the class attribute and the key:"
+                f"\n{type(owner).__name__}.{name} != {self.key}"
+            )
 
     @overload
     def __get__(
         self, obj: Literal[None], objtype: Type
     ) -> RawContextKey[A, T]:
-        ...
+        """When we got from the class, we return ourself"""
 
     @overload
     def __get__(self, obj: CtxKeys, objtype: Type) -> T:
-        ...
+        """When we got from the object, we return the current value"""
 
     def __get__(
         self, obj: Optional[CtxKeys], objtype=Type

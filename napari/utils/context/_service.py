@@ -50,6 +50,8 @@ class NullContext(Context):
 
 
 class ContextKey(Generic[T]):
+    """Created by AbstractContextKeyService.create_key."""
+
     def __init__(
         self,
         service: AbstractContextKeyService,
@@ -97,7 +99,7 @@ class AbstractContextKeyService:
     def set_context(self, key: str, value: Any) -> None:
         if self._is_disposed:
             return
-        context = self.get_context_values_container(self._context_id)
+        context = self.get_context(self._context_id)
         if not context:
             return
         if context.set_value(key, value):
@@ -106,16 +108,12 @@ class AbstractContextKeyService:
     def get_context_key_value(self, key: str) -> Any:
         if self._is_disposed:
             return None
-        return self.get_context_values_container(self._context_id).get_value(
-            key
-        )
+        return self.get_context(self._context_id).get_value(key)
 
     def remove_context(self, key: str) -> None:
         if self._is_disposed:
             return
-        if self.get_context_values_container(self._context_id).remove_value(
-            key
-        ):
+        if self.get_context(self._context_id).remove_value(key):
             self.contextChanged.emit(key)
 
     @abstractmethod
@@ -123,7 +121,7 @@ class AbstractContextKeyService:
         ...
 
     @abstractmethod
-    def get_context_values_container(self, context_id: int) -> Context:
+    def get_context(self, context_id: int) -> Context:
         ...
 
 
@@ -132,28 +130,25 @@ class ContextKeyService(AbstractContextKeyService):
 
     def __init__(self) -> None:
         super().__init__(0)
-        self._to_dispose = set()
         self._last_context_id = 0
         self._contexts = {self._context_id: Context(self._context_id)}
 
     def dispose(self) -> None:
         self.contextChanged._slots.clear()
         self._is_disposed = True
-        for item in self._to_dispose:
-            item.dispose()
 
-    def get_context_values_container(self, context_id) -> Context:
+    def get_context(self, context_id) -> Context:
         if not self._is_disposed and (context_id in self._contexts):
             return self._contexts[context_id]
         return NullContext.instance()
 
-    def create_child_context(self, parent_id: Optional[int] = None) -> int:
-        parent_id = parent_id or self._context_id
-        if self._is_disposed:
-            raise RuntimeError(f"{type(self)} has been disposed.")
-        self._last_context_id += 1
-        id = self._last_context_id
-        self._contexts[id] = Context(
-            id, self.get_context_values_container(parent_id)
-        )
-        return id
+    # def create_child_context(self, parent_id: Optional[int] = None) -> int:
+    #     parent_id = parent_id or self._context_id
+    #     if self._is_disposed:
+    #         raise RuntimeError(f"{type(self)} has been disposed.")
+    #     self._last_context_id += 1
+    #     id = self._last_context_id
+    #     self._contexts[id] = Context(
+    #         id, self.get_context(parent_id)
+    #     )
+    #     return id
