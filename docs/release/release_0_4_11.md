@@ -181,7 +181,7 @@ more! Thanks to our incredible user and contributor community.
 - Fix some divide-by-zeros (#3320)
 - Fix connect_setattr to handle single arguments better (#3324)
 - Fix objectName being an empty string (#3326)
-
+- Fix napari.run aborting due to IPython being imported during script (#3328)
 
 ## API Changes
 
