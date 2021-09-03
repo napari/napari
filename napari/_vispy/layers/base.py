@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
-from ..utils.events import disconnect_events
-from .utils_gl import get_max_texture_sizes
+from ...utils.events import disconnect_events
+from ..utils.utils_gl import get_max_texture_sizes
 
 
 class VispyBaseLayer(ABC):

@@ -1,6 +1,6 @@
-from ._vispy_tracks_shader import TrackShader
+from ..filters.tracks_shader import TrackShader
+from ..visuals.tracks import TracksVisual
 from .vispy_base_layer import VispyBaseLayer
-from .vispy_tracks_visual import TracksVisual
 
 
 class VispyTracksLayer(VispyBaseLayer):

@@ -1,8 +1,8 @@
 from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
 
-from ..components._viewer_constants import TextOverlayPosition
-from ..utils.translations import trans
+from ...components._viewer_constants import TextOverlayPosition
+from ...utils.translations import trans
 
 
 class VispyTextOverlay:

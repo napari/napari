@@ -1,10 +1,10 @@
 import numpy as np
 
-from ..settings import get_settings
-from ..utils.events import disconnect_events
-from ._text_utils import update_text
+from ...settings import get_settings
+from ...utils.events import disconnect_events
+from ..utils._text_utils import update_text
+from ..visuals.shapes import ShapesVisual
 from .vispy_base_layer import VispyBaseLayer
-from .vispy_shapes_visual import ShapesVisual
 
 
 class VispyShapesLayer(VispyBaseLayer):

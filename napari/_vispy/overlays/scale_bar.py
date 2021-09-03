@@ -5,11 +5,11 @@ import numpy as np
 from vispy.scene.visuals import Line, Text
 from vispy.visuals.transforms import STTransform
 
-from ..components._viewer_constants import Position
-from ..utils._units import PREFERRED_VALUES, get_unit_registry
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.theme import get_theme
-from ..utils.translations import trans
+from ...components._viewer_constants import Position
+from ...utils._units import PREFERRED_VALUES, get_unit_registry
+from ...utils.colormaps.standardize_color import transform_color
+from ...utils.theme import get_theme
+from ...utils.translations import trans
 
 
 class VispyScaleBarOverlay:
