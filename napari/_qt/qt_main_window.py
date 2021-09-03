@@ -21,6 +21,7 @@ from typing import (
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
+    QAction,
     QApplication,
     QDialog,
     QDockWidget,
@@ -654,7 +655,10 @@ class Window:
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             dock_widget = self._dock_widgets[full_name]
-            dock_widget.show()
+            if dock_widget.isVisible():
+                dock_widget.hide()
+            else:
+                dock_widget.show()
             wdg = dock_widget.widget()
             if hasattr(wdg, '_magic_widget'):
                 wdg = wdg._magic_widget
@@ -840,18 +844,6 @@ class Window:
                 sizes = list(range(1, len(_wdg) * 4, 4))
                 self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
 
-        action = dock_widget.toggleViewAction()
-        action.setStatusTip(dock_widget.name)
-        action.setText(dock_widget.name)
-        import warnings
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", FutureWarning)
-            # deprecating with 0.4.8, but let's try to keep compatibility.
-            shortcut = dock_widget.shortcut
-        if shortcut is not None:
-            action.setShortcut(shortcut)
-
         # dock widgets can have a menu item on the window menu or the plugin menu.
 
         # check for plugins menu first.  Need to check submenus too.  If the action in the
@@ -859,11 +851,15 @@ class Window:
         # directly in the plugins menu.
         actions = [a.text() for a in self.plugins_menu.actions()]
         if dock_widget.name in actions:
+            # connect the signal so that if closed/hidden, the action will toggle
+
             idx = actions.index(dock_widget.name)
             old_action = self.plugins_menu.actions()[idx]
+            dock_widget.closed.connect(lambda: old_action.setChecked(False))
+            # old_action.toggled.connect(lambda: dock_widget.hide())
             dock_widget.setVisible(True)
-            self.plugins_menu.insertAction(old_action, action)
-            self.plugins_menu.removeAction(old_action)
+            # self.plugins_menu.insertAction(old_action, action)
+            # self.plugins_menu.removeAction(old_action)
             return
         else:
             # if the action is not here, it may be in a submenu
@@ -882,15 +878,73 @@ class Window:
                             .menu()
                             .actions()[idx]
                         )
-                        self.plugins_menu.actions()[cnt].menu().insertAction(
-                            old_action, action
+                        dock_widget.closed.connect(
+                            lambda: old_action.setChecked(False)
                         )
-                        self.plugins_menu.actions()[cnt].menu().removeAction(
-                            old_action
-                        )
+                        dock_widget.setVisible(True)
+                        # self.plugins_menu.actions()[cnt].menu().insertAction(
+                        #     old_action, action
+                        # )
+                        # self.plugins_menu.actions()[cnt].menu().removeAction(
+                        #     old_action
+                        # )
                         return
 
+        actions = [a.text() for a in self.window_menu.actions()]
+
+        action = QAction(dock_widget.name, parent=self.window_menu)
+        # action = dock_widget.toggleViewAction()
+        action.setStatusTip(dock_widget.name)
+        # action.setText(dock_widget.name)
+        action.setCheckable(True)
+        dock_widget.closed.connect(lambda: action.setChecked(False))
+        action.triggered.connect(
+            lambda: self._toggle_dock_visibility(dock_widget)
+        )
+        if dock_widget.name != 'console':
+            action.trigger()
+
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            # deprecating with 0.4.8, but let's try to keep compatibility.
+            shortcut = dock_widget.shortcut
+        if shortcut is not None:
+            action.setShortcut(shortcut)
+
         self.window_menu.addAction(action)
+        # if dock_widget.name not in actions:
+
+        # else:
+        #     idx = actions.index(dock_widget.name)
+        #     old_action = self.window_menu.actions()[idx]
+        #     self.wi.insertAction(old_action, action)
+        #     # self.plugins_menu.removeAction(old_action)
+
+    def _toggle_dock_visibility(self, dock_widget=None):
+        try:
+            if dock_widget.isVisible():
+                dock_widget.hide()
+            else:
+                dock_widget.show()
+        except RuntimeError:
+            # this widget was deleted
+            if dock_widget.name == 'console':
+                self.qt_viewer._add_dockConsole()
+                self._add_viewer_dock_widget(
+                    self.qt_viewer.dockConsole, tabify=False
+                )
+            elif dock_widget.name == 'layer controls':
+                self.qt_viewer._add_dockLayerControls()
+                self._add_viewer_dock_widget(
+                    self.qt_viewer.dockLayerControls, tabify=False
+                )
+            else:
+                self.qt_viewer._add_dockLayerList()
+                self._add_viewer_dock_widget(
+                    self.qt_viewer.dockLayerList, tabify=False
+                )
 
     def _remove_dock_widget(self, event=None):
         names = list(self._dock_widgets.keys())
@@ -940,6 +994,8 @@ class Window:
             menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
+        for widg in self._dock_widgets:
+            print('wid', widg)
         del self._dock_widgets[_dw.name]
 
         # Deleting the dock widget means any references to it will no longer
