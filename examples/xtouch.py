@@ -198,13 +198,32 @@ class XTouch:
 
 if __name__ == '__main__':
     from napari.layers.labels._labels_key_bindings import new_label
-    from skimage import data
+    from skimage import data, filters, morphology, segmentation
     from scipy import ndimage as ndi
 
-    blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=3)
-    viewer = napari.view_image(blobs[::2].astype(float), name='blobs', scale=(2, 1, 1))
-    labeled = ndi.label(blobs)[0]
-    labels_layer = viewer.add_labels(labeled[::2], name='blob ID', scale=(2, 1, 1))
+    cells3d = data.cells3d()
+
+    viewer = napari.view_image(
+        cells3d[::2], channel_axis=1, name=['membranes', 'nuclei'], scale=[0.58, 0.26, 0.26]
+    )
+    membrane, nuclei = cells3d.transpose((1, 0, 2, 3)) / np.max(cells3d)
+    edges = filters.scharr(nuclei)
+    denoised = ndi.median_filter(nuclei, size=3)
+    thresholded = denoised > filters.threshold_li(denoised)
+    cleaned = morphology.remove_small_objects(
+        morphology.remove_small_holes(thresholded, 20**3),
+        20**3,
+    )
+    maxima = ndi.label(morphology.local_maxima(filters.gaussian(nuclei, sigma=10)))[0]
+    markers_big = morphology.dilation(maxima, morphology.ball(5))
+
+    segmented = segmentation.watershed(
+        edges,
+        markers_big,
+        mask=cleaned,
+    )
+
+    labels_layer = viewer.add_labels(segmented[::2], scale=[0.58, 0.26, 0.26])
 
     xt = XTouch(viewer)
     xt.bind_current_step('b', 0, 0, 1)
