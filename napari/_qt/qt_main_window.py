@@ -306,7 +306,7 @@ class _QtMainWindow(QMainWindow):
             condition = (
                 self.isMaximized() if os.name == "nt" else self.isFullScreen()
             )
-            if condition:
+            if condition and self._old_size is not None:
                 if self._positions and len(self._positions) > 1:
                     self._window_pos = self._positions[-2]
 
@@ -754,12 +754,15 @@ class Window:
             try:
                 name = widget.objectName()
             except AttributeError:
-                name = trans._(
-                    "Dock widget {number}",
-                    number=self._unnamed_dockwidget_count,
-                )
+                pass
+
+            name = name or trans._(
+                "Dock widget {number}",
+                number=self._unnamed_dockwidget_count,
+            )
 
             self._unnamed_dockwidget_count += 1
+
         if shortcut is not _sentinel:
             warnings.warn(
                 _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
