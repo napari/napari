@@ -12,8 +12,8 @@ vispy_logger = logging.getLogger('vispy')
 vispy_logger.setLevel(logging.WARNING)
 
 
-from .quaternion import quaternion2euler
-from .utils import create_vispy_visual
+from .utils.quaternion import quaternion2euler
+from .utils.utils import create_vispy_visual
 from .vispy_axes_visual import VispyAxesVisual
 from .vispy_camera import VispyCamera
 from .vispy_canvas import VispyCanvas
