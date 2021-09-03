@@ -1,4 +1,4 @@
-"""Scale Bar visual."""
+"""Scale Bar overlay."""
 import bisect
 
 import numpy as np
@@ -12,7 +12,7 @@ from ..utils.theme import get_theme
 from ..utils.translations import trans
 
 
-class VispyScaleBarVisual:
+class VispyScaleBarOverlay:
     """Scale bar in world coordinates."""
 
     def __init__(self, viewer, parent=None, order=0):
