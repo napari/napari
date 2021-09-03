@@ -23,3 +23,11 @@ class PointsVisual(Compound):
     @clipping_planes.setter
     def clipping_planes(self, value):
         self._clip_filter.clipping_planes = value
+
+    @property
+    def antialias(self):
+        return self._subvisuals[0].antialias
+
+    @antialias.setter
+    def antialias(self, value):
+        self._subvisuals[0].antialias = value

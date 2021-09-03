@@ -56,7 +56,6 @@ class Symbol(Enum):
     TRIANGLE_UP = 'triangle_up'
     VBAR = 'vbar'
     X = 'x'
-    SPHERE = 'sphere'
 
     def __str__(self):
         """String representation: The string method returns the
@@ -77,7 +76,6 @@ SYMBOL_ALIAS = {
     'v': Symbol.TRIANGLE_DOWN,
     's': Symbol.SQUARE,
     '|': Symbol.VBAR,
-    'oo': Symbol.SPHERE,
 }
 
 
@@ -97,6 +95,5 @@ SYMBOL_TRANSLATION = OrderedDict(
         (Symbol.TRIANGLE_UP, trans._('triangle up')),
         (Symbol.VBAR, trans._('vbar')),
         (Symbol.X, trans._('x')),
-        (Symbol.SPHERE, trans._('sphere')),
     ]
 )
