@@ -47,6 +47,7 @@
 
 - file: release/index
   sections:
+    - file: release/release_0_4_11
     - file: release/release_0_4_10
     - file: release/release_0_4_9
     - file: release/release_0_4_8
