@@ -5,10 +5,10 @@ from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
 from ...utils.translations import trans
-from ..utils.utils_gl import fix_data_dtype
+from ..utils.gl import fix_data_dtype
 from ..visuals.image import Image as ImageNode
 from ..visuals.volume import Volume as VolumeNode
-from .vispy_base_layer import VispyBaseLayer
+from .base import VispyBaseLayer
 
 
 class ImageLayerNode:

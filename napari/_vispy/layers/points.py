@@ -3,9 +3,9 @@ import numpy as np
 from ...settings import get_settings
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import disconnect_events
-from ..utils._text_utils import update_text
+from ..utils.text import update_text
 from ..visuals.points import PointsVisual
-from .vispy_base_layer import VispyBaseLayer
+from .base import VispyBaseLayer
 
 
 class VispyPointsLayer(VispyBaseLayer):

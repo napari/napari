@@ -10,7 +10,7 @@ from vispy.gloo import Texture2D
 from ...layers.image.experimental import OctreeChunk
 from ...types import ArrayLike
 from ...utils.translations import trans
-from ..utils_gl import fix_data_dtype
+from ..utils.gl import fix_data_dtype
 
 # Two triangles which cover a [0..1, 0..1] quad.
 _QUAD = np.array(

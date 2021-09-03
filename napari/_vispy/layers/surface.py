@@ -5,7 +5,7 @@ from vispy.color import Colormap as VispyColormap
 
 from ...utils.translations import trans
 from ..visuals.mesh import Mesh
-from .vispy_base_layer import VispyBaseLayer
+from .base import VispyBaseLayer
 
 
 class VispySurfaceLayer(VispyBaseLayer):

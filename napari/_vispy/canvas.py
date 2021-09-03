@@ -4,7 +4,7 @@ from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas
 
 from ..utils.colormaps.standardize_color import transform_color
-from .utils.utils_gl import get_max_texture_sizes
+from .utils.gl import get_max_texture_sizes
 
 
 class VispyCanvas(SceneCanvas):

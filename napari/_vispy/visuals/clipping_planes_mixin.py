@@ -2,9 +2,9 @@ from ..vendored.filters.clipping_planes import PlanesClipper
 
 
 class ClippingPlanesMixin:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self._clip_filter = PlanesClipper()
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
         # get subvisuals if compound, or just self
         visuals = getattr(self, '_subvisuals', [self])

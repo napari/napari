@@ -1,7 +1,7 @@
 import numpy as np
 
 from ..visuals.mesh import Mesh
-from .vispy_base_layer import VispyBaseLayer
+from .base import VispyBaseLayer
 
 
 class VispyVectorsLayer(VispyBaseLayer):
