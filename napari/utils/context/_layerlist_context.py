@@ -43,7 +43,7 @@ def _only_labels(s: LayerSel) -> bool:
 
 
 def _img_active(s: LayerSel) -> bool:
-    return bool(s.active and s.active._type_string == "Image")
+    return bool(s.active and s.active._type_string == "image")
 
 
 def _active_ndim(s: LayerSel) -> OptInt:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import partial
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     Generic,
@@ -32,7 +33,17 @@ T = TypeVar("T")
 A = TypeVar("A")
 
 
-class RawContextKey(Generic[A, T]):
+class AbstractContextKey:
+    def resolve(self, context) -> Any:
+        ...
+
+    def eval(self, context: dict) -> bool:
+        # XXX: are there times when we want to raise an exception
+        # if self.key is not in the context?
+        return bool(self.resolve(context))
+
+
+class RawContextKey(AbstractContextKey, Generic[A, T]):
     _info: List[ContextKeyInfo] = []
 
     def __init__(
