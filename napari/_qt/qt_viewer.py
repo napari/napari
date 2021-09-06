@@ -141,6 +141,7 @@ class QtViewer(QSplitter):
             allowed_areas=['left', 'right'],
             object_name='layer list',
         )
+
         self.dockLayerControls = QtViewerDockWidget(
             self,
             self.controls,
