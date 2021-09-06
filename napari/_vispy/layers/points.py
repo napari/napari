@@ -15,12 +15,7 @@ class VispyPointsLayer(VispyBaseLayer):
     def __init__(self, layer):
         self._highlight_width = get_settings().appearance.highlight_thickness
 
-        # Create a compound visual with the following four subvisuals:
-        # Lines: The lines of the interaction box used for highlights.
-        # Markers: The the outlines for each point used for highlights.
-        # Markers: The actual markers of each point.
         node = PointsVisual()
-
         super().__init__(layer, node)
 
         self.layer.events.symbol.connect(self._on_data_change)
@@ -36,6 +31,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         self.layer.events.highlight.connect(self._on_highlight_change)
 
+        self.reset()
         self._on_data_change()
 
     def _on_data_change(self, event=None):
@@ -170,7 +166,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.update()
 
     def reset(self, event=None):
-        self._reset_base()
+        super().reset()
         self._on_blending_change()
         self._on_text_change()
         self._on_highlight_change()

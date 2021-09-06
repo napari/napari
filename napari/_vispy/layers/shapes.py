@@ -9,14 +9,7 @@ from .base import VispyBaseLayer
 
 class VispyShapesLayer(VispyBaseLayer):
     def __init__(self, layer):
-        # Create a compound visual with the following four subvisuals:
-        # Markers: corresponding to the vertices of the interaction box or the
-        # shapes that are used for highlights.
-        # Lines: The lines of the interaction box used for highlights.
-        # Mesh: The mesh of the outlines for each shape used for highlights.
-        # Mesh: The actual meshes of the shape faces and edges
         node = ShapesVisual()
-
         super().__init__(layer, node)
 
         self.layer.events.edge_width.connect(self._on_data_change)
@@ -159,7 +152,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node.update()
 
     def reset(self):
-        self._reset_base()
+        super().reset()
         self._on_highlight_change()
         self._on_blending_change()
 

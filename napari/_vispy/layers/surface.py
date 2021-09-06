@@ -18,7 +18,6 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     def __init__(self, layer):
         node = Mesh()
-
         super().__init__(layer, node)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -101,6 +100,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.mesh_data_changed()
 
     def reset(self, event=None):
-        self._reset_base()
+        super().reset()
         self._on_colormap_change()
         self._on_contrast_limits_change()
+        self._on_shading_change()

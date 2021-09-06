@@ -4,7 +4,5 @@ from .mesh import Mesh
 
 class SurfaceVisual(ClippingPlanesMixin, Mesh):
     """
-    Compound vispy visual with markers for
+    Surface vispy visual with clipping plane functionality
     """
-
-    pass

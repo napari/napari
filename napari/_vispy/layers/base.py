@@ -158,7 +158,7 @@ class VispyBaseLayer(ABC):
                 self.layer.experimental_clipping_planes.as_array()
             )
 
-    def _reset_base(self):
+    def reset(self):
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
