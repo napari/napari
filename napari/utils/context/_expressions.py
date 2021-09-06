@@ -28,6 +28,7 @@ Things that are *NOT* supported:
 from __future__ import annotations
 
 import ast
+import sys
 from typing import (
     Any,
     Dict,
@@ -56,6 +57,26 @@ V = TypeVar('V', bound=ConstType)
 
 
 def parse_expression(expr: str) -> Expr:
+    """Parse string expression into an :class:`Expr` instance.
+
+    Parameters
+    ----------
+    expr : str
+        Expression to parse.
+
+    Returns
+    -------
+    Expr
+        Instance of `Expr`.
+
+    Raises
+    ------
+    SyntaxError
+        If the provided string is not an expression (e.g. it's a statement), or
+        if it uses any forbidden syntax components (e.g. Call, Attribute,
+        Containers, Indexing, Slicing, f-strings, named expression,
+        comprehensions.)
+    """
     try:
         # mode='eval' means the expr must consist of a single expression
         tree = ast.parse(expr, mode='eval')
@@ -63,7 +84,9 @@ def parse_expression(expr: str) -> Expr:
             raise SyntaxError  # pragma: no cover
         return ExprTranformer().visit(tree.body)
     except SyntaxError as e:
-        raise SyntaxError(f"{expr!r} is not a valid expression: ({e}).")
+        raise SyntaxError(
+            f"{expr!r} is not a valid expression: ({e})."
+        ) from None
 
 
 def safe_eval(expr: str, context: Context = {}) -> Any:
@@ -160,6 +183,10 @@ class Expr(ast.AST, Generic[T]):
 
     @classmethod
     def parse(cls, expr: str) -> Expr:
+        """Parse string into Expr (classmethod).
+
+        see docstring of :func:`parse_expression` for details.
+        """
         return parse_expression(str(expr))
 
     def __str__(self) -> str:
@@ -167,13 +194,17 @@ class Expr(ast.AST, Generic[T]):
         return self._serialize()
 
     def _serialize(self) -> str:
+        """Serialize this expression to string form."""
         return str(ExprSerializer(self))
 
     def __repr__(self) -> str:
-        return ast.dump(self, indent=2)
+        if sys.version_info >= (3, 9):
+            return ast.dump(self, indent=2)
+        return ast.dump(self)
 
     @staticmethod
     def _cast(obj: Any) -> Expr:
+        """Cast object into an Expression."""
         return obj if isinstance(obj, Expr) else Constant(obj)
 
     # boolean operators
@@ -181,10 +212,14 @@ class Expr(ast.AST, Generic[T]):
     # combine expression objects meaning "and" and "or".
     # if you want the binary operators, use Expr.bitand, and Expr.bitor
 
-    def __and__(self, other: Union[T2, Expr[T2]]) -> BoolOp[Union[T, T2]]:
+    def __and__(
+        self, other: Union[T2, Expr[T2], Compare]
+    ) -> BoolOp[Union[T, T2]]:
         return BoolOp(ast.And(), [self, other])
 
-    def __or__(self, other: Union[T2, Expr[T2]]) -> BoolOp[Union[T, T2]]:
+    def __or__(
+        self, other: Union[T2, Expr[T2], Compare]
+    ) -> BoolOp[Union[T, T2]]:
         return BoolOp(ast.Or(), [self, other])
 
     # comparisons
@@ -269,6 +304,11 @@ class Expr(ast.AST, Generic[T]):
 
 
 class Name(Expr[T], ast.Name):
+    """A variable name.
+
+    `id` holds the name as a string.
+    """
+
     def __init__(self, id: str, **kwargs: Any) -> None:
         kwargs['ctx'] = ast.Load()
         super().__init__(id, **kwargs)
@@ -278,6 +318,12 @@ class Name(Expr[T], ast.Name):
 
 
 class Constant(Expr[V], ast.Constant):
+    """A constant value.
+
+    The `value` attribute contains the Python object it represents.
+    types supported: NoneType, str, bytes, bool, int, float
+    """
+
     value: V
 
     def __init__(self, value: V, **kwargs: Any) -> None:
@@ -288,6 +334,13 @@ class Constant(Expr[V], ast.Constant):
 
 
 class Compare(Expr[bool], ast.Compare):
+    """A comparison of two or more values.
+
+    `left` is the first value in the comparison, `ops` the list of operators,
+    and `comparators` the list of values after the first element in the
+    comparison.
+    """
+
     def __init__(
         self,
         left: Expr,
@@ -304,6 +357,11 @@ class Compare(Expr[bool], ast.Compare):
 
 
 class BinOp(Expr[T], ast.BinOp):
+    """A binary operation (like addition or division).
+
+    `op` is the operator, and `left` and `right` are any expression nodes.
+    """
+
     def __init__(
         self,
         left: Union[T, Expr[T]],
@@ -315,6 +373,15 @@ class BinOp(Expr[T], ast.BinOp):
 
 
 class BoolOp(Expr[T], ast.BoolOp):
+    """A boolean operation, ‘or’ or ‘and’.
+
+    `op` is Or or And. `values` are the values involved. Consecutive operations
+    with the same operator, such as a or b or c, are collapsed into one node
+    with several values.
+
+    This doesn’t include `not`, which is a :class:`UnaryOp`.
+    """
+
     def __init__(
         self,
         op: ast.boolop,
@@ -325,11 +392,21 @@ class BoolOp(Expr[T], ast.BoolOp):
 
 
 class UnaryOp(Expr[T], ast.UnaryOp):
+    """A unary operation.
+
+    `op` is the operator, and `operand` any expression node.
+    """
+
     def __init__(self, op: ast.unaryop, operand: Expr, **kwargs) -> None:
         super().__init__(op, Expr._cast(operand), **kwargs)
 
 
 class IfExp(Expr, ast.IfExp):
+    """An expression such as `'a if b else c'`.
+
+    `body` if `test` else `orelse`
+    """
+
     def __init__(self, test: Expr, body: Expr, orelse: Expr, **kwargs) -> None:
         super().__init__(
             Expr._cast(test), Expr._cast(body), Expr._cast(orelse), **kwargs
@@ -376,7 +453,11 @@ class ExprTranformer(ast.NodeTransformer):
 
         # filter here for supported expression node types
         type_ = type(node).__name__
+
         if type_ not in ExprTranformer._SUPPORTED_NODES:
+            if sys.version_info < (3, 8) and type_ in self._PY37_CONSTS:
+                val = getattr(node, self._PY37_CONSTS[type_])
+                return Constant(val, lineno=1, col_offset=0)
             raise SyntaxError(f"Type {type_!r} not supported")
 
         # providing fake lineno and col_offset here rather than using
@@ -391,6 +472,14 @@ class ExprTranformer(ast.NodeTransformer):
             else:
                 kwargs[name] = field
         return globals()[type_](**kwargs)
+
+    # can drop after py3.7 support is gone
+    _PY37_CONSTS = {
+        'Num': 'n',
+        'Str': 's',
+        'Bytes': 's',
+        'NameConstant': 'value',
+    }
 
 
 class ExprSerializer(ast.NodeVisitor):

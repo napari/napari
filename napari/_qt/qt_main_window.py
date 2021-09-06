@@ -306,7 +306,7 @@ class _QtMainWindow(QMainWindow):
             condition = (
                 self.isMaximized() if os.name == "nt" else self.isFullScreen()
             )
-            if condition:
+            if condition and self._old_size is not None:
                 if self._positions and len(self._positions) > 1:
                     self._window_pos = self._positions[-2]
 
