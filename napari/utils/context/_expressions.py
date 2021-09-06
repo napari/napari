@@ -28,6 +28,7 @@ Things that are *NOT* supported:
 from __future__ import annotations
 
 import ast
+import sys
 from typing import (
     Any,
     Dict,
@@ -197,8 +198,6 @@ class Expr(ast.AST, Generic[T]):
         return str(ExprSerializer(self))
 
     def __repr__(self) -> str:
-        import sys
-
         if sys.version_info >= (3, 9):
             return ast.dump(self, indent=2)
         return ast.dump(self)
@@ -454,7 +453,11 @@ class ExprTranformer(ast.NodeTransformer):
 
         # filter here for supported expression node types
         type_ = type(node).__name__
+
         if type_ not in ExprTranformer._SUPPORTED_NODES:
+            if sys.version_info < (3, 8) and type_ in self._PY37_CONSTS:
+                val = getattr(node, self._PY37_CONSTS[type_])
+                return Constant(val, lineno=1, col_offset=0)
             raise SyntaxError(f"Type {type_!r} not supported")
 
         # providing fake lineno and col_offset here rather than using
@@ -469,6 +472,14 @@ class ExprTranformer(ast.NodeTransformer):
             else:
                 kwargs[name] = field
         return globals()[type_](**kwargs)
+
+    # can drop after py3.7 support is gone
+    _PY37_CONSTS = {
+        'Num': 'n',
+        'Str': 's',
+        'Bytes': 's',
+        'NameConstant': 'value',
+    }
 
 
 class ExprSerializer(ast.NodeVisitor):
