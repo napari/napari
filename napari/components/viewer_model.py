@@ -21,6 +21,8 @@ from typing import (
 import numpy as np
 from pydantic import Extra, Field, validator
 
+from napari._qt.qthreading import thread_worker
+
 from .. import layers
 from ..layers import Image, Layer
 from ..layers._source import layer_source
@@ -909,12 +911,62 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         added: List[Layer] = []  # for layers that get added
-        for _path in paths:
-            added.extend(
-                self._add_layers_with_plugins(
-                    _path, kwargs, plugin=plugin, layer_type=layer_type
+        # for _path in paths:
+        #     added.extend(
+        #         self._add_layers_with_plugins(
+        #             _path, kwargs, plugin=plugin, layer_type=layer_type
+        #         )
+        #     )
+
+        def add_layer(layer_info):
+            filename, _data = layer_info
+            # actually add the layer
+            with layer_source(path=filename, reader_plugin=plugin):
+                added.extend(self._add_layer_from_data(*_data))
+
+        @thread_worker(
+            progress={'total': len(paths), 'desc': 'Opening Files'},
+            connect={'yielded': add_layer},
+        )
+        def add_layers():
+            nonlocal plugin
+            from ..plugins.io import read_data_with_plugins
+
+            for _path in paths:
+                layer_data, hookimpl = read_data_with_plugins(
+                    _path, plugin=plugin
                 )
-            )
+
+                # glean layer names from filename. These will be used as *fallback*
+                # names, if the plugin does not return a name kwarg in their meta dict.
+                filenames = []
+                if isinstance(_path, str):
+                    filenames = itertools.repeat(_path)
+                elif is_sequence(_path):
+                    if len(_path) == len(layer_data):
+                        filenames = iter(_path)
+                    else:
+                        # if a list of paths has been returned as a list of layer data
+                        # without a 1:1 relationship between the two lists we iterate
+                        # over the first name
+                        filenames = itertools.repeat(_path[0])
+
+                # # add each layer to the viewer
+                # added: List[Layer] = []  # for layers that get added
+                plugin = hookimpl.plugin_name if hookimpl else None
+                for data, filename in zip(layer_data, filenames):
+                    basename, _ext = os.path.splitext(
+                        os.path.basename(filename)
+                    )
+                    _data = _unify_data_and_user_kwargs(
+                        data, kwargs, layer_type, fallback_name=basename
+                    )
+                    layer_info = (filename, _data)
+
+                    yield layer_info
+
+        add_layers()
+
         return added
 
     def _add_layers_with_plugins(
