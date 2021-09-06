@@ -63,7 +63,9 @@ def parse_expression(expr: str) -> Expr:
             raise SyntaxError  # pragma: no cover
         return ExprTranformer().visit(tree.body)
     except SyntaxError as e:
-        raise SyntaxError(f"{expr!r} is not a valid expression: ({e}).")
+        raise SyntaxError(
+            f"{expr!r} is not a valid expression: ({e})."
+        ) from None
 
 
 def safe_eval(expr: str, context: Context = {}) -> Any:
@@ -170,7 +172,11 @@ class Expr(ast.AST, Generic[T]):
         return str(ExprSerializer(self))
 
     def __repr__(self) -> str:
-        return ast.dump(self, indent=2)
+        import sys
+
+        if sys.version_info >= (3, 9):
+            return ast.dump(self, indent=2)
+        return ast.dump(self)
 
     @staticmethod
     def _cast(obj: Any) -> Expr:
@@ -181,10 +187,14 @@ class Expr(ast.AST, Generic[T]):
     # combine expression objects meaning "and" and "or".
     # if you want the binary operators, use Expr.bitand, and Expr.bitor
 
-    def __and__(self, other: Union[T2, Expr[T2]]) -> BoolOp[Union[T, T2]]:
+    def __and__(
+        self, other: Union[T2, Expr[T2], Compare]
+    ) -> BoolOp[Union[T, T2]]:
         return BoolOp(ast.And(), [self, other])
 
-    def __or__(self, other: Union[T2, Expr[T2]]) -> BoolOp[Union[T, T2]]:
+    def __or__(
+        self, other: Union[T2, Expr[T2], Compare]
+    ) -> BoolOp[Union[T, T2]]:
         return BoolOp(ast.Or(), [self, other])
 
     # comparisons
