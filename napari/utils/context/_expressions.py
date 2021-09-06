@@ -5,10 +5,20 @@ import itertools
 import operator
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Iterable, Sequence, Tuple, TypeVar, Union
+from functools import partial
+from typing import (
+    Any,
+    Iterable,
+    Iterator,
+    List,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 __all__ = [
-    'parse',
+    'parse_expression',
     'Expr',
     'Name',
     'Constant',
@@ -16,6 +26,7 @@ __all__ = [
     'Compare',
     'UnaryOp',
     'BinOp',
+    'IfExp',
 ]
 
 T = TypeVar('T')
@@ -34,17 +45,26 @@ def _expr_cast(obj: Any) -> Expr:
 
 
 class Expr(ABC):
+    __slots__: List[str] = []
+
     @abstractmethod
     def eval(self, context: dict = {}):
-        ...
+        """Evaluate this expression with names in `context`"""
 
     @abstractmethod
     def _sig_repr(self) -> str:
-        ...
+        """provide signature repr for this Expr"""
 
     @abstractmethod
     def serialize(self) -> str:
-        ...
+        """Serialize this expression to string form."""
+
+    def __str__(self) -> str:
+        """Serialize this expression to string form."""
+        return self.serialize()
+
+    # def names(self) -> Set[str, ...]:
+    #     return
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}({self._sig_repr()!r})'
@@ -79,6 +99,12 @@ class Expr(ABC):
     def __ge__(self, other: Any) -> Compare:
         return Compare(self, [Compare.CmpType.GtE], [other])
 
+    def in_(self, other: Any) -> Compare:
+        return Compare(self, [Compare.CmpType.In], [other])
+
+    def not_in(self, other: Any) -> Compare:
+        return Compare(self, [Compare.CmpType.NotIn], [other])
+
     # binary operators
 
     def __add__(self, other: Any) -> BinOp:
@@ -105,8 +131,17 @@ class Expr(ABC):
     def __xor__(self, other: Any) -> BinOp:
         return BinOp(self, BinOp.BinOpType.BitXor, other)
 
-    def __str__(self) -> str:
-        return self.serialize()
+    # unary operators
+
+    def __neg__(self) -> UnaryOp:
+        return UnaryOp(UnaryOp.UnaryOpType.USub, self)
+
+    def __pos__(self) -> UnaryOp:
+        return UnaryOp(UnaryOp.UnaryOpType.UAdd, self)
+
+    def __invert__(self) -> UnaryOp:
+        # note: we're using the invert operator `~` to mean "not ___"
+        return UnaryOp(UnaryOp.UnaryOpType.Not, self)
 
     @classmethod
     def parse(cls, string: str) -> Expr:
@@ -115,7 +150,7 @@ class Expr(ABC):
             if not isinstance(exp_node, ast.Expression):
                 raise SyntaxError
         except SyntaxError:
-            raise ValueError(f"string is an invalid expression: {string!r}")
+            raise SyntaxError(f"string is an invalid expression: {string!r}")
         return cls._from_ast_node(exp_node.body)
 
     @classmethod
@@ -142,29 +177,37 @@ class Expr(ABC):
             right = Expr._from_ast_node(node.right)
             binop = getattr(BinOp.BinOpType, type(node.op).__name__)
             return BinOp(left, binop, right)
-        raise NotImplementedError(
-            f'Cannot convert ast node of type: {type(node)}'
-        )
+        elif isinstance(node, ast.IfExp):
+            return IfExp(
+                Expr._from_ast_node(node.test),
+                Expr._from_ast_node(node.body),
+                Expr._from_ast_node(node.orelse),
+            )
+        raise SyntaxError(f'Cannot convert ast node of type: {type(node)}')
 
 
-parse = Expr.parse
+parse_expression = Expr.parse
 
 
 class Name(Expr):
-    def __init__(self, id: str):
-        self.id = id
+    __slots__ = ['key']
+
+    def __init__(self, key: str):
+        self.key = key
 
     def eval(self, context: dict = {}) -> Any:
-        return context[self.id]
+        return context[self.key]
 
     def _sig_repr(self):
-        return self.id
+        return self.key
 
     def serialize(self):
-        return self.id
+        return self.key
 
 
 class Constant(Expr):
+    __slots__ = ['value']
+
     def __init__(self, value: ConstType):
         if not isinstance(value, (str, bytes, bool, int, float, type(None))):
             raise TypeError(
@@ -184,6 +227,8 @@ class Constant(Expr):
 
 
 class BoolOp(Expr):
+    __slots__ = ['op', 'values']
+
     class BoolOpType(Enum):
         And = all  # 'and'
         Or = any  # 'or'
@@ -217,6 +262,8 @@ def _not_in(a: Any, b: Any) -> bool:
 
 
 class Compare(Expr):
+    __slots__ = ['left', 'ops', 'comparators']
+
     class CmpType(Enum):
         Eq = operator.eq  # '=='
         NotEq = operator.ne  # '!='
@@ -224,10 +271,10 @@ class Compare(Expr):
         LtE = operator.le  # '<='
         Gt = operator.gt  # '>'
         GtE = operator.ge  # '>='
-        Is = _in  # 'is'
-        IsNot = _not_in  # 'is not'
-        In = operator.is_  # 'in'
-        NotIn = operator.is_not  # 'not in'
+        Is = operator.is_  # 'is'
+        IsNot = operator.is_not  # 'is not'
+        In = partial(_in)  # 'in'
+        NotIn = partial(_not_in)  # 'not in'
 
         def serialize(self) -> str:
             return type2char[self]
@@ -260,6 +307,8 @@ class Compare(Expr):
 
 
 class UnaryOp(Expr):
+    __slots__ = ['op', 'operand']
+
     class UnaryOpType(Enum):
         Invert = operator.invert  # '~'
         Not = operator.not_  # 'not'
@@ -271,7 +320,7 @@ class UnaryOp(Expr):
 
     def __init__(self, op: UnaryOpType, operand: Expr) -> None:
         self.op = op
-        self.operand = operand
+        self.operand = _expr_cast(operand)
 
     def eval(self, context: dict = {}) -> Any:
         return self.op.value(self.operand.eval(context))
@@ -284,6 +333,8 @@ class UnaryOp(Expr):
 
 
 class BinOp(Expr):
+    __slots__ = ['left', 'op', 'right']
+
     class BinOpType(Enum):
         Add = operator.add  # '+'
         BitAnd = operator.and_  # '&'  reserved for boolean AND op
@@ -322,9 +373,34 @@ class BinOp(Expr):
         )
 
 
+class IfExp(Expr):
+    __slots__ = ['test', 'body', 'orelse']
+
+    def __init__(self, test: Expr, body: Expr, orelse: Expr) -> None:
+        self.test = test
+        self.body = body
+        self.orelse = orelse
+
+    def eval(self, context: dict = {}) -> Any:
+        return (
+            self.body.eval(context)
+            if self.test.eval(context)
+            else self.orelse.eval(context)
+        )
+
+    def serialize(self) -> str:
+        t = self.test.serialize()
+        b = self.body.serialize()
+        e = self.orelse.serialize()
+        return f'{b} if {t} else {e}'
+
+    def _sig_repr(self):
+        return self.test, self.body, self.orelse
+
+
 type2char = {
     BoolOp.BoolOpType.And: 'and',
-    BoolOp.BoolOpType.And: 'or',
+    BoolOp.BoolOpType.Or: 'or',
     Compare.CmpType.Eq: '==',
     Compare.CmpType.NotEq: '!=',
     Compare.CmpType.Lt: '<',
@@ -336,7 +412,7 @@ type2char = {
     Compare.CmpType.In: 'in',
     Compare.CmpType.NotIn: 'not in',
     UnaryOp.UnaryOpType.Invert: '~',
-    UnaryOp.UnaryOpType.Not: 'not',
+    UnaryOp.UnaryOpType.Not: 'not ',  # space is for unary serialization
     UnaryOp.UnaryOpType.UAdd: '+',
     UnaryOp.UnaryOpType.USub: '-',
     BinOp.BinOpType.Add: '+',
@@ -350,3 +426,18 @@ type2char = {
     BinOp.BinOpType.Pow: '**',
     BinOp.BinOpType.Sub: '-',
 }
+
+
+def _iter_names(expr: Expr) -> Iterator[str]:
+    """Iterate all (nested) names used in the expression.
+
+    Could be used to provide nicer error messages when eval() fails.
+    """
+    if isinstance(expr, Name):
+        yield expr.key
+    elif isinstance(expr, Expr):
+        for field in expr.__slots__:
+            val = getattr(expr, field)
+            val = val if isinstance(val, list) else [val]
+            for v in val:
+                yield from _iter_names(v)
