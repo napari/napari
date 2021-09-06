@@ -146,12 +146,8 @@ class QtViewerDockWidget(QDockWidget):
         self.visibilityChanged.connect(self._on_visibility_changed)
 
     def destroyOnClose(self):
-        if self.name in self.qt_viewer.viewer.window._dock_widgets.keys():
-            self.qt_viewer.viewer.window.remove_dock_widget(self)
-        else:
-            # need to handle console, layer controls, etc.
-            self.setAttribute(Qt.WA_DeleteOnClose)
-            self.close()
+        """ "Destroys dock plugin dock widget when 'x' is clicked."""
+        self.qt_viewer.viewer.window.remove_dock_widget(self)
 
     def _maybe_add_vertical_stretch(self, widget):
         """Add vertical stretch to the bottom of a vertical layout only
