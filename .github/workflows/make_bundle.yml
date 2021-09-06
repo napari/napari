@@ -57,12 +57,12 @@ jobs:
           echo "Machine: ${ARCH_SUFFIX}"
       - name: Make Bundle (Linux)
         if: runner.os == 'Linux'
-        env:
-          DISPLAY: ""
         run: |
           sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xfixes0
+          unset DISPLAY
+          export QT_DEBUG_PLUGINS=1
           xvfb-run --auto-servernum python bundle.py
       - name: Make Bundle (Windows & MacOS)
         if: runner.os != 'Linux'
