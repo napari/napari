@@ -65,17 +65,17 @@ class RawContextKey(Name, Generic[A, T]):
             self._info.append(RawContextKey.Info(key, type_, description))
 
     def __str__(self) -> str:
-        return self.key
+        return self.id
 
     @classmethod
     def info(cls) -> List[RawContextKey.Info]:
         return list(cls._info)
 
     def bind_to(self, service: ContextKeyService) -> None:
-        service[self.key] = self._default_value
+        service[self.id] = self._default_value
 
     def __set_name__(self, owner: Type, name):
-        if name != self.key:
+        if name != self.id:
             raise ValueError(
                 "Please use the same name for the class attribute and the key:"
                 f"\n{type(owner).__name__}.{name} != {self.key}"
@@ -96,13 +96,13 @@ class RawContextKey(Name, Generic[A, T]):
     ) -> Union[T, None, RawContextKey[A, T]]:
         if obj is None:
             return self
-        return obj._service[self.key]
+        return obj._service[self.id]
 
     def __set__(self, obj: ContextNamespace, value: T) -> None:
-        obj._service[self.key] = value
+        obj._service[self.id] = value
 
     def __delete__(self, obj: ContextNamespace) -> None:
-        del obj._service[self.key]
+        del obj._service[self.id]
 
 
 class ContextNamespace:
