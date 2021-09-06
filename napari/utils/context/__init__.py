@@ -8,6 +8,7 @@ from ._expressions import IfExp as IfExp
 from ._expressions import Name as Name
 from ._expressions import UnaryOp as UnaryOp
 from ._expressions import parse_expression as parse_expression
+from ._expressions import safe_eval as safe_eval
 from ._layerlist_context import LayerListContextKeys as LayerListContextKeys
 from ._service import ContextKeyService as ContextKeyService
 from ._service import ScopedContextKeyService as ScopedContextKeyService
