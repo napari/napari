@@ -60,6 +60,7 @@ class QtViewerDockWidget(QDockWidget):
     """
 
     closed = Signal()
+    opened = Signal()
 
     def __init__(
         self,
@@ -145,29 +146,12 @@ class QtViewerDockWidget(QDockWidget):
         self.visibilityChanged.connect(self._on_visibility_changed)
 
     def destroyOnClose(self):
-        print('destroy name', self.name)
-        print('widgets', self.qt_viewer.viewer.window._dock_widgets)
         if self.name in self.qt_viewer.viewer.window._dock_widgets.keys():
             self.qt_viewer.viewer.window.remove_dock_widget(self)
         else:
             # need to handle console, layer controls, etc.
             self.setAttribute(Qt.WA_DeleteOnClose)
             self.close()
-            # if self.name == 'console':
-
-            # self.qt_viewer.viewer.window._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
-        # self._add_viewer_dock_widget(
-        #     self.qt_viewer.dockLayerControls, tabify=False
-        # )
-        # self._add_viewer_dock_widget(
-        #     self.qt_viewer.dockLayerList, tabify=False
-        # )
-
-        self.closed.emit()
-
-    def close(self):
-        self.closed.emit()
-        super().close()
 
     def _maybe_add_vertical_stretch(self, widget):
         """Add vertical stretch to the bottom of a vertical layout only
@@ -245,7 +229,9 @@ class QtViewerDockWidget(QDockWidget):
 
     def _on_visibility_changed(self, visible):
         if not visible:
+            self.closed.emit()
             return
+        self.opened.emit()
         with qt_signals_blocked(self):
             self.setTitleBarWidget(None)
             if not self.isFloating():
@@ -285,19 +271,31 @@ class QtCustomTitleBar(QLabel):
         line = QFrame(self)
         line.setObjectName("QtCustomTitleBarLine")
 
-        self.close_button = QPushButton(self)
-        self.close_button.setToolTip(trans._('close this panel'))
-        self.close_button.setObjectName("QTitleBarCloseButton")
-        self.close_button.setCursor(Qt.ArrowCursor)
-        self.close_button.clicked.connect(
-            lambda: self.parent().destroyOnClose()
-        )
-
+        add_close = False
+        try:
+            actions = [
+                action.text()
+                for action in self.parent().qt_viewer.viewer.window.plugins_menu.actions()
+            ]
+            if self.parent().name in actions:
+                add_close = True
+                self.close_button = QPushButton(self)
+                self.close_button.setToolTip(trans._('close this panel'))
+                self.close_button.setObjectName("QTitleBarCloseButton")
+                self.close_button.setCursor(Qt.ArrowCursor)
+                self.close_button.clicked.connect(
+                    lambda: self.parent().destroyOnClose()
+                )
+            else:
+                add_close = False
+        except AttributeError:
+            pass
         self.hide_button = QPushButton(self)
         self.hide_button.setToolTip(trans._('hide this panel'))
         self.hide_button.setObjectName("QTitleBarHideButton")
         self.hide_button.setCursor(Qt.ArrowCursor)
         self.hide_button.clicked.connect(lambda: self.parent().close())
+
         self.float_button = QPushButton(self)
         self.float_button.setToolTip(trans._('float this panel'))
         self.float_button.setObjectName("QTitleBarFloatButton")
@@ -315,7 +313,8 @@ class QtCustomTitleBar(QLabel):
             layout.setSpacing(4)
             layout.setContentsMargins(0, 8, 0, 8)
             line.setFixedWidth(1)
-            layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
+            if add_close:
+                layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
             layout.addWidget(self.hide_button, 0, Qt.AlignHCenter)
             layout.addWidget(self.float_button, 0, Qt.AlignHCenter)
             layout.addWidget(line, 0, Qt.AlignHCenter)
@@ -326,7 +325,9 @@ class QtCustomTitleBar(QLabel):
             layout.setSpacing(4)
             layout.setContentsMargins(8, 1, 8, 0)
             line.setFixedHeight(1)
-            layout.addWidget(self.close_button)
+            if add_close:
+                layout.addWidget(self.close_button)
+
             layout.addWidget(self.hide_button)
             layout.addWidget(self.float_button)
             layout.addWidget(line)

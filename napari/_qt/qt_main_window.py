@@ -867,10 +867,11 @@ class Window:
             dock_widget.closed.connect(
                 lambda: current_action.setChecked(False)
             )
+            dock_widget.opened.connect(lambda: current_action.setChecked(True))
             dock_widget.setVisible(True)
             return
         else:
-            # if the action is not here, it may be in a submenu
+            # if the action was not already here, it may be in a submenu
             for cnt, current_action in enumerate(self.plugins_menu.actions()):
                 if current_action.menu() is not None:
                     sub_actions = [
@@ -893,31 +894,15 @@ class Window:
 
                         return
 
+        # it the action was not in the plugins menu, add it to the window menu.
         self.window_menu.addAction(action)
 
     def _toggle_dock_visibility(self, dock_widget=None):
-        try:
-            if dock_widget.isVisible():
-                dock_widget.hide()
-            else:
-                dock_widget.show()
-        except RuntimeError:
-            # this widget was deleted
-            if dock_widget.name == 'console':
-                self.qt_viewer._add_dockConsole()
-                self._add_viewer_dock_widget(
-                    self.qt_viewer.dockConsole, tabify=False
-                )
-            elif dock_widget.name == 'layer controls':
-                self.qt_viewer._add_dockLayerControls()
-                self._add_viewer_dock_widget(
-                    self.qt_viewer.dockLayerControls, tabify=False
-                )
-            else:
-                self.qt_viewer._add_dockLayerList()
-                self._add_viewer_dock_widget(
-                    self.qt_viewer.dockLayerList, tabify=False
-                )
+
+        if dock_widget.isVisible():
+            dock_widget.hide()
+        else:
+            dock_widget.show()
 
     def _remove_dock_widget(self, event=None):
         names = list(self._dock_widgets.keys())
@@ -967,8 +952,6 @@ class Window:
             menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
-        for widg in self._dock_widgets:
-            print('wid', widg)
         del self._dock_widgets[_dw.name]
 
         # Deleting the dock widget means any references to it will no longer
