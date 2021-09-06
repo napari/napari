@@ -56,6 +56,26 @@ V = TypeVar('V', bound=ConstType)
 
 
 def parse_expression(expr: str) -> Expr:
+    """Parse string expression into an :class:`Expr` instance.
+
+    Parameters
+    ----------
+    expr : str
+        Expression to parse.
+
+    Returns
+    -------
+    Expr
+        Instance of `Expr`.
+
+    Raises
+    ------
+    SyntaxError
+        If the provided string is not an expression (e.g. it's a statement), or
+        if it uses any forbidden syntax components (e.g. Call, Attribute,
+        Containers, Indexing, Slicing, f-strings, named expression,
+        comprehensions.)
+    """
     try:
         # mode='eval' means the expr must consist of a single expression
         tree = ast.parse(expr, mode='eval')
@@ -162,6 +182,10 @@ class Expr(ast.AST, Generic[T]):
 
     @classmethod
     def parse(cls, expr: str) -> Expr:
+        """Parse string into Expr (classmethod).
+
+        see docstring of :func:`parse_expression` for details.
+        """
         return parse_expression(str(expr))
 
     def __str__(self) -> str:
@@ -169,6 +193,7 @@ class Expr(ast.AST, Generic[T]):
         return self._serialize()
 
     def _serialize(self) -> str:
+        """Serialize this expression to string form."""
         return str(ExprSerializer(self))
 
     def __repr__(self) -> str:
@@ -180,6 +205,7 @@ class Expr(ast.AST, Generic[T]):
 
     @staticmethod
     def _cast(obj: Any) -> Expr:
+        """Cast object into an Expression."""
         return obj if isinstance(obj, Expr) else Constant(obj)
 
     # boolean operators
@@ -279,6 +305,11 @@ class Expr(ast.AST, Generic[T]):
 
 
 class Name(Expr[T], ast.Name):
+    """A variable name.
+
+    `id` holds the name as a string.
+    """
+
     def __init__(self, id: str, **kwargs: Any) -> None:
         kwargs['ctx'] = ast.Load()
         super().__init__(id, **kwargs)
@@ -288,6 +319,12 @@ class Name(Expr[T], ast.Name):
 
 
 class Constant(Expr[V], ast.Constant):
+    """A constant value.
+
+    The `value` attribute contains the Python object it represents.
+    types supported: NoneType, str, bytes, bool, int, float
+    """
+
     value: V
 
     def __init__(self, value: V, **kwargs: Any) -> None:
@@ -298,6 +335,13 @@ class Constant(Expr[V], ast.Constant):
 
 
 class Compare(Expr[bool], ast.Compare):
+    """A comparison of two or more values.
+
+    `left` is the first value in the comparison, `ops` the list of operators,
+    and `comparators` the list of values after the first element in the
+    comparison.
+    """
+
     def __init__(
         self,
         left: Expr,
@@ -314,6 +358,11 @@ class Compare(Expr[bool], ast.Compare):
 
 
 class BinOp(Expr[T], ast.BinOp):
+    """A binary operation (like addition or division).
+
+    `op` is the operator, and `left` and `right` are any expression nodes.
+    """
+
     def __init__(
         self,
         left: Union[T, Expr[T]],
@@ -325,6 +374,15 @@ class BinOp(Expr[T], ast.BinOp):
 
 
 class BoolOp(Expr[T], ast.BoolOp):
+    """A boolean operation, ‘or’ or ‘and’.
+
+    `op` is Or or And. `values` are the values involved. Consecutive operations
+    with the same operator, such as a or b or c, are collapsed into one node
+    with several values.
+
+    This doesn’t include `not`, which is a :class:`UnaryOp`.
+    """
+
     def __init__(
         self,
         op: ast.boolop,
@@ -335,11 +393,21 @@ class BoolOp(Expr[T], ast.BoolOp):
 
 
 class UnaryOp(Expr[T], ast.UnaryOp):
+    """A unary operation.
+
+    `op` is the operator, and `operand` any expression node.
+    """
+
     def __init__(self, op: ast.unaryop, operand: Expr, **kwargs) -> None:
         super().__init__(op, Expr._cast(operand), **kwargs)
 
 
 class IfExp(Expr, ast.IfExp):
+    """An expression such as `'a if b else c'`.
+
+    `body` if `test` else `orelse`
+    """
+
     def __init__(self, test: Expr, body: Expr, orelse: Expr, **kwargs) -> None:
         super().__init__(
             Expr._cast(test), Expr._cast(body), Expr._cast(orelse), **kwargs
