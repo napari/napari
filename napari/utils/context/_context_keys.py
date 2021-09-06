@@ -17,60 +17,62 @@ from typing import (
     overload,
 )
 
+from ._expressions import Name
+
 if TYPE_CHECKING:
     from napari.utils.events import Event, EventEmitter
 
     from ._service import ContextKeyService
 
 
-class ContextKeyInfo(NamedTuple):
-    key: str
-    type: Optional[Type]
-    description: Optional[str]
-
-
 T = TypeVar("T")
 A = TypeVar("A")
 
 
-class AbstractContextKey:
-    def resolve(self, context) -> Any:
-        ...
-
-    def eval(self, context: dict) -> bool:
-        # XXX: are there times when we want to raise an exception
-        # if self.key is not in the context?
-        return bool(self.resolve(context))
+class __missing:
+    ...
 
 
-class RawContextKey(AbstractContextKey, Generic[A, T]):
-    _info: List[ContextKeyInfo] = []
+MISSING = __missing()
+
+
+class RawContextKey(Name, Generic[A, T]):
+    class Info(NamedTuple):
+        key: str
+        type: Optional[Type]
+        description: Optional[str]
+
+    _info: List[Info] = []
 
     def __init__(
         self,
         key: str,
-        default_value: Optional[T] = None,
+        default_value: Union[T, __missing] = MISSING,
         description: Optional[str] = None,
         updater: Optional[Callable[[A], T]] = None,
         *,
         hide: bool = False,
     ) -> None:
-        self.key = key
+        super().__init__(key)
         self._default_value = default_value
         self._updater = updater
         if not hide:
-            type_ = type(default_value) if default_value is not None else None
-            self._info.append(ContextKeyInfo(key, type_, description))
+            type_ = (
+                type(default_value)
+                if default_value not in (None, MISSING)
+                else None
+            )
+            self._info.append(RawContextKey.Info(key, type_, description))
 
     def __str__(self) -> str:
         return self.key
 
     @classmethod
-    def all(cls) -> List[ContextKeyInfo]:
+    def info(cls) -> List[RawContextKey.Info]:
         return list(cls._info)
 
     def bind_to(self, service: ContextKeyService) -> None:
-        service.create_key(self.key, self._default_value)
+        service[self.key] = self._default_value
 
     def __set_name__(self, owner: Type, name):
         if name != self.key:
@@ -86,33 +88,42 @@ class RawContextKey(AbstractContextKey, Generic[A, T]):
         """When we got from the class, we return ourself"""
 
     @overload
-    def __get__(self, obj: CtxKeys, objtype: Type) -> T:
+    def __get__(self, obj: ContextNamespace, objtype: Type) -> T:
         """When we got from the object, we return the current value"""
 
     def __get__(
-        self, obj: Optional[CtxKeys], objtype=Type
+        self, obj: Optional[ContextNamespace], objtype=Type
     ) -> Union[T, None, RawContextKey[A, T]]:
         if obj is None:
             return self
-        return obj._service.get_context_key_value(self.key)
+        return obj._service[self.key]
 
-    def __set__(self, obj: CtxKeys, value: T) -> None:
-        obj._service.set_context(self.key, value)
+    def __set__(self, obj: ContextNamespace, value: T) -> None:
+        obj._service[self.key] = value
+
+    def __delete__(self, obj: ContextNamespace) -> None:
+        del obj._service[self.key]
 
 
-class CtxKeys:
-    def __init__(self, service: ContextKeyService) -> None:
-        self._service = service
+class ContextNamespace:
+    _service: ContextKeyService
+    _defaults: Dict[str, Any]
+    _updaters: Dict[str, Callable]
+
+    @classmethod
+    def bind_to_service(cls, service: ContextKeyService) -> ContextNamespace:
+        obj = cls()
+        obj._service = service
         # srv.create_key("LayerListId", f"LayerList:{id(layer_list)}")
-
-        self._key_names = set()
-        self._updaters: Dict[str, Callable] = {}
-        for k, v in type(self).__dict__.items():
+        obj._defaults = {}
+        obj._updaters = {}
+        for k, v in type(obj).__dict__.items():
             if isinstance(v, RawContextKey):
-                self._key_names.add(k)
+                obj._defaults[k] = v._default_value
                 v.bind_to(service)
                 if callable(v._updater):
-                    self._updaters[k] = v._updater
+                    obj._updaters[k] = v._updater
+        return obj
 
     def follow(self, on: EventEmitter, until: Optional[EventEmitter] = None):
         from napari.utils.events import Event
@@ -124,12 +135,23 @@ class CtxKeys:
         if until is not None:
             until.connect(partial(on.disconnect, self._update))
 
-    def _update(self, event: Event):
+    def _update(self, event: Event) -> None:
         for k, updater in self._updaters.items():
             setattr(self, k, updater(event.source))
 
+    def reset(self, key: str) -> None:
+        val = self._defaults[key]
+        if val is MISSING:
+            delattr(self, key)
+        else:
+            setattr(self, key, self._defaults[key])
+
+    def reset_all(self) -> None:
+        for key, default in self._defaults.items():
+            setattr(self, key, default)
+
     def dict(self):
-        return {k: getattr(self, k) for k in self._key_names}
+        return {k: getattr(self, k) for k in self._defaults}
 
     def __repr__(self):
         import pprint

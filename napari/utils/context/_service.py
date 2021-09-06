@@ -1,154 +1,175 @@
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import Any, Dict, Generic, Optional, TypeVar
+import pprint
+from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from itertools import count
+from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
-from psygnal import Signal
+from napari.utils.events import EventEmitter
 
-T = TypeVar("T")
-
-
-class Context:
-    def __init__(self, id: int, parent: Optional[Context] = None) -> None:
-        self._id = id
-        self._parent = parent
-        self._value = {"_contextId": id}
-
-    def set_value(self, key: str, value: Any) -> bool:
-        if self._value.get(key) != value:
-            self._value[key] = value
-            return True
-        return False
-
-    def get_value(self, key: str) -> Any:
-        val = self._value.get(key, "undefined")
-        if val == "undefined" and self._parent:
-            return self._parent.get_value(key)
-        return None if val == "undefined" else val
-
-    def remove_value(self, key: str) -> bool:
-        if key in self._value:
-            del self._value[key]
-            return True
-        return False
-
-    def update_parent(self, parent: Context) -> None:
-        self._parent = parent
+Context = Dict[str, Any]
+PARENT_KEY = '__parent__'
 
 
-class NullContext(Context):
-    __instance: Optional[NullContext] = None
-
-    def __init__(self) -> None:
-        super().__init__(-1, None)
-
-    @classmethod
-    def instance(cls) -> NullContext:
-        if cls.__instance is None:
-            cls.__instance = NullContext()
-        return cls.__instance
+def _get_key_recurse_parents(dct: dict, key, _par_key=PARENT_KEY):
+    if key in dct:
+        return dct[key]
+    if _par_key in dct:
+        return _get_key_recurse_parents(dct[_par_key], key)
 
 
-class ContextKey(Generic[T]):
-    """Created by AbstractContextKeyService.create_key."""
-
-    def __init__(
-        self,
-        service: AbstractContextKeyService,
-        key: str,
-        default_value: Optional[T],
-    ) -> None:
-        self._service = service
-        self._key = key
-        self._default_value = default_value
-        self.reset()
-
-    def get(self) -> Optional[T]:
-        return self._service.get_context_key_value(self._key)
-
-    def set(self, value: T) -> None:
-        self._service.set_context(self._key, value)
-
-    def reset(self) -> None:
-        if self._default_value is None:
-            self._service.remove_context(self._key)
-        else:
-            self._service.set_context(self._key, self._default_value)
+def _collect_all_values(dct: dict, _par_key=PARENT_KEY):
+    result = _collect_all_values(dct[_par_key]) if _par_key in dct else {}
+    result.update(dct)
+    result.pop(_par_key, None)
+    return result
 
 
-class AbstractContextKeyService:
-    contextChanged = Signal()
-
+class _AbsContextKeyService(ABC):
     def __init__(self, id: int) -> None:
-        self._is_disposed: bool = False
         self._context_id = id
-
-    # def change_events_buffered(self): ...
+        self.context_changed = EventEmitter(self, 'context_changed')
 
     @property
     def context_id(self) -> int:
         return self._context_id
 
-    def create_key(
-        self, key: str, default_value: Optional[T]
-    ) -> ContextKey[T]:
-        if self._is_disposed:
-            raise RuntimeError(f"{type(self)} has been disposed.")
-        return ContextKey(self, key, default_value)
+    @contextmanager
+    def buffered_change_events(self):
+        ...  # TODO
 
-    def set_context(self, key: str, value: Any) -> None:
-        if self._is_disposed:
-            return
-        context = self.get_context(self._context_id)
-        if not context:
-            return
-        if context.set_value(key, value):
-            self.contextChanged.emit(key)
+    def create_scoped(self, target=None):
+        return ScopedContextKeyService(self, target)
 
-    def get_context_key_value(self, key: str) -> Any:
-        if self._is_disposed:
-            return None
-        return self.get_context(self._context_id).get_value(key)
+    # TODO: rename get_context_key?
+    # def get_context_key_value(self, key: str) -> Any:
+    #     return _get_key_recurse_parents(self._my_context, key)
 
-    def remove_context(self, key: str) -> None:
-        if self._is_disposed:
-            return
-        if self.get_context(self._context_id).remove_value(key):
-            self.contextChanged.emit(key)
+    def __getitem__(self, key: str) -> Any:
+        return _get_key_recurse_parents(self._my_context, key)
 
+    # TODO: rename set_context_key?
+    # def set_context(self, key: str, value: Any) -> None:
+    def __setitem__(self, key: str, value: Any) -> None:
+        if self._my_context.get(key, '__missing__') != value:
+            self._my_context[key] = value
+            self.context_changed(value=[key])
+
+    def update(
+        self, _m: Union[Mapping, Iterable, None] = None, **kwargs
+    ) -> None:
+        d = dict(_m) if _m is not None else {}
+        d.update(kwargs)
+        for k, v in d.items():
+            self.set_context(k, v)
+
+    # TODO: rename del_context_key?
+    # def remove_context(self, key: str) -> None:
+    def __delitem__(self, key: str) -> None:
+        if key in self._my_context:
+            del self._my_context[key]
+            self.context_changed(value=[key])
+
+    @property
+    def _my_context(self):
+        return self.get_context(self._context_id)
+
+    # aka: getContextValuesContainer
     @abstractmethod
-    def dispose(self) -> None:
+    def get_context(self, id: int) -> Context:
         ...
 
     @abstractmethod
-    def get_context(self, context_id: int) -> Context:
+    def del_context(self, context_id: int) -> None:
         ...
 
+    @abstractmethod
+    def create_child_context(self, parent_ctx_id: Optional[int] = None) -> int:
+        ...
 
-class ContextKeyService(AbstractContextKeyService):
+    def dict(self):
+        return _collect_all_values(self._my_context)
+
+    def __iter__(self):
+        yield from self.dict().items()
+
+    def len(self):
+        len(self.dict())
+
+
+class ContextKeyService(_AbsContextKeyService):
     _contexts: Dict[int, Context]
+    __instance: Optional[ContextKeyService] = None
 
     def __init__(self) -> None:
         super().__init__(0)
-        self._last_context_id = 0
-        self._contexts = {self._context_id: Context(self._context_id)}
+        self._ctx_count: count[int] = count(1)
+        self._contexts = {self._context_id: {}}
 
-    def dispose(self) -> None:
-        self.contextChanged._slots.clear()
-        self._is_disposed = True
+    # aka: getContextValuesContainer
+    def get_context(self, context_id: int) -> Context:
+        return self._contexts.get(context_id, {})  # Null context
 
-    def get_context(self, context_id) -> Context:
-        if not self._is_disposed and (context_id in self._contexts):
-            return self._contexts[context_id]
-        return NullContext.instance()
+    def del_context(self, context_id: int) -> None:
+        del self._contexts[context_id]
 
-    # def create_child_context(self, parent_id: Optional[int] = None) -> int:
-    #     parent_id = parent_id or self._context_id
-    #     if self._is_disposed:
-    #         raise RuntimeError(f"{type(self)} has been disposed.")
-    #     self._last_context_id += 1
-    #     id = self._last_context_id
-    #     self._contexts[id] = Context(
-    #         id, self.get_context(parent_id)
-    #     )
-    #     return id
+    def create_child_context(self, parent_ctx_id: Optional[int] = None) -> int:
+        parent_id = parent_ctx_id or self._context_id
+        ctx = {}
+        if parent_id in self._contexts:
+            ctx[PARENT_KEY] = self._contexts[parent_id]
+
+        _id = next(self._ctx_count)
+        self._contexts[_id] = ctx
+        return _id
+
+    def __repr__(self):
+        return f'ContextKeyService({pprint.pformat(self._contexts)})'
+
+    @classmethod
+    def instance(cls) -> ContextKeyService:
+        if cls.__instance is None:
+            cls.__instance = cls()
+        return cls.__instance
+
+
+class ScopedContextKeyService(_AbsContextKeyService):
+    # TODO: figure out whether we need the scope object
+    def __init__(self, parent: _AbsContextKeyService, scope=None) -> None:
+        super().__init__(parent.create_child_context())
+        self._parent = parent
+        self._updateParentChangeListener()
+        self._scope = scope
+        # TODO: set KEYBINDING_CONTEXT_ATTR on scope
+
+    # aka: getContextValuesContainer
+    def get_context(self, context_id: int) -> Context:
+        return self._parent.get_context(context_id)
+
+    def del_context(self, context_id: int) -> None:
+        self._parent.del_context(context_id)
+
+    def create_child_context(self, parent_ctx_id: Optional[int] = None) -> int:
+        return self._parent.create_child_context(parent_ctx_id)
+
+    def update_parent(self, new_parent: _AbsContextKeyService) -> None:
+        current_ctx = self._my_context
+        old_vals = _collect_all_values(current_ctx)
+        self._parent.context_changed.disconnect(self._reemit)
+        self._parent = new_parent
+        self._updateParentChangeListener()
+        new_ctx = self._parent.get_context(self._parent.context_id)
+        current_ctx[PARENT_KEY] = new_ctx
+        new_vals = _collect_all_values(current_ctx)
+        changed_keys = [k for k, v in new_vals.items() if old_vals[k] != v]
+        self.context_changed(value=changed_keys)
+
+    def _updateParentChangeListener(self):
+        self._parent.context_changed.connect(self._reemit)
+
+    def _reemit(self, event):
+        self.context_changed(value=event.value)
+
+    def __repr__(self):
+        return f'ScopedContextKeyService({pprint.pformat(self._my_context)})'

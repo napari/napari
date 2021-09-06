@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Tuple
 
-from ._context_keys import CtxKeys, RawContextKey
+from ._context_keys import ContextNamespace, RawContextKey
 
 if TYPE_CHECKING:
     from napari.layers import Layer
@@ -58,7 +58,7 @@ def _same_shape(s: LayerSel) -> bool:
     return len({getattr(x.data, "shape", ()) for x in s}) == 1
 
 
-class LayerListContextKeys(CtxKeys):
+class LayerListContextKeys(ContextNamespace):
     layers_selection_count = RawContextKey(
         "layers_selection_count",
         0,

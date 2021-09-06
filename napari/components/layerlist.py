@@ -1,6 +1,7 @@
 import itertools
 import warnings
 from collections import namedtuple
+from itertools import count
 from typing import List, Optional
 
 import numpy as np
@@ -23,18 +24,26 @@ class LayerList(SelectableEventedList[Layer]):
         Iterable of napari.layer.Layer
     """
 
+    _ID = count()
+
     def __init__(self, data=()):
+        self._id = f'{type(self).__name__}:{next(LayerList._ID)}'
         super().__init__(
             data=data,
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
 
-        self._ctx = LayerListContextKeys(ContextKeyService())
+        self._srvc = ContextKeyService.instance().create_scoped()
+        self._srvc['LayerList'] = self._id
+        self._ctx = LayerListContextKeys.bind_to_service(self._srvc)
         self._ctx.follow(self.selection.events.changed)
 
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
+
+    def __del__(self):
+        self._srvc.del_context(self._srvc.context_id)
 
     def _on_selection_changed(self, event):
         # This method is a temporary workaround to the fact that the Points
