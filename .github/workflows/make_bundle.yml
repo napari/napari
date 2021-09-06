@@ -63,7 +63,7 @@ jobs:
           VER=`python bundle.py --version`
           echo "version=${VER}" >> $GITHUB_ENV
           echo "Version: $VER"
-          ARCH_SUFFIX=`python -c "import platform; print(platform.machine())"`
+          ARCH_SUFFIX=`python bundle.py --arch`
           echo "arch-suffix=${ARCH_SUFFIX}" >> $GITHUB_ENV
           echo "Machine: ${ARCH_SUFFIX}"
       - name: Make Bundle
