@@ -313,9 +313,12 @@ with contextlib.suppress(ImportError):
     from npe2 import plugin_manager
 
     for theme in plugin_manager._themes.values():
-        d = _themes[theme.type].dict()
-        d.update(theme.colors.dict(exclude_unset=True))
-        _themes[theme.id] = Theme(**d)
+        # `theme.type` is dark/light and supplies defaults for keys that
+        # are not provided by the plugin
+        _themes[theme.id] = Theme(
+            **_themes[theme.type].dict(),
+            **theme.colors.dict(exclude_unset=True),
+        )
 
 
 _themes.events.added.connect(rebuild_theme_settings)
