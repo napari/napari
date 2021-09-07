@@ -4,10 +4,10 @@ on:
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
   schedule:
     - cron: "0 0 * * *"
   # Allows you to run this workflow manually from the Actions tab
