@@ -262,9 +262,9 @@ at every point in time. For example you could record the length of a queue,
 and see the queue grow and shrink over time.
 
 Calls to `perf_timer`, `add_instant_event` and `add_counter_event` should
-be removed before merging code into master. Think of them like "debug
+be removed before merging code into main. Think of them like "debug
 prints", things you add while investigating a problem, but you do not leave
 them in the code permanently.
 
-You can save JSON files so that you can compare how things looked 
+You can save JSON files so that you can compare how things looked
 before and after your changes.
