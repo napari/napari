@@ -213,12 +213,12 @@ class Expr(ast.AST, Generic[T]):
     # if you want the binary operators, use Expr.bitand, and Expr.bitor
 
     def __and__(
-        self, other: Union[T2, Expr[T2], Compare]
+        self, other: Union[Expr[T2], Expr[T], ConstType, Compare]
     ) -> BoolOp[Union[T, T2]]:
         return BoolOp(ast.And(), [self, other])
 
     def __or__(
-        self, other: Union[T2, Expr[T2], Compare]
+        self, other: Union[Expr[T2], Expr[T], ConstType, Compare]
     ) -> BoolOp[Union[T, T2]]:
         return BoolOp(ast.Or(), [self, other])
 
