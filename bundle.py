@@ -207,7 +207,16 @@ def patch_python_lib_location():
 
 
 def patch_environment_variables():
-    os.environ["ARCH"] = ARCH
+    os.environ["ARCH"] = architecture()
+
+
+def architecture():
+    arch = platform.machine() or "generic"
+    # Try to canonicalize across OS
+    replacements = {
+        "amd64": "x86_64",
+    }
+    return replacements.get(arch.lower(), arch)
 
 
 def make_zip():
@@ -282,5 +291,8 @@ if __name__ == "__main__":
         sys.exit()
     if '--version' in sys.argv:
         print(VERSION)
+        sys.exit()
+    if '--arch' in sys.argv:
+        print(architecture())
         sys.exit()
     print('created', bundle())
