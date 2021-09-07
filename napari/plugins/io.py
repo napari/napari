@@ -17,6 +17,7 @@ logger = getLogger(__name__)
 
 
 def _read_with_npe2(path, plugin):
+    """Try to return data for `path`, from reader plugins using a manifest."""
     try:
         from npe2 import execute_command, plugin_manager
     except ImportError:
