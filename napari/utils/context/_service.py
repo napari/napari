@@ -12,21 +12,9 @@ Context = Dict[str, Any]
 PARENT_KEY = '__parent__'
 
 
-def _get_key_recurse_parents(dct: dict, key, _par_key=PARENT_KEY):
-    if key in dct:
-        return dct[key]
-    if _par_key in dct:
-        return _get_key_recurse_parents(dct[_par_key], key)
-
-
-def _collect_all_values(dct: dict, _par_key=PARENT_KEY):
-    result = _collect_all_values(dct[_par_key]) if _par_key in dct else {}
-    result.update(dct)
-    result.pop(_par_key, None)
-    return result
-
-
 class _AbsContextKeyService(ABC):
+    _parent: Optional[_AbsContextKeyService] = None
+
     def __init__(self, id: int) -> None:
         self._context_id = id
         self.context_changed = EventEmitter(self, 'context_changed')
@@ -42,15 +30,14 @@ class _AbsContextKeyService(ABC):
     def create_scoped(self, target=None):
         return ScopedContextKeyService(self, target)
 
-    # TODO: rename get_context_key?
-    # def get_context_key_value(self, key: str) -> Any:
-    #     return _get_key_recurse_parents(self._my_context, key)
-
+    # vscode: "getContextKeyValue"
     def __getitem__(self, key: str) -> Any:
-        return _get_key_recurse_parents(self._my_context, key)
+        if key in self._my_context:
+            return self._my_context[key]
+        if PARENT_KEY in self._my_context:
+            return self._my_context[PARENT_KEY][key]
 
-    # TODO: rename set_context_key?
-    # def set_context(self, key: str, value: Any) -> None:
+    # vscode: "setContext"
     def __setitem__(self, key: str, value: Any) -> None:
         if self._my_context.get(key, '__missing__') != value:
             self._my_context[key] = value
@@ -62,10 +49,9 @@ class _AbsContextKeyService(ABC):
         d = dict(_m) if _m is not None else {}
         d.update(kwargs)
         for k, v in d.items():
-            self.set_context(k, v)
+            self[k] = v
 
-    # TODO: rename del_context_key?
-    # def remove_context(self, key: str) -> None:
+    # vscode: "removeContext"
     def __delitem__(self, key: str) -> None:
         if key in self._my_context:
             del self._my_context[key]
@@ -75,27 +61,39 @@ class _AbsContextKeyService(ABC):
     def _my_context(self):
         return self.get_context(self._context_id)
 
-    # aka: getContextValuesContainer
+    # vscode: "getContextValuesContainer"
     @abstractmethod
-    def get_context(self, id: int) -> Context:
-        ...
+    def get_context(self, context_id: int) -> Context:
+        """Get Context dict for `context_id`"""
 
     @abstractmethod
     def del_context(self, context_id: int) -> None:
-        ...
+        """Get Context dict for `context_id`"""
 
     @abstractmethod
     def create_child_context(self, parent_ctx_id: Optional[int] = None) -> int:
-        ...
+        """Create a new child context for `parent_ctx_id`.
+
+        If not provided parent_ctx_id should be self._context_id
+        """
 
     def dict(self):
-        return _collect_all_values(self._my_context)
+        result = self._parent.dict() if self._parent else {}
+        result.update(self._my_context)
+        result.pop(PARENT_KEY, None)
+        return result
+
+    def __contains__(self, key):
+        return key in self._my_context
 
     def __iter__(self):
         yield from self.dict().items()
 
-    def len(self):
-        len(self.dict())
+    def __len__(self):
+        return len(self.dict())
+
+    def clear(self):
+        self._my_context.clear()
 
 
 class ContextKeyService(_AbsContextKeyService):
@@ -107,7 +105,6 @@ class ContextKeyService(_AbsContextKeyService):
         self._ctx_count: count[int] = count(1)
         self._contexts = {self._context_id: {}}
 
-    # aka: getContextValuesContainer
     def get_context(self, context_id: int) -> Context:
         return self._contexts.get(context_id, {})  # Null context
 
@@ -125,7 +122,13 @@ class ContextKeyService(_AbsContextKeyService):
         return _id
 
     def __repr__(self):
-        return f'ContextKeyService({pprint.pformat(self._contexts)})'
+        s = ''
+        for item in self._contexts.values():
+            if item is self._my_context:
+                s += pprint.pformat(self.dict())
+            else:
+                s += f', {id(item)}'
+        return f'ContextKeyService({s})'
 
     @classmethod
     def instance(cls) -> ContextKeyService:
@@ -135,6 +138,8 @@ class ContextKeyService(_AbsContextKeyService):
 
 
 class ScopedContextKeyService(_AbsContextKeyService):
+    _parent: _AbsContextKeyService
+
     # TODO: figure out whether we need the scope object
     def __init__(self, parent: _AbsContextKeyService, scope=None) -> None:
         super().__init__(parent.create_child_context())
@@ -154,14 +159,13 @@ class ScopedContextKeyService(_AbsContextKeyService):
         return self._parent.create_child_context(parent_ctx_id)
 
     def update_parent(self, new_parent: _AbsContextKeyService) -> None:
-        current_ctx = self._my_context
-        old_vals = _collect_all_values(current_ctx)
+        old_vals = self.dict()
         self._parent.context_changed.disconnect(self._reemit)
         self._parent = new_parent
         self._updateParentChangeListener()
         new_ctx = self._parent.get_context(self._parent.context_id)
-        current_ctx[PARENT_KEY] = new_ctx
-        new_vals = _collect_all_values(current_ctx)
+        self[PARENT_KEY] = new_ctx
+        new_vals = self.dict()
         changed_keys = [k for k, v in new_vals.items() if old_vals[k] != v]
         self.context_changed(value=changed_keys)
 
@@ -172,4 +176,7 @@ class ScopedContextKeyService(_AbsContextKeyService):
         self.context_changed(value=event.value)
 
     def __repr__(self):
-        return f'ScopedContextKeyService({pprint.pformat(self._my_context)})'
+        _id = hex(id(self))
+        return (
+            f'ScopedContextKeyService(id={_id}, {pprint.pformat(self.dict())})'
+        )
