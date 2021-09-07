@@ -499,3 +499,24 @@ def test_canvas_color(make_napari_viewer, theme):
     get_settings().appearance.theme = theme
     viewer = make_napari_viewer()
     assert viewer.theme == theme
+
+
+def test_remove_points(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_points([(1, 2), (2, 3)])
+    del viewer.layers[0]
+    viewer.add_points([(1, 2), (2, 3)])
+
+
+def test_remove_image(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_image(np.random.rand(10, 10))
+    del viewer.layers[0]
+    viewer.add_image(np.random.rand(10, 10))
+
+
+def test_remove_labels(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+    del viewer.layers[0]
+    viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))

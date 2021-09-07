@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import warnings
-from contextlib import suppress
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -292,13 +291,10 @@ class QtViewer(QSplitter):
         on_theme_change = self.canvas._on_theme_change
         theme.connect(on_theme_change)
 
-        def disconnect():
-            # strange EventEmitter has no attribute _callbacks errors sometimes
-            # maybe some sort of cleanup race condition?
-            with suppress(AttributeError):
-                theme.disconnect(on_theme_change)
+        self.canvas.destroyed.connect(self._diconnect_theme)
 
-        self.canvas.destroyed.connect(disconnect)
+    def _diconnect_theme(self):
+        self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
 
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""

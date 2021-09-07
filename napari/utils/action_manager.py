@@ -5,7 +5,7 @@ import weakref
 from collections import defaultdict
 from dataclasses import dataclass
 from inspect import signature
-from typing import TYPE_CHECKING, Callable, Dict, List, Set, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Set, Union
 
 from .interactions import Shortcut
 from .key_bindings import KeymapProvider
@@ -13,8 +13,6 @@ from .translations import trans
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QPushButton
-
-    from napari.qt import QtStateButton
 
 
 def call_with_context(function, context):
@@ -71,7 +69,13 @@ class ButtonWrapper:
     changed.
     """
 
-    def __init__(self, button, extra_tooltip_text):
+    def __init__(
+        self,
+        button: QPushButton,
+        extra_tooltip_text,
+        action_name,
+        action_manager,
+    ):
         """
         wrapper around button to disconnect an action only
         if it has been connected before.
@@ -79,8 +83,19 @@ class ButtonWrapper:
         self._button = weakref.ref(button)
         self._connected = None
         self._extra_tooltip_text: str = extra_tooltip_text
+        self._action_name = action_name
+        self._action_manager = weakref.ref(action_manager)
+        button.destroyed.connect(self._destroyed)
+
+    def _destroyed(self):
+        if self._action_manager() is None:
+            return
+        self._action_manager()._buttons[self._action_name].remove(self)
 
     def setToolTip(self, value):
+        if self._button() is None:
+            # destroyed signal not handled yet
+            return
         return self._button().setToolTip(
             value + ' ' + self._extra_tooltip_text
         )
@@ -160,10 +175,8 @@ class ActionManager:
     def __init__(self):
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
-        self._buttons: Dict[
-            str, Set[Tuple(Union[QPushButton, QtStateButton], str)]
-        ] = defaultdict(lambda: set())
-        self._shortcuts: Dict[str, set[str]] = defaultdict(lambda: set())
+        self._buttons: Dict[str, Set[ButtonWrapper]] = defaultdict(set)
+        self._shortcuts: Dict[str, Set[str]] = defaultdict(set)
         self.context = Context()  # Dict[str, Any] = {}
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
@@ -272,10 +285,7 @@ class ActionManager:
             shortcut_str = ''
 
         callable_ = self._actions[name].callable(self.context)
-        if self._tooltip_include_action_name:
-            append = '[' + name + ']'
-        else:
-            append = ''
+        append = '[' + name + ']' if self._tooltip_include_action_name else ''
         self._update_buttons(buttons, desc + shortcut_str + append, callable_)
 
     def _update_shortcut_bindings(self, name: str):
@@ -323,10 +333,9 @@ class ActionManager:
         self._validate_action_name(name)
         if hasattr(button, 'change'):
             button.clicked.disconnect(button.change)
-        button = ButtonWrapper(button, extra_tooltip_text)
-        assert button not in [x._button() for x in self._buttons['name']]
+        button = ButtonWrapper(button, extra_tooltip_text, name, self)
+        assert button not in [x._button() for x in self._buttons[name]]
 
-        button.destroyed.connect(lambda: self._buttons[name].remove(button))
         self._buttons[name].add(button)
         self._update_gui_elements(name)
 
