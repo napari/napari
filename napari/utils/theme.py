@@ -320,6 +320,5 @@ with contextlib.suppress(ImportError):
             **theme.colors.dict(exclude_unset=True),
         )
 
-
 _themes.events.added.connect(rebuild_theme_settings)
 _themes.events.removed.connect(rebuild_theme_settings)

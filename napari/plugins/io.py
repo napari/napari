@@ -16,9 +16,6 @@ from . import plugin_manager
 logger = getLogger(__name__)
 
 
-fake_hookimpl = namedtuple('fake_hookimpl', ('plugin_name'))
-
-
 def _read_with_npe2(path, plugin):
     try:
         from npe2 import execute_command, plugin_manager
@@ -31,7 +28,10 @@ def _read_with_npe2(path, plugin):
             try:
                 layer_data = read_func(path)  # try to read data
                 if layer_data:
-                    return layer_data, fake_hookimpl(rdr.command.split(".")[0])
+                    # hookimpl just mocks ``.plugin_name` attribute access
+                    # until we drop support for the old hookimpl stuff.
+                    hookimpl = namedtuple('hookimpl', ('plugin_name'))
+                    return layer_data, hookimpl(rdr.command.split(".")[0])
             except Exception:
                 continue
 
