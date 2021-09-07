@@ -333,10 +333,10 @@ class ActionManager:
         self._validate_action_name(name)
         if hasattr(button, 'change'):
             button.clicked.disconnect(button.change)
-        button = ButtonWrapper(button, extra_tooltip_text, name, self)
+        button_wrap = ButtonWrapper(button, extra_tooltip_text, name, self)
         assert button not in [x._button() for x in self._buttons[name]]
 
-        self._buttons[name].add(button)
+        self._buttons[name].add(button_wrap)
         self._update_gui_elements(name)
 
     def bind_shortcut(self, name: str, shortcut: str) -> None:
