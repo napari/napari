@@ -1,3 +1,8 @@
+"""
+This module is modeled after vscode's context key service
+
+https://github.com/microsoft/vscode/blob/main/src/vs/platform/contextkey/browser/contextKeyService.ts
+"""
 from __future__ import annotations
 
 import pprint
