@@ -1,4 +1,4 @@
-from napari.utils.context import ContextKeyService
+from napari.utils.context._service import ContextKeyService
 
 
 def test_root_service():

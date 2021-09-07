@@ -7,7 +7,8 @@ from typing import List, Optional
 import numpy as np
 
 from ..layers import Layer
-from ..utils.context import ContextKeyService, LayerListContextKeys
+from ..utils.context._layerlist_context import LayerListContextKeys
+from ..utils.context._service import ContextKeyService
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
