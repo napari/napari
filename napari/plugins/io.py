@@ -20,7 +20,10 @@ fake_hookimpl = namedtuple('fake_hookimpl', ('plugin_name'))
 
 
 def _read_with_npe2(path, plugin):
-    from npe2 import execute_command, plugin_manager
+    try:
+        from npe2 import execute_command, plugin_manager
+    except ImportError:
+        return
 
     for rdr in plugin_manager.iter_compatible_readers(path):
         read_func = execute_command(rdr.command, kwargs={'path': path})
@@ -73,7 +76,7 @@ def read_data_with_plugins(
     """
 
     _ld = _read_with_npe2(path, plugin)
-    if _ld:
+    if _ld is not None:
         _ld, hookimpl = _ld
         return [] if _is_null_layer_sentinel(_ld) else _ld or None, hookimpl
 

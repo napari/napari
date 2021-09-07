@@ -1,11 +1,11 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
+import contextlib
 import re
 import warnings
 from ast import literal_eval
 from typing import Union
 
-from npe2 import plugin_manager as pm2
 from pydantic import validator
 from pydantic.color import Color
 
@@ -309,10 +309,14 @@ _themes = EventedDict(
     basetype=Theme,
 )
 
-for theme in pm2._themes.values():
-    d = _themes[theme.type].dict()
-    d.update(theme.colors.dict(exclude_unset=True))
-    _themes[theme.id] = Theme(**d)
+with contextlib.suppress(ImportError):
+    from npe2 import plugin_manager
+
+    for theme in plugin_manager._themes.values():
+        d = _themes[theme.type].dict()
+        d.update(theme.colors.dict(exclude_unset=True))
+        _themes[theme.id] = Theme(**d)
+
 
 _themes.events.added.connect(rebuild_theme_settings)
 _themes.events.removed.connect(rebuild_theme_settings)
