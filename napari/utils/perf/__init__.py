@@ -5,7 +5,7 @@ behavior and timings in Chrome's Tracing GUI.
 
 To enable perfmon define the env var NAPARI_PERFMON as follows:
 
-NAPARI_PERFMON=1 
+NAPARI_PERFMON=1
     Activates perfmon, trace using Debug -> Performance Trace menu.
 
 NAPARI_PERFMON=/path/to/config.json
@@ -44,7 +44,7 @@ Manual Timing
 
 You can also manually add "perf_timer" context objects and
 "add_counter_event()" and "add_instant_event()" functions to your code. All
-three of these should be removed before merging the PR into master. While
+three of these should be removed before merging the PR into main. While
 they have almost zero overhead when perfmon is disabled, it's still better
 not to leave them in the code. Think of them as similar to debug prints.
 """

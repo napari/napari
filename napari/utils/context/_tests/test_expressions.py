@@ -2,8 +2,14 @@ import ast
 
 import pytest
 
-from napari.utils.context import Constant, Expr, Name, parse_expression
-from napari.utils.context._expressions import _OPS, _iter_names
+from napari.utils.context._expressions import (
+    _OPS,
+    Constant,
+    Expr,
+    Name,
+    _iter_names,
+    parse_expression,
+)
 
 
 def test_names():
