@@ -911,7 +911,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         added: List[Layer] = []  # for layers that get added
-        with progress(paths, desc='Opening Files') as pbr:
+        with progress(
+            paths, desc='Opening Files', total=0 if len(paths) == 1 else None
+        ) as pbr:
             for _path in pbr:
                 added.extend(
                     self._add_layers_with_plugins(
