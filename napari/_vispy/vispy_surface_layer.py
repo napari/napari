@@ -13,7 +13,7 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     View is based on the vispy mesh node and uses default values for
     lighting direction and lighting color. More information can be found
-    here https://github.com/vispy/vispy/blob/master/vispy/visuals/mesh.py
+    here https://github.com/vispy/vispy/blob/main/vispy/visuals/mesh.py
     """
 
     def __init__(self, layer):

@@ -4,10 +4,10 @@ on:
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
   schedule:
     - cron: "0 0 * * *"
   # Allows you to run this workflow manually from the Actions tab
@@ -63,7 +63,7 @@ jobs:
           VER=`python bundle.py --version`
           echo "version=${VER}" >> $GITHUB_ENV
           echo "Version: $VER"
-          ARCH_SUFFIX=`python -c "import platform; print(platform.machine())"`
+          ARCH_SUFFIX=`python bundle.py --arch`
           echo "arch-suffix=${ARCH_SUFFIX}" >> $GITHUB_ENV
           echo "Machine: ${ARCH_SUFFIX}"
       - name: Make Bundle
