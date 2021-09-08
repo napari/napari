@@ -41,7 +41,7 @@ class QtLayerList(QtListView[Layer]):
 
     def __init__(self, root: LayerList, parent: QWidget = None):
         super().__init__(root, parent)
-        self.setItemDelegate(LayerDelegate())
+        self.setItemDelegate(LayerDelegate(parent=self))
         self.setToolTip(trans._('Layer list'))
         font = self.font()
         font.setPointSize(12)
