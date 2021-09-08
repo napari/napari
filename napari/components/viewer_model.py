@@ -1243,24 +1243,38 @@ def valid_add_kwargs() -> Dict[str, Set[str]]:
     return valid
 
 
-def prep_layers(_path, plugin):
+def prep_layers(path, plugin):
+    """Read path into data using plugin and decide filename.
+
+    Parameters
+    ----------
+    path : str
+        the path to file or URL to open
+    plugin : str
+        plugin to use to open path
+
+    Returns
+    -------
+    tuple
+        tuple of (filenames, layer_data, hookimpl) layer info
+    """
     from ..plugins.io import read_data_with_plugins
 
-    layer_data, hookimpl = read_data_with_plugins(_path, plugin=plugin)
+    layer_data, hookimpl = read_data_with_plugins(path, plugin=plugin)
 
     # glean layer names from filename. These will be used as *fallback*
     # names, if the plugin does not return a name kwarg in their meta dict.
     filenames = []
-    if isinstance(_path, str):
-        filenames = itertools.repeat(_path)
-    elif is_sequence(_path):
-        if len(_path) == len(layer_data):
-            filenames = iter(_path)
+    if isinstance(path, str):
+        filenames = itertools.repeat(path)
+    elif is_sequence(path):
+        if len(path) == len(layer_data):
+            filenames = iter(path)
         else:
             # if a list of paths has been returned as a list of layer data
             # without a 1:1 relationship between the two lists we iterate
             # over the first name
-            filenames = itertools.repeat(_path[0])
+            filenames = itertools.repeat(path[0])
 
     return filenames, layer_data, hookimpl
 
