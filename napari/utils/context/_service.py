@@ -6,7 +6,6 @@ https://github.com/microsoft/vscode/blob/main/src/vs/platform/contextkey/browser
 from __future__ import annotations
 
 import contextlib
-import pprint
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from itertools import count
@@ -53,7 +52,7 @@ class Context(dict):
 
 
 class SettingsAwareContext(Context):
-    """A special context that allows access of settings using `_key_prefix`."""
+    """A special context that allows access of settings using `settings.`"""
 
     _key_prefix: Final[str] = 'settings.'
 
@@ -173,6 +172,9 @@ class _AbsContextKeyService(ABC):
     def __len__(self):
         return len(self._my_context.collect())
 
+    def __repr__(self):
+        return f'{type(self).__name__}({dict(self._my_context)})'
+
 
 class ContextKeyService(_AbsContextKeyService):
     """A root context."""
@@ -200,15 +202,6 @@ class ContextKeyService(_AbsContextKeyService):
         else:
             self._contexts[_id] = Context()
         return _id
-
-    def __repr__(self):
-        s = ''
-        for item in self._contexts.values():
-            if item is self._my_context:
-                s += pprint.pformat(dict(self))
-            else:
-                s += f', {id(item)}'
-        return f'{type(self).__name__}({s})'
 
     @classmethod
     def instance(cls) -> ContextKeyService:
@@ -262,7 +255,3 @@ class ScopedContextKeyService(_AbsContextKeyService):
 
     def _reemit_event(self, event):
         self.context_changed(value=event.value)
-
-    def __repr__(self):
-        _id = hex(id(self))
-        return f'{type(self).__name__}(id={_id}, {pprint.pformat(dict(self))})'

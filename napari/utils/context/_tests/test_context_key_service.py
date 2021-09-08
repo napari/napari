@@ -146,3 +146,30 @@ def test_service_events():
     scoped['b'] = 1
     event = mock.call_args_list[0][0][0]
     assert event.value == ['b']
+
+
+def test_settings_context():
+    """The root context is a SettingsAwareContext."""
+    mock = Mock()
+    root = ContextKeyService()
+    root.context_changed.connect(mock)
+
+    assert root['settings.appearance.theme'] == 'dark'
+    from napari.settings import get_settings
+
+    get_settings().appearance.theme = 'light'
+    assert root['settings.appearance.theme'] == 'light'
+    assert dict(root) == {}  # the context itself doesn't have the value
+    event = mock.call_args_list[0][0][0]
+    assert event.value == ['settings.appearance.theme']
+
+    # any changes made here do not affect the global settings...
+    # this is just a context that pulls from settings when missing.
+    root['settings.appearance.theme'] = 'dark'
+    assert 'settings.appearance.theme' in root
+    assert root['settings.appearance.theme'] == 'dark'
+    assert get_settings().appearance.theme == 'light'
+
+    del root['settings.appearance.theme']
+    assert 'settings.appearance.theme' not in root
+    assert root['settings.appearance.theme'] == 'light'  # falls back again
