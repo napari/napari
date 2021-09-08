@@ -910,134 +910,26 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 paths, kwargs, plugin=plugin, layer_type=layer_type
             )
 
-        added: List[Layer] = []  # for layers that get added
-        # for _path in paths:
-        #     added.extend(
-        #         self._add_layers_with_plugins(
-        #             _path, kwargs, plugin=plugin, layer_type=layer_type
-        #         )
-        #     )
-
-        def add_layer(layer_info):
-            filename, _data = layer_info
-            # actually add the layer
-            with layer_source(path=filename, reader_plugin=plugin):
-                added.extend(self._add_layer_from_data(*_data))
-
-        @thread_worker(
-            progress={'total': len(paths), 'desc': 'Opening Files'},
-            connect={'yielded': add_layer},
+        get_reader_worker(
+            self.add_layer_to_viewer, plugin, paths, kwargs, layer_type
         )
-        def add_layers():
-            nonlocal plugin
-            from ..plugins.io import read_data_with_plugins
 
-            for _path in paths:
-                layer_data, hookimpl = read_data_with_plugins(
-                    _path, plugin=plugin
-                )
+    def add_layer_to_viewer(self, layer_info):
+        """Adds layer to viewer based on layer_info.
 
-                # glean layer names from filename. These will be used as *fallback*
-                # names, if the plugin does not return a name kwarg in their meta dict.
-                filenames = []
-                if isinstance(_path, str):
-                    filenames = itertools.repeat(_path)
-                elif is_sequence(_path):
-                    if len(_path) == len(layer_data):
-                        filenames = iter(_path)
-                    else:
-                        # if a list of paths has been returned as a list of layer data
-                        # without a 1:1 relationship between the two lists we iterate
-                        # over the first name
-                        filenames = itertools.repeat(_path[0])
-
-                # # add each layer to the viewer
-                # added: List[Layer] = []  # for layers that get added
-                plugin = hookimpl.plugin_name if hookimpl else None
-                for data, filename in zip(layer_data, filenames):
-                    basename, _ext = os.path.splitext(
-                        os.path.basename(filename)
-                    )
-                    _data = _unify_data_and_user_kwargs(
-                        data, kwargs, layer_type, fallback_name=basename
-                    )
-                    layer_info = (filename, _data)
-
-                    yield layer_info
-
-        add_layers()
-
-        return added
-
-    def _add_layers_with_plugins(
-        self,
-        path_or_paths: Union[str, Sequence[str]],
-        kwargs: Optional[dict] = None,
-        plugin: Optional[str] = None,
-        layer_type: Optional[str] = None,
-    ) -> List[Layer]:
-        """Load a path or a list of paths into the viewer using plugins.
-
-        This function is mostly called from self.open_path, where the ``stack``
-        argument determines whether a list of strings is handed to plugins one
-        at a time, or en-masse.
+        This method is called on `yield` from a reader thread_worker,
+        which `yields` the filename, data and plugin to be used for
+        adding this layer.
 
         Parameters
         ----------
-        path_or_paths : str or list of str
-            A filepath, directory, or URL (or a list of any) to open. If a
-            list, the assumption is that the list is to be treated as a stack.
-        kwargs : dict, optional
-            keyword arguments that will be used to overwrite any of those that
-            are returned in the meta dict from plugins.
-        plugin : str, optional
-            Name of a plugin to use.  If provided, will force ``path`` to be
-            read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an exception will be raised.
-        layer_type : str, optional
-            If provided, will force data read from ``path`` to be passed to the
-            corresponding ``add_<layer_type>`` method (along with any
-            additional) ``kwargs`` provided to this function.  This *may*
-            result in exceptions if the data returned from the path is not
-            compatible with the layer_type.
-
-        Returns
-        -------
-        List[Layer]
-            A list of any layers that were added to the viewer.
+        layer_info : Tuple
+            tuple of filename, layer data and plugin used to read the layer
         """
-        from ..plugins.io import read_data_with_plugins
-
-        layer_data, hookimpl = read_data_with_plugins(
-            path_or_paths, plugin=plugin
-        )
-
-        # glean layer names from filename. These will be used as *fallback*
-        # names, if the plugin does not return a name kwarg in their meta dict.
-        filenames = []
-        if isinstance(path_or_paths, str):
-            filenames = itertools.repeat(path_or_paths)
-        elif is_sequence(path_or_paths):
-            if len(path_or_paths) == len(layer_data):
-                filenames = iter(path_or_paths)
-            else:
-                # if a list of paths has been returned as a list of layer data
-                # without a 1:1 relationship between the two lists we iterate
-                # over the first name
-                filenames = itertools.repeat(path_or_paths[0])
-
-        # add each layer to the viewer
-        added: List[Layer] = []  # for layers that get added
-        plugin = hookimpl.plugin_name if hookimpl else None
-        for data, filename in zip(layer_data, filenames):
-            basename, _ext = os.path.splitext(os.path.basename(filename))
-            _data = _unify_data_and_user_kwargs(
-                data, kwargs, layer_type, fallback_name=basename
-            )
-            # actually add the layer
-            with layer_source(path=filename, reader_plugin=plugin):
-                added.extend(self._add_layer_from_data(*_data))
-        return added
+        filename, _data, plugin = layer_info
+        # actually add the layer
+        with layer_source(path=filename, reader_plugin=plugin):
+            self._add_layer_from_data(*_data)
 
     def _add_layer_from_data(
         self,
@@ -1302,6 +1194,103 @@ def valid_add_kwargs() -> Dict[str, Set[str]]:
         params = inspect.signature(getattr(ViewerModel, meth)).parameters
         valid[meth[4:]] = set(params) - {'self', 'kwargs'}
     return valid
+
+
+def get_reader_worker(yield_func, plugin, paths, layer_type, kwargs):
+    """Creates and returns thread_worker with progress bar and yield connection.
+
+    Creates a thread_worker with progress bar of length len(paths), connected on
+    yield to yield_func. This reader worker is parameterised by plugin, paths,
+    kwargs and layer_type, and requested on `viewer.open` when opening a list of
+    files as individual layers i.e. the `stack` argument to `viewer.open` is False.
+
+    Parameters
+    ----------
+    yield_func : callable
+        function to connect on yield
+    paths : list of str
+        A list of filepath, directory, or URL to open.
+    plugin : str, optional
+        Name of a plugin to use.  If provided, will force ``path`` to be
+        read with the specified ``plugin``.  If the requested plugin cannot
+        read ``path``, an exception will be raised.
+    layer_type : str, optional
+        If provided, will force data read from ``path`` to be passed to the
+        corresponding ``add_<layer_type>`` method (along with any
+        additional) ``kwargs`` provided to this function.  This *may*
+        result in exceptions if the data returned from the path is not
+        compatible with the layer_type.
+    kwargs : dict, optional
+        keyword arguments that will be used to overwrite any of those that
+        are returned in the meta dict from plugins.
+
+    Returns
+    -------
+    GeneratorWorker
+        thread_worker with progress bar for reading the given paths
+    """
+
+    @thread_worker(
+        progress={'total': len(paths), 'desc': 'Opening Files'},
+        connect={'yielded': yield_func},
+    )
+    def read_layers(plugin, paths, layer_type, kwargs):
+        """Read a list of paths using plugins and yield each layer.
+
+        Parameters
+        ----------
+        plugin : str, optional
+            Name of a plugin to use.  If provided, will force ``path`` to be
+            read with the specified ``plugin``.  If the requested plugin cannot
+            read ``path``, an exception will be raised.
+        paths : list of str
+            A list of filepath, directory, or URL to open.
+        layer_type : str, optional
+            If provided, will force data read from ``path`` to be passed to the
+            corresponding ``add_<layer_type>`` method (along with any
+            additional) ``kwargs`` provided to this function.  This *may*
+            result in exceptions if the data returned from the path is not
+            compatible with the layer_type.
+        kwargs : dict, optional
+            keyword arguments that will be used to overwrite any of those that
+            are returned in the meta dict from plugins.
+
+        Yields
+        -------
+        tuple
+            tuple of (filename, layer data, plugin) for each layer to be added
+        """
+        from ..plugins.io import read_data_with_plugins
+
+        for _path in paths:
+            layer_data, hookimpl = read_data_with_plugins(_path, plugin=plugin)
+
+            # glean layer names from filename. These will be used as *fallback*
+            # names, if the plugin does not return a name kwarg in their meta dict.
+            filenames = []
+            if isinstance(_path, str):
+                filenames = itertools.repeat(_path)
+            elif is_sequence(_path):
+                if len(_path) == len(layer_data):
+                    filenames = iter(_path)
+                else:
+                    # if a list of paths has been returned as a list of layer data
+                    # without a 1:1 relationship between the two lists we iterate
+                    # over the first name
+                    filenames = itertools.repeat(_path[0])
+
+            # # add each layer to the viewer
+            # added: List[Layer] = []  # for layers that get added
+            plugin = hookimpl.plugin_name if hookimpl else None
+            for data, filename in zip(layer_data, filenames):
+                basename, _ext = os.path.splitext(os.path.basename(filename))
+                _data = _unify_data_and_user_kwargs(
+                    data, kwargs, layer_type, fallback_name=basename
+                )
+                layer_info = (filename, _data, plugin)
+                yield layer_info
+
+    return read_layers(plugin, paths, layer_type, kwargs)
 
 
 for _layer in (
