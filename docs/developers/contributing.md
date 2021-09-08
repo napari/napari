@@ -39,12 +39,12 @@ pre-commit install
 ```
 
 Upon committing, your code will be formatted according to our [`black`
-configuration](https://github.com/napari/napari/blob/master/pyproject.toml), which includes the settings
+configuration](https://github.com/napari/napari/blob/main/pyproject.toml), which includes the settings
 `skip-string-normalization = true` and `max-line-length = 79`. To learn more,
 see [`black`'s documentation](https://black.readthedocs.io/en/stable/).
 
 Code will also be linted to enforce the stylistic and logistical rules specified
-in our [`flake8` configuration](https://github.com/napari/napari/blob/master/setup.cfg), which currently ignores
+in our [`flake8` configuration](https://github.com/napari/napari/blob/main/setup.cfg), which currently ignores
 [E203](https://lintlyci.github.io/Flake8Rules/rules/E203.html),
 [E501](https://lintlyci.github.io/Flake8Rules/rules/E501.html),
 [W503](https://lintlyci.github.io/Flake8Rules/rules/W503.html) and
@@ -142,7 +142,7 @@ To learn more, please see the [translations guide](../guides/translations.md).
 
 Create a new feature branch:
 ```sh
-git checkout master -b your-branch-name
+git checkout main -b your-branch-name
 ```
 
 `git` will automatically detect changes to a repository.
@@ -175,26 +175,26 @@ To set it, use `git config --global user.email your-address@example.com`.
 
 ## Keeping your branches up-to-date
 
-Switch to the `master` branch:
+Switch to the `main` branch:
 ```sh
-git checkout master
+git checkout main
 ```
 
-Fetch changes and update `master`:
+Fetch changes and update `main`:
 ```sh
-git pull upstream master --tags
+git pull upstream main --tags
 ```
 
 This is shorthand for:
 ```sh
-git fetch upstream master --tags
-git merge upstream/master
+git fetch upstream main --tags
+git merge upstream/main
 ```
 
 Update your other branches:
 ```sh
 git checkout your-branch-name
-git merge master
+git merge main
 ```
 
 ## Sharing your changes
@@ -204,7 +204,8 @@ Update your remote branch:
 git push -u origin your-branch-name
 ```
 
-You can then make a [pull-request](https://guides.github.com/activities/forking/#making-a-pull-request) to `napari`'s `master` branch.
+You can then make a
+[pull-request](https://guides.github.com/activities/forking/#making-a-pull-request) to `napari`'s `main` branch.
 
 ## Building the docs
 

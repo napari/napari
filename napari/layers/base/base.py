@@ -32,6 +32,7 @@ from ..utils.layer_utils import (
     convert_to_uint8,
     dims_displayed_world_to_layer,
 )
+from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ._base_constants import Blending
 
 Extent = namedtuple('Extent', 'data world step')
@@ -86,7 +87,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. Applied as an extra transform on top of the
+        `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
@@ -140,7 +141,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. Applied as an extra transform on top of the
+        `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
@@ -203,6 +204,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         blending='translucent',
         visible=True,
         multiscale=False,
+        experimental_clipping_planes=None,
     ):
         super().__init__()
 
@@ -224,6 +226,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._value = None
         self.scale_factor = 1
         self.multiscale = multiscale
+        self._experimental_clipping_planes = ClippingPlaneList()
 
         self._ndim = ndim
         self._ndisplay = 2
@@ -273,6 +276,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
+        self.experimental_clipping_planes = experimental_clipping_planes
+
         self.events = EmitterGroup(
             source=self,
             auto_connect=False,
@@ -785,6 +790,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             'opacity': self.opacity,
             'blending': self.blending,
             'visible': self.visible,
+            'experimental_clipping_planes': [
+                plane.dict() for plane in self.experimental_clipping_planes
+            ],
         }
         return base_dict
 
@@ -915,6 +923,31 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
+
+    @property
+    def experimental_clipping_planes(self):
+        return self._experimental_clipping_planes
+
+    @experimental_clipping_planes.setter
+    def experimental_clipping_planes(
+        self,
+        value: Union[
+            dict,
+            ClippingPlane,
+            List[Union[ClippingPlane, dict]],
+            ClippingPlaneList,
+        ],
+    ):
+        self._experimental_clipping_planes.clear()
+        if value is None:
+            return
+
+        if isinstance(value, (ClippingPlane, dict)):
+            value = [value]
+        for new_plane in value:
+            plane = ClippingPlane()
+            plane.update(new_plane)
+            self._experimental_clipping_planes.append(plane)
 
     def set_view_slice(self):
         with self.dask_optimized_slicing():

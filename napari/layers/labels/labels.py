@@ -92,9 +92,9 @@ class Labels(_ImageBase):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -460,16 +460,11 @@ class Labels(_ImageBase):
 
     @color.setter
     def color(self, color):
-
         if not color:
             color = {}
-            color_mode = LabelColorMode.AUTO
-        else:
-            color_mode = LabelColorMode.DIRECT
 
         if self._background_label not in color:
             color[self._background_label] = 'transparent'
-
         if None not in color:
             color[None] = 'black'
 
@@ -477,9 +472,54 @@ class Labels(_ImageBase):
             label: transform_color(color_str)[0]
             for label, color_str in color.items()
         }
-
         self._color = colors
+
+        # `colors` may contain just the default None and background label
+        # colors, in which case we need to be in AUTO color mode. Otherwise,
+        # `colors` contains colors for all labels, and we should be in DIRECT
+        # mode.
+
+        # For more information
+        # - https://github.com/napari/napari/issues/2479
+        # - https://github.com/napari/napari/issues/2953
+        if self._is_default_colors(colors):
+            color_mode = LabelColorMode.AUTO
+        else:
+            color_mode = LabelColorMode.DIRECT
+
         self.color_mode = color_mode
+
+    def _is_default_colors(self, color):
+        """Returns True if color contains only default colors, otherwise False.
+
+        Default colors are black for `None` and transparent for
+        `self._background_label`.
+
+        Parameters
+        ----------
+        color : Dict
+            Dictionary of label value to color array
+
+        Returns
+        -------
+        bool
+            True if color contains only default colors, otherwise False.
+        """
+        if len(color) != 2:
+            return False
+
+        if not hasattr(self, '_color'):
+            return False
+
+        default_keys = [None, self._background_label]
+        if set(default_keys) != set(color.keys()):
+            return False
+
+        for key in default_keys:
+            if not np.allclose(self._color[key], color[key]):
+                return False
+
+        return True
 
     def _ensure_int_labels(self, data):
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""

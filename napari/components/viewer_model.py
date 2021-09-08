@@ -281,8 +281,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if np.max(size) == 0:
             self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
+            scale = np.array(size[-2:])
+            scale[np.isclose(scale, 0)] = 1
             self.camera.zoom = 0.95 * np.min(
-                np.array(self._canvas_size) / np.array(size[-2:])
+                np.array(self._canvas_size) / scale
             )
         self.camera.angles = (0, 0, 90)
 
@@ -648,9 +650,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         affine : n-D array or napari.utils.transforms.Affine
             (N+1, N+1) affine transformation matrix in homogeneous coordinates.
             The first (N, N) entries correspond to a linear transform and
-            the final column is a lenght N translation vector and a 1 or a napari
-            AffineTransform object. If provided then translate, scale, rotate, and
-            shear values are ignored.
+            the final column is a length N translation vector and a 1 or a
+            napari `Affine` transform object. Applied as an extra transform on
+            top of the provided scale, rotate, and shear values.
         opacity : float or list
             Opacity of the layer visual, between 0.0 and 1.0.  If a list then
             must be same length as the axis that is being expanded as channels.
