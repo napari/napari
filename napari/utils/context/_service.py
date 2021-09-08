@@ -10,7 +10,7 @@ import pprint
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from itertools import count
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Final, Optional
 
 from napari.utils.events import EventEmitter
 
@@ -50,6 +50,44 @@ class Context(dict):
         parvals = {k: v for k, v in self.collect().items() if k not in self}
         parstring = f' # <{parvals}>' if parvals else ''
         return f'{type(self).__name__}({myvals}){parstring}'
+
+
+class SettingsAwareContext(Context):
+    """A special context that allows access of settings using `_key_prefix`."""
+
+    _key_prefix: Final[str] = 'settings.'
+
+    def __init__(self, id: int, emitter: EventEmitter):
+        super().__init__()
+        self._id = id
+        self._emitter = emitter
+        from napari.settings import get_settings
+
+        self._settings = get_settings()
+        self._settings.events.changed.connect(self._update_key)
+
+    def __missing__(self, key: str) -> Any:
+        if key.startswith(self._key_prefix):
+            splits = [k for k in key.split(".")[1:] if k]
+            val = self._settings
+            if splits:
+                while splits:
+                    val = getattr(val, splits.pop(0))
+                if hasattr(val, 'dict'):
+                    val = val.dict()
+                return val
+        return super().__missing__(key)
+
+    def _update_key(self, event):
+        ctx_key = f'{self._key_prefix}{event.key}'
+        # if ctx_key in self:
+        self._emitter(value=[ctx_key])
+
+    def __del__(self):
+        self._settings.events.changed.disconnect(self._update_key)
+
+    def __bool__(self):
+        return True
 
 
 class _AbsContextKeyService(ABC):
@@ -135,15 +173,6 @@ class _AbsContextKeyService(ABC):
     def __len__(self):
         return len(self._my_context.collect())
 
-    # def update(
-    #     self, _m: Union[Mapping, Iterable, None] = None, **kwargs
-    # ) -> None:
-    #     # TODO: this should be protected behind a change buffer
-    #     d = dict(_m) if _m is not None else {}
-    #     d.update(kwargs)
-    #     for k, v in d.items():
-    #         self[k] = v
-
 
 class ContextKeyService(_AbsContextKeyService):
     """A root context."""
@@ -154,7 +183,8 @@ class ContextKeyService(_AbsContextKeyService):
     def __init__(self) -> None:
         super().__init__(0)
         self._ctx_count: count[int] = count(1)
-        self._contexts = {self._context_id: Context()}
+        my_ctx = SettingsAwareContext(self._context_id, self.context_changed)
+        self._contexts = {self._context_id: my_ctx}
 
     def _get_context_container(self, context_id: int) -> Context:
         return self._contexts.get(context_id, Context())  # Null context
@@ -203,14 +233,14 @@ class ScopedContextKeyService(_AbsContextKeyService):
         self._parent = parent
         self._parent.context_changed.connect(self._reemit_event)
 
-        # when the object gets deleted, delete this scoped_context from root
-        weakref.finalize(obj, self._parent.del_context, self._context_id)
-
-        # save weakref to object, so we can cleanup the context_attr if this
-        # scoped context gets deleted.
-        self._obj_ref = weakref.ref(obj)
-        with contextlib.suppress(AttributeError):
-            setattr(obj, KEYBINDING_CONTEXT_ATTR, self._context_id)
+        if obj is not None:
+            # when the object gets deleted, delete this scoped_context from root
+            weakref.finalize(obj, self._parent.del_context, self._context_id)
+            # save weakref to object, so we can cleanup the context_attr if
+            # this scoped context gets deleted.
+            self._obj_ref = weakref.ref(obj)
+            with contextlib.suppress(AttributeError):
+                setattr(obj, KEYBINDING_CONTEXT_ATTR, self._context_id)
 
     def __del__(self):
         """Delete this scoped service, cleanup parent, remove attr"""
