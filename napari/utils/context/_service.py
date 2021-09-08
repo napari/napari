@@ -9,7 +9,7 @@ import contextlib
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from itertools import count
-from typing import Any, Dict, Final, Optional
+from typing import Any, Callable, Dict, Final, Optional
 
 from napari.utils.events import EventEmitter
 
@@ -227,6 +227,7 @@ class ScopedContextKeyService(_AbsContextKeyService):
         self._parent.context_changed.connect(self._reemit_event)
 
         if obj is not None:
+            self['_scope_id'] = obj_id(obj)
             # when the object gets deleted, delete this scoped_context from root
             weakref.finalize(obj, self._parent.del_context, self._context_id)
             # save weakref to object, so we can cleanup the context_attr if
@@ -255,3 +256,25 @@ class ScopedContextKeyService(_AbsContextKeyService):
 
     def _reemit_event(self, event):
         self.context_changed(value=event.value)
+
+
+def _obj_id(fmt='{}:{}') -> Callable[[object], str]:
+    from itertools import count
+    from typing import DefaultDict
+    from weakref import WeakKeyDictionary
+
+    counter: DefaultDict[str, count[int]] = DefaultDict(count)
+    cache: WeakKeyDictionary[object, str] = WeakKeyDictionary()
+
+    def inner(obj: object) -> str:
+        if obj is None:
+            return ''
+        if obj not in cache:
+            type_ = type(obj).__name__
+            cache[obj] = fmt.format(type_, next(counter[type_]))
+        return cache[obj]
+
+    return inner
+
+
+obj_id = _obj_id()

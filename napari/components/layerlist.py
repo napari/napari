@@ -1,7 +1,7 @@
 import itertools
 import warnings
 from collections import namedtuple
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 import numpy as np
 
@@ -25,10 +25,7 @@ class LayerList(SelectableEventedList[Layer]):
         Iterable of napari.layer.Layer
     """
 
-    _ID = itertools.count()
-
     def __init__(self, data=()):
-        self._id = f'{type(self).__name__}:{next(LayerList._ID)}'
         super().__init__(
             data=data,
             basetype=Layer,
@@ -36,9 +33,8 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
         self._srvc = ContextKeyService.instance().create_scoped(self)
-        self._srvc['LayerList'] = self._id
-        self._ctx = LayerListContextKeys.bind_to_service(self._srvc)
-        self._ctx.follow(self.selection.events.changed)
+        _ctx = LayerListContextKeys.bind_to_service(self._srvc)
+        _ctx.follow(self.selection.events.changed)
 
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
@@ -333,37 +329,37 @@ class LayerList(SelectableEventedList[Layer]):
 
         return save_layers(path, layers, plugin=plugin)
 
-    def _selection_context(self) -> dict:
-        """Return context dict for current layerlist.selection"""
-        return {k: v(self.selection) for k, v in _CONTEXT_KEYS.items()}
+    # def _selection_context(self) -> dict:
+    #     """Return context dict for current layerlist.selection"""
+    #     return {k: v(self.selection) for k, v in _CONTEXT_KEYS.items()}
 
 
-# Each key in this list is "usable" as a variable name in the the "enable_when"
-# and "show_when" expressions of the napari.layers._layer_actions.LAYER_ACTIONS
-#
-# each value is a function that takes a LayerList.selection, and returns
-# a value. LayerList._selection_context uses this dict to generate a concrete
-# context object that can be passed to the
-# `qt_action_context_menu.QtActionContextMenu` method to update the enabled
-# and/or visible items based on the state of the layerlist.
+# # Each key in this list is "usable" as a variable name in the the "enable_when"
+# # and "show_when" expressions of the napari.layers._layer_actions.LAYER_ACTIONS
+# #
+# # each value is a function that takes a LayerList.selection, and returns
+# # a value. LayerList._selection_context uses this dict to generate a concrete
+# # context object that can be passed to the
+# # `qt_action_context_menu.QtActionContextMenu` method to update the enabled
+# # and/or visible items based on the state of the layerlist.
 
-_CONTEXT_KEYS = {
-    'selection_count': lambda s: len(s),
-    'all_layers_linked': lambda s: all(layer_is_linked(x) for x in s),
-    'linked_layers_unselected': lambda s: len(get_linked_layers(*s) - s),
-    'active_is_rgb': lambda s: getattr(s.active, 'rgb', False),
-    'only_images_selected': (
-        lambda s: bool(s and all(isinstance(x, Image) for x in s))
-    ),
-    'only_labels_selected': (
-        lambda s: bool(s and all(isinstance(x, Labels) for x in s))
-    ),
-    'image_active': lambda s: isinstance(s.active, Image),
-    'ndim': lambda s: s.active and getattr(s.active.data, 'ndim', None),
-    'active_layer_shape': (
-        lambda s: s.active and getattr(s.active.data, 'shape', None)
-    ),
-    'same_shape': (
-        lambda s: len({getattr(x.data, 'shape', ()) for x in s}) == 1
-    ),
-}
+# _CONTEXT_KEYS = {
+#     'selection_count': lambda s: len(s),
+#     'all_layers_linked': lambda s: all(layer_is_linked(x) for x in s),
+#     'linked_layers_unselected': lambda s: len(get_linked_layers(*s) - s),
+#     'active_is_rgb': lambda s: getattr(s.active, 'rgb', False),
+#     'only_images_selected': (
+#         lambda s: bool(s and all(isinstance(x, Image) for x in s))
+#     ),
+#     'only_labels_selected': (
+#         lambda s: bool(s and all(isinstance(x, Labels) for x in s))
+#     ),
+#     'image_active': lambda s: isinstance(s.active, Image),
+#     'ndim': lambda s: s.active and getattr(s.active.data, 'ndim', None),
+#     'active_layer_shape': (
+#         lambda s: s.active and getattr(s.active.data, 'shape', None)
+#     ),
+#     'same_shape': (
+#         lambda s: len({getattr(x.data, 'shape', ()) for x in s}) == 1
+#     ),
+# }

@@ -164,7 +164,7 @@ def _projdict(key) -> ContextAction:
     return {
         'description': key,
         'action': partial(_project, mode=key),
-        'enable_when': f'{LLK.active_layer_is_image} and {LLK.active_layer_ndim} > 2',
+        'enable_when': f'{LLK.active_layer_type} == "image" and {LLK.active_layer_ndim} > 2',
         'show_when': 'True',
     }
 
@@ -194,7 +194,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:group:projections': {
             'description': trans._('Make Projection'),
-            'enable_when': f'{LLK.active_layer_is_image} and {LLK.active_layer_ndim} > 2',
+            'enable_when': f'{LLK.active_layer_type} == "image" and {LLK.active_layer_ndim} > 2',
             'show_when': 'True',
             'action_group': {
                 'napari:max_projection': _projdict('max'),
@@ -210,7 +210,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:split_stack': {
             'description': trans._('Split Stack'),
             'action': _split_stack,
-            'enable_when': f'{LLK.active_layer_is_image} and {LLK.active_layer_shape}[0] < 10',
+            'enable_when': f'{LLK.active_layer_type} == "image" and {LLK.active_layer_shape}[0] < 10',
             'show_when': f'not {LLK.active_layer_is_rgb}',
         },
         'napari:split_rgb': {
