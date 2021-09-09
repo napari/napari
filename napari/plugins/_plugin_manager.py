@@ -674,8 +674,10 @@ class NapariPluginManager(PluginManager):
             icon = Path(icon)
             if not icon.exists() and icon.suffix != ".svg":
                 continue
-            _data[f"{plugin_name}:{icon.stem}"] = str(icon)
-            ICONS[f"{plugin_name}:{icon.stem}"] = str(icon)
+            icon_name = f"{plugin_name}:{icon.stem}"
+            icon = str(icon)
+            _data[icon_name] = icon
+            ICONS[icon_name] = icon
 
         if plugin_name not in self._icons_data:
             self._icons_data[plugin_name] = {}
