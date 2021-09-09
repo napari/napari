@@ -174,7 +174,7 @@ class Expr(ast.AST, Generic[T]):
         """Evaluate this expression with names in `context`"""
         code = compile(ast.Expression(body=self), '<Expr>', 'eval')
         try:
-            return eval(code, context)
+            return eval(code, {}, context)
         except NameError:
             miss = {k for k in _iter_names(self) if k not in context}
             raise NameError(

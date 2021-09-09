@@ -22,7 +22,7 @@ from ._expressions import Name
 if TYPE_CHECKING:
     from napari.utils.events import Event, EventEmitter
 
-    from ._service import ContextKeyService
+    from ._service import _BaseContextKeyService
 
 
 T = TypeVar("T")
@@ -71,7 +71,7 @@ class RawContextKey(Name, Generic[A, T]):
     def info(cls) -> List[RawContextKey.Info]:
         return list(cls._info)
 
-    def bind_to(self, service: ContextKeyService) -> None:
+    def bind_to(self, service: _BaseContextKeyService) -> None:
         service[self.id] = self._default_value
 
     def __set_name__(self, owner: Type, name):
@@ -106,15 +106,16 @@ class RawContextKey(Name, Generic[A, T]):
 
 
 class ContextNamespace:
-    _service: ContextKeyService
+    _service: _BaseContextKeyService
     _defaults: Dict[str, Any]
     _updaters: Dict[str, Callable]
 
     @classmethod
-    def bind_to_service(cls, service: ContextKeyService) -> ContextNamespace:
+    def bind_to_service(
+        cls, service: _BaseContextKeyService
+    ) -> ContextNamespace:
         obj = cls()
         obj._service = service
-        # srv.create_key("LayerListId", f"LayerList:{id(layer_list)}")
         obj._defaults = {}
         obj._updaters = {}
         for k, v in type(obj).__dict__.items():

@@ -2,7 +2,12 @@ from unittest.mock import Mock
 
 import pytest
 
-from napari.utils.context._service import Context, ContextKeyService
+from napari.utils.context._service import (
+    Context,
+    ContextKeyService,
+    create_context,
+    get_context,
+)
 
 
 def test_context():
@@ -11,8 +16,8 @@ def test_context():
     B_DICT = {'a': 1, 'd': 1}
     C_DICT = {'a': 2, 'c': 2, 'e': 2}
     a = Context(A_DICT)
-    b = a._spawn(B_DICT)
-    c = b._spawn(C_DICT)
+    b = a._create_child(B_DICT)
+    c = b._create_child(C_DICT)
 
     assert isinstance(a, dict)
 
@@ -86,7 +91,7 @@ def test_scoped_service_inherits():
     scoped = root.create_scoped(t)
     repr(scoped)
 
-    assert root.get_context(t) == scoped._my_context
+    assert root.get_context(t) == get_context(t) == scoped
 
     with pytest.raises(RuntimeError):
         root.create_scoped(t)
@@ -94,34 +99,37 @@ def test_scoped_service_inherits():
     # add to the scoped dict ... the root is unaffected
     scoped['k'] = 0
     assert dict(root) == {}
-    assert dict(scoped) == {'k': 0}
+    assert dict(scoped) == {'T': 'T:0', 'k': 0}
 
     assert repr(scoped)
 
     # add to the root dict ... the scoped dict is unaffected
     root['k'] = 1
     assert dict(root) == {'k': 1}
-    assert dict(scoped) == {'k': 0}
+    assert dict(scoped) == {'T': 'T:0', 'k': 0}
     assert scoped['k'] == 0
 
     # delete the scoped key, now it inherits from the parent
     del scoped['k']
     assert dict(root) == {'k': 1}
-    assert dict(scoped) == {'k': 1}
+    assert dict(scoped) == {'T': 'T:0', 'k': 1}
     assert scoped['k'] == 1
 
     # deleting again has no consequence
     del scoped['k']
-    assert dict(scoped) == {'k': 1}
+    assert dict(scoped) == {'T': 'T:0', 'k': 1}
 
     # deleting from parent affects the scoped keys
     scoped['k2'] = 10
     del root['k']
     assert dict(root) == {}
-    assert dict(scoped) == {'k2': 10}
+    assert dict(scoped) == {'T': 'T:0', 'k2': 10}
 
     # make sure that deletion frees the object for rescoping
     del scoped
+    import gc
+
+    gc.collect()
     newscope = root.create_scoped(t)
     assert newscope is not None
 
@@ -146,6 +154,22 @@ def test_service_events():
     scoped['b'] = 1
     event = mock.call_args_list[0][0][0]
     assert event.value == ['b']
+
+
+def test_create_scoped_contexts():
+    """Test that objects created in the stack of another contexted object"""
+
+    class A:
+        def __init__(self) -> None:
+            self.ctx = create_context(self)
+            self.b = B()
+
+    class B:
+        def __init__(self) -> None:
+            self.ctx = create_context(self)
+
+    obj = A()
+    assert get_context(obj.b)._parent is get_context(obj) is obj.ctx  # type: ignore
 
 
 def test_settings_context():
