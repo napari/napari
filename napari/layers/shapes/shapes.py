@@ -192,8 +192,8 @@ class Shapes(Layer):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -425,6 +425,7 @@ class Shapes(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        experimental_clipping_planes=None,
     ):
         if data is None:
             if ndim is None:
@@ -455,6 +456,7 @@ class Shapes(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -521,9 +523,13 @@ class Shapes(Layer):
         self._fixed_aspect = False
         self._aspect_ratio = 1
         self._is_moving = False
+
         # _moving_coordinates are needed for fixing aspect ratio during
-        # a resize
+        # a resize, it stores the last pointer coordinate value that happened
+        # during a mouse move to that pressing/releasing shift
+        # can trigger a redraw of the shape with a fixed aspect ratio.
         self._moving_coordinates = None
+
         self._fixed_index = 0
         self._is_selecting = False
         self._drag_box = None

@@ -106,8 +106,7 @@ class VispyCamera:
             scale = np.array(
                 [self._view.camera.rect.width, self._view.camera.rect.height]
             )
-            if np.allclose(scale, [0, 0]):  # fix for #2875
-                scale = [1, 1]
+            scale[np.isclose(scale, 0)] = 1  # fix for #2875
         zoom = np.min(canvas_size / scale)
         return zoom
 

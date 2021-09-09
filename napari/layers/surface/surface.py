@@ -58,9 +58,9 @@ class Surface(IntensityVisualizationMixin, Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -144,6 +144,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         blending='translucent',
         shading='flat',
         visible=True,
+        experimental_clipping_planes=None,
     ):
 
         ndim = data[0].shape[1]
@@ -161,6 +162,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(interpolation=Event, rendering=Event, shading=Event)

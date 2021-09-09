@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import partial
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -10,6 +9,7 @@ from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 from superqt import QDoubleRangeSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
+from ...utils.events.event_utils import connect_no_arg, connect_setattr
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from ..widgets._slider_compat import QDoubleSlider
@@ -19,6 +19,24 @@ from .qt_layer_controls_base import QtLayerControls
 
 if TYPE_CHECKING:
     from napari.layers import Image
+
+
+class _QDoubleRangeSlider(QDoubleRangeSlider):
+    def mousePressEvent(self, event):
+        """Update the slider, or, on right-click, pop-up an expanded slider.
+
+        The expanded slider provides finer control, directly editable values,
+        and the ability to change the available range of the sliders.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        if event.button() == Qt.RightButton:
+            self.parent().show_clim_popupup()
+        else:
+            super().mousePressEvent(event)
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -70,7 +88,7 @@ class QtBaseImageControls(QtLayerControls):
         self.colormapComboBox = comboBox
 
         # Create contrast_limits slider
-        self.contrastLimitsSlider = QDoubleRangeSlider(Qt.Horizontal, self)
+        self.contrastLimitsSlider = _QDoubleRangeSlider(Qt.Horizontal, self)
         self.contrastLimitsSlider.setSingleStep(0.01)
         self.contrastLimitsSlider.setRange(*self.layer.contrast_limits_range)
         self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
@@ -80,12 +98,15 @@ class QtBaseImageControls(QtLayerControls):
 
         self.clim_popup = None
 
-        self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
-        set_clim = partial(setattr, self.layer, 'contrast_limits')
-
-        self.contrastLimitsSlider.valueChanged.connect(set_clim)
-        self.contrastLimitsSlider.rangeChanged.connect(
-            lambda *a: setattr(self.layer, 'contrast_limits_range', a)
+        connect_setattr(
+            self.contrastLimitsSlider.valueChanged,
+            self.layer,
+            "contrast_limits",
+        )
+        connect_setattr(
+            self.contrastLimitsSlider.rangeChanged,
+            self.layer,
+            'contrast_limits_range',
         )
         self.autoScaleBar = AutoScaleButtons(layer, self)
 
@@ -95,7 +116,7 @@ class QtBaseImageControls(QtLayerControls):
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
         sld.setValue(self.layer.gamma)
-        sld.valueChanged.connect(lambda v: setattr(self.layer, 'gamma', v))
+        connect_setattr(sld.valueChanged, self.layer, 'gamma')
         self.gammaSlider = sld
 
         self.colorbarLabel = QLabel(parent=self)
@@ -113,24 +134,6 @@ class QtBaseImageControls(QtLayerControls):
             Colormap name.
         """
         self.layer.colormap = self.colormapComboBox.currentData()
-
-    def _clim_mousepress(self, event):
-        """Update the slider, or, on right-click, pop-up an expanded slider.
-
-        The expanded slider provides finer control, directly editable values,
-        and the ability to change the available range of the sliders.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if event.button() == Qt.RightButton:
-            self.show_clim_popupup()
-        else:
-            QDoubleRangeSlider.mousePressEvent(
-                self.contrastLimitsSlider, event
-            )
 
     def _on_contrast_limits_change(self, event=None):
         """Receive layer model contrast limits change event and update slider.
@@ -193,7 +196,8 @@ class QtBaseImageControls(QtLayerControls):
 
     def closeEvent(self, event):
         self.deleteLater()
-        event.accept()
+        self.layer.events.disconnect(self)
+        super().closeEvent(event)
 
     def show_clim_popupup(self):
         self.clim_popup = QContrastLimitsPopup(self.layer, self)
@@ -216,13 +220,9 @@ class AutoScaleButtons(QWidget):
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
-        once_btn.clicked.connect(lambda: layer.reset_contrast_limits())
-        auto_btn.toggled.connect(
-            lambda e: setattr(layer, '_keep_autoscale', e)
-        )
-        auto_btn.clicked.connect(
-            lambda e: layer.reset_contrast_limits() if e else None
-        )
+        connect_no_arg(once_btn.clicked, layer, "reset_contrast_limits")
+        connect_setattr(auto_btn.toggled, layer, "_keep_autoscale")
+        connect_no_arg(auto_btn.clicked, layer, "reset_contrast_limits")
 
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
@@ -249,10 +249,9 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         self.slider.setSingleStep(10 ** -decimals)
         self.slider.setValue(layer.contrast_limits)
 
-        set_values = partial(setattr, layer, 'contrast_limits')
-        self.slider.valueChanged.connect(set_values)
-        self.slider.rangeChanged.connect(
-            lambda *a: setattr(layer, 'contrast_limits_range', a)
+        connect_setattr(self.slider.valueChanged, layer, "contrast_limits")
+        connect_setattr(
+            self.slider.rangeChanged, layer, "contrast_limits_range"
         )
 
         def reset():

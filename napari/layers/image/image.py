@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -17,7 +17,7 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ..utils.plane import ClippingPlaneList, SlicingPlane
+from ..utils.plane import SlicingPlane
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
@@ -90,8 +90,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -249,6 +249,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -291,7 +292,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._experimental_slicing_plane = SlicingPlane(
             thickness=1, enabled=False
         )
-        self._experimental_clipping_planes = ClippingPlaneList()
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
                 dtype = getattr(data, 'dtype', None)
@@ -319,15 +319,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if experimental_slicing_plane is not None:
             self.experimental_slicing_plane = experimental_slicing_plane
             self.experimental_slicing_plane.update(experimental_slicing_plane)
-        self.experimental_clipping_planes = experimental_clipping_planes
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image."""
+        wrapper = _weakref_hide(self)
         self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed, self.rgb
+            self._get_empty_image(), wrapper._raw_to_displayed, self.rgb
         )
         self._empty = True
 
@@ -532,21 +532,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @experimental_slicing_plane.setter
     def experimental_slicing_plane(self, value: Union[dict, SlicingPlane]):
         self._experimental_slicing_plane.update(value)
-
-    @property
-    def experimental_clipping_planes(self):
-        return self._experimental_clipping_planes
-
-    @experimental_clipping_planes.setter
-    def experimental_clipping_planes(
-        self, value: Union[List[Union[SlicingPlane, dict]], ClippingPlaneList]
-    ):
-        self._experimental_clipping_planes.clear()
-        if value is not None:
-            for new_plane in value:
-                plane = SlicingPlane()
-                plane.update(new_plane)
-                self._experimental_clipping_planes.append(plane)
 
     @property
     def loaded(self):
@@ -879,9 +864,6 @@ class Image(_ImageBase):
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
                 'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
-                'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
-                ],
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
@@ -896,3 +878,13 @@ if config.async_octree:
 
     class Image(Image, _OctreeImageBase):
         pass
+
+
+class _weakref_hide:
+    def __init__(self, obj):
+        import weakref
+
+        self.obj = weakref.ref(obj)
+
+    def _raw_to_displayed(self, *args, **kwarg):
+        return self.obj()._raw_to_displayed(*args, **kwarg)
