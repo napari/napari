@@ -62,7 +62,7 @@ class Installer(QObject):
     ):
         super().__init__()
         self._queue = []
-        self._processes = []
+        self._processes = {}
         self._exit_code = 0
         self._conda_env_path = None
 
@@ -99,7 +99,6 @@ class Installer(QObject):
             "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
         )
         process.setProcessEnvironment(env)
-        self._processes.append(process)
         self.set_output_widget(self._output_widget)
         process.finished.connect(
             lambda ec, es: self._on_process_finished(process, ec, es)
@@ -124,8 +123,13 @@ class Installer(QObject):
         if exit_code != 0:
             self._exit_code = 0
 
-        if process in self._processes:
-            self._processes.remove(process)
+        process_to_terminate = []
+        for pkg_list, proc in self._processes.items():
+            if proc == process:
+                process_to_terminate.append(pkg_list)
+
+        for pkg_list in process_to_terminate:
+            process = self._processes.pop(pkg_list)
             process.terminate()
 
         self._handle_action()
@@ -137,9 +141,11 @@ class Installer(QObject):
 
     def _handle_action(self):
         if self._queue:
-            func = self._queue.pop()
+            pkg_list, func = self._queue.pop()
+            print(pkg_list, func)
             self.started.emit()
-            func()
+            process = func()
+            self._processes[pkg_list] = process
 
         if not self._processes:
             from ...plugins import plugin_manager
@@ -155,7 +161,7 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         self._queue.insert(
-            0, lambda: self._install(pkg_list, installer, channels)
+            0, [tuple(pkg_list), lambda: self._install(pkg_list, installer, channels)]
         )
         self._handle_action()
 
@@ -194,6 +200,14 @@ class Installer(QObject):
             self._output_widget.clear()
 
         process.start()
+        return process
+
+    def cancel(
+        self,
+        pkg_list: Sequence[str],
+    ):
+        process = self._processes.pop(pkg_list)
+        process.terminate()
 
     def uninstall(
         self,
@@ -202,7 +216,7 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         self._queue.insert(
-            0, lambda: self._uninstall(pkg_list, installer, channels)
+            0, [tuple(pkg_list), lambda: self._uninstall(pkg_list, installer, channels)]
         )
         self._handle_action()
 
@@ -234,6 +248,8 @@ class Installer(QObject):
 
         for pkg in pkg_list:
             plugin_manager.unregister(pkg)
+
+        return process
 
     @staticmethod
     def _is_installed_with_conda():
@@ -284,6 +300,7 @@ class PluginListItem(QFrame):
         self.package_name.setText(version)
         self.summary.setText(summary)
         self.package_author.setText(author)
+        self.cancel_btn.setVisible(False)
 
         if installed:
             self.enabled_checkbox.show()
@@ -301,19 +318,23 @@ class PluginListItem(QFrame):
         return p
 
     def set_busy(self, text: str, update: bool = False):
+        self.item_status.setText(text)
+        self.cancel_btn.setVisible(True)
         if not update:
-            self.action_button.setText(text)
-            self.action_button.setDisabled(True)
-            self.action_button.setObjectName("busy_button")
-            self.action_button.style().unpolish(self.action_button)
-            self.action_button.style().polish(self.action_button)
+            self.action_button.setVisible(False)
+        #     # self.action_button.setText(text)
+        #     # self.action_button.setDisabled(True)
+        #     # self.action_button.setObjectName("busy_button")
+        #     # self.action_button.style().unpolish(self.action_button)
+        #     # self.action_button.style().polish(self.action_button)
         else:
-            self.action_button.setDisabled(True)
-            self.update_btn.setText(text)
-            self.update_btn.setDisabled(True)
-            self.update_btn.setObjectName("busy_button")
-            self.update_btn.style().unpolish(self.update_btn)
-            self.update_btn.style().polish(self.update_btn)
+            self.update_btn.setVisible(False)
+        #     # self.action_button.setDisabled(True)
+        #     # self.update_btn.setText(text)
+        #     # self.update_btn.setDisabled(True)
+        #     # self.update_btn.setObjectName("busy_button")
+        #     # self.update_btn.style().unpolish(self.update_btn)
+        #     # self.update_btn.style().polish(self.update_btn)
 
     def setup_ui(self, enabled=True):
         self.v_lay = QVBoxLayout(self)
@@ -347,11 +368,24 @@ class PluginListItem(QFrame):
         font15.setPointSize(15)
         self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
+
+        self.item_status = QLabel(self)
+        self.item_status.setObjectName("small_italic_text")
+        self.item_status.setSizePolicy(sizePolicy)
+        self.row1.addWidget(self.item_status)
+        self.row1.addStretch()
+
         self.package_name = QLabel(self)
         self.package_name.setAlignment(
             Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
         )
         self.row1.addWidget(self.package_name)
+
+        self.cancel_btn = QPushButton("cancel", self)
+        self.cancel_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.cancel_btn.setObjectName("remove_button")
+        self.row1.addWidget(self.cancel_btn)
+
         self.update_btn = QPushButton(self)
         self.update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.update_btn.setObjectName("install_button")
@@ -452,11 +486,15 @@ class QPluginList(QListWidget):
                 item, project_info.name, "install", update=True
             )
         )
+        widg.cancel_btn.clicked.connect(
+            lambda: self.installer.cancel((project_info.name, ))
+        )
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
 
     def handle_action(self, item, pkg_name, action_name, update=False):
         widget = item.widget
+        item.setText("0-" + item.text())
         method = getattr(self.installer, action_name)
         self._remove_list.append((pkg_name, item))
 

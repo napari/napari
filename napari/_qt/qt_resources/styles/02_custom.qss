@@ -569,6 +569,12 @@ PluginListItem > QPushButton#busy_button:pressed {
   font-size: 10px;
 }
 
+#small_italic_text {
+  color: {{ opacity(text, 150) }};
+  font-size: 12px;
+  font-style: italic;
+}
+
 #pip_install_status{
   background: {{ background }};
   color: {{ opacity(text, 200) }};
