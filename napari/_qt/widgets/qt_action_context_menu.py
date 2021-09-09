@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
 from qtpy.QtWidgets import QAction, QMenu
 
-from napari.utils.context._expressions import Expr
+from ...utils.context._expressions import Expr
 
 if TYPE_CHECKING:
-
     from ...layers._layer_actions import MenuItem, SubMenu
+    from ...utils.context._service import _BaseContextKeyService as CtxService
 
 
 class QtActionContextMenu(QMenu):
@@ -91,7 +91,7 @@ class QtActionContextMenu(QMenu):
     def data(self):
         return self._data
 
-    def update_from_context(self, ctx: dict) -> None:
+    def update_from_context(self, ctx: Union[dict, CtxService]) -> None:
         """Update the enabled/visible state of each menu item with `ctx`.
 
         `ctx` is a namepsace dict that will be used to `eval()` the

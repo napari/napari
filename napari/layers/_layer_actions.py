@@ -19,18 +19,16 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
-from napari.experimental import link_layers, unlink_layers
-from napari.layers.utils._link_layers import get_linked_layers
-
+from ..utils.context._layerlist_context import LayerListContextKeys as LLK
 from ..utils.translations import trans
 from .base.base import Layer
 from .utils import stack_utils
+from .utils._link_layers import get_linked_layers
 
 if TYPE_CHECKING:
-    from napari.components import LayerList
-    from napari.layers import Image
-
-from napari.utils.context._layerlist_context import LayerListContextKeys as LLK
+    from ..components import LayerList
+    from ..utils.context._expressions import Expr
+    from . import Image
 
 
 def _duplicate_layer(ll: LayerList):
@@ -119,8 +117,8 @@ class _MenuItem(TypedDict):
     """
 
     description: str
-    enable_when: str
-    show_when: str
+    enable_when: Union[bool, Expr]
+    show_when: Union[bool, Expr]
 
 
 class ContextAction(_MenuItem):
@@ -215,7 +213,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Split Stack'),
             'action': _split_stack,
             'enable_when': LLK.active_layer_type == "image",
-            'show_when': f'not {LLK.active_layer_is_rgb}',
+            'show_when': ~LLK.active_layer_is_rgb,
         },
         'napari:split_rgb': {
             'description': trans._('Split RGB'),
@@ -237,7 +235,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:link_selected_layers': {
             'description': trans._('Link Layers'),
-            'action': lambda ll: link_layers(ll.selection),
+            'action': lambda ll: ll.link_layers(ll.selection),
             'enable_when': (
                 (LLK.layers_selection_count > 1) & ~LLK.all_layers_linked
             ),
@@ -245,7 +243,7 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         },
         'napari:unlink_selected_layers': {
             'description': trans._('Unlink Layers'),
-            'action': lambda ll: unlink_layers(ll.selection),
+            'action': lambda ll: ll.unlink_layers(ll.selection),
             'enable_when': LLK.all_layers_linked,
             'show_when': LLK.all_layers_linked,
         },

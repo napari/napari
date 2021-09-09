@@ -1,7 +1,7 @@
 import itertools
 import warnings
 from collections import namedtuple
-from typing import List, Optional
+from typing import Iterable, List, Optional, Union
 
 import numpy as np
 
@@ -252,6 +252,35 @@ class LayerList(SelectableEventedList[Layer]):
         ndim : int
         """
         return max((layer.ndim for layer in self), default=2)
+
+    def _link_layers(
+        self,
+        method: str,
+        layers: Optional[Iterable[Union[str, Layer]]] = None,
+        attributes: Iterable[str] = (),
+    ):
+        from ..layers.utils import _link_layers
+
+        if layers is not None:
+            layers = [self[x] if isinstance(x, str) else x for x in layers]  # type: ignore
+        else:
+            layers = self
+        getattr(_link_layers, method)(layers, attributes)
+        self.selection.events.changed(added={}, removed={})
+
+    def link_layers(
+        self,
+        layers: Optional[Iterable[Union[str, Layer]]] = None,
+        attributes: Iterable[str] = (),
+    ):
+        return self._link_layers('link_layers', layers, attributes)
+
+    def unlink_layers(
+        self,
+        layers: Optional[Iterable[Union[str, Layer]]] = None,
+        attributes: Iterable[str] = (),
+    ):
+        return self._link_layers('unlink_layers', layers, attributes)
 
     def save(
         self,
