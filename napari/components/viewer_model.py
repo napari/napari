@@ -21,8 +21,6 @@ from typing import (
 import numpy as np
 from pydantic import Extra, Field, validator
 
-from napari._qt.qprogress import progress
-
 from .. import layers
 from ..layers import Image, Layer
 from ..layers._source import layer_source
@@ -911,10 +909,22 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         added: List[Layer] = []  # for layers that get added
-        with progress(
-            paths, desc='Opening Files', total=0 if len(paths) == 1 else None
-        ) as pbr:
-            for _path in pbr:
+        try:
+            from napari._qt.qprogress import progress
+
+            with progress(
+                paths,
+                desc='Opening Files',
+                total=0 if len(paths) == 1 else None,
+            ) as pbr:
+                for _path in pbr:
+                    added.extend(
+                        self._add_layers_with_plugins(
+                            _path, kwargs, plugin=plugin, layer_type=layer_type
+                        )
+                    )
+        except (ImportError, ModuleNotFoundError):
+            for _path in paths:
                 added.extend(
                     self._add_layers_with_plugins(
                         _path, kwargs, plugin=plugin, layer_type=layer_type
