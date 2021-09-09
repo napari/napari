@@ -102,6 +102,8 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
                 def _setchecked(e, action=action):
                     action.setChecked(e.value if hasattr(e, 'value') else e)
 
+        action.setData(ax)
+
 
 def populate_qmenu_from_manifest(menu: QMenu, menu_key: str):
     """Populate `menu` from a `menu_key` offering in the manifest."""

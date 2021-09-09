@@ -411,6 +411,7 @@ class Window:
 
         # create QApplication if it doesn't already exist
         get_app()
+        self._viewer = viewer
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
