@@ -19,7 +19,6 @@ class FileMenu(QMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
-        self.aboutToShow.connect(self._update)
         self.open_sample_menu = QMenu('Open Sample', self)
         ACTIONS = [
             {
@@ -120,16 +119,10 @@ class FileMenu(QMenu):
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
         self._rebuild_samples_menu()
+        self.update()
 
     def _layer_count(self):
-        return len(self._win._viewer.layers)
-
-    def _update(self):
-        for ax in self.actions():
-            data = ax.data()
-            if data:
-                enabled_func = data.get('enabled', lambda: True)
-                ax.setEnabled(bool(enabled_func()))
+        return len(self._win.qt_viewer.viewer.layers)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
@@ -186,3 +179,10 @@ class FileMenu(QMenu):
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
+
+    def update(self):
+        for ax in self.actions():
+            data = ax.data()
+            if data:
+                enabled_func = data.get('enabled', lambda: True)
+                ax.setEnabled(bool(enabled_func()))

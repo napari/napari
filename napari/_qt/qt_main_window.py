@@ -411,7 +411,6 @@ class Window:
 
         # create QApplication if it doesn't already exist
         get_app()
-        self._viewer = viewer
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
@@ -448,6 +447,7 @@ class Window:
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
+        viewer.layers.events.connect(lambda x: self.file_menu.update())
 
         if show:
             self.show()
