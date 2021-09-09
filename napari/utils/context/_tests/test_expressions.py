@@ -25,9 +25,14 @@ def test_names():
 def test_constants():
     assert Constant(1).eval() == 1
     assert Constant(3.14).eval() == 3.14
+
     assert Constant('asdf').eval() == 'asdf'
+    assert str(Constant('asdf')) == "'asdf'"
+    assert str(Constant(r'asdf')) == "'asdf'"
+
     assert Constant(b'byte').eval() == b'byte'
     assert str(Constant(b'byte')) == "b'byte'"
+
     assert Constant(True).eval() is True
     assert Constant(False).eval() is False
     assert Constant(None).eval() is None
@@ -36,13 +41,14 @@ def test_constants():
 
     # only {None, str, bytes, bool, int, float} allowed
     with pytest.raises(TypeError):
-        Constant((1, 2))
+        Constant((1, 2))  # type: ignore
 
 
 def test_bool_ops():
-    n1 = Name("n1")
+    n1 = Name[bool]("n1")
     true = Constant(True)
     false = Constant(False)
+
     assert (n1 & true).eval({'n1': True}) is True
     assert (n1 & false).eval({'n1': True}) is False
     assert (n1 & false).eval({'n1': False}) is False
@@ -88,8 +94,8 @@ def test_unary_ops():
 
 
 def test_comparison():
-    n = Name("n")
-    n2 = Name("n2")
+    n = Name[int]("n")
+    n2 = Name[int]("n2")
     one = Constant(1)
 
     assert (n == n2).eval({'n': 2, 'n2': 2})
