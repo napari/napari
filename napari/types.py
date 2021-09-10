@@ -126,16 +126,12 @@ def _register_types_with_magicgui():
     """Register napari.types objects with magicgui."""
 
     from . import layers
-    from .qt.threading import FunctionWorker
     from .utils import _magicgui as _mgui
 
     for _type in (LayerDataTuple, List[LayerDataTuple]):
         _mgui.register_type(
             _type,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
-        )
-        _mgui.register_type(
-            FunctionWorker[_type], return_callback=_mgui.add_worker_data
         )
 
     for layer_name in layers.NAMES:

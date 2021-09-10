@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Generator,
     Generic,
+    List,
     Optional,
     Sequence,
     Set,
@@ -28,6 +29,8 @@ from qtpy.QtCore import (
     Slot,
 )
 
+from ..types import LayerDataTuple
+from ..utils import _magicgui as _mgui
 from ..utils.translations import trans
 from .qprogress import progress
 
@@ -925,3 +928,13 @@ def _new_worker_qthread(
     if _start_thread:
         thread.start()  # sometimes need to connect stuff before starting
     return worker, thread
+
+
+for _type in (LayerDataTuple, List[LayerDataTuple]):
+    _mgui.register_type(
+        _type,
+        return_callback=_mgui.add_layer_data_tuples_to_viewer,
+    )
+    _mgui.register_type(
+        FunctionWorker[_type], return_callback=_mgui.add_worker_data
+    )
