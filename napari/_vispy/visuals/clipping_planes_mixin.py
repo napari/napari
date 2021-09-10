@@ -11,10 +11,7 @@ class ClippingPlanesMixin:
         self._clip_filter = PlanesClipper()
         super().__init__(*args, **kwargs)
 
-        # get subvisuals if compound, or just self
-        visuals = getattr(self, '_subvisuals', [self])
-        for vis in visuals:
-            vis.attach(self._clip_filter)
+        self.attach(self._clip_filter)
 
     @property
     def clipping_planes(self):
