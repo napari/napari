@@ -6,11 +6,13 @@ import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
+from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import get_current_properties, prepare_properties
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 
 
@@ -29,6 +31,8 @@ class Vectors(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     edge_width : float
         Width for all vectors in pixels.
     length : float
@@ -65,9 +69,9 @@ class Vectors(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -117,7 +121,6 @@ class Vectors(Layer):
         Shape is (2M, 2) for 2D and (4M, 2) for 3D.
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Vectors.properties.
-        If properties is not provided, it will be {} (empty dictionary).
     _mesh_vertices : (4N, 2) array
         The four corner points for the mesh representation of each vector as as
         rectangle in the slice that it starts in.
@@ -139,6 +142,7 @@ class Vectors(Layer):
         data,
         *,
         properties=None,
+        property_choices=None,
         edge_width=1,
         edge_color='red',
         edge_color_cycle=None,
@@ -155,6 +159,7 @@ class Vectors(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        experimental_clipping_planes=None,
     ):
 
         super().__init__(
@@ -170,6 +175,7 @@ class Vectors(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         # events for non-napari calculations
@@ -198,26 +204,9 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        # Save the properties
-        if properties is None:
-            properties = {}
-            self._properties = properties
-            self._property_choices = properties
-        elif len(data) > 0:
-            properties, _ = dataframe_to_properties(properties)
-            self._properties = self._validate_properties(properties)
-            self._property_choices = {
-                k: np.unique(v) for k, v in properties.items()
-            }
-        elif len(self.data) == 0:
-            self._property_choices = {
-                k: np.asarray(v) for k, v in properties.items()
-            }
-            empty_properties = {
-                k: np.empty(0, dtype=v.dtype)
-                for k, v in self._property_choices.items()
-            }
-            self._properties = empty_properties
+        self._properties, self._property_choices = prepare_properties(
+            properties, property_choices, num_data=len(self.data)
+        )
 
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(self.data),
@@ -225,7 +214,9 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=properties,
+            properties=self._properties
+            if self._data.size > 0
+            else self._property_choices,
         )
 
         # Data containing vectors in the currently viewed slice
@@ -300,17 +291,21 @@ class Vectors(Layer):
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
-        if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
-        self._properties = self._validate_properties(properties)
+    def properties(self, properties: Dict[str, Array]):
+        self._properties, self._property_choices = prepare_properties(
+            properties, self._property_choices, num_data=len(self.data)
+        )
 
         if self._edge.color_properties is not None:
             if self._edge.color_properties.name not in self._properties:
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
-                    'property used for edge_color dropped', RuntimeWarning
+                    trans._(
+                        'property used for edge_color dropped',
+                        deferred=True,
+                    ),
+                    RuntimeWarning,
                 )
             else:
                 edge_color_name = self._edge.color_properties.name
@@ -321,17 +316,9 @@ class Vectors(Layer):
                 }
         self.events.properties()
 
-    def _validate_properties(
-        self, properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validates the type and size of the properties"""
-        for v in properties.values():
-            if len(v) != len(self.data):
-                raise ValueError(
-                    'the number of properties must equal the number of points'
-                )
-
-        return properties
+    @property
+    def property_choices(self) -> Dict[str, np.ndarray]:
+        return self._property_choices
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -352,6 +339,7 @@ class Vectors(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
+                'property_choices': self._property_choices,
             }
         )
         return state
@@ -428,9 +416,9 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
-        # since Vectors doesn't have "current properties", we have to make them
-        current_properties = {k: v[-1] for k, v in self.properties.items()}
-
+        current_properties = get_current_properties(
+            self._properties, self._property_choices, len(self.data)
+        )
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
@@ -481,10 +469,11 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    # vectors doesn't have current properties, so we have to make it
-                    current_properties = {
-                        k: v[-1] for k, v in self.properties.items()
-                    }
+                    current_properties = get_current_properties(
+                        self._properties,
+                        self._property_choices,
+                        len(self.data),
+                    )
                     self._edge.color_properties = {
                         'name': color_property,
                         'values': self.properties[color_property],
@@ -493,14 +482,20 @@ class Vectors(Layer):
                         ),
                     }
                     warnings.warn(
-                        f'edge_color property was not set, '
-                        f'setting to: {color_property}',
+                        trans._(
+                            'edge_color property was not set, setting to: {color_property}',
+                            deferred=True,
+                            color_property=color_property,
+                        ),
                         RuntimeWarning,
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.properties to use '
-                        f'{edge_color_mode}'
+                        trans._(
+                            'There must be a valid Points.properties to use {edge_color_mode}',
+                            deferred=True,
+                            edge_color_mode=edge_color_mode,
+                        )
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -509,7 +504,10 @@ class Vectors(Layer):
                 np.number,
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    trans._(
+                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        deferred=True,
+                    )
                 )
 
             self._edge.color_mode = edge_color_mode
@@ -556,7 +554,7 @@ class Vectors(Layer):
 
     @property
     def _view_face_color(self) -> np.ndarray:
-        """" (Mx4) np.ndarray : colors for the M in view vectors"""
+        """(Mx4) np.ndarray : colors for the M in view vectors"""
         face_color = np.repeat(self.edge_color[self._view_indices], 2, axis=0)
         if self._ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])

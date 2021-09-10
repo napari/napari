@@ -1,11 +1,16 @@
 """LoaderPoolGroup class.
 """
+from __future__ import annotations
+
 import bisect
 from functools import lru_cache
-from typing import Callable, Dict, List
+from typing import TYPE_CHECKING, Callable, Dict, List
 
-from ._pool import DoneCallback, LoaderPool
-from ._request import ChunkRequest
+from ....utils.translations import trans
+
+if TYPE_CHECKING:
+    from ._pool import DoneCallback, LoaderPool
+    from ._request import ChunkRequest
 
 
 class LoaderPoolGroup:
@@ -40,6 +45,8 @@ class LoaderPoolGroup:
         Dict[int, LoaderPool]
             The loader to use for each priority
         """
+        from ._pool import LoaderPool
+
         configs = _get_loader_configs(octree_config)
 
         # Create a LoaderPool for each priority.
@@ -128,7 +135,12 @@ def _get_loader_configs(octree_config) -> Dict[int, dict]:
     try:
         defaults = octree_config['loader_defaults']
     except KeyError as exc:
-        raise KeyError("Missing 'loader_defaults' in octree config.") from exc
+        raise KeyError(
+            trans._(
+                "Missing 'loader_defaults' in octree config.",
+                deferred=True,
+            )
+        ) from exc
 
     try:
         configs = octree_config['octree']['loaders']

@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
+from ...utils.translations import trans
 from ...utils.tree import Group, Node
 from ._base_item_model import _BaseEventedItemModel
 
@@ -175,7 +176,13 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
 
     def setRoot(self, root: Group[NodeType]):
         if not isinstance(root, Group):
-            raise TypeError(f"root node must be an instance of {Group}")
+            raise TypeError(
+                trans._(
+                    "root node must be an instance of {Group}",
+                    deferred=True,
+                    Group=Group,
+                )
+            )
         super().setRoot(root)
 
     def nestedIndex(self, nested_index: Tuple[int, ...]) -> QModelIndex:
@@ -190,7 +197,12 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         elif isinstance(nested_index, int):
             child = nested_index
         else:
-            raise TypeError("nested_index must be an int or tuple of int.")
+            raise TypeError(
+                trans._(
+                    "nested_index must be an int or tuple of int.",
+                    deferred=True,
+                )
+            )
         return self.index(child, 0, parent)
 
 

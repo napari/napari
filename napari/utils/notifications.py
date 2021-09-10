@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 import warnings
 from datetime import datetime
 from enum import auto
@@ -50,6 +51,12 @@ class NotificationSeverity(StringEnum):
     def __ge__(self, other):
         return name2num[str(self)] >= name2num[str(other)]
 
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return hash(self.value)
+
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
@@ -82,18 +89,26 @@ class Notification(Event):
     ):
         self.severity = NotificationSeverity(severity)
         super().__init__(type=str(self.severity).lower(), **kwargs)
-        self.message = message
+        self._message = message
         self.actions = actions
 
         # let's store when the object was created;
         self.date = datetime.now()
 
+    @property
+    def message(self):
+        return self._message
+
+    @message.setter
+    def message(self, value):
+        self._message = value
+
     @classmethod
-    def from_exception(cls, exc: BaseException, **kwargs) -> 'Notification':
+    def from_exception(cls, exc: BaseException, **kwargs) -> Notification:
         return ErrorNotification(exc, **kwargs)
 
     @classmethod
-    def from_warning(cls, warning: Warning, **kwargs) -> 'Notification':
+    def from_warning(cls, warning: Warning, **kwargs) -> Notification:
         return WarningNotification(warning, **kwargs)
 
 
@@ -174,11 +189,16 @@ class NotificationManager:
     def __init__(self) -> None:
         self.records: List[Notification] = []
         self.exit_on_error = os.getenv('NAPARI_EXIT_ON_ERROR') in ('1', 'True')
+        self.catch_error = os.getenv("NAPARI_CATCH_ERRORS") not in (
+            '0',
+            'False',
+        )
         self.notification_ready = self.changed = EventEmitter(
             source=self, event_class=Notification
         )
         self._originals_except_hooks = []
         self._original_showwarnings_hooks = []
+        self._originals_thread_except_hooks = []
 
     def __enter__(self):
         self.install_hooks()
@@ -189,39 +209,57 @@ class NotificationManager:
 
     def install_hooks(self):
         """
-        Install a sys.excepthook and a showwarning  hook to display any message
-        in the UI, storing the previous hooks to be restored if necessary
+        Install a `sys.excepthook`, a `showwarning` hook and a
+        threading.excepthook to display any message in the UI,
+        storing the previous hooks to be restored if necessary.
         """
+        if getattr(threading, 'excepthook', None):
+            # TODO: we might want to display the additional thread information
+            self._originals_thread_except_hooks.append(threading.excepthook)
+            threading.excepthook = self.receive_thread_error
+        else:
+            # Patch for Python < 3.8
+            _setup_thread_excepthook()
 
         self._originals_except_hooks.append(sys.excepthook)
-        sys.excepthook = self.receive_error
-
         self._original_showwarnings_hooks.append(warnings.showwarning)
+
+        sys.excepthook = self.receive_error
         warnings.showwarning = self.receive_warning
 
     def restore_hooks(self):
         """
         Remove hooks installed by `install_hooks` and restore previous hooks.
         """
-        sys.excepthook = self._originals_except_hooks.pop()
+        if getattr(threading, 'excepthook', None):
+            # `threading.excepthook` available only for Python >= 3.8
+            threading.excepthook = self._originals_thread_except_hooks.pop()
 
+        sys.excepthook = self._originals_except_hooks.pop()
         warnings.showwarning = self._original_showwarnings_hooks.pop()
 
     def dispatch(self, notification: Notification):
         self.records.append(notification)
         self.notification_ready(notification)
 
+    def receive_thread_error(self, args: threading.ExceptHookArgs):
+        self.receive_error(*args)
+
     def receive_error(
         self,
-        exctype: Type[BaseException],
-        value: BaseException,
-        traceback: TracebackType,
+        exctype: Optional[Type[BaseException]] = None,
+        value: Optional[BaseException] = None,
+        traceback: Optional[TracebackType] = None,
+        thread: Optional[threading.Thread] = None,
     ):
         if isinstance(value, KeyboardInterrupt):
             sys.exit("Closed by KeyboardInterrupt")
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
             sys.exit("Exit on error")
+        if not self.catch_error:
+            sys.__excepthook__(exctype, value, traceback)
+            return
         try:
             self.dispatch(Notification.from_exception(value))
         except Exception:
@@ -254,9 +292,43 @@ def show_info(message: str):
 
 
 def show_console_notification(notification: Notification):
-    from .settings import SETTINGS
+    try:
+        from ..settings import get_settings
 
-    if notification.severity < SETTINGS.application.console_notification_level:
-        return
+        if (
+            notification.severity
+            < get_settings().application.console_notification_level
+        ):
+            return
 
-    print(notification)
+        print(notification)
+    except Exception:
+        print(
+            "An error occurred while trying to format an error and show it in console.\n"
+            "You can try to uninstall IPython to disable rich traceback formatting\n"
+            "And/or report a bug to napari"
+        )
+        # this will likely get silenced by QT.
+        raise
+
+
+def _setup_thread_excepthook():
+    """
+    Workaround for `sys.excepthook` thread bug from:
+    http://bugs.python.org/issue1230540
+    """
+    _init = threading.Thread.__init__
+
+    def init(self, *args, **kwargs):
+        _init(self, *args, **kwargs)
+        _run = self.run
+
+        def run_with_except_hook(*args2, **kwargs2):
+            try:
+                _run(*args2, **kwargs2)
+            except Exception:
+                sys.excepthook(*sys.exc_info())
+
+        self.run = run_with_except_hook
+
+    threading.Thread.__init__ = init

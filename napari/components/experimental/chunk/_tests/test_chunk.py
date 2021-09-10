@@ -23,8 +23,10 @@ def test_base_location():
     The base ChunkLocation is not really used, only the derived
     ImageLocation and OctreeLocation are, but test it anyway.
     """
-    layer_ref1 = LayerRef.from_layer(_create_layer())
-    layer_ref2 = LayerRef.from_layer(_create_layer())
+    layer1 = _create_layer()
+    layer2 = _create_layer()
+    layer_ref1 = LayerRef.from_layer(layer1)
+    layer_ref2 = LayerRef.from_layer(layer2)
 
     location1a = ChunkLocation(layer_ref1)
     location1b = ChunkLocation(layer_ref1)

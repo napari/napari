@@ -2,6 +2,8 @@
 """
 import numpy as np
 
+from ...utils.translations import trans
+
 
 def guess_rgb(shape):
     """Guess if the passed shape comes from rgb data.
@@ -63,15 +65,19 @@ def guess_multiscale(data):
             # note: the individual array case should be caught by the first
             # code line in this function, hasattr(ndim) and ndim > 1.
             raise ValueError(
-                'Input data should be an array-like object, or a sequence of '
-                'arrays of decreasing size. Got arrays of single shape: '
-                f'{shapes[0]}'
+                trans._(
+                    'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single shape: {shape}',
+                    deferred=True,
+                    shape=shapes[0],
+                )
             )
         if not consistent:
             raise ValueError(
-                'Input data should be an array-like object, or a sequence of '
-                'arrays of decreasing size. Got arrays in incorrect order, '
-                f'shapes: {shapes}'
+                trans._(
+                    'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, shapes: {shapes}',
+                    deferred=True,
+                    shapes=shapes,
+                )
             )
         return True, data
     else:

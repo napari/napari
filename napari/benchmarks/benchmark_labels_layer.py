@@ -1,7 +1,7 @@
 # See "Writing benchmarks" in the asv docs for more information.
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
-# https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
+# https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import numpy as np
 
 from napari.layers import Labels
@@ -41,14 +41,8 @@ class Labels2DSuite:
         """Time to convert raw to displayed."""
         self.layer._raw_to_displayed(self.layer._data_raw)
 
-    def time_paint_square(self, n):
-        """Time to paint square."""
-        self.layer.brush_shape = 'square'
-        self.layer.paint((0,) * 2, self.layer.selected_label)
-
     def time_paint_circle(self, n):
         """Time to paint circle."""
-        self.layer.brush_shape = 'circle'
         self.layer.paint((0,) * 2, self.layer.selected_label)
 
     def time_fill(self, n):
@@ -102,14 +96,8 @@ class Labels3DSuite:
         """Time to convert raw to displayed."""
         self.layer._raw_to_displayed(self.layer._data_raw)
 
-    def time_paint_square(self, n):
-        """Time to paint square."""
-        self.layer.brush_shape = 'square'
-        self.layer.paint((0,) * 3, self.layer.selected_label)
-
     def time_paint_circle(self, n):
         """Time to paint circle."""
-        self.layer.brush_shape = 'circle'
         self.layer.paint((0,) * 3, self.layer.selected_label)
 
     def time_fill(self, n):

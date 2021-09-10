@@ -16,6 +16,7 @@ from ..types import (
     image_reader_to_layerdata_reader,
 )
 from ..utils.io import (
+    READER_EXTENSIONS,
     csv_to_layer_data,
     imsave,
     imsave_extensions,
@@ -38,8 +39,13 @@ def csv_reader_function(path: Union[str, List[str]]) -> List[LayerData]:
         return [layer_data] if layer_data else []
 
 
+def npy_to_layer_data(path: str) -> List[LayerData]:
+    data = np.load(path)
+    return [(data,)]
+
+
 @napari_hook_implementation(trylast=True)
-def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
+def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the
@@ -55,9 +61,17 @@ def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
     callable
         function that returns layer_data to be handed to viewer._add_layer_data
     """
-    if isinstance(path, str) and path.endswith('.csv'):
-        return csv_reader_function
-    return image_reader_to_layerdata_reader(magic_imread)
+    if isinstance(path, str):
+        if path.endswith('.csv'):
+            return csv_reader_function
+        if os.path.isdir(path):
+            return image_reader_to_layerdata_reader(magic_imread)
+        if path.endswith('.npy'):
+            return npy_to_layer_data
+        path = [path]
+
+    if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in path):
+        return image_reader_to_layerdata_reader(magic_imread)
 
 
 @napari_hook_implementation(trylast=True)
@@ -275,7 +289,6 @@ def write_layer_data_with_plugins(
     layer_data: List[FullLayerData],
     *,
     plugin_name: Optional[str] = 'builtins',
-    plugin_manager=None,
 ) -> List[str]:
     """Write layer data out into a folder one layer at a time.
 
@@ -305,9 +318,6 @@ def write_layer_data_with_plugins(
         corresponding to appropriate hook specification will be looped
         through to find the first one that can save the data. By default,
         only builtin napari implementations are used.
-    plugin_manager : plugins.PluginManager, optional
-        Instance of a napari PluginManager.  by default the main napari
-        plugin_manager will be used.
 
     Returns
     -------
@@ -316,10 +326,7 @@ def write_layer_data_with_plugins(
     """
     from tempfile import TemporaryDirectory
 
-    if not plugin_manager:
-        from . import plugin_manager as napari_plugin_manager
-
-        plugin_manager = napari_plugin_manager
+    from . import plugin_manager
 
     # remember whether it was there to begin with
     already_existed = os.path.exists(path)

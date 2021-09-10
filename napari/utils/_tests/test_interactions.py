@@ -36,8 +36,17 @@ def test_ReadOnlyWrapper_setattr():
 )
 def test_shortcut_invalid(shortcut, reason):
 
-    with pytest.raises(AssertionError):
+    with pytest.warns(UserWarning):
         Shortcut(shortcut)  # Should be Control-A
+
+
+def test_minus_shortcut():
+    """
+    Misc tests minus is properly handled as it is the delimiter
+    """
+    assert str(Shortcut('-')) == '-'
+    assert str(Shortcut('Control--')).endswith('-')
+    assert str(Shortcut('Shift--')).endswith('-')
 
 
 def test_shortcut_qt():

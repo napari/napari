@@ -3,20 +3,44 @@ from __future__ import annotations
 from contextlib import contextmanager
 from functools import partial
 from itertools import combinations, permutations, product
-from typing import TYPE_CHECKING, Callable, Iterable, Tuple
+from typing import TYPE_CHECKING, Callable, DefaultDict, Iterable, Set, Tuple
+from weakref import ReferenceType, ref
 
 if TYPE_CHECKING:
     from napari.layers import Layer
 
+from ...utils.translations import trans
+
 #: Record of already linked layers... to avoid duplicating callbacks
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
-LinkKey = Tuple[int, int, str]
+LinkKey = Tuple['ReferenceType[Layer]', 'ReferenceType[Layer]', str]
 Unlinker = Callable[[], None]
-_LINKED_LAYERS: dict[LinkKey, Unlinker] = dict()
+_UNLINKERS: dict[LinkKey, Unlinker] = dict()
+_LINKED_LAYERS: DefaultDict[
+    ReferenceType[Layer], Set[ReferenceType[Layer]]
+] = DefaultDict(set)
+
+
+def layer_is_linked(layer: Layer) -> bool:
+    """Return True if `layer` is linked to any other layers."""
+    return ref(layer) in _LINKED_LAYERS
+
+
+def get_linked_layers(*layers: Layer) -> Set[Layer]:
+    """Return layers that are linked to any layer in `*layers`.
+
+    Note, if multiple layers are provided, the returned set will represent any
+    layer that is linked to any one of the input layers.  They may not all be
+    directly linked to each other.  This is useful for context menu generation.
+    """
+    if not layers:
+        return {}
+    refs = set.union(*(_LINKED_LAYERS.get(ref(x), set()) for x in layers))
+    return {x() for x in refs if x() is not None}
 
 
 def link_layers(
-    layers: Iterable['Layer'], attributes: Iterable[str] = ()
+    layers: Iterable[Layer], attributes: Iterable[str] = ()
 ) -> list[LinkKey]:
     """Link ``attributes`` between all layers in ``layers``.
 
@@ -69,8 +93,12 @@ def link_layers(
         extra = attr_set - valid_attrs
         if extra:
             raise ValueError(
-                "Cannot link attributes that are not shared by all "
-                f"layers: {extra}. Allowable attrs include:\n{valid_attrs}"
+                trans._(
+                    "Cannot link attributes that are not shared by all layers: {extra}. Allowable attrs include:\n{valid_attrs}",
+                    deferred=True,
+                    extra=extra,
+                    valid_attrs=valid_attrs,
+                )
             )
     else:
         # if no attributes are specified, ALL valid attributes are linked.
@@ -82,7 +110,7 @@ def link_layers(
 
         key = _link_key(lay1, lay2, attribute)
         # if the layers and attribute are already linked then ignore
-        if key in _LINKED_LAYERS:
+        if key in _UNLINKERS:
             continue
 
         def _make_l2_setter(l1=lay1, l2=lay2, attr=attribute):
@@ -106,12 +134,14 @@ def link_layers(
 
         # store the connection so that we don't make it again.
         # and save an "unlink" function for the key.
-        _LINKED_LAYERS[key] = partial(emitter_group.disconnect, callback)
+        _UNLINKERS[key] = partial(emitter_group.disconnect, callback)
+        _LINKED_LAYERS[ref(lay1)].add(ref(lay2))
         links.append(key)
+
     return links
 
 
-def unlink_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
+def unlink_layers(layers: Iterable[Layer], attributes: Iterable[str] = ()):
     """Unlink previously linked ``attributes`` between all layers in ``layers``.
 
     Parameters
@@ -124,22 +154,29 @@ def unlink_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
         The set of attributes to unlink.  If not provided, all connections
         between the provided layers will be unlinked.
     """
-    layer_ids = [id(layer) for layer in layers]
-    if not layer_ids:
-        raise ValueError("Must provide at least one layer to unlink")
-    elif len(layer_ids) == 1:
-        layer_id = layer_ids[0]
-        keys = (k for k in list(_LINKED_LAYERS) if layer_id in k[:2])
+    if not layers:
+        raise ValueError(
+            trans._("Must provide at least one layer to unlink", deferred=True)
+        )
+    layer_refs = [ref(layer) for layer in layers]
+    if len(layer_refs) == 1:
+        # If a single layer was provided, find all keys that include that layer
+        # in either the first or second position
+        keys = (k for k in list(_UNLINKERS) if layer_refs[0] in k[:2])
     else:
-        layer_combos = {frozenset(i) for i in combinations(layer_ids, 2)}
-        keys = (k for k in list(_LINKED_LAYERS) if set(k[:2]) in layer_combos)
+        # otherwise, first find all combinations of layers provided
+        layer_combos = {frozenset(i) for i in combinations(layer_refs, 2)}
+        # then find all keys that include that combination
+        keys = (k for k in list(_UNLINKERS) if set(k[:2]) in layer_combos)
     if attributes:
+        # if attributes were provided, further restrict the keys to those
+        # that include that attribute
         keys = (k for k in keys if k[2] in attributes)
     _unlink_keys(keys)
 
 
 @contextmanager
-def layers_linked(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
+def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
     """Context manager that temporarily links ``attributes`` on ``layers``."""
     links = link_layers(layers, attributes)
     try:
@@ -149,7 +186,7 @@ def layers_linked(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
 
 
 def _get_common_evented_attributes(
-    layers: Iterable['Layer'],
+    layers: Iterable[Layer],
     exclude: set[str] = {'thumbnail', 'status', 'name', 'data'},
     with_private=False,
 ) -> set[str]:
@@ -179,7 +216,13 @@ def _get_common_evented_attributes(
     try:
         first_layer = next(iter(layers))
     except StopIteration:
-        raise ValueError("``layers`` iterable must have at least one layer")
+        raise ValueError(
+            trans._(
+                "``layers`` iterable must have at least one layer",
+                deferred=True,
+            )
+        )
+
     common_events = set.intersection(*(set(lay.events) for lay in layers))
     common_attrs = set.intersection(*(set(dir(lay)) for lay in layers))
     if not with_private:
@@ -195,14 +238,23 @@ def _get_common_evented_attributes(
     return common
 
 
-def _link_key(lay1: 'Layer', lay2: 'Layer', attr: str) -> LinkKey:
+def _link_key(lay1: Layer, lay2: Layer, attr: str) -> LinkKey:
     """Generate a "link key" for these layers and attribute."""
-    return (id(lay1), id(lay2), attr)
+    return (ref(lay1), ref(lay2), attr)
 
 
 def _unlink_keys(keys: Iterable[LinkKey]):
     """Disconnect layer linkages by keys."""
     for key in keys:
-        disconnecter = _LINKED_LAYERS.pop(key, None)
+        disconnecter = _UNLINKERS.pop(key, None)
         if disconnecter:
             disconnecter()
+    global _LINKED_LAYERS
+    _LINKED_LAYERS = _rebuild_link_index()
+
+
+def _rebuild_link_index():
+    links = DefaultDict(set)
+    for l1, l2, attr in _UNLINKERS:
+        links[l1].add(l2)
+    return links

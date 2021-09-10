@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
 from typing import (
@@ -120,3 +120,36 @@ def image_reader_to_layerdata_reader(
         return [(result,)]
 
     return reader_function
+
+
+def _register_types_with_magicgui():
+    """Register napari.types objects with magicgui."""
+    from concurrent.futures import Future
+
+    from . import layers
+    from .utils import _magicgui as _mgui
+
+    for _type in (LayerDataTuple, List[LayerDataTuple]):
+        _mgui.register_type(
+            _type,
+            return_callback=_mgui.add_layer_data_tuples_to_viewer,
+        )
+        _mgui.register_type(
+            Future[_type], return_callback=_mgui.add_future_data  # type: ignore
+        )
+
+    for layer_name in layers.NAMES:
+        data_type = globals().get(f'{layer_name.title()}Data')
+        _mgui.register_type(
+            data_type,
+            choices=_mgui.get_layers_data,
+            return_callback=_mgui.add_layer_data_to_viewer,
+        )
+        _mgui.register_type(
+            Future[data_type],  # type: ignore
+            choices=_mgui.get_layers_data,
+            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
+        )
+
+
+_register_types_with_magicgui()

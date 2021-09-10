@@ -1,7 +1,20 @@
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
+from qtpy.QtCore import QPoint, Qt
+from qtpy.QtWidgets import (
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QVBoxLayout,
+)
 
+from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
+from ..dialogs.qt_modal import QtPopup
+from .qt_spinbox import QtSpinBox
+from .qt_tooltip import QtToolTipLabel
 
 
 class QtLayerButtons(QFrame):
@@ -97,42 +110,42 @@ class QtViewerButtons(QFrame):
         super().__init__()
 
         self.viewer = viewer
+        action_manager.context['viewer'] = viewer
+
+        def active_layer():
+            if len(self.viewer.layers.selection) == 1:
+                return next(iter(self.viewer.layers.selection))
+            else:
+                return None
+
+        action_manager.context['layer'] = active_layer
+
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',
             trans._(
-                "Open IPython terminal ({shortcut})",
-                shortcut=Shortcut('Control-Shift-C').platform,
+                "Open IPython terminal",
             ),
         )
         self.consoleButton.setProperty('expanded', False)
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            trans._(
-                "Roll dimensions order for display ({shortcut})",
-                shortcut=Shortcut('Control-E').platform,
-            ),
-            lambda: self.viewer.dims._roll(),
         )
+
+        action_manager.bind_button('napari:roll_axes', self.rollDimsButton)
+
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            trans._(
-                "Transpose displayed dimensions ({shortcut})",
-                shortcut=Shortcut('Control-T').platform,
-            ),
-            lambda: self.viewer.dims._transpose(),
         )
-        self.resetViewButton = QtViewerPushButton(
-            self.viewer,
-            'home',
-            trans._(
-                "Reset view ({shortcut})",
-                shortcut=Shortcut('Control-R').platform,
-            ),
-            lambda: self.viewer.reset_view(),
+
+        action_manager.bind_button(
+            'napari:transpose_axes', self.transposeDimsButton
         )
+
+        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
+        action_manager.bind_button('napari:reset_view', self.resetViewButton)
 
         self.gridViewButton = QtStateButton(
             'grid_view_button',
@@ -140,11 +153,13 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
-        self.gridViewButton.setToolTip(
-            trans._(
-                "Toggle grid view ({shortcut})", shortcut=Shortcut("Control-R")
-            )
+
+        self.gridViewButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.gridViewButton.customContextMenuRequested.connect(
+            self._open_grid_popup
         )
+
+        action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
             "ndisplay_button",
@@ -154,11 +169,12 @@ class QtViewerButtons(QFrame):
             2,
             3,
         )
-        self.ndisplayButton.setToolTip(
-            trans._(
-                "Toggle number of displayed dimensions ({shortcut})",
-                shortcut=Shortcut("Control-Y"),
-            )
+        self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ndisplayButton.customContextMenuRequested.connect(
+            self.open_perspective_popup
+        )
+        action_manager.bind_button(
+            'napari:toggle_ndisplay', self.ndisplayButton
         )
 
         layout = QHBoxLayout()
@@ -171,6 +187,165 @@ class QtViewerButtons(QFrame):
         layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
         self.setLayout(layout)
+
+    def open_perspective_popup(self):
+        """Show a slider to control the viewer `camera.perspective`."""
+        if self.viewer.dims.ndisplay != 3:
+            return
+
+        # make slider connected to perspective parameter
+        sld = QSlider(Qt.Horizontal, self)
+        sld.setRange(0, max(90, self.viewer.camera.perspective))
+        sld.setValue(self.viewer.camera.perspective)
+        sld.valueChanged.connect(
+            lambda v: setattr(self.viewer.camera, 'perspective', v)
+        )
+
+        # make layout
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(trans._('Perspective'), self))
+        layout.addWidget(sld)
+
+        # popup and show
+        pop = QtPopup(self)
+        pop.frame.setLayout(layout)
+        pop.show_above_mouse()
+
+    def _open_grid_popup(self):
+        """Open grid options pop up widget."""
+
+        # widgets
+        popup = QtPopup(self)
+        grid_stride = QtSpinBox(popup)
+        grid_width = QtSpinBox(popup)
+        grid_height = QtSpinBox(popup)
+        shape_help_symbol = QtToolTipLabel(self)
+        stride_help_symbol = QtToolTipLabel(self)
+        blank = QLabel(self)  # helps with placing help symbols.
+
+        shape_help_msg = trans._(
+            'Number of rows and columns in the grid. A value of -1 for either or '
+            + 'both of width and height will trigger an auto calculation of the '
+            + 'necessary grid shape to appropriately fill all the layers at the '
+            + 'appropriate stride. 0 is not a valid entry.'
+        )
+
+        stride_help_msg = trans._(
+            'Number of layers to place in each grid square before moving on to '
+            + 'the next square. The default ordering is to place the most visible '
+            + 'layer in the top left corner of the grid. A negative stride will '
+            + 'cause the order in which the layers are placed in the grid to be '
+            + 'reversed. '
+            + '0 is not a valid entry.'
+        )
+
+        # set up
+        stride_min = self.viewer.grid.__fields__['stride'].type_.ge
+        stride_max = self.viewer.grid.__fields__['stride'].type_.le
+        stride_not = self.viewer.grid.__fields__['stride'].type_.ne
+        grid_stride.setObjectName("gridStrideBox")
+        grid_stride.setAlignment(Qt.AlignCenter)
+        grid_stride.setRange(stride_min, stride_max)
+        grid_stride.setProhibitValue(stride_not)
+        grid_stride.setValue(self.viewer.grid.stride)
+        grid_stride.valueChanged.connect(self._update_grid_stride)
+        self.grid_stride_box = grid_stride
+
+        width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
+        width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
+        grid_width.setObjectName("gridWidthBox")
+        grid_width.setAlignment(Qt.AlignCenter)
+        grid_width.setMinimum(width_min)
+        grid_width.setProhibitValue(width_not)
+        grid_width.setValue(self.viewer.grid.shape[1])
+        grid_width.valueChanged.connect(self._update_grid_width)
+        self.grid_width_box = grid_width
+
+        height_min = (
+            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ge
+        )
+        height_not = (
+            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
+        )
+        grid_height.setObjectName("gridStrideBox")
+        grid_height.setAlignment(Qt.AlignCenter)
+        grid_height.setMinimum(height_min)
+        grid_height.setProhibitValue(height_not)
+        grid_height.setValue(self.viewer.grid.shape[0])
+        grid_height.valueChanged.connect(self._update_grid_height)
+        self.grid_height_box = grid_height
+
+        # The following is needed in order to make the tooltip wrap the text.
+        shape_help_txt = f"<FONT> {shape_help_msg}</FONT>"
+        stride_help_txt = f"<FONT> {stride_help_msg}</FONT>"
+
+        shape_help_symbol.setObjectName("help_label")
+        shape_help_symbol.setToolTip(shape_help_txt)
+
+        stride_help_symbol.setObjectName("help_label")
+        stride_help_symbol.setToolTip(stride_help_txt)
+
+        # layout
+        form_layout = QFormLayout()
+        form_layout.insertRow(0, QLabel(trans._('Grid stride:')), grid_stride)
+        form_layout.insertRow(1, QLabel(trans._('Grid width:')), grid_width)
+        form_layout.insertRow(2, QLabel(trans._('Grid height:')), grid_height)
+
+        help_layout = QVBoxLayout()
+        help_layout.addWidget(stride_help_symbol)
+        help_layout.addWidget(blank)
+        help_layout.addWidget(shape_help_symbol)
+
+        layout = QHBoxLayout()
+        layout.addLayout(form_layout)
+        layout.addLayout(help_layout)
+
+        popup.frame.setLayout(layout)
+
+        popup.show_above_mouse()
+
+        # adjust placement of shape help symbol.  Must be done last
+        # in order for this movement to happen.
+        delta_x = 0
+        delta_y = -15
+        shape_pos = (
+            shape_help_symbol.x() + delta_x,
+            shape_help_symbol.y() + delta_y,
+        )
+        shape_help_symbol.move(QPoint(*shape_pos))
+
+    def _update_grid_width(self, value):
+        """Update the width value in grid shape.
+
+        Parameters
+        ----------
+        value : int
+            New grid width value.
+        """
+
+        self.viewer.grid.shape = (self.viewer.grid.shape[0], value)
+
+    def _update_grid_stride(self, value):
+        """Update stride in grid settings.
+
+        Parameters
+        ----------
+        value : int
+            New grid stride value.
+        """
+
+        self.viewer.grid.stride = value
+
+    def _update_grid_height(self, value):
+        """Update height value in grid shape.
+
+        Parameters
+        ----------
+        value : int
+            New grid height value.
+        """
+
+        self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
 
 
 class QtDeleteButton(QPushButton):

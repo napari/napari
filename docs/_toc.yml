@@ -5,14 +5,19 @@
 
 - file: guides/index
   sections:
+    - file: guides/3D_interactivity
     - file: guides/event_loop
+    - file: guides/connecting_events
     - file: guides/threading
     - file: guides/magicgui
     - file: guides/perfmon
     - file: guides/rendering
+    - file: guides/preferences
+    - file: guides/translations
 
 - file: plugins/index
   sections:
+    - file: plugins/find-and-install-plugin
     - file: plugins/for_napari_developers
     - file: plugins/for_plugin_developers
     - file: plugins/hook_specifications
@@ -41,8 +46,44 @@
     - file: explanations/rendering
 
 - file: release/index
+  sections:
+    - file: release/release_0_4_11
+    - file: release/release_0_4_10
+    - file: release/release_0_4_9
+    - file: release/release_0_4_8
+    - file: release/release_0_4_7
+    - file: release/release_0_4_6
+    - file: release/release_0_4_5
+    - file: release/release_0_4_4
+    - file: release/release_0_4_3
+    - file: release/release_0_4_2
+    - file: release/release_0_4_1
+    - file: release/release_0_4_0
+    - file: release/release_0_3_8
+    - file: release/release_0_3_7
+    - file: release/release_0_3_6
+    - file: release/release_0_3_5
+    - file: release/release_0_3_4
+    - file: release/release_0_3_3
+    - file: release/release_0_3_2
+    - file: release/release_0_3_1
+    - file: release/release_0_3_0
+    - file: release/release_0_2_12
+    - file: release/release_0_2_11
+    - file: release/release_0_2_10
+    - file: release/release_0_2_9
+    - file: release/release_0_2_8
+    - file: release/release_0_2_7
+    - file: release/release_0_2_6
+    - file: release/release_0_2_5
+    - file: release/release_0_2_4
+    - file: release/release_0_2_3
+    - file: release/release_0_2_1
+    - file: release/release_0_2_0
+    - file: release/release_0_1_5
+    - file: release/release_0_1_3
+    - file: release/release_0_1_0
 
 - file: api/index
   sections:
     - file: api/napari
-

@@ -10,6 +10,7 @@ from napari.utils.colormaps.colormap_utils import (
     AVAILABLE_COLORMAPS,
     _increment_unnamed_colormap,
     ensure_colormap,
+    vispy_or_mpl_colormap,
 )
 from napari.utils.colormaps.vendored import cm
 
@@ -94,6 +95,14 @@ def test_can_accept_named_vispy_colormaps():
     assert cmap.name == 'red'
 
 
+def test_can_accept_named_mpl_colormap():
+    """Test we can accept named mpl colormap"""
+    cmap_name = 'RdYlGn'
+    cmap = ensure_colormap(cmap_name)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == cmap_name
+
+
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_can_accept_vispy_colormaps_in_dict():
     """Test that we can accept vispy colormaps in a dictionary."""
@@ -129,6 +138,14 @@ def test_can_accept_colormap_dict():
     assert cmap.name == 'special_name'
 
 
+def test_can_degrade_gracefully():
+    """Test that we can degrade gracefully if given something not recognized."""
+    with pytest.warns(UserWarning):
+        cmap = ensure_colormap(object)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == 'gray'
+
+
 def test_vispy_colormap_amount():
     """
     Test that the amount of localized vispy colormap names matches available colormaps.
@@ -141,3 +158,21 @@ def test_mpl_colormap_exists():
     """Test that all localized mpl colormap names exist."""
     for name in _MATPLOTLIB_COLORMAP_NAMES:
         assert getattr(cm, name, None) is not None
+
+
+def test_colormap_error_suggestion():
+    """
+    Test that vispy/mpl errors, when using `display_name`, suggest `name`.
+    """
+    name = '"twilight_shifted"'
+    display_name = 'twilight shifted'
+    with pytest.raises(KeyError) as excinfo:
+        vispy_or_mpl_colormap(display_name)
+
+    assert name in str(excinfo.value)
+
+    wrong_name = 'foobar'
+    with pytest.raises(KeyError) as excinfo:
+        vispy_or_mpl_colormap(wrong_name)
+
+    assert name in str(excinfo.value)

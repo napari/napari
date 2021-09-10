@@ -26,6 +26,7 @@ class WidgetBuilder:
             "object": widgets.ObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
             "plugins": widgets.PluginWidget,
+            "shortcuts": widgets.ShortcutsWidget,
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
@@ -45,6 +46,7 @@ class WidgetBuilder:
             "text": widgets.TextSchemaWidget,
             "range": widgets.IntegerRangeSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
+            "highlight": widgets.HighlightSizePreviewWidget,
         },
         "array": {
             "array": widgets.ArraySchemaWidget,
@@ -98,7 +100,11 @@ class WidgetBuilder:
         return form
 
     def create_widget(
-        self, schema: dict, ui_schema: dict, state=None
+        self,
+        schema: dict,
+        ui_schema: dict,
+        state=None,
+        description: str = "",
     ) -> widgets.SchemaWidgetMixin:
         schema_type = get_schema_type(schema)
 
@@ -118,4 +124,9 @@ class WidgetBuilder:
         default_state = get_widget_state(schema, state)
         if default_state is not None:
             widget.state = default_state
+
+        if description:
+            widget.setDescription(description)
+            widget.setToolTip(description)
+
         return widget

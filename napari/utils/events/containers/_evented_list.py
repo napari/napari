@@ -25,6 +25,7 @@ cover this in test_evented_list.py)
 import logging
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
+from ...translations import trans
 from ..event import EmitterGroup, Event
 from ..types import SupportsEvents
 from ._typed import _L, _T, Index, TypedMutableSequence
@@ -112,14 +113,24 @@ class EventedList(TypedMutableSequence[_T]):
             return
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
-                raise TypeError('Can only assign an iterable to slice')
+                raise TypeError(
+                    trans._(
+                        'Can only assign an iterable to slice',
+                        deferred=True,
+                    )
+                )
+
             [self._type_check(v) for v in value]  # before we mutate the list
             if key.step is not None:  # extended slices are more restricted
                 indices = list(range(*key.indices(len(self))))
                 if not len(value) == len(indices):
                     raise ValueError(
-                        f"attempt to assign sequence of size {len(value)} to "
-                        f"extended slice of size {len(indices)}"
+                        trans._(
+                            "attempt to assign sequence of size {size} to extended slice of size {slice_size}",
+                            deferred=True,
+                            size=len(value),
+                            slice_size=len(indices),
+                        )
                     )
                 for i, v in zip(indices, value):
                     self.__setitem__(i, v)
@@ -144,7 +155,14 @@ class EventedList(TypedMutableSequence[_T]):
             return [(self, self.index(key))]
 
         valid = {int, slice}.union(set(self._lookup))
-        raise TypeError(f"Deletion index must be {valid!r}, got {type(key)}")
+        raise TypeError(
+            trans._(
+                "Deletion index must be {valid!r}, got {dtype}",
+                deferred=True,
+                valid=valid,
+                dtype=type(key),
+            )
+        )
 
     def __delitem__(self, key: Index):
         # delete from the end
@@ -164,7 +182,10 @@ class EventedList(TypedMutableSequence[_T]):
     def _reemit_child_event(self, event: Event):
         """An item in the list emitted an event.  Re-emit with index"""
         if not hasattr(event, 'index'):
-            setattr(event, 'index', self.index(event.source))
+            try:
+                setattr(event, 'index', self.index(event.source))
+            except ValueError:
+                pass
         # reemit with this object's EventEmitter of the same type if present
         # otherwise just emit with the EmitterGroup itself
         getattr(self.events, event.type, self.events)(event)
@@ -276,7 +297,12 @@ class EventedList(TypedMutableSequence[_T]):
             The destination for sources.
         """
         if isinstance(dest_index, slice):
-            raise TypeError("Destination index may not be a slice")
+            raise TypeError(
+                trans._(
+                    "Destination index may not be a slice",
+                    deferred=True,
+                )
+            )
 
         to_move: List[int] = []
         for idx in sources:
@@ -285,7 +311,12 @@ class EventedList(TypedMutableSequence[_T]):
             elif isinstance(idx, int):
                 to_move.append(idx)
             else:
-                raise TypeError("Can only move integer or slice indices")
+                raise TypeError(
+                    trans._(
+                        "Can only move integer or slice indices",
+                        deferred=True,
+                    )
+                )
 
         to_move = list(dict.fromkeys(to_move))
 
