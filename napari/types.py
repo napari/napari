@@ -135,7 +135,7 @@ def _register_types_with_magicgui():
             _type,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
-        if sys.version_info >= (3, 8):
+        if sys.version_info >= (3, 9):
             _mgui.register_type(
                 Future[_type], return_callback=_mgui.add_future_data  # type: ignore
             )
@@ -147,7 +147,7 @@ def _register_types_with_magicgui():
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
-        if sys.version_info >= (3, 8):
+        if sys.version_info >= (3, 9):
             _mgui.register_type(
                 Future[data_type],  # type: ignore
                 choices=_mgui.get_layers_data,

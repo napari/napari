@@ -1,5 +1,5 @@
 """An example of calling a threaded function from a magicgui dock_widget.
-Note: this example requires python >= 3.8
+Note: this example requires python >= 3.9
 """
 from magicgui import magic_factory, widgets
 from skimage import feature
