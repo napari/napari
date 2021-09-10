@@ -8,7 +8,7 @@ from ._fields import Theme
 
 class AppearanceSettings(EventedModel):
     theme: Theme = Field(
-        "dark",
+        "system",
         title=trans._("Theme"),
         description=trans._("Select the user interface theme."),
         env="napari_theme",

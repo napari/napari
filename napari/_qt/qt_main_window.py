@@ -18,7 +18,16 @@ from typing import (
     Tuple,
 )
 
-from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
+from qtpy.QtCore import (
+    QEvent,
+    QEventLoop,
+    QPoint,
+    QProcess,
+    QSize,
+    Qt,
+    QTimer,
+    Slot,
+)
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
@@ -37,7 +46,7 @@ from ..utils import perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
-from ..utils.theme import _themes
+from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
 from .dialogs.activity_dialog import ActivityDialog
@@ -408,6 +417,12 @@ class Window:
     """
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
+        self._initial_theme = get_system_theme()
+        self._system_theme_timer = QTimer()
+        self._system_theme_timer.timeout.connect(
+            self._check_system_theme_change
+        )
+        self._system_theme_timer.start(1000)
 
         # create QApplication if it doesn't already exist
         get_app()
@@ -450,6 +465,17 @@ class Window:
 
         if show:
             self.show()
+
+    def _check_system_theme_change(self):
+        """Check if system theme has changed since startup."""
+        new_theme = get_system_theme()
+        if self._initial_theme != new_theme:
+            self._initial_theme = new_theme
+
+            class Event:
+                value = new_theme
+
+            self._update_theme(Event)
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
