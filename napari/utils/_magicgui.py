@@ -13,18 +13,10 @@ from __future__ import annotations
 
 import weakref
 from functools import lru_cache
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    get_args,
-)
+from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Type
 
 import toolz as tz
+from typing_extensions import get_args
 
 if TYPE_CHECKING:
     from concurrent.futures import Future

@@ -124,6 +124,7 @@ def image_reader_to_layerdata_reader(
 
 def _register_types_with_magicgui():
     """Register napari.types objects with magicgui."""
+    import sys
     from concurrent.futures import Future
 
     from . import layers
@@ -134,9 +135,10 @@ def _register_types_with_magicgui():
             _type,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
-        _mgui.register_type(
-            Future[_type], return_callback=_mgui.add_future_data  # type: ignore
-        )
+        if sys.version_info >= (3, 8):
+            _mgui.register_type(
+                Future[_type], return_callback=_mgui.add_future_data  # type: ignore
+            )
 
     for layer_name in layers.NAMES:
         data_type = globals().get(f'{layer_name.title()}Data')
@@ -145,11 +147,14 @@ def _register_types_with_magicgui():
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
-        _mgui.register_type(
-            Future[data_type],  # type: ignore
-            choices=_mgui.get_layers_data,
-            return_callback=partial(_mgui.add_future_data, _from_tuple=False),
-        )
+        if sys.version_info >= (3, 8):
+            _mgui.register_type(
+                Future[data_type],  # type: ignore
+                choices=_mgui.get_layers_data,
+                return_callback=partial(
+                    _mgui.add_future_data, _from_tuple=False
+                ),
+            )
 
 
 _register_types_with_magicgui()

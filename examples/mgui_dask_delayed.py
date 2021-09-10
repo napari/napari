@@ -1,4 +1,6 @@
-"""An example of calling a threaded function from a magicgui dock_widget."""
+"""An example of calling a threaded function from a magicgui dock_widget.
+Note: this example requires python >= 3.8
+"""
 import time
 from concurrent.futures import Future
 
