@@ -97,7 +97,9 @@ class WorkerBase(QRunnable):
             # (which is of type `SignalInstance` in PySide and
             # `pyqtBoundSignal` in PyQt)
             return getattr(self.signals, name)
-        return super().__getattr__(name)
+        raise AttributeError(
+            f"{self.__class__.__name__} has no attribute {name}"
+        )
 
     def quit(self) -> None:
         """Send a request to abort the worker.
