@@ -517,6 +517,7 @@ class QPluginList(QListWidget):
             self.scrollToTop()
         elif action_name == "uninstall":
             widget.set_busy(trans._("uninstalling..."), update)
+            widget.update_btn.setDisabled(True)
             method([pkg_name])
             self.scrollToTop()
         elif action_name == "cancel":
