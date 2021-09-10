@@ -1,6 +1,6 @@
 from vispy.scene.visuals import Compound, Line, Text
 
-from ..filters.tracks_shader import TrackShader
+from ..filters.tracks import TracksFilter
 from .clipping_planes_mixin import ClippingPlanesMixin
 
 
@@ -16,15 +16,11 @@ class TracksVisual(ClippingPlanesMixin, Compound):
     """
 
     def __init__(self):
-        # build and attach the shader to the track
-        # TODO: does this need to be 2 separate shaders?
-        self.track_shader = TrackShader()
-        self.graph_shader = TrackShader()
+        self.tracks_filter = TracksFilter()
 
         super().__init__([Line(), Text(), Line()])
 
-        self._subvisuals[0].attach(self.track_shader)
-        self._subvisuals[2].attach(self.graph_shader)
+        self.attach(self.tracks_filter)
 
         # text label properties
         self._subvisuals[1].color = 'white'
