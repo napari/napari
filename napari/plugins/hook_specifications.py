@@ -549,7 +549,7 @@ def napari_experimental_provide_theme() -> Dict[
 
 
 @napari_hook_specification(historic=True)
-def napari_experimental_provide_qss() -> List[str]:
+def napari_experimental_provide_qss() -> Union[Tuple[str], List[str]]:
     """Provide GUI stylesheets that will supplement or overwrite existing
     napari stylesheets.
 
@@ -568,19 +568,29 @@ def napari_experimental_provide_qss() -> List[str]:
 
     Examples
     --------
+    >>> def get_new_stylesheets() -> Union[Tuple[str], List[str]]:
+    ...     # specify stylesheets that should be applied by napari
+    ...     qss_files = ['04_extra_widgets.qss', '05_napari_overrides.qss']
+    ...     return qss_files
+    >>>
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_qss():
+    ...     return get_new_stylesheets()
     """
 
 
 @napari_hook_specification(historic=True)
-def napari_experimental_provide_icons() -> List[str]:
-    """Provide GUI svg icons that will supplement or overwrite existing napari icons.
+def napari_experimental_provide_icons() -> Union[Tuple[str], List[str]]:
+    """Provide GUI svg icons that will supplement napari icons. Icons will be
+    available under a new namespace such as `PluginName:IconName.svg` where `PluginName`
+    corresponds to the name of your plugin and `IconName` to the name of the icon.
 
     Icons are built into a Qt resource file that is imported when napari is run. Typically,
-    icons are used in the qss stylesheets with the `{{ folder }}` variable used to expand
+    icons are used in the qss stylesheets with the `{{ name }}` variable used to expand
     the current theme name:
 
         QWidget {
-            image: url(":/themes/{{ folder }}/icon_name.svg");
+            image: url(":/themes/{{ name }}/PluginName:icon_name.svg");
         }
 
     This hook specification is marked as experimental as the API or how the returned
@@ -588,10 +598,18 @@ def napari_experimental_provide_icons() -> List[str]:
 
     Returns
     -------
-    svg_paths : List[str]
+    svg_paths : Union[Tuple[str], List[str]]
         A list of svg files to be colorized and used in napari. These can be new icons that
         are required by your own plugin or icons to replace the currently available icons.
 
     Examples
     --------
+    >>> def get_new_icons() -> Union[Tuple[str], List[str]]:
+    ...     # specify icons that should be added by napari
+    ...     svg_paths = ['path_to_icon_1.svg', 'path_to_icon_2.svg']
+    ...     return svg_paths
+    >>>
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_icons():
+    ...     return get_new_icons()
     """

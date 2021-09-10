@@ -743,7 +743,7 @@ class NapariPluginManager(PluginManager):
 
     def register_icons(
         self,
-        data: Dict[str, Dict[str, Union[str, Tuple, List]]],
+        data: Union[Tuple[str], List[str]],
         hookimpl: HookImplementation,
     ):
         """Register icons returned by the `napari_experimental_provide_icons` hook.
@@ -754,7 +754,7 @@ class NapariPluginManager(PluginManager):
 
         plugin_name = hookimpl.plugin_name
         hook_name = '`napari_experimental_provide_icons`'
-        if not isinstance(data, Iterable):
+        if not isinstance(data, (List, Tuple)):
             warn_message = trans._(
                 'Plugin {plugin_name!r} provided a non-iterable object to {hook_name!r}: data ignored',
                 deferred=True,
@@ -767,7 +767,14 @@ class NapariPluginManager(PluginManager):
         _data = {}
         for icon in data:
             icon = Path(icon)
-            if not icon.exists() and icon.suffix != ".svg":
+            if not icon.exists() or icon.suffix != ".svg":
+                warn_message = trans._(
+                    'Plugin {plugin_name!r} provided icon {icon!r} does not exist or is not a .svg file',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    icon=str(icon),
+                )
+                warn(message=warn_message)
                 continue
             icon_name = f"{plugin_name}:{icon.stem}"
             icon = str(icon)
@@ -804,18 +811,18 @@ class NapariPluginManager(PluginManager):
 
     def register_qss(
         self,
-        data: Dict[str, Dict[str, Union[str, Tuple, List]]],
+        data: Union[Tuple[str], List[str]],
         hookimpl: HookImplementation,
     ):
-        """Register icons returned by the `napari_experimental_provide_icons` hook.
-        The `icons` data should be provided as an iterable containing full paths to
-        svg icons.
+        """Register stylesheets returned by the `napari_experimental_provide_qss` hook.
+        The `qss` data should be provided as an iterable containing full paths to
+        stylesheets.
         """
         from .._qt.qt_resources import STYLES
 
         plugin_name = hookimpl.plugin_name
-        hook_name = '`napari_experimental_provide_icons`'
-        if not isinstance(data, Iterable):
+        hook_name = '`napari_experimental_provide_qss`'
+        if not isinstance(data, (List, Tuple)):
             warn_message = trans._(
                 'Plugin {plugin_name!r} provided a non-iterable object to {hook_name!r}: data ignored',
                 deferred=True,
@@ -828,7 +835,14 @@ class NapariPluginManager(PluginManager):
         _data = {}
         for stylesheet in data:
             stylesheet = Path(stylesheet)
-            if not stylesheet.exists() and stylesheet.suffix != ".qss":
+            if not stylesheet.exists() or stylesheet.suffix != ".qss":
+                warn_message = trans._(
+                    'Plugin {plugin_name!r} provided stylesheet {qss!r} does not exist or is not a .qss file',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    qss=str(stylesheet),
+                )
+                warn(message=warn_message)
                 continue
             _data[stylesheet.stem] = str(stylesheet)
             STYLES[stylesheet.stem] = str(stylesheet)

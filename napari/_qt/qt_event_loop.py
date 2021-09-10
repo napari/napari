@@ -184,7 +184,7 @@ def get_app(
         # can be used in qss files and elsewhere.
         plugin_manager.discover_icons()
         plugin_manager.discover_qss()
-        _register_napari_resources()
+        _register_napari_resources(False, True)
 
     _app_ref = app  # prevent garbage collection
 

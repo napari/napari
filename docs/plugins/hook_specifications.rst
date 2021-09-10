@@ -46,4 +46,6 @@ GUI hooks
 ---------
 
 .. autofunction:: napari_experimental_provide_theme
+.. autofunction:: napari_experimental_provide_qss
+.. autofunction:: napari_experimental_provide_icons
 .. autofunction:: napari_experimental_provide_dock_widget
