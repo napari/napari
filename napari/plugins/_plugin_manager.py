@@ -854,10 +854,10 @@ class NapariPluginManager(PluginManager):
     def unregister_qss(self, plugin_name: str):
         """Unregister icon data from napari."""
         # TODO: this will have to update the UI
-        from .._qt.qt_resources import STYLES
-
         if plugin_name not in self._qss_data:
             return
+
+        from .._qt.qt_resources import STYLES
 
         for stylesheet in self._qss_data[plugin_name]:
             STYLES.pop(stylesheet)
