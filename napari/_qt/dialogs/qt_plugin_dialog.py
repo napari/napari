@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Sequence
+from typing import Callable, Dict, List, Sequence, Tuple
 
 from napari_plugin_engine.dist import standard_metadata
 from qtpy.QtCore import (
@@ -61,8 +61,8 @@ class Installer(QObject):
         installer: InstallerTypes = "pip",
     ):
         super().__init__()
-        self._queue = []
-        self._processes = {}
+        self._queue: List[Tuple[Tuple[str, ...], Callable[[], QProcess]]] = []
+        self._processes: Dict[Tuple[str, ...], QProcess] = {}
         self._exit_code = 0
         self._conda_env_path = None
 
@@ -205,22 +205,6 @@ class Installer(QObject):
         process.start()
         return process
 
-    def cancel(
-        self,
-        pkg_list: Sequence[str] = None,
-    ):
-        if pkg_list is None:
-            for _, process in self._processes.items():
-                process.terminate()
-
-            self._processes = {}
-        else:
-            try:
-                process = self._processes.pop(tuple(pkg_list))
-                process.terminate()
-            except KeyError:
-                pass
-
     def uninstall(
         self,
         pkg_list: Sequence[str],
@@ -266,6 +250,22 @@ class Installer(QObject):
             plugin_manager.unregister(pkg)
 
         return process
+
+    def cancel(
+        self,
+        pkg_list: Sequence[str] = None,
+    ):
+        if pkg_list is None:
+            for _, process in self._processes.items():
+                process.terminate()
+
+            self._processes = {}
+        else:
+            try:
+                process = self._processes.pop(tuple(pkg_list))
+                process.terminate()
+            except KeyError:
+                pass
 
     @staticmethod
     def _is_installed_with_conda():
@@ -623,7 +623,6 @@ class QtPluginDialog(QDialog):
                 "Installed Plugins ({amount})", amount=len(already_installed)
             )
         )
-        # self.v_splitter.setSizes([70 * self.installed_list.count(), 10, 10])
 
         # fetch available plugins
         self.worker = create_worker(iter_napari_plugin_info)
