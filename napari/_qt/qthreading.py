@@ -98,7 +98,7 @@ class WorkerBase(QRunnable):
             # `pyqtBoundSignal` in PyQt)
             return getattr(self.signals, name)
         raise AttributeError(
-            f"{self.__class__.__name__} has no attribute {name}"
+            f"{self.__class__.__name__!r} object has no attribute {name!r}"
         )
 
     def quit(self) -> None:
