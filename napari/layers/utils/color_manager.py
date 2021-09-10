@@ -10,6 +10,7 @@ from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.colormap_utils import ensure_colormap
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
+from ...utils.translations import trans
 from ._color_manager_constants import ColorMode
 from .color_manager_utils import (
     _validate_colormap_mode,
@@ -61,15 +62,21 @@ class ColorProperties:
                     val['values'] = np.asarray(val['values'])
                     color_properties = cls(**val)
                 except ValueError:
-                    err_msg = 'color_properties dictionary should have keys: name, values, and optionally current_value'
-
-                    raise ValueError(err_msg)
+                    raise ValueError(
+                        trans._(
+                            'color_properties dictionary should have keys: name, values, and optionally current_value',
+                            deferred=True,
+                        )
+                    )
 
         elif isinstance(val, cls):
             color_properties = val
         else:
             raise TypeError(
-                'color_properties should be None, a dict, or ColorProperties object'
+                trans._(
+                    'color_properties should be None, a dict, or ColorProperties object',
+                    deferred=True,
+                )
             )
 
         return color_properties
@@ -177,6 +184,8 @@ class ColorManager(EventedModel):
         elif color_mode == ColorMode.DIRECT:
             colors = values['colors']
 
+        # FIXME Local variable 'colors' might be referenced before assignment
+
         # set the current color to the last color/property value
         # if it wasn't already set
         if values['current_color'] is None and len(colors) > 0:
@@ -212,10 +221,14 @@ class ColorManager(EventedModel):
         # if the provided color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
         if is_color_mapped(color, properties):
+            # note that we set ColorProperties.current_value by indexing rather than
+            # np.squeeze since the current_property values have shape (1,) and
+            # np.squeeze would return an array with shape ().
+            # see https://github.com/napari/napari/pull/3110#discussion_r680680779
             self.color_properties = ColorProperties(
                 name=color,
                 values=properties[color],
-                current_value=np.squeeze(current_properties[color]),
+                current_value=current_properties[color][0],
             )
             if guess_continuous(properties[color]):
                 self.color_mode = ColorMode.COLORMAP
@@ -396,9 +409,14 @@ class ColorManager(EventedModel):
             current_property_name = self.color_properties.name
             current_property_values = self.color_properties.values
             if current_property_name in current_properties:
-                new_current_value = np.squeeze(
-                    current_properties[current_property_name]
-                )
+                # note that we set ColorProperties.current_value by indexing rather than
+                # np.squeeze since the current_property values have shape (1,) and
+                # np.squeeze would return an array with shape ().
+                # see https://github.com/napari/napari/pull/3110#discussion_r680680779
+                new_current_value = current_properties[current_property_name][
+                    0
+                ]
+
                 if new_current_value != self.color_properties.current_value:
                     self.color_properties = ColorProperties(
                         name=current_property_name,
@@ -475,7 +493,10 @@ class ColorManager(EventedModel):
                     )
                 except KeyError:
                     raise KeyError(
-                        'if color_properties is a string, it should be a property name'
+                        trans._(
+                            'if color_properties is a string, it should be a property name',
+                            deferred=True,
+                        )
                     )
         else:
             color_values = colors

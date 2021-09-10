@@ -16,5 +16,8 @@ performance and diagnose and fix performance problems, see {ref}`perfmon`.
 See {ref}`rendering` for two experimental features than can optionally
 be enabled to add non-blocking rendering to napari.
 
+See {ref}`preferences` for the list of preferences that can be set via the
+preferences dialog.
+
 Finally, see {ref}`translations` to learn more about how to make strings
 within the napari codebase localizable.

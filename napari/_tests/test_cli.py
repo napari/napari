@@ -12,8 +12,8 @@ from napari import __main__
 def mock_run():
     """mock to prevent starting the event loop."""
     with mock.patch('napari._qt.widgets.qt_splash_screen.NapariSplashScreen'):
-        with mock.patch('napari.__main__.run'):
-            yield napari.__main__.run
+        with mock.patch('napari.run'):
+            yield napari.run
 
 
 def test_cli_works(monkeypatch, capsys):
@@ -24,14 +24,13 @@ def test_cli_works(monkeypatch, capsys):
     assert 'napari command line viewer.' in str(capsys.readouterr())
 
 
-def test_cli_shows_plugins(monkeypatch, capsys):
+def test_cli_shows_plugins(napari_plugin_manager, monkeypatch, capsys):
     """Test the cli --info runs and shows plugins"""
-    monkeypatch.setattr(napari.plugins, 'dock_widgets', dict())
-    monkeypatch.setattr(napari.plugins, 'function_widgets', dict())
     monkeypatch.setattr(sys, 'argv', ['napari', '--info'])
     with pytest.raises(SystemExit):
         __main__._run()
-    assert 'svg' in str(capsys.readouterr())
+    # this is because sckit-image is OUR builtin providing sample_data
+    assert 'scikit-image' in str(capsys.readouterr())
 
 
 def test_cli_parses_unknowns(mock_run, monkeypatch):
@@ -42,7 +41,7 @@ def test_cli_parses_unknowns(mock_run, monkeypatch):
         assert kwargs['contrast_limits'] == (0, 1)
 
     # testing all the variants of literal_evals
-    monkeypatch.setattr(napari.__main__, 'view_path', assert_kwargs)
+    monkeypatch.setattr(napari, 'view_path', assert_kwargs)
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['n', 'file', '--contrast-limits', '(0, 1)'])
         __main__._run()
@@ -85,7 +84,7 @@ def test_cli_runscript(run_path, monkeypatch, tmp_path):
     run_path.assert_called_once_with(str(script))
 
 
-@mock.patch('napari.__main__.view_path')
+@mock.patch('napari.view_path')
 def test_cli_passes_kwargs(view_path, mock_run, monkeypatch):
     """test that we can parse layer keyword arg variants"""
 
@@ -103,9 +102,9 @@ def test_cli_passes_kwargs(view_path, mock_run, monkeypatch):
     mock_run.assert_called_once_with(gui_exceptions=True)
 
 
-def test_cli_retains_viewer_ref(mock_run, monkeypatch):
+def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
     """Test that napari.__main__ is retaining a reference to the viewer."""
-    v = napari.Viewer(show=False)  # our mock view_path will return this object
+    v = make_napari_viewer()  # our mock view_path will return this object
     ref_count = None  # counter that will be updated before __main__._run()
 
     def _check_refs(**kwargs):
@@ -113,7 +112,7 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch):
         # it forces garbage collection, and then makes sure that at least one
         # additional reference to our viewer exists.
         gc.collect()
-        if not sys.getrefcount(v) > ref_count:
+        if sys.getrefcount(v) <= ref_count:
             raise AssertionError(
                 "Reference to napari.viewer has been lost by "
                 "the time the event loop started in napari.__main__"
@@ -122,9 +121,8 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch):
     mock_run.side_effect = _check_refs
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', 'path/to/file.tif'])
-        with mock.patch(
-            'napari.__main__.view_path', return_value=v  # return our local v
-        ) as mock_vp:
+        # return our local v
+        with mock.patch('napari.view_path', return_value=v) as mock_vp:
             ref_count = sys.getrefcount(v)  # count current references
             __main__._run()
             mock_vp.assert_called_once()

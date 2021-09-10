@@ -2,18 +2,17 @@
 import pytest
 
 from napari.components.experimental.chunk._pool_group import (
-    LoaderPoolGroup,
     _get_loader_configs,
 )
 
 
 def test_get_loader_config_error():
     """Test that defaults are required."""
-    config = {}
     with pytest.raises(KeyError):
-        _get_loader_configs(config)
+        _get_loader_configs({})
 
 
+@pytest.mark.async_only
 def test_get_loader_config_defaults():
     """Test config that has defaults but no octree loaders."""
     config = {
@@ -45,6 +44,7 @@ TEST_CONFIG = {
 }
 
 
+@pytest.mark.async_only
 def test_get_loader_config_override():
     """Test two loaders that override the defaults."""
     configs = _get_loader_configs(TEST_CONFIG)
@@ -61,7 +61,12 @@ def test_get_loader_config_override():
     assert configs[3]['force_synchronous'] is False
 
 
+@pytest.mark.async_only
 def test_loader_pool_group():
+    from napari.components.experimental.chunk._pool_group import (
+        LoaderPoolGroup,
+    )
+
     group = LoaderPoolGroup(TEST_CONFIG)
 
     # Test _get_loader_priority() returns the priority of the pool we

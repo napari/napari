@@ -6,8 +6,8 @@ from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from ...components.dims import Dims
+from ...settings._constants import LoopMode
 from ...utils.translations import trans
-from .._constants import LoopMode
 from .qt_dims_slider import QtDimSliderWidget
 
 
@@ -321,7 +321,12 @@ class QtDims(QWidget):
             else:
                 self._animation_worker, self._animation_thread = None, None
         else:
-            warnings.warn(trans._('Refusing to play a hidden axis'))
+            warnings.warn(
+                trans._(
+                    'Refusing to play a hidden axis',
+                    deferred=True,
+                )
+            )
 
     def stop(self):
         """Stop axis animation"""

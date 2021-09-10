@@ -37,6 +37,9 @@ matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
     gist_earth=trans._p('colormap', 'gist earth'),
     PiYG=trans._p('colormap', 'PiYG'),
 )
+_MATPLOTLIB_COLORMAP_NAMES_REVERSE = {
+    v: k for k, v in matplotlib_colormaps.items()
+}
 _VISPY_COLORMAPS_ORIGINAL = _VCO = get_colormaps()
 _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
     autumn=(trans._p('colormap', 'autumn'), _VCO['autumn']),
@@ -66,6 +69,9 @@ _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
     diverging=(trans._p('colormap', 'diverging'), _VCO['diverging']),
     RdYeBuCy=(trans._p('colormap', 'RdYeBuCy'), _VCO['RdYeBuCy']),
 )
+_VISPY_COLORMAPS_TRANSLATIONS_REVERSE = {
+    v[0]: k for k, v in _VISPY_COLORMAPS_TRANSLATIONS.items()
+}
 _PRIMARY_COLORS = OrderedDict(
     red=(trans._p('colormap', 'red'), [1.0, 0.0, 0.0]),
     green=(trans._p('colormap', 'green'), [0.0, 1.0, 0.0]),
@@ -124,7 +130,10 @@ def convert_vispy_colormap(colormap, name='vispy'):
     """
     if not isinstance(colormap, VispyColormap):
         raise TypeError(
-            'Colormap must be a vispy colormap ' 'if passed to from_vispy'
+            trans._(
+                'Colormap must be a vispy colormap if passed to from_vispy',
+                deferred=True,
+            )
         )
 
     # Not all vispy colormaps have an `_controls`
@@ -382,15 +391,37 @@ def vispy_or_mpl_colormap(name):
     else:
         try:
             mpl_cmap = getattr(cm, name)
-            display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
+            if name in _MATPLOTLIB_COLORMAP_NAMES:
+                display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
+            else:
+                display_name = name
         except AttributeError:
-            raise KeyError(
-                trans._(
-                    'Colormap "{name}" not found in either vispy '
-                    'or matplotlib.',
-                    name=name,
+            suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
+                name
+            ) or _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(name)
+            if suggestion:
+                raise KeyError(
+                    trans._(
+                        'Colormap "{name}" not found in either vispy or matplotlib but you might want to use "{suggestion}".',
+                        deferred=True,
+                        name=name,
+                        suggestion=suggestion,
+                    )
                 )
-            )
+            else:
+                colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
+                    set(_MATPLOTLIB_COLORMAP_NAMES)
+                )
+                raise KeyError(
+                    trans._(
+                        'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
+                        deferred=True,
+                        name=name,
+                        colormaps=", ".join(
+                            sorted([f'"{cm}"' for cm in colormaps])
+                        ),
+                    )
+                )
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(
             name=name, display_name=display_name, colors=mpl_colors
@@ -518,8 +549,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             ):
                 raise TypeError(
                     trans._(
-                        "When providing a tuple as a colormap argument, the first "
-                        "element must be a string and the second a Colormap instance"
+                        "When providing a tuple as a colormap argument, the first element must be a string and the second a Colormap instance",
+                        deferred=True,
                     )
                 )
             name, cmap = colormap
@@ -544,8 +575,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             ):
                 raise TypeError(
                     trans._(
-                        "When providing a dict as a colormap, "
-                        "all values must be Colormap instances"
+                        "When providing a dict as a colormap, all values must be Colormap instances",
+                        deferred=True,
                     )
                 )
             else:
@@ -567,23 +598,30 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
                     warnings.warn(
                         trans._(
-                            "only the first item in a colormap dict is used as an argument"
+                            "only the first item in a colormap dict is used as an argument",
+                            deferred=True,
                         )
                     )
                 else:
                     raise ValueError(
                         trans._(
-                            "Received an empty dict as a colormap argument."
+                            "Received an empty dict as a colormap argument.",
+                            deferred=True,
                         )
                     )
         else:
-            raise TypeError(
+            import warnings
+
+            warnings.warn(
                 trans._(
-                    'invalid type for colormap: {colormap_type}. '
-                    'Must be a {{str, tuple, dict, napari.utils.Colormap, '
-                    'vispy.colors.Colormap}}'
-                ).format(colormap_type=type(colormap))
+                    'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
+                    deferred=True,
+                    cm_type=type(colormap),
+                )
             )
+
+            # Use default colormap
+            name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
 

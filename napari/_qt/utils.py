@@ -1,22 +1,34 @@
+import signal
+import socket
 from contextlib import contextmanager
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtCore import QByteArray, QObject, QSize, Qt, Signal
-from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
+from qtpy.QtCore import (
+    QByteArray,
+    QObject,
+    QPropertyAnimation,
+    QSize,
+    QSocketNotifier,
+    Qt,
+    Signal,
+)
+from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
-    QApplication,
+    QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
+from ..utils.colormaps.standardize_color import transform_color
+from ..utils.events.custom_types import Array
 from ..utils.misc import is_sequence
+from ..utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
 
@@ -57,7 +69,10 @@ def str_to_qbytearray(string: str) -> QByteArray:
     """
     if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
         raise ValueError(
-            f"Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'"
+            trans._(
+                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
+                QBYTE_FLAG=QBYTE_FLAG,
+            )
         )
 
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
@@ -120,13 +135,13 @@ def event_hook_removed():
             QtCore.pyqtRestoreInputHook()
 
 
-def disable_with_opacity(obj, widget_list, disabled):
-    """Set enabled state on a list of widgets. If disabled, decrease opacity"""
-    for wdg in widget_list:
-        widget = getattr(obj, wdg)
-        widget.setEnabled(obj.layer.editable)
+def disable_with_opacity(obj, widget_list, enabled):
+    """Set enabled state on a list of widgets. If not enabled, decrease opacity."""
+    for widget_name in widget_list:
+        widget = getattr(obj, widget_name)
+        widget.setEnabled(enabled)
         op = QGraphicsOpacityEffect(obj)
-        op.setOpacity(1 if obj.layer.editable else 0.5)
+        op.setOpacity(1 if enabled else 0.5)
         widget.setGraphicsEffect(op)
 
 
@@ -232,42 +247,129 @@ def combine_widgets(
         return widgets.native  # type: ignore
     elif isinstance(widgets, QWidget):
         return widgets
-    elif is_sequence(widgets) and all(isinstance(i, QWidget) for i in widgets):
-        container = QWidget()
-        container.layout = QVBoxLayout() if vertical else QHBoxLayout()
-        container.setLayout(container.layout)
-        for widget in widgets:
-            container.layout.addWidget(widget)
-        # if this is a vertical layout, and none of the widgets declare a size
-        # policy of "expanding", add our own stretch.
-        if vertical and not any(
-            w.sizePolicy().verticalPolicy() == QSizePolicy.Expanding
-            for w in widgets
-        ):
-            container.layout.addStretch()
-        return container
-    else:
-        raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')
+    elif is_sequence(widgets):
+        # the same as above, compatibility with magicgui v0.2.0
+        widgets = [
+            i.native if isinstance(getattr(i, 'native', None), QWidget) else i
+            for i in widgets
+        ]
+        if all(isinstance(i, QWidget) for i in widgets):
+            container = QWidget()
+            container.setLayout(QVBoxLayout() if vertical else QHBoxLayout())
+            for widget in widgets:
+                container.layout().addWidget(widget)
+            return container
+    raise TypeError(
+        trans._('"widget" must be a QWidget or a sequence of QWidgets')
+    )
 
 
-def delete_qapp(app):
-    """Delete a QApplication
+def add_flash_animation(
+    widget: QWidget, duration: int = 300, color: Array = (0.5, 0.5, 0.5, 0.5)
+):
+    """Add flash animation to widget to highlight certain action (e.g. taking a screenshot).
 
     Parameters
     ----------
-    app : qtpy.QApplication
+    widget : QWidget
+        Any Qt widget.
+    duration : int
+        Duration of the flash animation.
+    color : Array
+        Color of the flash animation. By default, we use light gray.
     """
-    try:
-        # Pyside2
-        from shiboken2 import delete
-    except ImportError:
-        # PyQt5
-        from sip import delete
+    color = transform_color(color)[0]
+    color = (255 * color).astype("int")
 
-    delete(app)
-    # calling a second time is necessary on PySide2...
-    # see: https://bugreports.qt.io/browse/PYSIDE-1470
-    QApplication.instance()
+    effect = QGraphicsColorizeEffect(widget)
+    widget.setGraphicsEffect(effect)
+
+    widget._flash_animation = QPropertyAnimation(effect, b"color")
+    widget._flash_animation.setStartValue(QColor(0, 0, 0, 0))
+    widget._flash_animation.setEndValue(QColor(0, 0, 0, 0))
+    widget._flash_animation.setLoopCount(1)
+
+    # let's make sure to remove the animation from the widget because
+    # if we don't, the widget will actually be black and white.
+    widget._flash_animation.finished.connect(
+        partial(remove_flash_animation, widget)
+    )
+
+    widget._flash_animation.start()
+
+    # now  set an actual time for the flashing and an intermediate color
+    widget._flash_animation.setDuration(duration)
+    widget._flash_animation.setKeyValueAt(0.1, QColor(*color))
+
+
+def remove_flash_animation(widget: QWidget):
+    """Remove flash animation from widget.
+
+    Parameters
+    ----------
+    widget : QWidget
+        Any Qt widget.
+    """
+    widget.setGraphicsEffect(None)
+    del widget._flash_animation
+
+
+@contextmanager
+def _maybe_allow_interrupt(qapp):
+    """
+    This manager allows to terminate a plot by sending a SIGINT. It is
+    necessary because the running Qt backend prevents Python interpreter to
+    run and process signals (i.e., to raise KeyboardInterrupt exception). To
+    solve this one needs to somehow wake up the interpreter and make it close
+    the plot window. We do this by using the signal.set_wakeup_fd() function
+    which organizes a write of the signal number into a socketpair connected
+    to the QSocketNotifier (since it is part of the Qt backend, it can react
+    to that write event). Afterwards, the Qt handler empties the socketpair
+    by a recv() command to re-arm it (we need this if a signal different from
+    SIGINT was caught by set_wakeup_fd() and we shall continue waiting). If
+    the SIGINT was caught indeed, after exiting the on_signal() function the
+    interpreter reacts to the SIGINT according to the handle() function which
+    had been set up by a signal.signal() call: it causes the qt_object to
+    exit by calling its quit() method. Finally, we call the old SIGINT
+    handler with the same arguments that were given to our custom handle()
+    handler.
+    We do this only if the old handler for SIGINT was not None, which means
+    that a non-python handler was installed, i.e. in Julia, and not SIG_IGN
+    which means we should ignore the interrupts.
+
+    code from https://github.com/matplotlib/matplotlib/pull/13306
+    """
+    old_sigint_handler = signal.getsignal(signal.SIGINT)
+    handler_args = None
+    skip = False
+    if old_sigint_handler in (None, signal.SIG_IGN, signal.SIG_DFL):
+        skip = True
+    else:
+        wsock, rsock = socket.socketpair()
+        wsock.setblocking(False)
+        old_wakeup_fd = signal.set_wakeup_fd(wsock.fileno())
+        sn = QSocketNotifier(rsock.fileno(), QSocketNotifier.Type.Read)
+
+        # Clear the socket to re-arm the notifier.
+        sn.activated.connect(lambda *args: rsock.recv(1))
+
+        def handle(*args):
+            nonlocal handler_args
+            handler_args = args
+            qapp.exit()
+
+        signal.signal(signal.SIGINT, handle)
+    try:
+        yield
+    finally:
+        if not skip:
+            wsock.close()
+            rsock.close()
+            sn.setEnabled(False)
+            signal.set_wakeup_fd(old_wakeup_fd)
+            signal.signal(signal.SIGINT, old_sigint_handler)
+            if handler_args is not None:
+                old_sigint_handler(*handler_args)
 
 
 class Sentry(QObject):

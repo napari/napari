@@ -1,13 +1,9 @@
-import os
 import sys
 
 import numpy as np
 import pytest
 
-skip_local_popups = pytest.mark.skipif(
-    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
-    reason='Tests requiring GUI windows are skipped locally by default.',
-)
+from napari._tests.utils import skip_local_popups
 
 
 @skip_local_popups

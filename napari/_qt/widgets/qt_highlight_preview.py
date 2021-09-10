@@ -2,7 +2,6 @@ import numpy as np
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QColor, QIntValidator, QPainter, QPainterPath, QPen
 from qtpy.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -294,7 +293,7 @@ class QtTriangle(QFrame):
         self.valueChanged.emit(self._value)
 
 
-class QtHighlightSizePreviewWidget(QDialog):
+class QtHighlightSizePreviewWidget(QWidget):
     """Creates custom widget to set highlight size.
 
     Parameters
@@ -422,19 +421,13 @@ class QtHighlightSizePreviewWidget(QDialog):
             Highlight value.
         """
         if value == "":
-            value = int(self._value)
-
+            return
         value = int(value)
-
-        if value > self._max_value:
-            value = self._max_value
-        elif value < self._min_value:
-            value = self._min_value
-
-        if value != self._value:
-            self.valueChanged.emit(value)
-
+        value = max(min(value, self._max_value), self._min_value)
+        if value == self._value:
+            return
         self._value = value
+        self.valueChanged.emit(self._value)
         self._refresh()
 
     def _refresh(self):
@@ -445,7 +438,6 @@ class QtHighlightSizePreviewWidget(QDialog):
         self._triangle.setValue(self._value)
         self._preview.setValue(self._value)
         self.blockSignals(False)
-        self.valueChanged.emit(self._value)
 
     def value(self):
         """Return current value.
@@ -530,7 +522,11 @@ class QtHighlightSizePreviewWidget(QDialog):
             self._refresh()
         else:
             raise ValueError(
-                f"Minimum value must be smaller than {self._max_value}"
+                trans._(
+                    "Minimum value must be smaller than {max_value}",
+                    deferred=True,
+                    max_value=self._max_value,
+                )
             )
 
     def minimum(self):
@@ -565,7 +561,11 @@ class QtHighlightSizePreviewWidget(QDialog):
             self._refresh()
         else:
             raise ValueError(
-                f"Maximum value must be larger than {self._min_value}"
+                trans._(
+                    "Maximum value must be larger than {min_value}",
+                    deferred=True,
+                    min_value=self._min_value,
+                )
             )
 
     def maximum(self):

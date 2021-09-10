@@ -1,12 +1,20 @@
 from functools import partial
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 
 from qtpy import QtCore, QtGui, QtWidgets
+from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
+from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
 from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
+
+from ...._qt.widgets.qt_spinbox import QtSpinBox
+
+
+if TYPE_CHECKING:
+    from .form import WidgetBuilder
 
 
 class SchemaWidgetMixin:
@@ -19,8 +27,7 @@ class SchemaWidgetMixin:
         self,
         schema: dict,
         ui_schema: dict,
-        # note: need to figure out how the following works
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -66,6 +73,9 @@ class SchemaWidgetMixin:
 class TextSchemaWidget(SchemaWidgetMixin, QtWidgets.QLineEdit):
     def configure(self):
         self.textChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
 
     @state_property
     def state(self) -> str:
@@ -75,12 +85,18 @@ class TextSchemaWidget(SchemaWidgetMixin, QtWidgets.QLineEdit):
     def state(self, state: str):
         self.setText(state)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class PasswordWidget(TextSchemaWidget):
     def configure(self):
         super().configure()
 
         self.setEchoMode(self.Password)
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class TextAreaSchemaWidget(SchemaWidgetMixin, QtWidgets.QTextEdit):
@@ -94,6 +110,12 @@ class TextAreaSchemaWidget(SchemaWidgetMixin, QtWidgets.QTextEdit):
 
     def configure(self):
         self.textChanged.connect(lambda: self.on_changed.emit(self.state))
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
@@ -107,6 +129,12 @@ class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
 
     def configure(self):
         self.stateChanged.connect(lambda _: self.on_changed.emit(self.state))
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
@@ -120,6 +148,13 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
 
     def configure(self):
         self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
     @state_property
@@ -134,8 +169,11 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
     def configure(self):
         self.hook_list.order_changed.connect(self.on_changed.emit)
 
+    def setDescription(self, description: str):
+        self.description = description
 
-class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
+
+class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
     @state_property
     def state(self) -> int:
         return self.value()
@@ -146,6 +184,29 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
 
     def configure(self):
         self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+        minimum = -2147483648
+        if "minimum" in self.schema:
+            minimum = self.schema["minimum"]
+            if self.schema.get("exclusiveMinimum"):
+                minimum += 1
+
+        maximum = 2147483647
+        if "maximum" in self.schema:
+            maximum = self.schema["maximum"]
+            if self.schema.get("exclusiveMaximum"):
+                maximum -= 1
+
+        self.setRange(minimum, maximum)
+
+        if "not" in self.schema and 'const' in self.schema["not"]:
+            self.setProhibitValue(self.schema["not"]['const'])
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
@@ -153,7 +214,7 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(
             schema, ui_schema, widget_builder, orientation=QtCore.Qt.Horizontal
@@ -169,6 +230,9 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
 
     def configure(self):
         self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
 
         minimum = 0
         if "minimum" in self.schema:
@@ -189,6 +253,9 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
 
         self.setRange(minimum, maximum)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class QColorButton(QtWidgets.QPushButton):
     """Color picker widget QPushButton subclass.
@@ -203,6 +270,9 @@ class QColorButton(QtWidgets.QPushButton):
 
         self._color = None
         self.pressed.connect(self.onColorPicker)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
 
     def color(self):
         return self._color
@@ -231,12 +301,18 @@ class QColorButton(QtWidgets.QPushButton):
 
         return super().mousePressEvent(event)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class ColorSchemaWidget(SchemaWidgetMixin, QColorButton):
     """Widget representation of a string with the 'color' format keyword."""
 
     def configure(self):
         self.colorChanged.connect(lambda: self.on_changed.emit(self.state))
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
 
     @state_property
     def state(self) -> str:
@@ -246,15 +322,22 @@ class ColorSchemaWidget(SchemaWidgetMixin, QColorButton):
     def state(self, data: str):
         self.setColor(data)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
     def __init__(
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(schema, ui_schema, widget_builder)
+
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
 
         layout = QtWidgets.QHBoxLayout()
         self.setLayout(layout)
@@ -279,6 +362,9 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
     def state(self, state: str):
         self.path_widget.setText(state)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class ArrayControlsWidget(QtWidgets.QWidget):
     on_delete = QtCore.Signal()
@@ -293,6 +379,10 @@ class ArrayControlsWidget(QtWidgets.QWidget):
         self.up_button = QtWidgets.QPushButton()
         self.up_button.setIcon(style.standardIcon(QtWidgets.QStyle.SP_ArrowUp))
         self.up_button.clicked.connect(lambda _: self.on_move_up.emit())
+
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
 
         self.delete_button = QtWidgets.QPushButton()
         self.delete_button.setIcon(
@@ -314,6 +404,9 @@ class ArrayControlsWidget(QtWidgets.QWidget):
         group_layout.setSpacing(0)
         group_layout.addStretch(0)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class ArrayRowWidget(QtWidgets.QWidget):
     def __init__(
@@ -326,8 +419,15 @@ class ArrayRowWidget(QtWidgets.QWidget):
         layout.addWidget(controls)
         self.setLayout(layout)
 
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
         self.widget = widget
         self.controls = controls
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
@@ -356,6 +456,10 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
     def configure(self):
         layout = QtWidgets.QVBoxLayout()
         style = self.style()
+
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
 
         self.add_button = QtWidgets.QPushButton()
         self.add_button.setIcon(
@@ -473,12 +577,53 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.on_changed.emit(self.state)
 
 
+class HighlightSizePreviewWidget(
+    SchemaWidgetMixin, QtHighlightSizePreviewWidget
+):
+    @state_property
+    def state(self) -> int:
+        return self.value()
+
+    def setDescription(self, description: str):
+        self._description.setText(description)
+
+    @state.setter
+    def state(self, state: int):
+        self.setValue(state)
+
+    def configure(self):
+        self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+
+class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
+    @state_property
+    def state(self) -> dict:
+        return self.value()
+
+    def setDescription(self, description: str):
+        self.description = description
+
+    @state.setter
+    def state(self, state: dict):
+        # self.setValue(state)
+        return None
+
+    def configure(self):
+        self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+
 class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
     def __init__(
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
@@ -503,11 +648,14 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         self.state[name] = value
         self.on_changed.emit(self.state)
 
+    def setDescription(self, description: str):
+        self.description = description
+
     def populate_from_schema(
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
     ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)
@@ -524,10 +672,16 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         widgets = {}
         layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
         for name, sub_schema in schema['properties'].items():
+            if 'description' in sub_schema:
+                description = sub_schema['description']
+            else:
+                description = ""
+
             sub_ui_schema = ui_schema.get(name, {})
             widget = widget_builder.create_widget(
-                sub_schema, sub_ui_schema
+                sub_schema, sub_ui_schema, description=description
             )  # TODO onchanged
+            widget._name = name
             widget.on_changed.connect(partial(self.widget_on_changed, name))
             label = sub_schema.get("title", name)
             layout.addRow(label, widget)
@@ -558,8 +712,15 @@ class EnumSchemaWidget(SchemaWidgetMixin, QtWidgets.QComboBox):
             lambda _: self.on_changed.emit(self.state)
         )
 
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
     def _index_changed(self, index: int):
         self.on_changed.emit(self.state)
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class FormWidget(QtWidgets.QWidget):
@@ -597,13 +758,3 @@ class FormWidget(QtWidgets.QWidget):
 
     def clear_errors(self):
         self.error_widget.hide()
-
-
-class MyMainWindow(QtWidgets.QDialog):
-    def __init__(self, widget: SchemaWidgetMixin, parent=None):
-
-        super().__init__(parent)
-        self.form_widget = FormWidget(widget)
-        self.setWindowTitle("Preferences")
-        self.widget = self.form_widget
-        self.setCentralWidget(self.widget)

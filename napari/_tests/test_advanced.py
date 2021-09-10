@@ -247,6 +247,7 @@ def test_labels_undo_redo(make_napari_viewer):
 
     # history limit
     labels._history_limit = 1
+    labels._reset_history()
     labels.fill((0, 0), 3)
 
     l3 = labels.data.copy()
@@ -259,3 +260,19 @@ def test_labels_undo_redo(make_napari_viewer):
     # cannot undo as limit exceeded
     labels.undo()
     assert np.array_equal(l2, labels.data)
+
+
+def test_labels_brush_size(make_napari_viewer):
+    """Test changing labels brush size."""
+    viewer = make_napari_viewer()
+
+    data = np.zeros((50, 50), dtype=np.uint8)
+    labels = viewer.add_labels(data)
+
+    # Make small change
+    labels.brush_size = 20
+    assert labels.brush_size == 20
+
+    # Make large change
+    labels.brush_size = 100
+    assert labels.brush_size == 100

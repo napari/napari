@@ -4,6 +4,7 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
+from ..utils.translations import trans
 from .image import Image as ImageNode
 from .utils_gl import fix_data_dtype
 from .vispy_base_layer import VispyBaseLayer
@@ -14,7 +15,9 @@ class ImageLayerNode:
     def __init__(self, custom_node: Node = None):
         self._custom_node = custom_node
         self._image_node = ImageNode(None, method='auto')
-        self._volume_node = VolumeNode(np.zeros((1, 1, 1)), clim=[0, 1])
+        self._volume_node = VolumeNode(
+            np.zeros((1, 1, 1), dtype=np.float32), clim=[0, 1]
+        )
 
     def get_node(self, ndisplay: int) -> Node:
 
@@ -48,6 +51,18 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
+        self.layer.experimental_slicing_plane.events.enabled.connect(
+            self._on_experimental_slicing_plane_enabled_change
+        )
+        self.layer.experimental_slicing_plane.events.position.connect(
+            self._on_experimental_slicing_plane_position_change
+        )
+        self.layer.experimental_slicing_plane.events.thickness.connect(
+            self._on_experimental_slicing_plane_thickness_change
+        )
+        self.layer.experimental_slicing_plane.events.normal.connect(
+            self._on_experimental_slicing_plane_normal_change
+        )
 
         self._on_display_change()
         self._on_data_change()
@@ -142,6 +157,32 @@ class VispyImageLayer(VispyBaseLayer):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
 
+    def _on_experimental_slicing_plane_enabled_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            if self.layer.experimental_slicing_plane.enabled is True:
+                raycasting_mode = 'plane'
+            else:
+                raycasting_mode = 'volume'
+            self.node.raycasting_mode = raycasting_mode
+
+    def _on_experimental_slicing_plane_thickness_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_thickness = (
+                self.layer.experimental_slicing_plane.thickness
+            )
+
+    def _on_experimental_slicing_plane_position_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_position = (
+                self.layer.experimental_slicing_plane.position
+            )
+
+    def _on_experimental_slicing_plane_normal_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_normal = (
+                self.layer.experimental_slicing_plane.normal
+            )
+
     def reset(self, event=None):
         self._reset_base()
         self._on_interpolation_change()
@@ -149,6 +190,10 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_contrast_limits_change()
         self._on_gamma_change()
         self._on_rendering_change()
+        self._on_experimental_slicing_plane_enabled_change()
+        self._on_experimental_slicing_plane_position_change()
+        self._on_experimental_slicing_plane_normal_change()
+        self._on_experimental_slicing_plane_thickness_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.
@@ -168,16 +213,22 @@ class VispyImageLayer(VispyBaseLayer):
         if np.any(np.greater(data.shape, MAX_TEXTURE_SIZE)):
             if self.layer.multiscale:
                 raise ValueError(
-                    f"Shape of individual tiles in multiscale {data.shape} "
-                    f"cannot exceed GL_MAX_TEXTURE_SIZE "
-                    f"{MAX_TEXTURE_SIZE}. Rendering is currently in "
-                    f"{self.layer._ndisplay}D mode."
+                    trans._(
+                        "Shape of in dividual tiles in multiscale {shape} cannot exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is currently in {ndisplay}D mode.",
+                        deferred=True,
+                        shape=data.shape,
+                        texture_size=MAX_TEXTURE_SIZE,
+                        ndisplay=self.layer._ndisplay,
+                    )
                 )
             warnings.warn(
-                f"data shape {data.shape} exceeds GL_MAX_TEXTURE_SIZE "
-                f"{MAX_TEXTURE_SIZE} in at least one axis and "
-                f"will be downsampled. Rendering is currently in "
-                f"{self.layer._ndisplay}D mode."
+                trans._(
+                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size} in at least one axis and will be downsampled. Rendering is currently in {ndisplay}D mode.",
+                    deferred=True,
+                    shape=data.shape,
+                    texture_size=MAX_TEXTURE_SIZE,
+                    ndisplay=self.layer._ndisplay,
+                )
             )
             downsample = np.ceil(
                 np.divide(data.shape, MAX_TEXTURE_SIZE)

@@ -3,6 +3,7 @@ from typing import Any, Dict, Tuple, Union
 import numpy as np
 
 from ...utils.colormaps import Colormap
+from ...utils.translations import trans
 
 
 def guess_continuous(property: np.ndarray) -> bool:
@@ -31,7 +32,7 @@ def guess_continuous(property: np.ndarray) -> bool:
 
 
 def is_color_mapped(color, properties):
-    """ determines if the new color argument is for directly setting or cycle/colormap"""
+    """determines if the new color argument is for directly setting or cycle/colormap"""
     if isinstance(color, str):
         if color in properties:
             return True
@@ -43,7 +44,10 @@ def is_color_mapped(color, properties):
         return False
     else:
         raise ValueError(
-            'face_color should be the name of a color, an array of colors, or the name of an property'
+            trans._(
+                'face_color should be the name of a color, an array of colors, or the name of an property',
+                deferred=True,
+            )
         )
 
 

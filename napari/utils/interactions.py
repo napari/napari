@@ -1,8 +1,12 @@
 import inspect
+import re
 import sys
+import warnings
 
 import wrapt
 from numpydoc.docscrape import FunctionDoc
+
+from ..utils.translations import trans
 
 
 class ReadOnlyWrapper(wrapt.ObjectProxy):
@@ -12,11 +16,20 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
 
     def __setattr__(self, name, val):
         if name != '__wrapped__':
-            raise TypeError(f'cannot set attribute {name}')
+            raise TypeError(
+                trans._(
+                    'cannot set attribute {name}',
+                    deferred=True,
+                    name=name,
+                )
+            )
+
         super().__setattr__(name, val)
 
     def __setitem__(self, name, val):
-        raise TypeError(f'cannot set item {name}')
+        raise TypeError(
+            trans._('cannot set item {name}', deferred=True, name=name)
+        )
 
 
 def mouse_wheel_callbacks(obj, event):
@@ -63,6 +76,40 @@ def mouse_wheel_callbacks(obj, event):
                 pass
 
 
+def mouse_double_click_callbacks(obj, event) -> None:
+    """Run mouse double_click callbacks on either layer or viewer object.
+
+    Note that unlike other press and release callback those can't be generators:
+
+    .. code-block:: python
+
+        def double_click_callback(layer, event):
+            layer._finish_drawing()
+
+    Parameters
+    ----------
+    obj : ViewerModel or Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+
+    Returns
+    -------
+    None
+
+    """
+    # iterate through drag callback functions
+    for mouse_click_func in obj.mouse_double_click_callbacks:
+        # execute function to run press event code
+        if inspect.isgeneratorfunction(mouse_click_func):
+            raise ValueError(
+                trans._(
+                    "Double-click actions can't be generators.", deferred=True
+                )
+            )
+        mouse_click_func(obj, event)
+
+
 def mouse_press_callbacks(obj, event):
     """Run mouse press callbacks on either layer or viewer object.
 
@@ -93,7 +140,7 @@ def mouse_press_callbacks(obj, event):
     """
     # iterate through drag callback functions
     for mouse_drag_func in obj.mouse_drag_callbacks:
-        # exectute function to run press event code
+        # execute function to run press event code
         gen = mouse_drag_func(obj, event)
         # if function returns a generator then try to iterate it
         if inspect.isgenerator(gen):
@@ -204,10 +251,12 @@ KEY_SYMBOLS = {
     'Up': '↑',
     'Down': '↓',
     'Backspace': '⌫',
+    'Delete': '⌦',
     'Tab': '↹',
     'Escape': 'Esc',
     'Return': '⏎',
     'Enter': '↵',
+    'Space': '␣',
 }
 
 
@@ -241,10 +290,21 @@ class Shortcut:
             shortcut to format in the form of dash separated keys to press
 
         """
-        self._values = shortcut.split('-')
-        for v in self._values:
-            if len(v) > 1:
-                assert v in KEY_SYMBOLS.keys()
+        self._values = re.split('-(?=.+)', shortcut)
+        for shortcut_key in self._values:
+            if (
+                len(shortcut_key) > 1
+                and shortcut_key not in KEY_SYMBOLS.keys()
+            ):
+
+                warnings.warn(
+                    trans._(
+                        "{shortcut_key} does not seem to be a valid shortcut Key.",
+                        shortcut_key=shortcut_key,
+                    ),
+                    UserWarning,
+                    stacklevel=2,
+                )
 
     @property
     def qt(self) -> str:
@@ -283,23 +343,23 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
 
     Returns
     -------
-    key_bindings_str : str
+    str
         String with summary of all key_bindings and their functions.
     """
-    key_bindings_str = '<table border="0" width="100%">'
+    key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
         keycodes = "+".join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
-        key_bindings_str += (
+        key_bindings_strs.append(
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
-            f"{get_function_summary(keymap[key])}</td></tr>"
+            f"{keymap[key]}</td></tr>"
         )
-    key_bindings_str += '</table>'
-    return key_bindings_str
+    key_bindings_strs.append('</table>')
+    return ''.join(key_bindings_strs)
 
 
 def get_function_summary(func):

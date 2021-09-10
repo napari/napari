@@ -9,6 +9,7 @@ import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..base import Layer
 from ._track_utils import TrackManager
 
@@ -37,7 +38,9 @@ class Tracks(Layer):
     tail_width : float
         Width of the track tails in pixels.
     tail_length : float
-        Length of the track tails in units of time.
+        Length of the positive (backward in time) tails in units of time.
+    head_length : float
+        Length of the positive (forward in time) tails in units of time.
     colormap : str
         Default colormap to use to set vertex colors. Specialized colormaps,
         relating to specified properties can be passed to the layer via
@@ -66,9 +69,9 @@ class Tracks(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -84,6 +87,8 @@ class Tracks(Layer):
     # The max number of tracks that will ever be used to render the thumbnail
     # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
+    _max_length = 300
+    _max_width = 20
 
     def __init__(
         self,
@@ -93,6 +98,7 @@ class Tracks(Layer):
         graph=None,
         tail_width=2,
         tail_length=30,
+        head_length=0,
         name=None,
         metadata=None,
         scale=None,
@@ -106,6 +112,7 @@ class Tracks(Layer):
         colormap='turbo',
         color_by='track_id',
         colormaps_dict=None,
+        experimental_clipping_planes=None,
     ):
 
         # if not provided with any data, set up an empty layer in 2D+t
@@ -135,11 +142,13 @@ class Tracks(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
             tail_width=Event,
             tail_length=Event,
+            head_length=Event,
             display_id=Event,
             display_tail=Event,
             display_graph=Event,
@@ -163,6 +172,7 @@ class Tracks(Layer):
         # track display properties
         self.tail_width = tail_width
         self.tail_length = tail_length
+        self.head_length = head_length
         self.display_id = False
         self.display_tail = True
         self.display_graph = True
@@ -219,6 +229,7 @@ class Tracks(Layer):
                 'colormaps_dict': self.colormaps_dict,
                 'tail_width': self.tail_width,
                 'tail_length': self.tail_length,
+                'head_length': self.head_length,
             }
         )
         return state
@@ -287,7 +298,9 @@ class Tracks(Layer):
             # modulate track colors as per colormap/current_time
             colors = self.track_colors[thumbnail_indices]
             times = self.track_times[thumbnail_indices]
-            alpha = (self.current_time - times) / self.tail_length
+            alpha = (self.head_length + self.current_time - times) / (
+                self.tail_length + self.head_length
+            )
             alpha[times > self.current_time] = 1.0
             colors[:, -1] = np.clip(1.0 - alpha, 0.0, 1.0)
             colormapped[coords[:, 1], coords[:, 0]] = colors
@@ -297,16 +310,16 @@ class Tracks(Layer):
 
     @property
     def _view_data(self):
-        """ return a view of the data """
+        """return a view of the data"""
         return self._pad_display_data(self._manager.track_vertices)
 
     @property
     def _view_graph(self):
-        """ return a view of the graph """
+        """return a view of the graph"""
         return self._pad_display_data(self._manager.graph_vertices)
 
     def _pad_display_data(self, vertices):
-        """ pad display data when moving between 2d and 3d """
+        """pad display data when moving between 2d and 3d"""
         if vertices is None:
             return
 
@@ -321,7 +334,7 @@ class Tracks(Layer):
 
     @property
     def current_time(self):
-        """ current time according to the first dimension """
+        """current time according to the first dimension"""
         # TODO(arl): get the correct index here
         time_step = self._slice_indices[0]
 
@@ -340,12 +353,12 @@ class Tracks(Layer):
 
     @property
     def data(self) -> np.ndarray:
-        """ array (N, D+1): Coordinates for N points in D+1 dimensions. """
+        """array (N, D+1): Coordinates for N points in D+1 dimensions."""
         return self._manager.data
 
     @data.setter
     def data(self, data: np.ndarray):
-        """ set the data and build the vispy arrays for display """
+        """set the data and build the vispy arrays for display"""
         # set the data and build the tracks
         self._manager.data = data
         self._manager.build_tracks()
@@ -367,22 +380,25 @@ class Tracks(Layer):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Properties for each track."""
+        """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._manager.properties
 
     @property
     def properties_to_color_by(self) -> List[str]:
-        """ track properties that can be used for coloring etc... """
+        """track properties that can be used for coloring etc..."""
         return list(self.properties.keys())
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
-        """ set track properties """
+        """set track properties"""
         if self._color_by not in [*properties.keys(), 'track_id']:
             warn(
                 (
-                    f"Previous color_by key {self._color_by!r} not present in"
-                    " new properties. Falling back to track_id"
+                    trans._(
+                        "Previous color_by key {key!r} not present in new properties. Falling back to track_id",
+                        deferred=True,
+                        key=self._color_by,
+                    )
                 ),
                 UserWarning,
             )
@@ -398,7 +414,7 @@ class Tracks(Layer):
 
     @graph.setter
     def graph(self, graph: Dict[int, Union[int, List[int]]]):
-        """ Set the track graph. """
+        """Set the track graph."""
         self._manager.graph = graph
         self._manager.build_graph()
         self.events.rebuild_graph()
@@ -410,7 +426,7 @@ class Tracks(Layer):
 
     @tail_width.setter
     def tail_width(self, tail_width: Union[int, float]):
-        self._tail_width = tail_width
+        self._tail_width = np.clip(tail_width, 0.5, self._max_width)
         self.events.tail_width()
 
     @property
@@ -420,12 +436,21 @@ class Tracks(Layer):
 
     @tail_length.setter
     def tail_length(self, tail_length: Union[int, float]):
-        self._tail_length = tail_length
+        self._tail_length = np.clip(tail_length, 1, self._max_length)
         self.events.tail_length()
 
     @property
+    def head_length(self) -> Union[int, float]:
+        return self._head_length
+
+    @head_length.setter
+    def head_length(self, head_length: Union[int, float]):
+        self._head_length = np.clip(head_length, 0, self._max_length)
+        self.events.head_length()
+
+    @property
     def display_id(self) -> bool:
-        """ display the track id """
+        """display the track id"""
         return self._display_id
 
     @display_id.setter
@@ -436,7 +461,7 @@ class Tracks(Layer):
 
     @property
     def display_tail(self) -> bool:
-        """ display the track tail """
+        """display the track tail"""
         return self._display_tail
 
     @display_tail.setter
@@ -446,7 +471,7 @@ class Tracks(Layer):
 
     @property
     def display_graph(self) -> bool:
-        """ display the graph edges """
+        """display the graph edges"""
         return self._display_graph
 
     @display_graph.setter
@@ -460,9 +485,15 @@ class Tracks(Layer):
 
     @color_by.setter
     def color_by(self, color_by: str):
-        """ set the property to color vertices by """
+        """set the property to color vertices by"""
         if color_by not in self.properties_to_color_by:
-            raise ValueError(f'{color_by} is not a valid property key')
+            raise ValueError(
+                trans._(
+                    '{color_by} is not a valid property key',
+                    deferred=True,
+                    color_by=color_by,
+                )
+            )
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
@@ -473,9 +504,15 @@ class Tracks(Layer):
 
     @colormap.setter
     def colormap(self, colormap: str):
-        """ set the default colormap """
+        """set the default colormap"""
         if colormap not in AVAILABLE_COLORMAPS:
-            raise ValueError(f'Colormap {colormap} not available')
+            raise ValueError(
+                trans._(
+                    'Colormap {colormap} not available',
+                    deferred=True,
+                    colormap=colormap,
+                )
+            )
         self._colormap = colormap
         self._recolor_tracks()
         self.events.colormap()
@@ -490,7 +527,7 @@ class Tracks(Layer):
         self._colormaps_dict = colormaps_dict
 
     def _recolor_tracks(self):
-        """ recolor the tracks """
+        """recolor the tracks"""
 
         # this catch prevents a problem coloring the tracks if the data is
         # updated before the properties are. properties should always contain
@@ -517,7 +554,7 @@ class Tracks(Layer):
 
     @property
     def track_connex(self) -> np.ndarray:
-        """ vertex connections for drawing track lines """
+        """vertex connections for drawing track lines"""
         return self._manager.track_connex
 
     @property
@@ -528,22 +565,22 @@ class Tracks(Layer):
 
     @property
     def graph_connex(self) -> np.ndarray:
-        """ vertex connections for drawing the graph """
+        """vertex connections for drawing the graph"""
         return self._manager.graph_connex
 
     @property
     def track_times(self) -> np.ndarray:
-        """ time points associated with each track vertex """
+        """time points associated with each track vertex"""
         return self._manager.track_times
 
     @property
     def graph_times(self) -> np.ndarray:
-        """ time points assocaite with each graph vertex """
+        """time points associated with each graph vertex"""
         return self._manager.graph_times
 
     @property
     def track_labels(self) -> tuple:
-        """ return track labels at the current time """
+        """return track labels at the current time"""
         labels, positions = self._manager.track_labels(self.current_time)
 
         # if there are no labels, return empty for vispy

@@ -5,9 +5,11 @@ from typing import List, Optional
 
 import numpy as np
 
-from ..layers import Layer
+from ..layers import Image, Labels, Layer
+from ..layers.utils._link_layers import get_linked_layers, layer_is_linked
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
+from ..utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
 
@@ -60,16 +62,10 @@ class LayerList(SelectableEventedList[Layer]):
         new_name : str
             Coerced, unique name.
         """
-        if layer is None:
-            for existing_name in sorted(x.name for x in self):
-                if name == existing_name:
-                    name = inc_name_count(name)
-        else:
-            for _layer in sorted(self, key=lambda x: x.name):
-                if _layer is layer:
-                    continue
-                if name == _layer.name:
-                    name = inc_name_count(name)
+        existing_layers = {x.name for x in self if x is not layer}
+        for i in range(len(self)):
+            if name in existing_layers:
+                name = inc_name_count(name)
         return name
 
     def _update_name(self, event):
@@ -90,8 +86,10 @@ class LayerList(SelectableEventedList[Layer]):
     def selected(self):
         """List of selected layers."""
         warnings.warn(
-            "'viewer.layers.selected' is deprecated and will be removed in or "
-            "after v0.4.9. Please use 'viewer.layers.selection'",
+            trans._(
+                "'viewer.layers.selected' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection'",
+                deferred=True,
+            ),
             category=FutureWarning,
             stacklevel=2,
         )
@@ -131,10 +129,11 @@ class LayerList(SelectableEventedList[Layer]):
             Layer that should not be unselected if specified.
         """
         warnings.warn(
-            "'viewer.layers.unselect_all()' is deprecated and will be removed "
-            "in or after v0.4.9. Please use 'viewer.layers.selection.clear()'."
-            " To unselect everything but a set of ignored layers, use "
-            r"'viewer.layers.selection.intersection_update({ignored})'",
+            trans._(
+                "'viewer.layers.unselect_all()' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection.clear()'. To unselect everything but a set of ignored layers, use 'viewer.layers.selection.intersection_update({ignored})'",
+                deferred=True,
+                ignored=ignore,
+            ),
             category=FutureWarning,
             stacklevel=2,
         )
@@ -181,7 +180,10 @@ class LayerList(SelectableEventedList[Layer]):
                 # behaviour is acceptable and we can filter the
                 # warning
                 warnings.filterwarnings(
-                    'ignore', message='All-NaN axis encountered'
+                    'ignore',
+                    message=str(
+                        trans._('All-NaN axis encountered', deferred=True)
+                    ),
                 )
                 min_v = np.nanmin(
                     list(itertools.zip_longest(*mins, fillvalue=np.nan)),
@@ -310,8 +312,48 @@ class LayerList(SelectableEventedList[Layer]):
 
         layers = list(self.selection) if selected else list(self)
 
+        if selected:
+            msg = trans._("No layers selected", deferred=True)
+        else:
+            msg = trans._("No layers to save", deferred=True)
+
         if not layers:
-            warnings.warn(f"No layers {'selected' if selected else 'to save'}")
+            warnings.warn(msg)
             return []
 
         return save_layers(path, layers, plugin=plugin)
+
+    def _selection_context(self) -> dict:
+        """Return context dict for current layerlist.selection"""
+        return {k: v(self.selection) for k, v in _CONTEXT_KEYS.items()}
+
+
+# Each key in this list is "usable" as a variable name in the the "enable_when"
+# and "show_when" expressions of the napari.layers._layer_actions.LAYER_ACTIONS
+#
+# each value is a function that takes a LayerList.selection, and returns
+# a value. LayerList._selection_context uses this dict to generate a concrete
+# context object that can be passed to the
+# `qt_action_context_menu.QtActionContextMenu` method to update the enabled
+# and/or visible items based on the state of the layerlist.
+
+_CONTEXT_KEYS = {
+    'selection_count': lambda s: len(s),
+    'all_layers_linked': lambda s: all(layer_is_linked(x) for x in s),
+    'linked_layers_unselected': lambda s: len(get_linked_layers(*s) - s),
+    'active_is_rgb': lambda s: getattr(s.active, 'rgb', False),
+    'only_images_selected': (
+        lambda s: bool(s and all(isinstance(x, Image) for x in s))
+    ),
+    'only_labels_selected': (
+        lambda s: bool(s and all(isinstance(x, Labels) for x in s))
+    ),
+    'image_active': lambda s: isinstance(s.active, Image),
+    'ndim': lambda s: s.active and getattr(s.active.data, 'ndim', None),
+    'active_layer_shape': (
+        lambda s: s.active and getattr(s.active.data, 'shape', None)
+    ),
+    'same_shape': (
+        lambda s: len({getattr(x.data, 'shape', ()) for x in s}) == 1
+    ),
+}

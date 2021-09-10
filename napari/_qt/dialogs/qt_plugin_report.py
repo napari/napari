@@ -2,7 +2,7 @@
 """
 from typing import Optional
 
-from napari_plugin_engine import PluginManager, standard_metadata
+from napari_plugin_engine import standard_metadata
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import (
@@ -53,18 +53,14 @@ class QtPluginErrReporter(QDialog):
 
     def __init__(
         self,
-        plugin_manager: Optional[PluginManager] = None,
         *,
         parent: Optional[QWidget] = None,
         initial_plugin: Optional[str] = None,
     ) -> None:
         super().__init__(parent)
-        if not plugin_manager:
-            from ...plugins import plugin_manager as _pm
+        from ...plugins import plugin_manager
 
-            self.plugin_manager = _pm
-        else:
-            self.plugin_manager = plugin_manager
+        self.plugin_manager = plugin_manager
 
         self.setWindowTitle(trans._('Recorded Plugin Exceptions'))
         self.setWindowModality(Qt.NonModal)
@@ -89,8 +85,7 @@ class QtPluginErrReporter(QDialog):
         self.github_button = QPushButton(trans._('Open issue on GitHub'), self)
         self.github_button.setToolTip(
             trans._(
-                "Open a web browser to submit this error log\n"
-                "to the developer's GitHub issue tracker"
+                "Open a web browser to submit this error log\nto the developer's GitHub issue tracker",
             )
         )
         self.github_button.hide()

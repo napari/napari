@@ -1,7 +1,7 @@
 # See "Writing benchmarks" in the asv docs for more information.
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
-# https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
+# https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import numpy as np
 
 from napari.layers import Points
@@ -101,3 +101,30 @@ class PointsSlicingSuite:
     def time_slice_points(self, flatten_slice_axis):
         """Time to take one slice of points"""
         self.layer._slice_data(self.slice)
+
+
+class PointsToMaskSuite:
+    """Benchmarks for creating a binary image mask from points."""
+
+    param_names = ['num_points', 'mask_shape', 'point_size']
+    params = [
+        [64, 256, 1024, 4096, 16384],
+        [
+            (256, 256),
+            (512, 512),
+            (1024, 1024),
+            (2048, 2048),
+            (128, 128, 128),
+            (256, 256, 256),
+            (512, 512, 512),
+        ],
+        [5, 10],
+    ]
+
+    def setup(self, num_points, mask_shape, point_size):
+        np.random.seed(0)
+        data = np.random.random((num_points, len(mask_shape))) * mask_shape
+        self.layer = Points(data, size=point_size)
+
+    def time_to_mask(self, num_points, mask_shape, point_size):
+        self.layer.to_mask(shape=mask_shape)

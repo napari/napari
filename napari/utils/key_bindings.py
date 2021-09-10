@@ -39,6 +39,8 @@ from collections import ChainMap
 
 from vispy.util import keys
 
+from ..utils.translations import trans
+
 SPECIAL_KEYS = [
     keys.SHIFT,
     keys.CONTROL,
@@ -74,6 +76,8 @@ SPECIAL_KEYS = [
 ]
 
 MODIFIER_KEYS = [keys.CONTROL, keys.ALT, keys.SHIFT, keys.META]
+
+KEY_SUBS = {'Ctrl': 'Control'}
 
 
 def parse_key_combo(key_combo):
@@ -141,7 +145,6 @@ def components_to_key_combo(key, modifiers):
             lambda key: key in modifiers and cond(key), MODIFIER_KEYS
         )
     )
-
     return '-'.join(modifiers + (key,))
 
 
@@ -170,11 +173,28 @@ def normalize_key_combo(key_combo):
     key, modifiers = parse_key_combo(key_combo)
 
     if len(key) != 1 and key not in SPECIAL_KEYS:
-        raise TypeError(f'invalid key {key}')
+        raise TypeError(
+            trans._(
+                'invalid key {key}',
+                deferred=True,
+                key=key,
+            )
+        )
 
     for modifier in modifiers:
+        if modifier in KEY_SUBS.keys():
+            modifiers.remove(modifier)
+            modifier = KEY_SUBS[modifier]
+
+            modifiers.add(modifier)
         if modifier not in MODIFIER_KEYS:
-            raise TypeError(f'invalid modifier key {modifier}')
+            raise TypeError(
+                trans._(
+                    'invalid modifier key {modifier}',
+                    deferred=True,
+                    modifier=modifier,
+                )
+            )
 
     return components_to_key_combo(key, modifiers)
 
@@ -255,15 +275,23 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
 
     if func is not None and key in keymap and not overwrite:
         raise ValueError(
-            f'key combination {key} already used! '
-            "specify 'overwrite=True' to bypass this check"
+            trans._(
+                'key combination {key} already used! specify \'overwrite=True\' to bypass this check',
+                deferred=True,
+                key=key,
+            )
         )
 
     unbound = keymap.pop(key, None)
 
     if func is not None:
         if func is not Ellipsis and not callable(func):
-            raise TypeError("'func' must be a callable")
+            raise TypeError(
+                trans._(
+                    "'func' must be a callable",
+                    deferred=True,
+                )
+            )
         keymap[key] = func
 
     return unbound
@@ -407,7 +435,13 @@ class KeymapHandler:
         if func is Ellipsis:  # blocker
             return
         elif not callable(func):
-            raise TypeError(f"expected {func} to be callable")
+            raise TypeError(
+                trans._(
+                    "expected {func} to be callable",
+                    deferred=True,
+                    func=func,
+                )
+            )
 
         gen = func()
 

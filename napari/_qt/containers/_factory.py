@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Union
 
 from ...components.layerlist import LayerList
 from ...utils.events import SelectableEventedList
+from ...utils.translations import trans
 from ...utils.tree import Group
 
 if TYPE_CHECKING:
@@ -35,7 +36,13 @@ def create_view(
         return QtNodeTreeView(obj, parent=parent)
     if isinstance(obj, SelectableEventedList):
         return QtListView(obj, parent=parent)
-    raise TypeError(f"Cannot create Qt view for obj: {obj}")
+    raise TypeError(
+        trans._(
+            "Cannot create Qt view for obj: {obj}",
+            deferred=True,
+            obj=obj,
+        )
+    )
 
 
 def create_model(
@@ -63,4 +70,10 @@ def create_model(
         return QtNodeTreeModel(obj, parent=parent)
     if isinstance(obj, SelectableEventedList):
         return QtListModel(obj, parent=parent)
-    raise TypeError(f"Cannot create Qt model for obj: {obj}")
+    raise TypeError(
+        trans._(
+            "Cannot create Qt model for obj: {obj}",
+            deferred=True,
+            obj=obj,
+        )
+    )

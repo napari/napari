@@ -28,7 +28,7 @@ TO_COPY = [
     'release',
     'roadmaps',
     'images',
-    '_templates',
+    osp.join('_templates', 'autosummary'),
     *[
         (dire, osp.join(dire, 'stable'))
         for dire in ('api', 'guides', 'plugins')
@@ -45,7 +45,6 @@ SRC = osp.dirname(__file__)
 DOC_EXTS = ['.md', '.rst', '.ipynb']
 
 TOC_IGNORE = [
-    'release',
     'api/stable',
     'images',
     '_templates',

@@ -39,6 +39,7 @@ class VispyCamera:
         self._camera.events.center.connect(self._on_center_change)
         self._camera.events.zoom.connect(self._on_zoom_change)
         self._camera.events.angles.connect(self._on_angles_change)
+        self._camera.events.perspective.connect(self._on_perspective_change)
 
         self._on_ndisplay_change(None)
 
@@ -94,7 +95,7 @@ class VispyCamera:
     @property
     def zoom(self):
         """float: Scale from canvas pixels to world pixels."""
-        canvas_size = np.min(self._view.canvas.size)
+        canvas_size = np.array(self._view.canvas.size)
         if self._view.camera == self._3D_camera:
             # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
             # Note that the scaling is stored in the `_projection` property of the
@@ -102,23 +103,36 @@ class VispyCamera:
             # https://github.com/vispy/vispy/blob/v0.6.5/vispy/scene/cameras/perspective.py#L301-L313
             scale = self._view.camera.scale_factor
         else:
-            scale = np.min(
+            scale = np.array(
                 [self._view.camera.rect.width, self._view.camera.rect.height]
             )
-        zoom = canvas_size / scale
+            scale[np.isclose(scale, 0)] = 1  # fix for #2875
+        zoom = np.min(canvas_size / scale)
         return zoom
 
     @zoom.setter
     def zoom(self, zoom):
         if self.zoom == zoom:
             return
-        scale = np.min(self._view.canvas.size) / zoom
+        scale = np.array(self._view.canvas.size) / zoom
         if self._view.camera == self._3D_camera:
-            self._view.camera.scale_factor = scale
+            self._view.camera.scale_factor = np.min(scale)
         else:
             # Set view rectangle, as left, right, width, height
             corner = np.subtract(self._view.camera.center[:2], scale / 2)
-            self._view.camera.rect = tuple(corner) + (scale, scale)
+            self._view.camera.rect = tuple(corner) + tuple(scale)
+
+    @property
+    def perspective(self):
+        """Field of view of camera (only visible in 3D mode)."""
+        return self._3D_camera.fov
+
+    @perspective.setter
+    def perspective(self, perspective):
+        if self.perspective == perspective:
+            return
+        self._3D_camera.fov = perspective
+        self._view.camera.view_changed()
 
     def _on_ndisplay_change(self, event):
         if self._dims.ndisplay == 3:
@@ -135,6 +149,9 @@ class VispyCamera:
     def _on_zoom_change(self, event):
         self.zoom = self._camera.zoom
 
+    def _on_perspective_change(self, event):
+        self.perspective = self._camera.perspective
+
     def _on_angles_change(self, event):
         self.angles = self._camera.angles
 
@@ -149,6 +166,10 @@ class VispyCamera:
             self._camera.center = self.center
         with self._camera.events.zoom.blocker(self._on_zoom_change):
             self._camera.zoom = self.zoom
+        with self._camera.events.perspective.blocker(
+            self._on_perspective_change
+        ):
+            self._camera.perspective = self.perspective
 
 
 def viewbox_key_event(event):

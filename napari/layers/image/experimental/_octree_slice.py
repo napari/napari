@@ -2,21 +2,30 @@
 
 For viewing one slice of a multiscale image using an octree.
 """
+from __future__ import annotations
+
 import logging
 import math
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, LayerRef
+from ....utils.translations import trans
 from ._octree_loader import OctreeLoader
 from .octree import Octree
-from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
 from .octree_level import OctreeLevel, OctreeLevelInfo
 from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree.slice")
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk import (
+        ChunkRequest,
+        LayerRef,
+        OctreeLocation,
+    )
+    from .octree_chunk import OctreeChunk
 
 
 class OctreeSlice:
@@ -88,7 +97,12 @@ class OctreeSlice:
             index = self.octree_level
             num_levels = len(self._octree.levels)
             raise IndexError(
-                f"Octree level {index} is not in range(0, {num_levels})"
+                trans._(
+                    "Octree level {index} is not in range(0, {num_levels})",
+                    deferred=True,
+                    index=index,
+                    num_levels=num_levels,
+                )
             ) from exc
 
     def get_intersection(self, view: OctreeView) -> OctreeIntersection:
@@ -127,7 +141,13 @@ class OctreeSlice:
         """
         index = self._get_auto_level_index(view)
         if index < 0 or index >= self._octree.num_levels:
-            raise ValueError(f"Invalid octree level {index}")
+            raise ValueError(
+                trans._(
+                    "Invalid octree level {index}",
+                    deferred=True,
+                    index=index,
+                )
+            )
 
         return self._octree.levels[index]
 

@@ -9,6 +9,8 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
+from ..utils.translations import trans
+
 texture_dtypes = [
     np.dtype(np.int8),
     np.dtype(np.uint8),
@@ -55,11 +57,15 @@ def get_max_texture_sizes() -> Tuple[int, int]:
     if max_size_2d == ():
         max_size_2d = None
 
-    # vispy doesn't expose GL_MAX_3D_TEXTURE_SIZE so hard coding for now.
-    # MAX_TEXTURE_SIZE_3D = gl.glGetParameter(gl.GL_MAX_3D_TEXTURE_SIZE)
-    # if MAX_TEXTURE_SIZE_3D == ():
-    #    MAX_TEXTURE_SIZE_3D = None
-    max_size_3d = 2048
+    # vispy/gloo doesn't provide the GL_MAX_3D_TEXTURE_SIZE location,
+    # but it can be found in this list of constants
+    # http://pyopengl.sourceforge.net/documentation/pydoc/OpenGL.GL.html
+    with _opengl_context():
+        GL_MAX_3D_TEXTURE_SIZE = 32883
+        max_size_3d = gl.glGetParameter(GL_MAX_3D_TEXTURE_SIZE)
+
+    if max_size_3d == ():
+        max_size_3d = None
 
     return max_size_2d, max_size_3d
 
@@ -67,7 +73,7 @@ def get_max_texture_sizes() -> Tuple[int, int]:
 def fix_data_dtype(data):
     """Makes sure the dtype of the data is accetpable to vispy.
 
-    Acceptable types are int8, uint8, int16, uint16, float32, float64.
+    Acceptable types are int8, uint8, int16, uint16, float32.
 
     Parameters
     ----------
@@ -90,6 +96,11 @@ def fix_data_dtype(data):
             ]
         except KeyError:  # not an int or float
             raise TypeError(
-                f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
+                trans._(
+                    'type {dtype} not allowed for texture; must be one of {textures}',  # noqa: E501
+                    deferred=True,
+                    dtype=dtype,
+                    textures=set(texture_dtypes),
+                )
             )
         return data.astype(dtype)
