@@ -550,8 +550,10 @@ def napari_experimental_provide_theme() -> Dict[
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_qss() -> Union[Tuple[str], List[str]]:
-    """Provide GUI stylesheets that will supplement or overwrite existing
-    napari stylesheets.
+    """Provide GUI stylesheets that will supplement napari stylesheets.
+    Stylesheet names are prepended with the plugin name such as
+    `PluginName:StylesheetName.qss` where `PluginName` corresponds to the
+     name of your plugin and `StylesheetName` to the name of the stylesheet.
 
     This hook specification is marked as experimental as the API or how the returned
     value is handled may change here more frequently than the rest of the codebase.
@@ -563,8 +565,9 @@ def napari_experimental_provide_qss() -> Union[Tuple[str], List[str]]:
         several default stylesheets with names `00_base.qss`, `01_buttons.qss` etc
         which are first sorted (hence the number at the front) and then progressively
         read and appended to single stylesheet. You can provide your own stylesheets
-        that override the napari defaults by creating a new stylesheet with progressively
-        larger name.
+        that override the napari defaults by creating a new stylesheet. Since plugin
+        name will never begin with a number, stylesheets with such names will be
+        appended to the end and therefore override default style.
 
     Examples
     --------

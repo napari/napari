@@ -29,6 +29,7 @@ def test_provide_icons_hook(napari_plugin_manager: "NapariPluginManager"):
     assert len(reg) == 3  # ensure only 3 icons were added
 
     for icon in reg.keys():
+        assert icon.startswith("TestPlugin:")
         assert icon in ICONS
 
 

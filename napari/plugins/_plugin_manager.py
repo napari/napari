@@ -844,19 +844,22 @@ class NapariPluginManager(PluginManager):
                 )
                 warn(message=warn_message)
                 continue
-            _data[stylesheet.stem] = str(stylesheet)
-            STYLES[stylesheet.stem] = str(stylesheet)
+            stylesheet_name = f"{plugin_name}:{stylesheet.stem}"
+            _data[stylesheet_name] = str(stylesheet)
+            STYLES[stylesheet_name] = str(stylesheet)
 
         if plugin_name not in self._qss_data:
             self._qss_data[plugin_name] = {}
         self._qss_data[plugin_name].update(_data)
 
     def unregister_qss(self, plugin_name: str):
-        """Unregister icon data from napari."""
+        """Unregister stylesheet data from napari."""
         # TODO: this will have to update the UI
         if plugin_name not in self._qss_data:
             return
 
+        # import is moved below the initial check to avoid immediate failure
+        # in case napari is run in headless mode without Qt installed.
         from .._qt.qt_resources import STYLES
 
         for stylesheet in self._qss_data[plugin_name]:

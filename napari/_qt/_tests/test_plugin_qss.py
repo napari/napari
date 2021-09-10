@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 
+from napari._qt.qt_resources import STYLES
+
 if TYPE_CHECKING:
     from napari.plugins._plugin_manager import NapariPluginManager
 
@@ -37,6 +39,10 @@ def test_provide_qss_hook(
     reg = napari_plugin_manager._qss_data["TestPlugin"]
     assert isinstance(reg, dict)
     assert len(reg) == 1  # ensure only 1 file was added
+
+    for qss in reg.keys():
+        assert qss.startswith("TestPlugin:")
+        assert qss in STYLES
 
 
 def test_provide_qss_hook_bad(napari_plugin_manager: "NapariPluginManager"):
@@ -96,3 +102,6 @@ def test_provide_qss_hook_unregister(
     # unregister stylesheets
     napari_plugin_manager.unregister("TestPlugin")
     assert "TestPlugin" not in napari_plugin_manager._qss_data
+
+    for qss in reg.keys():
+        assert qss not in STYLES
