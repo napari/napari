@@ -16,10 +16,5 @@ class PointsVisual(ClippingPlanesMixin, Compound):
         - Text labels (vispy.TextVisual)
     """
 
-    # Create a compound visual with the following four subvisuals:
-    # Lines: The lines of the interaction box used for highlights.
-    # Markers: The the outlines for each point used for highlights.
-    # Markers: The actual markers of each point.
-
     def __init__(self):
         super().__init__([Markers(), Markers(), Line(), Text()])
