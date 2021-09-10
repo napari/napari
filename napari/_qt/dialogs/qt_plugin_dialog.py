@@ -142,7 +142,6 @@ class Installer(QObject):
     def _handle_action(self):
         if self._queue:
             pkg_list, func = self._queue.pop()
-            print(pkg_list, func)
             self.started.emit()
             process = func()
             self._processes[pkg_list] = process
@@ -161,7 +160,11 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         self._queue.insert(
-            0, [tuple(pkg_list), lambda: self._install(pkg_list, installer, channels)]
+            0,
+            [
+                tuple(pkg_list),
+                lambda: self._install(pkg_list, installer, channels),
+            ],
         )
         self._handle_action()
 
@@ -204,10 +207,19 @@ class Installer(QObject):
 
     def cancel(
         self,
-        pkg_list: Sequence[str],
+        pkg_list: Sequence[str] = None,
     ):
-        process = self._processes.pop(pkg_list)
-        process.terminate()
+        if pkg_list is None:
+            for _, process in self._processes.items():
+                process.terminate()
+
+            self._processes = {}
+        else:
+            try:
+                process = self._processes.pop(tuple(pkg_list))
+                process.terminate()
+            except KeyError:
+                pass
 
     def uninstall(
         self,
@@ -216,7 +228,11 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         self._queue.insert(
-            0, [tuple(pkg_list), lambda: self._uninstall(pkg_list, installer, channels)]
+            0,
+            [
+                tuple(pkg_list),
+                lambda: self._uninstall(pkg_list, installer, channels),
+            ],
         )
         self._handle_action()
 
@@ -322,19 +338,8 @@ class PluginListItem(QFrame):
         self.cancel_btn.setVisible(True)
         if not update:
             self.action_button.setVisible(False)
-        #     # self.action_button.setText(text)
-        #     # self.action_button.setDisabled(True)
-        #     # self.action_button.setObjectName("busy_button")
-        #     # self.action_button.style().unpolish(self.action_button)
-        #     # self.action_button.style().polish(self.action_button)
         else:
             self.update_btn.setVisible(False)
-        #     # self.action_button.setDisabled(True)
-        #     # self.update_btn.setText(text)
-        #     # self.update_btn.setDisabled(True)
-        #     # self.update_btn.setObjectName("busy_button")
-        #     # self.update_btn.style().unpolish(self.update_btn)
-        #     # self.update_btn.style().polish(self.update_btn)
 
     def setup_ui(self, enabled=True):
         self.v_lay = QVBoxLayout(self)
@@ -478,6 +483,9 @@ class QPluginList(QListWidget):
         )
         item.widget = widg
         action_name = 'uninstall' if installed else 'install'
+        item.setSizeHint(widg.sizeHint())
+        self.setItemWidget(item, widg)
+
         widg.action_button.clicked.connect(
             lambda: self.handle_action(item, project_info.name, action_name)
         )
@@ -487,7 +495,7 @@ class QPluginList(QListWidget):
             )
         )
         widg.cancel_btn.clicked.connect(
-            lambda: self.installer.cancel((project_info.name, ))
+            lambda: self.handle_action(item, project_info.name, "cancel")
         )
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
@@ -501,13 +509,19 @@ class QPluginList(QListWidget):
         if action_name == "install":
             if update:
                 widget.set_busy(trans._("updating..."), update)
+                widget.action_button.setDisabled(True)
             else:
                 widget.set_busy(trans._("installing..."), update)
 
             method([pkg_name])
+            self.scrollToTop()
         elif action_name == "uninstall":
             widget.set_busy(trans._("uninstalling..."), update)
             method([pkg_name])
+            self.scrollToTop()
+        elif action_name == "cancel":
+            widget.set_busy(trans._("cancelling..."), update)
+            method((pkg_name,))
 
     @Slot(ProjectInfo)
     def tag_outdated(self, project_info: ProjectInfo):
@@ -546,15 +560,25 @@ class QtPluginDialog(QDialog):
         self.refresh()
 
     def _on_installer_start(self):
+        self.cancel_all_btn.setVisible(True)
         self.working_indicator.show()
         self.process_error_indicator.hide()
+        self.close_btn.setDisabled(True)
 
     def _on_installer_done(self, exit_code):
         self.working_indicator.hide()
         if exit_code:
             self.process_error_indicator.show()
 
+        self.cancel_all_btn.setVisible(False)
+        self.close_btn.setDisabled(False)
         self.refresh()
+
+    def closeEvent(self, event):
+        if self.close_btn.isEnabled():
+            super().closeEvent(event)
+
+        event.ignore()
 
     def refresh(self):
         self.installed_list.clear()
@@ -682,14 +706,23 @@ class QtPluginDialog(QDialog):
 
         self.show_status_btn = QPushButton(trans._("Show Status"), self)
         self.show_status_btn.setFixedWidth(100)
+
+        self.cancel_all_btn = QPushButton(trans._("cancel all actions"), self)
+        self.cancel_all_btn.setObjectName("remove_button")
+        self.cancel_all_btn.setVisible(False)
+        self.cancel_all_btn.clicked.connect(lambda: self.installer.cancel())
+
         self.close_btn = QPushButton(trans._("Close"), self)
         self.close_btn.clicked.connect(self.accept)
+        self.close_btn.setObjectName("close_button")
         buttonBox.addWidget(self.show_status_btn)
         buttonBox.addWidget(self.working_indicator)
         buttonBox.addWidget(self.direct_entry_edit)
         buttonBox.addWidget(self.direct_entry_btn)
         buttonBox.addWidget(self.process_error_indicator)
-        buttonBox.addSpacing(60)
+        buttonBox.addSpacing(20)
+        buttonBox.addWidget(self.cancel_all_btn)
+        buttonBox.addSpacing(20)
         buttonBox.addWidget(self.close_btn)
         buttonBox.setContentsMargins(0, 0, 4, 0)
         vlay_1.addLayout(buttonBox)
