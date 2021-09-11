@@ -18,16 +18,7 @@ from typing import (
     Tuple,
 )
 
-from qtpy.QtCore import (
-    QEvent,
-    QEventLoop,
-    QPoint,
-    QProcess,
-    QSize,
-    Qt,
-    QTimer,
-    Slot,
-)
+from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
@@ -84,12 +75,6 @@ class _QtMainWindow(QMainWindow):
         self._ev = None
         self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
-        self._initial_theme = get_system_theme()
-        self._system_theme_timer = QTimer()
-        self._system_theme_timer.timeout.connect(
-            self._check_system_theme_change
-        )
-        self._system_theme_timer.start(1000)
 
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -178,19 +163,6 @@ class _QtMainWindow(QMainWindow):
             except ValueError:
                 pass
         return super().event(e)
-
-    def _check_system_theme_change(self):
-        """Check if system theme has changed since startup."""
-        theme = get_settings().appearance.theme
-        if theme == "system":
-            new_theme = get_system_theme()
-            if self._initial_theme != new_theme:
-                self._initial_theme = new_theme
-
-                class MockEvent:
-                    value = new_theme
-
-                self._update_theme(MockEvent)
 
     def _load_window_settings(self):
         """
@@ -444,7 +416,6 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
-        _QtMainWindow._update_theme = self._update_theme
         self._qt_window = _QtMainWindow(viewer)
 
         # connect theme events before collecting plugin-provided themes
@@ -1139,7 +1110,10 @@ class Window:
                 if settings.appearance.theme != "system":
                     settings.appearance.theme = value
             else:
-                value = self.qt_viewer.viewer.theme
+                if settings.appearance.theme == "system":
+                    value = get_system_theme()
+                else:
+                    value = self.qt_viewer.viewer.theme
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
         except (AttributeError, RuntimeError):
