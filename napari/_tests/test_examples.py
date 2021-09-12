@@ -18,7 +18,7 @@ skip = [
     'embed_ipython.py',  # fails without monkeypatch
     'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
 ]
-if os.name == 'nt' and API_NAME == 'PyQt5':
+if os.getenv("CI") and os.name == 'nt' and API_NAME == 'PyQt5':
     skip += [
         'mgui_with_threading.py',
         'multithreading_simple.py',
