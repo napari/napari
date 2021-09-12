@@ -14,6 +14,7 @@ from napari.utils.tree import Group, Node
 class T(Node):
     def __init__(self, x):
         self.x = x
+        self.name = str(x)
 
 
 @pytest.mark.parametrize(

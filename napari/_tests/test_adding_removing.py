@@ -14,20 +14,6 @@ def test_add_all_layers(make_napari_viewer, Layer, data, _):
     viewer.layers.append(Layer(data))
 
 
-def test_layers_removed_on_close(make_napari_viewer):
-    """Test layers removed on close."""
-    viewer = make_napari_viewer()
-
-    # add layers
-    viewer.add_image(np.random.random((30, 40)))
-    viewer.add_image(np.random.random((50, 20)))
-    assert len(viewer.layers) == 2
-
-    viewer.close()
-    # check layers have been removed
-    assert len(viewer.layers) == 0
-
-
 def test_layer_multiple_viewers(make_napari_viewer):
     """Test layer on multiple viewers."""
     # Check that a layer can be added and removed from
@@ -128,8 +114,6 @@ def test_add_remove_layer_external_callbacks(
     assert len(viewer.layers) == 0
 
     # Check that all internal callbacks have been removed
-    assert len(layer.events.callbacks) == 1
+    assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
-        # warningEmitters are not connected when connecting to the emitterGroup
-        if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+        assert len(em.callbacks) == 0

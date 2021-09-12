@@ -152,7 +152,9 @@ class ActivityDialog(QDialog):
         # show progress indicator and start gif
         self._toggleButton._inProgressIndicator.movie().start()
         self._toggleButton._inProgressIndicator.show()
-        pbar.destroyed.connect(self.maybe_hide_progress_indicator)
+
+        # causing bus error
+        # pbar.destroyed.connect(self.maybe_hide_progress_indicator)
 
     def move_to_bottom_right(self, offset=(8, 8)):
         """Position widget at the bottom right edge of the parent."""

@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from napari import Viewer
 from napari._qt.qt_main_window import Window, _QtMainWindow
 from napari.utils.theme import (
     _themes,
@@ -17,11 +18,13 @@ def test_current_viewer(make_napari_viewer, qapp):
     assert _QtMainWindow.current() is None
 
     # when we create a new viewer it becomes accessible at Viewer.current()
-    v1 = make_napari_viewer(title='v1')
+    v1 = Viewer(title='v1', show=False)
+    v1._create_window()
     assert _QtMainWindow._instances == [v1.window._qt_window]
     assert _QtMainWindow.current() == v1.window._qt_window
 
-    v2 = make_napari_viewer(title='v2')
+    v2 = Viewer(title='v2', show=False)
+    v2._create_window()
     assert _QtMainWindow._instances == [
         v1.window._qt_window,
         v2.window._qt_window,

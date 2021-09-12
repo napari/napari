@@ -31,7 +31,6 @@ def napari_plugin_manager(monkeypatch):
     Or, to re-enable global discovery, use:
     `napari_plugin_manager.discovery_blocker.stop()`
     """
-    from unittest.mock import patch
 
     import napari
     from napari.plugins._plugin_manager import NapariPluginManager
@@ -131,6 +130,8 @@ def make_napari_viewer(
         should_show = request.config.getoption("--show-napari-viewer")
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
+        if "napari._qt" in request.module.__name__:
+            viewer._create_window()
         viewers.append(viewer)
 
         return viewer
@@ -145,17 +146,12 @@ def make_napari_viewer(
     # close viewers, but don't saving window settings while closing
     for viewer in viewers:
         if hasattr(viewer.window, '_qt_window'):
-            with patch.object(
-                viewer.window._qt_window, '_save_current_window_settings'
-            ):
+            with qtbot.waitSignal(viewer.window._qt_window.destroyed):
                 viewer.close()
-        else:
-            viewer.close()
 
     # only check for leaked widgets if an exception was raised during the test,
     # or "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
-        QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...

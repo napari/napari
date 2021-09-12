@@ -9,18 +9,31 @@ import os
 import sys
 import time
 import warnings
+from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     ClassVar,
     Dict,
+    Iterator,
     List,
     Optional,
     Sequence,
     Tuple,
+    Type,
 )
 
-from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
+from qtpy.QtCore import (
+    QEvent,
+    QEventLoop,
+    QObject,
+    QPoint,
+    QProcess,
+    QSize,
+    Qt,
+    Slot,
+)
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
@@ -77,7 +90,7 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
-
+        self._viewer = viewer
         self._quit_app = False
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -154,17 +167,13 @@ class _QtMainWindow(QMainWindow):
     def event(self, e):
         if e.type() == QEvent.Close:
             # when we close the MainWindow, remove it from the instances list
-            try:
+            with suppress(ValueError):
                 _QtMainWindow._instances.remove(self)
-            except ValueError:
-                pass
         if e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
-            try:
+            with suppress(ValueError):
                 inst = _QtMainWindow._instances
                 inst.append(inst.pop(inst.index(self)))
-            except ValueError:
-                pass
         return super().event(e)
 
     def _load_window_settings(self):
@@ -339,6 +348,14 @@ class _QtMainWindow(QMainWindow):
 
         super().resizeEvent(event)
 
+    def _disconnect_ui(self):
+        for _, _, rcvr, _, disconn in _iter_viewer_connections(self._viewer):
+            if (
+                isinstance(rcvr, (QObject, Window))
+                or 'vispy' in type(rcvr).__name__.lower()
+            ):
+                disconn()
+
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
 
@@ -363,6 +380,11 @@ class _QtMainWindow(QMainWindow):
                 time.sleep(0.1)
                 QApplication.processEvents()
 
+        with suppress(RuntimeError):
+            self.qt_viewer.close()
+
+        self._disconnect_ui()
+        QApplication.processEvents()
         if self._quit_app:
             quit_app()
 
@@ -410,7 +432,7 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: Viewer, *, show: bool = True):
+    def __init__(self, viewer: Viewer, *, show: bool = False):
 
         # create QApplication if it doesn't already exist
         get_app()
@@ -447,7 +469,7 @@ class Window:
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
 
         self.events = EmitterGroup(self, False, closed=None)
-        self._qt_window.destroyed.connect(lambda: self.events.closed())
+        self._qt_window.destroyed.connect(lambda *_: self.events.closed())
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
@@ -756,10 +778,8 @@ class Window:
             `dock_widget` that can pass viewer events.
         """
         if not name:
-            try:
+            with suppress(AttributeError):
                 name = widget.objectName()
-            except AttributeError:
-                pass
 
             name = name or trans._(
                 "Dock widget {number}",
@@ -1043,15 +1063,7 @@ class Window:
             If the viewer.window has already been closed and deleted.
         """
         settings = get_settings()
-        try:
-            self._qt_window.show(block=block)
-        except (AttributeError, RuntimeError):
-            raise RuntimeError(
-                trans._(
-                    "This viewer has already been closed and deleted. Please create a new one.",
-                    deferred=True,
-                )
-            )
+        self._qt_window.show(block=block)
 
         if settings.application.first_time:
             settings.application.first_time = False
@@ -1108,7 +1120,7 @@ class Window:
     def _update_theme(self, event=None):
         """Update widget color theme."""
         settings = get_settings()
-        try:
+        with suppress(AttributeError, RuntimeError):
             if event:
                 value = event.value
                 settings.appearance.theme = value
@@ -1117,9 +1129,6 @@ class Window:
                 value = self.qt_viewer.viewer.theme
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
-        except (AttributeError, RuntimeError):
-            # wrapped C/C++ object may have been deleted?
-            pass
 
     def _status_changed(self, event):
         """Update status bar.
@@ -1217,6 +1226,21 @@ class Window:
         # if we still have one.
         if hasattr(self, '_qt_window'):
             self._teardown()
-            self.qt_viewer.close()
             self._qt_window.close()
-            get_app().processEvents()
+
+
+def _iter_viewer_connections(
+    viewer: Viewer,
+) -> Iterator[Tuple[Type, Optional[str], Type, str, Callable]]:
+    """(SourceType, event_name, receiver, method_name, disconnector)"""
+    from ..utils.events import EmitterGroup, iter_connections
+
+    yield from iter_connections(viewer.events)
+
+    for n in viewer.__fields__:
+        attr = getattr(viewer, n)
+        if isinstance(getattr(attr, 'events', None), EmitterGroup):
+            yield from iter_connections(attr.events)
+
+    for layer in viewer.layers:
+        yield from iter_connections(layer.events)
