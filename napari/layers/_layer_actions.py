@@ -19,16 +19,16 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
-from ..utils.context._layerlist_context import LayerListContextKeys as LLK
+from napari.experimental import link_layers, unlink_layers
+from napari.layers.utils._link_layers import get_linked_layers
+
 from ..utils.translations import trans
 from .base.base import Layer
 from .utils import stack_utils
-from .utils._link_layers import get_linked_layers
 
 if TYPE_CHECKING:
-    from ..components import LayerList
-    from ..utils.context._expressions import Expr
-    from . import Image
+    from napari.components import LayerList
+    from napari.layers import Image
 
 
 def _duplicate_layer(ll: LayerList):
@@ -117,8 +117,8 @@ class _MenuItem(TypedDict):
     """
 
     description: str
-    enable_when: Union[bool, Expr]
-    show_when: Union[bool, Expr]
+    enable_when: str
+    show_when: str
 
 
 class ContextAction(_MenuItem):
@@ -162,10 +162,8 @@ def _projdict(key) -> ContextAction:
     return {
         'description': key,
         'action': partial(_project, mode=key),
-        'enable_when': (
-            (LLK.active_layer_type == "image") & LLK.active_layer_ndim > 2
-        ),
-        'show_when': True,
+        'enable_when': 'image_active and ndim > 2',
+        'show_when': 'True',
     }
 
 
@@ -174,30 +172,28 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:duplicate_layer': {
             'description': trans._('Duplicate Layer'),
             'action': _duplicate_layer,
-            'enable_when': True,
-            'show_when': True,
+            'enable_when': 'True',
+            'show_when': 'True',
         },
         'napari:convert_to_labels': {
             'description': trans._('Convert to Labels'),
             'action': partial(_convert, type_='labels'),
-            'enable_when': LLK.only_images_selected,
-            'show_when': True,
+            'enable_when': 'only_images_selected',
+            'show_when': 'True',
         },
         'napari:convert_to_image': {
             'description': trans._('Convert to Image'),
             'action': partial(_convert, type_='image'),
-            'enable_when': LLK.only_labels_selected,
-            'show_when': True,
+            'enable_when': 'only_labels_selected',
+            'show_when': 'True',
         },
     },
     # (each new dict creates a seperated section in the menu)
     {
         'napari:group:projections': {
             'description': trans._('Make Projection'),
-            'enable_when': (
-                (LLK.active_layer_type == "image") & LLK.active_layer_ndim > 2
-            ),
-            'show_when': True,
+            'enable_when': 'image_active and ndim > 2',
+            'show_when': 'True',
             'action_group': {
                 'napari:max_projection': _projdict('max'),
                 'napari:min_projection': _projdict('min'),
@@ -212,46 +208,42 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:split_stack': {
             'description': trans._('Split Stack'),
             'action': _split_stack,
-            'enable_when': LLK.active_layer_type == "image",
-            'show_when': ~LLK.active_layer_is_rgb,
+            'enable_when': 'image_active and active_layer_shape[0] < 10',
+            'show_when': 'not active_is_rgb',
         },
         'napari:split_rgb': {
             'description': trans._('Split RGB'),
             'action': _split_stack,
-            'enable_when': LLK.active_layer_is_rgb,
-            'show_when': LLK.active_layer_is_rgb,
+            'enable_when': 'active_is_rgb',
+            'show_when': 'active_is_rgb',
         },
         'napari:merge_stack': {
             'description': trans._('Merge to Stack'),
             'action': _merge_stack,
             'enable_when': (
-                (LLK.layers_selection_count > 1)
-                & LLK.only_images_selected
-                & LLK.all_layers_same_shape
+                'selection_count > 1 and only_images_selected and same_shape'
             ),
-            'show_when': True,
+            'show_when': 'True',
         },
     },
     {
         'napari:link_selected_layers': {
             'description': trans._('Link Layers'),
-            'action': lambda ll: ll.link_layers(ll.selection),
-            'enable_when': (
-                (LLK.layers_selection_count > 1) & ~LLK.all_layers_linked
-            ),
-            'show_when': ~LLK.all_layers_linked,
+            'action': lambda ll: link_layers(ll.selection),
+            'enable_when': 'selection_count > 1 and not all_layers_linked',
+            'show_when': 'not all_layers_linked',
         },
         'napari:unlink_selected_layers': {
             'description': trans._('Unlink Layers'),
-            'action': lambda ll: ll.unlink_layers(ll.selection),
-            'enable_when': LLK.all_layers_linked,
-            'show_when': LLK.all_layers_linked,
+            'action': lambda ll: unlink_layers(ll.selection),
+            'enable_when': 'all_layers_linked',
+            'show_when': 'all_layers_linked',
         },
         'napari:select_linked_layers': {
             'description': trans._('Select Linked Layers'),
             'action': _select_linked_layers,
-            'enable_when': LLK.unselected_linked_layers,
-            'show_when': True,
+            'enable_when': 'linked_layers_unselected',
+            'show_when': 'True',
         },
     },
 ]

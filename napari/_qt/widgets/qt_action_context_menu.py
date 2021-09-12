@@ -4,11 +4,9 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
 from qtpy.QtWidgets import QAction, QMenu
 
-from ...utils.context._expressions import Expr
-
 if TYPE_CHECKING:
+
     from ...layers._layer_actions import MenuItem, SubMenu
-    from ...utils.context._service import _BaseContextKeyService as CtxService
 
 
 class QtActionContextMenu(QMenu):
@@ -91,7 +89,7 @@ class QtActionContextMenu(QMenu):
     def data(self):
         return self._data
 
-    def update_from_context(self, ctx: Union[dict, CtxService]) -> None:
+    def update_from_context(self, ctx: dict) -> None:
         """Update the enabled/visible state of each menu item with `ctx`.
 
         `ctx` is a namepsace dict that will be used to `eval()` the
@@ -105,19 +103,16 @@ class QtActionContextMenu(QMenu):
             d = item.data()
             if not d:
                 continue
-            enable = d['enable_when']
-            enable = enable.eval(ctx) if isinstance(enable, Expr) else enable
-            item.setEnabled(bool(enable))
+            enabled = eval(d['enable_when'], {}, ctx)
+            item.setEnabled(enabled)
             # if it's a menu, iterate (but don't toggle visibility)
             if isinstance(item, QtActionContextMenu):
-                if enable:
+                if enabled:
                     item.update_from_context(ctx)
             else:
-                vis = d.get("show_when")
-                if vis is not None:
-                    item.setVisible(
-                        bool(vis.eval(ctx) if isinstance(vis, Expr) else vis)
-                    )
+                visible = d.get("show_when")
+                if visible:
+                    item.setVisible(eval(visible, {}, ctx))
 
     def _build_menu(self, actions: Sequence[MenuItem]):
         """recursively build menu with submenus and sections.

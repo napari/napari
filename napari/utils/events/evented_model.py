@@ -222,15 +222,15 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         like arrays, whose truth value is often ambiguous. ``__eq_operators__``
         is constructed in ``EqualityMetaclass.__new__``
         """
-        if not isinstance(other, EventedModel):
+        if isinstance(other, EventedModel):
+            for f_name, eq in self.__eq_operators__.items():
+                if f_name not in other.__eq_operators__:
+                    return False
+                if not eq(getattr(self, f_name), getattr(other, f_name)):
+                    return False
+            return True
+        else:
             return self.dict() == other
-
-        for f_name, eq in self.__eq_operators__.items():
-            if f_name not in other.__eq_operators__:
-                return False
-            if not eq(getattr(self, f_name, 'a'), getattr(other, f_name, 'b')):
-                return False
-        return True
 
     @contextmanager
     def enums_as_values(self, as_values: bool = True):
