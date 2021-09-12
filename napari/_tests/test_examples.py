@@ -18,17 +18,14 @@ skip = [
     'embed_ipython.py',  # fails without monkeypatch
     'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
 ]
-if os.getenv("CI") and os.name == 'nt' and API_NAME == 'PyQt5':
-    skip += [
-        'mgui_with_threading.py',
-        'multithreading_simple.py',
-        'multithreading_two_way.py',
-        'progress_bar_threading.py',
-    ]
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
 examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
+
+# still some CI segfaults, but only on windows with pyqt5
+if os.getenv("CI") and os.name == 'nt' and API_NAME == 'PyQt5':
+    examples = []
 
 
 @pytest.fixture
