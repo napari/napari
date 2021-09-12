@@ -450,11 +450,7 @@ def test_n_edit_dimensions():
     data = np.random.randint(20, size=(5, 10, 15))
     layer = Labels(data)
     layer.n_edit_dimensions = 2
-    with pytest.warns(FutureWarning):
-        assert layer.n_dimensional is False
     layer.n_edit_dimensions = 3
-    with pytest.warns(FutureWarning):
-        assert layer.n_dimensional is True
 
 
 @pytest.mark.parametrize(
