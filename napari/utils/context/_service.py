@@ -41,14 +41,13 @@ from napari.utils.events import EventEmitter
 
 
 class Context(dict):
-    """Just a dict that has a parent.
+    """A (hashable) dict that has a parent.
 
-    If `__getitem__` or `get` can't find a key, they check the parent.
-    use `collect` to get the merged dict (self takes precedence)
+    If `__getitem__` or `get` can't find a key, the parent is checked.
+    use `collect()` to get the merged dict (self takes precedence)
     """
 
     _parent: Optional[Context] = None
-    _id: int
 
     def __missing__(self, name: str) -> Any:
         return (self._parent or {})[name]  # type: ignore
@@ -73,6 +72,9 @@ class Context(dict):
         parvals = {k: v for k, v in self.collect().items() if k not in self}
         parstring = f' # <{parvals}>' if parvals else ''
         return f'{type(self).__name__}({myvals}){parstring}'
+
+    def __hash__(self) -> int:  # type: ignore
+        return id(self)
 
 
 class SettingsAwareContext(Context):
