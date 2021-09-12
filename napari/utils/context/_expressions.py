@@ -43,6 +43,8 @@ from typing import (
     overload,
 )
 
+from ._service import _BaseContextKeyService
+
 ConstType = Union[None, str, bytes, bool, int, float]
 PassedType = TypeVar(
     "PassedType",
@@ -50,7 +52,7 @@ PassedType = TypeVar(
         ast.cmpop, ast.operator, ast.boolop, ast.unaryop, ast.expr_context
     ],
 )
-Context = Dict[str, Any]
+Context = Union[_BaseContextKeyService, Dict[str, Any]]
 T = TypeVar('T')
 T2 = TypeVar('T2', bound=Union[ConstType, 'Expr'])
 V = TypeVar('V', bound=ConstType)

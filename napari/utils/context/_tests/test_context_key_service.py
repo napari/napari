@@ -200,6 +200,9 @@ def test_settings_context():
     assert root['settings.appearance.theme'] == 'dark'
     assert get_settings().appearance.theme == 'light'
 
+    # complex objects are cast to dict
+    assert isinstance(root['settings.appearance'], dict)
+
     del root['settings.appearance.theme']
     assert 'settings.appearance.theme' not in root
     assert root['settings.appearance.theme'] == 'light'  # falls back again

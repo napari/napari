@@ -202,3 +202,18 @@ def test_serdes(expr):
 def test_bad_serdes(expr):
     with pytest.raises(SyntaxError):
         parse_expression(expr)
+
+
+def test_eval_expression():
+    """Test that expression.eval works with ContextKeyServices"""
+    from napari.utils.context._service import ContextKeyService
+
+    expr = parse_expression('a and b > 5')
+    context = ContextKeyService()
+    context['a'] = False
+    context['b'] = 8
+    assert expr.eval(context) is False
+    context['a'] = True
+    assert expr.eval(context) is True
+    context['b'] = 3
+    assert expr.eval(context) is False

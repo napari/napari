@@ -1,4 +1,27 @@
 """
+Classes that implement scoped contexts: dict-like objects that manage a set
+of key value pairs, inheriting from "parent" contexts when a value is missing.
+
+In most cases, `create_context` and `get_context` will be used to access the
+functionality here:
+
+Examples
+--------
+
+    from napari.utils.context._service import get_context, create_context
+
+    class A:
+        def __init__(self) -> None:
+            self.ctx = create_context(self)
+            self.b = B()  # self.b.ctx will be scoped off of self.ctx
+
+    class B:
+        def __init__(self) -> None:
+            self.ctx = create_context(self)
+
+    obj = A()
+    assert get_context(obj) is obj.ctx
+
 This module is modeled after vscode's context key service
 
 https://github.com/microsoft/vscode/blob/main/src/vs/platform/contextkey/browser/contextKeyService.ts
@@ -112,9 +135,6 @@ class _BaseContextKeyService(ABC):
     def __getitem__(self, key: str) -> Any:
         return self._my_context[key]
 
-    def __dir__(self):
-        return list(object.__dir__(self)) + list(dict(self._my_context))
-
     # vscode: "setContext" (only used in this module)
     def __setitem__(self, key: str, value: Any) -> None:
         if self._my_context.get(key, '__missing__') != value:
@@ -213,14 +233,13 @@ class ScopedContextKeyService(_BaseContextKeyService):
 
     _parent: _BaseContextKeyService
 
-    # TODO: figure out whether we need the scope object
     def __init__(self, parent: _BaseContextKeyService, obj: object) -> None:
         super().__init__(parent.create_child_context())
         self._parent = parent
         self._parent.context_changed.connect(self._reemit_event)
 
         if obj is None:
-            return
+            return  # pragma: no cover
 
         self._scope_id = scope_id(obj)
         if self._scope_id in self._parent._scopes:
@@ -278,7 +297,7 @@ scope_id = _make_scope_id_func()
 def create_context(obj: object, depth=20, start=2) -> ScopedContextKeyService:
     root_scope = ContextKeyService.root()
 
-    if not hasattr(sys, '_getframe'):
+    if not hasattr(sys, '_getframe'):  # pragma: no cover
         # we can't inspect stack...
         return root_scope.create_scoped(obj)
 
@@ -287,7 +306,7 @@ def create_context(obj: object, depth=20, start=2) -> ScopedContextKeyService:
     while frame and i < depth:
         if frame.f_code.co_name in ('__new__', '_set_default_and_type'):
             # the type is being declared and pydantic is checking defaults
-            break
+            break  # pragma: no cover
         elif 'self' in frame.f_locals:
             obid = scope_id(frame.f_locals['self'])
             if obid in root_scope._scopes:
