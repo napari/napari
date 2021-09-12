@@ -25,6 +25,7 @@ from .dialogs.qt_notification import (
 )
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
+from .utils import _maybe_allow_interrupt
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
@@ -54,6 +55,7 @@ _defaults = {
 
 # store reference to QApplication to prevent garbage collection
 _app_ref = None
+_IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
 
 
 def qt_breakpointhook():
@@ -172,7 +174,8 @@ def get_app(
 
     if ipy_interactive is None:
         ipy_interactive = get_settings().application.ipy_interactive
-    _try_enable_ipython_gui('qt' if ipy_interactive else None)
+    if _IPYTHON_WAS_HERE_FIRST:
+        _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -395,5 +398,5 @@ def run(
             )
         )
         return
-    with notification_manager:
+    with notification_manager, _maybe_allow_interrupt(app):
         app.exec_()

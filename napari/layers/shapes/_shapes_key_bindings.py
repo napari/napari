@@ -39,6 +39,7 @@ def hold_to_lock_aspect_ratio(layer):
     else:
         layer._aspect_ratio = 1
     if layer._is_moving:
+        assert layer._moving_coordinates is not None, layer
         _move(layer, layer._moving_coordinates)
 
     yield

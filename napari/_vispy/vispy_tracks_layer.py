@@ -1,7 +1,6 @@
-from vispy.scene.visuals import Compound, Line, Text
-
 from ._vispy_tracks_shader import TrackShader
 from .vispy_base_layer import VispyBaseLayer
+from .vispy_tracks_visual import TracksVisual
 
 
 class VispyTracksLayer(VispyBaseLayer):
@@ -17,7 +16,7 @@ class VispyTracksLayer(VispyBaseLayer):
     """
 
     def __init__(self, layer):
-        node = Compound([Line(), Text(), Line()])
+        node = TracksVisual()
         super().__init__(layer, node)
 
         self.layer.events.tail_width.connect(self._on_appearance_change)

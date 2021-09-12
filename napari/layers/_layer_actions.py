@@ -71,7 +71,6 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
         **layer._get_base_state(),
         'name': f'{layer} {mode}-proj',
         'colormap': layer.colormap.name,
-        'interpolation': layer.interpolation,
         'rendering': layer.rendering,
     }
     new = Layer.create(data, meta, layer._type_string)
@@ -96,6 +95,11 @@ def _merge_stack(ll: LayerList, rgb=False):
     else:
         new = stack_utils.images_to_stack(selection)
     ll.append(new)
+
+
+def _toggle_visibility(ll: LayerList):
+    for lay in ll.selection:
+        lay.visible = not lay.visible
 
 
 def _select_linked_layers(ll: LayerList):
@@ -186,6 +190,12 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Convert to Image'),
             'action': partial(_convert, type_='image'),
             'enable_when': 'only_labels_selected',
+            'show_when': 'True',
+        },
+        'napari:toggle_visibility': {
+            'description': trans._('Toggle visibility'),
+            'action': _toggle_visibility,
+            'enable_when': 'True',
             'show_when': 'True',
         },
     },

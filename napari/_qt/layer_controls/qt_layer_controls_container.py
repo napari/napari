@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 layer_to_controls = {
     layers.Labels: QtLabelsControls,
-    layers.Image: QtImageControls,  # must be after Labels layer
+    layers.Image: QtImageControls,
     layers.Points: QtPointsControls,
     layers.Shapes: QtShapesControls,
     layers.Surface: QtSurfaceControls,
@@ -138,6 +138,8 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
-        controls.close()
+        # controls.close()
+        controls.hide()
+        controls.deleteLater()
         controls = None
         del self.widgets[layer]

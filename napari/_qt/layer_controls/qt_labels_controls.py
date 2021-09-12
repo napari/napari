@@ -10,7 +10,6 @@ from qtpy.QtWidgets import (
     QSpinBox,
     QWidget,
 )
-from superqt import QLabeledSlider as QSlider
 from superqt import QLargeIntSpinBox
 
 from ...layers.image._image_constants import Rendering
@@ -25,6 +24,7 @@ from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity
+from ..widgets._slider_compat import QSlider
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
@@ -579,6 +579,10 @@ class QtLabelsControls(QtLayerControls):
 
         self._on_editable_change()
 
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self.colorBox)
+        super().deleteLater()
+
 
 class QtColorBox(QWidget):
     """A widget that shows a square with the current label color.
@@ -653,7 +657,11 @@ class QtColorBox(QWidget):
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
 
-    def close(self):
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self)
+        super().deleteLater()
+
+    def closeEvent(self, event):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
-        super().close()
+        super().closeEvent(event)

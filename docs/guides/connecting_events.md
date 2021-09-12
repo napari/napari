@@ -48,7 +48,7 @@ napari.run()
 ```
 
 See also this [custom key bindings
-example](https://github.com/napari/napari/blob/master/examples/custom_key_bindings.py).
+example](https://github.com/napari/napari/blob/main/examples/custom_key_bindings.py).
 
 ### Listening for mouse events
 
@@ -83,9 +83,9 @@ registered with `mouse_drag_callbacks`, and `mouse_double_click_callbacks` is
 triggered _in addition to_ mouse `mouse_drag_callbacks`.
 
 See also the [custom mouse
-functions](https://github.com/napari/napari/blob/master/examples/custom_mouse_functions.py)
+functions](https://github.com/napari/napari/blob/main/examples/custom_mouse_functions.py)
 and [mouse drag
-callback](https://github.com/napari/napari/blob/master/examples/mouse_drag_callback.py)
+callback](https://github.com/napari/napari/blob/main/examples/mouse_drag_callback.py)
 examples.
 
 ### Connection functions to native napari events
