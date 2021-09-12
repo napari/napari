@@ -2,7 +2,7 @@ import napari
 from napari.qt import get_app, run
 from napari.layers import Points, Image
 from napari.layers.layergroup import LayerGroup
-from napari._qt.tree import QtLayerTreeView
+from napari._qt.containers import QtLayerTreeView
 from skimage.data import grass
 
 app = get_app()
