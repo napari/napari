@@ -844,39 +844,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._ndim
 
     @property
-    def selected(self):
-        """bool: Whether this layer is selected or not."""
-        warnings.warn(
-            trans._(
-                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `layer in viewer.layers.selection`",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        layers = getattr(self, '_deprecated_layerlist', None)
-        if layers is not None:
-            return self in layers.selection
-        return False
-
-    @selected.setter
-    def selected(self, selected):
-        warnings.warn(
-            trans._(
-                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `viewer.layers.selection.add(layer)` or `viewer.layers.selection.remove(layer)`",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        layers = getattr(self, '_deprecated_layerlist', None)
-        if layers is not None:
-            if selected:
-                layers.selection.add(self)
-            else:
-                layers.selection.discard(self)
-
-    @property
     def help(self):
         """str: displayed in status bar bottom right."""
         return self._help
