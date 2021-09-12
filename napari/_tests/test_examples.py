@@ -1,6 +1,7 @@
+import os
 import runpy
 from pathlib import Path
-
+from qtpy import API_NAME
 import pytest
 
 import napari
@@ -15,8 +16,15 @@ skip = [
     'live_tiffs_generator.py',
     'points-over-time.py',  # too resource hungry
     'embed_ipython.py',  # fails without monkeypatch
-    'custom_key_bindings.py'  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
+    'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
 ]
+if os.name == 'nt' and API_NAME == 'PyQt5':
+    skip += [
+        'mgui_with_threading.py',
+        'multithreading_simple.py',
+        'multithreading_two_way.py',
+        'progress_bar_threading.py',
+    ]
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
