@@ -1,7 +1,6 @@
-from vispy.scene.visuals import Compound, Line, Text
-
 from ._vispy_tracks_shader import TrackShader
 from .vispy_base_layer import VispyBaseLayer
+from .vispy_tracks_visual import TracksVisual
 
 
 class VispyTracksLayer(VispyBaseLayer):
@@ -17,11 +16,12 @@ class VispyTracksLayer(VispyBaseLayer):
     """
 
     def __init__(self, layer):
-        node = Compound([Line(), Text(), Line()])
+        node = TracksVisual()
         super().__init__(layer, node)
 
         self.layer.events.tail_width.connect(self._on_appearance_change)
         self.layer.events.tail_length.connect(self._on_appearance_change)
+        self.layer.events.head_length.connect(self._on_appearance_change)
         self.layer.events.display_id.connect(self._on_appearance_change)
         self.layer.events.display_tail.connect(self._on_appearance_change)
         self.layer.events.display_graph.connect(self._on_appearance_change)
@@ -73,8 +73,10 @@ class VispyTracksLayer(VispyBaseLayer):
         # update shader properties related to appearance
         self.track_shader.use_fade = self.layer.use_fade
         self.track_shader.tail_length = self.layer.tail_length
+        self.track_shader.head_length = self.layer.head_length
         self.graph_shader.use_fade = self.layer.use_fade
         self.graph_shader.tail_length = self.layer.tail_length
+        self.graph_shader.head_length = self.layer.head_length
 
         # set visibility of subvisuals
         self.node._subvisuals[0].visible = self.layer.display_tail

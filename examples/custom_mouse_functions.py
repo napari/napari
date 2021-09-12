@@ -66,4 +66,11 @@ def click_drag(layer, event):
     else:
         print('clicked!')
 
+# Handle click or drag events separately
+@labels_layer.mouse_double_click_callbacks.append
+def on_second_click_of_double_click(layer, event):
+    print('Second click of double_click', event.position)
+    print('note that a click event was also triggered', event.type)
+
+
 napari.run()

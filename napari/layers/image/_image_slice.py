@@ -1,17 +1,21 @@
 """ImageSlice class.
 """
+from __future__ import annotations
+
 import logging
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
-from ...types import ArrayLike
 from ...utils import config
 from ._image_loader import ImageLoader
 from ._image_slice_data import ImageSliceData
 from ._image_view import ImageView
 
 LOGGER = logging.getLogger("napari.loader")
+
+if TYPE_CHECKING:
+    from ...types import ArrayLike
 
 
 def _create_loader_class() -> ImageLoader:

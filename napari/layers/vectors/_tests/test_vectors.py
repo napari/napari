@@ -46,17 +46,17 @@ def test_empty_vectors():
     assert layer._view_data.shape[2] == 2
 
 
-def test_empty_vectors_with_properties():
+def test_empty_vectors_with_property_choices():
     """Test instantiating Vectors layer with empty coordinate-like 2D data."""
     shape = (0, 2, 2)
     data = np.empty(shape)
-    properties = {'angle': np.array([0.5], dtype=float)}
-    layer = Vectors(data, properties=properties)
+    property_choices = {'angle': np.array([0.5], dtype=float)}
+    layer = Vectors(data, property_choices=property_choices)
     assert np.all(layer.data == data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
-    np.testing.assert_equal(layer._property_choices, properties)
+    np.testing.assert_equal(layer._property_choices, property_choices)
 
 
 def test_empty_layer_with_edge_colormap():
@@ -66,7 +66,7 @@ def test_empty_layer_with_edge_colormap():
     default_properties = {'angle': np.array([1.5], dtype=float)}
     layer = Vectors(
         data=data,
-        properties=default_properties,
+        property_choices=default_properties,
         edge_color='angle',
         edge_colormap='grays',
     )
@@ -85,7 +85,7 @@ def test_empty_layer_with_edge_color_cycle():
     default_properties = {'vector_type': np.array(['A'])}
     layer = Vectors(
         data=data,
-        properties=default_properties,
+        property_choices=default_properties,
         edge_color='vector_type',
     )
 
@@ -566,6 +566,30 @@ def test_value():
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     value = layer.get_value((0,) * 2)
+    assert value is None
+
+
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
+        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
+    """Currently get_value should return None in 3D"""
+    np.random.seed(0)
+    data = np.random.random((10, 2, 3))
+    data[:, 0, :] = 20 * data[:, 0, :]
+    layer = Vectors(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    value = layer.get_value(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
+    )
     assert value is None
 
 

@@ -48,7 +48,7 @@ napari.run()
 ```
 
 See also this [custom key bindings
-example](https://github.com/napari/napari/blob/master/examples/custom_key_bindings.py).
+example](https://github.com/napari/napari/blob/main/examples/custom_key_bindings.py).
 
 ### Listening for mouse events
 
@@ -70,10 +70,22 @@ def update_layer(layer, event):
 napari.run()
 ```
 
+As of this writing `MouseProvider`s have 4 list of callbacks that can be registered:
+
+   - `mouse_move_callbacks`
+   - `mouse_wheel_callbacks`
+   - `mouse_drag_callbacks`
+   - `mouse_double_click_callbacks`
+
+Please look at the documentation of `MouseProvider` for a more in depth
+discussion of when each callback is triggered. In particular single click can be
+registered with `mouse_drag_callbacks`, and `mouse_double_click_callbacks` is
+triggered _in addition to_ mouse `mouse_drag_callbacks`.
+
 See also the [custom mouse
-functions](https://github.com/napari/napari/blob/master/examples/custom_mouse_functions.py)
+functions](https://github.com/napari/napari/blob/main/examples/custom_mouse_functions.py)
 and [mouse drag
-callback](https://github.com/napari/napari/blob/master/examples/mouse_drag_callback.py)
+callback](https://github.com/napari/napari/blob/main/examples/mouse_drag_callback.py)
 examples.
 
 ### Connection functions to native napari events

@@ -221,6 +221,7 @@ class VispyAxesVisual:
         self._viewer.axes.events.labels.connect(self._on_data_change)
         self._viewer.axes.events.arrows.connect(self._on_data_change)
         self._viewer.dims.events.order.connect(self._on_data_change)
+        self._viewer.dims.events.range.connect(self._on_data_change)
         self._viewer.dims.events.ndisplay.connect(self._on_data_change)
         self._viewer.dims.events.axis_labels.connect(self._on_data_change)
         self._viewer.camera.events.zoom.connect(self._on_zoom_change)
@@ -259,7 +260,11 @@ class VispyAxesVisual:
                 for ra in reversed_axes
             ]
         else:
-            background_color = get_theme(self._viewer.theme)['canvas']
+            # the reason for using the `as_hex` here is to avoid
+            # `UserWarning` which is emitted when RGB values are above 1
+            background_color = get_theme(
+                self._viewer.theme, False
+            ).canvas.as_hex()
             background_color = transform_color(background_color)[0]
             color = np.subtract(1, background_color)
             color[-1] = background_color[-1]

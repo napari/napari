@@ -4,7 +4,7 @@ name: PR Test
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   code:
@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [flake8, black, isort]
+        task: [flake8, black, isort, import-lint]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
@@ -73,6 +73,9 @@ jobs:
         platform: [ubuntu-latest]
         python: [3.7, 3.8, 3.9]
         include:
+          # Windows py37
+          - python: 3.7
+            platform: windows-latest
           # Windows py38
           - python: 3.8
             platform: windows-latest
@@ -137,7 +140,9 @@ jobs:
       # `tox -e py38-linux-pyqt,py38-linux-pyside`
       # see tox.ini for more
       - name: Test with tox
-        run: tox
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: tox
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
@@ -165,10 +170,13 @@ jobs:
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
 
-      - name: Test
+      - name: Install this commit
         run: |
-          pip install --upgrade pip
-          pip install pytest-xvfb
           # pip install this git sha directly from github
-          pip install pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
-          pytest --pyargs napari -v --color=yes
+          pip install --upgrade pip
+          pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
+
+      - name: Test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: pytest --pyargs napari --color=yes

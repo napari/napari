@@ -3,12 +3,13 @@
 An eventual replacement for Image that combines single-scale and
 chunked (tiled) multi-scale into one implementation.
 """
+from __future__ import annotations
+
 import logging
-from typing import List, Set
+from typing import TYPE_CHECKING, List, Set
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.events import Event
 from ....utils.translations import trans
 from ..image import _ImageBase
@@ -17,6 +18,9 @@ from .octree_chunk import OctreeChunk
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import OctreeDisplayOptions, OctreeMetadata
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk import ChunkRequest
 
 LOGGER = logging.getLogger("napari.octree.image")
 
@@ -336,7 +340,7 @@ class _OctreeImageBase(_ImageBase):
         )
 
     def _update_draw(
-        self, scale_factor, corner_pixels, shape_threshold
+        self, scale_factor, corner_pixels_displayed, shape_threshold
     ) -> None:
         """Override Layer._update_draw completely.
 
@@ -349,21 +353,24 @@ class _OctreeImageBase(_ImageBase):
         ----------
         scale_factor : float
             Scale factor going from canvas to world coordinates.
-        corner_pixels : array
-            Coordinates of the top-left and bottom-right canvas pixels in the
+        corner_pixels_displayed : array
+            Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
 
         """
         # Compute our 2D corners from the incoming n-d corner_pixels
-        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-        corners = data_corners[:, self._dims_displayed]
+        data_corners = (
+            self._transforms[1:]
+            .simplified.set_slice(self._displayed_axes)
+            .inverse(corner_pixels_displayed)
+        )
 
         # Update our self._view to to capture the state of things right
         # before we are drawn. Our self._view will used by our
         # drawable_chunks() method.
-        self._view = OctreeView(corners, shape_threshold, self.display)
+        self._view = OctreeView(data_corners, shape_threshold, self.display)
 
     def get_intersection(self) -> OctreeIntersection:
         """The the interesection between the current view and the octree.
@@ -410,10 +417,9 @@ class _OctreeImageBase(_ImageBase):
         logic in Image._set_view_slice goes away entirely.
         """
         # Consider non-multiscale data as just having a single level
-        if self.multiscale:
-            multilevel_data = self.data
-        else:
-            multilevel_data = [self.data]
+        from ....components.experimental.chunk import LayerRef
+
+        multilevel_data = self.data if self.multiscale else [self.data]
 
         if self._slice is not None:
             # For now bail out so we don't nuke an existing slice which

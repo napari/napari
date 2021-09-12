@@ -28,13 +28,25 @@ class PurposefulException(Exception):
     pass
 
 
-def test_notification_manager_no_gui():
+def test_notification_repr_has_message():
+    assert "='this is the message'" in repr(
+        Notification("this is the message")
+    )
+
+
+def test_notification_manager_no_gui(monkeypatch):
     """
     Direct test of the notification manager.
 
     This does not test the integration with the gui, but test that the
     notification manager itself can receive a info, warning or error.
     """
+    try:
+        from napari._qt.dialogs.qt_notification import NapariQtNotification
+
+        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
+    except ImportError:
+        pass
     previous_exhook = sys.excepthook
     with notification_manager:
         notification_manager.records.clear()
@@ -44,7 +56,9 @@ def test_notification_manager_no_gui():
         notification_manager.notification_ready.connect(_append)
 
         show_info('this is one way of showing an information message')
-        assert len(notification_manager.records) == 1
+        assert (
+            len(notification_manager.records) == 1
+        ), notification_manager.records
         assert store[-1].type == 'info'
 
         notification_manager.receive_info(
@@ -128,9 +142,16 @@ def test_notification_manager_no_gui_with_threading():
         assert warnings.showwarning == notification_manager.receive_warning
         warning_thread = threading.Thread(target=_warn)
         warning_thread.start()
-        time.sleep(0.02)
-        assert len(notification_manager.records) == 2
-        assert store[-1].type == 'warning'
+
+        for _ in range(100):
+            time.sleep(0.01)
+            if (
+                len(notification_manager.records) == 2
+                and store[-1].type == 'warning'
+            ):
+                break
+        else:
+            raise AssertionError("Thread notification not received in time")
 
     # make sure we've restored the threading except hook
     if PY38_OR_HIGHER:

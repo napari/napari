@@ -17,9 +17,10 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ...settings import get_settings
+from ...settings._constants import LoopMode
 from ...utils.events import Event
 from ...utils.translations import trans
-from .._constants import LoopMode
 from ..dialogs.qt_modal import QtPopup
 from ..qthreading import _new_worker_qthread
 from .qt_scrollbar import ModifiedScrollBar
@@ -70,10 +71,18 @@ class QtDimSliderWidget(QWidget):
         sep.setFixedSize(1, 14)
         sep.setObjectName('slice_label_sep')
 
-        self._fps = 10
+        settings = get_settings()
+        self._fps = settings.application.playback_fps
+        settings.application.events.playback_fps.connect(
+            lambda e: setattr(self, 'fps', e.value)
+        )
+
         self._minframe = None
         self._maxframe = None
-        self._loop_mode = LoopMode.LOOP
+        self._loop_mode = settings.application.playback_mode
+        settings.application.events.playback_mode.connect(
+            lambda e: setattr(self, 'loop_mode', e.value)
+        )
 
         layout = QHBoxLayout()
         self._create_axis_label_widget()
@@ -156,7 +165,12 @@ class QtDimSliderWidget(QWidget):
 
     def _create_play_button_widget(self):
         """Creates the actual play button, which has the modal popup."""
-        self.play_button = QtPlayButton(self.qt_dims, self.axis)
+        self.play_button = QtPlayButton(
+            self.qt_dims, self.axis, fps=self._fps, mode=self._loop_mode
+        )
+        self.play_button.setToolTip(
+            trans._('Right click on button for playback setting options.')
+        )
         self.play_button.mode_combo.activated[str].connect(
             lambda x: self.__class__.loop_mode.fset(
                 self, LoopMode(x.replace(' ', '_'))
@@ -284,8 +298,11 @@ class QtDimSliderWidget(QWidget):
                 reversing direction when the maximum or minimum frame
                 has been reached.
         """
+        value = LoopMode(value)
         self._loop_mode = value
-        self.play_button.mode_combo.setCurrentText(str(value))
+        self.play_button.mode_combo.setCurrentText(
+            str(value).replace('_', ' ')
+        )
         self.mode_changed.emit(str(value))
 
     @property
@@ -514,7 +531,7 @@ class QtPlayButton(QPushButton):
         form_layout.insertRow(
             2, QLabel(trans._('play mode:'), parent=self.popup), mode_combo
         )
-        mode_combo.setCurrentText(str(self.mode))
+        mode_combo.setCurrentText(str(self.mode).replace('_', ' '))
         self.mode_combo = mode_combo
 
     def mouseReleaseEvent(self, event):

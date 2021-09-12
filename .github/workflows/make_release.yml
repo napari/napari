@@ -13,19 +13,17 @@ jobs:
     if: github.repository == 'napari/napari'
     steps:
       - name: Checkout code
-        uses: actions/checkout@master
+        uses: actions/checkout@main
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.9
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install check-manifest build
+          python -m pip install -e .[build]  # need full install so we can build type stubs
       - name: Build Distribution
-        run: |
-          check-manifest  # https://github.com/mgedmin/check-manifest
-          python -m build  # https://pypa-build.readthedocs.io/en/latest/
+        run: make dist
       - name: Find Release Notes
         id: release_notes
         run: |

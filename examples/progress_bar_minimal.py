@@ -25,7 +25,7 @@ def iterable():
 def iterable_w_context():
     """using progress with a context manager
     """
-    my_stacked_volume = np.random.random((5, 4, 500, 500))    
+    my_stacked_volume = np.random.random((5, 4, 500, 500))
     # progress provides a context manager we can use for automatic
     # teardown of our widget once iteration is complete. Wherever
     # possible, we should *always* use progress within a context
@@ -34,8 +34,13 @@ def iterable_w_context():
             # using a context manager also allows us to manipulate
             # the progress object e.g. by setting a description
             pbr.set_description(f"Slice {i}")
-            process(im_slice)
-                
+
+            # we can group progress bars together in the viewer
+            # by passing a parent progress bar to new progress
+            # objects' nest_under attribute
+            for channel in progress(im_slice, nest_under=pbr):
+                process(channel)
+
 def indeterminate():
     """By passing a total of 0, we can have an indeterminate progress bar
     """
@@ -90,8 +95,10 @@ button_layout.addWidget(steps_btn)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
+pbar_widget.setObjectName("Progress Examples")
 
 viewer.window.add_dock_widget(pbar_widget)
 # showing the activity dock so we can see the progress bars
-viewer.window.qt_viewer.activityDock.show()
+viewer.window._status_bar._toggle_activity_dock(True)
+
 napari.run()

@@ -183,7 +183,7 @@ class Event:
                     continue
                 attr = getattr(self, name)
 
-                attrs.append(f"{name}={attr}")
+                attrs.append(f"{name}={attr!r}")
             return "<{} {}>".format(self.__class__.__name__, " ".join(attrs))
         finally:
             _event_repr_depth -= 1
@@ -258,6 +258,7 @@ class EventEmitter:
         self._block_counter: Counter[Optional[Callback]] = Counter()
 
         # used to detect emitter loops
+        self._emitting = False
         self.source = source
         self.default_args = {}
         if type is not None:
@@ -549,6 +550,7 @@ class EventEmitter:
         # Add our source to the event; remove it after all callbacks have been
         # invoked.
         event._push_source(self.source)
+        self._emitting = True
         try:
             if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
                 self._block_counter.update([None])
@@ -578,6 +580,7 @@ class EventEmitter:
             for cb in rem:
                 self.disconnect(cb)
         finally:
+            self._emitting = False
             if event._pop_source() != self.source:
                 raise RuntimeError(
                     trans._(
@@ -591,7 +594,16 @@ class EventEmitter:
     def _invoke_callback(self, cb: Callback, event: Event):
         try:
             cb(event)
-        except Exception:
+        except Exception as e:
+            # dead Qt object with living python pointer. not importing Qt
+            # here... but this error is consistent across backends
+            if (
+                isinstance(e, RuntimeError)
+                and 'C++' in str(e)
+                and str(e).endswith(('has been deleted', 'already deleted.'))
+            ):
+                self.disconnect(cb)
+                return
             _handle_exception(
                 self.ignore_callback_errors,
                 self.print_callback_errors,

@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import Optional, Tuple
 
+from magicgui.widgets import FunctionGui
 from pydantic import BaseModel
-
-if TYPE_CHECKING:
-    from magicgui.widgets import FunctionGui
 
 
 class Source(BaseModel):

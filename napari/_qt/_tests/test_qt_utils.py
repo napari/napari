@@ -2,8 +2,9 @@ import pytest
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtWidgets import QMainWindow
 
-from ..utils import (
+from napari._qt.utils import (
     QBYTE_FLAG,
+    add_flash_animation,
     is_qbyte,
     qbytearray_to_str,
     qt_signals_blocked,
@@ -82,3 +83,15 @@ def test_qbytearray_to_str_and_back(qtbot):
 
     qbyte = widget.saveState()
     assert str_to_qbytearray(qbytearray_to_str(qbyte)) == qbyte
+
+
+def test_add_flash_animation(qtbot):
+    widget = QMainWindow()
+    qtbot.addWidget(widget)
+    assert widget.graphicsEffect() is None
+    add_flash_animation(widget)
+    assert widget.graphicsEffect() is not None
+    assert hasattr(widget, "_flash_animation")
+    qtbot.wait(350)
+    assert widget.graphicsEffect() is None
+    assert not hasattr(widget, "_flash_animation")

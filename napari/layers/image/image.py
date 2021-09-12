@@ -1,29 +1,30 @@
 """Image class.
 """
+from __future__ import annotations
+
 import types
 import warnings
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils import config
+from ...utils._dtype import get_dtype_limits
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
+from ..utils.plane import SlicingPlane
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
 
-# Use special ChunkedSlideData for async.
-if config.async_loading:
-    from .experimental._chunked_slice_data import ChunkedSliceData
-
-    SliceDataClass = ChunkedSliceData
-else:
-    SliceDataClass = ImageSliceData
+if TYPE_CHECKING:
+    from ...components.experimental.chunk import ChunkRequest
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -35,10 +36,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     Parameters
     ----------
     data : array or list of array
-        Image data. Can be N dimensional. If the last dimension has length
+        Image data. Can be N >= 2 dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        a multiscale image.
+        a multiscale image. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
@@ -86,9 +89,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -102,7 +105,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest.
+        should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
+    experimental_slicing_plane : dict or SlicingPlane
+        Properties defining plane rendering in 3D. Properties are defined in
+        data coordinates. Valid dictionary keys are
+        {'position', 'normal', 'thickness', and 'enabled'}.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
 
     Attributes
     ----------
@@ -110,7 +123,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
         and arrays are decreasing in shape then the data is treated as a
-        multiscale image.
+        multiscale image. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     metadata : dict
         Image metadata.
     rgb : bool
@@ -121,7 +136,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest.
+        list should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
@@ -146,6 +163,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Threshold for isosurface.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
+    experimental_slicing_plane : SlicingPlane or dict
+        Properties defining plane rendering in 3D. Valid dictionary keys are
+        {'position', 'normal', 'thickness', and 'enabled'}.
+    experimental_clipping_planes : ClippingPlaneList
+        Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
     -----
@@ -182,9 +204,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
+
+        if getattr(data, 'ndim', 2) < 2:
+            raise ValueError(
+                trans._('Image data must have at least 2 dimensions.')
+            )
 
         # Determine if data is a multiscale
         if multiscale is None:
@@ -220,6 +249,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -248,16 +278,29 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self._data_level = 0
             self._thumbnail_level = 0
-        self.corner_pixels[1] = self.level_shapes[self._data_level]
+        displayed_axes = self._displayed_axes
+        self.corner_pixels[1][displayed_axes] = self.level_shapes[
+            self._data_level
+        ][displayed_axes]
 
         self._new_empty_slice()
 
-        # Set contrast_limits and colormaps
+        # Set contrast limits, colormaps and plane parameters
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
+        self._experimental_slicing_plane = SlicingPlane(
+            thickness=1, enabled=False
+        )
         if contrast_limits is None:
-            self.contrast_limits_range = self._calc_data_range()
+            if not isinstance(data, np.ndarray):
+                dtype = getattr(data, 'dtype', None)
+                if np.issubdtype(dtype, np.integer):
+                    self.contrast_limits_range = get_dtype_limits(dtype)
+                else:
+                    self.contrast_limits_range = (0, 1)
+            else:
+                self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
@@ -273,14 +316,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
+        if experimental_slicing_plane is not None:
+            self.experimental_slicing_plane = experimental_slicing_plane
+            self.experimental_slicing_plane.update(experimental_slicing_plane)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image."""
+        wrapper = _weakref_hide(self)
         self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed, self.rgb
+            self._get_empty_image(), wrapper._raw_to_displayed, self.rgb
         )
         self._empty = True
 
@@ -313,11 +360,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Raw image for the current slice. (compatibility)"""
         return self._slice.image.raw
 
-    def _calc_data_range(self):
-        if self.multiscale:
-            input_data = self.data[-1]
+    def _calc_data_range(self, mode='data'):
+        if mode == 'data':
+            input_data = self.data[-1] if self.multiscale else self.data
+        elif mode == 'slice':
+            data = self._slice.image.view  # ugh
+            input_data = data[-1] if self.multiscale else data
         else:
-            input_data = self.data
+            raise ValueError(
+                f"mode must be either 'data' or 'slice', got {mode!r}"
+            )
         return calc_data_range(input_data, rgb=self.rgb)
 
     @property
@@ -334,6 +386,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)
+        if self._keep_autoscale:
+            self.reset_contrast_limits()
         self._set_editable()
 
     def _get_ndim(self):
@@ -472,6 +526,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.rendering()
 
     @property
+    def experimental_slicing_plane(self):
+        return self._experimental_slicing_plane
+
+    @experimental_slicing_plane.setter
+    def experimental_slicing_plane(self, value: Union[dict, SlicingPlane]):
+        self._experimental_slicing_plane.update(value)
+
+    @property
     def loaded(self):
         """Has the data for this layer been loaded yet.
 
@@ -521,8 +583,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._empty = False
 
         if self.multiscale:
-            # If 3d redering just show lowest level of multiscale
             if self._ndisplay == 3:
+                # If 3d redering just show lowest level of multiscale
+                warnings.warn(
+                    trans._(
+                        'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
+                        deferred=True,
+                    ),
+                    category=UserWarning,
+                )
                 self.data_level = len(self.data) - 1
 
             # Slice currently viewed level
@@ -545,7 +614,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._transforms['tile2data'].scale = scale
 
             if self._ndisplay == 2:
-                for d in self._dims_displayed:
+                for d in self._displayed_axes:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
                         self.corner_pixels[1, d] + 1,
@@ -586,10 +655,23 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             thumbnail_source = None
 
         # Load our images, might be sync or async.
-        data = SliceDataClass(self, image_indices, image, thumbnail_source)
+        data = self._SliceDataClass(
+            self, image_indices, image, thumbnail_source
+        )
         self._load_slice(data)
+        if self._keep_autoscale:
+            self.reset_contrast_limits()
 
-    def _load_slice(self, data: SliceDataClass):
+    @property
+    def _SliceDataClass(self):
+        # Use special ChunkedSlideData for async.
+        if config.async_loading:
+            from .experimental._chunked_slice_data import ChunkedSliceData
+
+            return ChunkedSliceData
+        return ImageSliceData
+
+    def _load_slice(self, data: ImageSliceData):
         """Load the image and maybe thumbnail source.
 
         Parameters
@@ -604,7 +686,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # property is now false, since the load is in progress.
             self.events.loaded()
 
-    def _on_data_loaded(self, data: SliceDataClass, sync: bool) -> None:
+    def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now.
 
         This routine is called synchronously from _load_async() above, or
@@ -640,7 +722,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # call our _set_view_slice(). Do we need a "refresh without
             # set_view_slice()" method that we can call?
 
-            self.events.set_data()  # update vispy
+            self.events.set_data(value=self._slice)  # update vispy
             self._update_thumbnail()
 
     def _update_thumbnail(self):
@@ -749,7 +831,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     # For async we add an on_chunk_loaded() method.
     if config.async_loading:
-        from ...components.experimental.chunk import ChunkRequest
 
         def on_chunk_loaded(self, request: ChunkRequest) -> None:
             """An asynchronous ChunkRequest was loaded.
@@ -760,7 +841,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 This request was loaded.
             """
             # Convert the ChunkRequest to SliceData and use it.
-            data = SliceDataClass.from_request(self, request)
+            data = self._SliceDataClass.from_request(self, request)
             self._on_data_loaded(data, sync=False)
 
 
@@ -782,6 +863,7 @@ class Image(_ImageBase):
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
+                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
@@ -796,3 +878,13 @@ if config.async_octree:
 
     class Image(Image, _OctreeImageBase):
         pass
+
+
+class _weakref_hide:
+    def __init__(self, obj):
+        import weakref
+
+        self.obj = weakref.ref(obj)
+
+    def _raw_to_displayed(self, *args, **kwarg):
+        return self.obj()._raw_to_displayed(*args, **kwarg)

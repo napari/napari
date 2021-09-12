@@ -1,0 +1,26 @@
+# See: .github/workflows/labeler.yml and https://github.com/marketplace/actions/labeler
+design:
+  - 'napari/_qt/qt_resources/**/*'
+
+documentation:
+  - 'docs/**/*'
+  - 'docs/*'
+
+preferences:
+  - 'napari/_qt/**/*/preferences_dialog.py'
+  - 'napari/settings/**/*.py'
+
+qt:
+  - 'napari/_qt/**/*.py'
+  - 'napari/_qt/**/*.py'
+  - 'napari/qt/**/*.py'
+  - 'napari/qt/**/*.py'
+
+task:
+  - '.github/**/*'
+
+tests:
+  - '**/*/_tests/**/*.py'
+
+vispy:
+  - 'napari/_vispy'

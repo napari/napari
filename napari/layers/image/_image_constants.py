@@ -1,4 +1,5 @@
 from enum import auto
+from typing import Tuple
 
 from ...utils.misc import StringEnum
 
@@ -9,7 +10,7 @@ class Interpolation(StringEnum):
     The spatial filters used for interpolation are from vispy's
     spatial filters. The filters are built in the file below:
 
-    https://github.com/vispy/vispy/blob/master/vispy/glsl/build-spatial-filters.py
+    https://github.com/vispy/vispy/blob/main/vispy/glsl/build-spatial-filters.py
     """
 
     BESSEL = auto()
@@ -65,6 +66,10 @@ class Rendering(StringEnum):
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
               performed to give the visual appearance of a surface.
+            * iso_categorical: isosurface for categorical data (e.g., labels).
+              Cast a ray until a non-background value is encountered. At that
+              location, lighning calculations are performed to give the visual
+              appearance of a surface.
             * average: average intensity projection. Cast a ray and display the
               average of values that were encountered.
     """
@@ -72,7 +77,24 @@ class Rendering(StringEnum):
     TRANSLUCENT = auto()
     ADDITIVE = auto()
     ISO = auto()
+    ISO_CATEGORICAL = auto()
     MIP = auto()
     MINIP = auto()
     ATTENUATED_MIP = auto()
     AVERAGE = auto()
+
+    @classmethod
+    def image_layer_subset(cls) -> Tuple['Rendering']:
+        return (
+            cls.TRANSLUCENT,
+            cls.ADDITIVE,
+            cls.ISO,
+            cls.MIP,
+            cls.MINIP,
+            cls.ATTENUATED_MIP,
+            cls.AVERAGE,
+        )
+
+    @classmethod
+    def labels_layer_subset(cls) -> Tuple['Rendering']:
+        return (cls.TRANSLUCENT, cls.ISO_CATEGORICAL)
