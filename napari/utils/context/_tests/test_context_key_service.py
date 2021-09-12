@@ -10,6 +10,27 @@ from napari.utils.context._service import (
 )
 
 
+def test_create_and_get_scoped_contexts():
+    """Test that objects created in the stack of another contexted object.
+
+    likely the most common way that this API will be used:
+    """
+
+    class A:
+        def __init__(self) -> None:
+            self.ctx = create_context(self)
+            self.b = B()
+
+    class B:
+        def __init__(self) -> None:
+            self.ctx = create_context(self)
+
+    obj = A()
+    ctxb = get_context(obj.b)
+    assert ctxb
+    assert ctxb._parent is get_context(obj) is obj.ctx
+
+
 def test_context():
     """test Context object is a dict that inherits values from parent."""
     A_DICT = {'a': 0, 'b': 0, 'c': 0}
@@ -141,6 +162,7 @@ def test_scoped_service_inherits():
 
 
 def test_service_events():
+    """Changing context keys emits an event"""
     mock = Mock()
     root = ContextKeyService()
     scoped = root.create_scoped(T())
@@ -154,22 +176,6 @@ def test_service_events():
     scoped['b'] = 1
     event = mock.call_args_list[0][0][0]
     assert event.value == ['b']
-
-
-def test_create_scoped_contexts():
-    """Test that objects created in the stack of another contexted object"""
-
-    class A:
-        def __init__(self) -> None:
-            self.ctx = create_context(self)
-            self.b = B()
-
-    class B:
-        def __init__(self) -> None:
-            self.ctx = create_context(self)
-
-    obj = A()
-    assert get_context(obj.b)._parent is get_context(obj) is obj.ctx  # type: ignore
 
 
 def test_settings_context():
