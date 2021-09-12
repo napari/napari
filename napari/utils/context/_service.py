@@ -33,7 +33,9 @@ import weakref
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from itertools import count
-from typing import Any, Callable, Dict, Final, Optional, TypeVar
+from typing import Any, Callable, Dict, Optional, TypeVar
+
+from typing_extensions import Final
 
 from napari.utils.events import EventEmitter
 
