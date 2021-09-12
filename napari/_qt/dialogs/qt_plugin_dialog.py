@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Sequence
+from typing import Callable, Dict, List, Sequence, Tuple
 
 from napari_plugin_engine.dist import standard_metadata
 from qtpy.QtCore import (
@@ -61,8 +61,8 @@ class Installer(QObject):
         installer: InstallerTypes = "pip",
     ):
         super().__init__()
-        self._queue = []
-        self._processes = []
+        self._queue: List[Tuple[Tuple[str, ...], Callable[[], QProcess]]] = []
+        self._processes: Dict[Tuple[str, ...], QProcess] = {}
         self._exit_code = 0
         self._conda_env_path = None
 
@@ -99,7 +99,6 @@ class Installer(QObject):
             "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
         )
         process.setProcessEnvironment(env)
-        self._processes.append(process)
         self.set_output_widget(self._output_widget)
         process.finished.connect(
             lambda ec, es: self._on_process_finished(process, ec, es)
@@ -124,8 +123,13 @@ class Installer(QObject):
         if exit_code != 0:
             self._exit_code = 0
 
-        if process in self._processes:
-            self._processes.remove(process)
+        process_to_terminate = []
+        for pkg_list, proc in self._processes.items():
+            if proc == process:
+                process_to_terminate.append(pkg_list)
+
+        for pkg_list in process_to_terminate:
+            process = self._processes.pop(pkg_list)
             process.terminate()
 
         self._handle_action()
@@ -137,9 +141,10 @@ class Installer(QObject):
 
     def _handle_action(self):
         if self._queue:
-            func = self._queue.pop()
+            pkg_list, func = self._queue.pop()
             self.started.emit()
-            func()
+            process = func()
+            self._processes[pkg_list] = process
 
         if not self._processes:
             from ...plugins import plugin_manager
@@ -155,7 +160,11 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         self._queue.insert(
-            0, lambda: self._install(pkg_list, installer, channels)
+            0,
+            [
+                tuple(pkg_list),
+                lambda: self._install(pkg_list, installer, channels),
+            ],
         )
         self._handle_action()
 
@@ -194,6 +203,7 @@ class Installer(QObject):
             self._output_widget.clear()
 
         process.start()
+        return process
 
     def uninstall(
         self,
@@ -202,7 +212,11 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         self._queue.insert(
-            0, lambda: self._uninstall(pkg_list, installer, channels)
+            0,
+            [
+                tuple(pkg_list),
+                lambda: self._uninstall(pkg_list, installer, channels),
+            ],
         )
         self._handle_action()
 
@@ -234,6 +248,24 @@ class Installer(QObject):
 
         for pkg in pkg_list:
             plugin_manager.unregister(pkg)
+
+        return process
+
+    def cancel(
+        self,
+        pkg_list: Sequence[str] = None,
+    ):
+        if pkg_list is None:
+            for _, process in self._processes.items():
+                process.terminate()
+
+            self._processes = {}
+        else:
+            try:
+                process = self._processes.pop(tuple(pkg_list))
+                process.terminate()
+            except KeyError:
+                pass
 
     @staticmethod
     def _is_installed_with_conda():
@@ -284,6 +316,7 @@ class PluginListItem(QFrame):
         self.package_name.setText(version)
         self.summary.setText(summary)
         self.package_author.setText(author)
+        self.cancel_btn.setVisible(False)
 
         if installed:
             self.enabled_checkbox.show()
@@ -301,19 +334,12 @@ class PluginListItem(QFrame):
         return p
 
     def set_busy(self, text: str, update: bool = False):
+        self.item_status.setText(text)
+        self.cancel_btn.setVisible(True)
         if not update:
-            self.action_button.setText(text)
-            self.action_button.setDisabled(True)
-            self.action_button.setObjectName("busy_button")
-            self.action_button.style().unpolish(self.action_button)
-            self.action_button.style().polish(self.action_button)
+            self.action_button.setVisible(False)
         else:
-            self.action_button.setDisabled(True)
-            self.update_btn.setText(text)
-            self.update_btn.setDisabled(True)
-            self.update_btn.setObjectName("busy_button")
-            self.update_btn.style().unpolish(self.update_btn)
-            self.update_btn.style().polish(self.update_btn)
+            self.update_btn.setVisible(False)
 
     def setup_ui(self, enabled=True):
         self.v_lay = QVBoxLayout(self)
@@ -347,11 +373,24 @@ class PluginListItem(QFrame):
         font15.setPointSize(15)
         self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
+
+        self.item_status = QLabel(self)
+        self.item_status.setObjectName("small_italic_text")
+        self.item_status.setSizePolicy(sizePolicy)
+        self.row1.addWidget(self.item_status)
+        self.row1.addStretch()
+
         self.package_name = QLabel(self)
         self.package_name.setAlignment(
             Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
         )
         self.row1.addWidget(self.package_name)
+
+        self.cancel_btn = QPushButton("cancel", self)
+        self.cancel_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.cancel_btn.setObjectName("remove_button")
+        self.row1.addWidget(self.cancel_btn)
+
         self.update_btn = QPushButton(self)
         self.update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.update_btn.setObjectName("install_button")
@@ -444,6 +483,9 @@ class QPluginList(QListWidget):
         )
         item.widget = widg
         action_name = 'uninstall' if installed else 'install'
+        item.setSizeHint(widg.sizeHint())
+        self.setItemWidget(item, widg)
+
         widg.action_button.clicked.connect(
             lambda: self.handle_action(item, project_info.name, action_name)
         )
@@ -452,24 +494,35 @@ class QPluginList(QListWidget):
                 item, project_info.name, "install", update=True
             )
         )
+        widg.cancel_btn.clicked.connect(
+            lambda: self.handle_action(item, project_info.name, "cancel")
+        )
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
 
     def handle_action(self, item, pkg_name, action_name, update=False):
         widget = item.widget
+        item.setText("0-" + item.text())
         method = getattr(self.installer, action_name)
         self._remove_list.append((pkg_name, item))
 
         if action_name == "install":
             if update:
                 widget.set_busy(trans._("updating..."), update)
+                widget.action_button.setDisabled(True)
             else:
                 widget.set_busy(trans._("installing..."), update)
 
             method([pkg_name])
+            self.scrollToTop()
         elif action_name == "uninstall":
             widget.set_busy(trans._("uninstalling..."), update)
+            widget.update_btn.setDisabled(True)
             method([pkg_name])
+            self.scrollToTop()
+        elif action_name == "cancel":
+            widget.set_busy(trans._("cancelling..."), update)
+            method((pkg_name,))
 
     @Slot(ProjectInfo)
     def tag_outdated(self, project_info: ProjectInfo):
@@ -508,15 +561,25 @@ class QtPluginDialog(QDialog):
         self.refresh()
 
     def _on_installer_start(self):
+        self.cancel_all_btn.setVisible(True)
         self.working_indicator.show()
         self.process_error_indicator.hide()
+        self.close_btn.setDisabled(True)
 
     def _on_installer_done(self, exit_code):
         self.working_indicator.hide()
         if exit_code:
             self.process_error_indicator.show()
 
+        self.cancel_all_btn.setVisible(False)
+        self.close_btn.setDisabled(False)
         self.refresh()
+
+    def closeEvent(self, event):
+        if self.close_btn.isEnabled():
+            super().closeEvent(event)
+
+        event.ignore()
 
     def refresh(self):
         self.installed_list.clear()
@@ -560,7 +623,6 @@ class QtPluginDialog(QDialog):
                 "Installed Plugins ({amount})", amount=len(already_installed)
             )
         )
-        # self.v_splitter.setSizes([70 * self.installed_list.count(), 10, 10])
 
         # fetch available plugins
         self.worker = create_worker(iter_napari_plugin_info)
@@ -644,14 +706,23 @@ class QtPluginDialog(QDialog):
 
         self.show_status_btn = QPushButton(trans._("Show Status"), self)
         self.show_status_btn.setFixedWidth(100)
+
+        self.cancel_all_btn = QPushButton(trans._("cancel all actions"), self)
+        self.cancel_all_btn.setObjectName("remove_button")
+        self.cancel_all_btn.setVisible(False)
+        self.cancel_all_btn.clicked.connect(lambda: self.installer.cancel())
+
         self.close_btn = QPushButton(trans._("Close"), self)
         self.close_btn.clicked.connect(self.accept)
+        self.close_btn.setObjectName("close_button")
         buttonBox.addWidget(self.show_status_btn)
         buttonBox.addWidget(self.working_indicator)
         buttonBox.addWidget(self.direct_entry_edit)
         buttonBox.addWidget(self.direct_entry_btn)
         buttonBox.addWidget(self.process_error_indicator)
-        buttonBox.addSpacing(60)
+        buttonBox.addSpacing(20)
+        buttonBox.addWidget(self.cancel_all_btn)
+        buttonBox.addSpacing(20)
         buttonBox.addWidget(self.close_btn)
         buttonBox.setContentsMargins(0, 0, 4, 0)
         vlay_1.addLayout(buttonBox)

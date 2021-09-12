@@ -524,49 +524,60 @@ PluginListItem {
   border-radius: 3px;
 }
 
-PluginListItem > QPushButton#install_button {
+QPushButton#install_button {
   background-color: {{ current }}
 }
 
-PluginListItem > QPushButton#install_button:hover {
+QPushButton#install_button:hover {
   background-color: {{ lighten(current, 10) }}
 }
 
-PluginListItem > QPushButton#install_button:pressed {
+QPushButton#install_button:pressed {
   background-color: {{ darken(current, 10) }}
 }
 
-PluginListItem > QPushButton#remove_button {
+QPushButton#remove_button {
   background-color: {{ warning }}
 }
 
-PluginListItem > QPushButton#remove_button:hover {
+QPushButton#remove_button:hover {
   background-color: {{ lighten(warning, 10) }}
 }
 
-PluginListItem > QPushButton#remove_button:pressed {
+QPushButton#remove_button:pressed {
   background-color: {{ darken(warning, 10) }}
 }
 
-PluginListItem > QPushButton#busy_button:pressed {
+QPushButton#busy_button:pressed {
   background-color: {{ darken(secondary, 10) }}
 }
 
-PluginListItem > QPushButton#busy_button {
+QPushButton#busy_button {
   background-color: {{ secondary }}
 }
 
-PluginListItem > QPushButton#busy_button:hover {
+QPushButton#busy_button:hover {
   background-color: {{ lighten(secondary, 10) }}
 }
 
-PluginListItem > QPushButton#busy_button:pressed {
+QPushButton#busy_button:pressed {
   background-color: {{ darken(secondary, 10) }}
 }
+
+QPushButton#close_button:disabled {
+  background-color: {{ lighten(secondary, 10) }}
+}
+
 
 #small_text {
   color: {{ opacity(text, 150) }};
   font-size: 10px;
+}
+
+#small_italic_text {
+  color: {{ opacity(text, 150) }};
+  font-size: 12px;
+  font-style: italic;
 }
 
 #pip_install_status{
