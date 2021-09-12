@@ -1106,9 +1106,7 @@ class Window:
             if event:
                 value = event.value
                 self.qt_viewer.viewer.theme = value
-
-                if settings.appearance.theme != "system":
-                    settings.appearance.theme = value
+                settings.appearance.theme = value
             else:
                 if settings.appearance.theme == "system":
                     value = get_system_theme()
