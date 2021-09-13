@@ -43,7 +43,7 @@ def connect_setattr(emitter: Emitter, obj, attr: str):
     ref = weakref.ref(obj)
 
     def _cb(*value):
-        setattr(ref(), attr, value)
+        setattr(ref(), attr, value[0] if len(value) == 1 else value)
 
     emitter.connect(_cb)
     # There are scenarios where emmiter is deleted before obj.

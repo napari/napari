@@ -1,11 +1,11 @@
-# The full test suite, which will be run anytime anything is merged into master.
+# The full test suite, which will be run anytime anything is merged into main.
 # See test_pull_request.yml for the tests that will be run
 name: Full Test
 
 on:
   push:
     branches:
-      - master
+      - main
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
   # Allows you to run this workflow manually from the Actions tab
