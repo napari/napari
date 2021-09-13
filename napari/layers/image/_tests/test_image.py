@@ -787,6 +787,8 @@ def test_instantiate_with_experimental_clipping_planes_dict():
 
 def test_tensorstore_image():
     """Test an image coming from a tensorstore array."""
-    data = ts.array(np.full(shape=(1024, 1024), fill_value=255, dtype=np.uint8))
+    data = ts.array(
+        np.full(shape=(1024, 1024), fill_value=255, dtype=np.uint8)
+    )
     layer = Image(data)
     assert np.all(layer.data == data)
