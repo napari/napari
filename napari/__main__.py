@@ -380,6 +380,13 @@ def _run_pythonw(python_path):
     sys.exit(result.returncode)
 
 
+def _bundle_checks():
+    from napari.packaging.bundle import running_as_bundled_app, ensure_installed
+
+    if running_as_bundled_app():
+        ensure_installed()
+
+
 def main():
     # Ensure we're always using a "framework build" on the latest
     # macOS to ensure menubar works without needing to refocus napari.
@@ -425,4 +432,5 @@ def main():
 
 
 if __name__ == '__main__':
+    _bundle_checks()
     sys.exit(main())
