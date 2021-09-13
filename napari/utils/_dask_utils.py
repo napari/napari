@@ -13,6 +13,8 @@ from ..utils.translations import trans
 
 #: dask.cache.Cache, optional : A dask cache for opportunistic caching
 #: use :func:`~.resize_dask_cache` to actually register and resize.
+#: this is a global cache (all layers will use it), but individual layers
+#: can opt out using Layer(..., cache=False)
 _DASK_CACHE = Cache(1)
 _DEFAULT_MEM_FRACTION = 0.25
 
@@ -23,8 +25,7 @@ def resize_dask_cache(
     """Create or resize the dask cache used for opportunistic caching.
 
     The cache object is an instance of a :class:`Cache`, (which
-    wraps a :class:`cachey.Cache`), and is made available at
-    :attr:`napari.utils.dask_cache`.
+    wraps a :class:`cachey.Cache`).
 
     See `Dask opportunistic caching
     <https://docs.dask.org/en/latest/caching.html>`_
@@ -64,6 +65,7 @@ def resize_dask_cache(
     avail = _DASK_CACHE.cache.available_bytes
     # if we don't have a cache already, create one.
     if avail == 1:
+        # If neither nbytes nor mem_fraction was provided, use default
         if nbytes is None:
             nbytes = virtual_memory().total * _DEFAULT_MEM_FRACTION
         _DASK_CACHE.cache.resize(nbytes)

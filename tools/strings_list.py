@@ -1766,7 +1766,6 @@ SKIP_WORDS = {
     ],
     'napari/utils/dask_utils.py': [
         '2.15.0',
-        'dask_cache',
         'optimization.fuse.active',
     ],
     'napari/utils/events/__init__.py': [],
