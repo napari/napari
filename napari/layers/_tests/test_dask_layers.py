@@ -182,8 +182,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] == 1
 
     with layer.dask_optimized_slicing() as (_, cache):
-        assert cache.cache.available_bytes > 0
-        assert not cache.active  # !!
+        assert cache is None
 
     # without optimized dask slicing, we get a new call to the get_array func
     # (which "re-reads" the full z stack) EVERY time we change the Z plane

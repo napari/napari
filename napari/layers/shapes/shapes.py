@@ -202,6 +202,9 @@ class Shapes(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
@@ -425,6 +428,7 @@ class Shapes(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        cache=True,
         experimental_clipping_planes=None,
     ):
         if data is None:
@@ -456,6 +460,7 @@ class Shapes(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
