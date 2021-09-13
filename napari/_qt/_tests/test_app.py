@@ -33,6 +33,7 @@ def test_run_outside_ipython(qapp, monkeypatch):
     """Test that we don't incorrectly give ipython the event loop."""
     assert not _ipython_has_eventloop()
     v1 = Viewer(show=False)
+    v1._create_window()
     assert not _ipython_has_eventloop()
     v2 = Viewer(show=False)
     assert not _ipython_has_eventloop()
