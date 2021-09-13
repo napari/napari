@@ -10,9 +10,7 @@ def test_empty_text_manager_property():
     This is for creating an empty layer with text initialized.
     """
     properties = {'confidence': np.empty(0, dtype=float)}
-    text_manager = TextManager.from_layer_kwargs(
-        text='confidence', properties=properties
-    )
+    text_manager = TextManager(text='confidence', properties=properties)
     assert text_manager.values.size == 0
 
     # add a text element
@@ -27,9 +25,7 @@ def test_empty_text_manager_format():
     """
     properties = {'confidence': np.empty(0, dtype=float)}
     text = 'confidence: {confidence:.2f}'
-    text_manager = TextManager.from_layer_kwargs(
-        text=text, properties=properties
-    )
+    text_manager = TextManager(text=text, properties=properties)
     assert text_manager.values.size == 0
 
     # add a text element
@@ -44,9 +40,7 @@ def test_text_manager_property():
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager = TextManager.from_layer_kwargs(
-        text=text, properties=properties
-    )
+    text_manager = TextManager(text=text, properties=properties)
     np.testing.assert_equal(text_manager.values, classes)
 
     # add new text with properties
@@ -69,9 +63,7 @@ def test_text_manager_format():
     expected_text = np.array(
         ['confidence: 0.50', 'confidence: 0.30', 'confidence: 1.00']
     )
-    text_manager = TextManager.from_layer_kwargs(
-        text=text, properties=properties
-    )
+    text_manager = TextManager(text=text, properties=properties)
     np.testing.assert_equal(text_manager.values, expected_text)
 
     # add new text with properties
@@ -105,9 +97,7 @@ def test_refresh_text():
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager = TextManager.from_layer_kwargs(
-        text=text, properties=properties
-    )
+    text_manager = TextManager(text=text, properties=properties)
 
     new_classes = np.array(['D', 'E', 'F'])
     new_properties = {
@@ -122,17 +112,13 @@ def test_equality():
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager_1 = TextManager.from_layer_kwargs(
-        text=text, properties=properties, color='red'
-    )
-    text_manager_2 = TextManager.from_layer_kwargs(
-        text=text, properties=properties, color='red'
-    )
+    text_manager_1 = TextManager(text=text, properties=properties, color='red')
+    text_manager_2 = TextManager(text=text, properties=properties, color='red')
 
     assert text_manager_1 == text_manager_2
     assert not (text_manager_1 != text_manager_2)
 
-    text_manager_3 = TextManager.from_layer_kwargs(
+    text_manager_3 = TextManager(
         text=text, properties=properties, color='blue'
     )
     assert text_manager_1 != text_manager_3
@@ -143,7 +129,7 @@ def test_blending_modes():
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager = TextManager.from_layer_kwargs(
+    text_manager = TextManager(
         text=text,
         properties=properties,
         color='red',
@@ -162,18 +148,18 @@ def test_blending_modes():
 
 
 def test_constant():
-    text_manager = TextManager.from_layer_kwargs(text='point', properties={})
+    text_manager = TextManager(text='point', properties={})
     assert len(text_manager.values) == 0
 
 
 def test_constant_add():
-    text_manager = TextManager.from_layer_kwargs(text='point', properties={})
+    text_manager = TextManager(text='point', properties={})
     text_manager.add(2)
     np.testing.assert_equal(text_manager.values, ['point', 'point'])
 
 
 def test_constant_remove():
-    text_manager = TextManager.from_layer_kwargs(text='point', properties={})
+    text_manager = TextManager(text='point', properties={})
     text_manager.add(5)
 
     text_manager.remove([1, 3])
@@ -183,13 +169,13 @@ def test_constant_remove():
 
 def test_direct():
     values = ['one', 'two', 'three']
-    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
+    text_manager = TextManager(text=values, properties={})
     np.testing.assert_array_equal(text_manager.values, values)
 
 
 def test_direct_add():
     values = ['one', 'two', 'three']
-    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
+    text_manager = TextManager(text=values, properties={})
 
     text_manager.add(2)
 
@@ -200,7 +186,7 @@ def test_direct_add():
 
 def test_direct_remove():
     values = ['one', 'two', 'three', 'four']
-    text_manager = TextManager.from_layer_kwargs(text=values, properties={})
+    text_manager = TextManager(text=values, properties={})
 
     text_manager.remove([1, 3])
 
@@ -212,7 +198,7 @@ def test_multi_color_direct():
     colors = ['red', 'green', 'blue']
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
 
-    text_manager = TextManager.from_layer_kwargs(
+    text_manager = TextManager(
         text='class', properties=properties, color=colors
     )
 
@@ -225,7 +211,7 @@ def test_multi_color_property():
     colors = ['red', 'green', 'blue']
     properties = {'class': colors, 'confidence': np.array([0.5, 0.3, 1])}
 
-    text_manager = TextManager.from_layer_kwargs(
+    text_manager = TextManager(
         text='class', properties=properties, color='class'
     )
 
@@ -244,7 +230,7 @@ def test_multi_color_property_discrete_map():
         'discrete_map': {'A': 'red', 'B': 'green', 'C': 'blue'},
     }
 
-    text_manager = TextManager.from_layer_kwargs(
+    text_manager = TextManager(
         text='class', properties=properties, color=color
     )
 
@@ -271,7 +257,7 @@ def test_multi_color_property_continuous_map():
         'colormap': 'gray',
     }
 
-    text_manager = TextManager.from_layer_kwargs(
+    text_manager = TextManager(
         text='class', properties=properties, color=color
     )
 

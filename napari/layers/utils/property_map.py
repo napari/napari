@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, Iterable, List, TypeVar, Union
 
+import numpy as np
 from pydantic import validator
 from pydantic.generics import GenericModel
 
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
 from .color_transformations import ColorType
 
 OutputType = TypeVar('OutputType')
@@ -20,23 +20,23 @@ class PropertyMap(EventedModel, GenericModel, Generic[OutputType], ABC):
     def __call__(self, property_row: Dict[str, Any]) -> OutputType:
         pass
 
-    def refresh(self, properties: Dict[str, Array]):
+    def refresh(self, properties: Dict[str, np.ndarray]):
         """Updates all values from the given properties.
 
         Parameters
         ----------
-        properties : Dict[str, Array]
+        properties : Dict[str, np.ndarray]
             The properties of a layer.
         """
         num_values = _num_rows(properties)
         self.values = self._apply(properties, range(0, num_values))
 
-    def add(self, properties: Dict[str, Array], num_to_add: int):
+    def add(self, properties: Dict[str, np.ndarray], num_to_add: int):
         """Adds a number of a new values based on the given properties.
 
         Parameters
         ----------
-        properties : Dict[str, Array]
+        properties : Dict[str, np.ndarray]
             The properties of a layer.
         num_to_add : int
             The number of values to add.
@@ -58,7 +58,9 @@ class PropertyMap(EventedModel, GenericModel, Generic[OutputType], ABC):
             self.values[i] for i in range(len(self.values)) if i not in indices
         ]
 
-    def _apply(self, properties: Dict[str, Array], indices: Iterable[int]):
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices: Iterable[int]
+    ):
         return [
             self({name: column[index] for name, column in properties.items()})
             for index in indices
@@ -67,7 +69,7 @@ class PropertyMap(EventedModel, GenericModel, Generic[OutputType], ABC):
 
 # TODO: if there are no property columns, this will return 0
 # even if there are some data.
-def _num_rows(properties: Dict[str, Array]) -> int:
+def _num_rows(properties: Dict[str, np.ndarray]) -> int:
     return len(next(iter(properties.values()))) if len(properties) > 0 else 0
 
 
@@ -77,7 +79,7 @@ class DirectPropertyMap(PropertyMap[OutputType], Generic[OutputType]):
     def __call__(self, property_row: Dict[str, Any]) -> OutputType:
         return self.default_value
 
-    def refresh(self, properties: Dict[str, Array]):
+    def refresh(self, properties: Dict[str, np.ndarray]):
         pass
         # TODO: should probably resize based on number of rows.
         # num_rows = _num_rows(properties)

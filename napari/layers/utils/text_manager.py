@@ -1,5 +1,4 @@
 import warnings
-from copy import deepcopy
 from typing import Dict, Iterable, Tuple, Union
 
 import numpy as np
@@ -64,16 +63,10 @@ class TextManager(EventedModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._on_color_changed(None)
-        self.events.color.connect(self._on_color_changed)
-        self._on_text_changed(None)
+        self._on_properties_changed(None)
+        self.events.properties.connect(self._on_properties_changed)
         self.events.text.connect(self._on_text_changed)
-
-    def _on_color_changed(self, event):
-        self.color.refresh(self.properties)
-
-    def _on_text_changed(self, event):
-        self.text.refresh(self.properties)
+        self.events.color.connect(self._on_color_changed)
 
     # TODO: apply str cast within the map store to avoid repeated compute.
     @property
@@ -86,12 +79,12 @@ class TextManager(EventedModel):
         values = self.color.values
         return np.empty((0,)) if len(values) == 0 else transform_color(values)
 
-    def refresh_text(self, properties: Dict[str, Array]):
+    def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all text values from the given layer properties.
 
         Parameters
         ----------
-        properties : Dict[str, Array]
+        properties : Dict[str, np.ndarray]
             The properties of a layer.
         """
         self.properties = properties
@@ -184,16 +177,6 @@ class TextManager(EventedModel):
         # if no elements in this slice send dummy data
         return np.array([''])
 
-    @validator('properties', pre=True, always=True)
-    def _check_properties(cls, properties, values):
-        # TODO: may not be a good idea to rely on the instances in values?
-        # Instead we connect to the properties event to update these.
-        if 'text' in values:
-            values['text'].refresh(properties)
-        if 'color' in values:
-            values['color'].refresh(properties)
-        return properties
-
     @validator('text', pre=True, always=True)
     def _check_text(
         cls, text: Union[str, Iterable[str], None], values
@@ -218,7 +201,7 @@ class TextManager(EventedModel):
 
     @classmethod
     def _mapping_from_text(
-        cls, text: str, properties: Dict[str, Array]
+        cls, text: str, properties: Dict[str, np.ndarray]
     ) -> dict:
         if text in properties:
             return {'property_name': text}
@@ -288,36 +271,39 @@ class TextManager(EventedModel):
         # connect the function for updating the text node blending
         self.events.blending.connect(blending_update_function)
 
+    def _on_text_changed(self, event):
+        self.text.refresh(self.properties)
+
+    def _on_color_changed(self, event):
+        self.color.refresh(self.properties)
+
+    def _on_properties_changed(self, event):
+        self.text.refresh(self.properties)
+        self.color.refresh(self.properties)
+
     @classmethod
     def from_layer_kwargs(
         cls,
         text: Union['TextManager', dict, str, Iterable[str], None],
-        properties: Dict[str, Array],
-        **kwargs,
+        properties: Dict[str, np.ndarray],
     ):
-        """Create a TextManager from layer keyword arguments and TextManager attributes.
+        """Create a TextManager from a layer.
 
         Parameters
         ----------
         text : Union[TextManager, dict, str, Iterable[str], None]
             The strings to be displayed, or a format string to be filled out using properties.
-        properties: Dict[str, Array]
-            Stores properties data that will be used to generate strings.
-        **kwargs
-            The other accepted keyword arguments as named and described as TextManager's attributes.
+        properties: Dict[str, np.ndarray]
+            Stores properties data that will be used to generate text.
         """
         if isinstance(text, TextManager):
-            manager = text
-            manager.properties = properties
+            kwargs = text.dict()
         elif isinstance(text, dict):
-            kwargs = deepcopy(text)
-            kwargs['properties'] = properties
-            manager = cls(**kwargs)
+            kwargs = text
         else:
-            kwargs['text'] = text
-            kwargs['properties'] = properties
-            manager = cls(**kwargs)
-        return manager
+            kwargs = {'text': text}
+        kwargs['properties'] = properties
+        return cls(**kwargs)
 
 
 def _properties_equal(left, right):
