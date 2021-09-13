@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from napari.layers.utils.property_map import PropertyMap
 from napari.layers.utils.text_manager import TextManager
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -240,10 +239,10 @@ def test_multi_color_property_discrete_map():
         'class': ['A', 'B', 'C'],
         'confidence': np.array([0.5, 0.3, 1]),
     }
-    color = PropertyMap.from_discrete_map(
-        property_name='class',
-        discrete_map={'A': 'red', 'B': 'green', 'C': 'blue'},
-    )
+    color = {
+        'property_name': 'class',
+        'discrete_map': {'A': 'red', 'B': 'green', 'C': 'blue'},
+    }
 
     text_manager = TextManager.from_layer_kwargs(
         text='class', properties=properties, color=color
@@ -253,16 +252,24 @@ def test_multi_color_property_discrete_map():
         text_manager.color_values, transform_color(['red', 'green', 'blue'])
     )
 
+    text_manager.color = {
+        'property_name': 'class',
+        'discrete_map': {'A': 'purple', 'B': 'green', 'C': 'blue'},
+    }
+    np.testing.assert_array_equal(
+        text_manager.color_values, transform_color(['purple', 'green', 'blue'])
+    )
+
 
 def test_multi_color_property_continuous_map():
     properties = {
         'class': ['A', 'B', 'C'],
         'confidence': np.array([0.5, 0, 1]),
     }
-    color = PropertyMap.from_colormap(
-        property_name='confidence',
-        colormap='gray',
-    )
+    color = {
+        'property_name': 'confidence',
+        'colormap': 'gray',
+    }
 
     text_manager = TextManager.from_layer_kwargs(
         text='class', properties=properties, color=color

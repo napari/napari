@@ -13,7 +13,7 @@ from ..base._base_constants import Blending
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .color_transformations import ColorType
-from .property_map import PropertyMap
+from .property_map import ColorPropertyMap, PropertyMap, StringPropertyMap
 
 DEFAULT_COLOR = 'cyan'
 
@@ -59,8 +59,21 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    text: PropertyMap[str] = ''
-    color: PropertyMap[ColorType] = DEFAULT_COLOR
+    text: StringPropertyMap = ''
+    color: ColorPropertyMap = DEFAULT_COLOR
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._on_color_changed(None)
+        self.events.color.connect(self._on_color_changed)
+        self._on_text_changed(None)
+        self.events.text.connect(self._on_text_changed)
+
+    def _on_color_changed(self, event):
+        self.color.refresh(self.properties)
+
+    def _on_text_changed(self, event):
+        self.text.refresh(self.properties)
 
     # TODO: apply str cast within the map store to avoid repeated compute.
     @property
@@ -184,35 +197,34 @@ class TextManager(EventedModel):
     @validator('text', pre=True, always=True)
     def _check_text(
         cls, text: Union[str, Iterable[str], None], values
-    ) -> PropertyMap[str]:
+    ) -> Union[dict, PropertyMap[str]]:
         properties = values['properties']
         if isinstance(text, str):
             property_map = cls._mapping_from_text(text, properties)
         elif isinstance(text, Iterable):
-            property_map = PropertyMap.from_iterable(text, '')
+            property_map = {'values': text, 'default_value': ''}
         elif isinstance(text, PropertyMap):
-            # Make a defensive copy to store different values for different attributes that share a map.
-            property_map = text.copy(deep=True)
+            property_map = text
         elif text is None:
-            property_map = PropertyMap.from_constant('')
+            property_map = {'constant': ''}
         else:
             raise TypeError(
                 trans._(
-                    'text should be a string, iterable, or None', deferred=True
+                    'text should be a string, iterable, PropertyMap[str], or None',
+                    deferred=True,
                 )
             )
-        property_map.refresh(properties)
         return property_map
 
     @classmethod
     def _mapping_from_text(
         cls, text: str, properties: Dict[str, Array]
-    ) -> PropertyMap[str]:
+    ) -> dict:
         if text in properties:
-            return PropertyMap.from_property(text)
+            return {'property_name': text}
         elif ('{' in text) and ('}' in text):
-            return PropertyMap.from_format_string(text)
-        return PropertyMap.from_constant(constant=text)
+            return {'format_string': text}
+        return {'constant': text}
 
     @validator('color', pre=True, always=True)
     def _check_color(
@@ -220,22 +232,23 @@ class TextManager(EventedModel):
     ) -> PropertyMap[ColorType]:
         properties = values['properties']
         if color is None:
-            property_map = PropertyMap.from_constant(DEFAULT_COLOR)
+            property_map = {'constant': DEFAULT_COLOR}
         elif isinstance(color, str) and color in properties:
-            property_map = PropertyMap.from_property(color)
+            property_map = {'property_name': color}
         elif isinstance(color, PropertyMap):
-            # Make a defensive copy to store different values for different attributes that share a map.
-            property_map = color.copy(deep=True)
+            property_map = color
+        elif isinstance(color, dict):
+            property_map = color
         else:
             color_array = transform_color(color)
             n_colors = color_array.shape[0]
             if n_colors > 1:
-                property_map = PropertyMap.from_iterable(
-                    list(color), DEFAULT_COLOR
-                )
+                property_map = {
+                    'values': list(color),
+                    'default_value': DEFAULT_COLOR,
+                }
             else:
-                property_map = PropertyMap.from_constant(color)
-        property_map.refresh(properties)
+                property_map = {'constant': color}
         return property_map
 
     @validator('blending', pre=True, always=True)

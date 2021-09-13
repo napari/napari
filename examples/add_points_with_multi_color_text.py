@@ -26,7 +26,10 @@ good_point_color = {
 text = {
     'text': 'Confidence is {confidence:.2f}',
     'size': 20,
-    'color': PropertyMap.from_discrete_map('good_point', good_point_color),
+    'color': {
+        'property_name': 'good_point',
+        'discrete_map': good_point_color,
+    },
     'translation': np.array([-30, 0]),
 }
 

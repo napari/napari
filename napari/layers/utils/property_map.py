@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Iterable, List, TypeVar
+from typing import Any, Dict, Generic, Iterable, List, TypeVar, Union
 
 from pydantic import validator
+from pydantic.generics import GenericModel
 
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
@@ -12,7 +13,7 @@ from .color_transformations import ColorType
 OutputType = TypeVar('OutputType')
 
 
-class PropertyMap(ABC, Generic[OutputType], EventedModel):
+class PropertyMap(EventedModel, GenericModel, Generic[OutputType], ABC):
     values: List[OutputType] = []
 
     @abstractmethod
@@ -63,44 +64,6 @@ class PropertyMap(ABC, Generic[OutputType], EventedModel):
             for index in indices
         ]
 
-    @staticmethod
-    def _num_values(properties):
-        return (
-            len(next(iter(properties.values()))) if len(properties) > 0 else 0
-        )
-
-    @classmethod
-    def from_format_string(cls, format_string: str):
-        return TextFormatPropertyMap(format_string=format_string)
-
-    @classmethod
-    def from_property(cls, property_name: OutputType):
-        return NamedPropertyMap(name=property_name)
-
-    @classmethod
-    def from_constant(cls, constant: OutputType):
-        return ConstantPropertyMap(constant=constant)
-
-    @classmethod
-    def from_discrete_map(
-        cls, property_name: str, discrete_map: Dict[Any, OutputType]
-    ):
-        return NamedPropertyDiscreteMap(
-            name=property_name, discrete_map=discrete_map
-        )
-
-    @classmethod
-    def from_colormap(cls, property_name: str, colormap: ValidColormapArg):
-        return NamedPropertyColorMap(name=property_name, colormap=colormap)
-
-    @classmethod
-    def from_iterable(
-        cls, iterable: Iterable[OutputType], default_value: OutputType
-    ):
-        return DirectPropertyMap(
-            values=list(iterable), default_value=default_value
-        )
-
 
 # TODO: if there are no property columns, this will return 0
 # even if there are some data.
@@ -108,23 +71,24 @@ def _num_rows(properties: Dict[str, Array]) -> int:
     return len(next(iter(properties.values()))) if len(properties) > 0 else 0
 
 
-class DirectPropertyMap(PropertyMap[OutputType], EventedModel):
+class DirectPropertyMap(PropertyMap[OutputType], Generic[OutputType]):
     default_value: OutputType
 
-    # TODO: if the row had an index, we could look up the value,
-    # which might be more meaningful.
     def __call__(self, property_row: Dict[str, Any]) -> OutputType:
         return self.default_value
 
-    # TODO: May want to resize values based on size of properties.
     def refresh(self, properties: Dict[str, Array]):
         pass
+        # TODO: should probably resize based on number of rows.
+        # num_rows = _num_rows(properties)
+        # num_values = len(self.values)
+        # if num_values > num_rows:
+        #    self.remove(range(num_rows, num_values))
+        # elif num_values < num_rows:
+        #    self.add(num_rows - num_values)
 
-    def add(self, properties: Dict[str, Array], num_to_add: int):
-        self.values.extend([self.default_value] * num_to_add)
 
-
-class ConstantPropertyMap(PropertyMap[OutputType], EventedModel):
+class ConstantPropertyMap(PropertyMap[OutputType], Generic[OutputType]):
     """Maps from a property row to a constant.
 
     Attributes
@@ -139,40 +103,40 @@ class ConstantPropertyMap(PropertyMap[OutputType], EventedModel):
         return self.constant
 
 
-class NamedPropertyMap(PropertyMap[OutputType], EventedModel):
+class NamedPropertyMap(PropertyMap[OutputType], Generic[OutputType]):
     """Maps from a property row to a property value by name.
 
     Attributes
     ----------
-    name : str
+    property_name : str
         The name of the property to select from a row.
     """
 
-    name: str
+    property_name: str
 
     def __call__(self, property_row: Dict[str, Any]) -> OutputType:
-        return property_row[self.name]
+        return property_row[self.property_name]
 
 
-class NamedPropertyDiscreteMap(PropertyMap[OutputType], EventedModel):
+class NamedPropertyDiscreteMap(PropertyMap[OutputType], Generic[OutputType]):
     """Maps from a property row to a property value by name to another value defined by a discrete mapping.
 
     Attributes
     ----------
-    name : str
+    property_name : str
         The name of the property to select from a row.
     discrete_map : dict
         The map from the discrete named property value to the output value.
     """
 
-    name: str
+    property_name: str
     discrete_map: dict[Any, OutputType]
 
     def __call__(self, property_row: Dict[str, Any]) -> OutputType:
-        return self.discrete_map.get(property_row[self.name])
+        return self.discrete_map.get(property_row[self.property_name])
 
 
-class NamedPropertyColorMap(PropertyMap[ColorType], EventedModel):
+class NamedPropertyColorMap(PropertyMap[ColorType]):
     """Maps from a property row to a property value by name to another value defined by a discrete mapping.
 
     Attributes
@@ -183,18 +147,18 @@ class NamedPropertyColorMap(PropertyMap[ColorType], EventedModel):
         The map from the continuous named property value to the output color value.
     """
 
-    name: str
+    property_name: str
     colormap: Colormap
 
     def __call__(self, property_row: Dict[str, Any]) -> ColorType:
-        return self.colormap.map(property_row[self.name])[0]
+        return self.colormap.map(property_row[self.property_name])[0]
 
     @validator('colormap', pre=True, always=True)
     def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
         return ensure_colormap(colormap)
 
 
-class TextFormatPropertyMap(PropertyMap[str], EventedModel):
+class TextFormatPropertyMap(PropertyMap[str]):
     """Maps from a property row to a formatted string containing property names.
 
     Attributes
@@ -208,3 +172,21 @@ class TextFormatPropertyMap(PropertyMap[str], EventedModel):
 
     def __call__(self, property_row: Dict[str, Any]) -> str:
         return self.format_string.format(**property_row)
+
+
+ColorPropertyMap = Union[
+    NamedPropertyColorMap,
+    NamedPropertyDiscreteMap[ColorType],
+    NamedPropertyMap[ColorType],
+    DirectPropertyMap[ColorType],
+    ConstantPropertyMap[ColorType],
+]
+
+
+StringPropertyMap = Union[
+    TextFormatPropertyMap,
+    NamedPropertyDiscreteMap[str],
+    NamedPropertyMap[str],
+    DirectPropertyMap[str],
+    ConstantPropertyMap[str],
+]
