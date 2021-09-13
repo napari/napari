@@ -224,7 +224,7 @@ class WorkerBase(QRunnable):
            V               V             V
            worker.start -> worker.run -> worker.work
         """
-        if self in WorkerBase._worker_set:
+        if self in self._worker_set:
             raise RuntimeError(
                 trans._(
                     'This worker is already started!',
@@ -235,10 +235,14 @@ class WorkerBase(QRunnable):
         # This will raise a RunTimeError if the worker is already deleted
         repr(self)
 
-        WorkerBase._worker_set.add(self)
-        self._finished.connect(WorkerBase._worker_set.discard)
+        self._worker_set.add(self)
+        self._finished.connect(self._set_discard)
         start_ = partial(QThreadPool.globalInstance().start, self)
         QTimer.singleShot(10, start_)
+
+    @classmethod
+    def _set_discard(cls, obj):
+        cls._worker_set.discard(obj)
 
 
 class FunctionWorker(WorkerBase):
