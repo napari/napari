@@ -10,6 +10,7 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils import config
+from ...utils._dtype import normalize_dtype
 from ...utils._dtype import get_dtype_limits
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
@@ -295,7 +296,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
                 dtype = getattr(data, 'dtype', None)
-                if np.issubdtype(dtype, np.integer):
+                if np.issubdtype(normalize_dtype(dtype), np.integer):
                     self.contrast_limits_range = get_dtype_limits(dtype)
                 else:
                     self.contrast_limits_range = (0, 1)
