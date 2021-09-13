@@ -302,6 +302,7 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
+            text=Event,
         )
 
         self._colors = get_color_namelist()
@@ -519,9 +520,7 @@ class Points(Layer):
             self._current_properties,
             "edge_color",
         )
-
-        if self.text.values is not None:
-            self.refresh_text()
+        self.refresh_text()
         self.events.properties()
 
     @property
@@ -557,6 +556,7 @@ class Points(Layer):
     @text.setter
     def text(self, text):
         self._text = TextManager.from_layer_kwargs(text, self.properties)
+        self.events.text()
 
     def refresh_text(self):
         """Refresh the text values.

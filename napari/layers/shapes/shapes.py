@@ -467,6 +467,7 @@ class Shapes(Layer):
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
+            text=Event,
         )
 
         # Flag set to false to block thumbnail refresh
@@ -711,9 +712,7 @@ class Shapes(Layer):
                 ),
                 RuntimeWarning,
             )
-
-        if self.text.values is not None:
-            self.refresh_text()
+        self.refresh_text()
         self.events.properties()
 
     @property
@@ -2214,6 +2213,7 @@ class Shapes(Layer):
     @text.setter
     def text(self, text):
         self._text = TextManager.from_layer_kwargs(text, self.properties)
+        self.events.text()
 
     def refresh_text(self):
         """Refresh the text values.

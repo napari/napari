@@ -63,7 +63,7 @@ class TextManager(EventedModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._on_properties_changed(None)
+        self._on_properties_changed()
         self.events.properties.connect(self._on_properties_changed)
         self.events.text.connect(self._on_text_changed)
         self.events.color.connect(self._on_color_changed)
@@ -271,13 +271,13 @@ class TextManager(EventedModel):
         # connect the function for updating the text node blending
         self.events.blending.connect(blending_update_function)
 
-    def _on_text_changed(self, event):
+    def _on_text_changed(self, event=None):
         self.text.refresh(self.properties)
 
-    def _on_color_changed(self, event):
+    def _on_color_changed(self, event=None):
         self.color.refresh(self.properties)
 
-    def _on_properties_changed(self, event):
+    def _on_properties_changed(self, event=None):
         self.text.refresh(self.properties)
         self.color.refresh(self.properties)
 

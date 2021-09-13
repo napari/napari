@@ -22,14 +22,19 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
-        self.layer.text._connect_update_events(
-            self._on_text_change, self._on_blending_change
-        )
+        self.layer.events.text.connect(self._on_layer_text_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
 
         self._reset_base()
+        self._on_layer_text_change()
         self._on_data_change()
         self._on_highlight_change()
+
+    def _on_layer_text_change(self, event=None):
+        self.layer.text._connect_update_events(
+            self._on_text_change, self._on_blending_change
+        )
+        self._on_text_change()
 
     def _on_data_change(self, event=None):
         faces = self.layer._data_view._mesh.displayed_triangles
