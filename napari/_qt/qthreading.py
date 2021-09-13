@@ -15,8 +15,8 @@ from qtpy.QtCore import (
     Slot,
 )
 
+from ..utils import progress
 from ..utils.translations import trans
-from .qprogress import progress
 
 
 def as_generator_function(func: Callable) -> Callable:
