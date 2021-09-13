@@ -43,11 +43,11 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from .widgets.qt_welcome import QtWidgetOverlay
 
 from .._vispy import (  # isort:skip
-    VispyAxesVisual,
+    VispyAxesOverlay,
     VispyCamera,
     VispyCanvas,
-    VispyScaleBarVisual,
-    VispyTextVisual,
+    VispyScaleBarOverlay,
+    VispyTextOverlay,
     create_vispy_visual,
 )
 
@@ -303,18 +303,18 @@ class QtViewer(QSplitter):
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
 
-        self.axes = VispyAxesVisual(
+        self.axes = VispyAxesOverlay(
             self.viewer,
             parent=self.view.scene,
             order=1e6,
         )
-        self.scale_bar = VispyScaleBarVisual(
+        self.scale_bar = VispyScaleBarOverlay(
             self.viewer,
             parent=self.view,
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-        self.text_overlay = VispyTextVisual(
+        self.text_overlay = VispyTextOverlay(
             self.viewer,
             parent=self.view,
             order=1e6 + 2,

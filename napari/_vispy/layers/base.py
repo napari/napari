@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
-from ..utils.events import disconnect_events
-from .utils_gl import get_max_texture_sizes
+from ...utils.events import disconnect_events
+from ..utils.gl import get_max_texture_sizes
 
 
 class VispyBaseLayer(ABC):
@@ -158,7 +158,7 @@ class VispyBaseLayer(ABC):
                 self.layer.experimental_clipping_planes.as_array()
             )
 
-    def _reset_base(self):
+    def reset(self):
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()

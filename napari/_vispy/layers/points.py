@@ -1,11 +1,11 @@
 import numpy as np
 
-from ..settings import get_settings
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.events import disconnect_events
-from ._text_utils import update_text
-from .vispy_base_layer import VispyBaseLayer
-from .vispy_points_visual import PointsVisual
+from ...settings import get_settings
+from ...utils.colormaps.standardize_color import transform_color
+from ...utils.events import disconnect_events
+from ..utils.text import update_text
+from ..visuals.points import PointsVisual
+from .base import VispyBaseLayer
 
 
 class VispyPointsLayer(VispyBaseLayer):
@@ -15,12 +15,7 @@ class VispyPointsLayer(VispyBaseLayer):
     def __init__(self, layer):
         self._highlight_width = get_settings().appearance.highlight_thickness
 
-        # Create a compound visual with the following four subvisuals:
-        # Lines: The lines of the interaction box used for highlights.
-        # Markers: The the outlines for each point used for highlights.
-        # Markers: The actual markers of each point.
         node = PointsVisual()
-
         super().__init__(layer, node)
 
         self.layer.events.symbol.connect(self._on_data_change)
@@ -37,6 +32,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.events.antialias.connect(self._on_antialias_change)
 
+        self.reset()
         self._on_data_change()
 
     def _on_data_change(self, event=None):
@@ -174,7 +170,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.antialias = self.layer.antialias
 
     def reset(self, event=None):
-        self._reset_base()
+        super().reset()
         self._on_blending_change()
         self._on_text_change()
         self._on_highlight_change()

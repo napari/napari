@@ -3,9 +3,9 @@ Start with:
 ```
 export GH_TOKEN=<your-gh-api-token>
 ```
-Then, for to include everything from a certain release to master:
+Then, for to include everything from a certain release to main:
 ```
-python /path/to/generate_release_notes.py v0.14.0 master --version 0.15.0
+python /path/to/generate_release_notes.py v0.14.0 main --version 0.15.0
 ```
 Or two include only things between two releases:
 ```
@@ -20,7 +20,7 @@ You'll require PyGitHub and tqdm, which you can install with:
 pip install -e ".[release]"
 ```
 References
-https://github.com/scikit-image/scikit-image/blob/master/tools/generate_release_notes.py
+https://github.com/scikit-image/scikit-image/blob/main/tools/generate_release_notes.py
 https://github.com/scikit-image/scikit-image/issues/3404
 https://github.com/scikit-image/scikit-image/issues/3405
 """

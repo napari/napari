@@ -1,15 +1,12 @@
-"""Label visual."""
-# Third-party imports
 from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
 
-# Local imports
-from ..components._viewer_constants import TextOverlayPosition
-from ..utils.translations import trans
+from ...components._viewer_constants import TextOverlayPosition
+from ...utils.translations import trans
 
 
-class VispyTextVisual:
-    """Text overlay visual."""
+class VispyTextOverlay:
+    """Text overlay."""
 
     def __init__(self, viewer, parent=None, order=1e6):
         self._viewer = viewer

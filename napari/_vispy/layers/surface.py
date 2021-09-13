@@ -3,9 +3,9 @@ import warnings
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 
-from ..utils.translations import trans
-from .mesh import Mesh
-from .vispy_base_layer import VispyBaseLayer
+from ...utils.translations import trans
+from ..visuals.mesh import Mesh
+from .base import VispyBaseLayer
 
 
 class VispySurfaceLayer(VispyBaseLayer):
@@ -13,12 +13,11 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     View is based on the vispy mesh node and uses default values for
     lighting direction and lighting color. More information can be found
-    here https://github.com/vispy/vispy/blob/master/vispy/visuals/mesh.py
+    here https://github.com/vispy/vispy/blob/main/vispy/visuals/mesh.py
     """
 
     def __init__(self, layer):
         node = Mesh()
-
         super().__init__(layer, node)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -101,6 +100,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.mesh_data_changed()
 
     def reset(self, event=None):
-        self._reset_base()
+        super().reset()
         self._on_colormap_change()
         self._on_contrast_limits_change()
+        self._on_shading_change()
