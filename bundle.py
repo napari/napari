@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
 import tomlkit
 
@@ -62,9 +63,7 @@ def patched_toml():
     # Initialize EXTRA_REQS from setup.cfg 'options.extras_require.bundle_run'
     bundle_run = parser.get("options.extras_require", "bundle_run")
     EXTRA_REQS = [
-        requirement.split('#')[0].strip()
-        for requirement in bundle_run.splitlines()
-        if requirement
+        requirement.split('#')[0].strip() for requirement in bundle_run.splitlines() if requirement
     ]
 
     # parse command line arguments
@@ -137,11 +136,27 @@ def patch_dmgbuild():
         f.write(
             src.replace(
                 "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)",
-                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)"
-                ";time.sleep(30)",
+                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)" ";time.sleep(30)",
             )
         )
         print("patched dmgbuild.core")
+
+
+def undo_patch_dmgbuild():
+    if not MACOS:
+        return
+    from dmgbuild import core
+
+    with open(core.__file__) as f:
+        src = f.read()
+    with open(core.__file__, 'w') as f:
+        f.write(
+            src.replace(
+                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True);time.sleep(30)",
+                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)",
+            )
+        )
+        print("reverted patched dmgbuild.core")
 
 
 def add_site_packages_to_path():
@@ -194,9 +209,7 @@ def patch_wxs():
 
 def patch_python_lib_location():
     # must run after briefcase create
-    support = os.path.join(
-        BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support"
-    )
+    support = os.path.join(BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support")
     python_resources = os.path.join(support, "Python", "Resources")
     os.makedirs(python_resources, exist_ok=True)
     for subdir in ("bin", "lib"):
@@ -208,6 +221,13 @@ def patch_python_lib_location():
 
 def patch_environment_variables():
     os.environ["ARCH"] = architecture()
+
+
+def add_sentinel_file():
+    if MACOS:
+        (Path(APP_DIR) / "Contents" / "MacOS" / ".napari_is_bundled").touch()
+    else:
+        (Path(BUILD_DIR) / "bin" / ".napari_is_bundled").touch()
 
 
 def architecture():
@@ -263,6 +283,7 @@ def bundle():
         time.sleep(0.5)
 
         add_site_packages_to_path()
+        add_sentinel_file()
 
         if WINDOWS:
             patch_wxs()
@@ -281,6 +302,9 @@ def bundle():
         # compress
         dest = make_zip()
         clean()
+
+        if MACOS:
+            undo_patch_dmgbuild()
 
         return dest
 
