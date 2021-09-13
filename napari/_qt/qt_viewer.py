@@ -160,9 +160,7 @@ class QtViewer(QSplitter):
         self.dockConsole.setVisible(False)
         # because the console is loaded lazily in the @getter, this line just
         # gets (or creates) the console when the dock console is made visible.
-        self.dockConsole.visibilityChanged.connect(
-            lambda visible: self.console if visible else None
-        )
+        self.dockConsole.visibilityChanged.connect(self._ensure_connect)
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
@@ -256,6 +254,10 @@ class QtViewer(QSplitter):
 
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
+
+    def _ensure_connect(self):
+        # lazy load console
+        id(self.console)
 
     def _bind_shortcuts(self):
         """Bind shortcuts stored in SETTINGS to actions."""

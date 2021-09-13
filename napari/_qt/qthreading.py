@@ -34,6 +34,7 @@ class WorkerBaseSignals(QObject):
 
     started = Signal()  # emitted when the work is started
     finished = Signal()  # emitted when the work is finished
+    _finished = Signal(object)  # emitted when the work is finished ro delete
     returned = Signal(object)  # emitted with return value
     errored = Signal(object)  # emitted with error object on Exception
     warned = Signal(tuple)  # emitted with showwarning args on warning
@@ -173,6 +174,7 @@ class WorkerBase(QRunnable):
             self.errored.emit(exc)
         self._running = False
         self.finished.emit()
+        self._finished.emit(self)
 
     def work(self) -> Union[Exception, Any]:
         """Main method to execute the worker.
@@ -234,7 +236,7 @@ class WorkerBase(QRunnable):
         repr(self)
 
         WorkerBase._worker_set.add(self)
-        self.finished.connect(lambda: WorkerBase._worker_set.discard(self))
+        self._finished.connect(WorkerBase._worker_set.discard)
         start_ = partial(QThreadPool.globalInstance().start, self)
         QTimer.singleShot(10, start_)
 

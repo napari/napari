@@ -103,7 +103,7 @@ class Installer(QObject):
         self.set_output_widget(self._output_widget)
         process.finished.connect(
             lambda ec, es: self._on_process_finished(process, ec, es)
-        )
+        )  # FIXME
         return process
 
     def _sys_executable_or_bundled_python(self):
