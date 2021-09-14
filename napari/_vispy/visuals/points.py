@@ -18,3 +18,20 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     def __init__(self):
         super().__init__([Markers(), Markers(), Line(), Text()])
+
+    @property
+    def antialias(self):
+        return self._subvisuals[0]._antialias
+
+    @antialias.setter
+    def antialias(self, value):
+        for marker in self._subvisuals[:2]:
+            marker.antialias = value
+
+    @property
+    def spherical(self):
+        return self._subvisuals[0]._spherical
+
+    @spherical.setter
+    def spherical(self, value):
+        self._subvisuals[0].spherical = value

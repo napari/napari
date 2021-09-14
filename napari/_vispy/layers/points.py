@@ -31,6 +31,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.events.antialias.connect(self._on_antialias_change)
+        self.layer.events.spherical.connect(self._on_spherical_change)
 
         self.reset()
         self._on_data_change()
@@ -168,6 +169,9 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _on_antialias_change(self, event=None):
         self.node.antialias = self.layer.antialias
+
+    def _on_spherical_change(self, event=None):
+        self.node.spherical = self.layer.spherical
 
     def reset(self, event=None):
         super().reset()

@@ -270,6 +270,7 @@ class Points(Layer):
         property_choices=None,
         experimental_clipping_planes=None,
         antialias=1,
+        spherical=False,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -306,6 +307,7 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
             antialias=Event,
+            spherical=Event,
         )
 
         self._colors = get_color_namelist()
@@ -393,6 +395,7 @@ class Points(Layer):
 
         self.size = size
         self.antialias = antialias
+        self.spherical = spherical
 
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(self.data)
@@ -684,6 +687,15 @@ class Points(Layer):
     def antialias(self, value) -> Union[int, float]:
         self._antialias = value
         self.events.antialias()
+
+    @property
+    def spherical(self):
+        return self._spherical
+
+    @spherical.setter
+    def spherical(self, value) -> Union[int, float]:
+        self._spherical = value
+        self.events.spherical()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
