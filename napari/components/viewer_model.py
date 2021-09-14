@@ -447,7 +447,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent : array, shape (2, D)
             Extent of the world.
         """
-        scene_shift = extent[1] - extent[0] + 1
+        scene_shift = extent[1] - extent[0]
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
