@@ -10,8 +10,7 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils import config
-from ...utils._dtype import normalize_dtype
-from ...utils._dtype import get_dtype_limits
+from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
