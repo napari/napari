@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Iterable, Tuple, Union
+from typing import Dict, Iterable, Tuple, Union, get_args
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -12,7 +12,7 @@ from ..base._base_constants import Blending
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .color_transformations import ColorType
-from .property_map import ColorPropertyMap, PropertyMap, StringPropertyMap
+from .style_encoding import ColorEncoding, StringEncoding
 
 DEFAULT_COLOR = 'cyan'
 
@@ -42,9 +42,9 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     properties : Dict[str, Array]
         The property values, which typically come from a layer.
-    color : PropertyMap[ColorType]
+    color : ColorEncoding
         Defines the color for each text element in colors.values
-    text : PropertyMap[str]
+    text : StringEncoding
         Defines the string for each text element in text.values
     """
 
@@ -58,8 +58,8 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    text: StringPropertyMap = ''
-    color: ColorPropertyMap = DEFAULT_COLOR
+    text: StringEncoding = {'constant': ''}
+    color: ColorEncoding = {'constant': DEFAULT_COLOR}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -179,28 +179,32 @@ class TextManager(EventedModel):
 
     @validator('text', pre=True, always=True)
     def _check_text(
-        cls, text: Union[str, Iterable[str], None], values
-    ) -> Union[dict, PropertyMap[str]]:
+        cls,
+        text: Union[str, Iterable[str], StringEncoding, dict, None],
+        values,
+    ) -> dict:
         properties = values['properties']
-        if isinstance(text, str):
-            property_map = cls._mapping_from_text(text, properties)
+        if text is None:
+            encoding = {'constant': ''}
+        elif isinstance(text, str):
+            encoding = cls._encoding_from_text(text, properties)
         elif isinstance(text, Iterable):
-            property_map = {'values': text, 'default_value': ''}
-        elif isinstance(text, PropertyMap):
-            property_map = text
-        elif text is None:
-            property_map = {'constant': ''}
+            encoding = {'values': text, 'default_value': ''}
+        elif isinstance(text, get_args(StringEncoding)):
+            encoding = text.dict()
+        elif isinstance(text, dict):
+            encoding = text
         else:
             raise TypeError(
                 trans._(
-                    'text should be a string, iterable, PropertyMap[str], or None',
+                    'text should be a string, iterable, StringEncoding, dict, or None',
                     deferred=True,
                 )
             )
-        return property_map
+        return encoding
 
     @classmethod
-    def _mapping_from_text(
+    def _encoding_from_text(
         cls, text: str, properties: Dict[str, np.ndarray]
     ) -> dict:
         if text in properties:
@@ -211,28 +215,34 @@ class TextManager(EventedModel):
 
     @validator('color', pre=True, always=True)
     def _check_color(
-        cls, color: Union[ColorType, Iterable[ColorType], None], values
-    ) -> PropertyMap[ColorType]:
+        cls,
+        color: Union[
+            ColorType, Iterable[ColorType], ColorEncoding, dict, None
+        ],
+        values,
+    ) -> dict:
         properties = values['properties']
         if color is None:
-            property_map = {'constant': DEFAULT_COLOR}
+            encoding = {'constant': DEFAULT_COLOR}
         elif isinstance(color, str) and color in properties:
-            property_map = {'property_name': color}
-        elif isinstance(color, PropertyMap):
-            property_map = color
+            encoding = {'property_name': color}
+        elif isinstance(color, get_args(ColorEncoding)):
+            encoding = color.dict()
         elif isinstance(color, dict):
-            property_map = color
+            encoding = color
         else:
+            # TODO: distinguish between single color and array of length one.
+            # as constant vs. direct.
             color_array = transform_color(color)
             n_colors = color_array.shape[0]
             if n_colors > 1:
-                property_map = {
+                encoding = {
                     'values': list(color),
                     'default_value': DEFAULT_COLOR,
                 }
             else:
-                property_map = {'constant': color}
-        return property_map
+                encoding = {'constant': color}
+        return encoding
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):

@@ -5,7 +5,6 @@ add_image APIs
 
 import numpy as np
 import napari
-from napari.layers.utils.property_map import PropertyMap
 
 # add the image
 viewer = napari.view_image(np.zeros((400, 400)))
@@ -28,7 +27,7 @@ text = {
     'size': 20,
     'color': {
         'property_name': 'good_point',
-        'discrete_map': good_point_color,
+        'mapping': good_point_color,
     },
     'translation': np.array([-30, 0]),
 }

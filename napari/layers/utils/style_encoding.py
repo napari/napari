@@ -13,11 +13,11 @@ from .color_transformations import ColorType
 OutputType = TypeVar('OutputType')
 
 
-class PropertyMap(EventedModel, GenericModel, Generic[OutputType], ABC):
+class StyleEncoding(EventedModel, GenericModel, Generic[OutputType], ABC):
     values: List[OutputType] = []
 
     @abstractmethod
-    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
+    def apply_to_row(self, property_row: Dict[str, Any]) -> OutputType:
         pass
 
     def refresh(self, properties: Dict[str, np.ndarray]):
@@ -29,7 +29,7 @@ class PropertyMap(EventedModel, GenericModel, Generic[OutputType], ABC):
             The properties of a layer.
         """
         num_values = _num_rows(properties)
-        self.values = self._apply(properties, range(0, num_values))
+        self.values = self._apply_to_table(properties, range(0, num_values))
 
     def add(self, properties: Dict[str, np.ndarray], num_to_add: int):
         """Adds a number of a new values based on the given properties.
@@ -43,7 +43,7 @@ class PropertyMap(EventedModel, GenericModel, Generic[OutputType], ABC):
         """
         num_values = _num_rows(properties)
         indices = range(num_values - num_to_add, num_values)
-        self.values.extend(self._apply(properties, indices))
+        self.values.extend(self._apply_to_table(properties, indices))
 
     def remove(self, indices: Iterable[int]):
         """Removes some values by index.
@@ -58,11 +58,13 @@ class PropertyMap(EventedModel, GenericModel, Generic[OutputType], ABC):
             self.values[i] for i in range(len(self.values)) if i not in indices
         ]
 
-    def _apply(
+    def _apply_to_table(
         self, properties: Dict[str, np.ndarray], indices: Iterable[int]
     ):
         return [
-            self({name: column[index] for name, column in properties.items()})
+            self.apply_to_row(
+                {name: column[index] for name, column in properties.items()}
+            )
             for index in indices
         ]
 
@@ -73,10 +75,10 @@ def _num_rows(properties: Dict[str, np.ndarray]) -> int:
     return len(next(iter(properties.values()))) if len(properties) > 0 else 0
 
 
-class DirectPropertyMap(PropertyMap[OutputType], Generic[OutputType]):
+class DirectEncoding(StyleEncoding[OutputType], Generic[OutputType]):
     default_value: OutputType
 
-    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
+    def apply_to_row(self, property_row: Dict[str, Any]) -> OutputType:
         return self.default_value
 
     def refresh(self, properties: Dict[str, np.ndarray]):
@@ -90,22 +92,22 @@ class DirectPropertyMap(PropertyMap[OutputType], Generic[OutputType]):
         #    self.add(num_rows - num_values)
 
 
-class ConstantPropertyMap(PropertyMap[OutputType], Generic[OutputType]):
+class ConstantEncoding(StyleEncoding[OutputType], Generic[OutputType]):
     """Maps from a property row to a constant.
 
     Attributes
     ----------
-    constant : Any
+    constant : OutputType
         The constant value to always return.
     """
 
     constant: OutputType
 
-    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
+    def apply_to_row(self, property_row: Dict[str, Any]) -> OutputType:
         return self.constant
 
 
-class NamedPropertyMap(PropertyMap[OutputType], Generic[OutputType]):
+class IdentityEncoding(StyleEncoding[OutputType], Generic[OutputType]):
     """Maps from a property row to a property value by name.
 
     Attributes
@@ -116,34 +118,34 @@ class NamedPropertyMap(PropertyMap[OutputType], Generic[OutputType]):
 
     property_name: str
 
-    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
+    def apply_to_row(self, property_row: Dict[str, Any]) -> OutputType:
         return property_row[self.property_name]
 
 
-class NamedPropertyDiscreteMap(PropertyMap[OutputType], Generic[OutputType]):
+class DiscreteEncoding(StyleEncoding[OutputType], Generic[OutputType]):
     """Maps from a property row to a property value by name to another value defined by a discrete mapping.
 
     Attributes
     ----------
     property_name : str
         The name of the property to select from a row.
-    discrete_map : dict
+    mapping : dict
         The map from the discrete named property value to the output value.
     """
 
     property_name: str
-    discrete_map: dict[Any, OutputType]
+    mapping: dict[Any, OutputType]
 
-    def __call__(self, property_row: Dict[str, Any]) -> OutputType:
-        return self.discrete_map.get(property_row[self.property_name])
+    def apply_to_row(self, property_row: Dict[str, Any]) -> OutputType:
+        return self.mapping.get(property_row[self.property_name])
 
 
-class NamedPropertyColorMap(PropertyMap[ColorType]):
-    """Maps from a property row to a property value by name to another value defined by a discrete mapping.
+class ContinuousColorEncoding(StyleEncoding[ColorType]):
+    """Maps from a property row to a property value by name to another value defined by a discrete continuous colormap.
 
     Attributes
     ----------
-    name : str
+    property_name : str
         The name of the property to select from a row.
     colormap : Colormap
         The map from the continuous named property value to the output color value.
@@ -152,7 +154,7 @@ class NamedPropertyColorMap(PropertyMap[ColorType]):
     property_name: str
     colormap: Colormap
 
-    def __call__(self, property_row: Dict[str, Any]) -> ColorType:
+    def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
         return self.colormap.map(property_row[self.property_name])[0]
 
     @validator('colormap', pre=True, always=True)
@@ -160,7 +162,7 @@ class NamedPropertyColorMap(PropertyMap[ColorType]):
         return ensure_colormap(colormap)
 
 
-class TextFormatPropertyMap(PropertyMap[str]):
+class TextFormatStyleEncoding(StyleEncoding[str]):
     """Maps from a property row to a formatted string containing property names.
 
     Attributes
@@ -172,23 +174,23 @@ class TextFormatPropertyMap(PropertyMap[str]):
 
     format_string: str
 
-    def __call__(self, property_row: Dict[str, Any]) -> str:
+    def apply_to_row(self, property_row: Dict[str, Any]) -> str:
         return self.format_string.format(**property_row)
 
 
-ColorPropertyMap = Union[
-    NamedPropertyColorMap,
-    NamedPropertyDiscreteMap[ColorType],
-    NamedPropertyMap[ColorType],
-    DirectPropertyMap[ColorType],
-    ConstantPropertyMap[ColorType],
+ColorEncoding = Union[
+    ContinuousColorEncoding,
+    DiscreteEncoding[ColorType],
+    IdentityEncoding[ColorType],
+    DirectEncoding[ColorType],
+    ConstantEncoding[ColorType],
 ]
 
 
-StringPropertyMap = Union[
-    TextFormatPropertyMap,
-    NamedPropertyDiscreteMap[str],
-    NamedPropertyMap[str],
-    DirectPropertyMap[str],
-    ConstantPropertyMap[str],
+StringEncoding = Union[
+    TextFormatStyleEncoding,
+    DiscreteEncoding[str],
+    IdentityEncoding[str],
+    DirectEncoding[str],
+    ConstantEncoding[str],
 ]

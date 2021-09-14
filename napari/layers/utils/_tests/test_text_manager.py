@@ -227,7 +227,7 @@ def test_multi_color_property_discrete_map():
     }
     color = {
         'property_name': 'class',
-        'discrete_map': {'A': 'red', 'B': 'green', 'C': 'blue'},
+        'mapping': {'A': 'red', 'B': 'green', 'C': 'blue'},
     }
 
     text_manager = TextManager(
@@ -236,14 +236,6 @@ def test_multi_color_property_discrete_map():
 
     np.testing.assert_array_equal(
         text_manager.color_values, transform_color(['red', 'green', 'blue'])
-    )
-
-    text_manager.color = {
-        'property_name': 'class',
-        'discrete_map': {'A': 'purple', 'B': 'green', 'C': 'blue'},
-    }
-    np.testing.assert_array_equal(
-        text_manager.color_values, transform_color(['purple', 'green', 'blue'])
     )
 
 
