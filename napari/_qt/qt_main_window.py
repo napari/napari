@@ -432,15 +432,21 @@ class Window:
         self._update_theme()
         get_settings().appearance.events.theme.connect(self._update_theme)
 
-        self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerControls, tabify=False
+            self.qt_viewer.dockConsole, tabify=False, menu=self.window_menu
         )
         self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerList, tabify=False
+            self.qt_viewer.dockLayerControls,
+            tabify=False,
+            menu=self.window_menu,
+        )
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
         )
         if perf.USE_PERFMON:
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+            self._add_viewer_dock_widget(
+                self.qt_viewer.dockPerformance, menu=self.window_menu
+            )
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -697,7 +703,12 @@ class Window:
         """
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            self._dock_widgets[full_name].show()
+            dock_widget = self._dock_widgets[full_name]
+            if dock_widget.isVisible():
+                self._dock_widgets[full_name].hide()
+            else:
+                self._dock_widgets[full_name].show()
+            # self._dock_widgets[full_name].show()
             return
 
         func = plugin_manager._function_widgets[plugin_name][widget_name]
@@ -808,7 +819,7 @@ class Window:
         return dock_widget
 
     def _add_viewer_dock_widget(
-        self, dock_widget: QtViewerDockWidget, tabify=False
+        self, dock_widget: QtViewerDockWidget, tabify=False, menu=None
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -843,66 +854,21 @@ class Window:
                 sizes = list(range(1, len(_wdg) * 4, 4))
                 self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
 
-        action = dock_widget.toggleViewAction()
-        action.setStatusTip(dock_widget.name)
-        action.setText(dock_widget.name)
-        import warnings
+        if menu:
+            action = dock_widget.toggleViewAction()
+            action.setStatusTip(dock_widget.name)
+            action.setText(dock_widget.name)
+            import warnings
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", FutureWarning)
-            # deprecating with 0.4.8, but let's try to keep compatibility.
-            shortcut = dock_widget.shortcut
-        if shortcut is not None:
-            action.setShortcut(shortcut)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", FutureWarning)
+                # deprecating with 0.4.8, but let's try to keep compatibility.
+                shortcut = dock_widget.shortcut
+            if shortcut is not None:
+                action.setShortcut(shortcut)
 
-        # dock widgets can have a menu item on the window menu or the plugin menu.
-
-        # check for plugins menu first.  Need to check submenus too.
-        actions = [a.text() for a in self.plugins_menu.actions()]
-        if dock_widget.name in actions:
-            # connect the signal so that if closed/hidden, the action will toggle
-
-            idx = actions.index(dock_widget.name)
-            current_action = self.plugins_menu.actions()[idx]
-            dock_widget.closed.connect(
-                lambda: current_action.setChecked(False)
-            )
-            dock_widget.opened.connect(lambda: current_action.setChecked(True))
-            dock_widget.setVisible(True)
-            return
-        else:
-            # if the action was not already here, it may be in a submenu
-            for cnt, current_action in enumerate(self.plugins_menu.actions()):
-                if current_action.menu() is not None:
-                    sub_actions = [
-                        plugin_menu_item_template.format(
-                            current_action.text(), a.text()
-                        )
-                        for a in current_action.menu().actions()
-                    ]
-                    if dock_widget.name in sub_actions:
-                        idx = sub_actions.index(dock_widget.name)
-                        current_action = (
-                            self.plugins_menu.actions()[cnt]
-                            .menu()
-                            .actions()[idx]
-                        )
-                        dock_widget.closed.connect(
-                            lambda: current_action.setChecked(False)
-                        )
-                        dock_widget.setVisible(True)
-
-                        return
-
-        # it the action was not in the plugins menu, add it to the window menu.
-        self.window_menu.addAction(action)
-
-    def _toggle_dock_visibility(self, dock_widget=None):
-
-        if dock_widget.isVisible():
-            dock_widget.hide()
-        else:
-            dock_widget.show()
+                menu.addAction(action)
+        # self.window_menu.addAction(action)
 
     def _remove_dock_widget(self, event=None):
         names = list(self._dock_widgets.keys())

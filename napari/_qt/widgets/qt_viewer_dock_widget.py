@@ -4,7 +4,7 @@ from itertools import count
 from operator import ior
 from typing import List, Optional
 
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QDockWidget,
     QFrame,
@@ -58,9 +58,6 @@ class QtViewerDockWidget(QDockWidget):
         widgets up towards the top of the allotted area, instead of letting
         them distribute across the vertical space).  By default, True.
     """
-
-    closed = Signal()
-    opened = Signal()
 
     def __init__(
         self,
@@ -224,10 +221,25 @@ class QtViewerDockWidget(QDockWidget):
         return self.size().height() > self.size().width()
 
     def _on_visibility_changed(self, visible):
+        try:
+            actions = [
+                action.text()
+                for action in self.qt_viewer.viewer.window.plugins_menu.actions()
+            ]
+            idx = actions.index(self.name)
+
+            current_action = (
+                self.qt_viewer.viewer.window.plugins_menu.actions()[idx]
+            )
+            current_action.setChecked(visible)
+            self.setVisible(visible)
+
+        except (AttributeError, ValueError):
+            # AttributeError: This error happens when the plugins menu is not yet built.
+            # ValueError: This error is when the action is from the windows menu.
+            pass
         if not visible:
-            self.closed.emit()
             return
-        self.opened.emit()
         with qt_signals_blocked(self):
             self.setTitleBarWidget(None)
             if not self.isFloating():
