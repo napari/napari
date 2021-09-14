@@ -40,7 +40,7 @@ class TextManager(EventedModel):
         Offset from the anchor point.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
-    properties : Dict[str, Array]
+    properties : Dict[str, np.ndarray]
         The property values, which typically come from a layer.
     color : ColorEncoding
         Defines the color for each text element in colors.values
