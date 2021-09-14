@@ -663,7 +663,7 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.random(shape)
     layer = Image(data)
-    extent = np.array(((0,) * 3, np.subtract(shape, 1)))
+    extent = np.array(((0,) * 3, shape))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
