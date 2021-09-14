@@ -1,17 +1,24 @@
 """
 Launching logic for bundle packaging
 """
-import os.path as os_path
+import os.path
 import sys
 from pathlib import Path
-from typing import (
-    Optional,
-)
+from typing import Optional
+import subprocess
 
 try:
     from importlib import metadata as importlib_metadata
 except ImportError:
     import importlib_metadata  # noqa
+
+
+USERSPACE_LOCATIONS = {
+    # TODO: check paths for linux / windows
+    "linux": [Path(os.path.expanduser("~/.local/napari/"))],
+    "darwin": [Path(os.path.expanduser("~/.local/napari/"))],
+    "windows": [],
+}
 
 
 def running_as_bundled_app() -> bool:
@@ -36,10 +43,65 @@ def running_as_bundled_app() -> bool:
 
 def bundle_bin_dir() -> Optional[str]:
     """Return path to briefcase app_packages/bin if it exists."""
-    bin = os_path.join(os_path.dirname(sys.exec_prefix), 'app_packages', 'bin')
-    if os_path.isdir(bin):
+    bin = os.path.join(os.path.dirname(sys.exec_prefix), 'app_packages', 'bin')
+    if os.path.isdir(bin):
         return bin
 
 
+def install_to_userspace(target):
+    extension = "exe" if sys.platform.startswith("win") else "sh"
+    bundle = Path(sys.executable).parents[1] / "Resources" / f"bundle.{extension}"
+    assert bundle.exists(), f"Cannot locate {bundle}!"
+
+    prefix = first_writable_location()
+    # TODO: this looks like a bug in constructor we need to fix
+    # urls is a file actually?! but just creating something that exists is enough
+    # ... ¯\_(ツ)_/¯
+    (prefix / "pkgs" / "urls").mkdir(parents=True, exist_ok=True)
+    subprocess.check_call(["bash", str(bundle), "-bfp", str(prefix)])
+    return prefix
+
+
+def first_writable_location():
+    for location in USERSPACE_LOCATIONS[sys.platform]:
+        if not location.exists():
+            try:
+                location.mkdir(parents=True)
+            except:
+                continue
+
+        try:
+            (location / ".canary").touch()
+        except:
+            continue
+        else:
+            return location
+        finally:
+            (location / ".canary").unlink()
+
+    raise ValueError("Could not find a suitable userspace location to install to.")
+
+
 def ensure_installed():
-    raise RuntimeError("Just checking this is getting imported and used")
+    if not running_as_bundled_app():
+        return
+
+    locations = USERSPACE_LOCATIONS[sys.platform]
+
+    for location in locations:
+        if location.exists() and (location / "condabin" / "conda").exists():
+            break
+    else:
+        # no installation detected!
+        location = install_to_userspace(locations)
+
+    # patch environment
+    sys.path.insert(
+        2,
+        str(
+            location
+            / "lib"
+            / f"python{sys.version_info.major}.{sys.version_info.minor}"
+            / "site-packages"
+        ),
+    )

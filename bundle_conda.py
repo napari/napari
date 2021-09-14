@@ -10,21 +10,14 @@ Steps:
 4. Package everything in Briefcase, along with the launcher logic.
 """
 
-import os
 import sys
-import platform
 import re
-import configparser
 from distutils.spawn import find_executable
 import subprocess
-import json
 import tempfile
-from urllib.request import urlopen
-from shutil import copyfileobj
-from pathlib import Path
-from tqdm import tqdm
-import hashlib
+import shutil
 from contextlib import contextmanager
+from pathlib import Path
 
 import ruamel_yaml as yaml
 import tomlkit
@@ -41,8 +34,7 @@ from bundle import (
     BUILD_DIR,
     APP_DIR,
     VERSION,
-    patch_dmgbuild,
-    undo_patch_dmgbuild,
+    patched_dmgbuild,
     patch_environment_variables,
     patch_python_lib_location,
     patch_wxs,
@@ -66,91 +58,49 @@ def _clean_pypi_spec(spec):
     return spec
 
 
-def _setup_cfg_to_environment_yml(selector=None):
-    parser = configparser.ConfigParser()
-    parser.read(SETUP_CFG)
-    requirements = parser.get("options", "install_requires").splitlines()
-    requirements = [_clean_pypi_spec(r) for r in requirements if r]
+def _generate_conda_build_recipe():
+    pass
 
-    return {
+
+def _conda_build():
+    pass
+
+
+def _constructor(with_local=False, version=VERSION):
+    constructor = find_executable("constructor")
+    if not constructor:
+        raise RuntimeError("Constructor must be installed.")
+    micromamba = find_executable("micromamba")
+
+    output_filename = f"bundle.{'exe' if WINDOWS else 'sh'}"
+    definitions = {
         "name": APP,
-        "channels": ["conda-forge"],
-        "dependencies": sorted(requirements),
+        "company": "Napari",
+        "version": f"{version}",
+        "channels": (["local"] if with_local else []) + ["conda-forge"],
+        "batch_mode": True,
+        "installer_filename": output_filename,
+        "specs": [
+            f"napari={version}",
+            f"python={sys.version_info.major}.{sys.version_info.minor}.*",
+            "conda",
+            "mamba",
+            "pip",
+        ],
+        "exclude": [
+            "napari",
+        ],
     }
 
-
-def _solve_environment(environment_dict):
-    micromamba = find_executable("micromamba")
-    with tempfile.NamedTemporaryFile(suffix=".env.yml", mode="w") as tmp:
-        yaml.dump(environment_dict, tmp, default_flow_style=False)
-        out = subprocess.check_output(
-            [
-                micromamba,
-                "create",
-                "--yes",
-                "--dry-run",
-                "-n",
-                f"{APP}-bundle",
-                "--json",
-                "-f",
-                tmp.name,
-            ],
-            universal_newlines=True,
+    with open("construct.yaml", "w") as fin:
+        yaml.dump(definitions, fin, default_flow_style=False)
+        print("-----")
+        subprocess.check_call(
+            [constructor] + (["--conda-exe", micromamba] if micromamba else []) + ["."],
         )
+        print("-----")
 
-    solved = json.loads(out)
-    return solved
-
-
-def _urls_from_solved_environment(solved):
-    return [f'{pkg["url"]}#{pkg["md5"]}' for pkg in solved["actions"]["FETCH"]]
-
-
-def _download_packages(packages, target_dir):
-    target_dir.mkdir(parents=True, exist_ok=True)
-    for package in tqdm(packages):
-        _download_and_check(package, target_dir)
-
-
-def _download_and_check(url_md5, target_directory):
-    url, md5 = url_md5.split("#")
-    filename = url.split("/")[-1]
-    dest_path = Path(target_directory) / filename
-    download = True
-    if dest_path.exists():
-        try:
-            _check_md5(dest_path, md5)
-            download = False
-        except AssertionError:
-            download = True
-    if download:
-        with urlopen(url) as fsrc, open(dest_path, "wb") as fdst:
-            copyfileobj(fsrc, fdst)
-        _check_md5(dest_path, md5)
-
-
-def _check_md5(path, md5):
-    with open(path, "rb") as f:
-        file_hash = hashlib.md5()
-        chunk = f.read(8192)
-        while chunk:
-            file_hash.update(chunk)
-            chunk = f.read(8192)
-
-    obtained_md5 = file_hash.hexdigest()
-    assert md5 == obtained_md5, (
-        f"Expected MD5 hash for package {path} does not match obtained:\n"
-        f"- Expected: {md5}\n"
-        f"- Obtained: {obtained_md5}"
-    )
-
-
-def _setup_briefcase_workspace():
-    pass
-
-
-def _package():
-    pass
+    return output_filename
 
 
 @contextmanager
@@ -191,34 +141,40 @@ def _patched_toml():
 
 def main():
     clean()
-    print("Checking if environment is solvable...")
-    environment_definitions = _setup_cfg_to_environment_yml()
-    solved_environment = _solve_environment(environment_definitions)
-    urls = _urls_from_solved_environment(solved_environment)
+    print("Generating constructor installer...")
+    with_local = False
+    if not "release":  # TODO: implement actual checks for non-final releases
+        _generate_conda_build_recipe()
+        _conda_build()
+        with_local = True
+    # else: we just build a bundle of the last release in conda-forge
+    version = "0.4.11"  # hardcoded now for testing purposes
+    constructor_bundle = _constructor(with_local=with_local, version=version)
+
+    print("Debugging info...")
+
+    # smoke test, and build resources
+    subprocess.check_call([sys.executable, '-m', APP, '--info'])
 
     print("Patching runtime conditions...")
-    if MACOS:
-        patch_dmgbuild()
 
     if LINUX:
         patch_environment_variables()
 
-    with _patched_toml():
+    with _patched_toml(), patched_dmgbuild():
         # create
         cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
-
-        add_sentinel_file()
-
-        # download pkgs to workspace
-        print("Downloading packages...")
-        target = Path(APP_DIR) / "Contents" / "Resources" / "Support" if MACOS else BUILD_DIR
-        _download_packages(urls, target_dir=Path(target) / "pkgs")
 
         if WINDOWS:
             patch_wxs()
         elif MACOS:
             patch_python_lib_location()
+
+        add_sentinel_file()
+        shutil.move(
+            constructor_bundle, Path(APP_DIR) / "Contents" / "Resources" if MACOS else BUILD_DIR
+        )
 
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
@@ -228,9 +184,6 @@ def main():
         cmd = ['briefcase', 'package']
         cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
-
-    if MACOS:
-        undo_patch_dmgbuild()
 
 
 if __name__ == "__main__":

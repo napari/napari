@@ -125,38 +125,29 @@ def patched_toml():
             f.write(original_toml)
 
 
-def patch_dmgbuild():
+@contextmanager
+def patched_dmgbuild():
     if not MACOS:
-        return
-    from dmgbuild import core
+        yield
+    else:
+        from dmgbuild import core
 
-    with open(core.__file__) as f:
-        src = f.read()
-    with open(core.__file__, 'w') as f:
-        f.write(
-            src.replace(
-                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)",
-                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)" ";time.sleep(30)",
+        with open(core.__file__) as f:
+            src = f.read()
+        with open(core.__file__, 'w') as f:
+            f.write(
+                src.replace(
+                    "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)",
+                    "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True);time.sleep(30)",
+                )
             )
-        )
         print("patched dmgbuild.core")
-
-
-def undo_patch_dmgbuild():
-    if not MACOS:
-        return
-    from dmgbuild import core
-
-    with open(core.__file__) as f:
-        src = f.read()
-    with open(core.__file__, 'w') as f:
-        f.write(
-            src.replace(
-                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True);time.sleep(30)",
-                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)",
-            )
-        )
-        print("reverted patched dmgbuild.core")
+        try:
+            yield
+        finally:
+            # undo
+            with open(core.__file__, 'w') as f:
+                f.write(src)
 
 
 def add_site_packages_to_path():
@@ -211,6 +202,8 @@ def patch_python_lib_location():
     # must run after briefcase create
     support = os.path.join(BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support")
     python_resources = os.path.join(support, "Python", "Resources")
+    if os.path.exists(python_resources):
+        return
     os.makedirs(python_resources, exist_ok=True)
     for subdir in ("bin", "lib"):
         orig = os.path.join(support, subdir)
@@ -265,9 +258,6 @@ def clean():
 def bundle():
     clean()
 
-    if MACOS:
-        patch_dmgbuild()
-
     if LINUX:
         patch_environment_variables()
 
@@ -275,7 +265,7 @@ def bundle():
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
 
     # the briefcase calls need to happen while the pyproject toml is patched
-    with patched_toml():
+    with patched_toml(), patched_dmgbuild():
         # create
         cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
@@ -302,9 +292,6 @@ def bundle():
         # compress
         dest = make_zip()
         clean()
-
-        if MACOS:
-            undo_patch_dmgbuild()
 
         return dest
 
