@@ -196,7 +196,7 @@ class LayerList(SelectableEventedList[Layer]):
 
         min_vals = np.nan_to_num(min_v[::-1])
         max_vals = np.copy(max_v[::-1])
-        max_vals[np.isnan(max_vals)] = 511
+        max_vals[np.isnan(max_vals)] = 512
 
         return np.vstack([min_vals, max_vals])
 
