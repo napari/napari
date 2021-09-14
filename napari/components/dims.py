@@ -21,7 +21,8 @@ class Dims(EventedModel):
         Dimension which was last used.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension. In a world
-        coordinates space.
+        coordinates space. As with Python's `range` and `slice`, max is not
+        included.
     current_step : tuple of int
         Tuple of the slider position for each dims slider, in slider coordinates.
     order : tuple of int
@@ -39,7 +40,8 @@ class Dims(EventedModel):
         Dimension which was last used.
     range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension. In a world
-        coordinates space.
+        coordinates space. As with Python's `range` and `slice`, max is not
+        included.
     current_step : tuple of int
         Tuple the slider position for each dims slider, in slider coordinates.
     order : tuple of int
