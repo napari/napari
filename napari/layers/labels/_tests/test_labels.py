@@ -1163,7 +1163,7 @@ def test_cursor_ray_3d():
         mouse_event_1.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [1, 0, 11, 5])
-    np.testing.assert_allclose(end_point, [1, 19, 11, 5])
+    np.testing.assert_allclose(end_point, [1, 20, 11, 5])
 
     # click in the background
     mouse_event_2 = MouseEvent(
@@ -1196,7 +1196,7 @@ def test_cursor_ray_3d():
         mouse_event_3.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [0, 0, 11, 5])
-    np.testing.assert_allclose(end_point, [0, 19, 11, 5])
+    np.testing.assert_allclose(end_point, [0, 20, 11, 5])
 
 
 def test_cursor_ray_3d_rolled():
@@ -1224,7 +1224,7 @@ def test_cursor_ray_3d_rolled():
         mouse_event_1.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [0, 11, 5, 1])
-    np.testing.assert_allclose(end_point, [19, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [20, 11, 5, 1])
 
 
 def test_cursor_ray_3d_transposed():
@@ -1252,7 +1252,7 @@ def test_cursor_ray_3d_transposed():
         mouse_event_1.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [0, 11, 5, 1])
-    np.testing.assert_allclose(end_point, [19, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [20, 11, 5, 1])
 
 
 def test_labels_state_update():
