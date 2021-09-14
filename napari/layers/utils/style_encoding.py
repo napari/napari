@@ -162,7 +162,7 @@ class ContinuousColorEncoding(StyleEncoding[ColorType]):
         return ensure_colormap(colormap)
 
 
-class TextFormatStyleEncoding(StyleEncoding[str]):
+class FormatStringEncoding(StyleEncoding[str]):
     """Maps from a property row to a formatted string containing property names.
 
     Attributes
@@ -188,7 +188,7 @@ ColorEncoding = Union[
 
 
 StringEncoding = Union[
-    TextFormatStyleEncoding,
+    FormatStringEncoding,
     DiscreteEncoding[str],
     IdentityEncoding[str],
     DirectEncoding[str],
