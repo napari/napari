@@ -574,7 +574,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 [extent[0, ax] for ax in not_disp],
             )
         ) or np.any(
-            np.greater(
+            np.greater_equal(
                 [indices[ax] for ax in not_disp],
                 [extent[1, ax] for ax in not_disp],
             )

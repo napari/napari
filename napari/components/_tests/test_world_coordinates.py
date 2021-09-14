@@ -11,9 +11,9 @@ def test_translated_images():
     data = np.random.random((10, 10, 10))
     viewer.add_image(data)
     viewer.add_image(data, translate=[10, 0, 0])
-    assert viewer.dims.range[0] == (0, 20 - 1, 1)
-    assert viewer.dims.range[1] == (0, 10 - 1, 1)
-    assert viewer.dims.range[2] == (0, 10 - 1, 1)
+    assert viewer.dims.range[0] == (0, 20, 1)
+    assert viewer.dims.range[1] == (0, 10, 1)
+    assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == (20, 10, 10)
     for i in range(viewer.dims.nsteps[0]):
         viewer.dims.set_current_step(0, i)
