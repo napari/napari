@@ -234,6 +234,21 @@ def main():
         cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
 
+        # compress
+        dest = make_zip()
+        clean()
+
+        return dest
+
 
 if __name__ == "__main__":
-    main()
+    if '--clean' in sys.argv:
+        clean()
+        sys.exit()
+    if '--version' in sys.argv:
+        print(VERSION)
+        sys.exit()
+    if '--arch' in sys.argv:
+        print(architecture())
+        sys.exit()
+    print('created', main())
