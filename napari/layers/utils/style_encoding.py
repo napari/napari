@@ -205,12 +205,7 @@ class ContinuousColorEncoding(StyleEncoding[ColorType]):
         return ensure_colormap(colormap)
 
 
-ConstantColorEncoding.__eq_operators__['values'] = np.array_equal
 ConstantColorEncoding.__eq_operators__['constant'] = np.array_equal
-IdentityColorEncoding.__eq_operators__['values'] = np.array_equal
-ContinuousColorEncoding.__eq_operators__['values'] = np.array_equal
-DiscreteColorEncoding.__eq_operators__['values'] = np.array_equal
-DirectColorEncoding.__eq_operators__['values'] = np.array_equal
 DirectColorEncoding.__eq_operators__['default_value'] = np.array_equal
 
 
