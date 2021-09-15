@@ -220,7 +220,8 @@ def add_sentinel_file():
     if MACOS:
         (Path(APP_DIR) / "Contents" / "MacOS" / ".napari_is_bundled").touch()
     else:
-        (Path(BUILD_DIR) / "bin" / ".napari_is_bundled").touch()
+        print("!!! Sentinel files not yet implemented in Linux/Windows.")
+        #  (Path(BUILD_DIR) / "bin" / ".napari_is_bundled").touch()
 
 
 def architecture():
