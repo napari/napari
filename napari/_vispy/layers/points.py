@@ -179,6 +179,8 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_text_change()
         self._on_highlight_change()
         self._on_matrix_change()
+        self._on_antialias_change()
+        self._on_spherical_change()
 
     def close(self):
         """Vispy visual is closing."""
