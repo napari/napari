@@ -253,7 +253,7 @@ def test_multi_color_property_continuous_map():
         text='class', properties=properties, color=color
     )
 
-    np.testing.assert_array_equal(
+    np.testing.assert_allclose(
         text_manager.color_values,
         transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
     )

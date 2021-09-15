@@ -7,18 +7,24 @@ from pydantic.generics import GenericModel
 
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
+from ...utils.colormaps.categorical_colormap import CategoricalColormap
+from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import EventedModel
+from ...utils.events.custom_types import Array
 from .color_transformations import ColorType
 
 OutputType = TypeVar('OutputType')
 
 
 class StyleEncoding(EventedModel, GenericModel, Generic[OutputType], ABC):
-    values: List[OutputType] = []
+    values: Array = []
 
     @abstractmethod
     def apply_to_row(self, property_row: Dict[str, Any]) -> OutputType:
         pass
+
+    def _coerce_output(self, output: OutputType) -> OutputType:
+        return output
 
     def refresh(self, properties: Dict[str, np.ndarray]):
         """Updates all values from the given properties.
@@ -29,7 +35,9 @@ class StyleEncoding(EventedModel, GenericModel, Generic[OutputType], ABC):
             The properties of a layer.
         """
         num_values = _num_rows(properties)
-        self.values = self._apply_to_table(properties, range(0, num_values))
+        self.values = np.array(
+            self._apply_to_table(properties, range(0, num_values))
+        )
 
     def add(self, properties: Dict[str, np.ndarray], num_to_add: int):
         """Adds a number of a new values based on the given properties.
@@ -43,7 +51,11 @@ class StyleEncoding(EventedModel, GenericModel, Generic[OutputType], ABC):
         """
         num_values = _num_rows(properties)
         indices = range(num_values - num_to_add, num_values)
-        self.values.extend(self._apply_to_table(properties, indices))
+        to_add = self._apply_to_table(properties, indices)
+        if len(self.values) == 0:
+            self.values = to_add
+        else:
+            self.values = np.concatenate((self.values, to_add), axis=0)
 
     def remove(self, indices: Iterable[int]):
         """Removes some values by index.
@@ -53,17 +65,19 @@ class StyleEncoding(EventedModel, GenericModel, Generic[OutputType], ABC):
         indices : Iterable[int]
             The indices to remove.
         """
-        indices = set(indices)
-        self.values = [
-            self.values[i] for i in range(len(self.values)) if i not in indices
-        ]
+        self.values = np.delete(self.values, list(indices), axis=0)
 
     def _apply_to_table(
         self, properties: Dict[str, np.ndarray], indices: Iterable[int]
-    ):
+    ) -> List[OutputType]:
         return [
-            self.apply_to_row(
-                {name: column[index] for name, column in properties.items()}
+            self._coerce_output(
+                self.apply_to_row(
+                    {
+                        name: column[index]
+                        for name, column in properties.items()
+                    }
+                )
             )
             for index in indices
         ]
@@ -140,6 +154,35 @@ class DiscreteEncoding(StyleEncoding[OutputType], Generic[OutputType]):
         return self.mapping.get(property_row[self.property_name])
 
 
+class DirectColorEncoding(DirectEncoding[ColorType]):
+    def _coerce_output(self, output):
+        return transform_color(output)[0]
+
+    @validator('values', pre=True, always=True)
+    def _check_values(cls, values):
+        return (
+            np.empty((0, 4)) if len(values) == 0 else transform_color(values)
+        )
+
+
+class IdentityColorEncoding(IdentityEncoding[ColorType]):
+    def _coerce_output(self, output):
+        return transform_color(output)[0]
+
+
+class ConstantColorEncoding(ConstantEncoding[ColorType]):
+    def _coerce_output(self, output):
+        return transform_color(output)[0]
+
+
+class DiscreteColorEncoding(StyleEncoding[ColorType]):
+    property_name: str
+    mapping: CategoricalColormap
+
+    def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
+        return self.mapping.map(property_row[self.property_name])[0]
+
+
 class ContinuousColorEncoding(StyleEncoding[ColorType]):
     """Maps from a property row to a property value by name to another value defined by a discrete continuous colormap.
 
@@ -162,6 +205,15 @@ class ContinuousColorEncoding(StyleEncoding[ColorType]):
         return ensure_colormap(colormap)
 
 
+ConstantColorEncoding.__eq_operators__['values'] = np.array_equal
+ConstantColorEncoding.__eq_operators__['constant'] = np.array_equal
+IdentityColorEncoding.__eq_operators__['values'] = np.array_equal
+ContinuousColorEncoding.__eq_operators__['values'] = np.array_equal
+DiscreteColorEncoding.__eq_operators__['values'] = np.array_equal
+DirectColorEncoding.__eq_operators__['values'] = np.array_equal
+DirectColorEncoding.__eq_operators__['default_value'] = np.array_equal
+
+
 class FormatStringEncoding(StyleEncoding[str]):
     """Maps from a property row to a formatted string containing property names.
 
@@ -178,19 +230,21 @@ class FormatStringEncoding(StyleEncoding[str]):
         return self.format_string.format(**property_row)
 
 
+class DirectStringEncoding(DirectEncoding[ColorType]):
+    def _coerce_output(self, output):
+        return str(output)
+
+
 ColorEncoding = Union[
     ContinuousColorEncoding,
-    DiscreteEncoding[ColorType],
-    IdentityEncoding[ColorType],
-    DirectEncoding[ColorType],
-    ConstantEncoding[ColorType],
+    DiscreteColorEncoding,
+    ConstantColorEncoding,
+    IdentityColorEncoding,
+    DirectColorEncoding,
 ]
 
 
 StringEncoding = Union[
     FormatStringEncoding,
-    DiscreteEncoding[str],
-    IdentityEncoding[str],
-    DirectEncoding[str],
-    ConstantEncoding[str],
+    DirectStringEncoding,
 ]

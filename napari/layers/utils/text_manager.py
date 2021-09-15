@@ -58,7 +58,7 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    text: StringEncoding = {'constant': ''}
+    text: StringEncoding = {'format_string': ''}
     color: ColorEncoding = {'constant': DEFAULT_COLOR}
 
     def __init__(self, **kwargs):
@@ -68,16 +68,13 @@ class TextManager(EventedModel):
         self.events.text.connect(self._on_text_changed)
         self.events.color.connect(self._on_color_changed)
 
-    # TODO: apply str cast within the map store to avoid repeated compute.
     @property
     def values(self):
-        return np.array(self.text.values, dtype=str)
+        return self.text.values
 
-    # TODO: apply transform_color within the map store to avoid repeated compute.
     @property
     def color_values(self):
-        values = self.color.values
-        return np.empty((0,)) if len(values) == 0 else transform_color(values)
+        return self.color.values
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all text values from the given layer properties.
@@ -185,9 +182,10 @@ class TextManager(EventedModel):
     ) -> dict:
         properties = values['properties']
         if text is None:
-            encoding = {'constant': ''}
+            encoding = {'format_string': ''}
         elif isinstance(text, str):
-            encoding = cls._encoding_from_text(text, properties)
+            format_string = f'{{{text}}}' if text in properties else text
+            encoding = {'format_string': format_string}
         elif isinstance(text, Iterable):
             encoding = {'values': text, 'default_value': ''}
         elif isinstance(text, get_args(StringEncoding)):
@@ -202,16 +200,6 @@ class TextManager(EventedModel):
                 )
             )
         return encoding
-
-    @classmethod
-    def _encoding_from_text(
-        cls, text: str, properties: Dict[str, np.ndarray]
-    ) -> dict:
-        if text in properties:
-            return {'property_name': text}
-        elif ('{' in text) and ('}' in text):
-            return {'format_string': text}
-        return {'constant': text}
 
     @validator('color', pre=True, always=True)
     def _check_color(
