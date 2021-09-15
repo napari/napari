@@ -64,7 +64,7 @@ def constructor_to_userspace():
 
 
 def conda_pack_to_userspace():
-    packed = Path(sys.executable).parents[1] / "Resources" / f"pack.tar.gz"
+    packed = Path(sys.executable).parents[1] / "Resources" / "pack.tar.gz"
     assert packed.exists(), f"Cannot locate {packed}!"
 
     prefix = first_writable_location()
@@ -81,12 +81,12 @@ def first_writable_location():
         if not location.exists():
             try:
                 location.mkdir(parents=True)
-            except:
+            except OSError:
                 continue
 
         try:
             (location / ".canary").touch()
-        except:
+        except OSError:
             continue
         else:
             return location

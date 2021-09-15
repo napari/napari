@@ -28,10 +28,7 @@ from bundle import (
     WINDOWS,
     MACOS,
     LINUX,
-    HERE,
     PYPROJECT_TOML,
-    SETUP_CFG,
-    ARCH,
     BUILD_DIR,
     APP_DIR,
     VERSION,
@@ -40,9 +37,9 @@ from bundle import (
     patch_python_lib_location,
     patch_wxs,
     clean,
-    add_site_packages_to_path,
-    make_zip,
     add_sentinel_file,
+    architecture,
+    make_zip,
 )
 
 
