@@ -727,6 +727,7 @@ class Window:
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
+        menu=None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -802,7 +803,7 @@ class Window:
                 add_vertical_stretch=add_vertical_stretch,
             )
 
-        self._add_viewer_dock_widget(dock_widget)
+        self._add_viewer_dock_widget(dock_widget, menu=menu)
 
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
@@ -867,7 +868,7 @@ class Window:
             if shortcut is not None:
                 action.setShortcut(shortcut)
 
-                menu.addAction(action)
+            menu.addAction(action)
         # self.window_menu.addAction(action)
 
     def _remove_dock_widget(self, event=None):
