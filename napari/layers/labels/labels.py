@@ -431,7 +431,7 @@ class Labels(_ImageBase):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return self._property_table.all_values
+        return self._property_table.values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -448,7 +448,7 @@ class Labels(_ImageBase):
         label_index = {}
         if 'index' in property_table:
             label_index = {
-                i: k for k, i in enumerate(property_table['index'].values)
+                i: k for k, i in enumerate(property_table.data['index'])
             }
         elif property_table.num_properties > 0:
             label_index = {i: i for i in range(property_table.num_values)}
@@ -520,7 +520,7 @@ class Labels(_ImageBase):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
-                'properties': self._property_table,
+                'properties': self._property_table.values,
                 'rendering': self.rendering,
                 'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
                 'experimental_clipping_planes': [
@@ -1290,15 +1290,12 @@ class Labels(_ImageBase):
 
         idx = self._label_index[label_value]
         return [
-            f'{name}: {column.values[idx]}'
-            for name, column in self._property_table.items()
+            f'{name}: {series[idx]}'
+            for name, series in self._property_table.data.items()
             if name != 'index'
-            and len(column.values) > idx
-            and column.values[idx] is not None
-            and not (
-                isinstance(column.values[idx], float)
-                and np.isnan(column.values[idx])
-            )
+            and len(series) > idx
+            and series[idx] is not None
+            and not (isinstance(series[idx], float) and np.isnan(series[idx]))
         ]
 
 

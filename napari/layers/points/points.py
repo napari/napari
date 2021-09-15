@@ -462,7 +462,7 @@ class Points(Layer):
     def _update_color_manager(color_manager, property_table, name):
         if color_manager.color_properties is not None:
             color_name = color_manager.color_properties.name
-            if color_name not in property_table:
+            if color_name not in property_table.data:
                 color_manager.color_mode = ColorMode.DIRECT
                 color_manager.color_properties = None
                 warnings.warn(

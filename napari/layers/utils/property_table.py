@@ -1,4 +1,3 @@
-import warnings
 from typing import Dict, Optional, Union
 
 import pandas as pd
@@ -75,16 +74,12 @@ class PropertyTable:
         num_data: Optional[int] = None,
     ):
         if property_choices is not None:
-            if isinstance(properties, pd.DataFrame):
-                warnings.warn(
-                    'property_choices should not be specified when properties is a DataFrame'
-                )
-            else:
-                properties = pd.DataFrame(data=properties)
-                for name, choices in property_choices.items():
-                    values = properties[name] if name in properties else []
+            properties = pd.DataFrame(data=properties)
+            for name, choices in property_choices.items():
+                if name in properties:
                     properties[name] = pd.Series(
-                        values, dtype=pd.CategoricalDtype(categories=choices)
+                        properties[name],
+                        dtype=pd.CategoricalDtype(categories=choices),
                     )
         index = None if num_data is None else range(num_data)
         data = pd.DataFrame(data=properties, index=index)
