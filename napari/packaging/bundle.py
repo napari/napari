@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 import subprocess
+import shutil
 
 try:
     from importlib import metadata as importlib_metadata
@@ -48,7 +49,7 @@ def bundle_bin_dir() -> Optional[str]:
         return bin
 
 
-def install_to_userspace(target):
+def constructor_to_userspace():
     extension = "exe" if sys.platform.startswith("win") else "sh"
     bundle = Path(sys.executable).parents[1] / "Resources" / f"bundle.{extension}"
     assert bundle.exists(), f"Cannot locate {bundle}!"
@@ -59,6 +60,19 @@ def install_to_userspace(target):
     # ... ¯\_(ツ)_/¯
     (prefix / "pkgs" / "urls").mkdir(parents=True, exist_ok=True)
     subprocess.check_call(["bash", str(bundle), "-bfp", str(prefix)])
+    return prefix
+
+
+def conda_pack_to_userspace():
+    packed = Path(sys.executable).parents[1] / "Resources" / f"pack.tar.gz"
+    assert packed.exists(), f"Cannot locate {packed}!"
+
+    prefix = first_writable_location()
+    shutil.unpack_archive(packed, prefix)
+    python = os.path.join(sys.prefix, "bin", "python3")
+    if not os.path.isfile(python):
+        python = "python"  # cross your fingers user has some python installed!
+    subprocess.check_call([python, str(prefix / "bin" / "conda-unpack")])
     return prefix
 
 
@@ -93,15 +107,15 @@ def ensure_installed():
             break
     else:
         # no installation detected!
-        location = install_to_userspace(locations)
+        # location = constructor_to_userspace()
+        location = conda_pack_to_userspace()
 
     # patch environment
-    sys.path.insert(
-        2,
-        str(
-            location
-            / "lib"
-            / f"python{sys.version_info.major}.{sys.version_info.minor}"
-            / "site-packages"
-        ),
+    site_packages = (
+        location
+        / "lib"
+        / f"python{sys.version_info.major}.{sys.version_info.minor}"
+        / "site-packages"
     )
+    os.environ["QT_PLUGIN_PATH"] = str(location / "plugins")
+    sys.path.insert(2, str(site_packages))

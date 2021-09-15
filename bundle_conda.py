@@ -10,6 +10,7 @@ Steps:
 4. Package everything in Briefcase, along with the launcher logic.
 """
 
+import os
 import sys
 import re
 from distutils.spawn import find_executable
@@ -64,6 +65,55 @@ def _generate_conda_build_recipe():
 
 def _conda_build():
     pass
+
+
+def _conda_pack(with_local=False, version=VERSION):
+    micromamba = find_executable("micromamba")
+    if not micromamba:
+        raise RuntimeError("Micromamba must be installed and in PATH.")
+
+    environment = {
+        "name": "napari-pack",
+        "channels": (["local"] if with_local else []) + ["conda-forge"],
+        "dependencies": [
+            f"python={sys.version_info.major}.{sys.version_info.minor}.*",
+            "pip",
+            "conda",
+            "mamba",
+            f"napari={version}.*",
+        ],
+    }
+
+    # Create temporary environment
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w") as f:
+        yaml.dump(environment, f)
+        prefix = tempfile.mkdtemp()
+        subprocess.check_output(
+            [
+                micromamba,
+                "create",
+                "-y",
+                "-f",
+                f.name,
+                "-r",
+                prefix,
+            ]
+        )
+
+    # Run conda-pack
+    output = "pack.tar.gz"
+    subprocess.check_output(
+        [
+            "conda-pack",
+            "-p",
+            os.path.join(prefix, "envs", "napari-pack"),
+            "-o",
+            output,
+            "--force",
+        ]
+    )
+
+    return output
 
 
 def _constructor(with_local=False, version=VERSION):
@@ -141,7 +191,8 @@ def _patched_toml():
 
 def main():
     clean()
-    print("Generating constructor installer...")
+    print("Generating internal installer...")
+
     with_local = False
     if not "release":  # TODO: implement actual checks for non-final releases
         _generate_conda_build_recipe()
@@ -149,7 +200,8 @@ def main():
         with_local = True
     # else: we just build a bundle of the last release in conda-forge
     version = "0.4.11"  # hardcoded now for testing purposes
-    constructor_bundle = _constructor(with_local=with_local, version=version)
+    # internal_installer = _constructor(with_local=with_local, version=version)
+    internal_installer = _conda_pack(with_local, version=version)
 
     print("Debugging info...")
 
@@ -173,7 +225,7 @@ def main():
 
         add_sentinel_file()
         shutil.move(
-            constructor_bundle, Path(APP_DIR) / "Contents" / "Resources" if MACOS else BUILD_DIR
+            internal_installer, Path(APP_DIR) / "Contents" / "Resources" if MACOS else BUILD_DIR
         )
 
         # build
