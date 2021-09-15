@@ -14,7 +14,6 @@ from ...utils.colormaps import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
-from ...utils.events.event import WarningEmitter
 from ...utils.geometry import clamp_point_to_bounding_box
 from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
@@ -156,8 +155,8 @@ class Labels(_ImageBase):
         Opacity of the labels, must be between 0 and 1.
     contiguous : bool
         If `True`, the fill bucket changes only connected pixels of same label.
-    n_dimensional : bool
-        If `True`, paint and fill edit labels across all dimensions.
+    n_edit_dimensions : int
+        The number of dimensions across which labels will be edited.
     contour : int
         If greater than 0, displays contours of labels instead of shaded regions
         with a thickness equal to its value.
@@ -274,13 +273,6 @@ class Labels(_ImageBase):
             mode=Event,
             preserve_labels=Event,
             properties=Event,
-            n_dimensional=WarningEmitter(
-                trans._(
-                    "'Labels.events.n_dimensional' is deprecated and will be removed in napari v0.4.9. Use 'Labels.event.n_edit_dimensions' instead.",
-                    deferred=True,
-                ),
-                type='n_dimensional',
-            ),
             n_edit_dimensions=Event,
             contiguous=Event,
             brush_size=Event,
@@ -319,35 +311,6 @@ class Labels(_ImageBase):
     def contiguous(self, contiguous):
         self._contiguous = contiguous
         self.events.contiguous()
-
-    @property
-    def n_dimensional(self):
-        """bool: paint and fill edits labels across all dimensions."""
-        warnings.warn(
-            trans._(
-                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self._n_edit_dimensions == self.ndim and self.ndim > 2
-
-    @n_dimensional.setter
-    def n_dimensional(self, n_dimensional):
-        warnings.warn(
-            trans._(
-                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        if n_dimensional:
-            self.n_edit_dimensions = self.ndim
-        else:
-            self.n_edit_dimensions = 2
-        self.events.n_dimensional()
 
     @property
     def n_edit_dimensions(self):
@@ -1084,9 +1047,8 @@ class Labels(_ImageBase):
     def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
-        if it is `False`, working either just in the current slice if
-        the `n_dimensional` flag is `False` or on the entire data if it is
-        `True`.
+        if it is `False`, working in the number of dimensions specified by
+        the `n_edit_dimensions` flag.
 
         Parameters
         ----------

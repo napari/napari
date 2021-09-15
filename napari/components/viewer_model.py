@@ -30,7 +30,6 @@ from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
-from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
@@ -174,17 +173,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
-
-        self.events.add(
-            # FIXME: Deferred translation?
-            active_layer=WarningEmitter(
-                trans._(
-                    "'viewer.events.active_layer' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.active' instead",
-                    deferred=True,
-                ),
-                type='active_layer',
-            )
-        )
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
@@ -335,34 +323,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
-
-    @property
-    def active_layer(self):
-        warnings.warn(
-            trans._(
-                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.layers.selection.active
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        # this method is only for the deprecation warning, because pydantic
-        # prevents using @active_layer.setter
-        if name != 'active_layer':
-            return super().__setattr__(name, value)
-
-        warnings.warn(
-            trans._(
-                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        self.layers.selection.active = value
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
