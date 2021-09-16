@@ -53,7 +53,7 @@ def check_vendored_module(org : str, reponame : str, tag : str) -> str:
 
 def main():
     print("\n\nChecking vendored modules\n")
-    for org, reponame, tag in [("albertosottile", "darkdetect", "v0.5.0")]:
+    for org, reponame, tag in [("albertosottile", "darkdetect", "master")]:
         print(f"\n * Checking '{org}/{reponame}'\n")
         diff = check_vendored_module(org, reponame, tag)
         if diff:
