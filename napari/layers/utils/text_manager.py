@@ -70,11 +70,11 @@ class TextManager(EventedModel):
 
     @property
     def values(self):
-        return self.text.values
+        return self.text.get_array()
 
     @property
     def color_values(self):
-        return self.color.values
+        return self.color.get_array()
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all text values from the given layer properties.
@@ -258,8 +258,8 @@ class TextManager(EventedModel):
         This is typically used in the vispy view file.
         """
         # connect the function for updating the text node
-        self.text.events.values.connect(text_update_function)
-        self.color.events.values.connect(text_update_function)
+        self.text.connect(text_update_function)
+        self.color.connect(text_update_function)
         self.events.rotation.connect(text_update_function)
         self.events.translation.connect(text_update_function)
         self.events.anchor.connect(text_update_function)
