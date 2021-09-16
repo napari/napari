@@ -447,7 +447,7 @@ class Window:
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
-        viewer.layers.events.connect(lambda x: self.file_menu.update())
+        viewer.layers.events.connect(self.file_menu.update)
 
         if show:
             self.show()
@@ -1206,6 +1206,8 @@ class Window:
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.added.disconnect(register_napari_themes)
         _themes.events.removed.disconnect(self._remove_theme)
+        self.qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
+        self.file_menu.close()
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""

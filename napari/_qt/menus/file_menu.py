@@ -121,7 +121,7 @@ class FileMenu(QMenu):
         self._rebuild_samples_menu()
         self.update()
 
-    def _layer_count(self):
+    def _layer_count(self, event=None):
         return len(self._win.qt_viewer.viewer.layers)
 
     def _screenshot_dialog(self):
@@ -180,9 +180,15 @@ class FileMenu(QMenu):
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
 
-    def update(self):
+    def update(self, event=None):
         for ax in self.actions():
             data = ax.data()
             if data:
-                enabled_func = data.get('enabled', lambda: True)
-                ax.setEnabled(bool(enabled_func()))
+                enabled_func = data.get('enabled', lambda event: True)
+                ax.setEnabled(bool(enabled_func(event)))
+
+    def closeEvent(self, event):
+        for ax in self.actions():
+            ax.setData(None)
+
+        super().closeEvent(event)
