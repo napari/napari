@@ -258,3 +258,44 @@ def test_multi_color_property_continuous_map():
         text_manager.color.get_array(),
         transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
     )
+
+
+def test_color_missing_field():
+    properties = {
+        'class': ['A', 'B', 'C'],
+        'confidence': np.array([0.5, 0, 1]),
+    }
+    color = {
+        'mapping': {'A': 'red', 'B': 'green', 'C': 'blue'},
+    }
+
+    # TODO: maybe worth asserting the error message contains some custom
+    # text that is more understandable than the pydantic default.
+    with pytest.raises(ValueError):
+        TextManager(text='class', properties=properties, color=color)
+
+
+def test_color_too_many_fields_use_first_matching():
+    properties = {
+        'class': ['A', 'B', 'C'],
+        'confidence': np.array([0.5, 0, 1]),
+    }
+    color = {
+        'property_name': 'confidence',
+        'mapping': {'A': 'red', 'B': 'green', 'C': 'blue'},
+        'colormap': 'gray',
+    }
+
+    text_manager = TextManager(
+        text='class', properties=properties, color=color
+    )
+
+    # ContinuousColorEncoding is the first in the ColorEncoding
+    # and can be instantiated with a subset of the dictionary's
+    # entries, so is instantiated without an error or warning.
+    # To change this behavior to error, update the model config
+    # with `extra = 'forbid'`.
+    np.testing.assert_allclose(
+        text_manager.color.get_array(),
+        transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
+    )

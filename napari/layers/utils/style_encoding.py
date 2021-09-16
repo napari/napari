@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, Iterable, List, TypeVar, Union
 
 import numpy as np
-from pydantic import validator
+from pydantic import ValidationError, parse_obj_as, validator
 
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
@@ -198,6 +198,20 @@ class DirectStringEncoding(StringEncodingBase):
         pass
 
 
+def parse_obj_as_union(union, obj: Dict[str, Any]):
+    try:
+        return parse_obj_as(union, obj)
+    except ValidationError as error:
+        raise ValueError(
+            'Failed to parse a supported encoding from kwargs:\n'
+            f'{obj}\n\n'
+            'The kwargs must specify the fields of exactly one of the following encodings:\n'
+            f'{union}\n\n'
+            'Original error:\n'
+            f'{error}'
+        )
+
+
 ColorEncoding = Union[
     ContinuousColorEncoding,
     DiscreteColorEncoding,
@@ -205,6 +219,7 @@ ColorEncoding = Union[
     IdentityColorEncoding,
     DirectColorEncoding,
 ]
+
 
 StringEncoding = Union[
     FormatStringEncoding,

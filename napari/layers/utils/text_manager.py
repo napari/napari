@@ -12,7 +12,16 @@ from ..base._base_constants import Blending
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .color_transformations import ColorType
-from .style_encoding import ColorEncoding, StringEncoding
+from .style_encoding import (
+    ColorEncoding,
+    ConstantColorEncoding,
+    DirectColorEncoding,
+    DirectStringEncoding,
+    FormatStringEncoding,
+    IdentityColorEncoding,
+    StringEncoding,
+    parse_obj_as_union,
+)
 
 DEFAULT_COLOR = 'cyan'
 
@@ -175,27 +184,25 @@ class TextManager(EventedModel):
         cls,
         text: Union[str, Iterable[str], StringEncoding, dict, None],
         values,
-    ) -> dict:
-        properties = values['properties']
+    ) -> StringEncoding:
         if text is None:
-            encoding = {'format_string': ''}
-        elif isinstance(text, str):
+            return FormatStringEncoding(format_string='')
+        if isinstance(text, get_args(StringEncoding)):
+            return text
+        if isinstance(text, str):
+            properties = values['properties']
             format_string = f'{{{text}}}' if text in properties else text
-            encoding = {'format_string': format_string}
-        elif isinstance(text, Iterable):
-            encoding = {'values': text, 'default_value': ''}
-        elif isinstance(text, get_args(StringEncoding)):
-            encoding = text.dict()
-        elif isinstance(text, dict):
-            encoding = text
-        else:
-            raise TypeError(
-                trans._(
-                    'text should be a string, iterable, StringEncoding, dict, or None',
-                    deferred=True,
-                )
+            return FormatStringEncoding(format_string=format_string)
+        if isinstance(text, Iterable):
+            return DirectStringEncoding(values=text, default_value='')
+        if isinstance(text, dict):
+            return parse_obj_as_union(StringEncoding, text)
+        raise TypeError(
+            trans._(
+                'text should be a string, iterable, StringEncoding, dict, or None',
+                deferred=True,
             )
-        return encoding
+        )
 
     @validator('color', pre=True, always=True)
     def _check_color(
@@ -204,29 +211,23 @@ class TextManager(EventedModel):
             ColorType, Iterable[ColorType], ColorEncoding, dict, None
         ],
         values,
-    ) -> dict:
+    ) -> ColorEncoding:
         properties = values['properties']
         if color is None:
-            encoding = {'constant': DEFAULT_COLOR}
-        elif isinstance(color, str) and color in properties:
-            encoding = {'property_name': color}
-        elif isinstance(color, get_args(ColorEncoding)):
-            encoding = color.dict()
-        elif isinstance(color, dict):
-            encoding = color
-        else:
-            # TODO: distinguish between single color and array of length one.
-            # as constant vs. direct.
-            color_array = transform_color(color)
-            n_colors = color_array.shape[0]
-            if n_colors > 1:
-                encoding = {
-                    'values': list(color),
-                    'default_value': DEFAULT_COLOR,
-                }
-            else:
-                encoding = {'constant': color}
-        return encoding
+            return ConstantColorEncoding(constant=DEFAULT_COLOR)
+        if isinstance(color, get_args(ColorEncoding)):
+            return color
+        if isinstance(color, str) and color in properties:
+            return IdentityColorEncoding(property_name=color)
+        if isinstance(color, dict):
+            return parse_obj_as_union(ColorEncoding, color)
+        color_array = transform_color(color)
+        # TODO: distinguish between single color and array of length one as constant vs. direct.
+        if color_array.shape[0] > 1:
+            return DirectColorEncoding(
+                values=list(color), default_value=DEFAULT_COLOR
+            )
+        return ConstantColorEncoding(constant=color)
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
