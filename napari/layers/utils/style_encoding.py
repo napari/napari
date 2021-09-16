@@ -147,21 +147,27 @@ class IdentityColorEncoding(ColorEncodingBase):
 
 class DiscreteColorEncoding(ColorEncodingBase):
     property_name: str
-    mapping: CategoricalColormap
+    categorical_colormap: CategoricalColormap
 
     def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
-        return self.mapping.map(property_row[self.property_name])[0]
+        return self.categorical_colormap.map(property_row[self.property_name])[
+            0
+        ]
 
 
 class ContinuousColorEncoding(ColorEncodingBase):
     property_name: str
-    colormap: Colormap
+    continuous_colormap: Colormap
 
     def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
-        return self.colormap.map(property_row[self.property_name])[0]
+        return self.continuous_colormap.map(property_row[self.property_name])[
+            0
+        ]
 
-    @validator('colormap', pre=True, always=True)
-    def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
+    @validator('continuous_colormap', pre=True, always=True)
+    def _check_continuous_colormap(
+        cls, colormap: ValidColormapArg
+    ) -> Colormap:
         return ensure_colormap(colormap)
 
 

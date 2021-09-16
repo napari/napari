@@ -27,7 +27,7 @@ text = {
     'size': 20,
     'color': {
         'property_name': 'good_point',
-        'mapping': good_point_color,
+        'categorical_colormap': good_point_color,
     },
     'translation': np.array([-30, 0]),
 }

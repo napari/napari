@@ -227,7 +227,7 @@ def test_multi_color_property_discrete_map():
     }
     color = {
         'property_name': 'class',
-        'mapping': {'A': 'red', 'B': 'green', 'C': 'blue'},
+        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
     }
 
     text_manager = TextManager(
@@ -247,7 +247,7 @@ def test_multi_color_property_continuous_map():
     }
     color = {
         'property_name': 'confidence',
-        'colormap': 'gray',
+        'continuous_colormap': 'gray',
     }
 
     text_manager = TextManager(
@@ -266,7 +266,7 @@ def test_color_missing_field():
         'confidence': np.array([0.5, 0, 1]),
     }
     color = {
-        'mapping': {'A': 'red', 'B': 'green', 'C': 'blue'},
+        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
     }
 
     # TODO: maybe worth asserting the error message contains some custom
@@ -282,8 +282,8 @@ def test_color_too_many_fields_use_first_matching():
     }
     color = {
         'property_name': 'confidence',
-        'mapping': {'A': 'red', 'B': 'green', 'C': 'blue'},
-        'colormap': 'gray',
+        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
+        'continuous_colormap': 'gray',
     }
 
     text_manager = TextManager(
