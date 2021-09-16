@@ -60,7 +60,15 @@ class PluginsMenu(NapariMenu):
                     full_name = menu_item_template.format(*key)
                     action = QAction(full_name, parent=self)
 
-                def _add_widget(*args, key=key, hook_type=hook_type):
+                def _add_toggle_widget(*args, key=key, hook_type=hook_type):
+                    full_name = menu_item_template.format(*key)
+                    if full_name in self._win._dock_widgets.keys():
+                        dock_widget = self._win._dock_widgets[full_name]
+                        if dock_widget.isVisible():
+                            dock_widget.hide()
+                        else:
+                            dock_widget.show()
+                        return
                     if hook_type == 'dock':
                         self._win.add_plugin_dock_widget(*key)
                     else:
@@ -71,7 +79,7 @@ class PluginsMenu(NapariMenu):
                 actions = [a.text() for a in menu.actions()]
                 if action.text() not in actions:
                     menu.addAction(action)
-                action.triggered.connect(_add_widget)
+                action.triggered.connect(_add_toggle_widget)
 
     def _remove_unregistered_widget(self, event=None):
 
@@ -100,7 +108,19 @@ class PluginsMenu(NapariMenu):
                         full_name = menu_item_template.format(*key)
                         action = QAction(full_name, parent=self)
 
-                    def _add_widget(*args, key=key, hook_type=hook_type):
+                    def _add_toggle_widget(
+                        *args, key=key, hook_type=hook_type
+                    ):
+
+                        full_name = menu_item_template.format(*key)
+                        if full_name in self._win._dock_widgets.keys():
+                            dock_widget = self._win._dock_widgets[full_name]
+                            if dock_widget.isVisible():
+                                dock_widget.hide()
+                            else:
+                                dock_widget.show()
+                            return
+
                         if hook_type == 'dock':
                             self._win.add_plugin_dock_widget(*key)
                         else:
@@ -111,7 +131,7 @@ class PluginsMenu(NapariMenu):
                     actions = [a.text() for a in menu.actions()]
                     if action.text() not in actions:
                         menu.addAction(action)
-                    action.triggered.connect(_add_widget)
+                    action.triggered.connect(_add_toggle_widget)
 
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""

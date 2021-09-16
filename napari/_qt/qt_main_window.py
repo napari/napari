@@ -660,10 +660,6 @@ class Window:
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             dock_widget = self._dock_widgets[full_name]
-            if dock_widget.isVisible():
-                dock_widget.hide()
-            else:
-                dock_widget.show()
             wdg = dock_widget.widget()
             if hasattr(wdg, '_magic_widget'):
                 wdg = wdg._magic_widget
@@ -703,12 +699,6 @@ class Window:
         """
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            dock_widget = self._dock_widgets[full_name]
-            if dock_widget.isVisible():
-                self._dock_widgets[full_name].hide()
-            else:
-                self._dock_widgets[full_name].show()
-            # self._dock_widgets[full_name].show()
             return
 
         func = plugin_manager._function_widgets[plugin_name][widget_name]
