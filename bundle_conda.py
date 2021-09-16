@@ -11,13 +11,13 @@ Steps:
 """
 
 import os
-import sys
 import re
-from distutils.spawn import find_executable
-import subprocess
-import tempfile
 import shutil
+import subprocess
+import sys
+import tempfile
 from contextlib import contextmanager
+from distutils.spawn import find_executable
 from pathlib import Path
 
 import ruamel_yaml as yaml
@@ -25,21 +25,21 @@ import tomlkit
 
 from bundle import (
     APP,
-    WINDOWS,
-    MACOS,
-    LINUX,
-    PYPROJECT_TOML,
-    BUILD_DIR,
     APP_DIR,
+    BUILD_DIR,
+    LINUX,
+    MACOS,
+    PYPROJECT_TOML,
     VERSION,
-    patched_dmgbuild,
+    WINDOWS,
+    add_sentinel_file,
+    architecture,
+    clean,
+    make_zip,
     patch_environment_variables,
     patch_python_lib_location,
     patch_wxs,
-    clean,
-    add_sentinel_file,
-    architecture,
-    make_zip,
+    patched_dmgbuild,
 )
 
 
@@ -143,7 +143,9 @@ def _constructor(with_local=False, version=VERSION):
         yaml.dump(definitions, fin, default_flow_style=False)
         print("-----")
         subprocess.check_call(
-            [constructor] + (["--conda-exe", micromamba] if micromamba else []) + ["."],
+            [constructor]
+            + (["--conda-exe", micromamba] if micromamba else [])
+            + ["."],
         )
         print("-----")
 
@@ -222,7 +224,8 @@ def main():
 
         add_sentinel_file()
         shutil.move(
-            internal_installer, Path(APP_DIR) / "Contents" / "Resources" if MACOS else BUILD_DIR
+            internal_installer,
+            Path(APP_DIR) / "Contents" / "Resources" if MACOS else BUILD_DIR,
         )
 
         # build

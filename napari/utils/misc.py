@@ -6,7 +6,6 @@ import inspect
 import itertools
 import os
 import re
-import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath
 from os import path as os_path
@@ -25,8 +24,8 @@ from typing import (
 
 import numpy as np
 
+from ..packaging.bundle import bundle_bin_dir, running_as_bundled_app  # noqa
 from ..utils.translations import trans
-from ..packaging.bundle import running_as_bundled_app, bundle_bin_dir  # noqa
 
 if TYPE_CHECKING:
     import packaging.version

@@ -2,11 +2,11 @@
 Launching logic for bundle packaging
 """
 import os.path
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
-import subprocess
-import shutil
 
 try:
     from importlib import metadata as importlib_metadata
@@ -51,7 +51,9 @@ def bundle_bin_dir() -> Optional[str]:
 
 def constructor_to_userspace():
     extension = "exe" if sys.platform.startswith("win") else "sh"
-    bundle = Path(sys.executable).parents[1] / "Resources" / f"bundle.{extension}"
+    bundle = (
+        Path(sys.executable).parents[1] / "Resources" / f"bundle.{extension}"
+    )
     assert bundle.exists(), f"Cannot locate {bundle}!"
 
     prefix = first_writable_location()
@@ -93,7 +95,9 @@ def first_writable_location():
         finally:
             (location / ".canary").unlink()
 
-    raise ValueError("Could not find a suitable userspace location to install to.")
+    raise ValueError(
+        "Could not find a suitable userspace location to install to."
+    )
 
 
 def ensure_installed():

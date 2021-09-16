@@ -16,5 +16,5 @@ recursive-exclude examples *
 recursive-exclude napari *.pyc
 exclude napari/benchmarks/*
 recursive-exclude resources *
-exclude bundle.py
+exclude bundle.py bundle_conda.py
 exclude dockerfile

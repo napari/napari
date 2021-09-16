@@ -381,7 +381,10 @@ def _run_pythonw(python_path):
 
 
 def _bundle_checks():
-    from napari.packaging.bundle import running_as_bundled_app, ensure_installed
+    from napari.packaging.bundle import (
+        ensure_installed,
+        running_as_bundled_app,
+    )
 
     if running_as_bundled_app():
         ensure_installed()
