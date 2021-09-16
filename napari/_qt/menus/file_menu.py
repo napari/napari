@@ -147,10 +147,13 @@ class FileMenu(NapariMenu):
             def _save_size(sz: QSize):
                 app_pref.preferences_size = (sz.width(), sz.height())
 
-            win.finished.connect(lambda e: setattr(self, '_pref_dialog', None))
+            win.finished.connect(self._clean_pref_dialog)
             win.show()
         else:
             self._pref_dialog.raise_()
+
+    def _clean_pref_dialog(self):
+        self._pref_dialog = None
 
     def _rebuild_samples_menu(self, event=None):
         from ...plugins import menu_item_template, plugin_manager
