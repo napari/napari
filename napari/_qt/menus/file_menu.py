@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QAction, QMenu
+from qtpy.QtWidgets import QAction
 
 from ...settings import get_settings
 from ...utils.history import get_save_history, update_save_history
@@ -9,17 +9,17 @@ from ...utils.misc import running_as_bundled_app
 from ...utils.translations import trans
 from ..dialogs.preferences_dialog import PreferencesDialog
 from ..dialogs.screenshot_dialog import ScreenshotDialog
-from ._util import populate_menu
+from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
 
-class FileMenu(QMenu):
+class FileMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
-        self.open_sample_menu = QMenu('Open Sample', self)
+        self.open_sample_menu = NapariMenu('Open Sample', self)
         ACTIONS = [
             {
                 'text': trans._('Open File(s)...'),
@@ -179,16 +179,3 @@ class FileMenu(QMenu):
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
-
-    def update(self, event=None):
-        for ax in self.actions():
-            data = ax.data()
-            if data:
-                enabled_func = data.get('enabled', lambda event: True)
-                ax.setEnabled(bool(enabled_func(event)))
-
-    def closeEvent(self, event):
-        for ax in self.actions():
-            ax.setData(None)
-
-        super().closeEvent(event)

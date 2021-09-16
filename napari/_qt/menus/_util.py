@@ -122,3 +122,32 @@ def populate_qmenu_from_manifest(menu: QMenu, menu_key: str):
             cmd = plugin_manager.get_command(item.command)
             action = menu.addAction(cmd.title)
             action.triggered.connect(lambda *_: execute_command(cmd.command))
+
+
+class NapariMenu(QMenu):
+    """
+    Base napari menu class that provides action handling and clean up on
+    close.
+    """
+
+    _INSTANCES: List['NapariMenu'] = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._INSTANCES.append(self)
+
+    def update(self, event=None):
+        """Update action enabled/disabled state based on action data."""
+        for ax in self.actions():
+            data = ax.data()
+            if data:
+                enabled_func = data.get('enabled', lambda event: True)
+                ax.setEnabled(bool(enabled_func(event)))
+
+    def closeEvent(self, event):
+        """Override qt method to clean up action data."""
+        for ax in self.actions():
+            ax.setData(None)
+
+        self._INSTANCES.remove(self)
+        super().closeEvent(event)
