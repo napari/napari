@@ -37,7 +37,7 @@ from ..utils import perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
-from ..utils.theme import _themes
+from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
 from .dialogs.activity_dialog import ActivityDialog
@@ -74,8 +74,8 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
-
         self._quit_app = False
+
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
@@ -408,7 +408,6 @@ class Window:
     """
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
-
         # create QApplication if it doesn't already exist
         get_app()
 
@@ -1107,10 +1106,13 @@ class Window:
         try:
             if event:
                 value = event.value
-                settings.appearance.theme = value
                 self.qt_viewer.viewer.theme = value
+                settings.appearance.theme = value
             else:
-                value = self.qt_viewer.viewer.theme
+                if settings.appearance.theme == "system":
+                    value = get_system_theme()
+                else:
+                    value = self.qt_viewer.viewer.theme
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
         except (AttributeError, RuntimeError):
