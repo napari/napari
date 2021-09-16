@@ -32,6 +32,7 @@ from ..utils.layer_utils import (
     convert_to_uint8,
     dims_displayed_world_to_layer,
 )
+from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ._base_constants import Blending
 
 Extent = namedtuple('Extent', 'data world step')
@@ -86,7 +87,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. Applied as an extra transform on top of the
+        `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
@@ -140,7 +141,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. Applied as an extra transform on top of the
+        `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
@@ -203,6 +204,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         blending='translucent',
         visible=True,
         multiscale=False,
+        experimental_clipping_planes=None,
     ):
         super().__init__()
 
@@ -224,6 +226,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._value = None
         self.scale_factor = 1
         self.multiscale = multiscale
+        self._experimental_clipping_planes = ClippingPlaneList()
 
         self._ndim = ndim
         self._ndisplay = 2
@@ -273,6 +276,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
+        self.experimental_clipping_planes = experimental_clipping_planes
+
         self.events = EmitterGroup(
             source=self,
             auto_connect=False,
@@ -561,32 +566,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.translate()
 
     @property
-    def position(self):
-        """tuple: Cursor position in world slice coordinates."""
-        warnings.warn(
-            trans._(
-                "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self._position
+    def _is_moving(self):
+        return self._private_is_moving
 
-    @position.setter
-    def position(self, position):
-        warnings.warn(
-            trans._(
-                "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        _position = position[-self.ndim :]
-        if self._position == _position:
-            return
-        self._position = _position
+    @_is_moving.setter
+    def _is_moving(self, value):
+        assert value in (True, False)
+        if value:
+            assert self._moving_coordinates is not None
+        self._private_is_moving = value
 
     @property
     def _dims_displayed(self):
@@ -774,6 +762,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             'opacity': self.opacity,
             'blending': self.blending,
             'visible': self.visible,
+            'experimental_clipping_planes': [
+                plane.dict() for plane in self.experimental_clipping_planes
+            ],
         }
         return base_dict
 
@@ -825,39 +816,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._ndim
 
     @property
-    def selected(self):
-        """bool: Whether this layer is selected or not."""
-        warnings.warn(
-            trans._(
-                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `layer in viewer.layers.selection`",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        layers = getattr(self, '_deprecated_layerlist', None)
-        if layers is not None:
-            return self in layers.selection
-        return False
-
-    @selected.setter
-    def selected(self, selected):
-        warnings.warn(
-            trans._(
-                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `viewer.layers.selection.add(layer)` or `viewer.layers.selection.remove(layer)`",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        layers = getattr(self, '_deprecated_layerlist', None)
-        if layers is not None:
-            if selected:
-                layers.selection.add(self)
-            else:
-                layers.selection.discard(self)
-
-    @property
     def help(self):
         """str: displayed in status bar bottom right."""
         return self._help
@@ -904,6 +862,31 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
+
+    @property
+    def experimental_clipping_planes(self):
+        return self._experimental_clipping_planes
+
+    @experimental_clipping_planes.setter
+    def experimental_clipping_planes(
+        self,
+        value: Union[
+            dict,
+            ClippingPlane,
+            List[Union[ClippingPlane, dict]],
+            ClippingPlaneList,
+        ],
+    ):
+        self._experimental_clipping_planes.clear()
+        if value is None:
+            return
+
+        if isinstance(value, (ClippingPlane, dict)):
+            value = [value]
+        for new_plane in value:
+            plane = ClippingPlane()
+            plane.update(new_plane)
+            self._experimental_clipping_planes.append(plane)
 
     def set_view_slice(self):
         with self.dask_optimized_slicing():
@@ -1118,20 +1101,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.events.set_data()
             self._update_thumbnail()
             self._set_highlight(force=True)
-
-    @property
-    def coordinates(self):
-        """Cursor position in data coordinates."""
-        warnings.warn(
-            trans._(
-                "layer.coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position. You can then transform that into data coordinates using the layer.world_to_data method.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        # Note we ignore the first transform which is tile2data
-        return self.world_to_data(self._position)
 
     def world_to_data(self, position):
         """Convert from world coordinates to data coordinates.
@@ -1365,26 +1334,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         else:
             self.corner_pixels = data_bbox_clipped
-
-    @property
-    def displayed_coordinates(self):
-        """list: List of currently displayed coordinates.
-
-        displayed_coordinates is deprecated and will be removed in version 0.4.9.
-        It should no longer be used as layers should will soon not know
-        which dimensions are displayed. Instead you should use
-        `[layer.coordinates[d] for d in viewer.dims.displayed]
-        """
-        warnings.warn(
-            trans._(
-                "displayed_coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should use [layer.coordinates[d] for d in viewer.dims.displayed]",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        coordinates = self.world_to_data(self._position)
-        return [coordinates[i] for i in self._dims_displayed]
 
     def get_status(
         self,

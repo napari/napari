@@ -169,7 +169,7 @@ The loader will load lower resolution chunks in some cases. Although this
 can slightly delay when the ideal chunks are loaded, it's a very quick way
 to get reasonable looking "coverage" of the area of interest. Often data
 from one or two levels up isn't even that noticeably degraded. This table
-shows how many ideal chunks are "covered" a chunk at a higher level:
+shows how many ideal chunks are "covered" by a chunk at a higher level:
 
 | Levels Above Ideal | Coverage |
 | -----------------: | -------: |
@@ -260,7 +260,7 @@ of view. The
 {class}`~napari.components.experimental.chunk._delay_queue.DelayQueue` was
 created to help with this problem.
 
-While we can't cancel a load if a worker as started working on it, we can
+While we can't cancel a load if a worker has started working on it, we can
 trivially cancel loads that are still in our delay queue. If the chunk goes
 out of view, we cancel the load. If the user pauses for a bit, we initiate
 the loads.
@@ -324,7 +324,7 @@ works today is the
 potentially passes the visual tiles of various sizes, from different levels
 of the Octree. The tiles are rendered on top of each other from largest
 (coarsest level) to smallest (finest level). This is a nice trick so that
-bigger tiles to provide "coverage" for an area, while the smaller tiles add
+bigger tiles provide "coverage" for an area, while the smaller tiles add
 detail only where that data has been loaded.
 
 However, this breaks blending and opacity. We draw multiple tiles on top of
@@ -337,9 +337,9 @@ larger tiles to make sure we do not render anything on top of anything
 else.
 
 Until we do that, we could punt on making things look correct while loads
-are in progress. We could even highly the fact that a tile has not been
-fully loaded. Purposely make them look different until the data is fully
-loaded. Aside from blending this would address a common complaint with
+are in progress. We could even highlight the fact that a tile has not been
+fully loaded (purposely making it look different until the data is fully
+loaded). Aside from blending, this would address a common complaint with
 tiled image viewers: you often can't tell if the data is still being
 loaded. This could be a big issue for scientific uses, you don't want
 people drawing the wrong conclusions from the data.
@@ -426,12 +426,12 @@ framerate would not tank, and you could switch slices at any time.
 
 ### Future Work: Caching
 
-Basically no work as gone into caching or memory management for Octree
+Basically no work has gone into caching or memory management for Octree
 data. It's very likely there are leaks and extended usage will run out of
 memory. This hasn't been addressed because using Octree for long periods of
 time is just now becoming possible.
 
-One caching issue is figuring how to combine the `ChunkCache` with
+One caching issue is figuring out how to combine the `ChunkCache` with
 Dasks's built-in caching. We probably want to keep the `ChunkCache` for
 rendering non-Dask arrays? But when using Dask, we defer to its cache? We
 certainly don't want to cache the data in both places.

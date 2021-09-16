@@ -110,3 +110,11 @@ def test_clim_slider_step_size_and_precision(qtbot, mag):
     # the slider step size should also be inversely proportional to the data
     # range, with 1000 steps across the data range
     assert popup.slider.singleStep() == 10 ** -decimals
+
+
+def test_qt_image_controls_change_contrast(qtbot):
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtBaseImageControls(layer)
+    qtbot.addWidget(qtctrl)
+    qtctrl.contrastLimitsSlider.setValue((0.1, 0.8))
+    assert tuple(layer.contrast_limits) == (0.1, 0.8)

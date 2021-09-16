@@ -1,12 +1,11 @@
 import numpy as np
-from vispy.scene.visuals import Compound, Line, Text
 
 from ..settings import get_settings
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.events import disconnect_events
 from ._text_utils import update_text
-from .markers import Markers
 from .vispy_base_layer import VispyBaseLayer
+from .vispy_points_visual import PointsVisual
 
 
 class VispyPointsLayer(VispyBaseLayer):
@@ -20,7 +19,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # Lines: The lines of the interaction box used for highlights.
         # Markers: The the outlines for each point used for highlights.
         # Markers: The actual markers of each point.
-        node = Compound([Markers(), Markers(), Line(), Text()])
+        node = PointsVisual()
 
         super().__init__(layer, node)
 
@@ -34,9 +33,9 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer._face.events.color_properties.connect(self._on_data_change)
         self.layer.events.text.connect(self._on_layer_text_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
+
         self._on_layer_text_change()
         self._on_data_change()
-        self._reset_base()
 
     def _on_layer_text_change(self, event=None):
         self.layer.text._connect_update_events(
@@ -78,7 +77,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.update()
 
         # Call to update order of translation values with new dims:
-        self._on_matrix_change()
+        self.reset()
 
     def _on_highlight_change(self, event=None):
         settings = get_settings()
@@ -175,6 +174,13 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_node.set_gl_state(str(self.layer.text.blending))
         self.node.update()
+
+    def reset(self, event=None):
+        self._reset_base()
+        self._on_blending_change()
+        self._on_text_change()
+        self._on_highlight_change()
+        self._on_matrix_change()
 
     def close(self):
         """Vispy visual is closing."""

@@ -949,7 +949,6 @@ SKIP_WORDS = {
         '<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>',
         'Extent',
         'Ready',
-        '_deprecated_layerlist',
         '_round_index',
         'blending',
         'constant',

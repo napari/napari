@@ -30,7 +30,6 @@ from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
-from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
@@ -175,17 +174,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
 
-        self.events.add(
-            # FIXME: Deferred translation?
-            active_layer=WarningEmitter(
-                trans._(
-                    "'viewer.events.active_layer' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.active' instead",
-                    deferred=True,
-                ),
-                type='active_layer',
-            )
-        )
-
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
@@ -281,8 +269,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if np.max(size) == 0:
             self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
+            scale = np.array(size[-2:])
+            scale[np.isclose(scale, 0)] = 1
             self.camera.zoom = 0.95 * np.min(
-                np.array(self._canvas_size) / np.array(size[-2:])
+                np.array(self._canvas_size) / scale
             )
         self.camera.angles = (0, 0, 90)
 
@@ -333,34 +323,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
-
-    @property
-    def active_layer(self):
-        warnings.warn(
-            trans._(
-                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.layers.selection.active
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        # this method is only for the deprecation warning, because pydantic
-        # prevents using @active_layer.setter
-        if name != 'active_layer':
-            return super().__setattr__(name, value)
-
-        warnings.warn(
-            trans._(
-                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        self.layers.selection.active = value
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
@@ -648,9 +610,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         affine : n-D array or napari.utils.transforms.Affine
             (N+1, N+1) affine transformation matrix in homogeneous coordinates.
             The first (N, N) entries correspond to a linear transform and
-            the final column is a lenght N translation vector and a 1 or a napari
-            AffineTransform object. If provided then translate, scale, rotate, and
-            shear values are ignored.
+            the final column is a length N translation vector and a 1 or a
+            napari `Affine` transform object. Applied as an extra transform on
+            top of the provided scale, rotate, and shear values.
         opacity : float or list
             Opacity of the layer visual, between 0.0 and 1.0.  If a list then
             must be same length as the axis that is being expanded as channels.

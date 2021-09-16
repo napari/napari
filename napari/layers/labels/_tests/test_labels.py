@@ -450,11 +450,7 @@ def test_n_edit_dimensions():
     data = np.random.randint(20, size=(5, 10, 15))
     layer = Labels(data)
     layer.n_edit_dimensions = 2
-    with pytest.warns(FutureWarning):
-        assert layer.n_dimensional is False
     layer.n_edit_dimensions = 3
-    with pytest.warns(FutureWarning):
-        assert layer.n_dimensional is True
 
 
 @pytest.mark.parametrize(
@@ -1264,3 +1260,35 @@ def test_labels_state_update():
     state = layer._get_state()
     for k, v in state.items():
         setattr(layer, k, v)
+
+
+def test_is_default_color():
+    """Test labels layer default color for None and background
+
+    Previously, setting color to just default values would
+    change color mode to DIRECT and display a black layer.
+    This test ensures `is_default_color` is
+    correctly checking against layer defaults, and `color_mode`
+    is only changed when appropriate.
+
+    See
+        - https://github.com/napari/napari/issues/2479
+        - https://github.com/napari/napari/issues/2953
+    """
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+
+    # layer gets instantiated with defaults
+    current_color = layer.color
+    assert layer._is_default_colors(current_color)
+
+    # setting color to default colors doesn't update color mode
+    layer.color = current_color
+    assert layer.color_mode == 'auto'
+
+    # new colors are not default
+    new_color = {0: 'white', 1: 'red', 3: 'green'}
+    assert not layer._is_default_colors(new_color)
+    # setting the color with non-default colors updates color mode
+    layer.color = new_color
+    assert layer.color_mode == 'direct'

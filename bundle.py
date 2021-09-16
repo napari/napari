@@ -1,5 +1,6 @@
 import configparser
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -28,6 +29,8 @@ LINUX = sys.platform.startswith("linux")
 HERE = os.path.abspath(os.path.dirname(__file__))
 PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
+ARCH = platform.machine() or "generic"
+
 
 if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
@@ -203,6 +206,19 @@ def patch_python_lib_location():
         print("symlinking", orig, "to", dest)
 
 
+def patch_environment_variables():
+    os.environ["ARCH"] = architecture()
+
+
+def architecture():
+    arch = platform.machine() or "generic"
+    # Try to canonicalize across OS
+    replacements = {
+        "amd64": "x86_64",
+    }
+    return replacements.get(arch.lower(), arch)
+
+
 def make_zip():
     import glob
     import zipfile
@@ -214,7 +230,7 @@ def make_zip():
     elif MACOS:
         ext, OS = '*.dmg', 'macOS'
     artifact = glob.glob(os.path.join(BUILD_DIR, ext))[0]
-    dest = f'napari-{VERSION}-{OS}.zip'
+    dest = f'napari-{VERSION}-{OS}-{ARCH}.zip'
 
     with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(artifact, arcname=os.path.basename(artifact))
@@ -231,6 +247,9 @@ def bundle():
 
     if MACOS:
         patch_dmgbuild()
+
+    if LINUX:
+        patch_environment_variables()
 
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
@@ -250,7 +269,6 @@ def bundle():
         elif MACOS:
             patch_python_lib_location()
 
-        sys.exit(0)
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
@@ -273,5 +291,8 @@ if __name__ == "__main__":
         sys.exit()
     if '--version' in sys.argv:
         print(VERSION)
+        sys.exit()
+    if '--arch' in sys.argv:
+        print(architecture())
         sys.exit()
     print('created', bundle())

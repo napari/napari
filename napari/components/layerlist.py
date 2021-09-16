@@ -62,16 +62,10 @@ class LayerList(SelectableEventedList[Layer]):
         new_name : str
             Coerced, unique name.
         """
-        if layer is None:
-            for existing_name in sorted(x.name for x in self):
-                if name == existing_name:
-                    name = inc_name_count(name)
-        else:
-            for _layer in sorted(self, key=lambda x: x.name):
-                if _layer is layer:
-                    continue
-                if name == _layer.name:
-                    name = inc_name_count(name)
+        existing_layers = {x.name for x in self if x is not layer}
+        for i in range(len(self)):
+            if name in existing_layers:
+                name = inc_name_count(name)
         return name
 
     def _update_name(self, event):
@@ -84,22 +78,6 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         super().insert(index, new_layer)
-
-        # required for deprecated layer.selected property.  remove after 0.4.9
-        new_layer._deprecated_layerlist = self
-
-    @property
-    def selected(self):
-        """List of selected layers."""
-        warnings.warn(
-            trans._(
-                "'viewer.layers.selected' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection'",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.selection
 
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
@@ -125,25 +103,6 @@ class LayerList(SelectableEventedList[Layer]):
             moving = [i for i, x in enumerate(self) if x in self.selection]
         offset = insert >= index
         self.move_multiple(moving, insert + offset)
-
-    def unselect_all(self, ignore=None):
-        """Unselects all layers expect any specified in ignore.
-
-        Parameters
-        ----------
-        ignore : Layer | None
-            Layer that should not be unselected if specified.
-        """
-        warnings.warn(
-            trans._(
-                "'viewer.layers.unselect_all()' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection.clear()'. To unselect everything but a set of ignored layers, use 'viewer.layers.selection.intersection_update({ignored})'",
-                deferred=True,
-                ignored=ignore,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        self.selection.intersection_update({ignore} if ignore else {})
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""

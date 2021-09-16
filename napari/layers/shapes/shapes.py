@@ -192,8 +192,8 @@ class Shapes(Layer):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -425,6 +425,7 @@ class Shapes(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        experimental_clipping_planes=None,
     ):
         if data is None:
             if ndim is None:
@@ -455,6 +456,7 @@ class Shapes(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -506,9 +508,13 @@ class Shapes(Layer):
         self._fixed_aspect = False
         self._aspect_ratio = 1
         self._is_moving = False
+
         # _moving_coordinates are needed for fixing aspect ratio during
-        # a resize
+        # a resize, it stores the last pointer coordinate value that happened
+        # during a mouse move to that pressing/releasing shift
+        # can trigger a redraw of the shape with a fixed aspect ratio.
         self._moving_coordinates = None
+
         self._fixed_index = 0
         self._is_selecting = False
         self._drag_box = None
@@ -2585,45 +2591,6 @@ class Shapes(Layer):
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
-
-    def expand_shape(self, data):
-        """Expand shape from 2D to the full data dims.
-
-        expand_shape is deprecated and will be removed in version 0.4.9.
-        It should no longer be used as layers should will soon not know
-        which dimensions are displayed. Instead you should work with
-        full nD shape data as much as possible.
-
-        Parameters
-        ----------
-        data : array
-            2D data array of shape to be expanded.
-
-        Returns
-        -------
-        data_full : array
-            Full D dimensional data array of the shape.
-        """
-        warnings.warn(
-            trans._(
-                "expand_shape is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should work with full nD shape data as much as possible.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        if self.ndim == 2:
-            data_full = data[:, self._dims_displayed_order]
-        else:
-            data_full = np.zeros((len(data), self.ndim), dtype=float)
-            indices = np.array(self._slice_indices)
-            data_full[:, self._dims_not_displayed] = indices[
-                self._dims_not_displayed
-            ]
-            data_full[:, self._dims_displayed] = data
-
-        return data_full
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.

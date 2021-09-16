@@ -78,7 +78,7 @@ Issues that napari has without asynchronous rendering include
 ## RAM and VRAM
 
 There is a two step process to prepare data for rendering. First the data
-needs to be loaded it RAM, then it needs to be transferred from RAM to
+needs to be loaded in RAM, then it needs to be transferred from RAM to
 VRAM. Some hardware has "unified memory" where there is no actual VRAM, but
 there is still a change of status when data goes from raw bytes in RAM to a
 graphics "resource" like a texture or geometry that can be drawn.
