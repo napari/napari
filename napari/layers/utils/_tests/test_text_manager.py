@@ -203,7 +203,7 @@ def test_multi_color_direct():
     )
 
     np.testing.assert_array_equal(
-        text_manager.color_values, transform_color(colors)
+        text_manager.color.get_array(), transform_color(colors)
     )
 
 
@@ -216,7 +216,7 @@ def test_multi_color_property():
     )
 
     np.testing.assert_array_equal(
-        text_manager.color_values, transform_color(colors)
+        text_manager.color.get_array(), transform_color(colors)
     )
 
 
@@ -235,7 +235,8 @@ def test_multi_color_property_discrete_map():
     )
 
     np.testing.assert_array_equal(
-        text_manager.color_values, transform_color(['red', 'green', 'blue'])
+        text_manager.color.get_array(),
+        transform_color(['red', 'green', 'blue']),
     )
 
 
@@ -254,6 +255,6 @@ def test_multi_color_property_continuous_map():
     )
 
     np.testing.assert_allclose(
-        text_manager.color_values,
+        text_manager.color.get_array(),
         transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
     )

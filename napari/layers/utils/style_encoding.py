@@ -59,10 +59,10 @@ class StyleEncoding(EventedModel, Generic[OutputType], ABC):
         pass
 
     @abstractmethod
-    def _make_store(self):
+    def _make_store(self) -> StyleStore[OutputType]:
         pass
 
-    def get_array(self):
+    def get_array(self) -> np.ndarray:
         return self._store.array
 
     def connect(self, callback):
@@ -129,14 +129,6 @@ DirectColorEncoding.__eq_operators__['default_value'] = np.array_equal
 
 
 class ConstantColorEncoding(ColorEncodingBase):
-    """Maps from a property row to a constant color.
-
-    Attributes
-    ----------
-    constant : ColorType
-        The constant value to always return.
-    """
-
     constant: ColorType
 
     def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
@@ -147,14 +139,6 @@ ConstantColorEncoding.__eq_operators__['constant'] = np.array_equal
 
 
 class IdentityColorEncoding(ColorEncodingBase):
-    """Maps from a property row to a property value by name.
-
-    Attributes
-    ----------
-    property_name : str
-        The name of the property to select from a row.
-    """
-
     property_name: str
 
     def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
@@ -170,16 +154,6 @@ class DiscreteColorEncoding(ColorEncodingBase):
 
 
 class ContinuousColorEncoding(ColorEncodingBase):
-    """Maps from a property row to a property value by name to another value defined by a discrete continuous colormap.
-
-    Attributes
-    ----------
-    property_name : str
-        The name of the property to select from a row.
-    colormap : Colormap
-        The map from the continuous named property value to the output color value.
-    """
-
     property_name: str
     colormap: Colormap
 
@@ -197,15 +171,6 @@ class StringEncodingBase(StyleEncoding[str], ABC):
 
 
 class FormatStringEncoding(StringEncodingBase):
-    """Maps from a property row to a formatted string containing property names.
-
-    Attributes
-    ----------
-    format_string : str
-        The format string as described in str.format. The format placeholders
-        should only reference property names.
-    """
-
     format_string: str
 
     def apply_to_row(self, property_row: Dict[str, Any]) -> str:

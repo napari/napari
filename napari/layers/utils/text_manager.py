@@ -72,10 +72,6 @@ class TextManager(EventedModel):
     def values(self):
         return self.text.get_array()
 
-    @property
-    def color_values(self):
-        return self.color.get_array()
-
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all text values from the given layer properties.
 
@@ -170,7 +166,7 @@ class TextManager(EventedModel):
             Array of colors for the N text elements in view
         """
         if len(indices_view) > 0:
-            return self.color_values[indices_view]
+            return self.color.get_array()[indices_view]
         # if no elements in this slice send dummy data
         return np.array([''])
 
