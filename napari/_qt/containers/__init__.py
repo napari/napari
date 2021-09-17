@@ -13,6 +13,7 @@ __all__ = [
     'QtLayerList',
     'QtLayerListModel',
     "QtLayerTreeView",
+    "QtLayerTreeModel",
     'QtListModel',
     'QtListView',
     'QtNodeTreeModel',
