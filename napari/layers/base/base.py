@@ -95,6 +95,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
+    depth_test : bool
+        The layer performs depth testing on render when set to True. depth
+        testing ensures that only the portions of the layer in the foreground
+        (i.e., "in front" are rendered). This overrides the depth_test value
+         set by the blending mode. The default value is True.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -124,6 +129,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 different colors and opacity. Useful for creating overlays. It
                 corresponds to depth_test=False, cull_face=False, blend=True,
                 blend_func=('src_alpha', 'one').
+    depth_test : bool
+        The layer performs depth testing on render when set to True. depth
+        testing ensures that only the portions of the layer in the foreground
+        (i.e., "in front" are rendered). This overrides the depth_test value
+         set by the blending mode. The default value is True.
     scale : tuple of float
         Scale factors for the layer.
     translate : tuple of float
@@ -205,6 +215,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         affine=None,
         opacity=1,
         blending='translucent',
+        depth_test=True,
         visible=True,
         multiscale=False,
         cache=True,  # this should move to future "data source" object.
@@ -220,6 +231,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
+        self._depth_test = depth_test
         self._visible = visible
         self._freeze = False
         self._status = 'Ready'
@@ -306,6 +318,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             editable=Event,
             loaded=Event,
             _ndisplay=Event,
+            depth_test=Event,
             select=WarningEmitter(
                 trans._(
                     "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
@@ -468,6 +481,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def blending(self, blending):
         self._blending = Blending(blending)
         self.events.blending()
+
+    @property
+    def depth_test(self) -> bool:
+        """bool: When true, perform depth testing during rendering.
+
+        Layers with depth_test set to True only render the portions
+        of the layer that are in the foreground (i.e., "in front").
+        """
+        return self._depth_test
+
+    @depth_test.setter
+    def depth_test(self, depth_test: bool):
+        self._depth_test = depth_test
+        self.events.depth_test()
 
     @property
     def visible(self):
@@ -765,6 +792,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             'shear': list(self.shear),
             'opacity': self.opacity,
             'blending': self.blending,
+            'depth_test': self.depth_test,
             'visible': self.visible,
             'experimental_clipping_planes': [
                 plane.dict() for plane in self.experimental_clipping_planes

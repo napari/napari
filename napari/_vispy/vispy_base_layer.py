@@ -58,7 +58,8 @@ class VispyBaseLayer(ABC):
         self.layer.events.set_data.connect(self._on_data_change)
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
-        self.layer.events.blending.connect(self._on_blending_change)
+        self.layer.events.blending.connect(self._on_gl_state_change)
+        self.layer.events.depth_test.connect(self._on_gl_state_change)
         self.layer.events.scale.connect(self._on_matrix_change)
         self.layer.events.translate.connect(self._on_matrix_change)
         self.layer.events.rotate.connect(self._on_matrix_change)
@@ -117,8 +118,10 @@ class VispyBaseLayer(ABC):
     def _on_opacity_change(self, event=None):
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self, event=None):
-        self.node.set_gl_state(self.layer.blending)
+    def _on_gl_state_change(self, event=None):
+        self.node.set_gl_state(
+            self.layer.blending, depth_test=self.layer.depth_test
+        )
         self.node.update()
 
     def _on_matrix_change(self, event=None):
@@ -161,7 +164,7 @@ class VispyBaseLayer(ABC):
     def _reset_base(self):
         self._on_visible_change()
         self._on_opacity_change()
-        self._on_blending_change()
+        self._on_gl_state_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
 
