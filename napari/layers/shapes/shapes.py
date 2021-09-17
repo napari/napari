@@ -666,6 +666,10 @@ class Shapes(Layer):
                 )
             )
 
+        # Remove all text values. These will either be repopulated from new property
+        # values or will get default values, which is fine.
+        self.text.remove(range(self.nshapes))
+
         self._data_view = ShapeList()
         self.add(
             data,
@@ -1971,15 +1975,11 @@ class Shapes(Layer):
                     self.properties[k] = np.concatenate(
                         (self.properties[k], new_property), axis=0
                     )
-                self.text.add(n_props_to_add)
             if total_shapes < n_prop_values:
                 for k in self.properties:
                     self.properties[k] = self.properties[k][:total_shapes]
-                n_props_to_remove = n_prop_values - total_shapes
-                indices_to_remove = np.arange(n_prop_values)[
-                    -n_props_to_remove:
-                ]
-                self.text.remove(indices_to_remove)
+
+            self.text.add(n_new_shapes)
 
             self._add_shapes(
                 data,
@@ -2218,7 +2218,9 @@ class Shapes(Layer):
 
     @text.setter
     def text(self, text):
-        self._text = TextManager.from_layer_kwargs(text, self.properties)
+        self._text = TextManager.from_layer_kwargs(
+            text, self.nshapes, self.properties
+        )
         self.events.text()
 
     def refresh_text(self):
@@ -2226,7 +2228,7 @@ class Shapes(Layer):
 
         This is generally used if the properties were updated without changing the data
         """
-        self.text.refresh_text(self.properties)
+        self.text.refresh_text(self.properties, self.nshapes)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""

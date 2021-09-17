@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Iterable, Tuple, Union, get_args
+from typing import Dict, Iterable, Sequence, Tuple, Union, get_args
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -52,14 +52,15 @@ class TextManager(EventedModel):
     properties : Dict[str, np.ndarray]
         The property values, which typically come from a layer.
     color : ColorEncoding
-        Defines the color for each text element in colors.values
+        Defines the color for each text element.
     text : StringEncoding
-        Defines the string for each text element in text.values
+        Defines the string for each text element.
     """
 
     # Declare properties as a generic dict so that a copy is not made on validation
     # and we can rely on a layer and this sharing the same instance.
     properties: dict
+    n_text: int
     visible: bool = True
     size: PositiveInt = 12
     blending: Blending = Blending.TRANSLUCENT
@@ -77,11 +78,7 @@ class TextManager(EventedModel):
         self.events.text.connect(self._on_text_changed)
         self.events.color.connect(self._on_color_changed)
 
-    @property
-    def values(self):
-        return self.text.get_array()
-
-    def refresh_text(self, properties: Dict[str, np.ndarray]):
+    def refresh_text(self, properties: Dict[str, np.ndarray], n_text: int):
         """Refresh all text values from the given layer properties.
 
         Parameters
@@ -89,6 +86,7 @@ class TextManager(EventedModel):
         properties : Dict[str, np.ndarray]
             The properties of a layer.
         """
+        self.n_text = n_text
         self.properties = properties
 
     def add(self, num_to_add: int):
@@ -99,6 +97,7 @@ class TextManager(EventedModel):
         num_to_add : int
             The number of text values to add.
         """
+        self.n_text += num_to_add
         self.text.add(self.properties, num_to_add)
         self.color.add(self.properties, num_to_add)
 
@@ -110,6 +109,7 @@ class TextManager(EventedModel):
         indices : Iterable[int]
             The indices to remove.
         """
+        self.n_text -= len(set(indices))
         self.text.remove(indices)
         self.color.remove(indices)
 
@@ -158,7 +158,7 @@ class TextManager(EventedModel):
             Array of text strings for the N text elements in view
         """
         if len(indices_view) > 0:
-            return self.values[indices_view]
+            return self.text.get_array()[indices_view]
         # if no elements in this slice send dummy data
         return np.array([''])
 
@@ -175,14 +175,14 @@ class TextManager(EventedModel):
             Array of colors for the N text elements in view
         """
         if len(indices_view) > 0:
-            return self.color.get_array()[indices_view]
+            return self.color.get_array()[indices_view, :]
         # if no elements in this slice send dummy data
-        return np.array([''])
+        return np.zeros((1, 4))
 
     @validator('text', pre=True, always=True)
     def _check_text(
         cls,
-        text: Union[str, Iterable[str], StringEncoding, dict, None],
+        text: Union[str, Sequence[str], StringEncoding, dict, None],
         values,
     ) -> StringEncoding:
         if text is None:
@@ -193,10 +193,10 @@ class TextManager(EventedModel):
             properties = values['properties']
             format_string = f'{{{text}}}' if text in properties else text
             return FormatStringEncoding(format_string=format_string)
-        if isinstance(text, Iterable):
-            return DirectStringEncoding(values=text, default_value='')
         if isinstance(text, dict):
             return parse_obj_as_union(StringEncoding, text)
+        if isinstance(text, Sequence):
+            return DirectStringEncoding(values=text, default_value='')
         raise TypeError(
             trans._(
                 'text should be a string, iterable, StringEncoding, dict, or None',
@@ -208,7 +208,7 @@ class TextManager(EventedModel):
     def _check_color(
         cls,
         color: Union[
-            ColorType, Iterable[ColorType], ColorEncoding, dict, None
+            ColorType, Sequence[ColorType], ColorEncoding, dict, None
         ],
         values,
     ) -> ColorEncoding:
@@ -254,9 +254,10 @@ class TextManager(EventedModel):
 
         This is typically used in the vispy view file.
         """
+        # TODO: need to be careful about when we block this connection, so disable for now.
+        # self.text.connect(text_update_function)
+        # self.color.connect(text_update_function)
         # connect the function for updating the text node
-        self.text.connect(text_update_function)
-        self.color.connect(text_update_function)
         self.events.rotation.connect(text_update_function)
         self.events.translation.connect(text_update_function)
         self.events.anchor.connect(text_update_function)
@@ -267,26 +268,27 @@ class TextManager(EventedModel):
         self.events.blending.connect(blending_update_function)
 
     def _on_text_changed(self, event=None):
-        self.text.refresh(self.properties)
+        self.text.refresh(self.properties, self.n_text)
 
     def _on_color_changed(self, event=None):
-        self.color.refresh(self.properties)
+        self.color.refresh(self.properties, self.n_text)
 
     def _on_properties_changed(self, event=None):
-        self.text.refresh(self.properties)
-        self.color.refresh(self.properties)
+        self.text.refresh(self.properties, self.n_text)
+        self.color.refresh(self.properties, self.n_text)
 
     @classmethod
     def from_layer_kwargs(
         cls,
-        text: Union['TextManager', dict, str, Iterable[str], None],
+        text: Union['TextManager', dict, str, Sequence[str], None],
+        n_text: int,
         properties: Dict[str, np.ndarray],
     ):
         """Create a TextManager from a layer.
 
         Parameters
         ----------
-        text : Union[TextManager, dict, str, Iterable[str], None]
+        text : Union[TextManager, dict, str, Sequence[str], None]
             The strings to be displayed, or a format string to be filled out using properties.
         properties: Dict[str, np.ndarray]
             Stores properties data that will be used to generate text.
@@ -297,6 +299,7 @@ class TextManager(EventedModel):
             kwargs = text
         else:
             kwargs = {'text': text}
+        kwargs['n_text'] = n_text
         kwargs['properties'] = properties
         return cls(**kwargs)
 

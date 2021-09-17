@@ -418,6 +418,13 @@ class Points(Layer):
                                 : len(data)
                             ]
 
+                        # remove_selected removes the specific indices, but then also updates
+                        # data, which is why we need this check here and similar above.
+                        if self.text.n_text > len(data):
+                            self.text.remove(
+                                range(len(data), self.text.n_text)
+                            )
+
                     elif len(data) > cur_npoints:
                         # If there are now more points, add the size and colors of the
                         # new ones
@@ -446,11 +453,12 @@ class Points(Layer):
                         self._face._add(n_colors=adding)
 
                         self.size = np.concatenate((self._size, size), axis=0)
+
+                        self.text.add(adding)
+
                         self.selected_data = set(
                             np.arange(cur_npoints, len(data))
                         )
-
-                        self.text.add(adding)
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -557,7 +565,9 @@ class Points(Layer):
 
     @text.setter
     def text(self, text):
-        self._text = TextManager.from_layer_kwargs(text, self.properties)
+        self._text = TextManager.from_layer_kwargs(
+            text, len(self.data), self.properties
+        )
         self.events.text()
 
     def refresh_text(self):
@@ -565,7 +575,7 @@ class Points(Layer):
 
         This is generally used if the properties were updated without changing the data
         """
-        self.text.refresh_text(self.properties)
+        self.text.refresh_text(self.properties, len(self.data))
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""

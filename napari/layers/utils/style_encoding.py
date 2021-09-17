@@ -55,7 +55,9 @@ class StyleEncoding(EventedModel, Generic[OutputType], ABC):
         self._store = self._make_store()
 
     @abstractmethod
-    def apply_to_row(self, property_row: Dict[str, Any]) -> OutputType:
+    def apply_to_row(
+        self, property_row: Dict[str, Any], index: int
+    ) -> OutputType:
         pass
 
     @abstractmethod
@@ -68,15 +70,14 @@ class StyleEncoding(EventedModel, Generic[OutputType], ABC):
     def connect(self, callback):
         self._store.events.array.connect(callback)
 
-    def refresh(self, properties: Dict[str, np.ndarray]):
-        num_values = _num_rows(properties)
-        indices = range(0, num_values)
+    def refresh(self, properties: Dict[str, np.ndarray], n_rows: int):
+        indices = range(0, n_rows)
         values = self._apply_to_table(properties, indices)
         self._store.update(values)
 
     def add(self, properties: Dict[str, np.ndarray], num_to_add: int):
-        num_values = _num_rows(properties)
-        indices = range(num_values - num_to_add, num_values)
+        num_values = len(self._store.array)
+        indices = range(num_values, num_values + num_to_add)
         values = self._apply_to_table(properties, indices)
         self._store.append(values)
 
@@ -88,7 +89,8 @@ class StyleEncoding(EventedModel, Generic[OutputType], ABC):
     ) -> List[OutputType]:
         return [
             self.apply_to_row(
-                {name: column[index] for name, column in properties.items()}
+                {name: column[index] for name, column in properties.items()},
+                index,
             )
             for index in indices
         ]
@@ -116,13 +118,19 @@ class DirectColorEncoding(ColorEncodingBase):
     def _on_values_changed(self, event=None):
         self._store.update(self.values)
 
-    def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
-        # TODO: consider returning value if we have access to row index.
-        return self.default_value
+    def apply_to_row(
+        self, property_row: Dict[str, Any], index: int
+    ) -> ColorType:
+        return (
+            self.values[index]
+            if index < len(self.values)
+            else self.default_value
+        )
 
-    def refresh(self, properties: Dict[str, np.ndarray]):
-        # TODO: should probably resize based on number of rows but can't rely on that yet.
-        pass
+    def remove(self, indices):
+        super().remove(indices)
+        for index in sorted(indices, reverse=True):
+            self.values.pop(index)
 
 
 DirectColorEncoding.__eq_operators__['default_value'] = np.array_equal
@@ -131,7 +139,9 @@ DirectColorEncoding.__eq_operators__['default_value'] = np.array_equal
 class ConstantColorEncoding(ColorEncodingBase):
     constant: ColorType
 
-    def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
+    def apply_to_row(
+        self, property_row: Dict[str, Any], index: int
+    ) -> ColorType:
         return self.constant
 
 
@@ -141,7 +151,9 @@ ConstantColorEncoding.__eq_operators__['constant'] = np.array_equal
 class IdentityColorEncoding(ColorEncodingBase):
     property_name: str
 
-    def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
+    def apply_to_row(
+        self, property_row: Dict[str, Any], index: int
+    ) -> ColorType:
         return property_row[self.property_name]
 
 
@@ -149,7 +161,9 @@ class DiscreteColorEncoding(ColorEncodingBase):
     property_name: str
     categorical_colormap: CategoricalColormap
 
-    def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
+    def apply_to_row(
+        self, property_row: Dict[str, Any], index: int
+    ) -> ColorType:
         return self.categorical_colormap.map(property_row[self.property_name])[
             0
         ]
@@ -159,7 +173,9 @@ class ContinuousColorEncoding(ColorEncodingBase):
     property_name: str
     continuous_colormap: Colormap
 
-    def apply_to_row(self, property_row: Dict[str, Any]) -> ColorType:
+    def apply_to_row(
+        self, property_row: Dict[str, Any], index: int
+    ) -> ColorType:
         return self.continuous_colormap.map(property_row[self.property_name])[
             0
         ]
@@ -179,7 +195,7 @@ class StringEncodingBase(StyleEncoding[str], ABC):
 class FormatStringEncoding(StringEncodingBase):
     format_string: str
 
-    def apply_to_row(self, property_row: Dict[str, Any]) -> str:
+    def apply_to_row(self, property_row: Dict[str, Any], index: int) -> str:
         return self.format_string.format(**property_row)
 
 
@@ -195,13 +211,17 @@ class DirectStringEncoding(StringEncodingBase):
     def _on_values_changed(self, event=None):
         self._store.update(self.values)
 
-    def apply_to_row(self, property_row: Dict[str, Any]) -> str:
-        # TODO: consider returning value if we have access to row index.
-        return self.default_value
+    def apply_to_row(self, property_row: Dict[str, Any], index: int) -> str:
+        return (
+            self.values[index]
+            if index < len(self.values)
+            else self.default_value
+        )
 
-    def refresh(self, properties: Dict[str, np.ndarray]):
-        # TODO: should probably resize based on number of rows but can't rely on that yet.
-        pass
+    def remove(self, indices):
+        super().remove(indices)
+        for index in sorted(indices, reverse=True):
+            self.values.pop(index)
 
 
 def parse_obj_as_union(union, obj: Dict[str, Any]):
