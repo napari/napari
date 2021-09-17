@@ -29,8 +29,6 @@ class PluginsMenu(NapariMenu):
         self._build()
 
     def _build(self, event=None):
-        from ...plugins import menu_item_template, plugin_manager
-
         self.clear()
         action = self.addAction(trans._("Install/Uninstall Plugins..."))
         action.triggered.connect(self._show_plugin_install_dialog)
@@ -44,42 +42,7 @@ class PluginsMenu(NapariMenu):
         self.addSeparator()
 
         # Add a menu item (QAction) for each available plugin widget
-        for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
-            multiprovider = len(widgets) > 1
-            if multiprovider:
-                menu = NapariMenu(plugin_name, self)
-                self.addMenu(menu)
-            else:
-                menu = self
-
-            for wdg_name in widgets:
-                key = (plugin_name, wdg_name)
-                if multiprovider:
-                    action = QAction(wdg_name, parent=self)
-                else:
-                    full_name = menu_item_template.format(*key)
-                    action = QAction(full_name, parent=self)
-
-                def _add_toggle_widget(*args, key=key, hook_type=hook_type):
-                    full_name = menu_item_template.format(*key)
-                    if full_name in self._win._dock_widgets.keys():
-                        dock_widget = self._win._dock_widgets[full_name]
-                        if dock_widget.isVisible():
-                            dock_widget.hide()
-                        else:
-                            dock_widget.show()
-                        return
-                    if hook_type == 'dock':
-                        self._win.add_plugin_dock_widget(*key)
-                    else:
-                        self._win._add_plugin_function_widget(*key)
-
-                action.setCheckable(True)
-                # check that this wasn't added to the menu already
-                actions = [a.text() for a in menu.actions()]
-                if action.text() not in actions:
-                    menu.addAction(action)
-                action.triggered.connect(_add_toggle_widget)
+        self._add_registered_widget(self, call_all=True)
 
     def _remove_unregistered_widget(self, event=None):
 
@@ -88,11 +51,11 @@ class PluginsMenu(NapariMenu):
                 self.removeAction(action)
                 self._win._remove_dock_widget(event=event)
 
-    def _add_registered_widget(self, event=None):
+    def _add_registered_widget(self, event=None, call_all=False):
         from ...plugins import menu_item_template, plugin_manager
 
         for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
-            if event.value == plugin_name:
+            if call_all or event.value == plugin_name:
                 multiprovider = len(widgets) > 1
                 if multiprovider:
                     menu = NapariMenu(plugin_name, self)
