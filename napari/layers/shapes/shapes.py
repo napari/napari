@@ -202,6 +202,9 @@ class Shapes(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
@@ -425,6 +428,7 @@ class Shapes(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        cache=True,
         experimental_clipping_planes=None,
     ):
         if data is None:
@@ -456,6 +460,7 @@ class Shapes(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
@@ -2603,45 +2608,6 @@ class Shapes(Layer):
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
-
-    def expand_shape(self, data):
-        """Expand shape from 2D to the full data dims.
-
-        expand_shape is deprecated and will be removed in version 0.4.9.
-        It should no longer be used as layers should will soon not know
-        which dimensions are displayed. Instead you should work with
-        full nD shape data as much as possible.
-
-        Parameters
-        ----------
-        data : array
-            2D data array of shape to be expanded.
-
-        Returns
-        -------
-        data_full : array
-            Full D dimensional data array of the shape.
-        """
-        warnings.warn(
-            trans._(
-                "expand_shape is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should work with full nD shape data as much as possible.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        if self.ndim == 2:
-            data_full = data[:, self._dims_displayed_order]
-        else:
-            data_full = np.zeros((len(data), self.ndim), dtype=float)
-            indices = np.array(self._slice_indices)
-            data_full[:, self._dims_not_displayed] = indices[
-                self._dims_not_displayed
-            ]
-            data_full[:, self._dims_displayed] = data
-
-        return data_full
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.

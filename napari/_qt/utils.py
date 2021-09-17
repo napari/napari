@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import signal
 import socket
+import weakref
 from contextlib import contextmanager
 from functools import lru_cache, partial
 from typing import Sequence, Union
@@ -8,10 +11,12 @@ import numpy as np
 import qtpy
 from qtpy.QtCore import (
     QByteArray,
+    QObject,
     QPropertyAnimation,
     QSize,
     QSocketNotifier,
     Qt,
+    Signal,
 )
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
@@ -290,7 +295,7 @@ def add_flash_animation(
     # let's make sure to remove the animation from the widget because
     # if we don't, the widget will actually be black and white.
     widget._flash_animation.finished.connect(
-        partial(remove_flash_animation, widget)
+        partial(remove_flash_animation, weakref.ref(widget))
     )
 
     widget._flash_animation.start()
@@ -300,7 +305,7 @@ def add_flash_animation(
     widget._flash_animation.setKeyValueAt(0.1, QColor(*color))
 
 
-def remove_flash_animation(widget: QWidget):
+def remove_flash_animation(widget_ref: weakref.ref[QWidget]):
     """Remove flash animation from widget.
 
     Parameters
@@ -308,6 +313,9 @@ def remove_flash_animation(widget: QWidget):
     widget : QWidget
         Any Qt widget.
     """
+    if widget_ref() is None:
+        return
+    widget = widget_ref()
     widget.setGraphicsEffect(None)
     del widget._flash_animation
 
@@ -368,3 +376,12 @@ def _maybe_allow_interrupt(qapp):
             signal.signal(signal.SIGINT, old_sigint_handler)
             if handler_args is not None:
                 old_sigint_handler(*handler_args)
+
+
+class Sentry(QObject):
+    """Small object to trigger events across threads."""
+
+    alerted = Signal()
+
+    def alert(self, *_):
+        self.alerted.emit()
