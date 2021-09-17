@@ -40,8 +40,7 @@ class Array(np.ndarray):
         result = np.array(val, dtype=dtype, copy=False, ndmin=len(shape))
 
         if any(
-            (shape[i] != -1 and shape[i] != result.shape[i])
-            for i in range(len(shape))
+            shape[i] not in [-1, result.shape[i]] for i in range(len(shape))
         ):
             result = result.reshape(shape)
         return result
