@@ -231,6 +231,9 @@ class LayerGroup(Group[Layer], Layer):
             child._set_highlight(force=force)
 
     def _update_thumbnail(self, *args, **kwargs):
+        if not hasattr(self, '_thumbnail_shape'):
+            # layer is not finished initializing
+            return
         leaves = list(self.traverse(leaves_only=True))
         if leaves:
             thumb = np.clip(np.sum(leaf.thumbnail for leaf in leaves), 0, 255)

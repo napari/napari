@@ -86,8 +86,7 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
             else:
                 return Qt.Unchecked
         if role == Qt.SizeHintRole:  # determines size of item
-            h = 38
-            return QSize(228, h)
+            return QSize(228, 38)
         if role == self.LayerRole:  # custom role: return the layer
             return self.getItem(index)
         if role == self.ThumbnailRole:  # return the thumbnail

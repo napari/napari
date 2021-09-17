@@ -28,11 +28,11 @@ QtLayerTreeView::item::text {
 }
 
 QTreeView::branch:closed:has-children {
-  image: url(":/themes/{{ folder }}/caret-right.svg");
+  image: url(":/themes/{{ name }}/caret-right.svg");
   padding: 6px;
 }
 QTreeView::branch:open:has-children {
-  image: url(":/themes/{{ folder }}/caret-down.svg");
+  image: url(":/themes/{{ name }}/caret-down.svg");
   padding: 5px;
 }
 QTreeView::branch:selected {
@@ -63,13 +63,13 @@ QTreeView QLineEdit {
 
 /* the first one is the "partially checked" state */
 QtLayerTreeView::indicator {
-  image: url(":/themes/{{ folder }}/visibility_off.svg");
+  image: url(":/themes/{{ name }}/visibility_off.svg");
 }
 
 QtLayerTreeView::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/2D.svg");
+  image: url(":/themes/{{ name }}/2D.svg");
 }
 
 QtLayerTreeView::indicator:checked {
-  image: url(":/themes/{{ folder }}/visibility.svg");
+  image: url(":/themes/{{ name }}/visibility.svg");
 }
