@@ -1,15 +1,11 @@
 """Dask cache utilities.
 """
 import contextlib
-import warnings
-from distutils.version import LooseVersion
 from typing import Callable, ContextManager, Optional, Tuple
 
 import dask
 import dask.array as da
 from dask.cache import Cache
-
-from ..utils.translations import trans
 
 #: dask.cache.Cache, optional : A dask cache for opportunistic caching
 #: use :func:`~.resize_dask_cache` to actually register and resize.
@@ -136,15 +132,6 @@ def configure_dask(
     """
     if not _is_dask_data(data):
         return contextlib.nullcontext
-
-    if dask.__version__ < LooseVersion('2.15.0'):
-        warnings.warn(
-            trans._(
-                'For best performance with Dask arrays in napari, please upgrade Dask to v2.15.0 or later. Current version is {dask_version}',
-                deferred=True,
-                dask_version=dask.__version__,
-            )
-        )
 
     _cache = resize_dask_cache() if cache else contextlib.nullcontext()
 

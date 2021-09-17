@@ -1763,10 +1763,6 @@ SKIP_WORDS = {
         'enabled',
         'octree',
     ],
-    'napari/utils/dask_utils.py': [
-        '2.15.0',
-        'optimization.fuse.active',
-    ],
     'napari/utils/events/__init__.py': [],
     'napari/utils/events/containers/__init__.py': [],
     'napari/utils/events/containers/_evented_list.py': [

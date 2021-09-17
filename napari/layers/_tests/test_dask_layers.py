@@ -1,6 +1,4 @@
-import os
 from contextlib import nullcontext
-from distutils.version import LooseVersion
 
 import dask
 import dask.array as da
@@ -17,8 +15,6 @@ def test_dask_not_greedy():
     """Make sure that we don't immediately calculate dask arrays."""
 
     FETCH_COUNT = 0
-    # the min requirements seems to double the number of fetches
-    MINREQ = int(bool(os.environ.get('MIN_REQ'))) + 1
 
     def get_plane(block_id):
         if block_id:
@@ -32,7 +28,7 @@ def test_dask_not_greedy():
         dtype=float,
     )
     layer = layers.Image(arr)
-    assert FETCH_COUNT == 1 * MINREQ
+    assert FETCH_COUNT == 1
     assert tuple(layer.contrast_limits) == (0, 1)
 
     arr2 = da.map_blocks(
@@ -41,7 +37,7 @@ def test_dask_not_greedy():
         dtype='uint8',
     )
     layer = layers.Image(arr2)
-    assert FETCH_COUNT == 1 * MINREQ
+    assert FETCH_COUNT == 1
     assert tuple(layer.contrast_limits) == (0, 2 ** 8 - 1)
 
 
@@ -64,15 +60,6 @@ def test_dask_array_creates_cache():
     assert _dask_utils._DASK_CACHE.cache.available_bytes > 100
     assert not _dask_utils._DASK_CACHE.active
     assert dask.config.get("optimization.fuse.active", None) == original
-
-    # if the dask version is too low to remove task fusion, emit a warning
-    _dask_ver = dask.__version__
-    dask.__version__ = '2.14.0'
-    with pytest.warns(UserWarning) as record:
-        _ = layers.Image(da.ones((100, 100)))
-
-    assert 'upgrade Dask to v2.15.0 or later' in record[0].message.args[0]
-    dask.__version__ = _dask_ver
 
     # make sure we can resize the cache
     resize_dask_cache(10000)
@@ -122,10 +109,6 @@ def delayed_dask_stack():
     return output
 
 
-@pytest.mark.skipif(
-    dask.__version__ < LooseVersion('2.15.0'),
-    reason="requires dask 2.15.0 or higher",
-)
 @pytest.mark.sync_only
 def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
     """Test that dask_configure reduces compute with dask stacks."""
@@ -164,10 +147,6 @@ def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] == 4
 
 
-@pytest.mark.skipif(
-    dask.__version__ < LooseVersion('2.15.0'),
-    reason="requires dask 2.15.0 or higher",
-)
 @pytest.mark.sync_only
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     """Prove that the dask_configure function works with a counterexample."""
@@ -206,10 +185,6 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] >= 7
 
 
-@pytest.mark.skipif(
-    dask.__version__ < LooseVersion('2.15.0'),
-    reason="requires dask 2.15.0 or higher",
-)
 @pytest.mark.sync_only
 def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     """Prove that the dask_configure function works with a counterexample."""
