@@ -78,6 +78,9 @@ class Surface(IntensityVisualizationMixin, Layer):
                 Corresponds to shading='smooth'.
     visible : bool
         Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
@@ -144,6 +147,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         blending='translucent',
         shading='flat',
         visible=True,
+        cache=True,
         experimental_clipping_planes=None,
     ):
 
@@ -162,6 +166,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
