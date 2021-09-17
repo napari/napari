@@ -10,8 +10,8 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 
 from ...utils import _magicgui as _mgui
+from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
-from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
@@ -147,6 +147,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
         smallest.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
@@ -204,6 +207,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         blending='translucent',
         visible=True,
         multiscale=False,
+        cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
     ):
         super().__init__()
@@ -212,7 +216,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             name = magic_name(data, path_prefix=ROOT_DIR)
 
         self._source = current_source()
-        self.dask_optimized_slicing = configure_dask(data)
+        self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
