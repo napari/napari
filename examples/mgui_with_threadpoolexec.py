@@ -3,7 +3,7 @@ Note: this example requires python >= 3.9
 """
 from concurrent.futures import Future, ThreadPoolExecutor
 
-from magicgui import magic_factory, widgets
+from magicgui import magic_factory
 from skimage import data
 from skimage.feature import blob_log
 from typing_extensions import Annotated
@@ -23,6 +23,7 @@ def make_widget(
 
     # long running function
     def _make_blob():
+        print("running!")
         # skimage.feature may take a while depending on the parameters
         blobs = blob_log(
             image,
@@ -38,6 +39,7 @@ def make_widget(
             edge_width=2,
             face_color="transparent",
         )
+        print("finished")
         return (data, kwargs, 'points')
 
     with ThreadPoolExecutor() as exec:

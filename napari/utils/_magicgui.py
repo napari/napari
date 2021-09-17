@@ -246,13 +246,13 @@ def add_future_data(gui, future, return_type, _from_tuple=True):
 
         def _on_future_ready():
             add_layer_data_tuples_to_viewer(gui, future.result(), return_type)
-            _FUTURES.remove(future)
+            _FUTURES.discard(future)
 
     else:
 
         def _on_future_ready():
             add_layer_data_to_viewer(gui, future.result(), _return_type)
-            _FUTURES.remove(future)
+            _FUTURES.discard(future)
 
     # some future types (such as a dask Future) will call the callback in
     # another thread, which wont always work here.  So we create a very small
