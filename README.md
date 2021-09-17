@@ -93,7 +93,7 @@ For more information or troubleshooting see our [installation tutorial](https://
 > pip install "napari[pyqt5]"    # for PyQt5
 >
 > # OR
-> pip install napari[pyside2]"  # for PySide2
+> pip install "napari[pyside2]"  # for PySide2
 > ```
 
 ## simple example
