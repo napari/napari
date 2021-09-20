@@ -107,23 +107,35 @@ def fix_data_dtype(data):
 
 
 BLENDING_MODES = {
-    'opaque': dict(depth_test=True, cull_face=False, blend=False),
-    'translucent': dict(
-        depth_test=True,
-        cull_face=False,
-        blend=True,
-        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
-    ),
+    'opaque': dict(preset='opaque'),
+    'translucent': dict(preset='translucent'),
     'translucent_no_depth': dict(
         depth_test=False,
         cull_face=False,
         blend=True,
         blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
     ),
-    'additive': dict(
-        depth_test=False,
-        cull_face=False,
-        blend=True,
-        blend_func=('src_alpha', 'one'),
-    ),
+    'additive': dict(preset='additive'),
 }
+
+# BLENDING_MODES = {
+#     'opaque': dict(depth_test=True, cull_face=False, blend=False),
+#     'translucent': dict(
+#         depth_test=True,
+#         cull_face=False,
+#         blend=True,
+#         blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+#     ),
+#     'translucent_no_depth': dict(
+#         depth_test=False,
+#         cull_face=False,
+#         blend=True,
+#         blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+#     ),
+#     'additive': dict(
+#         depth_test=False,
+#         cull_face=False,
+#         blend=True,
+#         blend_func=('src_alpha', 'one'),
+#     ),
+# }
