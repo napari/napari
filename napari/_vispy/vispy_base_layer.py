@@ -4,7 +4,7 @@ import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
 from ..utils.events import disconnect_events
-from .utils_gl import get_max_texture_sizes
+from .utils_gl import BLENDING_MODES, get_max_texture_sizes
 
 
 class VispyBaseLayer(ABC):
@@ -118,7 +118,8 @@ class VispyBaseLayer(ABC):
         self.node.opacity = self.layer.opacity
 
     def _on_blending_change(self, event=None):
-        self.node.set_gl_state(self.layer.blending)
+        blending_kwargs = BLENDING_MODES[self.layer.blending]
+        self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
     def _on_matrix_change(self, event=None):
