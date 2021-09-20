@@ -18,8 +18,8 @@ def test_action_menu(qapp):
 
     menu = QtActionContextMenu(ACTIONS)
     menu.update_from_context({'count': 0, 'is_ready': True})
-    assert menu._menu_actions['add_one'].isEnabled()
-    assert menu._menu_actions['add_one'].isVisible()
+    assert menu._get_action('add_one').isEnabled()
+    assert menu._get_action('add_one').isVisible()
 
     CONTEXT_KEYS = {
         'count': lambda x: len(x),
@@ -28,7 +28,7 @@ def test_action_menu(qapp):
     some_object = [42]
     ctx = {k: v(some_object) for k, v in CONTEXT_KEYS.items()}
     menu.update_from_context(ctx)
-    assert not menu._menu_actions['add_one'].isEnabled()
+    assert not menu._get_action('add_one').isEnabled()
 
 
 def test_layer_action_menu(qapp):
@@ -36,25 +36,25 @@ def test_layer_action_menu(qapp):
     menu = QtActionContextMenu(_LAYER_ACTIONS)
     layer_list = LayerList([])
     menu.update_from_context(layer_list._selection_context())
-    assert not menu._menu_actions['napari:convert_to_image'].isEnabled()
+    assert not menu._get_action('napari:convert_to_image').isEnabled()
 
     layer_list.append(Labels(np.zeros((8, 8), int)))
     menu.update_from_context(layer_list._selection_context())
-    assert menu._menu_actions['napari:convert_to_image'].isEnabled()
-    assert not menu._menu_actions['napari:convert_to_labels'].isEnabled()
+    assert menu._get_action('napari:convert_to_image').isEnabled()
+    assert not menu._get_action('napari:convert_to_labels').isEnabled()
 
     layer_list.append(Image(np.zeros((8, 8))))
     menu.update_from_context(layer_list._selection_context())
-    assert not menu._menu_actions['napari:convert_to_image'].isEnabled()
-    assert menu._menu_actions['napari:convert_to_labels'].isEnabled()
-    assert not menu._menu_actions['napari:link_selected_layers'].isEnabled()
+    assert not menu._get_action('napari:convert_to_image').isEnabled()
+    assert menu._get_action('napari:convert_to_labels').isEnabled()
+    assert not menu._get_action('napari:link_selected_layers').isEnabled()
 
     layer_list.select_all()
     menu.update_from_context(layer_list._selection_context())
-    assert menu._menu_actions['napari:link_selected_layers'].isEnabled()
-    assert not menu._menu_actions['napari:unlink_selected_layers'].isEnabled()
+    assert menu._get_action('napari:link_selected_layers').isEnabled()
+    assert not menu._get_action('napari:unlink_selected_layers').isEnabled()
 
     link_layers(layer_list)
     menu.update_from_context(layer_list._selection_context())
-    assert not menu._menu_actions['napari:link_selected_layers'].isEnabled()
-    assert menu._menu_actions['napari:unlink_selected_layers'].isEnabled()
+    assert not menu._get_action('napari:link_selected_layers').isEnabled()
+    assert menu._get_action('napari:unlink_selected_layers').isEnabled()

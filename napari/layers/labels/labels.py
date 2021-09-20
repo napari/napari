@@ -14,7 +14,6 @@ from ...utils.colormaps import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
-from ...utils.events.event import WarningEmitter
 from ...utils.geometry import clamp_point_to_bounding_box
 from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
@@ -92,9 +91,9 @@ class Labels(_ImageBase):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -116,6 +115,17 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
+    experimental_slicing_plane : dict or SlicingPlane
+        Properties defining plane rendering in 3D. Properties are defined in
+        data coordinates. Valid dictionary keys are
+        {'position', 'normal', 'thickness', and 'enabled'}.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
 
     Attributes
     ----------
@@ -148,8 +158,8 @@ class Labels(_ImageBase):
         Opacity of the labels, must be between 0 and 1.
     contiguous : bool
         If `True`, the fill bucket changes only connected pixels of same label.
-    n_dimensional : bool
-        If `True`, paint and fill edit labels across all dimensions.
+    n_edit_dimensions : int
+        The number of dimensions across which labels will be edited.
     contour : int
         If greater than 0, displays contours of labels instead of shaded regions
         with a thickness equal to its value.
@@ -180,6 +190,10 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
+    experimental_slicing_plane : SlicingPlane
+        Properties defining plane rendering in 3D.
+    experimental_clipping_planes : ClippingPlaneList
+        Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
     -----
@@ -212,6 +226,9 @@ class Labels(_ImageBase):
         rendering='iso_categorical',
         visible=True,
         multiscale=None,
+        cache=True,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ):
 
         self._seed = seed
@@ -252,19 +269,15 @@ class Labels(_ImageBase):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            cache=cache,
+            experimental_slicing_plane=experimental_slicing_plane,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
             mode=Event,
             preserve_labels=Event,
             properties=Event,
-            n_dimensional=WarningEmitter(
-                trans._(
-                    "'Labels.events.n_dimensional' is deprecated and will be removed in napari v0.4.9. Use 'Labels.event.n_edit_dimensions' instead.",
-                    deferred=True,
-                ),
-                type='n_dimensional',
-            ),
             n_edit_dimensions=Event,
             contiguous=Event,
             brush_size=Event,
@@ -303,35 +316,6 @@ class Labels(_ImageBase):
     def contiguous(self, contiguous):
         self._contiguous = contiguous
         self.events.contiguous()
-
-    @property
-    def n_dimensional(self):
-        """bool: paint and fill edits labels across all dimensions."""
-        warnings.warn(
-            trans._(
-                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self._n_edit_dimensions == self.ndim and self.ndim > 2
-
-    @n_dimensional.setter
-    def n_dimensional(self, n_dimensional):
-        warnings.warn(
-            trans._(
-                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        if n_dimensional:
-            self.n_edit_dimensions = self.ndim
-        else:
-            self.n_edit_dimensions = 2
-        self.events.n_dimensional()
 
     @property
     def n_edit_dimensions(self):
@@ -379,10 +363,10 @@ class Labels(_ImageBase):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self._selected_color = self.get_color(self.selected_label)
         # invalidate _all_vals to trigger re-generation
         # in _raw_to_displayed
         self._all_vals = np.array([])
+        self._selected_color = self.get_color(self.selected_label)
         self.refresh()
         self.events.selected_label()
 
@@ -444,16 +428,11 @@ class Labels(_ImageBase):
 
     @color.setter
     def color(self, color):
-
         if not color:
             color = {}
-            color_mode = LabelColorMode.AUTO
-        else:
-            color_mode = LabelColorMode.DIRECT
 
         if self._background_label not in color:
             color[self._background_label] = 'transparent'
-
         if None not in color:
             color[None] = 'black'
 
@@ -461,9 +440,54 @@ class Labels(_ImageBase):
             label: transform_color(color_str)[0]
             for label, color_str in color.items()
         }
-
         self._color = colors
+
+        # `colors` may contain just the default None and background label
+        # colors, in which case we need to be in AUTO color mode. Otherwise,
+        # `colors` contains colors for all labels, and we should be in DIRECT
+        # mode.
+
+        # For more information
+        # - https://github.com/napari/napari/issues/2479
+        # - https://github.com/napari/napari/issues/2953
+        if self._is_default_colors(colors):
+            color_mode = LabelColorMode.AUTO
+        else:
+            color_mode = LabelColorMode.DIRECT
+
         self.color_mode = color_mode
+
+    def _is_default_colors(self, color):
+        """Returns True if color contains only default colors, otherwise False.
+
+        Default colors are black for `None` and transparent for
+        `self._background_label`.
+
+        Parameters
+        ----------
+        color : Dict
+            Dictionary of label value to color array
+
+        Returns
+        -------
+        bool
+            True if color contains only default colors, otherwise False.
+        """
+        if len(color) != 2:
+            return False
+
+        if not hasattr(self, '_color'):
+            return False
+
+        default_keys = [None, self._background_label]
+        if set(default_keys) != set(color.keys()):
+            return False
+
+        for key in default_keys:
+            if not np.allclose(self._color[key], color[key]):
+                return False
+
+        return True
 
     def _ensure_int_labels(self, data):
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""
@@ -505,6 +529,10 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self._properties,
                 'rendering': self.rendering,
+                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
+                ],
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,
@@ -749,7 +777,7 @@ class Labels(_ImageBase):
             maximum label value in data
 
         Returns
-        ----------
+        -------
         lookup_func : function
             function to use for mapping label values to colors
         """
@@ -921,8 +949,8 @@ class Labels(_ImageBase):
 
     def _get_value_3d(
         self,
-        start_position: np.ndarray,
-        end_position: np.ndarray,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
         dims_displayed: List[int],
     ) -> Optional[int]:
         """Get the first non-background value encountered along a ray.
@@ -944,23 +972,16 @@ class Labels(_ImageBase):
         """
         return (
             self._get_value_ray(
-                start_point=start_position,
-                end_point=end_position,
+                start_point=start_point,
+                end_point=end_point,
                 dims_displayed=dims_displayed,
             )
             or 0
         )
 
     def _reset_history(self, event=None):
-        self._undo_history = deque()
-        self._redo_history = deque()
-
-    def _trim_history(self):
-        while (
-            len(self._undo_history) + len(self._redo_history)
-            > self._history_limit
-        ):
-            self._undo_history.popleft()
+        self._undo_history = deque(maxlen=self._history_limit)
+        self._redo_history = deque(maxlen=self._history_limit)
 
     def _save_history(self, value):
         """Save a history "atom" to the undo history.
@@ -985,7 +1006,6 @@ class Labels(_ImageBase):
         self._redo_history = deque()
         if not self._block_saving:
             self._undo_history.append([value])
-            self._trim_history()
         else:
             self._undo_history[-1].append(value)
 
@@ -1032,9 +1052,8 @@ class Labels(_ImageBase):
     def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
-        if it is `False`, working either just in the current slice if
-        the `n_dimensional` flag is `False` or on the entire data if it is
-        `True`.
+        if it is `False`, working in the number of dimensions specified by
+        the `n_edit_dimensions` flag.
 
         Parameters
         ----------
@@ -1060,7 +1079,7 @@ class Labels(_ImageBase):
         ):
             return
 
-        dims_to_fill = self._dims_order[-self.n_edit_dimensions :]
+        dims_to_fill = sorted(self._dims_order[-self.n_edit_dimensions :])
         data_slice_list = list(int_coord)
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
@@ -1094,7 +1113,11 @@ class Labels(_ImageBase):
             match_indices = match_indices_local
 
         self._save_history(
-            (match_indices, self.data[match_indices], new_label)
+            (
+                match_indices,
+                np.array(self.data[match_indices], copy=True),
+                new_label,
+            )
         )
 
         # Replace target pixels with new_label
@@ -1119,8 +1142,8 @@ class Labels(_ImageBase):
             calls.
         """
         shape = self.data.shape
-        dims_to_paint = self._dims_order[-self.n_edit_dimensions :]
-        dims_not_painted = self._dims_order[: -self.n_edit_dimensions]
+        dims_to_paint = sorted(self._dims_order[-self.n_edit_dimensions :])
+        dims_not_painted = sorted(self._dims_order[: -self.n_edit_dimensions])
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
@@ -1181,7 +1204,13 @@ class Labels(_ImageBase):
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         # save the existing values to the history
-        self._save_history((slice_coord, self.data[slice_coord], new_label))
+        self._save_history(
+            (
+                slice_coord,
+                np.array(self.data[slice_coord], copy=True),
+                new_label,
+            )
+        )
 
         # update the labels image
         self.data[slice_coord] = new_label

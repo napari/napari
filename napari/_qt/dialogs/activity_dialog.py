@@ -109,6 +109,8 @@ class ActivityDialog(QDialog):
         self._baseLayout.addWidget(self._titleBar)
         self._baseLayout.addWidget(self._scrollArea)
         self.setLayout(self._baseLayout)
+        self.resize(520, self.MIN_HEIGHT)
+        self.move_to_bottom_right()
 
     def add_progress_bar(self, pbar, nest_under=None):
         """Add progress bar to the activity_dialog, making ProgressBarGroup if needed.

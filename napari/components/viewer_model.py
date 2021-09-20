@@ -30,7 +30,6 @@ from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
-from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
@@ -66,6 +65,10 @@ PathLike = Union[str, Path]
 PathOrPaths = Union[PathLike, Sequence[PathLike]]
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
+
+
+def _current_theme() -> str:
+    return get_settings().appearance.theme
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -114,7 +117,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     help: str = ''
     status: str = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
-    theme: str = DEFAULT_THEME
+    theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
 
     # 2-tuple indicating height and width
@@ -171,17 +174,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
 
-        self.events.add(
-            # FIXME: Deferred translation?
-            active_layer=WarningEmitter(
-                trans._(
-                    "'viewer.events.active_layer' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.active' instead",
-                    deferred=True,
-                ),
-                type='active_layer',
-            )
-        )
-
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
@@ -222,7 +214,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return super().json(exclude=exclude, **kwargs)
 
     def dict(self, **kwargs):
-        """Convert to a dictionaty."""
+        """Convert to a dictionary."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
         # https://github.com/samuelcolvin/pydantic/pull/2231
@@ -277,8 +269,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if np.max(size) == 0:
             self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
+            scale = np.array(size[-2:])
+            scale[np.isclose(scale, 0)] = 1
             self.camera.zoom = 0.95 * np.min(
-                np.array(self._canvas_size) / np.array(size[-2:])
+                np.array(self._canvas_size) / scale
             )
         self.camera.angles = (0, 0, 90)
 
@@ -329,34 +323,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
-
-    @property
-    def active_layer(self):
-        warnings.warn(
-            trans._(
-                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.layers.selection.active
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        # this method is only for the deprecation warning, because pydantic
-        # prevents using @active_layer.setter
-        if name != 'active_layer':
-            return super().__setattr__(name, value)
-
-        warnings.warn(
-            trans._(
-                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        self.layers.selection.active = value
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
@@ -556,6 +522,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
+        cache=True,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -642,9 +611,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         affine : n-D array or napari.utils.transforms.Affine
             (N+1, N+1) affine transformation matrix in homogeneous coordinates.
             The first (N, N) entries correspond to a linear transform and
-            the final column is a lenght N translation vector and a 1 or a napari
-            AffineTransform object. If provided then translate, scale, rotate, and
-            shear values are ignored.
+            the final column is a length N translation vector and a 1 or a
+            napari `Affine` transform object. Applied as an extra transform on
+            top of the provided scale, rotate, and shear values.
         opacity : float or list
             Opacity of the layer visual, between 0.0 and 1.0.  If a list then
             must be same length as the axis that is being expanded as channels.
@@ -665,6 +634,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             should be the largest. Please note multiscale rendering is only
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
+        cache : bool
+            Whether slices of out-of-core datasets should be cached upon
+            retrieval. Currently, this only applies to dask arrays.
+        experimental_slicing_plane : dict or SlicingPlane
+            Properties defining plane rendering in 3D. Properties are defined in
+            data coordinates. Valid dictionary keys are
+            {'position', 'normal', 'thickness', and 'enabled'}.
+        experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+            Each dict defines a clipping plane in 3D in data coordinates.
+            Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+            Values on the negative side of the normal are discarded if the plane is enabled.
 
         Returns
         -------
@@ -703,6 +683,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'blending': blending,
             'visible': visible,
             'multiscale': multiscale,
+            'cache': cache,
+            'experimental_slicing_plane': experimental_slicing_plane,
+            'experimental_clipping_planes': experimental_clipping_planes,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -714,6 +697,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'affine',
             'contrast_limits',
             'metadata',
+            'experimental_clipping_planes',
         }
 
         if channel_axis is None:

@@ -7,13 +7,13 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
 )
-from superqt import QLabeledSlider as QSlider
 
 from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
 from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
+from ..widgets._slider_compat import QSlider
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -255,10 +255,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if label layer is n-dimensional.
         """
-        if state == Qt.Checked:
-            self.layer.n_dimensional = True
-        else:
-            self.layer.n_dimensional = False
+        self.layer.n_dimensional = state == Qt.Checked
 
     def change_text_visibility(self, state):
         """Toggle the visibiltiy of the text.
@@ -268,10 +265,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        if state == Qt.Checked:
-            self.layer.text.visible = True
-        else:
-            self.layer.text.visible = False
+        self.layer.text.visible = state == Qt.Checked
 
     def _on_text_visibility_change(self, event):
         """Receive layer model text visibiltiy change change event and update checkbox.

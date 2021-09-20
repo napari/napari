@@ -518,26 +518,3 @@ def test_name_uniqueness():
     layers.append(Image(np.random.random((10, 15)), name="Image"))
     layers.append(Image(np.random.random((10, 15)), name="Image"))
     assert [x.name for x in layers] == ['Image [1]', 'Image', 'Image [2]']
-
-
-def test_deprecated_selection():
-    """Test deprecated layer selection emits warnings."""
-    layers = LayerList()
-    layer = Image(np.random.random((10, 15)))
-    events = []
-
-    with pytest.warns(FutureWarning):
-        layer.events.select.connect(lambda e: events.append(e))
-        layer.events.deselect.connect(lambda e: events.append(e))
-
-    layers.append(layer)
-    assert events[-1].type == 'select'
-
-    with pytest.warns(FutureWarning):
-        assert layer.selected is True
-
-    with pytest.warns(FutureWarning):
-        layer.selected = False
-
-    assert events[-1].type == 'deselect'
-    assert layer not in layers.selection

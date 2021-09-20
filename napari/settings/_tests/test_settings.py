@@ -128,12 +128,15 @@ def test_settings_to_dict_no_env(monkeypatch):
 
 
 def test_settings_reset(test_settings):
+    appearance_id = id(test_settings.appearance)
     test_settings.reset()
+    assert id(test_settings.appearance) == appearance_id
     assert test_settings.appearance.theme == "dark"
     test_settings.appearance.theme = "light"
     assert test_settings.appearance.theme == "light"
     test_settings.reset()
     assert test_settings.appearance.theme == "dark"
+    assert id(test_settings.appearance) == appearance_id
 
 
 def test_settings_model(test_settings):
@@ -161,7 +164,7 @@ def test_custom_theme_settings(test_settings):
         primary='rgb(80, 88, 108)',
         current='rgb(184, 112, 0)',
     )
-    register_theme(custom_theme_name, custom_theme_name)
+    register_theme(custom_theme_name, blue_theme)
 
     # Theme registered, should pass validation
     test_settings.appearance.theme = custom_theme_name
@@ -178,6 +181,8 @@ def test_model_fields_are_annotated(test_settings):
     errors = []
     for field in test_settings.__fields__.values():
         model = field.type_
+        if not hasattr(model, '__fields__'):
+            continue
         difference = set(model.__fields__) - set(model.__annotations__)
         if difference:
             errors.append(
@@ -225,20 +230,30 @@ def test_subfield_env_field(monkeypatch):
 # Failing because dark is actually the default...
 def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
 
+    # create a settings file with light theme
     data = "appearance:\n   theme: light"
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
 
+    # make sure they wrote correctly
     disk_settings = fake_path.read_text()
     assert 'theme: light' in disk_settings
+    # make sure they load correctly
     assert NapariSettings(fake_path).appearance.theme == "light"
 
+    # now load settings again with an Env-var override
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'dark')
     settings = NapariSettings(fake_path)
+    # make sure the override worked, and save again
     assert settings.appearance.theme == 'dark'
-    settings.save()
+    # data from the config file is still "known"
+    assert settings._config_file_settings['appearance']['theme'] == 'light'
+    # but we know what came from env vars as well:
+    assert settings.env_settings()['appearance']['theme'] == 'dark'
 
-    # it shouldn't have overriden our non-default value
+    # when we save it shouldn't use environment variables and it shouldn't
+    # have overriden our non-default value of `theme: light`
+    settings.save()
     disk_settings = fake_path.read_text()
     assert 'theme: light' in disk_settings
 
@@ -320,3 +335,12 @@ def test_settings_events(test_settings):
     mock.reset_mock()
     test_settings.appearance.theme = 'light'
     mock.assert_not_called()
+
+
+@pytest.mark.parametrize('ext', ['yml', 'yaml', 'json'])
+def test_full_serialize(test_settings: NapariSettings, tmp_path, ext):
+    """Make sure that every object in the settings is serializeable.
+
+    Should work with both json and yaml.
+    """
+    test_settings.save(tmp_path / f't.{ext}', exclude_defaults=False)

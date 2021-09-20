@@ -1,10 +1,12 @@
 import dask.array as da
 import numpy as np
 import pytest
+import tensorstore as ts
 import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
+from napari.layers.utils.plane import ClippingPlaneList, SlicingPlane
 from napari.utils import Colormap
 from napari.utils.transforms.transform_utils import rotate_to_matrix
 
@@ -721,3 +723,72 @@ def test_2d_image_with_channels_and_affine_assignment_broadcasts(affine_size):
     image = Image(np.ones((1, 1, 1, 100, 100)))
     image.affine = np.eye(affine_size)
     np.testing.assert_array_equal(image.affine, np.eye(6))
+
+
+def test_image_state_update():
+    """Test that an image can be updated from the output of its
+    _get_state method()
+    """
+    image = Image(np.ones((32, 32, 32)))
+    state = image._get_state()
+    for k, v in state.items():
+        setattr(image, k, v)
+
+
+def test_instiantiate_with_experimental_slicing_plane_dict():
+    """Test that an image layer can be instantiated with plane parameters
+    in a dictionary.
+    """
+    plane_parameters = {
+        'position': (32, 32, 32),
+        'normal': (1, 1, 1),
+        'thickness': 22,
+    }
+    image = Image(
+        np.ones((32, 32, 32)), experimental_slicing_plane=plane_parameters
+    )
+    for k, v in plane_parameters.items():
+        if k == 'normal':
+            v = tuple(v / np.linalg.norm(v))
+        assert v == getattr(image.experimental_slicing_plane, k, v)
+
+
+def test_instiantiate_with_experimental_slicing_plane():
+    """Test that an image layer can be instantiated with plane parameters
+    in a Plane.
+    """
+    plane = SlicingPlane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
+    image = Image(np.ones((32, 32, 32)), experimental_slicing_plane=plane)
+    for k, v in plane.dict().items():
+        assert v == getattr(image.experimental_slicing_plane, k, v)
+
+
+def test_instantiate_with_clipping_planelist():
+    planes = ClippingPlaneList.from_array(np.ones((2, 2, 3)))
+    image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
+    assert len(image.experimental_clipping_planes) == 2
+
+
+def test_instantiate_with_experimental_clipping_planes_dict():
+    planes = [
+        {'position': (0, 0, 0), 'normal': (0, 0, 1)},
+        {'position': (0, 1, 0), 'normal': (1, 0, 0)},
+    ]
+    image = Image(np.ones((32, 32, 32)), experimental_clipping_planes=planes)
+    for i in range(len(planes)):
+        assert (
+            image.experimental_clipping_planes[i].position
+            == planes[i]['position']
+        )
+        assert (
+            image.experimental_clipping_planes[i].normal == planes[i]['normal']
+        )
+
+
+def test_tensorstore_image():
+    """Test an image coming from a tensorstore array."""
+    data = ts.array(
+        np.full(shape=(1024, 1024), fill_value=255, dtype=np.uint8)
+    )
+    layer = Image(data)
+    assert np.all(layer.data == data)

@@ -26,10 +26,10 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt import QElidingLabel
 
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans
-from ..widgets.qt_eliding_label import MultilineElidedLabel
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
@@ -77,7 +77,7 @@ class NapariQtNotification(QDialog):
     MIN_WIDTH = 400
     MIN_EXPANSION = 18
 
-    message: MultilineElidedLabel
+    message: QElidingLabel
     source_label: QLabel
     severity_icon: QLabel
 
@@ -227,7 +227,9 @@ class NapariQtNotification(QDialog):
         self.severity_icon.setMinimumWidth(30)
         self.severity_icon.setMaximumWidth(30)
         self.row1.addWidget(self.severity_icon, alignment=Qt.AlignTop)
-        self.message = MultilineElidedLabel(self.row1_widget)
+        self.message = QElidingLabel()
+        self.message.setWordWrap(True)
+        self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.message.setMinimumWidth(self.MIN_WIDTH - 200)
         self.message.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding

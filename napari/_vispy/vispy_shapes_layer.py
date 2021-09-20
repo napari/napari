@@ -1,10 +1,10 @@
 import numpy as np
-from vispy.scene.visuals import Compound, Line, Markers, Mesh, Text
 
 from ..settings import get_settings
 from ..utils.events import disconnect_events
 from ._text_utils import update_text
 from .vispy_base_layer import VispyBaseLayer
+from .vispy_shapes_visual import ShapesVisual
 
 
 class VispyShapesLayer(VispyBaseLayer):
@@ -15,7 +15,7 @@ class VispyShapesLayer(VispyBaseLayer):
         # Lines: The lines of the interaction box used for highlights.
         # Mesh: The mesh of the outlines for each shape used for highlights.
         # Mesh: The actual meshes of the shape faces and edges
-        node = Compound([Mesh(), Mesh(), Line(), Markers(), Text()])
+        node = ShapesVisual()
 
         super().__init__(layer, node)
 
@@ -27,9 +27,8 @@ class VispyShapesLayer(VispyBaseLayer):
         )
         self.layer.events.highlight.connect(self._on_highlight_change)
 
-        self._reset_base()
+        self.reset()
         self._on_data_change()
-        self._on_highlight_change()
 
     def _on_data_change(self, event=None):
         faces = self.layer._data_view._mesh.displayed_triangles
@@ -158,6 +157,11 @@ class VispyShapesLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_node.set_gl_state(str(self.layer.text.blending))
         self.node.update()
+
+    def reset(self):
+        self._reset_base()
+        self._on_highlight_change()
+        self._on_blending_change()
 
     def close(self):
         """Vispy visual is closing."""

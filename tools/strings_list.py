@@ -443,7 +443,6 @@ SKIP_WORDS = {
         'slice_label',
         'slice_label_sep',
     ],
-    'napari/_qt/widgets/qt_eliding_label.py': [],
     'napari/_qt/widgets/qt_highlight_preview.py': [
         'border: 1px solid white;',
         'px',
@@ -950,7 +949,6 @@ SKIP_WORDS = {
         '<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>',
         'Extent',
         'Ready',
-        '_deprecated_layerlist',
         '_round_index',
         'blending',
         'constant',
@@ -1764,11 +1762,6 @@ SKIP_WORDS = {
         'NAPARI_MON',
         'enabled',
         'octree',
-    ],
-    'napari/utils/dask_utils.py': [
-        '2.15.0',
-        'dask_cache',
-        'optimization.fuse.active',
     ],
     'napari/utils/events/__init__.py': [],
     'napari/utils/events/containers/__init__.py': [],

@@ -49,16 +49,9 @@ class VispyScaleBarVisual:
         self.text_node.anchors = ("center", "center")
         self.text_node.text = f"{1}px"
 
-        # Note:
-        # There are issues on MacOS + GitHub action about destroyed
-        # C/C++ object during test if those don't get disconnected.
-        def set_none():
-            self.node._set_canvas(None)
-            self.text_node._set_canvas(None)
-
         # the two canvas are not the same object, better be safe.
-        self.node.canvas._backend.destroyed.connect(set_none)
-        self.text_node.canvas._backend.destroyed.connect(set_none)
+        self.node.canvas._backend.destroyed.connect(self._set_canvas_none)
+        self.text_node.canvas._backend.destroyed.connect(self._set_canvas_none)
         assert self.node.canvas is self.text_node.canvas
         # End Note
 
@@ -77,6 +70,10 @@ class VispyScaleBarVisual:
         self._on_data_change(None)
         self._on_dimension_change(None)
         self._on_position_change(None)
+
+    def _set_canvas_none(self):
+        self.node._set_canvas(None)
+        self.text_node._set_canvas(None)
 
     @property
     def unit_registry(self):
@@ -182,7 +179,11 @@ class VispyScaleBarVisual:
         if self._viewer.scale_bar.colored:
             color = self._default_color
         else:
-            background_color = get_theme(self._viewer.theme)['canvas']
+            # the reason for using the `as_hex` here is to avoid
+            # `UserWarning` which is emitted when RGB values are above 1
+            background_color = get_theme(
+                self._viewer.theme, False
+            ).canvas.as_hex()
             background_color = transform_color(background_color)[0]
             color = np.subtract(1, background_color)
             color[-1] = background_color[-1]
