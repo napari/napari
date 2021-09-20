@@ -10,7 +10,7 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils import config
-from ...utils._dtype import get_dtype_limits
+from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
@@ -108,6 +108,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     experimental_slicing_plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
@@ -204,6 +207,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
+        cache=True,
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
     ):
@@ -249,6 +253,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
@@ -295,7 +300,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
                 dtype = getattr(data, 'dtype', None)
-                if np.issubdtype(dtype, np.integer):
+                if np.issubdtype(normalize_dtype(dtype), np.integer):
                     self.contrast_limits_range = get_dtype_limits(dtype)
                 else:
                     self.contrast_limits_range = (0, 1)
