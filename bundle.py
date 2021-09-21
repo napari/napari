@@ -31,9 +31,9 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
 
-APP_DIR = None
 if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
+    APP_DIR = os.path.join(BUILD_DIR, APP, 'src')
 elif LINUX:
     BUILD_DIR = os.path.join(HERE, 'linux')
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.AppDir')
@@ -221,9 +221,10 @@ def add_sentinel_file():
         (Path(APP_DIR) / "Contents" / "MacOS" / ".napari_is_bundled").touch()
     elif LINUX:
         (Path(APP_DIR) / "usr" / "bin" / ".napari_is_bundled").touch()
+    elif WINDOWS:
+        (Path(APP_DIR) / "python" / ".napari_is_bundled").touch()
     else:
-        print("!!! Sentinel files not yet implemented in Linux/Windows.")
-        #  (Path(BUILD_DIR) / "bin" / ".napari_is_bundled").touch()
+        print("!!! Sentinel files not yet implemented in", sys.platform)
 
 
 def architecture():

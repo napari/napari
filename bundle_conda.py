@@ -45,7 +45,7 @@ if LINUX:
 elif MACOS:
     CONDA_ROOT = Path(APP_DIR) / "Contents" / "Resources" / "conda"
 elif WINDOWS:
-    CONDA_ROOT = Path(BUILD_DIR) / "conda"
+    CONDA_ROOT = Path(APP_DIR) / "conda"
 else:
     CONDA_ROOT = Path(BUILD_DIR) / "conda"
 
