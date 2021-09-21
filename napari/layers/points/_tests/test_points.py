@@ -1530,6 +1530,29 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+def test_thumbnail_non_square_data():
+    """Test the image thumbnail for non-square data.
+
+    See: https://github.com/napari/napari/issues/1450
+    """
+    # Make the x coordinate range 16x the y range so that the points
+    # should be drawn on two rows of the 32x32 thumbnail.
+    data_range = [1, 32]
+    np.random.seed(0)
+    data = np.random.random((10, 2)) * data_range
+    # Make sure the random points span the range.
+    data[0, :] = [0, 0]
+    data[-1, :] = data_range
+    layer = Points(data)
+
+    layer._update_thumbnail()
+
+    assert layer.thumbnail.shape == (32, 32, 4)
+    expected_zeros = np.zeros(shape=(15, 32, 3), dtype=np.uint8)
+    np.testing.assert_array_equal(layer.thumbnail[:15, :, :3], expected_zeros)
+    np.testing.assert_array_equal(layer.thumbnail[17:, :, :3], expected_zeros)
+
+
 def test_thumbnail_with_n_points_greater_than_max():
     """Test thumbnail generation with n_points > _max_points_thumbnail
 
