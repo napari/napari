@@ -75,8 +75,23 @@ def _micromamba(root=None, with_local=False, version=VERSION):
     )
     with open("micromamba.log", "w") as out:
         out.write(output)
+
+    # Remove some stuff we do not need in the conda env:
+    # - Package cache (tarballs)
+    # - Another napari installation coming from conda-forge
     shutil.rmtree(Path(root) / "pkgs")
-    return str(Path(root) / "envs" / "napari")
+    napari_env = Path(root) / "envs" / "napari"
+    site_packages = (
+        napari_env
+        / "lib"
+        / f"python{sys.version_info.major}.{sys.version_info.minor}"
+        / "site-packages"
+    )
+    shutil.rmtree(site_packages / "napari")
+    for dist_info in site_packages.glob("napari-*.dist-info"):
+        shutil.rmtree(dist_info)
+
+    return str(napari_env)
 
 
 @contextmanager
@@ -116,7 +131,9 @@ def _patched_toml():
 
 
 def main():
+    print("Cleaning...")
     clean()
+
     with_local = False
     if not "release":  # TODO: implement actual checks for non-final releases
         _generate_conda_build_recipe()
