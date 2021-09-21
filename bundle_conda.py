@@ -57,7 +57,16 @@ def _micromamba(root=None, with_local=False, version=VERSION):
         root = tempfile.mkdtemp()
 
     output = subprocess.check_output(
-        [micromamba, "create", "--always-copy", "-y", "-r", root, "-n", "napari"]
+        [
+            micromamba,
+            "create",
+            "--always-copy",
+            "-y",
+            "-r",
+            root,
+            "-n",
+            "napari",
+        ]
         + (["-c", "local"] if with_local else [])
         + [
             "-c",
