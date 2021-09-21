@@ -10,8 +10,6 @@ Steps:
 4. Package everything in Briefcase, along with the launcher logic.
 """
 
-import os
-import re
 import shutil
 import subprocess
 import sys
