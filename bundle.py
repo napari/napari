@@ -32,7 +32,7 @@ PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
 ARCH = platform.machine() or "generic"
 
-
+APP_DIR = None
 if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
 elif LINUX:
@@ -63,9 +63,7 @@ def patched_toml():
     # Initialize EXTRA_REQS from setup.cfg 'options.extras_require.bundle_run'
     bundle_run = parser.get("options.extras_require", "bundle_run")
     EXTRA_REQS = [
-        requirement.split('#')[0].strip()
-        for requirement in bundle_run.splitlines()
-        if requirement
+        requirement.split('#')[0].strip() for requirement in bundle_run.splitlines() if requirement
     ]
 
     # parse command line arguments
@@ -202,9 +200,7 @@ def patch_wxs():
 
 def patch_python_lib_location():
     # must run after briefcase create
-    support = os.path.join(
-        BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support"
-    )
+    support = os.path.join(BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support")
     python_resources = os.path.join(support, "Python", "Resources")
     if os.path.exists(python_resources):
         return
