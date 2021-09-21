@@ -37,19 +37,29 @@ class ProgressBar(QWidget):
     def setRange(self, min, max):
         self.pbar.setRange(min, max)
 
-    def _set_value(self, value):
+    def setValue(self, value):
         self.pbar.setValue(value)
+
+    def setDescription(self, value):
+        self.description_label.setText(value)
+
+    def _set_value(self, event):
+        print(f"Ticked, setting {event.value}")
+        self.pbar.setValue(event.value)
         QApplication.processEvents()
 
     def _get_value(self):
         return self.pbar.value()
 
-    def _set_description(self, desc):
-        self.description_label.setText(desc)
+    def _set_description(self, event):
+        self.description_label.setText(event.value)
         QApplication.processEvents()
 
     def _set_eta(self, eta):
         self.eta_label.setText(eta)
+
+    def _close(self, event):
+        super().close()
 
 
 class ProgressBarGroup(QWidget):

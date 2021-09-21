@@ -3,6 +3,7 @@ from pathlib import Path
 from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QMovie
 from qtpy.QtWidgets import (
+    QApplication,
     QDialog,
     QFrame,
     QGraphicsOpacityEffect,
@@ -17,6 +18,7 @@ from qtpy.QtWidgets import (
 
 import napari.resources
 
+from ...utils.progress import progress
 from ...utils.translations import trans
 from ..widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
 
@@ -111,6 +113,40 @@ class ActivityDialog(QDialog):
         self.setLayout(self._baseLayout)
         self.resize(520, self.MIN_HEIGHT)
         self.move_to_bottom_right()
+
+        # self.initialize_pbars()
+        # connect add method to progress.add
+        progress.progress_list.events.inserted.connect(self.make_new_pbar)
+        progress.gui_available = True
+
+    # def initialize_pbars(self):
+    #     current_progress = progress.progress_list
+
+    #     for prog in current_progress:
+    #         self.make_new_pbar(prog)
+
+    def make_new_pbar(self, event):
+        prog = event.value
+        # make a progress bar
+        pbar = ProgressBar()
+
+        # set its range etc. based on progress object
+        if prog.total is not None:
+            pbar.setRange(prog.n, prog.total)
+            pbar.setValue(prog.n)
+        else:
+            pbar.setRange(0, 0)
+            prog.total = 0
+        pbar.setDescription(prog.desc)
+
+        # connect its tick event to this pbar's update method somehow
+        prog.events.value.connect(pbar._set_value)
+        prog.events.close.connect(pbar._close)
+        prog.events.description.connect(pbar._set_description)
+        # prog.close.connect()
+
+        self.add_progress_bar(pbar, nest_under=prog.nest_under)
+        QApplication.processEvents()
 
     def add_progress_bar(self, pbar, nest_under=None):
         """Add progress bar to the activity_dialog, making ProgressBarGroup if needed.

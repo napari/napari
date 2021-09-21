@@ -3,6 +3,9 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
+from napari.utils.events.event import EmitterGroup, Event
+
+from ..utils.events.containers import EventedList
 from ..utils.translations import trans
 
 _tqdm_kwargs = {
@@ -57,6 +60,8 @@ class progress(tqdm):
     """
 
     monitor_interval = 0  # set to 0 to disable the thread
+    progress_list = EventedList()
+    gui_available = False
 
     def __init__(
         self,
@@ -67,95 +72,72 @@ class progress(tqdm):
         *args,
         **kwargs,
     ) -> None:
-        kwargs = kwargs.copy()
-        pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
-        self._group_token = None
+        self.events = EmitterGroup(
+            value=Event,
+            description=Event,
+            close=Event,
+        )
+        self.nest_under = nest_under
 
-        # get progress bar added to viewer
-        try:
-            from .._qt.dialogs.activity_dialog import get_pbar
-
-            pbar = get_pbar(self, nest_under=nest_under, **pbar_kwargs)
-        except ImportError:
-            pbar = None
-
-        if pbar is not None:
-            kwargs['gui'] = True
-
-        self._pbar = pbar
         super().__init__(iterable, desc, total, *args, **kwargs)
-        if not self._pbar:
-            return
-
-        if self.total is not None:
-            self._pbar.setRange(self.n, self.total)
-            self._pbar._set_value(self.n)
-        else:
-            self._pbar.setRange(0, 0)
-            self.total = 0
 
         if desc:
             self.set_description(desc)
         else:
             self.set_description(trans._("progress"))
+        progress.progress_list.append(self)
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
-        if not self._pbar:
-            return super().display(msg=msg, pos=pos)
+        self.events.value(value=self.n)
+        if not progress.gui_available:
+            super().display(msg, pos)
 
-        if self.total != 0:
-            etas = str(self).split('|')[-1]
-            try:
-                self._pbar._set_value(self.n)
-                self._pbar._set_eta(etas)
-            except AttributeError:
-                pass
+    def update(self, n):
+        super().update(n)
 
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
         if self.n == self.total:
             self.total = 0
-            if self._pbar:
-                self._pbar.setRange(0, 0)
+            # if self._pbar:
+            #     self._pbar.setRange(0, 0)
         else:
             self.update(1)
 
     def set_description(self, desc):
         """Update progress bar description"""
         super().set_description(desc, refresh=True)
-        if self._pbar:
-            self._pbar._set_description(self.desc)
+        self.events.description(value=desc)
 
     def close(self):
         """Closes and deletes the progress bar widget"""
         if self.disable:
             return
-        if self._pbar:
-            self.close_pbar()
+        self.events.close()
         super().close()
 
-    def close_pbar(self):
-        if self.disable or not self._pbar:
-            return
+    # def close_pbar(self):
+    #     if self.disable or not self._pbar:
+    #         return
 
-        from napari._qt.widgets.qt_progress_bar import (
-            ProgressBar,
-            ProgressBarGroup,
-        )
+    #     from napari._qt.widgets.qt_progress_bar import (
+    #         ProgressBar,
+    #         ProgressBarGroup,
+    #     )
 
-        parent_widget = self._pbar.parent()
-        self._pbar.close()
-        self._pbar.deleteLater()
-        if isinstance(parent_widget, ProgressBarGroup):
-            pbar_children = [
-                child
-                for child in parent_widget.children()
-                if isinstance(child, ProgressBar)
-            ]
-            if not any(child.isVisible() for child in pbar_children):
-                parent_widget.close()
-        self._pbar = None
+    #     parent_widget = self._pbar.parent()
+    #     self._pbar.close()
+    #     self._pbar.deleteLater()
+    #     if isinstance(parent_widget, ProgressBarGroup):
+    #         pbar_children = [
+    #             child
+    #             for child in parent_widget.children()
+    #             if isinstance(child, ProgressBar)
+    #         ]
+    #         if not any(child.isVisible() for child in pbar_children):
+    #             parent_widget.close()
+    #     self._pbar = None
 
 
 def progrange(*args, **kwargs):
