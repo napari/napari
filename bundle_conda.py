@@ -40,6 +40,15 @@ from bundle import (
     patched_dmgbuild,
 )
 
+if LINUX:
+    CONDA_ROOT = Path(APP_DIR) / "usr" / "conda"
+elif MACOS:
+    CONDA_ROOT = Path(APP_DIR) / "Contents" / "Resources" / "conda"
+elif WINDOWS:
+    CONDA_ROOT = Path(BUILD_DIR) / "conda"
+else:
+    CONDA_ROOT = Path(BUILD_DIR) / "conda"
+
 
 def _generate_conda_build_recipe():
     pass
@@ -172,13 +181,8 @@ def main():
         add_sentinel_file()
 
         print("Installing conda environment...")
-        root = (
-            Path(APP_DIR) / "Contents" / "Resources" / "conda"
-            if MACOS
-            else Path(BUILD_DIR) / "conda"
-        )
-        root.mkdir(parents=True, exist_ok=True)
-        _micromamba(root, with_local=with_local, version=version)
+        CONDA_ROOT.mkdir(parents=True, exist_ok=True)
+        _micromamba(CONDA_ROOT, with_local=with_local, version=version)
 
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])

@@ -37,6 +37,7 @@ if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
 elif LINUX:
     BUILD_DIR = os.path.join(HERE, 'linux')
+    APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.AppDir')
 elif MACOS:
     BUILD_DIR = os.path.join(HERE, 'macOS')
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
@@ -63,9 +64,7 @@ def patched_toml():
     # Initialize EXTRA_REQS from setup.cfg 'options.extras_require.bundle_run'
     bundle_run = parser.get("options.extras_require", "bundle_run")
     EXTRA_REQS = [
-        requirement.split('#')[0].strip()
-        for requirement in bundle_run.splitlines()
-        if requirement
+        requirement.split('#')[0].strip() for requirement in bundle_run.splitlines() if requirement
     ]
 
     # parse command line arguments
@@ -202,9 +201,7 @@ def patch_wxs():
 
 def patch_python_lib_location():
     # must run after briefcase create
-    support = os.path.join(
-        BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support"
-    )
+    support = os.path.join(BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support")
     python_resources = os.path.join(support, "Python", "Resources")
     if os.path.exists(python_resources):
         return
@@ -223,6 +220,8 @@ def patch_environment_variables():
 def add_sentinel_file():
     if MACOS:
         (Path(APP_DIR) / "Contents" / "MacOS" / ".napari_is_bundled").touch()
+    elif LINUX:
+        (Path(APP_DIR) / "usr" / "bin" / ".napari_is_bundled").touch()
     else:
         print("!!! Sentinel files not yet implemented in Linux/Windows.")
         #  (Path(BUILD_DIR) / "bin" / ".napari_is_bundled").touch()
