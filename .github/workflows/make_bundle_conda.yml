@@ -46,7 +46,7 @@ jobs:
           channels:
             - conda-forge
           dependencies:
-            - python {{ matrix.python-version}}
+            - python ${{ matrix.python-version }}
             - pip
           EOF
       - name: install micromamba
