@@ -53,8 +53,10 @@ def _conda_build():
 
 def _micromamba(root=None, with_local=False, version=VERSION):
     micromamba = find_executable("micromamba")
-    if not micromamba:
-        raise RuntimeError("Micromamba must be installed and in PATH.")
+    mamba = find_executable("mamba")
+
+    if not any([micromamba, mamba]):
+        raise RuntimeError("Micromamba or mamba must be installed and in PATH.")
 
     if root is None:
         root = tempfile.mkdtemp()
@@ -74,22 +76,23 @@ def _micromamba(root=None, with_local=False, version=VERSION):
     # Create temporary environment
     with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w") as f:
         yaml.dump(environment, f)
-        output = subprocess.check_output(
-            [
-                micromamba,
-                "create",
+        cmd = [micromamba, "create", "--always-copy"] if micromamba else [mamba, "env", "create"]
+        environ = os.environ.copy()
+        environ["CONDA_ALWAYS_COPY"] = "true"
+        output = subprocess.check_call(
+            cmd
+            + [
                 "-y",
                 "-f",
                 f.name,
                 "-r",
                 root,
-                "--always-copy",
             ],
             universal_newlines=True,
+            env=environ,
         )
         with open("micromamba.log", "w") as out:
             out.write(output)
-
     shutil.rmtree(Path(root) / "pkgs")
     return str(Path(root) / "envs" / "napari-pack")
 
