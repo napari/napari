@@ -375,7 +375,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ndim = world.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
-                self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
+                self.dims.set_range(
+                    i,
+                    (
+                        world[0, i] + 0.5 * ss[i],
+                        world[1, i] + 0.5 * ss[i],
+                        ss[i],
+                    ),
+                )
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)

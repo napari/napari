@@ -159,8 +159,7 @@ class LayerList(SelectableEventedList[Layer]):
     def _get_extent_world(self, layer_extent_list):
         """Extent of layers in world coordinates.
 
-        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
-        This corresponds to 512 pixels centered at [0, ..., 511].
+        Default to 2D with (0, 512) min/ max values if no data is present.
 
         Returns
         -------
