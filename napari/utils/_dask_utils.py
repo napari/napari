@@ -1,61 +1,27 @@
 """Dask cache utilities.
 """
-import warnings
-from contextlib import contextmanager
-from distutils.version import LooseVersion
-from typing import Callable, ContextManager, Optional
+import contextlib
+from typing import Callable, ContextManager, Optional, Tuple
 
 import dask
 import dask.array as da
 from dask.cache import Cache
 
-from ..utils.translations import trans
-
-
-def create_dask_cache(
-    nbytes: Optional[int] = None, mem_fraction: float = 0.1
-) -> Cache:
-    """Create a dask cache at utils.dask_cache if one doesn't already exist.
-
-    Parameters
-    ----------
-    nbytes : int, optional
-        The desired size of the cache, in bytes.  If ``None``, the cache size
-        will autodetermined as fraction of the total memory in the system,
-        using ``mem_fraction``.  If ``nbytes`` is 0, cache object will be
-        created, but not caching will occur. by default, cache size is
-        autodetermined using ``mem_fraction``.
-    mem_fraction : float, optional
-        The fraction (from 0 to 1) of total memory to use for the dask cache.
-        by default, 10% of total memory is used.
-
-    Returns
-    -------
-    dask_cache : dask.cache.Cache
-        An instance of a Dask Cache
-    """
-    import psutil
-
-    from .. import utils
-
-    if nbytes is None:
-        nbytes = psutil.virtual_memory().total * mem_fraction
-    if not (
-        hasattr(utils, 'dask_cache') and isinstance(utils.dask_cache, Cache)
-    ):
-        utils.dask_cache = Cache(nbytes)
-        utils.dask_cache.register()
-    return utils.dask_cache
+#: dask.cache.Cache, optional : A dask cache for opportunistic caching
+#: use :func:`~.resize_dask_cache` to actually register and resize.
+#: this is a global cache (all layers will use it), but individual layers
+#: can opt out using Layer(..., cache=False)
+_DASK_CACHE = Cache(1)
+_DEFAULT_MEM_FRACTION = 0.25
 
 
 def resize_dask_cache(
-    nbytes: Optional[int] = None, mem_fraction: float = None
+    nbytes: Optional[int] = None, mem_fraction: Optional[float] = None
 ) -> Cache:
     """Create or resize the dask cache used for opportunistic caching.
 
     The cache object is an instance of a :class:`Cache`, (which
-    wraps a :class:`cachey.Cache`), and is made available at
-    :attr:`napari.utils.dask_cache`.
+    wraps a :class:`cachey.Cache`).
 
     See `Dask opportunistic caching
     <https://docs.dask.org/en/latest/caching.html>`_
@@ -78,7 +44,7 @@ def resize_dask_cache(
     Examples
     --------
     >>> from napari.utils import resize_dask_cache
-    >>> cache = resize_dask_cache()  # use 50% of total memory by default
+    >>> cache = resize_dask_cache()  # use 25% of total memory by default
 
     >>> # dask.Cache wraps cachey.Cache
     >>> assert isinstance(cache.cache, cachey.Cache)
@@ -87,32 +53,24 @@ def resize_dask_cache(
     >>> cache.cache.available_bytes  # full size of cache
     >>> cache.cache.total_bytes   # currently used bytes
     """
-
-    import psutil
-
-    from .. import utils
+    from psutil import virtual_memory
 
     if nbytes is None and mem_fraction is not None:
-        nbytes = psutil.virtual_memory().total * mem_fraction
+        nbytes = virtual_memory().total * mem_fraction
 
-    # if we don't have a cache already, create one.  If neither nbytes nor
-    # mem_fraction was provided, it will use the default size as determined in
-    # create_cache.
-    if not (
-        hasattr(utils, 'dask_cache') and isinstance(utils.dask_cache, Cache)
-    ):
-        return create_dask_cache(nbytes)
-    else:  # we already have a cache
+    avail = _DASK_CACHE.cache.available_bytes
+    # if we don't have a cache already, create one.
+    if avail == 1:
+        # If neither nbytes nor mem_fraction was provided, use default
+        if nbytes is None:
+            nbytes = virtual_memory().total * _DEFAULT_MEM_FRACTION
+        _DASK_CACHE.cache.resize(nbytes)
+    elif nbytes is not None and nbytes != _DASK_CACHE.cache.available_bytes:
         # if the cache has already been registered, then calling
         # resize_dask_cache() without supplying either mem_fraction or nbytes
         # is a no-op:
-        if (
-            nbytes is not None
-            and nbytes != utils.dask_cache.cache.available_bytes
-        ):
-            utils.dask_cache.cache.resize(nbytes)
-
-    return utils.dask_cache
+        _DASK_CACHE.cache.resize(nbytes)
+    return _DASK_CACHE
 
 
 def _is_dask_data(data) -> bool:
@@ -123,7 +81,9 @@ def _is_dask_data(data) -> bool:
     )
 
 
-def configure_dask(data) -> Callable[[], ContextManager[dict]]:
+def configure_dask(
+    data, cache=True
+) -> Callable[[], ContextManager[Optional[Tuple[dict, Cache]]]]:
     """Spin up cache and return context manager that optimizes Dask indexing.
 
     This function determines whether data is a dask array or list of dask
@@ -170,23 +130,15 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
     >>> with optimized_slicing():
     ...    data[0, 2].compute()
     """
-    if _is_dask_data(data):
-        if dask.__version__ < LooseVersion('2.15.0'):
-            warnings.warn(
-                trans._(
-                    'For best performance with Dask arrays in napari, please upgrade Dask to v2.15.0 or later. Current version is {dask_version}',
-                    deferred=True,
-                    dask_version=dask.__version__,
-                )
-            )
+    if not _is_dask_data(data):
+        return contextlib.nullcontext
 
-        def dask_optimized_slicing():
-            with dask.config.set({"optimization.fuse.active": False}) as cfg:
-                yield cfg
+    _cache = resize_dask_cache() if cache else contextlib.nullcontext()
 
-    else:
+    @contextlib.contextmanager
+    def dask_optimized_slicing(memfrac=0.5):
+        opts = {"optimization.fuse.active": False}
+        with dask.config.set(opts) as cfg, _cache as c:
+            yield cfg, c
 
-        def dask_optimized_slicing():
-            yield {}
-
-    return contextmanager(dask_optimized_slicing)
+    return dask_optimized_slicing
