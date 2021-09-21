@@ -63,4 +63,9 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
 
     # run the example!
-    runpy.run_path(str(EXAMPLE_DIR / fname))
+    try:
+        runpy.run_path(str(EXAMPLE_DIR / fname))
+    except SystemExit as e:
+        # we use sys.exit(0) to gracefully exit from examples
+        if e.code != 0:
+            raise
