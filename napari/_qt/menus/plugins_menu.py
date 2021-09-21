@@ -71,9 +71,7 @@ class PluginsMenu(NapariMenu):
                         full_name = menu_item_template.format(*key)
                         action = QAction(full_name, parent=self)
 
-                    def _add_toggle_widget(
-                        *args, key=key, hook_type=hook_type
-                    ):
+                    def _add_toggle_widget(*, key=key, hook_type=hook_type):
 
                         full_name = menu_item_template.format(*key)
                         if full_name in self._win._dock_widgets.keys():
