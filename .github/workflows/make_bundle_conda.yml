@@ -50,7 +50,6 @@ jobs:
       - name: set up build dependencies
         shell: bash -l {0}
         run: |
-          mamba install micromamba
           python -m pip install -e '.[bundle_build]'
       - name: get tag / arch-suffix
         shell: bash -l {0}
