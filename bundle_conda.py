@@ -10,6 +10,7 @@ Steps:
 4. Package everything in Briefcase, along with the launcher logic.
 """
 
+import os
 import shutil
 import subprocess
 import sys
@@ -49,7 +50,7 @@ def _conda_build():
 
 
 def _micromamba(root=None, with_local=False, version=VERSION):
-    micromamba = find_executable("micromamba")
+    micromamba = os.environ.get("MAMBA_EXE", find_executable("micromamba"))
     if not micromamba:
         raise RuntimeError("Micromamba must be installed and in PATH.")
 
