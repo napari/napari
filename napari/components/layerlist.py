@@ -321,4 +321,36 @@ _CONTEXT_KEYS = {
     'same_shape': (
         lambda s: len({getattr(x.data, 'shape', ()) for x in s}) == 1
     ),
+    'int64_label': (
+        lambda s: s.active
+        and getattr(s.active.data, 'dtype', None) == np.dtype('int64')
+    ),
+    'int32_label': (
+        lambda s: s.active
+        and getattr(s.active.data, 'dtype', None) == np.dtype('int32')
+    ),
+    'int16_label': (
+        lambda s: s.active
+        and getattr(s.active.data, 'dtype', None) == np.dtype('int16')
+    ),
+    'int8_label': (
+        lambda s: s.active
+        and getattr(s.active.data, 'dtype', None) == np.dtype('int8')
+    ),
+    'uint64_label': (
+        lambda s: s.active
+        and getattr(s.active.data, 'dtype', None) == np.dtype('uint64')
+    ),
+    'uint32_label': (
+        lambda s: s.active
+        and getattr(s.active.data, 'dtype', None) == np.dtype('uint32')
+    ),
+    'uint16_label': (
+        lambda s: s.active
+        and getattr(s.active.data, 'dtype', None) == np.dtype('uint16')
+    ),
+    'uint8_label': (
+        lambda s: s.active
+        and getattr(s.active.data, 'dtype', None) == np.dtype('uint8')
+    ),
 }

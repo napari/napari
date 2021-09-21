@@ -77,6 +77,27 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     ll.append(new)
 
 
+def _convert_dtype(ll: LayerList, mode='int64'):
+    layer = ll.selection.active
+    if not layer:
+        return
+    if layer._type_string != 'labels':
+        raise NotImplementedError(
+            "Data type conversion only implemented for labels"
+        )
+
+    target_dtype = np.dtype(mode)
+    if (
+        layer.data.min() < np.iinfo(target_dtype).min
+        or layer.data.max() > np.iinfo(target_dtype).max
+    ):
+        raise AssertionError(
+            "Labeling contains values outside of the target data type range."
+        )
+    else:
+        layer.data = layer.data.astype(np.dtype(mode))
+
+
 def _convert(ll: LayerList, type_: str):
 
     for lay in list(ll.selection):
@@ -172,6 +193,15 @@ def _projdict(key) -> ContextAction:
     }
 
 
+def _labeltypedict(key) -> ContextAction:
+    return {
+        'description': key,
+        'action': partial(_convert_dtype, mode=key),
+        'enable_when': f'not {key}_label',
+        'show_when': 'True',
+    }
+
+
 _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:duplicate_layer': {
@@ -200,6 +230,23 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         },
     },
     # (each new dict creates a seperated section in the menu)
+    {
+        'napari:group:convert_type': {
+            'description': trans._('Convert datatype'),
+            'enable_when': 'only_labels_selected',
+            'show_when': 'True',
+            'action_group': {
+                'napari:to_int8': _labeltypedict('int8'),
+                'napari:to_int16': _labeltypedict('int16'),
+                'napari:to_int32': _labeltypedict('int32'),
+                'napari:to_int64': _labeltypedict('int64'),
+                'napari:to_uint8': _labeltypedict('uint8'),
+                'napari:to_uint16': _labeltypedict('uint16'),
+                'napari:to_uint32': _labeltypedict('uint32'),
+                'napari:to_uint64': _labeltypedict('uint64'),
+            },
+        }
+    },
     {
         'napari:group:projections': {
             'description': trans._('Make Projection'),
