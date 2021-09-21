@@ -20,7 +20,6 @@ from contextlib import contextmanager
 from distutils.spawn import find_executable
 from pathlib import Path
 
-import ruamel_yaml as yaml
 import tomlkit
 
 from bundle import (
