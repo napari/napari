@@ -1,0 +1,113 @@
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * *"
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+name: Create Conda Bundle
+
+jobs:
+  bundle:
+    name: Bundle ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
+    if: github.repository == 'napari/napari'
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      DISPLAY: ":99.0"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-18.04
+            python-version: "3.9"
+            conda-installer-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
+          - platform: macos-latest
+            python-version: "3.9"
+            conda-installer-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-MacOSX-x86_64.sh
+          - platform: windows-latest
+            python-version: "3.8"
+            conda-installer-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          installer-url: ${{ matrix.conda-installer-url }}
+          use-mamba: true
+          auto-activate-base: true
+          activate-environment: ""
+      - name: set up build dependencies
+        shell: bash -l {0}
+        run: |
+          mamba install micromamba
+          python -m pip install '.[bundle_build]'
+      - name: get tag / arch-suffix
+        shell: bash -l {0}
+        run: |
+          VER=`python bundle.py --version`
+          echo "version=${VER}" >> $GITHUB_ENV
+          echo "Version: $VER"
+          ARCH_SUFFIX=`python bundle.py --arch`
+          echo "arch-suffix=${ARCH_SUFFIX}" >> $GITHUB_ENV
+          echo "Machine: ${ARCH_SUFFIX}"
+      - name: Make Bundle (Linux)
+        if: runner.os == 'Linux'
+        shell: bash -l {0}
+        run: |
+          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-xinerama0 libxcb-xfixes0 libxcb-shape0 libqt5gui5
+          xvfb-run --auto-servernum python bundle_conda.py
+      - name: Make Bundle (Windows & MacOS)
+        shell: bash -l {0}
+        if: runner.os != 'Linux'
+        run: python bundle_conda.py
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+          path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+      - name: Get Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: get_release
+        uses: bruceadams/get-release@v1.2.2
+      - name: Upload Release Asset
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+          asset_name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+          asset_content_type: application/zip
+      - name: Upload Nightly Build Asset
+        if: ${{ github.event_name == 'schedule' }}
+        uses: WebFreak001/deploy-nightly@v1.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # nightly build release from https://api.github.com/repos/napari/napari/releases
+          upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label}
+          release_id: 34273071
+          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+          asset_name: napari-${{ runner.os }}-${{ env.arch-suffix }}.zip
+          asset_content_type: application/zip
+          max_releases: 1
+      - name: Update latest tag
+        uses: EndBug/latest-tag@latest
+        if: ${{ github.event_name == 'schedule' }}
+        with:
+          description: latest code released from nightly build
+          tag-name: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
