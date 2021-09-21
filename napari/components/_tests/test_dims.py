@@ -70,11 +70,11 @@ def test_point():
     dims = Dims(ndim=4)
     assert dims.point == (0,) * 4
 
-    dims.set_range(3, (0, 5, 1))
+    dims.set_range(3, (-0.5, 4.5, 1))
     dims.set_point(3, 4)
     assert dims.point == (0, 0, 0, 4)
 
-    dims.set_range(2, (0, 5, 1))
+    dims.set_range(2, (-0.5, 4.5, 1))
     dims.set_point(2, 1)
     assert dims.point == (0, 0, 1, 4)
 
@@ -84,10 +84,10 @@ def test_range():
     Tests range setting.
     """
     dims = Dims(ndim=4)
-    assert dims.range == ((0, 2, 1),) * 4
+    assert dims.range == ((-0.5, 1.5, 1),) * 4
 
-    dims.set_range(3, (0, 4, 2))
-    assert dims.range == ((0, 2, 1),) * 3 + ((0, 4, 2),)
+    dims.set_range(3, (-0.5, 3.5, 2))
+    assert dims.range == ((-0.5, 1.5, 1),) * 3 + ((-0.5, 3.5, 2),)
 
 
 def test_axis_labels():
@@ -100,7 +100,7 @@ def test_order_when_changing_ndim():
     Test order of the dims when changing the number of dimensions.
     """
     dims = Dims(ndim=4)
-    dims.set_range(0, (0, 4, 1))
+    dims.set_range(0, (-0.5, 3.5, 1))
     dims.set_point(0, 2)
 
     dims.ndim = 5
@@ -109,7 +109,7 @@ def test_order_when_changing_ndim():
     assert dims.order == (0, 1, 2, 3, 4)
     assert dims.axis_labels == ('0', '1', '2', '3', '4')
 
-    dims.set_range(2, (0, 4, 1))
+    dims.set_range(2, (-0.5, 3.5, 1))
     dims.set_point(2, 3)
     dims.ndim = 3
     # Test that dims get removed from the beginning of lists

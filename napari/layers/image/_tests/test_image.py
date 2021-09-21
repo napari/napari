@@ -664,7 +664,7 @@ def test_world_data_extent():
     data = np.random.random(shape)
     layer = Image(data)
     extent = np.array(((0,) * 3, shape))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
 
 
 def test_data_to_world_2d_scale_translate_affine_composed():

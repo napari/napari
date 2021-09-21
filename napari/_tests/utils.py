@@ -166,7 +166,9 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         np.testing.assert_almost_equal(vis_vals, transf[disp_dims])
 
 
-def check_layer_world_data_extent(layer, extent, scale, translate):
+def check_layer_world_data_extent(
+    layer, extent, scale, translate, pixels=False
+):
     """Test extents after applying transforms.
 
     Parameters
@@ -181,16 +183,17 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
         Translation to be applied to layer.
     """
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    np.testing.assert_almost_equal(layer.extent.world, extent)
+    world_extent = extent - 0.5 if pixels else extent
+    np.testing.assert_almost_equal(layer.extent.world, world_extent)
 
     # Apply scale transformation
     layer.scale = scale
-    scaled_extent = np.multiply(extent, scale)
+    scaled_world_extent = np.multiply(world_extent, scale)
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    np.testing.assert_almost_equal(layer.extent.world, scaled_extent)
+    np.testing.assert_almost_equal(layer.extent.world, scaled_world_extent)
 
     # Apply translation transformation
     layer.translate = translate
-    translated_extent = np.add(scaled_extent, translate)
+    translated_world_extent = np.add(scaled_world_extent, translate)
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    np.testing.assert_almost_equal(layer.extent.world, translated_extent)
+    np.testing.assert_almost_equal(layer.extent.world, translated_world_extent)

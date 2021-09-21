@@ -98,7 +98,7 @@ class Dims(EventedModel):
 
         # Check the range tuple has same number of elements as ndim
         if len(values['range']) < ndim:
-            values['range'] = ((0, 2, 1),) * (
+            values['range'] = ((-0.5, 1.5, 1),) * (
                 ndim - len(values['range'])
             ) + values['range']
         elif len(values['range']) > ndim:
@@ -163,7 +163,7 @@ class Dims(EventedModel):
         """Tuple of float: Value of each dimension."""
         # The point value is computed from the range and current_step
         point = tuple(
-            min_val + step_size * value
+            (min_val + 0.5 * step_size) + step_size * value
             for (min_val, max_val, step_size), value in zip(
                 self.range, self.current_step
             )
@@ -219,7 +219,7 @@ class Dims(EventedModel):
         """
         axis = assert_axis_in_bounds(axis, self.ndim)
         (min_val, max_val, step_size) = self.range[axis]
-        raw_step = (value - min_val) / step_size
+        raw_step = (value - (min_val + 0.5 * step_size)) / step_size
         self.set_current_step(axis, raw_step)
 
     def set_current_step(self, axis: int, value: int):
@@ -264,7 +264,7 @@ class Dims(EventedModel):
     def reset(self):
         """Reset dims values to initial states."""
         # Don't reset axis labels
-        self.range = ((0, 2, 1),) * self.ndim
+        self.range = ((-0.5, 1.5, 1),) * self.ndim
         self.current_step = (0,) * self.ndim
         self.order = tuple(range(self.ndim))
 

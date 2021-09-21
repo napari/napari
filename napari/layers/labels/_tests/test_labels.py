@@ -802,7 +802,7 @@ def test_world_data_extent():
     data = np.random.randint(20, size=(shape))
     layer = Labels(data)
     extent = np.array(((0,) * 3, shape))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
 
 
 @pytest.mark.parametrize(

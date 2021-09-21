@@ -389,7 +389,7 @@ def test_world_data_extent():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data)
     extent = np.array(((0,) * 3, shapes[0]))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
 
 
 def test_5D_multiscale():

@@ -225,7 +225,7 @@ def test_new_labels_image():
     assert viewer.dims.ndim == 2
     np.testing.assert_equal(viewer.layers[1].data.shape, (10, 15))
     np.testing.assert_equal(viewer.layers[1].scale, (1, 1))
-    np.testing.assert_equal(viewer.layers[1].translate, (0, 0))
+    np.testing.assert_equal(viewer.layers[1].translate, (-0.5, -0.5))
 
 
 def test_new_labels_scaled_image():
@@ -240,7 +240,7 @@ def test_new_labels_scaled_image():
     assert viewer.dims.ndim == 2
     np.testing.assert_equal(viewer.layers[1].data.shape, (10, 15))
     np.testing.assert_equal(viewer.layers[1].scale, (3, 3))
-    np.testing.assert_equal(viewer.layers[1].translate, (0, 0))
+    np.testing.assert_equal(viewer.layers[1].translate, (-1.5, -1.5))
 
 
 def test_new_labels_scaled_translated_image():
@@ -255,7 +255,7 @@ def test_new_labels_scaled_translated_image():
     assert viewer.dims.ndim == 2
     np.testing.assert_almost_equal(viewer.layers[1].data.shape, (10, 15))
     np.testing.assert_almost_equal(viewer.layers[1].scale, (3, 3))
-    np.testing.assert_almost_equal(viewer.layers[1].translate, (20, -5))
+    np.testing.assert_almost_equal(viewer.layers[1].translate, (18.5, -6.5))
 
 
 def test_new_points():
@@ -585,22 +585,24 @@ def test_sliced_world_extent():
     viewer = ViewerModel()
 
     # Empty data is taken to be 512 x 512
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (0, 0))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (512, 512))
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (-0.5, -0.5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511.5, 511.5))
 
     # Add one layer
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
-    np.testing.assert_allclose(viewer.layers.extent.world[0], (10, 20, 5))
-    np.testing.assert_allclose(viewer.layers.extent.world[1], (28, 30, 20))
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (30, 20))
+    np.testing.assert_allclose(viewer.layers.extent.world[0], (8.5, 19.5, 4.5))
+    np.testing.assert_allclose(
+        viewer.layers.extent.world[1], (26.5, 29.5, 19.5)
+    )
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (19.5, 4.5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29.5, 19.5))
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (20, 28))
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (4.5, 8.5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19.5, 26.5))
 
 
 def test_camera():
@@ -614,17 +616,17 @@ def test_camera():
     assert viewer.dims.ndim == 3
 
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.center == (0, 7.5, 10)
+    assert viewer.camera.center == (0, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
-    assert viewer.camera.center == (5, 7.5, 10)
+    assert viewer.camera.center == (4.5, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.center == (0, 7.5, 10)
+    assert viewer.camera.center == (0, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
 
@@ -634,11 +636,11 @@ def test_update_scale():
     shape = (10, 15, 20)
     data = np.random.random(shape)
     viewer.add_image(data)
-    assert viewer.dims.range == tuple((0.0, x, 1.0) for x in shape)
+    assert viewer.dims.range == tuple((-0.5, x - 0.5, 1.0) for x in shape)
     scale = (3.0, 2.0, 1.0)
     viewer.layers[0].scale = scale
     assert viewer.dims.range == tuple(
-        (0.0, x * s, s) for x, s in zip(shape, scale)
+        (-0.5 * s, (x - 0.5) * s, s) for x, s in zip(shape, scale)
     )
 
 
