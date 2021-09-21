@@ -74,7 +74,7 @@ def _micromamba(root=None, with_local=False, version=VERSION):
     # Create temporary environment
     with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w") as f:
         yaml.dump(environment, f)
-        subprocess.check_output(
+        output = subprocess.check_output(
             [
                 micromamba,
                 "create",
@@ -83,9 +83,14 @@ def _micromamba(root=None, with_local=False, version=VERSION):
                 f.name,
                 "-r",
                 root,
-            ]
+                "--always-copy",
+            ],
+            universal_newlines=True,
         )
+        with open("micromamba.log", "w") as out:
+            out.write(output)
 
+    shutil.rmtree(Path(root) / "pkgs")
     return str(Path(root) / "envs" / "napari-pack")
 
 
