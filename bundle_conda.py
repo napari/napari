@@ -43,19 +43,6 @@ from bundle import (
 )
 
 
-def _clean_pypi_spec(spec):
-    # remove comments and python selectors
-    spec = spec.split("#")[0].split(";")[0].strip()
-    # remove [extras] syntax
-    match = re.search(r"\S+(\[\S+\]).*", spec)
-    if match:
-        return spec.replace(match.groups()[0], "")
-    # no spaces between constrains
-    spec = spec.replace(", ", ",")
-    # add space before version requirements
-    return spec
-
-
 def _generate_conda_build_recipe():
     pass
 
@@ -64,10 +51,13 @@ def _conda_build():
     pass
 
 
-def _conda_pack(with_local=False, version=VERSION):
+def _micromamba(root=None, with_local=False, version=VERSION):
     micromamba = find_executable("micromamba")
     if not micromamba:
         raise RuntimeError("Micromamba must be installed and in PATH.")
+
+    if root is None:
+        root = tempfile.mkdtemp()
 
     environment = {
         "name": "napari-pack",
@@ -84,7 +74,6 @@ def _conda_pack(with_local=False, version=VERSION):
     # Create temporary environment
     with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w") as f:
         yaml.dump(environment, f)
-        prefix = tempfile.mkdtemp()
         subprocess.check_output(
             [
                 micromamba,
@@ -93,63 +82,11 @@ def _conda_pack(with_local=False, version=VERSION):
                 "-f",
                 f.name,
                 "-r",
-                prefix,
+                root,
             ]
         )
 
-    # Run conda-pack
-    output = "pack.tar.gz"
-    subprocess.check_output(
-        [
-            "conda-pack",
-            "-p",
-            os.path.join(prefix, "envs", "napari-pack"),
-            "-o",
-            output,
-            "--force",
-        ]
-    )
-
-    return output
-
-
-def _constructor(with_local=False, version=VERSION):
-    constructor = find_executable("constructor")
-    if not constructor:
-        raise RuntimeError("Constructor must be installed.")
-    micromamba = find_executable("micromamba")
-
-    output_filename = f"bundle.{'exe' if WINDOWS else 'sh'}"
-    definitions = {
-        "name": APP,
-        "company": "Napari",
-        "version": f"{version}",
-        "channels": (["local"] if with_local else []) + ["conda-forge"],
-        "batch_mode": True,
-        "installer_filename": output_filename,
-        "specs": [
-            f"napari={version}",
-            f"python={sys.version_info.major}.{sys.version_info.minor}.*",
-            "conda",
-            "mamba",
-            "pip",
-        ],
-        "exclude": [
-            "napari",
-        ],
-    }
-
-    with open("construct.yaml", "w") as fin:
-        yaml.dump(definitions, fin, default_flow_style=False)
-        print("-----")
-        subprocess.check_call(
-            [constructor]
-            + (["--conda-exe", micromamba] if micromamba else [])
-            + ["."],
-        )
-        print("-----")
-
-    return output_filename
+    return str(Path(root) / "envs" / "napari-pack")
 
 
 @contextmanager
@@ -190,8 +127,6 @@ def _patched_toml():
 
 def main():
     clean()
-    print("Generating internal installer...")
-
     with_local = False
     if not "release":  # TODO: implement actual checks for non-final releases
         _generate_conda_build_recipe()
@@ -199,8 +134,6 @@ def main():
         with_local = True
     # else: we just build a bundle of the last release in conda-forge
     version = "0.4.11"  # hardcoded now for testing purposes
-    # internal_installer = _constructor(with_local=with_local, version=version)
-    internal_installer = _conda_pack(with_local, version=version)
 
     print("Debugging info...")
 
@@ -223,10 +156,15 @@ def main():
             patch_python_lib_location()
 
         add_sentinel_file()
-        shutil.move(
-            internal_installer,
-            Path(APP_DIR) / "Contents" / "Resources" if MACOS else BUILD_DIR,
+
+        print("Installing conda environment...")
+        root = (
+            Path(APP_DIR) / "Contents" / "Resources" / "conda"
+            if MACOS
+            else Path(BUILD_DIR) / "conda"
         )
+        root.mkdir(parents=True, exist_ok=True)
+        _micromamba(root, with_local=with_local, version=version)
 
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
