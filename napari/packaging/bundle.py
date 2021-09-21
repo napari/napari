@@ -45,7 +45,7 @@ def set_conda_config():
     if sys.platform == "darwin":
         launcher = Path(sys.executable)
         contents = launcher.parent.parent
-        conda = contents / "Resources" / "conda" / "envs" / "napari-pack"
+        conda = contents / "Resources" / "conda" / "envs" / "napari"
         site_packages = (
             conda
             / "lib"
