@@ -176,8 +176,9 @@ def main():
         subprocess.check_call(cmd)
 
         # compress
+        print("Creating zipfile...")
         dest = make_zip()
-        clean()
+        # clean()
 
         return dest
 
