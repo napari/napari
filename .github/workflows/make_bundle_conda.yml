@@ -51,7 +51,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mamba install micromamba
-          python -m pip install '.[bundle_build]'
+          python -m pip install -e '.[bundle_build]'
       - name: get tag / arch-suffix
         shell: bash -l {0}
         run: |
