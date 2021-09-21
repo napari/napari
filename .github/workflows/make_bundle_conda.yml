@@ -41,7 +41,7 @@ jobs:
       - name: Create environment.yml
         shell: bash
         run: |
-          cat environment.yml << EOF
+          cat <<EOF > environment.yml
           name: build-bundle
           channels:
             - conda-forge
