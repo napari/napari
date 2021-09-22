@@ -5,7 +5,7 @@ import numpy as np
 from pydantic import PositiveInt, validator
 
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import EventedModel
+from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
@@ -73,10 +73,13 @@ class TextManager(EventedModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._on_properties_changed()
+        # Add a custom event that is emitted when text needs to be re-rendered.
+        self.events.add(text_update=Event)
         self.events.properties.connect(self._on_properties_changed)
         self.events.text.connect(self._on_text_changed)
         self.events.color.connect(self._on_color_changed)
+        self._on_text_changed()
+        self._on_color_changed()
 
     def refresh_text(self, properties: Dict[str, np.ndarray], n_text: int):
         """Refresh all text values from the given layer properties.
@@ -87,7 +90,15 @@ class TextManager(EventedModel):
             The properties of a layer.
         """
         self.n_text = n_text
-        self.properties = properties
+        # This shares the same instance of properties as the layer, so when
+        # that instance is modified, we won't detect the change. But when
+        # layer.properties is reassigned to a new instance, we will.
+        # Therefore, manually call _on_properties_changed to ensure those
+        # updates always occur exactly once and this always refreshes even
+        # if it doesn't need to.
+        with self.events.properties.blocker():
+            self.properties = properties
+        self._on_properties_changed()
 
     def add(self, num_to_add: int):
         """Adds a number of a new text values based on the given layer properties.
@@ -254,23 +265,23 @@ class TextManager(EventedModel):
 
         This is typically used in the vispy view file.
         """
-        # TODO: need to be careful about when we block this connection, so disable for now.
-        # self.text.connect(text_update_function)
-        # self.color.connect(text_update_function)
+        self.events.text_update.connect(text_update_function)
         # connect the function for updating the text node
-        self.events.rotation.connect(text_update_function)
-        self.events.translation.connect(text_update_function)
-        self.events.anchor.connect(text_update_function)
-        self.events.size.connect(text_update_function)
-        self.events.visible.connect(text_update_function)
+        self.events.rotation.connect(self.events.text_update)
+        self.events.translation.connect(self.events.text_update)
+        self.events.anchor.connect(self.events.text_update)
+        self.events.size.connect(self.events.text_update)
+        self.events.visible.connect(self.events.text_update)
 
         # connect the function for updating the text node blending
         self.events.blending.connect(blending_update_function)
 
     def _on_text_changed(self, event=None):
+        self.text.connect(self.events.text_update)
         self.text.refresh(self.properties, self.n_text)
 
     def _on_color_changed(self, event=None):
+        self.color.connect(self.events.text_update)
         self.color.refresh(self.properties, self.n_text)
 
     def _on_properties_changed(self, event=None):

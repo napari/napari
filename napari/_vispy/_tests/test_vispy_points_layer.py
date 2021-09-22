@@ -1,6 +1,9 @@
 import numpy as np
 import pytest
 
+from napari._vispy.vispy_points_layer import VispyPointsLayer
+from napari.layers import Points
+
 
 @pytest.mark.parametrize("opacity", [(0), (0.3), (0.7), (1)])
 def test_VispyPointsLayer(make_napari_viewer, opacity):
@@ -10,3 +13,70 @@ def test_VispyPointsLayer(make_napari_viewer, opacity):
     layer = viewer.add_points(points, size=30, opacity=opacity)
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
     assert visual.node.opacity == opacity
+
+
+def test_change_text_updates_node_string():
+    points = np.random.rand(3, 2)
+    layer = Points(points, text='one')
+    vispy_layer = VispyPointsLayer(layer)
+    text_node = vispy_layer._get_text_node()
+    np.testing.assert_array_equal(text_node.text, ['one'] * len(points))
+
+    layer.text = 'two'
+
+    np.testing.assert_array_equal(text_node.text, ['two'] * len(points))
+
+
+def test_change_text_string_updates_node_strings():
+    points = np.random.rand(3, 2)
+    layer = Points(points, text={'text': 'one'})
+    vispy_layer = VispyPointsLayer(layer)
+    text_node = vispy_layer._get_text_node()
+    np.testing.assert_array_equal(text_node.text, ['one'] * len(points))
+
+    layer.text.text = 'two'
+
+    np.testing.assert_array_equal(text_node.text, ['two'] * len(points))
+
+
+def test_change_text_color_updates_node_colors():
+    points = np.random.rand(3, 2)
+    layer = Points(points, text={'color': [1, 0, 0]})
+    vispy_layer = VispyPointsLayer(layer)
+    text_node = vispy_layer._get_text_node()
+    np.testing.assert_array_equal(
+        text_node.color.rgb, [[1, 0, 0]] * len(points)
+    )
+
+    layer.text.color = [0, 0, 1]
+
+    np.testing.assert_array_equal(
+        text_node.color.rgb, [[0, 0, 1]] * len(points)
+    )
+
+
+def test_change_properties_updates_node_strings():
+    points = np.random.rand(3, 2)
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    layer = Points(points, properties=properties, text='class')
+    vispy_layer = VispyPointsLayer(layer)
+    text_node = vispy_layer._get_text_node()
+    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+
+    layer.properties = {'class': np.array(['D', 'E', 'F'])}
+
+    np.testing.assert_array_equal(text_node.text, ['D', 'E', 'F'])
+
+
+def test_update_property_value_then_refresh_text_updates_node_strings():
+    points = np.random.rand(3, 2)
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    layer = Points(points, properties=properties, text='class')
+    vispy_layer = VispyPointsLayer(layer)
+    text_node = vispy_layer._get_text_node()
+    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+
+    layer.properties['class'][1] = 'D'
+    layer.refresh_text()
+
+    np.testing.assert_array_equal(text_node.text, ['A', 'D', 'C'])
