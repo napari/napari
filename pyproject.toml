@@ -82,7 +82,7 @@ skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = "--maxfail=5 --durations=10"
+addopts = "--maxfail=5 --durations=10 --timeout=5"
 
 # NOTE: only put things that will never change in here.
 # napari deprecation and future warnings should NOT go in here.
@@ -105,5 +105,6 @@ filterwarnings = [
 ]
 markers = [
     "sync_only: Test should only be run synchronously",
-    "async_only: Test should only be run asynchronously"
+    "async_only: Test should only be run asynchronously",
+    "slow: Slow test you can skip with `-m 'not slow'`, or adjust with the env varaible NAPARI_TESTING_TIMEOUT_SCALING"
 ]

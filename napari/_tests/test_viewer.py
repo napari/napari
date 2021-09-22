@@ -10,6 +10,7 @@ from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
     skip_local_popups,
+    slow,
 )
 from napari.utils._tests.test_naming import eval_with_filename
 from napari.utils.action_manager import action_manager
@@ -140,6 +141,7 @@ def test_add_layer_magic_name(
     assert layer.name == "a_unique_name"
 
 
+@slow(10)
 def test_screenshot(make_napari_viewer):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
@@ -292,6 +294,7 @@ def test_deleting_points(make_napari_viewer):
     assert len(pts_layer.data) == 3
 
 
+@slow(15)
 @skip_local_popups
 def test_custom_layer(make_napari_viewer):
     """Make sure that custom layers subclasses can be added to the viewer."""
