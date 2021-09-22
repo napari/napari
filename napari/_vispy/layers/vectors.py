@@ -14,29 +14,26 @@ class VispyVectorsLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self):
-        if (
-            len(self.layer._view_vertices) == 0
-            or len(self.layer._view_faces) == 0
-        ):
-            vertices = np.zeros((3, self.layer._ndisplay))
-            faces = np.array([[0, 1, 2]])
-            face_color = np.array([[0, 0, 0, 0]])
+    def _on_data_change(self, event=None):
+        if len(self.layer._view_data) == 0:
+            pos = np.empty((0, 2, self.layer._ndisplay))
+            color = np.empty((0, 4))
         else:
-            vertices = self.layer._view_vertices[:, ::-1]
-            faces = self.layer._view_faces
-            face_color = self.layer._view_face_color
+            # reverse to draw most recent last
+            pos = self.layer._view_data[::-1].copy()
+            pos[:, 0] += pos[:, 1]
+            color = self.layer._view_color
 
         if self.layer._ndisplay == 3 and self.layer.ndim == 2:
-            vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
+            pos = np.pad(pos, ((0, 0), (0, 1)), mode='constant')
 
-        # self.node.set_data(
-        #     vertices=vertices, faces=faces, color=self.layer.current_edge_color
-        # )
+        # reshape to what LineVisual needs
+        pos = pos.reshape(-1, self.layer._ndisplay)
+        color = color.repeat(2, axis=0)
+
         self.node.set_data(
-            vertices=vertices,
-            faces=faces,
-            face_colors=face_color,
+            pos=pos,
+            color=color,
         )
 
         self.node.update()
