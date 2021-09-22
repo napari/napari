@@ -197,7 +197,7 @@ def _labeltypedict(key) -> ContextAction:
     return {
         'description': key,
         'action': partial(_convert_dtype, mode=key),
-        'enable_when': f'not {key}_label',
+        'enable_when': f'only_labels_selected and active_layer_dtype != {key!r}',
         'show_when': 'True',
     }
 
