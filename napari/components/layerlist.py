@@ -148,7 +148,8 @@ class LayerList(SelectableEventedList[Layer]):
     def _extent_world(self) -> np.ndarray:
         """Extent of layers in world coordinates.
 
-        Default to 2D with (0, 512) min/ max values if no data is present.
+        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
+        Corresponds to pixels centered at [0, ..., 511].
 
         Returns
         -------
@@ -159,7 +160,8 @@ class LayerList(SelectableEventedList[Layer]):
     def _get_extent_world(self, layer_extent_list):
         """Extent of layers in world coordinates.
 
-        Default to 2D with (0, 512) min/ max values if no data is present.
+        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
+        Corresponds to pixels centered at [0, ..., 511].
 
         Returns
         -------
