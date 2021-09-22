@@ -194,9 +194,15 @@ class LayerList(SelectableEventedList[Layer]):
                     axis=1,
                 )
 
-        min_vals = np.nan_to_num(min_v[::-1], nan=-0.5)
-        max_vals = np.copy(max_v[::-1])
-        max_vals[np.isnan(max_vals)] = 511.5
+        try:
+            min_vals = np.nan_to_num(min_v[::-1], nan=-0.5)
+            max_vals = np.nan_to_num(max_v[::-1], nan=511.5)
+        except TypeError:
+            # In NumPy < 1.17, nan_to_num doesn't have a nan kwarg
+            min_vals = np.asarray(min_v[::-1])
+            min_vals[np.isnan(min_vals)] = -0.5
+            max_vals = np.asarray(max_v[::-1])
+            max_vals[np.isnan(max_vals)] = 511.5
 
         return np.vstack([min_vals, max_vals])
 
