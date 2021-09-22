@@ -13,12 +13,12 @@ def test_empty_text_manager_property():
     text_manager = TextManager(
         text='confidence', n_text=0, properties=properties
     )
-    assert text_manager.text.get_array().size == 0
+    assert text_manager.text.array.size == 0
 
     # add a text element
     properties['confidence'] = np.array([0.5])
     text_manager.add(1)
-    np.testing.assert_equal(text_manager.text.get_array(), ['0.5'])
+    np.testing.assert_equal(text_manager.text.array, ['0.5'])
 
 
 def test_empty_text_manager_format():
@@ -28,16 +28,14 @@ def test_empty_text_manager_format():
     properties = {'confidence': np.empty(0, dtype=float)}
     text = 'confidence: {confidence:.2f}'
     text_manager = TextManager(text=text, n_text=0, properties=properties)
-    assert text_manager.text.get_array().size == 0
+    assert text_manager.text.array.size == 0
 
     # add a text element
     properties['confidence'] = np.concatenate(
         (properties['confidence'], [0.5])
     )
     text_manager.add(1)
-    np.testing.assert_equal(
-        text_manager.text.get_array(), ['confidence: 0.50']
-    )
+    np.testing.assert_equal(text_manager.text.array, ['confidence: 0.50'])
 
 
 def test_text_manager_property():
@@ -45,7 +43,7 @@ def test_text_manager_property():
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager = TextManager(text=text, n_text=3, properties=properties)
-    np.testing.assert_equal(text_manager.text.get_array(), classes)
+    np.testing.assert_equal(text_manager.text.array, classes)
 
     # add new text with properties
     properties['class'] = np.concatenate((classes, ['A']))
@@ -53,13 +51,11 @@ def test_text_manager_property():
         (properties['confidence'], [0.5])
     )
     text_manager.add(1)
-    np.testing.assert_equal(text_manager.text.get_array(), properties['class'])
+    np.testing.assert_equal(text_manager.text.array, properties['class'])
 
     # remove the first text element
     text_manager.remove({0})
-    np.testing.assert_equal(
-        text_manager.text.get_array(), properties['class'][1::]
-    )
+    np.testing.assert_equal(text_manager.text.array, properties['class'][1::])
 
 
 def test_text_manager_format():
@@ -70,7 +66,7 @@ def test_text_manager_format():
         ['confidence: 0.50', 'confidence: 0.30', 'confidence: 1.00']
     )
     text_manager = TextManager(text=text, n_text=3, properties=properties)
-    np.testing.assert_equal(text_manager.text.get_array(), expected_text)
+    np.testing.assert_equal(text_manager.text.array, expected_text)
 
     # add new text with properties
     properties['class'] = np.concatenate((classes, ['A']))
@@ -79,7 +75,7 @@ def test_text_manager_format():
     )
     text_manager.add(1)
     expected_text_2 = np.concatenate([expected_text, ['confidence: 0.50']])
-    np.testing.assert_equal(text_manager.text.get_array(), expected_text_2)
+    np.testing.assert_equal(text_manager.text.array, expected_text_2)
 
     # test getting the text elements when there are none in view
     text_view = text_manager.view_text([])
@@ -96,9 +92,7 @@ def test_text_manager_format():
 
     # remove the first text element
     text_manager.remove({0})
-    np.testing.assert_equal(
-        text_manager.text.get_array(), expected_text_2[1::]
-    )
+    np.testing.assert_equal(text_manager.text.array, expected_text_2[1::])
 
 
 def test_refresh_text():
@@ -113,7 +107,7 @@ def test_refresh_text():
         'confidence': np.array([0.5, 0.3, 1]),
     }
     text_manager.refresh_text(new_properties, 3)
-    np.testing.assert_equal(new_classes, text_manager.text.get_array())
+    np.testing.assert_equal(new_classes, text_manager.text.array)
 
 
 def test_equality():
@@ -162,13 +156,13 @@ def test_blending_modes():
 
 def test_constant():
     text_manager = TextManager(text='point', n_text=0, properties={})
-    assert len(text_manager.text.get_array()) == 0
+    assert len(text_manager.text.array) == 0
 
 
 def test_constant_add():
     text_manager = TextManager(text='point', n_text=0, properties={})
     text_manager.add(2)
-    np.testing.assert_equal(text_manager.text.get_array(), ['point', 'point'])
+    np.testing.assert_equal(text_manager.text.array, ['point', 'point'])
 
 
 def test_constant_remove():
@@ -178,22 +172,22 @@ def test_constant_remove():
     text_manager.remove([1, 3])
 
     np.testing.assert_equal(
-        text_manager.text.get_array(), ['point', 'point', 'point']
+        text_manager.text.array, ['point', 'point', 'point']
     )
 
 
 def test_constant_add_then_remove():
     text_manager = TextManager(text='point', n_text=0, properties={})
     text_manager.add(2)
-    np.testing.assert_equal(text_manager.text.get_array(), ['point', 'point'])
+    np.testing.assert_equal(text_manager.text.array, ['point', 'point'])
     text_manager.remove([0])
-    np.testing.assert_equal(text_manager.text.get_array(), ['point'])
+    np.testing.assert_equal(text_manager.text.array, ['point'])
 
 
 def test_direct():
     values = ['one', 'two', 'three']
     text_manager = TextManager(text=values, n_text=3, properties={})
-    np.testing.assert_array_equal(text_manager.text.get_array(), values)
+    np.testing.assert_array_equal(text_manager.text.array, values)
 
 
 def test_direct_add():
@@ -203,7 +197,7 @@ def test_direct_add():
     text_manager.add(2)
 
     np.testing.assert_array_equal(
-        text_manager.text.get_array(), ['one', 'two', 'three', '', '']
+        text_manager.text.array, ['one', 'two', 'three', '', '']
     )
 
 
@@ -213,9 +207,7 @@ def test_direct_remove():
 
     text_manager.remove([1, 3])
 
-    np.testing.assert_array_equal(
-        text_manager.text.get_array(), ['one', 'three']
-    )
+    np.testing.assert_array_equal(text_manager.text.array, ['one', 'three'])
 
 
 def test_multi_color_direct():
@@ -228,7 +220,7 @@ def test_multi_color_direct():
     )
 
     np.testing.assert_array_equal(
-        text_manager.color.get_array(), transform_color(colors)
+        text_manager.color.array, transform_color(colors)
     )
 
 
@@ -241,7 +233,7 @@ def test_multi_color_property():
     )
 
     np.testing.assert_array_equal(
-        text_manager.color.get_array(), transform_color(colors)
+        text_manager.color.array, transform_color(colors)
     )
 
 
@@ -260,7 +252,7 @@ def test_multi_color_property_discrete_map():
     )
 
     np.testing.assert_array_equal(
-        text_manager.color.get_array(),
+        text_manager.color.array,
         transform_color(['red', 'green', 'blue']),
     )
 
@@ -280,7 +272,7 @@ def test_multi_color_property_continuous_map():
     )
 
     np.testing.assert_allclose(
-        text_manager.color.get_array(),
+        text_manager.color.array,
         transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
     )
 
@@ -321,6 +313,6 @@ def test_color_too_many_fields_use_first_matching():
     # To change this behavior to error, update the model config
     # with `extra = 'forbid'`.
     np.testing.assert_allclose(
-        text_manager.color.get_array(),
+        text_manager.color.array,
         transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
     )

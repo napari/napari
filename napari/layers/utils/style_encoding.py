@@ -64,7 +64,8 @@ class StyleEncoding(EventedModel, Generic[OutputType], ABC):
     def _make_store(self) -> StyleStore[OutputType]:
         pass
 
-    def get_array(self) -> np.ndarray:
+    @property
+    def array(self) -> np.ndarray:
         return self._store.array
 
     def connect(self, callback):

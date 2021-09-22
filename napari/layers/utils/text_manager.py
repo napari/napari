@@ -169,7 +169,7 @@ class TextManager(EventedModel):
             Array of text strings for the N text elements in view
         """
         if len(indices_view) > 0:
-            return self.text.get_array()[indices_view]
+            return self.text.array[indices_view]
         # if no elements in this slice send dummy data
         return np.array([''])
 
@@ -186,7 +186,7 @@ class TextManager(EventedModel):
             Array of colors for the N text elements in view
         """
         if len(indices_view) > 0:
-            return self.color.get_array()[indices_view, :]
+            return self.color.array[indices_view, :]
         # if no elements in this slice send dummy data
         return np.zeros((1, 4))
 
