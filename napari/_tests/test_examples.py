@@ -1,11 +1,14 @@
 import os
 import runpy
 from pathlib import Path
-from qtpy import API_NAME
+
 import pytest
+from qtpy import API_NAME
 
 import napari
 from napari.utils.notifications import notification_manager
+
+from .utils import slow
 
 # not testing these examples
 skip = [
@@ -50,6 +53,7 @@ def qapp():
     yield app
 
 
+@slow(30)
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
