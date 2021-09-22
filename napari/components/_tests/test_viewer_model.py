@@ -225,7 +225,7 @@ def test_new_labels_image():
     assert viewer.dims.ndim == 2
     np.testing.assert_equal(viewer.layers[1].data.shape, (10, 15))
     np.testing.assert_equal(viewer.layers[1].scale, (1, 1))
-    np.testing.assert_equal(viewer.layers[1].translate, (-0.5, -0.5))
+    np.testing.assert_equal(viewer.layers[1].translate, (0, 0))
 
 
 def test_new_labels_scaled_image():
@@ -240,7 +240,7 @@ def test_new_labels_scaled_image():
     assert viewer.dims.ndim == 2
     np.testing.assert_equal(viewer.layers[1].data.shape, (10, 15))
     np.testing.assert_equal(viewer.layers[1].scale, (3, 3))
-    np.testing.assert_equal(viewer.layers[1].translate, (-1.5, -1.5))
+    np.testing.assert_equal(viewer.layers[1].translate, (0, 0))
 
 
 def test_new_labels_scaled_translated_image():
@@ -255,7 +255,7 @@ def test_new_labels_scaled_translated_image():
     assert viewer.dims.ndim == 2
     np.testing.assert_almost_equal(viewer.layers[1].data.shape, (10, 15))
     np.testing.assert_almost_equal(viewer.layers[1].scale, (3, 3))
-    np.testing.assert_almost_equal(viewer.layers[1].translate, (18.5, -6.5))
+    np.testing.assert_almost_equal(viewer.layers[1].translate, (20, -5))
 
 
 def test_new_points():

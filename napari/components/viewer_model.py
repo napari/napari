@@ -301,7 +301,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent = self.layers.extent.world
         scale = self.layers.extent.step
         scene_size = extent[1] - extent[0]
-        corner = extent[0]
+        corner = extent[0] + 0.5 * self.layers.extent.step
         shape = [
             np.round(s / sc).astype('int') if s > 0 else 1
             for s, sc in zip(scene_size, scale)
