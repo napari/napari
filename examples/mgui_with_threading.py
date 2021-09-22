@@ -1,6 +1,13 @@
 """An example of calling a threaded function from a magicgui dock_widget.
 Note: this example requires python >= 3.9
 """
+
+import sys
+
+if sys.version_info < (3, 9):
+    print('This example requires python >= 3.9')
+    sys.exit(0)
+
 from magicgui import magic_factory, widgets
 from skimage import feature
 from typing_extensions import Annotated
