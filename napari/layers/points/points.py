@@ -1379,13 +1379,11 @@ class Points(Layer):
                 thumbnail_indices = self._indices_view
 
             # Calculate the point coordinates in the thumbnail data space.
-            thumbnail_shape = np.round(
-                np.clip(
-                    zoom_factor * np.array(shape[:2]),
-                    1,  # smallest side should be 1 pixel wide
-                    self._thumbnail_shape[:2],
-                )
-            ).astype(int)
+            thumbnail_shape = np.clip(
+                np.ceil(zoom_factor * np.array(shape[:2])).astype(int),
+                1,  # smallest side should be 1 pixel wide
+                self._thumbnail_shape[:2],
+            )
             coords = np.floor(
                 (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
             ).astype(int)
