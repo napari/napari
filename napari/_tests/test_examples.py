@@ -1,7 +1,7 @@
 import os
 import runpy
 from pathlib import Path
-
+from qtpy import API_NAME
 import pytest
 
 import napari
@@ -16,12 +16,16 @@ skip = [
     'live_tiffs_generator.py',
     'points-over-time.py',  # too resource hungry
     'embed_ipython.py',  # fails without monkeypatch
-    'custom_key_bindings.py'  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
+    'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
 ]
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
 examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
+
+# still some CI segfaults, but only on windows with pyqt5
+if os.getenv("CI") and os.name == 'nt' and API_NAME == 'PyQt5':
+    examples = []
 
 
 @pytest.fixture
@@ -42,7 +46,6 @@ def qapp():
 
 
 @pytest.mark.filterwarnings("ignore")
-@pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
 def test_examples(qapp, fname, monkeypatch, capsys):
@@ -60,4 +63,9 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
 
     # run the example!
-    runpy.run_path(str(EXAMPLE_DIR / fname))
+    try:
+        runpy.run_path(str(EXAMPLE_DIR / fname))
+    except SystemExit as e:
+        # we use sys.exit(0) to gracefully exit from examples
+        if e.code != 0:
+            raise

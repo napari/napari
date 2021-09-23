@@ -2,7 +2,7 @@
 Start napari and land directly in an embedded ipython console with qt event loop.
 
 A similar effect can be achieved more simply with `viewer.update_console(locals())`,
-such as shown in https://github.com/napari/napari/blob/master/examples/update_console.py.
+such as shown in https://github.com/napari/napari/blob/main/examples/update_console.py.
 
 However, differently from `update_console`, this will start an independent
 ipython console which can outlive the viewer.

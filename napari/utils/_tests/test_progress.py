@@ -11,7 +11,7 @@ from napari._qt.widgets.qt_progress_bar import (  # noqa
     ProgressBar,
     ProgressBarGroup,
 )
-from napari.qt import progrange, progress  # noqa
+from napari.utils import progrange, progress  # noqa
 
 SHOW = bool(sys.platform == 'linux' or os.getenv("CI"))
 

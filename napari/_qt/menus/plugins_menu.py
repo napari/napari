@@ -1,16 +1,17 @@
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QAction, QMenu
+from qtpy.QtWidgets import QAction
 
 from ...utils.translations import trans
 from ..dialogs.qt_plugin_dialog import QtPluginDialog
 from ..dialogs.qt_plugin_report import QtPluginErrReporter
+from ._util import NapariMenu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
 
-class PluginsMenu(QMenu):
+class PluginsMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&Plugins'), window._qt_window)
@@ -46,7 +47,7 @@ class PluginsMenu(QMenu):
         for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
             multiprovider = len(widgets) > 1
             if multiprovider:
-                menu = QMenu(plugin_name, self)
+                menu = NapariMenu(plugin_name, self)
                 self.addMenu(menu)
             else:
                 menu = self
@@ -86,7 +87,7 @@ class PluginsMenu(QMenu):
             if event.value == plugin_name:
                 multiprovider = len(widgets) > 1
                 if multiprovider:
-                    menu = QMenu(plugin_name, self)
+                    menu = NapariMenu(plugin_name, self)
                     self.addMenu(menu)
                 else:
                     menu = self

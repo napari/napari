@@ -14,7 +14,7 @@ https://github.com/napari/napari
 - Point face color and edge color are now settable as a property in a columnar
   data table, mapped using a colormap (continuous values) or a color cycle
   (categorical values). See `this example
-  <https://github.com/napari/napari/blob/master/examples/add_points_with_properties.py>`_
+  <https://github.com/napari/napari/blob/main/examples/add_points_with_properties.py>`_
   for syntax details.
 - Python 3.8 is now supported.
 
