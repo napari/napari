@@ -212,7 +212,7 @@ def test_direct_remove():
 
 def test_multi_color_direct():
     classes = np.array(['A', 'B', 'C'])
-    colors = ['red', 'green', 'blue']
+    colors = np.array(['red', 'green', 'blue'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
 
     text_manager = TextManager(
@@ -225,7 +225,7 @@ def test_multi_color_direct():
 
 
 def test_multi_color_property():
-    colors = ['red', 'green', 'blue']
+    colors = np.array(['red', 'green', 'blue'])
     properties = {'class': colors, 'confidence': np.array([0.5, 0.3, 1])}
 
     text_manager = TextManager(
@@ -239,7 +239,7 @@ def test_multi_color_property():
 
 def test_multi_color_property_discrete_map():
     properties = {
-        'class': ['A', 'B', 'C'],
+        'class': np.array(['A', 'B', 'C']),
         'confidence': np.array([0.5, 0.3, 1]),
     }
     color = {
@@ -259,7 +259,7 @@ def test_multi_color_property_discrete_map():
 
 def test_multi_color_property_continuous_map():
     properties = {
-        'class': ['A', 'B', 'C'],
+        'class': np.array(['A', 'B', 'C']),
         'confidence': np.array([0.5, 0, 1]),
     }
     color = {
@@ -279,7 +279,7 @@ def test_multi_color_property_continuous_map():
 
 def test_color_missing_field():
     properties = {
-        'class': ['A', 'B', 'C'],
+        'class': np.array(['A', 'B', 'C']),
         'confidence': np.array([0.5, 0, 1]),
     }
     color = {
@@ -294,7 +294,7 @@ def test_color_missing_field():
 
 def test_color_too_many_fields_use_first_matching():
     properties = {
-        'class': ['A', 'B', 'C'],
+        'class': np.array(['A', 'B', 'C']),
         'confidence': np.array([0.5, 0, 1]),
     }
     color = {

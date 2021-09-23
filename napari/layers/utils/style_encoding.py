@@ -55,9 +55,9 @@ class StyleEncoding(EventedModel, Generic[OutputType], ABC):
         self._store = self._make_store()
 
     @abstractmethod
-    def apply_to_row(
-        self, property_row: Dict[str, Any], index: int
-    ) -> OutputType:
+    def apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> List[OutputType]:
         pass
 
     @abstractmethod
@@ -73,13 +73,13 @@ class StyleEncoding(EventedModel, Generic[OutputType], ABC):
 
     def refresh(self, properties: Dict[str, np.ndarray], n_rows: int):
         indices = range(0, n_rows)
-        values = self._apply_to_table(properties, indices)
+        values = self.apply(properties, indices)
         self._store.update(values)
 
     def add(self, properties: Dict[str, np.ndarray], num_to_add: int):
         num_values = len(self._store.array)
         indices = range(num_values, num_values + num_to_add)
-        values = self._apply_to_table(properties, indices)
+        values = self.apply(properties, indices)
         self._store.append(values)
 
     def paste(
@@ -92,17 +92,6 @@ class StyleEncoding(EventedModel, Generic[OutputType], ABC):
 
     def remove(self, indices: Iterable[int]):
         self._store.delete(indices)
-
-    def _apply_to_table(
-        self, properties: Dict[str, np.ndarray], indices: Iterable[int]
-    ) -> List[OutputType]:
-        return [
-            self.apply_to_row(
-                {name: column[index] for name, column in properties.items()},
-                index,
-            )
-            for index in indices
-        ]
 
 
 # TODO: if there are no property columns, this will return 0 even if there are some data.
@@ -127,14 +116,15 @@ class DirectColorEncoding(ColorEncodingBase):
     def _on_values_changed(self, event=None):
         self._store.update(self.values)
 
-    def apply_to_row(
-        self, property_row: Dict[str, Any], index: int
-    ) -> ColorType:
-        return (
+    def apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> List[ColorType]:
+        return [
             self.values[index]
             if index < len(self.values)
             else self.default_value
-        )
+            for index in indices
+        ]
 
     def paste(
         self, properties: Dict[str, np.ndarray], values: Sequence[OutputType]
@@ -154,10 +144,10 @@ DirectColorEncoding.__eq_operators__['default_value'] = np.array_equal
 class ConstantColorEncoding(ColorEncodingBase):
     constant: ColorType
 
-    def apply_to_row(
-        self, property_row: Dict[str, Any], index: int
-    ) -> ColorType:
-        return self.constant
+    def apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> List[ColorType]:
+        return [self.constant] * len(indices)
 
 
 ConstantColorEncoding.__eq_operators__['constant'] = np.array_equal
@@ -166,34 +156,36 @@ ConstantColorEncoding.__eq_operators__['constant'] = np.array_equal
 class IdentityColorEncoding(ColorEncodingBase):
     property_name: str
 
-    def apply_to_row(
-        self, property_row: Dict[str, Any], index: int
-    ) -> ColorType:
-        return property_row[self.property_name]
+    def apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> List[ColorType]:
+        return properties[self.property_name][indices]
 
 
 class DiscreteColorEncoding(ColorEncodingBase):
     property_name: str
     categorical_colormap: CategoricalColormap
 
-    def apply_to_row(
-        self, property_row: Dict[str, Any], index: int
-    ) -> ColorType:
-        return self.categorical_colormap.map(property_row[self.property_name])[
-            0
-        ]
+    def apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> List[ColorType]:
+        return list(
+            self.categorical_colormap.map(
+                properties[self.property_name][indices]
+            )
+        )
 
 
 class ContinuousColorEncoding(ColorEncodingBase):
     property_name: str
     continuous_colormap: Colormap
 
-    def apply_to_row(
-        self, property_row: Dict[str, Any], index: int
-    ) -> ColorType:
-        return self.continuous_colormap.map(property_row[self.property_name])[
-            0
-        ]
+    def apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> List[ColorType]:
+        return self.continuous_colormap.map(
+            properties[self.property_name][indices]
+        )
 
     @validator('continuous_colormap', pre=True, always=True)
     def _check_continuous_colormap(
@@ -210,8 +202,15 @@ class StringEncodingBase(StyleEncoding[str], ABC):
 class FormatStringEncoding(StringEncodingBase):
     format_string: str
 
-    def apply_to_row(self, property_row: Dict[str, Any], index: int) -> str:
-        return self.format_string.format(**property_row)
+    def apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> List[str]:
+        return [
+            self.format_string.format(
+                **{name: column[index] for name, column in properties.items()}
+            )
+            for index in indices
+        ]
 
 
 class DirectStringEncoding(StringEncodingBase):
@@ -226,12 +225,15 @@ class DirectStringEncoding(StringEncodingBase):
     def _on_values_changed(self, event=None):
         self._store.update(self.values)
 
-    def apply_to_row(self, property_row: Dict[str, Any], index: int) -> str:
-        return (
+    def apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> List[str]:
+        return [
             self.values[index]
             if index < len(self.values)
             else self.default_value
-        )
+            for index in indices
+        ]
 
     def paste(
         self, properties: Dict[str, np.ndarray], values: Sequence[OutputType]
