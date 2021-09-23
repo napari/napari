@@ -2836,6 +2836,8 @@ class Shapes(Layer):
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self._slice_indices,
+                'text_string': deepcopy(self.text.text.array[index]),
+                'text_color': deepcopy(self.text.color.array[index, :]),
             }
         else:
             self._clipboard = {}
@@ -2870,11 +2872,13 @@ class Shapes(Layer):
                     shape, face_color=face_color, edge_color=edge_color
                 )
 
-            num_pasted_shapes = len(self._clipboard['data'])
-            self.text.add(num_pasted_shapes)
+            self.text.paste(
+                strings=self._clipboard['text_string'],
+                colors=self._clipboard['text_color'],
+            )
 
             self.selected_data = set(
-                range(cur_shapes, cur_shapes + num_pasted_shapes)
+                range(cur_shapes, cur_shapes + len(self._clipboard['data']))
             )
 
             self.move_to_front()

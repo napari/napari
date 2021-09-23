@@ -2075,3 +2075,23 @@ def test_to_mask_3d_with_size_2():
         dtype=bool,
     )
     np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_text_direct_copy_paste():
+    text = {
+        'text': ['A', 'B', 'C'],
+        'color': ['red', 'green', 'blue'],
+    }
+    points = Points(np.random.rand(3, 2), text=text)
+    points.selected_data = [0, 2]
+
+    points._copy_data()
+    points._paste_data()
+
+    np.testing.assert_array_equal(
+        points.text.text.array, ['A', 'B', 'C', 'A', 'C']
+    )
+    np.testing.assert_array_equal(
+        points.text.color.array,
+        transform_color(['red', 'green', 'blue', 'red', 'blue']),
+    )

@@ -112,6 +112,11 @@ class TextManager(EventedModel):
         self.text.add(self.properties, num_to_add)
         self.color.add(self.properties, num_to_add)
 
+    def paste(self, strings: Sequence[str], colors: Sequence[ColorType]):
+        self.n_text += len(strings)
+        self.text.paste(self.properties, strings)
+        self.color.paste(self.properties, colors)
+
     def remove(self, indices: Iterable[int]):
         """Removes some text values by index.
 

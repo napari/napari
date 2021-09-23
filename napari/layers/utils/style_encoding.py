@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Iterable, List, TypeVar, Union
+from typing import Any, Dict, Generic, Iterable, List, Sequence, TypeVar, Union
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as, validator
@@ -82,6 +82,14 @@ class StyleEncoding(EventedModel, Generic[OutputType], ABC):
         values = self._apply_to_table(properties, indices)
         self._store.append(values)
 
+    def paste(
+        self, properties: Dict[str, np.ndarray], values: Sequence[OutputType]
+    ):
+        # By default, paste acts like add because style values are derived.
+        # Some encodings (e.g. DirectColorEncoding) may actually use the values passed
+        # in and should override this method.
+        return self.add(properties, len(values))
+
     def remove(self, indices: Iterable[int]):
         self._store.delete(indices)
 
@@ -127,6 +135,12 @@ class DirectColorEncoding(ColorEncodingBase):
             if index < len(self.values)
             else self.default_value
         )
+
+    def paste(
+        self, properties: Dict[str, np.ndarray], values: Sequence[OutputType]
+    ):
+        self.values.extend(values)
+        super().paste(properties, values)
 
     def remove(self, indices):
         super().remove(indices)
@@ -218,6 +232,12 @@ class DirectStringEncoding(StringEncodingBase):
             if index < len(self.values)
             else self.default_value
         )
+
+    def paste(
+        self, properties: Dict[str, np.ndarray], values: Sequence[OutputType]
+    ):
+        self.values.extend(values)
+        super().paste(properties, values)
 
     def remove(self, indices):
         super().remove(indices)

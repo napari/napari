@@ -1462,9 +1462,12 @@ class Points(Layer):
                     axis=0,
                 )
 
-            num_pasted_points = len(self._clipboard['data'])
-            self.text.add(num_pasted_points)
+            self.text.paste(
+                strings=self._clipboard['text_string'],
+                colors=self._clipboard['text_color'],
+            )
 
+            num_pasted_points = len(self._clipboard['data'])
             self._selected_view = list(
                 range(npoints, npoints + num_pasted_points)
             )
@@ -1486,6 +1489,8 @@ class Points(Layer):
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self._slice_indices,
+                'text_string': deepcopy(self.text.text.array[index]),
+                'text_color': deepcopy(self.text.color.array[index, :]),
             }
         else:
             self._clipboard = {}

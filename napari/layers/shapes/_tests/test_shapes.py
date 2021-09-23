@@ -2121,3 +2121,23 @@ def test_world_data_extent():
     max_val = (9, 30, 15)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+def test_text_direct_copy_paste():
+    text = {
+        'text': ['A', 'B', 'C'],
+        'color': ['red', 'green', 'blue'],
+    }
+    shapes = Shapes(np.random.rand(3, 4, 2), text=text)
+    shapes.selected_data = [0, 2]
+
+    shapes._copy_data()
+    shapes._paste_data()
+
+    np.testing.assert_array_equal(
+        shapes.text.text.array, ['A', 'B', 'C', 'A', 'C']
+    )
+    np.testing.assert_array_equal(
+        shapes.text.color.array,
+        transform_color(['red', 'green', 'blue', 'red', 'blue']),
+    )
