@@ -33,6 +33,7 @@ from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
+from ..utils.progress import progress
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -874,22 +875,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         added: List[Layer] = []  # for layers that get added
-        try:
-            from napari._qt.qprogress import progress
-
-            with progress(
-                paths,
-                desc='Opening Files',
-                total=0 if len(paths) == 1 else None,
-            ) as pbr:
-                for _path in pbr:
-                    added.extend(
-                        self._add_layers_with_plugins(
-                            _path, kwargs, plugin=plugin, layer_type=layer_type
-                        )
-                    )
-        except (ImportError, ModuleNotFoundError):
-            for _path in paths:
+        with progress(
+            paths,
+            desc='Opening Files',
+            total=0
+            if len(paths) == 1
+            else None,  # indeterminate bar for 1 file
+        ) as pbr:
+            for _path in pbr:
                 added.extend(
                     self._add_layers_with_plugins(
                         _path, kwargs, plugin=plugin, layer_type=layer_type
