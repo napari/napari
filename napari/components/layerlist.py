@@ -7,6 +7,7 @@ import numpy as np
 
 from ..layers import Image, Labels, Layer
 from ..layers.utils._link_layers import get_linked_layers, layer_is_linked
+from ..utils._dtype import normalize_dtype
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
@@ -302,6 +303,16 @@ class LayerList(SelectableEventedList[Layer]):
 # `qt_action_context_menu.QtActionContextMenu` method to update the enabled
 # and/or visible items based on the state of the layerlist.
 
+
+def get_active_layer_dtype(layer):
+    if layer.active:
+        return normalize_dtype(
+            getattr(layer.active.data, 'dtype', '')
+        ).__name__
+    else:
+        return None
+
+
 _CONTEXT_KEYS = {
     'selection_count': lambda s: len(s),
     'all_layers_linked': lambda s: all(layer_is_linked(x) for x in s),
@@ -321,6 +332,5 @@ _CONTEXT_KEYS = {
     'same_shape': (
         lambda s: len({getattr(x.data, 'shape', ()) for x in s}) == 1
     ),
-    'active_layer_dtype': lambda s: s.active
-    and str(getattr(s.active.data, 'dtype', '')),
+    'active_layer_dtype': get_active_layer_dtype,
 }
