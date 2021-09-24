@@ -97,6 +97,9 @@ def _micromamba(root=None, with_local=False, version=VERSION):
     # - Another napari installation coming from conda-forge
     shutil.rmtree(Path(root) / "pkgs", ignore_errors=True)
     napari_env = Path(root) / "envs" / "napari"
+    if WINDOWS:
+        napari_env = napari_env / "Library"
+
     site_packages = (
         napari_env
         / "lib"
