@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Iterable, Sequence, Tuple, Union, get_args
+from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -13,13 +13,13 @@ from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .color_transformations import ColorType
 from .style_encoding import (
-    ColorEncoding,
+    COLOR_ENCODINGS,
+    STRING_ENCODINGS,
     ConstantColorEncoding,
     DirectColorEncoding,
     DirectStringEncoding,
     FormatStringEncoding,
     IdentityColorEncoding,
-    StringEncoding,
     parse_obj_as_union,
 )
 
@@ -31,8 +31,6 @@ class TextManager(EventedModel):
 
     Attributes
     ----------
-    values : np.ndarray
-        The text values to be displayed (read-only).
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
@@ -68,8 +66,10 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    text: StringEncoding = {'format_string': ''}
-    color: ColorEncoding = {'constant': DEFAULT_COLOR}
+    text: Union[STRING_ENCODINGS] = FormatStringEncoding(format_string='')
+    color: Union[COLOR_ENCODINGS] = ConstantColorEncoding(
+        constant=DEFAULT_COLOR
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -198,19 +198,19 @@ class TextManager(EventedModel):
     @validator('text', pre=True, always=True)
     def _check_text(
         cls,
-        text: Union[str, Sequence[str], StringEncoding, dict, None],
+        text: Union[str, Sequence[str], Union[STRING_ENCODINGS], dict, None],
         values,
-    ) -> StringEncoding:
+    ) -> Union[STRING_ENCODINGS]:
         if text is None:
             return FormatStringEncoding(format_string='')
-        if isinstance(text, get_args(StringEncoding)):
+        if isinstance(text, STRING_ENCODINGS):
             return text
         if isinstance(text, str):
             properties = values['properties']
             format_string = f'{{{text}}}' if text in properties else text
             return FormatStringEncoding(format_string=format_string)
         if isinstance(text, dict):
-            return parse_obj_as_union(StringEncoding, text)
+            return parse_obj_as_union(STRING_ENCODINGS, text)
         if isinstance(text, Sequence):
             return DirectStringEncoding(array=text, default='')
         raise TypeError(
@@ -224,19 +224,19 @@ class TextManager(EventedModel):
     def _check_color(
         cls,
         color: Union[
-            ColorType, Sequence[ColorType], ColorEncoding, dict, None
+            ColorType, Sequence[ColorType], Union[COLOR_ENCODINGS], dict, None
         ],
         values,
-    ) -> ColorEncoding:
+    ) -> Union[COLOR_ENCODINGS]:
         properties = values['properties']
         if color is None:
             return ConstantColorEncoding(constant=DEFAULT_COLOR)
-        if isinstance(color, get_args(ColorEncoding)):
+        if isinstance(color, COLOR_ENCODINGS):
             return color
         if isinstance(color, str) and color in properties:
             return IdentityColorEncoding(property_name=color)
         if isinstance(color, dict):
-            return parse_obj_as_union(ColorEncoding, color)
+            return parse_obj_as_union(COLOR_ENCODINGS, color)
         color_array = transform_color(color)
         # TODO: distinguish between single color and array of length one as constant vs. direct.
         if color_array.shape[0] > 1:

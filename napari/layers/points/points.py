@@ -397,12 +397,7 @@ class Points(Layer):
         self._data = data
 
         # Add/remove property and style values based on the number of new points.
-        with (
-            self.events.blocker_all(),
-            self._edge.events.blocker_all(),
-            self._face.events.blocker_all(),
-            self.text.events.text_update.blocker(),
-        ):
+        with self.events.blocker_all(), self._edge.events.blocker_all(), self._face.events.blocker_all(), self.text.events.text_update.blocker():
             if len(data) < cur_npoints:
                 # If there are now fewer points, remove the extra property and style
                 # extra ones

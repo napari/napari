@@ -117,24 +117,11 @@ class ContinuousColorEncoding(DerivedStyleEncoding):
     ) -> np.ndarray:
         all_values = properties[self.property_name]
         if self.contrast_limits is None:
-            self.contrast_limits = self._calculate_contrast_limits(all_values)
+            self.contrast_limits = _calculate_contrast_limits(all_values)
         values = all_values[indices]
         if self.contrast_limits is not None:
             values = np.interp(values, self.contrast_limits, (0, 1))
         return self.continuous_colormap.map(values)
-
-    @classmethod
-    def _calculate_contrast_limits(
-        cls, values: np.ndarray
-    ) -> Optional[Tuple[float, float]]:
-        contrast_limits = None
-        if values.size > 0:
-            min_value = np.min(values)
-            max_value = np.max(values)
-            # Use < instead of != to handle nans.
-            if min_value < max_value:
-                contrast_limits = (min_value, max_value)
-        return contrast_limits
 
     @validator('continuous_colormap', pre=True, always=True)
     def _check_continuous_colormap(
@@ -164,10 +151,7 @@ class FormatStringEncoding(DerivedStyleEncoding):
         return np.array(
             [
                 self.format_string.format(
-                    **{
-                        name: values[index]
-                        for name, values in properties.items()
-                    }
+                    **_get_property_row(properties, index)
                 )
                 for index in indices
             ]
@@ -184,9 +168,9 @@ class DirectStringEncoding(DirectStyleEncoding):
         return np.array(default, dtype=str)
 
 
-def parse_obj_as_union(union, obj: Dict[str, Any]):
+def parse_obj_as_union(union: Tuple[type, ...], obj: Dict[str, Any]):
     try:
-        return parse_obj_as(union, obj)
+        return parse_obj_as(Union[union], obj)
     except ValidationError as error:
         raise ValueError(
             'Failed to parse a supported encoding from kwargs:\n'
@@ -198,19 +182,22 @@ def parse_obj_as_union(union, obj: Dict[str, Any]):
         )
 
 
-ColorEncoding = Union[
+# Define supported encodings as tuples instead of Union, so that they can be used with
+# isinstance without relying on get_args, which was only added in python 3.8.
+# The order of the encoding matters because we rely on Pydantic for parsing dict kwargs
+# inputs for each encoding - it will use the first encoding that can be defined with those kwargs.
+COLOR_ENCODINGS = (
     ContinuousColorEncoding,
     DiscreteColorEncoding,
     ConstantColorEncoding,
     IdentityColorEncoding,
     DirectColorEncoding,
-]
+)
 
-
-StringEncoding = Union[
+STRING_ENCODINGS = (
     FormatStringEncoding,
     DirectStringEncoding,
-]
+)
 
 
 def _append_maybe_empty(left: np.ndarray, right: np.ndarray):
@@ -220,3 +207,22 @@ def _append_maybe_empty(left: np.ndarray, right: np.ndarray):
     if left.size == 0:
         return right
     return np.append(left, right, axis=0)
+
+
+def _calculate_contrast_limits(
+    values: np.ndarray,
+) -> Optional[Tuple[float, float]]:
+    contrast_limits = None
+    if values.size > 0:
+        min_value = np.min(values)
+        max_value = np.max(values)
+        # Use < instead of != to handle nans.
+        if min_value < max_value:
+            contrast_limits = (min_value, max_value)
+    return contrast_limits
+
+
+def _get_property_row(
+    properties: Dict[str, np.ndarray], index: int
+) -> Dict[str, Any]:
+    return {name: values[index] for name, values in properties.items()}
