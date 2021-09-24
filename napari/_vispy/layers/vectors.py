@@ -29,7 +29,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             color = self.layer._view_color
 
         if self.layer._ndisplay == 3 and self.layer.ndim == 2:
-            pos = np.pad(pos, ((0, 0), (0, 1)), mode='constant')
+            pos = np.pad(pos, ((0, 0), (0, 0), (0, 1)), mode='constant')
 
         # reshape to what LineVisual needs
         pos = pos.reshape(-1, self.layer._ndisplay)
