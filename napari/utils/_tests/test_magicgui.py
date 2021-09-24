@@ -129,6 +129,7 @@ def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     viewer.add_layer(layer)
 
 
+@slow(10)
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
 def test_magicgui_add_layer(make_napari_viewer, LayerType, data, ndim):
     viewer = make_napari_viewer()
