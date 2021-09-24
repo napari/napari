@@ -12,7 +12,7 @@ from napari.utils.interactions import (
 )
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_adding_removing_images(make_napari_viewer):
@@ -57,7 +57,7 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 0, 255])
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images(make_napari_viewer):
@@ -79,7 +79,7 @@ def test_z_order_images(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points(make_napari_viewer):
@@ -101,7 +101,7 @@ def test_z_order_image_points(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images_after_ndisplay(make_napari_viewer):
@@ -131,7 +131,7 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_napari_viewer):
@@ -161,7 +161,7 @@ def test_z_order_image_points_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_colormap(make_napari_viewer):
@@ -192,7 +192,7 @@ def test_changing_image_colormap(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_gamma(make_napari_viewer):
@@ -223,7 +223,7 @@ def test_changing_image_gamma(make_napari_viewer):
     assert screenshot[center + (0,)] < 80
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_grid_mode(make_napari_viewer):
@@ -324,7 +324,7 @@ def test_grid_mode(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_attenuation(make_napari_viewer):
@@ -350,7 +350,7 @@ def test_changing_image_attenuation(make_napari_viewer):
     assert screenshot[center + (0,)] < 60
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_labels_painting(make_napari_viewer):
@@ -424,7 +424,7 @@ def test_labels_painting(make_napari_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
-@slow(15)
+@slow(30)
 @pytest.mark.skip("Welcome visual temporarily disabled")
 @skip_on_win_ci
 @skip_local_popups
@@ -450,7 +450,7 @@ def test_welcome(make_napari_viewer):
     assert screenshot[..., :-1].max() > 0
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_axes_visible(make_napari_viewer):
@@ -475,7 +475,7 @@ def test_axes_visible(make_napari_viewer):
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
-@slow(15)
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_scale_bar_visible(make_napari_viewer):

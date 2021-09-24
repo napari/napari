@@ -141,7 +141,7 @@ def test_add_layer_magic_name(
     assert layer.name == "a_unique_name"
 
 
-@slow(10)
+@slow(20)
 def test_screenshot(make_napari_viewer):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
