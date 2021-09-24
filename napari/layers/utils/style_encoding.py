@@ -80,8 +80,6 @@ class DirectColorEncoding(DirectStyleEncoding):
 
     @validator('default', pre=True, always=True)
     def _check_default(cls, default):
-        if default is None:
-            default = 'cyan'
         return transform_color(default)[0]
 
 
@@ -95,9 +93,7 @@ class ConstantColorEncoding(DerivedStyleEncoding):
 
     @validator('constant', pre=True, always=True)
     def _check_constant(cls, constant) -> np.ndarray:
-        return (
-            [0, 1, 1, 1] if constant is None else transform_color(constant)[0]
-        )
+        return transform_color(constant)[0]
 
 
 class IdentityColorEncoding(DerivedStyleEncoding):
@@ -165,8 +161,6 @@ class DirectStringEncoding(DirectStyleEncoding):
 
     @validator('default', pre=True, always=True)
     def _check_default(cls, default) -> np.ndarray:
-        if default is None:
-            default = ''
         return np.array(default, dtype=str)
 
 
