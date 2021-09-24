@@ -95,7 +95,7 @@ def _micromamba(root=None, with_local=False, version=VERSION):
     # Remove some stuff we do not need in the conda env:
     # - Package cache (tarballs)
     # - Another napari installation coming from conda-forge
-    shutil.rmtree(Path(root) / "pkgs")
+    shutil.rmtree(Path(root) / "pkgs", ignore_errors=True)
     napari_env = Path(root) / "envs" / "napari"
     site_packages = (
         napari_env
@@ -103,9 +103,9 @@ def _micromamba(root=None, with_local=False, version=VERSION):
         / f"python{sys.version_info.major}.{sys.version_info.minor}"
         / "site-packages"
     )
-    shutil.rmtree(site_packages / "napari")
+    shutil.rmtree(site_packages / "napari", ignore_errors=True)
     for dist_info in site_packages.glob("napari-*.dist-info"):
-        shutil.rmtree(dist_info)
+        shutil.rmtree(dist_info, ignore_errors=True)
 
     return str(napari_env)
 
