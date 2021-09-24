@@ -8,69 +8,52 @@ from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import Event, EventedModel
+from ...utils.events import EventedModel
 from .color_transformations import ColorType
 
 
 class StyleEncoding(EventedModel, ABC):
+    array: np.ndarray = []
+
     @abstractmethod
     def apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
         pass
 
-    @abstractmethod
-    def _get_array(self) -> np.ndarray:
-        pass
-
-    @abstractmethod
-    def _set_array(self, array: np.ndarray):
-        pass
-
     def refresh(self, properties: Dict[str, np.ndarray], n_rows: int):
         indices = range(0, n_rows)
-        self._set_array(self.apply(properties, indices))
+        self.array = self.apply(properties, indices)
 
     def add(self, properties: Dict[str, np.ndarray], num_to_add: int):
-        num_values = len(self._get_array())
+        num_values = len(self.array)
         indices = range(num_values, num_values + num_to_add)
         array = self.apply(properties, indices)
         new_array = (
-            array
-            if num_values == 0
-            else np.append(self._get_array(), array, axis=0)
+            array if num_values == 0 else np.append(self.array, array, axis=0)
         )
-        self._set_array(new_array)
+        self.array = new_array
 
     def paste(self, array: np.ndarray):
-        self._set_array(np.append(self._get_array(), array, axis=0))
+        self.array = np.append(self.array, array, axis=0)
 
     def remove(self, indices: Iterable[int]):
-        self._set_array(np.delete(self._get_array(), list(indices), axis=0))
+        self.array = np.delete(self.array, list(indices), axis=0)
+
+    @validator('array', pre=True, always=True)
+    def _check_array(cls, array):
+        return np.array(array)
 
 
 class DerivedStyleEncoding(StyleEncoding, ABC):
-    # TODO: consider making this a field in StyleEncoding and excluding from serialization.
-    _array: np.ndarray
+    def json(self, **kwargs):
+        return super().json(exclude={'array'})
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.events.add(array=Event)
-
-    @property
-    def array(self) -> np.ndarray:
-        return self._get_array()
-
-    def _get_array(self) -> np.ndarray:
-        return self._array
-
-    def _set_array(self, array: np.ndarray):
-        self._array = array
-        self.events.array()
+    def dict(self, **kwargs):
+        return super().dict(exclude={'array'})
 
 
 class DirectStyleEncoding(StyleEncoding):
-    array: np.ndarray
     default: np.ndarray
 
     def apply(
@@ -88,12 +71,6 @@ class DirectStyleEncoding(StyleEncoding):
                 axis=0,
             )
         )
-
-    def _get_array(self) -> np.ndarray:
-        return self.array
-
-    def _set_array(self, array: np.ndarray):
-        self.array = array
 
 
 class DirectColorEncoding(DirectStyleEncoding):
