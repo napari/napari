@@ -3,8 +3,6 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
-from napari._qt.widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
-
 from ..utils.translations import trans
 
 _tqdm_kwargs = {
@@ -65,7 +63,7 @@ class progress(tqdm):
         iterable: Optional[Iterable] = None,
         desc: Optional[str] = None,
         total: Optional[int] = None,
-        nest_under: Optional[ProgressBar] = None,
+        nest_under: Optional['progress'] = None,
         *args,
         **kwargs,
     ) -> None:
@@ -75,7 +73,7 @@ class progress(tqdm):
 
         # get progress bar added to viewer
         try:
-            from .dialogs.activity_dialog import get_pbar
+            from .._qt.dialogs.activity_dialog import get_pbar
 
             pbar = get_pbar(self, nest_under=nest_under, **pbar_kwargs)
         except ImportError:
@@ -138,19 +136,26 @@ class progress(tqdm):
         super().close()
 
     def close_pbar(self):
-        if not self.disable and self._pbar:
-            parent_widget = self._pbar.parent()
-            self._pbar.close()
-            self._pbar.deleteLater()
-            if isinstance(parent_widget, ProgressBarGroup):
-                pbar_children = [
-                    child
-                    for child in parent_widget.children()
-                    if isinstance(child, ProgressBar)
-                ]
-                if not any(child.isVisible() for child in pbar_children):
-                    parent_widget.close()
-            self._pbar = None
+        if self.disable or not self._pbar:
+            return
+
+        from napari._qt.widgets.qt_progress_bar import (
+            ProgressBar,
+            ProgressBarGroup,
+        )
+
+        parent_widget = self._pbar.parent()
+        self._pbar.close()
+        self._pbar.deleteLater()
+        if isinstance(parent_widget, ProgressBarGroup):
+            pbar_children = [
+                child
+                for child in parent_widget.children()
+                if isinstance(child, ProgressBar)
+            ]
+            if not any(child.isVisible() for child in pbar_children):
+                parent_widget.close()
+        self._pbar = None
 
 
 def progrange(*args, **kwargs):
