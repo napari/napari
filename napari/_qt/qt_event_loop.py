@@ -19,6 +19,7 @@ from ..utils.notifications import (
 )
 from ..utils.perf import perf_config
 from ..utils.translations import trans
+from ._qt_event_filter import QTooltipEventFilter
 from .dialogs.qt_notification import (
     NapariQtNotification,
     NotificationDispatcher,
@@ -152,6 +153,10 @@ def get_app(
         app.setOrganizationName(kwargs.get('org_name'))
         app.setOrganizationDomain(kwargs.get('org_domain'))
         set_app_id(kwargs.get('app_id'))
+
+        # Intercept tooltip events in order to convert all text to
+        # rich text (for text wrapping of tooltips).
+        app.installEventFilter(QTooltipEventFilter(app))
 
     if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(
