@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Sequence, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as, validator
@@ -9,7 +9,6 @@ from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import EventedModel
-from .color_transformations import ColorType
 
 
 class StyleEncoding(EventedModel, ABC):
@@ -120,19 +119,49 @@ class DiscreteColorEncoding(DerivedStyleEncoding):
 class ContinuousColorEncoding(DerivedStyleEncoding):
     property_name: str
     continuous_colormap: Colormap
+    contrast_limits: Optional[Tuple[float, float]] = None
 
     def apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> List[ColorType]:
-        return self.continuous_colormap.map(
-            properties[self.property_name][indices]
-        )
+    ) -> np.ndarray:
+        all_values = properties[self.property_name]
+        if self.contrast_limits is None:
+            self.contrast_limits = self._calculate_contrast_limits(all_values)
+        values = all_values[indices]
+        if self.contrast_limits is not None:
+            values = np.interp(values, self.contrast_limits, (0, 1))
+        return self.continuous_colormap.map(values)
+
+    @classmethod
+    def _calculate_contrast_limits(
+        cls, values: np.ndarray
+    ) -> Optional[Tuple[float, float]]:
+        contrast_limits = None
+        if values.size > 0:
+            min_value = np.min(values)
+            max_value = np.max(values)
+            # Use < instead of != to handle nans.
+            if min_value < max_value:
+                contrast_limits = (min_value, max_value)
+        return contrast_limits
 
     @validator('continuous_colormap', pre=True, always=True)
     def _check_continuous_colormap(
         cls, colormap: ValidColormapArg
     ) -> Colormap:
         return ensure_colormap(colormap)
+
+    @validator('contrast_limits', pre=True, always=True)
+    def _check_contrast_limits(
+        cls, contrast_limits
+    ) -> Optional[Tuple[float, float]]:
+        if (contrast_limits is not None) and (
+            contrast_limits[0] >= contrast_limits[1]
+        ):
+            raise ValueError(
+                'contrast_limits must be a strictly increasing pair of values'
+            )
+        return contrast_limits
 
 
 class FormatStringEncoding(DerivedStyleEncoding):

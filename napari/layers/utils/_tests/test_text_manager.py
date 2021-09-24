@@ -277,6 +277,27 @@ def test_multi_color_property_continuous_map():
     )
 
 
+def test_multi_color_property_continuous_map_with_contrast_limits():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+        'confidence': np.array([0, -1.5, 2]),
+    }
+    color = {
+        'property_name': 'confidence',
+        'continuous_colormap': 'gray',
+        'contrast_limits': [-1, 1],
+    }
+
+    text_manager = TextManager(
+        text='class', n_text=3, properties=properties, color=color
+    )
+
+    np.testing.assert_allclose(
+        text_manager.color.array,
+        transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
+    )
+
+
 def test_color_missing_field():
     properties = {
         'class': np.array(['A', 'B', 'C']),
