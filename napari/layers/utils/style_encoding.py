@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Iterable, List, Sequence, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Sequence, Union
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as, validator
@@ -8,175 +8,143 @@ from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import EventedModel
-from ...utils.events.custom_types import Array
+from ...utils.events import Event, EventedModel
 from .color_transformations import ColorType
 
-OutputType = TypeVar('OutputType')
 
-
-class StyleStore(EventedModel, Generic[OutputType], ABC):
-    array: Array = []
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        with self.events.array.blocker():
-            self.array = self._values_to_array([])
-
-    def update(self, values: List[OutputType]):
-        self.array = self._values_to_array(values)
-
-    def append(self, values: List[OutputType]):
-        array = self._values_to_array(values)
-        self.array = np.concatenate((self.array, array), axis=0)
-
-    def delete(self, indices: Iterable[int]):
-        self.array = np.delete(self.array, list(indices), axis=0)
-
-    def _values_to_array(self, values: List[OutputType]) -> np.ndarray:
-        return np.array(values)
-
-
-class ColorStore(StyleStore[ColorType]):
-    def _values_to_array(self, values: List[ColorType]) -> np.ndarray:
-        return transform_color(values) if len(values) > 0 else np.empty((0, 4))
-
-
-class StringStore(StyleStore[str]):
-    def _values_to_array(self, values: List[str]) -> np.ndarray:
-        return np.array(values, dtype=str)
-
-
-class StyleEncoding(EventedModel, Generic[OutputType], ABC):
-    _store: StyleStore[OutputType]
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._store = self._make_store()
-
+class StyleEncoding(EventedModel, ABC):
     @abstractmethod
     def apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> List[OutputType]:
+    ) -> np.ndarray:
         pass
 
     @abstractmethod
-    def _make_store(self) -> StyleStore[OutputType]:
+    def _get_array(self) -> np.ndarray:
         pass
 
-    @property
-    def array(self) -> np.ndarray:
-        return self._store.array
-
-    def connect(self, callback):
-        self._store.events.array.connect(callback)
+    @abstractmethod
+    def _set_array(self, array: np.ndarray):
+        pass
 
     def refresh(self, properties: Dict[str, np.ndarray], n_rows: int):
         indices = range(0, n_rows)
-        values = self.apply(properties, indices)
-        self._store.update(values)
+        self._set_array(self.apply(properties, indices))
 
     def add(self, properties: Dict[str, np.ndarray], num_to_add: int):
-        num_values = len(self._store.array)
+        num_values = len(self._get_array())
         indices = range(num_values, num_values + num_to_add)
-        values = self.apply(properties, indices)
-        self._store.append(values)
+        array = self.apply(properties, indices)
+        new_array = (
+            array
+            if num_values == 0
+            else np.append(self._get_array(), array, axis=0)
+        )
+        self._set_array(new_array)
 
-    def paste(
-        self, properties: Dict[str, np.ndarray], values: Sequence[OutputType]
-    ):
-        # By default, paste acts like add because style values are derived.
-        # Some encodings (e.g. DirectColorEncoding) may actually use the values passed
-        # in and should override this method.
-        return self.add(properties, len(values))
+    def paste(self, properties: Dict[str, np.ndarray], array: np.ndarray):
+        self._set_array(np.append(self._get_array(), array, axis=0))
 
     def remove(self, indices: Iterable[int]):
-        self._store.delete(indices)
+        self._set_array(np.delete(self._get_array(), list(indices), axis=0))
 
 
-# TODO: if there are no property columns, this will return 0 even if there are some data.
-def _num_rows(properties: Dict[str, np.ndarray]) -> int:
-    return len(next(iter(properties.values()))) if len(properties) > 0 else 0
-
-
-class ColorEncodingBase(StyleEncoding[ColorType], ABC):
-    def _make_store(self):
-        return ColorStore()
-
-
-class DirectColorEncoding(ColorEncodingBase):
-    values: List[ColorType]
-    default_value: ColorType
+class DerivedStyleEncoding(StyleEncoding, ABC):
+    # TODO: consider making this a field in StyleEncoding and excluding from serialization.
+    _array: np.ndarray
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.events.values.connect(self._on_values_changed)
-        self._on_values_changed()
+        self.events.add(array=Event)
 
-    def _on_values_changed(self, event=None):
-        self._store.update(self.values)
+    @property
+    def array(self) -> np.ndarray:
+        return self._get_array()
 
-    def apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> List[ColorType]:
-        return [
-            self.values[index]
-            if index < len(self.values)
-            else self.default_value
-            for index in indices
-        ]
+    def _get_array(self) -> np.ndarray:
+        return self._array
 
-    def paste(
-        self, properties: Dict[str, np.ndarray], values: Sequence[OutputType]
-    ):
-        self.values.extend(values)
-        super().paste(properties, values)
-
-    def remove(self, indices):
-        super().remove(indices)
-        for index in sorted(indices, reverse=True):
-            self.values.pop(index)
+    def _set_array(self, array: np.ndarray):
+        self._array = array
+        self.events.array()
 
 
-DirectColorEncoding.__eq_operators__['default_value'] = np.array_equal
-
-
-class ConstantColorEncoding(ColorEncodingBase):
-    constant: ColorType
+class DirectStyleEncoding(StyleEncoding):
+    array: np.ndarray
+    default: np.ndarray
 
     def apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> List[ColorType]:
-        return [self.constant] * len(indices)
+    ) -> np.ndarray:
+        num_values = self.array.shape[0]
+        in_bound_indices = [index for index in indices if index < num_values]
+        num_default = len(indices) - len(in_bound_indices)
+        return (
+            self.array
+            if num_default == 0
+            else np.append(
+                self.array[in_bound_indices],
+                [self.default] * num_default,
+                axis=0,
+            )
+        )
+
+    def _get_array(self) -> np.ndarray:
+        return self.array
+
+    def _set_array(self, array: np.ndarray):
+        self.array = array
 
 
-ConstantColorEncoding.__eq_operators__['constant'] = np.array_equal
+class DirectColorEncoding(DirectStyleEncoding):
+    @validator('array', pre=True, always=True)
+    def _check_array(cls, array):
+        return np.empty((0, 4)) if len(array) == 0 else transform_color(array)
+
+    @validator('default', pre=True, always=True)
+    def _check_default(cls, default):
+        if default is None:
+            default = 'cyan'
+        return transform_color(default)[0]
 
 
-class IdentityColorEncoding(ColorEncodingBase):
+class ConstantColorEncoding(DerivedStyleEncoding):
+    constant: np.ndarray
+
+    def apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> np.ndarray:
+        return np.tile(self.constant, (len(indices), 1))
+
+    @validator('constant', pre=True, always=True)
+    def _check_constant(cls, constant) -> np.ndarray:
+        return (
+            [0, 1, 1, 1] if constant is None else transform_color(constant)[0]
+        )
+
+
+class IdentityColorEncoding(DerivedStyleEncoding):
     property_name: str
 
     def apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> List[ColorType]:
-        return properties[self.property_name][indices]
+    ) -> np.ndarray:
+        return transform_color(properties[self.property_name][indices])
 
 
-class DiscreteColorEncoding(ColorEncodingBase):
+class DiscreteColorEncoding(DerivedStyleEncoding):
     property_name: str
     categorical_colormap: CategoricalColormap
 
     def apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> List[ColorType]:
-        return list(
-            self.categorical_colormap.map(
-                properties[self.property_name][indices]
-            )
+    ) -> np.ndarray:
+        return self.categorical_colormap.map(
+            properties[self.property_name][indices]
         )
 
 
-class ContinuousColorEncoding(ColorEncodingBase):
+class ContinuousColorEncoding(DerivedStyleEncoding):
     property_name: str
     continuous_colormap: Colormap
 
@@ -194,57 +162,35 @@ class ContinuousColorEncoding(ColorEncodingBase):
         return ensure_colormap(colormap)
 
 
-class StringEncodingBase(StyleEncoding[str], ABC):
-    def _make_store(self):
-        return StringStore()
-
-
-class FormatStringEncoding(StringEncodingBase):
+class FormatStringEncoding(DerivedStyleEncoding):
     format_string: str
 
     def apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> List[str]:
-        return [
-            self.format_string.format(
-                **{name: column[index] for name, column in properties.items()}
-            )
-            for index in indices
-        ]
+    ) -> np.ndarray:
+        return np.array(
+            [
+                self.format_string.format(
+                    **{
+                        name: column[index]
+                        for name, column in properties.items()
+                    }
+                )
+                for index in indices
+            ]
+        )
 
 
-class DirectStringEncoding(StringEncodingBase):
-    values: List[str]
-    default_value: str
+class DirectStringEncoding(DirectStyleEncoding):
+    @validator('array', pre=True, always=True)
+    def _check_array(cls, array) -> np.ndarray:
+        return np.array(array, dtype=str)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.events.values.connect(self._on_values_changed)
-        self._on_values_changed()
-
-    def _on_values_changed(self, event=None):
-        self._store.update(self.values)
-
-    def apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> List[str]:
-        return [
-            self.values[index]
-            if index < len(self.values)
-            else self.default_value
-            for index in indices
-        ]
-
-    def paste(
-        self, properties: Dict[str, np.ndarray], values: Sequence[OutputType]
-    ):
-        self.values.extend(values)
-        super().paste(properties, values)
-
-    def remove(self, indices):
-        super().remove(indices)
-        for index in sorted(indices, reverse=True):
-            self.values.pop(index)
+    @validator('default', pre=True, always=True)
+    def _check_default(cls, default) -> np.ndarray:
+        if default is None:
+            default = ''
+        return np.array(default, dtype=str)
 
 
 def parse_obj_as_union(union, obj: Dict[str, Any]):

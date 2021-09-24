@@ -112,7 +112,7 @@ class TextManager(EventedModel):
         self.text.add(self.properties, num_to_add)
         self.color.add(self.properties, num_to_add)
 
-    def paste(self, strings: Sequence[str], colors: Sequence[ColorType]):
+    def paste(self, strings: np.ndarray, colors: np.ndarray):
         self.n_text += len(strings)
         self.text.paste(self.properties, strings)
         self.color.paste(self.properties, colors)
@@ -212,7 +212,7 @@ class TextManager(EventedModel):
         if isinstance(text, dict):
             return parse_obj_as_union(StringEncoding, text)
         if isinstance(text, Sequence):
-            return DirectStringEncoding(values=text, default_value='')
+            return DirectStringEncoding(array=text, default='')
         raise TypeError(
             trans._(
                 'text should be a string, iterable, StringEncoding, dict, or None',
@@ -240,10 +240,12 @@ class TextManager(EventedModel):
         color_array = transform_color(color)
         # TODO: distinguish between single color and array of length one as constant vs. direct.
         if color_array.shape[0] > 1:
-            return DirectColorEncoding(
-                values=list(color), default_value=DEFAULT_COLOR
+            encoding = DirectColorEncoding(
+                array=color_array, default=DEFAULT_COLOR
             )
-        return ConstantColorEncoding(constant=color)
+        else:
+            encoding = ConstantColorEncoding(constant=color)
+        return encoding
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
@@ -282,11 +284,11 @@ class TextManager(EventedModel):
         self.events.blending.connect(blending_update_function)
 
     def _on_text_changed(self, event=None):
-        self.text.connect(self.events.text_update)
+        self.text.events.array.connect(self.events.text_update)
         self.text.refresh(self.properties, self.n_text)
 
     def _on_color_changed(self, event=None):
-        self.color.connect(self.events.text_update)
+        self.color.events.array.connect(self.events.text_update)
         self.color.refresh(self.properties, self.n_text)
 
     def _on_properties_changed(self, event=None):
