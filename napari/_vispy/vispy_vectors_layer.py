@@ -21,7 +21,8 @@ class VispyVectorsLayer(VispyBaseLayer):
         else:
             # reverse to draw most recent last
             pos = self.layer._view_data[::-1].copy()
-            pos[:, 0] += pos[:, 1]
+            # add vector to origin for second point
+            pos[:, 1] += pos[:, 0]
             color = self.layer._view_color
 
         if self.layer._ndisplay == 3 and self.layer.ndim == 2:
