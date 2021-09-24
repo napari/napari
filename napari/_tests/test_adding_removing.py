@@ -6,7 +6,7 @@ from napari.layers import Image
 from napari.utils.events.event import WarningEmitter
 
 
-@slow(10)
+@slow(15)
 @skip_local_popups
 @pytest.mark.parametrize('Layer, data, _', layer_test_data)
 def test_add_all_layers(make_napari_viewer, Layer, data, _):
