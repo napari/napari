@@ -109,13 +109,13 @@ class TextManager(EventedModel):
             The number of text values to add.
         """
         self.n_text += num_to_add
-        self.text.add(self.properties, num_to_add)
-        self.color.add(self.properties, num_to_add)
+        self.text.update_tail(self.properties, self.n_text)
+        self.color.update_tail(self.properties, self.n_text)
 
     def paste(self, strings: np.ndarray, colors: np.ndarray):
         self.n_text += len(strings)
-        self.text.paste(strings)
-        self.color.paste(colors)
+        self.text.append(strings)
+        self.color.append(colors)
 
     def remove(self, indices: Iterable[int]):
         """Removes some text values by index.
@@ -126,8 +126,8 @@ class TextManager(EventedModel):
             The indices to remove.
         """
         self.n_text -= len(set(indices))
-        self.text.remove(indices)
-        self.color.remove(indices)
+        self.text.delete(indices)
+        self.color.delete(indices)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -283,15 +283,15 @@ class TextManager(EventedModel):
 
     def _on_text_changed(self, event=None):
         self.text.events.array.connect(self.events.text_update)
-        self.text.refresh(self.properties, self.n_text)
+        self.text.update_all(self.properties, self.n_text)
 
     def _on_color_changed(self, event=None):
         self.color.events.array.connect(self.events.text_update)
-        self.color.refresh(self.properties, self.n_text)
+        self.color.update_all(self.properties, self.n_text)
 
     def _on_properties_changed(self, event=None):
-        self.text.refresh(self.properties, self.n_text)
-        self.color.refresh(self.properties, self.n_text)
+        self.text.update_all(self.properties, self.n_text)
+        self.color.update_all(self.properties, self.n_text)
 
     @classmethod
     def from_layer_kwargs(

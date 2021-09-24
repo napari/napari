@@ -15,28 +15,25 @@ class StyleEncoding(EventedModel, ABC):
     array: np.ndarray = []
 
     @abstractmethod
-    def apply(
+    def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
         pass
 
-    def refresh(self, properties: Dict[str, np.ndarray], n_rows: int):
+    def update_all(self, properties: Dict[str, np.ndarray], n_rows: int):
         indices = range(0, n_rows)
-        self.array = self.apply(properties, indices)
+        self.array = self._apply(properties, indices)
 
-    def add(self, properties: Dict[str, np.ndarray], num_to_add: int):
-        num_values = len(self.array)
-        indices = range(num_values, num_values + num_to_add)
-        array = self.apply(properties, indices)
-        new_array = (
-            array if num_values == 0 else np.append(self.array, array, axis=0)
-        )
-        self.array = new_array
+    def update_tail(self, properties: Dict[str, np.ndarray], n_rows: int):
+        n_values = self.array.shape[0]
+        indices = range(n_values, n_rows)
+        array = self._apply(properties, indices)
+        self.append(array)
 
-    def paste(self, array: np.ndarray):
-        self.array = np.append(self.array, array, axis=0)
+    def append(self, array: np.ndarray):
+        self.array = _append_maybe_empty(self.array, array)
 
-    def remove(self, indices: Iterable[int]):
+    def delete(self, indices: Iterable[int]):
         self.array = np.delete(self.array, list(indices), axis=0)
 
     @validator('array', pre=True, always=True)
@@ -55,20 +52,15 @@ class DerivedStyleEncoding(StyleEncoding, ABC):
 class DirectStyleEncoding(StyleEncoding):
     default: np.ndarray
 
-    def apply(
+    def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
-        num_values = self.array.shape[0]
-        in_bound_indices = [index for index in indices if index < num_values]
-        num_default = len(indices) - len(in_bound_indices)
-        return (
-            self.array
-            if num_default == 0
-            else np.append(
-                self.array[in_bound_indices],
-                [self.default] * num_default,
-                axis=0,
-            )
+        n_values = self.array.shape[0]
+        in_bound_indices = [index for index in indices if index < n_values]
+        n_default = len(indices) - len(in_bound_indices)
+        return _append_maybe_empty(
+            self.array[in_bound_indices],
+            np.array([self.default] * n_default),
         )
 
 
@@ -85,7 +77,7 @@ class DirectColorEncoding(DirectStyleEncoding):
 class ConstantColorEncoding(DerivedStyleEncoding):
     constant: np.ndarray
 
-    def apply(
+    def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
         return np.tile(self.constant, (len(indices), 1))
@@ -98,7 +90,7 @@ class ConstantColorEncoding(DerivedStyleEncoding):
 class IdentityColorEncoding(DerivedStyleEncoding):
     property_name: str
 
-    def apply(
+    def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
         return transform_color(properties[self.property_name][indices])
@@ -108,12 +100,11 @@ class DiscreteColorEncoding(DerivedStyleEncoding):
     property_name: str
     categorical_colormap: CategoricalColormap
 
-    def apply(
+    def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
-        return self.categorical_colormap.map(
-            properties[self.property_name][indices]
-        )
+        values = properties[self.property_name][indices]
+        return self.categorical_colormap.map(values)
 
 
 class ContinuousColorEncoding(DerivedStyleEncoding):
@@ -121,7 +112,7 @@ class ContinuousColorEncoding(DerivedStyleEncoding):
     continuous_colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
 
-    def apply(
+    def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
         all_values = properties[self.property_name]
@@ -167,15 +158,15 @@ class ContinuousColorEncoding(DerivedStyleEncoding):
 class FormatStringEncoding(DerivedStyleEncoding):
     format_string: str
 
-    def apply(
+    def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
         return np.array(
             [
                 self.format_string.format(
                     **{
-                        name: column[index]
-                        for name, column in properties.items()
+                        name: values[index]
+                        for name, values in properties.items()
                     }
                 )
                 for index in indices
@@ -220,3 +211,12 @@ StringEncoding = Union[
     FormatStringEncoding,
     DirectStringEncoding,
 ]
+
+
+def _append_maybe_empty(left: np.ndarray, right: np.ndarray):
+    """Like numpy.append, except that the dimensionality of empty arrays is ignored."""
+    if right.size == 0:
+        return left
+    if left.size == 0:
+        return right
+    return np.append(left, right, axis=0)
