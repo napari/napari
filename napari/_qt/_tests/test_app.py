@@ -30,7 +30,7 @@ def test_windows_grouping_overwrite(make_napari_viewer):
     assert get_app_id() == ""
 
 
-@slow(15)
+@slow(30)
 def test_run_outside_ipython(qapp, monkeypatch):
     """Test that we don't incorrectly give ipython the event loop."""
     assert not _ipython_has_eventloop()
