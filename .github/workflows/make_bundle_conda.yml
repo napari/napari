@@ -76,14 +76,9 @@ jobs:
             libxcb-xinerama0 libxcb-xfixes0 libxcb-shape0 libqt5gui5
           xvfb-run --auto-servernum python bundle_conda.py
 
-      - name: Make Bundle (MacOS)
+      - name: Make Bundle (MacOS/Windows)
         shell: bash -l {0}
-        if: runner.os == 'macOS'
-        run: python bundle_conda.py
-
-      - name: Make Bundle (Windows)
-        shell: powershell
-        if: runner.os == 'Windows'
+        if: runner.os != 'Linux'
         run: python bundle_conda.py
 
       - name: Upload Artifact
