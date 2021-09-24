@@ -42,7 +42,7 @@ class StyleEncoding(EventedModel, ABC):
         )
         self._set_array(new_array)
 
-    def paste(self, properties: Dict[str, np.ndarray], array: np.ndarray):
+    def paste(self, array: np.ndarray):
         self._set_array(np.append(self._get_array(), array, axis=0))
 
     def remove(self, indices: Iterable[int]):

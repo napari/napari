@@ -114,8 +114,8 @@ class TextManager(EventedModel):
 
     def paste(self, strings: np.ndarray, colors: np.ndarray):
         self.n_text += len(strings)
-        self.text.paste(self.properties, strings)
-        self.color.paste(self.properties, colors)
+        self.text.paste(strings)
+        self.color.paste(colors)
 
     def remove(self, indices: Iterable[int]):
         """Removes some text values by index.
