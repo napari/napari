@@ -2939,7 +2939,7 @@ class Shapes(Layer):
             For overlapping shapes z-ordering will be respected.
         """
         if labels_shape is None:
-            labels_shape = self._extent_data[1] - self._extent_data[0]
+            labels_shape = self._extent_data[1] + 1
 
         labels_shape = np.ceil(labels_shape).astype('int')
         labels = self._data_view.to_labels(labels_shape=labels_shape)
