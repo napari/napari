@@ -240,12 +240,10 @@ class TextManager(EventedModel):
         color_array = transform_color(color)
         # TODO: distinguish between single color and array of length one as constant vs. direct.
         if color_array.shape[0] > 1:
-            encoding = DirectColorEncoding(
+            return DirectColorEncoding(
                 array=color_array, default=DEFAULT_COLOR
             )
-        else:
-            encoding = ConstantColorEncoding(constant=color)
-        return encoding
+        return ConstantColorEncoding(constant=color)
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
