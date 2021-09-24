@@ -14,7 +14,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import _FeatureTable
-from ._vector_utils import fix_data_vectors
+from ._vector_utils import vectors_to_coordinates
 
 
 class Vectors(Layer):
@@ -414,7 +414,6 @@ class Vectors(Layer):
     def edge_width(self, edge_width: Union[int, float]):
         self._edge_width = edge_width
         self.events.edge_width()
-        self.refresh()
 
     @property
     def length(self) -> Union[int, float]:
@@ -424,7 +423,6 @@ class Vectors(Layer):
     @length.setter
     def length(self, length: Union[int, float]):
         self._length = float(length)
-
         self.events.length()
         self.refresh()
 
