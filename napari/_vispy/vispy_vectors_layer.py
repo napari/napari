@@ -6,10 +6,13 @@ from .vispy_base_layer import VispyBaseLayer
 
 class VispyVectorsLayer(VispyBaseLayer):
     def __init__(self, layer):
-        node = Line(connect='segments', antialias=True)
+        # disable antialias until transparency in vispy is fixed
+        node = Line(connect='segments', antialias=False)
         super().__init__(layer, node)
 
         self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer.events.length.connect(self._on_data_change)
+        self.layer.events.edge_width.connect(self._on_edge_width_change)
 
         self.reset()
         self._on_data_change()
@@ -21,7 +24,8 @@ class VispyVectorsLayer(VispyBaseLayer):
         else:
             # reverse to draw most recent last
             pos = self.layer._view_data[::-1].copy()
-            # add vector to origin for second point
+            # scale vector and add it to its origin to get the endpoint coordinate
+            pos[:, 1] *= self.layer.length
             pos[:, 1] += pos[:, 0]
             color = self.layer._view_color
 
@@ -40,6 +44,9 @@ class VispyVectorsLayer(VispyBaseLayer):
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
+
+    def _on_edge_width_change(self, event=None):
+        self.node.set_data(width=self.layer.edge_width)
 
     def reset(self):
         self._reset_base()

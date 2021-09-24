@@ -349,7 +349,6 @@ class Vectors(Layer):
     def edge_width(self, edge_width: Union[int, float]):
         self._edge_width = edge_width
         self.events.edge_width()
-        self.refresh()
 
     @property
     def length(self) -> Union[int, float]:
@@ -359,9 +358,7 @@ class Vectors(Layer):
     @length.setter
     def length(self, length: Union[int, float]):
         self._length = length
-
         self.events.length()
-        self.refresh()
 
     @property
     def edge_color(self) -> np.ndarray:
