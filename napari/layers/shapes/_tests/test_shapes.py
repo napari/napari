@@ -2038,6 +2038,22 @@ def test_to_labels():
     assert len(np.unique(labels)) <= 11
 
 
+def test_to_labels_default_shape():
+    """Test that labels data generation preserves origin at (0, 0).
+
+    See https://github.com/napari/napari/issues/3401
+    """
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape) + [50, 100]
+    layer = Shapes(data)
+    labels = layer.to_labels()
+    assert labels.ndim == 2
+    assert 1 < len(np.unique(labels)) <= 11
+    assert 50 <= labels.shape[0] <= 71
+    assert 100 <= labels.shape[1] <= 121
+
+
 def test_to_labels_3D():
     """Test label generation for 3D data"""
     data = [
