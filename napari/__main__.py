@@ -26,7 +26,7 @@ class InfoAction(argparse.Action):
         errors = plugin_manager.get_errors()
         if errors:
             names = {e.plugin_name for e in errors}
-            print("\n‼️  Errors were detected in the following plugins:")
+            print("\n!!  Errors were detected in the following plugins:")
             print("(Run 'napari --plugin-info -v' for more details)")
             print("\n".join(f"  - {n}" for n in names))
         sys.exit()
@@ -43,7 +43,7 @@ class PluginInfoAction(argparse.Action):
 
         errors = plugin_manager.get_errors()
         if errors:
-            print("‼️  Some errors occurred:")
+            print("!!  Some errors occurred:")
             verbose = '-v' in sys.argv or '--verbose' in sys.argv
             if not verbose:
                 print("   (use '-v') to show full tracebacks")
@@ -200,8 +200,7 @@ def parse_sys_argv():
         metavar="TYPE",
         choices=set(layers.NAMES),
         help=(
-            'force file to be interpreted as a specific layer type. '
-            f'one of {set(layers.NAMES)}'
+            'force file to be interpreted as a specific layer type. ' f'one of {set(layers.NAMES)}'
         ),
     )
     parser.add_argument(
@@ -254,10 +253,7 @@ def _run():
     if args.plugin:
         # make sure plugin is only used when files are specified
         if not args.paths:
-            sys.exit(
-                "error: The '--plugin' argument is only valid "
-                "when providing a file name"
-            )
+            sys.exit("error: The '--plugin' argument is only valid " "when providing a file name")
         # I *think* that Qt is looking in sys.argv for a flag `--plugins`,
         # which emits "WARNING: No such plugin for spec 'builtins'"
         # so remove --plugin from sys.argv to prevent that warningz
