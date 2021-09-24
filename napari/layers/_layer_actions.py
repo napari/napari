@@ -88,8 +88,8 @@ def _convert_dtype(ll: LayerList, mode='int64'):
 
     target_dtype = np.dtype(mode)
     if (
-        layer.data.min() < np.iinfo(target_dtype).min
-        or layer.data.max() > np.iinfo(target_dtype).max
+        np.min(layer.data) < np.iinfo(target_dtype).min
+        or np.max(layer.data) > np.iinfo(target_dtype).max
     ):
         raise AssertionError(
             "Labeling contains values outside of the target data type range."
