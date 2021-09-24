@@ -73,13 +73,13 @@ def test_calc_data_fast_uint8():
     assert calc_data_range(data) == [0, 255]
 
 
-@pytest.mark.timeout(2)
+@pytest.mark.execution_timeout(2)
 def test_calc_data_range_fast_big():
     val = calc_data_range(data_dask)
     assert len(val) > 0
 
 
-@pytest.mark.timeout(2)
+@pytest.mark.execution_timeout(2)
 def test_calc_data_range_fast_big_plane():
     val = calc_data_range(data_dask_plane)
     assert len(val) > 0

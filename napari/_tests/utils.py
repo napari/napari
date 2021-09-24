@@ -205,7 +205,7 @@ def slow(timeout):
 
     def _slow(func):
 
-        func = pytest.mark.timeout(timeout * factor)(func)
+        func = pytest.mark.execution_timeout(timeout * factor)(func)
         func = pytest.mark.slow(func)
         return func
 
