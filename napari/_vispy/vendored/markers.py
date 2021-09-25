@@ -528,6 +528,21 @@ float rect(vec2 pointcoord, float size)
 }
 """
 
+cross_lines = """
+float cross(vec2 pointcoord, float size)
+{
+    //vbar
+    float r1 = abs(pointcoord.x - 0.5)*size;
+    float r2 = abs(pointcoord.y - 0.5)*size - $v_size/2;
+    float vbar = max(r1,r2);
+    //hbar
+    float r3 = abs(pointcoord.y - 0.5)*size;
+    float r4 = abs(pointcoord.x - 0.5)*size - $v_size/2;
+    float hbar = max(r3,r4);
+    return min(vbar, hbar);
+}
+"""
+
 _marker_dict = {
     'disc': disc,
     'arrow': arrow,
@@ -546,6 +561,7 @@ _marker_dict = {
     # aliases
     'o': disc,
     '+': cross,
+    '++': cross_lines,
     's': square,
     '-': hbar,
     '|': vbar,
@@ -738,26 +754,37 @@ class MarkersVisual(Visual):
 
     @property
     def scaling(self):
+        """
+        If set to True, marker scales when rezooming.
+        """
         return self._scaling
 
     @scaling.setter
     def scaling(self, value):
+        value = bool(value)
         self.shared_program['u_scaling'] = value
         self._scaling = value
         self.update()
 
     @property
     def antialias(self):
+        """
+        Antialiasing amount (in px).
+        """
         return self._antialias
 
     @antialias.setter
     def antialias(self, value):
+        value = float(value)
         self.shared_program['u_antialias'] = value
         self._antialias = value
         self.update()
 
     @property
     def light_position(self):
+        """
+        The coordinates of the light used to create the spherical effect.
+        """
         return self._light_position
 
     @light_position.setter
@@ -769,6 +796,9 @@ class MarkersVisual(Visual):
 
     @property
     def light_ambient(self):
+        """
+        The amount of ambient light used to create the spherical effect.
+        """
         return self._light_ambient
 
     @light_ambient.setter
@@ -779,6 +809,9 @@ class MarkersVisual(Visual):
 
     @property
     def light_color(self):
+        """
+        The color of the light used to create the spherical effect.
+        """
         return self._light_color
 
     @light_color.setter
@@ -789,6 +822,9 @@ class MarkersVisual(Visual):
 
     @property
     def alpha(self):
+        """
+        The opacity level of the visual.
+        """
         return self._alpha
 
     @alpha.setter
@@ -799,6 +835,9 @@ class MarkersVisual(Visual):
 
     @property
     def spherical(self):
+        """
+        Whether to add a spherical effect on the marker using lighting.
+        """
         return self._spherical
 
     @spherical.setter
@@ -813,7 +852,7 @@ class MarkersVisual(Visual):
         view.view_program.vert['framebuffer_to_render'] = view.get_transform('framebuffer', 'render')
 
     def _prepare_draw(self, view):
-        if self._symbol is None:
+        if self._data is None or self._symbol is None:
             return False
         view.view_program['u_px_scale'] = view.transforms.pixel_scale
         view.view_program['u_scaling'] = self.scaling

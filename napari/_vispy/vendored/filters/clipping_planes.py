@@ -11,44 +11,59 @@ from .base_filter import Filter
 
 
 class PlanesClipper(Filter):
-    """Clips visual output based on arbitrary clipping planes."""
+    """Clips visual output based on arbitrary clipping planes.
+
+    Parameters
+    ----------
+    cliping_planes : ArrayLike
+        Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
+    coord_system : str
+        Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)
+
+    """
 
     VERT_CODE = """
     void clip() {
         // Transform back to visual coordinates and clip based on that
-        $v_is_shown = $clip_with_planes($itransform(gl_Position).xyz);
+        $v_distance_from_clip = $clip_with_planes($itransform(gl_Position).xyz);
     }
     """
 
     FRAG_CODE = """
     void clip() {
-        if ($v_is_shown < 0.)
+        if ($v_distance_from_clip < 0.)
             discard;
     }
     """
 
-    def __init__(self, clipping_planes=None):
+    def __init__(self, clipping_planes=None, coord_system='scene'):
+        tr = ['visual', 'scene', 'document', 'canvas', 'framebuffer', 'render']
+        if coord_system not in tr:
+            raise ValueError(f'Invalid coordinate system {coord_system}. Must be one of {tr}.')
+        self._coord_system = coord_system
+
         super().__init__(
             vcode=Function(self.VERT_CODE), vhook='post', vpos=1,
             fcode=Function(self.FRAG_CODE), fhook='pre', fpos=1,
         )
 
-        v_is_shown = Varying('v_is_shown', 'float')
-        self.vshader['v_is_shown'] = v_is_shown
-        self.fshader['v_is_shown'] = v_is_shown
+        v_distance_from_clip = Varying('v_distance_from_clip', 'float')
+        self.vshader['v_distance_from_clip'] = v_distance_from_clip
+        self.fshader['v_distance_from_clip'] = v_distance_from_clip
 
         self.clipping_planes = clipping_planes
 
-    @staticmethod
-    def _get_itransform(visual):
+    @property
+    def coord_system(self):
         """
-        get the transform from gl_Position to visual coordinates
+        Coordinate system used by the clipping planes (see visuals.transforms.transform_system.py)
         """
-        return visual.get_transform('render', 'visual')
+        # unsettable cause we can't update the transform after being attached
+        return self._coord_system
 
     def _attach(self, visual):
         super()._attach(visual)
-        self.vshader['itransform'] = self._get_itransform(visual)
+        self.vshader['itransform'] = visual.get_transform('render', self._coord_system)
 
     @staticmethod
     @lru_cache(maxsize=10)
@@ -56,16 +71,16 @@ class PlanesClipper(Filter):
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
         func_template = '''
             float clip_planes(vec3 loc) {{
-                float is_shown = 3.4e38; // max float
+                float distance_from_clip = 3.4e38; // max float
                 {clips};
-                return is_shown;
+                return distance_from_clip;
             }}
         '''
         # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
             vec3 relative_vec{idx} = loc - $clipping_plane_pos{idx};
-            float is_shown{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
-            is_shown = min(is_shown{idx}, is_shown);
+            float distance_from_clip{idx} = dot(relative_vec{idx}, $clipping_plane_norm{idx});
+            distance_from_clip = min(distance_from_clip{idx}, distance_from_clip);
             '''
         all_clips = []
         for idx in range(n_planes):
@@ -78,13 +93,12 @@ class PlanesClipper(Filter):
         """Get the set of planes used to clip the mesh.
         Each plane is defined by a position and a normal vector (magnitude is irrelevant). Shape: (n_planes, 2, 3)
         """
-        return self._clipping_planes[:, :, ::-1]
+        return self._clipping_planes
 
     @clipping_planes.setter
     def clipping_planes(self, value):
         if value is None:
             value = np.empty([0, 2, 3])
-        value = value[:, :, ::-1]
         self._clipping_planes = value
 
         clip_func = self._build_clipping_planes_func(len(value))
