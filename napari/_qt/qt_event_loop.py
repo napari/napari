@@ -19,11 +19,11 @@ from ..utils.notifications import (
 )
 from ..utils.perf import perf_config
 from ..utils.translations import trans
-from ._qt_event_filter import QTooltipEventFilter
 from .dialogs.qt_notification import (
     NapariQtNotification,
     NotificationDispatcher,
 )
+from .qt_event_filter import QTooltipEventFilter
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 from .utils import _maybe_allow_interrupt
