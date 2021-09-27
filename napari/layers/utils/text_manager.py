@@ -53,12 +53,18 @@ class TextManager(EventedModel):
         Defines the color for each text element.
     text : StringEncoding
         Defines the string for each text element.
+
+    Private Attributes
+    ------------------
+    _n_text : int
+        The number of text elements managed, which should correspond to the number
+        of rows in the properties table. Should be removed if/when the properties
+        table reliably stores that count.
     """
 
     # Declare properties as a generic dict so that a copy is not made on validation
     # and we can rely on a layer and this sharing the same instance.
     properties: dict
-    n_text: int
     visible: bool = True
     size: PositiveInt = 12
     blending: Blending = Blending.TRANSLUCENT
@@ -70,14 +76,16 @@ class TextManager(EventedModel):
     color: Union[COLOR_ENCODINGS] = ConstantColorEncoding(
         constant=DEFAULT_COLOR
     )
+    _n_text: int
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, n_text, **kwargs):
         super().__init__(**kwargs)
         # Add a custom event that is emitted when text needs to be re-rendered.
         self.events.add(text_update=Event)
         self.events.properties.connect(self._on_properties_changed)
         self.events.text.connect(self._on_text_changed)
         self.events.color.connect(self._on_color_changed)
+        self._n_text = n_text
         self._on_text_changed()
         self._on_color_changed()
 
@@ -89,13 +97,12 @@ class TextManager(EventedModel):
         properties : Dict[str, np.ndarray]
             The properties of a layer.
         """
-        self.n_text = n_text
+        self._n_text = n_text
         # This shares the same instance of properties as the layer, so when
         # that instance is modified, we won't detect the change. But when
         # layer.properties is reassigned to a new instance, we will.
         # Therefore, manually call _on_properties_changed to ensure those
-        # updates always occur exactly once and this always refreshes even
-        # if it doesn't need to.
+        # updates always occur exactly once and this always refreshes derived values.
         with self.events.properties.blocker():
             self.properties = properties
         self._on_properties_changed()
@@ -108,12 +115,12 @@ class TextManager(EventedModel):
         num_to_add : int
             The number of text values to add.
         """
-        self.n_text += num_to_add
-        self.text.update_tail(self.properties, self.n_text)
-        self.color.update_tail(self.properties, self.n_text)
+        self._n_text += num_to_add
+        self.text.update_tail(self.properties, self._n_text)
+        self.color.update_tail(self.properties, self._n_text)
 
     def paste(self, strings: np.ndarray, colors: np.ndarray):
-        self.n_text += len(strings)
+        self._n_text += len(strings)
         self.text.append(strings)
         self.color.append(colors)
 
@@ -125,7 +132,7 @@ class TextManager(EventedModel):
         indices : Iterable[int]
             The indices to remove.
         """
-        self.n_text -= len(set(indices))
+        self._n_text -= len(set(indices))
         self.text.delete(indices)
         self.color.delete(indices)
 
@@ -283,15 +290,15 @@ class TextManager(EventedModel):
 
     def _on_text_changed(self, event=None):
         self.text.events.array.connect(self.events.text_update)
-        self.text.update_all(self.properties, self.n_text)
+        self.text.update_all(self.properties, self._n_text)
 
     def _on_color_changed(self, event=None):
         self.color.events.array.connect(self.events.text_update)
-        self.color.update_all(self.properties, self.n_text)
+        self.color.update_all(self.properties, self._n_text)
 
     def _on_properties_changed(self, event=None):
-        self.text.update_all(self.properties, self.n_text)
-        self.color.update_all(self.properties, self.n_text)
+        self.text.update_all(self.properties, self._n_text)
+        self.color.update_all(self.properties, self._n_text)
 
     @classmethod
     def from_layer_kwargs(
@@ -315,9 +322,8 @@ class TextManager(EventedModel):
             kwargs = text
         else:
             kwargs = {'text': text}
-        kwargs['n_text'] = n_text
         kwargs['properties'] = properties
-        return cls(**kwargs)
+        return cls(n_text=n_text, **kwargs)
 
 
 def _properties_equal(left, right):

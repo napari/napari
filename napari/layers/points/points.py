@@ -425,9 +425,9 @@ class Points(Layer):
 
                             # remove_selected removes the specific indices, but then also updates
                             # data, which is why we need this check here and similar above.
-                            if self.text.n_text > len(data):
+                            if self.text._n_text > len(data):
                                 self.text.remove(
-                                    range(len(data), self.text.n_text)
+                                    range(len(data), self.text._n_text)
                                 )
 
                         elif len(data) > cur_npoints:
