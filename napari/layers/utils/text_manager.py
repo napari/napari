@@ -31,6 +31,8 @@ class TextManager(EventedModel):
 
     Attributes
     ----------
+    properties : Dict[str, np.ndarray]
+        The property values, which typically come from a layer.
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
@@ -47,8 +49,6 @@ class TextManager(EventedModel):
         Offset from the anchor point.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
-    properties : Dict[str, np.ndarray]
-        The property values, which typically come from a layer.
     color : ColorEncoding
         Defines the color for each text element.
     text : StringEncoding
@@ -81,10 +81,15 @@ class TextManager(EventedModel):
     def __init__(self, *, n_text, **kwargs):
         super().__init__(**kwargs)
         # Add a custom event that is emitted when text needs to be re-rendered.
+        # This means external clients do not need to reconnect to the events of
+        # any mutable fields when their instance changes.
         self.events.add(text_update=Event)
-        self.events.properties.connect(self._on_properties_changed)
-        self.events.text.connect(self._on_text_changed)
-        self.events.color.connect(self._on_color_changed)
+        # Connect to lambda's that wrap these bound methods because our Python 3.7
+        # environment cannot hash these bound methods because TextManager itself is
+        # not hashable, but newer environments can (for reasons not understood).
+        self.events.properties.connect(lambda e: self._on_properties_changed())
+        self.events.text.connect(lambda e: self._on_text_changed())
+        self.events.color.connect(lambda e: self._on_color_changed())
         self._n_text = n_text
         self._on_text_changed()
         self._on_color_changed()
