@@ -46,6 +46,50 @@ class Points2DSuite:
         return self.data
 
 
+class Points2DTextSuite:
+    """Benchmarks for the Points layer with 2D data, properties, text."""
+
+    params = [2 ** i for i in range(4, 18, 2)]
+
+    def setup(self, n):
+        np.random.seed(0)
+        self.data = np.random.random((n, 2))
+        self.properties = {
+            'class': np.random.choice(('cat', 'car'), n),
+            'confidence': np.random.rand(n),
+        }
+        self.layer = Points(self.data, properties=self.properties)
+
+    def time_create_with_no_text(self, n):
+        """Time to create vispy layer without specifying text."""
+        Points(self.data, properties=self.properties)
+
+    def time_create_with_text_constant(self, n):
+        """Time to create with text from a constant."""
+        Points(self.data, properties=self.properties, text='test')
+
+    def time_set_text_constant(self, n):
+        """Time to set text from a constant."""
+        self.layer.text = 'test'
+
+    def time_set_text_property(self, n):
+        """Time to set text based on one property."""
+        self.layer.text = 'class'
+
+    def time_set_text_format(self, n):
+        """Time to set text based on a format string over two properties."""
+        self.layer.text = '({class}, {confidence:.2f})'
+
+    def time_add_points_iteratively_with_text_constant(self, n):
+        """Time to add points iteratively with constant text."""
+        for point in np.random.random((512, 2)):
+            self.layer.add(point)
+
+    def time_add_points_batch_with_text_constant(self, n):
+        """Time to add points in one batch with constant text."""
+        self.layer.add(np.random.random((512, 2)))
+
+
 class Points3DSuite:
     """Benchmarks for the Points layer with 3D data."""
 
