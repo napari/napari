@@ -3,6 +3,8 @@ import html
 from qtpy.QtCore import QEvent, QObject, Qt
 from qtpy.QtWidgets import QWidget
 
+from ..utils.translations import trans
+
 
 class QTooltipEventFilter(QObject):
     def eventFilter(self, widget: QObject, event: QEvent) -> bool:
@@ -17,7 +19,13 @@ class QTooltipEventFilter(QObject):
             # raise a human-readable exception. While this should *NEVER* be the
             # case, edge cases are edge cases because they sometimes happen.
             if not isinstance(widget, QWidget):
-                raise ValueError(f'QObject "{widget}" not a widget.')
+                raise ValueError(
+                    trans._(
+                        'QObject "{widget}" not a widget.',
+                        deferred=True,
+                        widget=widget,
+                    )
+                )
 
             # Tooltip for this widget if any *OR* the empty string otherwise.
             tooltip = widget.toolTip()
