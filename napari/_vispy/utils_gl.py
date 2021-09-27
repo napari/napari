@@ -117,4 +117,3 @@ BLENDING_MODES = {
     ),
     'additive': dict(preset='additive'),
 }
-
