@@ -486,7 +486,7 @@ class Window:
         # connect console-specific attributes only if QtConsole
         # is present. The `console` is called which might slow
         # things down a little.
-        if self.qt_viewer.console:
+        if self.qt_viewer._console:
             theme.events.console.connect(self.qt_viewer.console._update_theme)
             theme.events.syntax_style.connect(
                 self.qt_viewer.console._update_theme
@@ -509,7 +509,7 @@ class Window:
         )
         # disconnect console-specific attributes only if QtConsole
         # is present and they were previously connected
-        if self.qt_viewer.console:
+        if self.qt_viewer._console:
             theme.events.console.disconnect(
                 self.qt_viewer.console._update_theme
             )
