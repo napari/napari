@@ -74,3 +74,10 @@ def test_update_theme(
     theme = _themes["light"]
     theme.icon = "#FF0000"
     mock_icon_changed.assert_called()
+
+
+def test_lazy_console(make_napari_viewer):
+    v = make_napari_viewer()
+    assert v.window.qt_viewer._console is None
+    v.update_console({"test": "test"})
+    assert v.window.qt_viewer._console is None
