@@ -57,8 +57,8 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
         ):
             # contructor of EventedModel
             break
-        if frame.function == "<module>" and frame.frame.f_locals.get(
-            "__package__", ""
+        if frame.function == "<module>" and str(
+            frame.frame.f_locals.get("__package__", "")
         ).startswith("napari."):
             warnings.warn(
                 f"using settings in global context:\n{frame.filename}:{frame.lineno} {''.join(frame.code_context)}\n"
