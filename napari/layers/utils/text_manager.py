@@ -1,4 +1,5 @@
 import warnings
+from string import Formatter
 from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
@@ -17,6 +18,7 @@ from .style_encoding import (
     COLOR_ENCODINGS,
     STRING_ENCODINGS,
     ConstantColorEncoding,
+    ConstantStringEncoding,
     DirectColorEncoding,
     DirectStringEncoding,
     FormatStringEncoding,
@@ -73,7 +75,7 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    text: Union[STRING_ENCODINGS] = FormatStringEncoding(format_string='')
+    text: Union[STRING_ENCODINGS] = ConstantStringEncoding(constant='')
     color: Union[COLOR_ENCODINGS] = ConstantColorEncoding(
         constant=DEFAULT_COLOR
     )
@@ -215,13 +217,16 @@ class TextManager(EventedModel):
         values,
     ) -> Union[STRING_ENCODINGS]:
         if text is None:
-            return FormatStringEncoding(format_string='')
+            return ConstantStringEncoding(constant='')
         if isinstance(text, STRING_ENCODINGS):
             return text
         if isinstance(text, str):
             properties = values['properties']
-            format_string = f'{{{text}}}' if text in properties else text
-            return FormatStringEncoding(format_string=format_string)
+            if text in properties:
+                return FormatStringEncoding(format_string=f'{{{text}}}')
+            if cls._is_format_string(properties, text):
+                return FormatStringEncoding(format_string=text)
+            return ConstantStringEncoding(constant=text)
         if isinstance(text, dict):
             return parse_obj_as_union(STRING_ENCODINGS, text)
         if isinstance(text, Sequence):
@@ -232,6 +237,20 @@ class TextManager(EventedModel):
                 deferred=True,
             )
         )
+
+    @classmethod
+    def _is_format_string(cls, properties: dict, format_string: str):
+        fields = tuple(
+            field
+            for _, field, _, _ in Formatter().parse(format_string)
+            if field is not None
+        )
+        for field in fields:
+            if field not in properties:
+                raise ValueError(
+                    f'Found format string field {field} without a corresponding property.'
+                )
+        return len(fields) > 0
 
     @validator('color', pre=True, always=True)
     def _check_color(

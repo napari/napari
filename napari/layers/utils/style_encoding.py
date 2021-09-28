@@ -12,7 +12,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import ValidationError, parse_obj_as, validator
+from pydantic import Field, ValidationError, parse_obj_as, validator
 
 if TYPE_CHECKING:
     from pydantic.typing import ReprArgs
@@ -110,7 +110,7 @@ class ConstantColorEncoding(DerivedStyleEncoding):
 
 
 class IdentityColorEncoding(DerivedStyleEncoding):
-    property_name: str
+    property_name: str = Field(..., allow_mutation=False)
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
@@ -119,7 +119,7 @@ class IdentityColorEncoding(DerivedStyleEncoding):
 
 
 class DiscreteColorEncoding(DerivedStyleEncoding):
-    property_name: str
+    property_name: str = Field(..., allow_mutation=False)
     categorical_colormap: CategoricalColormap
 
     def _apply(
@@ -130,7 +130,7 @@ class DiscreteColorEncoding(DerivedStyleEncoding):
 
 
 class ContinuousColorEncoding(DerivedStyleEncoding):
-    property_name: str
+    property_name: str = Field(..., allow_mutation=False)
     continuous_colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
 
@@ -164,8 +164,17 @@ class ContinuousColorEncoding(DerivedStyleEncoding):
         return contrast_limits
 
 
+class ConstantStringEncoding(DerivedStyleEncoding):
+    constant: str
+
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> np.ndarray:
+        return np.repeat(self.constant, len(indices))
+
+
 class FormatStringEncoding(DerivedStyleEncoding):
-    format_string: str
+    format_string: str = Field(..., allow_mutation=False)
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
@@ -218,6 +227,7 @@ COLOR_ENCODINGS = (
 
 STRING_ENCODINGS = (
     FormatStringEncoding,
+    ConstantStringEncoding,
     DirectStringEncoding,
 )
 

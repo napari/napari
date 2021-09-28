@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from pydantic import ValidationError
 
 from napari.layers.utils.text_manager import TextManager
 from napari.utils.colormaps.standardize_color import transform_color
@@ -93,6 +94,20 @@ def test_text_manager_format():
     # remove the first text element
     text_manager.remove({0})
     np.testing.assert_equal(text_manager.text.array, expected_text_2[1::])
+
+
+def test_text_manager_invalid_format_string():
+    text = 'confidence: {confidence:.2f'
+    properties = {'confidence': np.array([0.5, 0.3, 1])}
+    with pytest.raises(ValidationError):
+        TextManager(text=text, n_text=3, properties=properties)
+
+
+def test_text_manager_format_string_contains_non_property():
+    text = 'score: {score:.2f}'
+    properties = {'confidence': np.array([0.5, 0.3, 1])}
+    with pytest.raises(ValidationError):
+        TextManager(text=text, n_text=3, properties=properties)
 
 
 def test_refresh_text():
@@ -235,6 +250,16 @@ def test_multi_color_property():
     np.testing.assert_array_equal(
         text_manager.color.array, transform_color(colors)
     )
+
+
+def test_multi_color_non_property():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    with pytest.raises(ValidationError):
+        TextManager(
+            text='class', n_text=3, properties=properties, color='class_color'
+        )
 
 
 def test_multi_color_property_discrete_map():
