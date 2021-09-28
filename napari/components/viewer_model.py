@@ -33,6 +33,7 @@ from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
+from ..utils.progress import progress
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -289,9 +290,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent = self.layers.extent.world
         scale = self.layers.extent.step
         scene_size = extent[1] - extent[0]
-        corner = extent[0]
+        corner = extent[0] + 0.5 * self.layers.extent.step
         shape = [
-            np.round(s / sc).astype('int') + 1 if s > 0 else 1
+            np.round(s / sc).astype('int') if s > 0 else 1
             for s, sc in zip(scene_size, scale)
         ]
         empty_labels = np.zeros(shape, dtype=int)
@@ -335,7 +336,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ndim = world.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
-                self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
+                self.dims.set_range(
+                    i,
+                    (
+                        world[0, i] + 0.5 * ss[i],
+                        world[1, i] + 0.5 * ss[i],
+                        ss[i],
+                    ),
+                )
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -407,7 +415,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent : array, shape (2, D)
             Extent of the world.
         """
-        scene_shift = extent[1] - extent[0] + 1
+        scene_shift = extent[1] - extent[0]
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
@@ -874,12 +882,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         added: List[Layer] = []  # for layers that get added
-        for _path in paths:
-            added.extend(
-                self._add_layers_with_plugins(
-                    _path, kwargs, plugin=plugin, layer_type=layer_type
+        with progress(
+            paths,
+            desc='Opening Files',
+            total=0
+            if len(paths) == 1
+            else None,  # indeterminate bar for 1 file
+        ) as pbr:
+            for _path in pbr:
+                added.extend(
+                    self._add_layers_with_plugins(
+                        _path, kwargs, plugin=plugin, layer_type=layer_type
+                    )
                 )
-            )
         return added
 
     def _add_layers_with_plugins(

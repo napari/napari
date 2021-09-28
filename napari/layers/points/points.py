@@ -1382,6 +1382,7 @@ class Points(Layer):
         colormapped[..., 3] = 1
         view_data = self._view_data
         if len(view_data) > 0:
+            # Get the zoom factor required to fit all data in the thumbnail.
             de = self._extent_data
             min_vals = [de[0, i] for i in self._dims_displayed]
             shape = np.ceil(
@@ -1390,6 +1391,8 @@ class Points(Layer):
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
+
+            # Maybe subsample the points.
             if len(view_data) > self._max_points_thumbnail:
                 thumbnail_indices = np.random.randint(
                     0, len(view_data), self._max_points_thumbnail
@@ -1398,12 +1401,21 @@ class Points(Layer):
             else:
                 points = view_data
                 thumbnail_indices = self._indices_view
+
+            # Calculate the point coordinates in the thumbnail data space.
+            thumbnail_shape = np.clip(
+                np.ceil(zoom_factor * np.array(shape[:2])).astype(int),
+                1,  # smallest side should be 1 pixel wide
+                self._thumbnail_shape[:2],
+            )
             coords = np.floor(
                 (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
             ).astype(int)
-            coords = np.clip(
-                coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
-            )
+            coords = np.clip(coords, 0, thumbnail_shape - 1)
+
+            # Draw single pixel points in the colormapped thumbnail.
+            colormapped = np.zeros(tuple(thumbnail_shape) + (4,))
+            colormapped[..., 3] = 1
             colors = self._face.colors[thumbnail_indices]
             colormapped[coords[:, 0], coords[:, 1]] = colors
 

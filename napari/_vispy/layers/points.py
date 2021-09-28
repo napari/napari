@@ -3,6 +3,7 @@ import numpy as np
 from ...settings import get_settings
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import disconnect_events
+from ..utils.gl import BLENDING_MODES
 from ..utils.text import update_text
 from ..visuals.points import PointsVisual
 from .base import VispyBaseLayer
@@ -161,10 +162,12 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _on_blending_change(self, event=None):
         """Function to set the blending mode"""
-        self.node.set_gl_state(self.layer.blending)
+        points_blending_kwargs = BLENDING_MODES[self.layer.blending]
+        self.node.set_gl_state(**points_blending_kwargs)
 
         text_node = self._get_text_node()
-        text_node.set_gl_state(str(self.layer.text.blending))
+        text_blending_kwargs = BLENDING_MODES[self.layer.text.blending]
+        text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
 
     def _on_antialias_change(self, event=None):

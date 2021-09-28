@@ -4,11 +4,12 @@ import numpy as np
 import pytest
 
 from napari.components.layerlist import _CONTEXT_KEYS, LayerList
-from napari.layers import Image
+from napari.layers import Image, Labels
 from napari.layers._layer_actions import (
     _LAYER_ACTIONS,
     ContextAction,
     SubMenu,
+    _convert_dtype,
     _project,
 )
 
@@ -55,3 +56,28 @@ def test_projections(mode):
     assert len(ll) == 2
     # because we use keepdims = True
     assert ll[-1].data.shape == (1, 8, 8)
+
+
+@pytest.mark.parametrize(
+    'mode',
+    ['int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64'],
+)
+def test_convert_dtype(mode):
+    ll = LayerList()
+    data = np.zeros((10, 10), dtype=np.int16)
+    ll.append(Labels(data))
+    assert ll[-1].data.dtype == np.int16
+
+    data[5, 5] = 1000
+    assert data[5, 5] == 1000
+    if mode == 'int8' or mode == 'uint8':
+        # label value 1000 is outside of the target data type range.
+        with pytest.raises(AssertionError):
+            _convert_dtype(ll, mode=mode)
+        assert ll[-1].data.dtype == np.int16
+    else:
+        _convert_dtype(ll, mode=mode)
+        assert ll[-1].data.dtype == np.dtype(mode)
+
+    assert ll[-1].data[5, 5] == 1000
+    assert ll[-1].data.flatten().sum() == 1000
