@@ -27,6 +27,9 @@ _SETTINGS: Optional[NapariSettings] = None
 def get_settings(path=_NOT_SET) -> NapariSettings:
     """
     Get settings for a given path.
+    This function cannot be call on module level.
+    When using get_settings in default factory for pydantic fields then check if Settings is already initialized.
+    For example please see `napari.components.viewer_model._current_theme`.
 
     Parameters
     ----------
