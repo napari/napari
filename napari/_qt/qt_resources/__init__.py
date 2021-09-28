@@ -56,8 +56,6 @@ def get_stylesheet(
     if theme:
         from ...utils.theme import get_theme, template
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", FutureWarning)
-            return template(stylesheet, **get_theme(theme))
+        return template(stylesheet, **get_theme(theme, as_dict=True))
 
     return stylesheet
