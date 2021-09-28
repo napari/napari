@@ -7,6 +7,7 @@ import numpy as np
 
 from ..layers import Image, Labels, Layer
 from ..layers.utils._link_layers import get_linked_layers, layer_is_linked
+from ..utils._dtype import normalize_dtype
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
@@ -113,7 +114,8 @@ class LayerList(SelectableEventedList[Layer]):
     def _extent_world(self) -> np.ndarray:
         """Extent of layers in world coordinates.
 
-        Default to 2D with (0, 512) min/ max values if no data is present.
+        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
+        Corresponds to pixels centered at [0, ..., 511].
 
         Returns
         -------
@@ -124,7 +126,8 @@ class LayerList(SelectableEventedList[Layer]):
     def _get_extent_world(self, layer_extent_list):
         """Extent of layers in world coordinates.
 
-        Default to 2D with (0, 512) min/ max values if no data is present.
+        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
+        Corresponds to pixels centered at [0, ..., 511].
 
         Returns
         -------
@@ -159,9 +162,15 @@ class LayerList(SelectableEventedList[Layer]):
                     axis=1,
                 )
 
-        min_vals = np.nan_to_num(min_v[::-1])
-        max_vals = np.copy(max_v[::-1])
-        max_vals[np.isnan(max_vals)] = 511
+        try:
+            min_vals = np.nan_to_num(min_v[::-1], nan=-0.5)
+            max_vals = np.nan_to_num(max_v[::-1], nan=511.5)
+        except TypeError:
+            # In NumPy < 1.17, nan_to_num doesn't have a nan kwarg
+            min_vals = np.asarray(min_v[::-1])
+            min_vals[np.isnan(min_vals)] = -0.5
+            max_vals = np.asarray(max_v[::-1])
+            max_vals[np.isnan(max_vals)] = 511.5
 
         return np.vstack([min_vals, max_vals])
 
@@ -302,6 +311,16 @@ class LayerList(SelectableEventedList[Layer]):
 # `qt_action_context_menu.QtActionContextMenu` method to update the enabled
 # and/or visible items based on the state of the layerlist.
 
+
+def get_active_layer_dtype(layer):
+    if layer.active:
+        return normalize_dtype(
+            getattr(layer.active.data, 'dtype', '')
+        ).__name__
+    else:
+        return None
+
+
 _CONTEXT_KEYS = {
     'selection_count': lambda s: len(s),
     'all_layers_linked': lambda s: all(layer_is_linked(x) for x in s),
@@ -321,4 +340,5 @@ _CONTEXT_KEYS = {
     'same_shape': (
         lambda s: len({getattr(x.data, 'shape', ()) for x in s}) == 1
     ),
+    'active_layer_dtype': get_active_layer_dtype,
 }

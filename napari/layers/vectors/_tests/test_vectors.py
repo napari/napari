@@ -611,4 +611,4 @@ def test_world_data_extent():
     max_val = (8, 30, 12)
     layer = Vectors(np.array(data))
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
