@@ -16,7 +16,9 @@ from . import plugin_manager
 logger = getLogger(__name__)
 
 
-def _read_with_npe2(path, plugin):
+def _read_with_npe2(
+    path: Union[str, Sequence[str]], plugin: Optional[str] = None
+) -> Tuple[Optional[List[LayerData]], Optional[HookImplementation]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
     try:
         from npe2 import execute_command, plugin_manager
@@ -280,6 +282,56 @@ def _is_null_layer_sentinel(layer_data: Union[LayerData, Any]) -> bool:
     )
 
 
+def _write_layers_with_npe2(
+    path: str, layers: List[Layer], plugin_name: Optional[str] = None
+) -> Optional[List[str]]:
+    """
+    Write layers to a file using an NPE2 plugin.
+
+    Parameters
+    ----------
+    path : str
+        The path (file, directory, url) to write.
+    layer_type : str
+        All lower-class name of the layer class to be written.
+    plugin_name : str, optional
+        Name of the plugin to write data with. If None then all plugins
+        corresponding to appropriate hook specification will be looped
+        through to find the first one that can write the data.
+
+
+    Returns
+    -------
+    None or list of str
+        None when no plugin was found, otherwise a list of file paths, if any,
+        that were written.
+    """
+
+    try:
+        from npe2 import execute_command, plugin_manager
+    except ImportError:
+        return None
+
+    layer_data = [layer.as_layer_data_tuple() for layer in layers]
+    layer_types = [ld[2] for ld in layer_data]
+
+    # TODO: if a plugin name is provided, use npe2 to load it
+    if plugin_name:
+        # For now, if a plugin_name is provided, fall back to
+        # the original napari_plugin_engine implementation.
+        return None
+
+    # if no plugin name is provided, try to find one
+    # if path is provided, use the file extension as a hint to filter the list of
+    # plugins
+    ext = os.path.splitext(path)[1].lower() if path else None
+    if candidate := next(
+        plugin_manager.iter_compatible_writers(layer_types, ext), None
+    ):
+        return execute_command(candidate.command, args=[path, layer_data])
+    return None
+
+
 def _write_multiple_layers_with_plugins(
     path: str,
     layers: List[Layer],
@@ -319,6 +371,12 @@ def _write_multiple_layers_with_plugins(
     list of str
         A list of filenames, if any, that were written.
     """
+
+    # Try to use NPE2 first
+    written_paths = _write_layers_with_npe2(path, layers, plugin_name)
+    if written_paths is not None:
+        return written_paths
+
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
 
@@ -349,7 +407,6 @@ def _write_multiple_layers_with_plugins(
         result = hook_caller.call_with_result_obj(
             path=path, layer_types=layer_types, _return_impl=True
         )
-        writer_function = result.result
         implementation = result.implementation
 
     if not callable(writer_function):
@@ -412,6 +469,12 @@ def _write_single_layer_with_plugins(
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
     """
+
+    # Try to use NPE2 first
+    written_paths = _write_layers_with_npe2(path, [layer], plugin_name)
+    if written_paths is not None:
+        return written_paths
+
     hook_caller = getattr(
         plugin_manager.hook, f'napari_write_{layer._type_string}'
     )
