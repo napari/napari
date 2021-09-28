@@ -9,7 +9,6 @@ from ..utils.translations import trans
 from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
 from ._base import EventedConfigFileSettings
-from ._experimental import ExperimentalSettings
 from ._plugins import PluginsSettings
 from ._shortcuts import ShortcutsSettings
 
@@ -26,7 +25,7 @@ class NapariSettings(EventedConfigFileSettings):
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
     schema_version: Tuple[int, int, int] = Field(
-        (0, 3, 0),
+        (1, 3, 0),
         description=trans._("Napari settings schema version."),
         allow_mutation=False,
     )
@@ -50,11 +49,11 @@ class NapariSettings(EventedConfigFileSettings):
         title=trans._("Shortcuts"),
         description=trans._("Shortcut settings."),
     )
-    experimental: ExperimentalSettings = Field(
-        default_factory=ExperimentalSettings,
-        title=trans._("Experimental"),
-        description=trans._("Experimental settings."),
-    )
+    # experimental: ExperimentalSettings = Field(
+    #     default_factory=ExperimentalSettings,
+    #     title=trans._("Experimental"),
+    #     description=trans._("Experimental settings."),
+    # )
 
     # private attributes and ClassVars will not appear in the schema
     _config_path: Optional[Path] = Path(_CFG_PATH) if _CFG_PATH else None

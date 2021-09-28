@@ -70,11 +70,15 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
                 stacklevel=2,
             )
             break
+    del curframe
+    del calframe
     if _SETTINGS is None:
         if path is not _NOT_SET:
             path = Path(path).resolve() if path is not None else None
         _SETTINGS = NapariSettings(config_path=path)
     elif path is not _NOT_SET:
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
         raise RuntimeError(
             f"The path can only be set once per session. Settings called from {calframe[1][3]}"
         )
