@@ -31,7 +31,7 @@ def _read_with_npe2(
             try:
                 layer_data = read_func(path)  # try to read data
                 if layer_data:
-                    # hookimpl just mocks ``.plugin_name` attribute access
+                    # hookimpl just mocks `.plugin_name` attribute access
                     # until we drop support for the old hookimpl stuff.
                     hookimpl = namedtuple('hookimpl', ('plugin_name'))
                     return layer_data, hookimpl(rdr.command.split(".")[0])
@@ -325,9 +325,10 @@ def _write_layers_with_npe2(
     # if path is provided, use the file extension as a hint to filter the list of
     # plugins
     ext = os.path.splitext(path)[1].lower() if path else None
-    if candidate := next(
+    candidate = next(
         plugin_manager.iter_compatible_writers(layer_types, ext), None
-    ):
+    )
+    if candidate:
         return execute_command(candidate.command, args=[path, layer_data])
     return None
 
