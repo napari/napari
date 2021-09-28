@@ -1,13 +1,12 @@
 import numpy as np
-from vispy.scene.visuals import Line
 
-from .vispy_base_layer import VispyBaseLayer
+from ..visuals.vectors import VectorsVisual
+from .base import VispyBaseLayer
 
 
 class VispyVectorsLayer(VispyBaseLayer):
     def __init__(self, layer):
-        # disable antialias until transparency in vispy is fixed
-        node = Line(connect='segments', antialias=False)
+        node = VectorsVisual()
         super().__init__(layer, node)
 
         self.layer.events.edge_color.connect(self._on_data_change)
@@ -49,5 +48,5 @@ class VispyVectorsLayer(VispyBaseLayer):
         self.node.set_data(width=self.layer.edge_width)
 
     def reset(self):
-        self._reset_base()
-        self._on_data_change()
+        super().reset()
+        self._on_edge_width_change()
