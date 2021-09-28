@@ -29,7 +29,7 @@ def test_dask_not_greedy():
     )
     layer = layers.Image(arr)
     assert FETCH_COUNT == 1
-    assert tuple(layer.contrast_limits) == (0, 1)
+    assert tuple(layer.contrast_limits) != (0, 1)
 
     arr2 = da.map_blocks(
         get_plane,
@@ -38,7 +38,7 @@ def test_dask_not_greedy():
     )
     layer = layers.Image(arr2)
     assert FETCH_COUNT == 1
-    assert tuple(layer.contrast_limits) == (0, 2 ** 8 - 1)
+    assert tuple(layer.contrast_limits) != (0, 2 ** 8 - 1)
 
 
 def test_dask_array_creates_cache():

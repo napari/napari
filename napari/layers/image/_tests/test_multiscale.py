@@ -272,7 +272,6 @@ def test_contrast_limits():
     assert layer.contrast_limits[0] >= 0
     assert layer.contrast_limits[1] <= 1
     assert layer.contrast_limits[0] < layer.contrast_limits[1]
-    assert layer.contrast_limits == layer._contrast_limits_range
 
     # Change contrast_limits property
     contrast_limits = [0, 2]
