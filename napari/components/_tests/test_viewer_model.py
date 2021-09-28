@@ -18,6 +18,8 @@ def test_viewer_model():
     viewer = ViewerModel(title='testing')
     assert viewer.title == 'testing'
 
+    viewer.dict()
+
 
 def test_add_image():
     """Test adding image."""

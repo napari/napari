@@ -1,8 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as, validator
+
+if TYPE_CHECKING:
+    from pydantic.typing import ReprArgs
 
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
@@ -42,11 +54,20 @@ class StyleEncoding(EventedModel, ABC):
 
 
 class DerivedStyleEncoding(StyleEncoding, ABC):
+    def __repr_args__(self) -> 'ReprArgs':
+        return [
+            (name, value)
+            for name, value in super().__repr_args__()
+            if name != 'array'
+        ]
+
     def json(self, **kwargs):
-        return super().json(exclude={'array'})
+        exclude = _add_to_exclude(kwargs.pop('exclude', None), 'array')
+        return super().json(exclude=exclude, **kwargs)
 
     def dict(self, **kwargs):
-        return super().dict(exclude={'array'})
+        exclude = _add_to_exclude(kwargs.pop('exclude', None), 'array')
+        return super().dict(exclude=exclude, **kwargs)
 
 
 class DirectStyleEncoding(StyleEncoding):
@@ -226,3 +247,11 @@ def _get_property_row(
     properties: Dict[str, np.ndarray], index: int
 ) -> Dict[str, Any]:
     return {name: values[index] for name, values in properties.items()}
+
+
+def _add_to_exclude(excluded: Optional[set[str]], to_exclude: str):
+    if excluded is None:
+        return {to_exclude}
+    else:
+        excluded.add(to_exclude)
+    return excluded
