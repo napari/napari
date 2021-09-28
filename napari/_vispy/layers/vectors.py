@@ -18,8 +18,8 @@ class VispyVectorsLayer(VispyBaseLayer):
 
     def _on_data_change(self, event=None):
         if len(self.layer._view_data) == 0:
-            pos = np.empty((0, 2, self.layer._ndisplay))
-            color = np.empty((0, 4))
+            pos = np.zeros((1, 2, self.layer._ndisplay))
+            color = np.zeros((0, 4))
         else:
             # reverse to draw most recent last
             pos = self.layer._view_data[::-1].copy()
