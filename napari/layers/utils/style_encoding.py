@@ -6,6 +6,7 @@ from typing import (
     Iterable,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
 )
@@ -249,7 +250,7 @@ def _get_property_row(
     return {name: values[index] for name, values in properties.items()}
 
 
-def _add_to_exclude(excluded: Optional[set[str]], to_exclude: str):
+def _add_to_exclude(excluded: Optional[Set[str]], to_exclude: str):
     if excluded is None:
         return {to_exclude}
     else:

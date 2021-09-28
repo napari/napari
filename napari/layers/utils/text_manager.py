@@ -7,6 +7,7 @@ from pydantic import PositiveInt, validator
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
+from ...utils.events.event_utils import connect_no_arg
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor
@@ -84,12 +85,12 @@ class TextManager(EventedModel):
         # This means external clients do not need to reconnect to the events of
         # any mutable fields when their instance changes.
         self.events.add(text_update=Event)
-        # Connect to lambda's that wrap these bound methods because our Python 3.7
-        # environment cannot hash these bound methods because TextManager itself is
-        # not hashable, but newer environments can (for reasons not understood).
-        self.events.properties.connect(lambda e: self._on_properties_changed())
-        self.events.text.connect(lambda e: self._on_text_changed())
-        self.events.color.connect(lambda e: self._on_color_changed())
+        # Use connect_no_arg to workaround issue that TextManager is not hashable,
+        # so any method bound to it (e.g. _on_text_changed) is not hashable either,
+        # which is required by EventEmitter.
+        connect_no_arg(self.events.properties, self, '_on_properties_changed')
+        connect_no_arg(self.events.text, self, '_on_text_changed')
+        connect_no_arg(self.events.color, self, '_on_color_changed')
         self._n_text = n_text
         self._on_text_changed()
         self._on_color_changed()
