@@ -156,6 +156,7 @@ def make_napari_viewer(
     # or "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
+        qtbot.wait(10)
         leak = set(QApplication.topLevelWidgets()).difference(initial)
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
