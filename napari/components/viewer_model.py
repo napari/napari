@@ -22,11 +22,11 @@ import numpy as np
 from pydantic import Extra, Field, validator
 
 from .. import layers
+from .. import settings as settings_module
 from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -69,7 +69,9 @@ __all__ = ['ViewerModel', 'valid_add_kwargs']
 
 
 def _current_theme() -> str:
-    return get_settings().appearance.theme
+    if settings_module._SETTINGS is None:
+        return "dark"
+    return settings_module.get_settings().appearance.theme
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -137,7 +139,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         self.__config__.extra = Extra.ignore
 
-        settings = get_settings()
+        settings = settings_module.get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
         settings.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visible_update
@@ -181,7 +183,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _update_viewer_grid(self, e=None):
         """Keep viewer grid settings up to date with settings values."""
 
-        settings = get_settings()
+        settings = settings_module.get_settings()
 
         self.grid.stride = settings.application.grid_stride
         self.grid.shape = (
