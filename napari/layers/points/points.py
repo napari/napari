@@ -1031,6 +1031,9 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
+                'fixed_size': self.fixed_size,
+                'antialias': self.antialias,
+                'spherical': self.spherical,
             }
         )
         return state
