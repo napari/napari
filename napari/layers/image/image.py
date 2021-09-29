@@ -297,7 +297,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._experimental_slicing_plane = SlicingPlane(
             thickness=1, enabled=False
         )
-        self._should_calc_clims = False  # calc clims on next set_view_slice?
+        # Whether to calculate clims on the next set_view_slice
+        self._should_calc_clims = False
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
                 dtype = getattr(data, 'dtype', None)
