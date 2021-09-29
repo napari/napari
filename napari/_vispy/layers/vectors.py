@@ -6,7 +6,7 @@ from .base import VispyBaseLayer
 
 class VispyVectorsLayer(VispyBaseLayer):
     def __init__(self, layer):
-        node = VectorsVisual()
+        node = VectorsVisual(connect='segments', antialias=False)
         super().__init__(layer, node)
 
         self.layer.events.edge_color.connect(self._on_data_change)
