@@ -701,9 +701,14 @@ class Shapes(Layer):
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties, self._property_choices = prepare_properties(
+        properties, property_choices = prepare_properties(
             properties, self._property_choices, num_data=len(self.data)
         )
+        self.text.properties = properties
+
+        self._properties = properties
+        self._property_choices = property_choices
+
         if self._face_color_property and (
             self._face_color_property not in self._properties
         ):
@@ -727,7 +732,6 @@ class Shapes(Layer):
                 ),
                 RuntimeWarning,
             )
-        self.refresh_text()
         self.events.properties()
 
     @property
