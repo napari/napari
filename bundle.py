@@ -216,7 +216,7 @@ def patch_python_lib_location():
 
 
 def patch_environment_variables():
-    os.environ["ARCH"] = architecture()
+    os.environ["ARCH"] = ARCH
 
 
 def add_sentinel_file():
