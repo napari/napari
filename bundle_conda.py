@@ -80,7 +80,6 @@ def _constructor(version=VERSION):
     constructor = find_executable("constructor")
     if not constructor:
         raise RuntimeError("Constructor must be installed.")
-    micromamba = os.environ.get("MAMBA_EXE", find_executable("micromamba"))
 
     definitions = {
         "name": APP,
@@ -121,11 +120,7 @@ def _constructor(version=VERSION):
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
         print("-----")
-        subprocess.check_call(
-            [constructor]
-            + (["--conda-exe", micromamba] if micromamba else [])
-            + ["."],
-        )
+        subprocess.check_call([constructor, "."])
         print("-----")
 
     return OUTPUT_FILENAME
