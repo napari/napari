@@ -265,27 +265,31 @@ class TextManager(EventedModel):
         text: Union[str, Sequence[str], Union[STRING_ENCODINGS], dict, None],
         values,
     ) -> Union[STRING_ENCODINGS]:
+        properties = values['properties']
         if text is None:
-            return ConstantStringEncoding(constant='')
-        if isinstance(text, STRING_ENCODINGS):
-            return text
-        if isinstance(text, str):
-            properties = values['properties']
+            encoding = ConstantStringEncoding(constant='')
+        elif isinstance(text, STRING_ENCODINGS):
+            encoding = text
+        elif isinstance(text, str):
             if text in properties:
-                return FormatStringEncoding(format_string=f'{{{text}}}')
-            if is_format_string(properties, text):
-                return FormatStringEncoding(format_string=text)
-            return ConstantStringEncoding(constant=text)
-        if isinstance(text, dict):
-            return parse_kwargs_as_encoding(STRING_ENCODINGS, **text)
-        if isinstance(text, Sequence):
-            return DirectStringEncoding(array=text, default='')
-        raise TypeError(
-            trans._(
-                'text should be a string, iterable, StringEncoding, dict, or None',
-                deferred=True,
+                encoding = FormatStringEncoding(format_string=f'{{{text}}}')
+            elif is_format_string(properties, text):
+                encoding = FormatStringEncoding(format_string=text)
+            else:
+                encoding = ConstantStringEncoding(constant=text)
+        elif isinstance(text, dict):
+            encoding = parse_kwargs_as_encoding(STRING_ENCODINGS, **text)
+        elif isinstance(text, Sequence):
+            encoding = DirectStringEncoding(array=text, default='')
+        else:
+            raise TypeError(
+                trans._(
+                    'text should be a string, iterable, StringEncoding, dict, or None',
+                    deferred=True,
+                )
             )
-        )
+        encoding.validate_properties(properties)
+        return encoding
 
     @validator('color', pre=True, always=True)
     def _check_color(
@@ -297,20 +301,24 @@ class TextManager(EventedModel):
     ) -> Union[COLOR_ENCODINGS]:
         properties = values['properties']
         if color is None:
-            return ConstantColorEncoding(constant=DEFAULT_COLOR)
-        if isinstance(color, COLOR_ENCODINGS):
-            return color
-        if isinstance(color, str) and color in properties:
-            return IdentityColorEncoding(property_name=color)
-        if isinstance(color, dict):
-            return parse_kwargs_as_encoding(COLOR_ENCODINGS, **color)
-        color_array = transform_color(color)
-        # TODO: distinguish between single color and array of length one as constant vs. direct.
-        if color_array.shape[0] > 1:
-            return DirectColorEncoding(
-                array=color_array, default=DEFAULT_COLOR
-            )
-        return ConstantColorEncoding(constant=color)
+            encoding = ConstantColorEncoding(constant=DEFAULT_COLOR)
+        elif isinstance(color, COLOR_ENCODINGS):
+            encoding = color
+        elif isinstance(color, str) and color in properties:
+            encoding = IdentityColorEncoding(property_name=color)
+        elif isinstance(color, dict):
+            encoding = parse_kwargs_as_encoding(COLOR_ENCODINGS, **color)
+        else:
+            # TODO: distinguish between single color and array of length one as constant vs. direct.
+            color_array = transform_color(color)
+            if color_array.shape[0] > 1:
+                encoding = DirectColorEncoding(
+                    array=color_array, default=DEFAULT_COLOR
+                )
+            else:
+                encoding = ConstantColorEncoding(constant=color)
+        encoding.validate_properties(properties)
+        return encoding
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
@@ -361,15 +369,8 @@ class TextManager(EventedModel):
         self.color.update_all(self.properties, self._n_text)
 
 
-def _properties_equal(left, right):
-    if not (isinstance(left, dict) and isinstance(right, dict)):
-        return False
-    if left.keys() != right.keys():
-        return False
-    for key in left:
-        if np.any(left[key] != right[key]):
-            return False
-    return True
-
-
-TextManager.__eq_operators__['properties'] = _properties_equal
+# The properties table may be large and we typically want to store
+# a reference to another table, like the one from the owning layer,
+# so the equality operator should just check identity, rather than
+# all the values in the table.
+TextManager.__eq_operators__['properties'] = lambda a, b: a is b
