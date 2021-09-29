@@ -700,6 +700,7 @@ class Points(Layer):
 
     @property
     def fixed_size(self):
+        """bool: maintain point size fixed regardless of zoom"""
         return self._fixed_size
 
     @fixed_size.setter
@@ -709,20 +710,24 @@ class Points(Layer):
 
     @property
     def antialias(self):
+        """float: amount in pixels of antialiasing"""
         return self._antialias
 
     @antialias.setter
     def antialias(self, value) -> Union[int, float]:
+        if value < 0:
+            value = 0
         self._antialias = value
         self.events.antialias()
 
     @property
     def spherical(self):
+        """bool: display spherical shading and lighting on points"""
         return self._spherical
 
     @spherical.setter
-    def spherical(self, value) -> Union[int, float]:
-        self._spherical = value
+    def spherical(self, value) -> bool:
+        self._spherical = bool(value)
         self.events.spherical()
 
     @property
