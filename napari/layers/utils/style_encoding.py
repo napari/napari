@@ -394,7 +394,7 @@ def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
 def is_format_string(
     properties: Dict[str, np.ndarray], format_string: str
 ) -> bool:
-    """Returns true if the given string can be used in :class:`StringFormatEncoding`.
+    """Returns true if the given string should be used in :class:`StringFormatEncoding`.
 
     Parameters
     ----------

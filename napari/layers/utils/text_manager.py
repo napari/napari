@@ -224,6 +224,7 @@ class TextManager(EventedModel):
     @classmethod
     def from_layer_kwargs(
         cls,
+        *,
         text: Union['TextManager', dict, str, Sequence[str], None],
         n_text: int,
         properties: Dict[str, np.ndarray],
