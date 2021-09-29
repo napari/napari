@@ -122,7 +122,9 @@ def _constructor(version=VERSION):
         yaml.dump(definitions, fin, default_flow_style=False)
         print("-----")
         subprocess.check_call(
-            [constructor] + (["--conda-exe", micromamba] if micromamba else []) + ["."],
+            [constructor]
+            + (["--conda-exe", micromamba] if micromamba else [])
+            + ["."],
         )
         print("-----")
 
