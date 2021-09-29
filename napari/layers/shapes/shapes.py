@@ -2915,7 +2915,11 @@ class Shapes(Layer):
             Array where there is one binary mask for each shape
         """
         if mask_shape is None:
-            mask_shape = self._extent_data[1] - self._extent_data[0]
+            # See https://github.com/napari/napari/issues/2778
+            # Point coordinates land on pixel centers. We want to find the
+            # smallest shape that will hold the largest point in the data,
+            # using rounding.
+            mask_shape = np.round(self._extent_data[1]) + 1
 
         mask_shape = np.ceil(mask_shape).astype('int')
         masks = self._data_view.to_masks(mask_shape=mask_shape)
@@ -2939,7 +2943,11 @@ class Shapes(Layer):
             For overlapping shapes z-ordering will be respected.
         """
         if labels_shape is None:
-            labels_shape = self._extent_data[1] + 1
+            # See https://github.com/napari/napari/issues/2778
+            # Point coordinates land on pixel centers. We want to find the
+            # smallest shape that will hold the largest point in the data,
+            # using rounding.
+            labels_shape = np.round(self._extent_data[1]) + 1
 
         labels_shape = np.ceil(labels_shape).astype('int')
         labels = self._data_view.to_labels(labels_shape=labels_shape)

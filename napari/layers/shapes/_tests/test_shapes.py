@@ -2023,6 +2023,21 @@ def test_to_masks():
     assert masks.shape == (shape[0], 20, 20)
 
 
+def test_to_masks_default_shape():
+    """Test that labels data generation preserves origin at (0, 0).
+
+    See https://github.com/napari/napari/issues/3401
+    """
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape) + [50, 100]
+    layer = Shapes(data)
+    masks = layer.to_masks()
+    assert len(masks) == 10
+    assert 50 <= masks[0].shape[0] <= 71
+    assert 100 <= masks[0].shape[1] <= 121
+
+
 def test_to_labels():
     """Test the labels generation."""
     shape = (10, 4, 2)
