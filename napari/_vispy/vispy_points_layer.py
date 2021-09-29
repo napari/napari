@@ -17,7 +17,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         # Create a compound visual with the following four subvisuals:
         # Lines: The lines of the interaction box used for highlights.
-        # Markers: The the outlines for each point used for highlights.
+        # Markers: The outlines for each point used for highlights.
         # Markers: The actual markers of each point.
         node = PointsVisual()
 

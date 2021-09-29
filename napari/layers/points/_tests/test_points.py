@@ -2095,3 +2095,33 @@ def test_text_direct_copy_paste():
         points.text.color.array,
         transform_color(['red', 'green', 'blue', 'red', 'blue']),
     )
+
+
+def test_set_properties_invalid_errors_safely():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])
+
+    with pytest.raises(ValueError):
+        points.properties = {'not_class': np.array(['D', 'E'])}
+
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])
+
+
+def test_set_properties_invalid_with_text_errors_safely():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])
+
+    with pytest.raises(ValidationError):
+        points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])

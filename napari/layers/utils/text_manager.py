@@ -1,5 +1,4 @@
 import warnings
-from string import Formatter
 from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
@@ -23,6 +22,7 @@ from .style_encoding import (
     DirectStringEncoding,
     FormatStringEncoding,
     IdentityColorEncoding,
+    is_format_string,
     parse_obj_as_union,
 )
 
@@ -105,7 +105,6 @@ class TextManager(EventedModel):
         properties : Dict[str, np.ndarray]
             The properties of a layer.
         """
-        self._n_text = n_text
         # This shares the same instance of properties as the layer, so when
         # that instance is modified, we won't detect the change. But when
         # layer.properties is reassigned to a new instance, we will.
@@ -113,6 +112,7 @@ class TextManager(EventedModel):
         # updates always occur exactly once and this always refreshes derived values.
         with self.events.properties.blocker():
             self.properties = properties
+        self._n_text = n_text
         self._on_properties_changed()
 
     def add(self, num_to_add: int):
@@ -210,6 +210,16 @@ class TextManager(EventedModel):
         # if no elements in this slice send dummy data
         return np.zeros((1, 4))
 
+    @validator('properties', pre=True, always=True)
+    def _check_properties(
+        cls, properties: Dict[str, np.ndarray], values: dict
+    ):
+        if 'text' in values:
+            values['text'].validate_properties(properties)
+        if 'color' in values:
+            values['color'].validate_properties(properties)
+        return properties
+
     @validator('text', pre=True, always=True)
     def _check_text(
         cls,
@@ -224,7 +234,7 @@ class TextManager(EventedModel):
             properties = values['properties']
             if text in properties:
                 return FormatStringEncoding(format_string=f'{{{text}}}')
-            if cls._is_format_string(properties, text):
+            if is_format_string(properties, text):
                 return FormatStringEncoding(format_string=text)
             return ConstantStringEncoding(constant=text)
         if isinstance(text, dict):
@@ -237,20 +247,6 @@ class TextManager(EventedModel):
                 deferred=True,
             )
         )
-
-    @classmethod
-    def _is_format_string(cls, properties: dict, format_string: str):
-        fields = tuple(
-            field
-            for _, field, _, _ in Formatter().parse(format_string)
-            if field is not None
-        )
-        for field in fields:
-            if field not in properties:
-                raise ValueError(
-                    f'Found format string field {field} without a corresponding property.'
-                )
-        return len(fields) > 0
 
     @validator('color', pre=True, always=True)
     def _check_color(

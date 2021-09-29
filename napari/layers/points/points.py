@@ -516,9 +516,21 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
-        self._properties, self._property_choices = prepare_properties(
+        properties, property_choices = prepare_properties(
             properties, self._property_choices, len(self.data)
         )
+
+        # This may raise a ValidationError if properties is not compatible with
+        # the rest of the state in TextManager. That is done before assigning
+        # properties to self, so that this does not become inconsistent.
+        # If similar assignments are added that may also raise an exception,
+        # they will likely need to be a try block that revert to the previous
+        # value of properties.
+        self.text.properties = properties
+
+        self._properties = properties
+        self._property_choices = property_choices
+
         # Updating current_properties can modify properties, so block to avoid
         # infinite recursion when explicitly setting the properties.
         with self.block_update_properties():
@@ -537,7 +549,6 @@ class Points(Layer):
             self._current_properties,
             "edge_color",
         )
-        self.refresh_text()
         self.events.properties()
 
     @property
@@ -1141,7 +1152,6 @@ class Points(Layer):
         text_coords : (N x D) np.ndarray
             Array of coordinates for the N text elements in view
         """
-        # TODO check if it is used, as it has wrong signature and this not cause errors.
         return self.text.compute_text_coords(self._view_data, self._ndisplay)
 
     @property

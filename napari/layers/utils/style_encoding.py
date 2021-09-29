@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from string import Formatter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -31,6 +32,9 @@ class StyleEncoding(EventedModel, ABC):
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
+        pass
+
+    def validate_properties(self, properties: Dict[str, np.ndarray]):
         pass
 
     def update_all(self, properties: Dict[str, np.ndarray], n_rows: int):
@@ -117,6 +121,9 @@ class IdentityColorEncoding(DerivedStyleEncoding):
     ) -> np.ndarray:
         return transform_color(properties[self.property_name][indices])
 
+    def validate_properties(self, properties: Dict[str, np.ndarray]):
+        _check_property_name(properties, self.property_name)
+
 
 class DiscreteColorEncoding(DerivedStyleEncoding):
     property_name: str = Field(..., allow_mutation=False)
@@ -127,6 +134,9 @@ class DiscreteColorEncoding(DerivedStyleEncoding):
     ) -> np.ndarray:
         values = properties[self.property_name][indices]
         return self.categorical_colormap.map(values)
+
+    def validate_properties(self, properties: Dict[str, np.ndarray]):
+        _check_property_name(properties, self.property_name)
 
 
 class ContinuousColorEncoding(DerivedStyleEncoding):
@@ -163,6 +173,9 @@ class ContinuousColorEncoding(DerivedStyleEncoding):
             )
         return contrast_limits
 
+    def validate_properties(self, properties: Dict[str, np.ndarray]):
+        _check_property_name(properties, self.property_name)
+
 
 class ConstantStringEncoding(DerivedStyleEncoding):
     constant: str
@@ -188,6 +201,9 @@ class FormatStringEncoding(DerivedStyleEncoding):
             ]
         )
 
+    def validate_properties(self, properties: Dict[str, np.ndarray]):
+        is_format_string(properties, self.format_string)
+
 
 class DirectStringEncoding(DirectStyleEncoding):
     @validator('array', pre=True, always=True)
@@ -211,6 +227,22 @@ def parse_obj_as_union(union: Tuple[type, ...], obj: Dict[str, Any]):
             'Original error:\n'
             f'{error}'
         )
+
+
+def is_format_string(
+    properties: Dict[str, np.ndarray], format_string: str
+) -> bool:
+    fields = tuple(
+        field
+        for _, field, _, _ in Formatter().parse(format_string)
+        if field is not None
+    )
+    for field in fields:
+        if field not in properties:
+            raise ValueError(
+                f'Found format string field {field} without a corresponding property'
+            )
+    return len(fields) > 0
 
 
 # Define supported encodings as tuples instead of Union, so that they can be used with
@@ -263,6 +295,12 @@ def _get_property_row(
 def _add_to_exclude(excluded: Optional[Set[str]], to_exclude: str):
     if excluded is None:
         return {to_exclude}
-    else:
-        excluded.add(to_exclude)
+    excluded.add(to_exclude)
     return excluded
+
+
+def _check_property_name(
+    properties: Dict[str, np.ndarray], property_name: str
+):
+    if property_name not in properties:
+        raise ValueError(f'{property_name} is not in properties: {properties}')
