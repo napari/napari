@@ -5,6 +5,8 @@ from ..vendored import MarkersVisual
 BaseMarkers = create_visual_node(MarkersVisual)
 
 
+# Custom markers class is needed for entering 3D rendering mode when a points
+# layer is invisible and the self._data property is None
 class Markers(BaseMarkers):
     def _compute_bounds(self, axis, view):
         if self._data is None:
