@@ -1,6 +1,6 @@
 import numpy as np
 
-from napari._vispy.vispy_shapes_layer import VispyShapesLayer
+from napari._vispy.layers.shapes import VispyShapesLayer
 from napari.layers import Shapes
 
 

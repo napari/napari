@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from napari._vispy.vispy_points_layer import VispyPointsLayer
+from napari._vispy.layers.points import VispyPointsLayer
 from napari.layers import Points
 
 
