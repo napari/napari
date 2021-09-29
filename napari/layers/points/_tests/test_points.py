@@ -731,6 +731,7 @@ def test_text_from_property_fstring(properties):
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'text': 'type: {point_type}',
+        'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
         'anchor': Anchor.UPPER_LEFT,
@@ -745,8 +746,11 @@ def test_set_text_with_kwarg_dict(properties):
     expected_text = ['type: ' + v for v in properties['point_type']]
     np.testing.assert_equal(layer.text.text.array, expected_text)
 
+    expected_color = [text_kwargs['color']] * len(data)
+    np.testing.assert_equal(layer.text.color.array, expected_color)
+
     for property, value in text_kwargs.items():
-        if property == 'text':
+        if property in ('text', 'color'):
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
