@@ -17,6 +17,7 @@ skip = [
     'points-over-time.py',  # too resource hungry
     'embed_ipython.py',  # fails without monkeypatch
     'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
+    'new_theme.py',  # testing theme is extremely slow on CI
 ]
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
@@ -63,4 +64,9 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
 
     # run the example!
-    runpy.run_path(str(EXAMPLE_DIR / fname))
+    try:
+        runpy.run_path(str(EXAMPLE_DIR / fname))
+    except SystemExit as e:
+        # we use sys.exit(0) to gracefully exit from examples
+        if e.code != 0:
+            raise

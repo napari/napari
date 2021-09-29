@@ -1532,6 +1532,37 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+def test_thumbnail_non_square_data():
+    """Test the image thumbnail for non-square data.
+
+    See: https://github.com/napari/napari/issues/1450
+    """
+    # The points coordinates are in a short and wide range.
+    data_range = [1, 32]
+    np.random.seed(0)
+    data = np.random.random((10, 2)) * data_range
+    # Make sure the random points span the range.
+    data[0, :] = [0, 0]
+    data[-1, :] = data_range
+    layer = Points(data)
+
+    layer._update_thumbnail()
+
+    assert layer.thumbnail.shape == layer._thumbnail_shape
+    # Check that the thumbnail only contains non-zero RGB values in the middle two rows.
+    mid_row = layer.thumbnail.shape[0] // 2
+    expected_zeros = np.zeros(shape=(mid_row - 1, 32, 3), dtype=np.uint8)
+    np.testing.assert_array_equal(
+        layer.thumbnail[: mid_row - 1, :, :3], expected_zeros
+    )
+    assert (
+        np.count_nonzero(layer.thumbnail[mid_row - 1 : mid_row + 1, :, :3]) > 0
+    )
+    np.testing.assert_array_equal(
+        layer.thumbnail[mid_row + 1 :, :, :3], expected_zeros
+    )
+
+
 def test_thumbnail_with_n_points_greater_than_max():
     """Test thumbnail generation with n_points > _max_points_thumbnail
 
@@ -1643,7 +1674,7 @@ def test_world_data_extent():
     max_val = (7, 30, 15)
     layer = Points(data)
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
 
 
 def test_slice_data():

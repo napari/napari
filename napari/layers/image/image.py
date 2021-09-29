@@ -108,6 +108,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     experimental_slicing_plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
@@ -204,6 +207,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
+        cache=True,
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
     ):
@@ -249,6 +253,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
@@ -402,8 +407,35 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         -------
         extent_data : array, shape (2, D)
         """
-        shape = np.subtract(self.level_shapes[0], 1)
+        shape = self.level_shapes[0]
         return np.vstack([np.zeros(len(shape)), shape])
+
+    def _get_extent_world(self, data_extent):
+        """Range of layer in world coordinates base on provided data_extent
+
+        This differs from the parent Layer class by shifting the coordinate
+        range by 1/2 pixel thickness.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        D = data_extent.shape[1]
+
+        # subtract 0.5 to get from pixel center to pixel edge
+        pixel_extents = tuple(d - 0.5 for d in data_extent.T)
+
+        full_data_extent = np.array(np.meshgrid(*pixel_extents)).T.reshape(
+            -1, D
+        )
+        full_world_extent = self._data_to_world(full_data_extent)
+        world_extent = np.array(
+            [
+                np.min(full_world_extent, axis=0),
+                np.max(full_world_extent, axis=0),
+            ]
+        )
+        return world_extent
 
     @property
     def data_level(self):
@@ -574,7 +606,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 [extent[0, ax] for ax in not_disp],
             )
         ) or np.any(
-            np.greater(
+            np.greater_equal(
                 [indices[ax] for ax in not_disp],
                 [extent[1, ax] for ax in not_disp],
             )

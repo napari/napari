@@ -587,22 +587,24 @@ def test_sliced_world_extent():
     viewer = ViewerModel()
 
     # Empty data is taken to be 512 x 512
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (0, 0))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511, 511))
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (-0.5, -0.5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511.5, 511.5))
 
     # Add one layer
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
-    np.testing.assert_allclose(viewer.layers.extent.world[0], (10, 20, 5))
-    np.testing.assert_allclose(viewer.layers.extent.world[1], (25, 29, 19))
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29, 19))
+    np.testing.assert_allclose(viewer.layers.extent.world[0], (8.5, 19.5, 4.5))
+    np.testing.assert_allclose(
+        viewer.layers.extent.world[1], (26.5, 29.5, 19.5)
+    )
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (19.5, 4.5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29.5, 19.5))
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
-    np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19, 25))
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (4.5, 8.5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19.5, 26.5))
 
 
 def test_camera():
@@ -636,11 +638,11 @@ def test_update_scale():
     shape = (10, 15, 20)
     data = np.random.random(shape)
     viewer.add_image(data)
-    assert viewer.dims.range == tuple((0.0, x - 1.0, 1.0) for x in shape)
+    assert viewer.dims.range == tuple((0.0, x, 1.0) for x in shape)
     scale = (3.0, 2.0, 1.0)
     viewer.layers[0].scale = scale
     assert viewer.dims.range == tuple(
-        (0.0, (x - 1) * s, s) for x, s in zip(shape, scale)
+        (0.0, x * s, s) for x, s in zip(shape, scale)
     )
 
 

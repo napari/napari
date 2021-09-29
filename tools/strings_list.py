@@ -515,6 +515,7 @@ SKIP_WORDS = {
     'napari/_qt/widgets/qt_viewer_dock_widget.py': [
         'QTitleBarCloseButton',
         'QTitleBarFloatButton',
+        'QTitleBarHideButton',
         'QtCustomTitleBar',
         'QtCustomTitleBarLine',
         'bottom',
@@ -1763,11 +1764,6 @@ SKIP_WORDS = {
         'NAPARI_MON',
         'enabled',
         'octree',
-    ],
-    'napari/utils/dask_utils.py': [
-        '2.15.0',
-        'dask_cache',
-        'optimization.fuse.active',
     ],
     'napari/utils/events/__init__.py': [],
     'napari/utils/events/containers/__init__.py': [],
