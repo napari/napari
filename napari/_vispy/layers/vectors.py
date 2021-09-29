@@ -21,8 +21,8 @@ class VispyVectorsLayer(VispyBaseLayer):
             pos = np.zeros((1, 2, self.layer._ndisplay))
             color = np.zeros((0, 4))
         else:
-            # reverse to draw most recent last
-            pos = self.layer._view_data[::-1].copy()
+            # reverse to draw most recent last and swap xy for vispy
+            pos = self.layer._view_data[::-1, :, ::-1].copy()
             # scale vector and add it to its origin to get the endpoint coordinate
             pos[:, 1] *= self.layer.length
             pos[:, 1] += pos[:, 0]
