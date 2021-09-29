@@ -2219,7 +2219,7 @@ class Shapes(Layer):
     @text.setter
     def text(self, text):
         self._text = TextManager.from_layer_kwargs(
-            text, self.nshapes, self.properties
+            text=text, properties=self.properties, n_text=self.nshapes
         )
         self.events.text()
 

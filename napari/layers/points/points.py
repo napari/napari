@@ -584,7 +584,7 @@ class Points(Layer):
     @text.setter
     def text(self, text):
         self._text = TextManager.from_layer_kwargs(
-            text, len(self.data), self.properties
+            text=text, properties=self.properties, n_text=len(self.data)
         )
         self.events.text()
 

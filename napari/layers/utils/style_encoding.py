@@ -26,6 +26,18 @@ from ...utils.events import EventedModel
 
 
 class StyleEncoding(EventedModel, ABC):
+    """Defines a way to encode style values, like colors and strings.
+
+    This also updates and stores values generated using that encoding.
+
+    Attributes
+    ----------
+    array : np.ndarray
+        Stores the generated style values. The first dimension should have
+        length N, where N is the number of expected style values. The other
+        dimensions should describe the dimensionality of the style value.
+    """
+
     array: np.ndarray = []
 
     @abstractmethod
@@ -35,22 +47,72 @@ class StyleEncoding(EventedModel, ABC):
         pass
 
     def validate_properties(self, properties: Dict[str, np.ndarray]):
+        """Validates that the given properties are compatible with this encoding.
+
+        Parameters
+        ----------
+        properties : Dict[str, np.ndarray]
+            The properties of a layer.
+
+        Raises
+        ------
+        ValueError
+            If the given properties are not compatible with this encoding.
+        """
         pass
 
     def update_all(self, properties: Dict[str, np.ndarray], n_rows: int):
+        """Updates all style values based on the given properties.
+
+        Parameters
+        ----------
+        properties : Dict[str, np.ndarray]
+            The properties of a layer.
+        n_rows : int
+            The total number of rows in the properties table, which should
+            correspond to the number of elements in a layer, and will be the
+            number of style values generated.
+        """
         indices = range(0, n_rows)
         self.array = self._apply(properties, indices)
 
     def update_tail(self, properties: Dict[str, np.ndarray], n_rows: int):
+        """Generates style values for newly added elements in properties and appends them to this.
+
+        Parameters
+        ----------
+        properties : Dict[str, np.ndarray]
+            The properties of a layer.
+        n_rows : int
+            The total number of rows in the properties table, which should
+            correspond to the number of elements in a layer, and will be the
+            number of style values generated.
+        """
         n_values = self.array.shape[0]
         indices = range(n_values, n_rows)
         array = self._apply(properties, indices)
         self.append(array)
 
     def append(self, array: np.ndarray):
+        """Appends raw style values to this.
+
+        This is useful for supporting the paste operation in layers.
+
+        Parameters
+        ----------
+        array : np.ndarray
+            The values to append. The dimensionality of these should match that of the existing style values.
+        """
         self.array = _append_maybe_empty(self.array, array)
 
     def delete(self, indices: Iterable[int]):
+        """Deletes style values from this by index.
+
+        Parameters
+        ----------
+        indices : Iterable[int]
+            The indices of the style values to remove.
+        """
         self.array = np.delete(self.array, list(indices), axis=0)
 
     @validator('array', pre=True, always=True)
@@ -59,6 +121,14 @@ class StyleEncoding(EventedModel, ABC):
 
 
 class DerivedStyleEncoding(StyleEncoding, ABC):
+    """Encodes style values from properties.
+
+    The style values can always be regenerated from properties, so the
+    array attribute should read, but not written for persistent storage,
+    as updating this type of encoding will clobber the written values.
+    For the same reason, the array attribute is not serialized.
+    """
+
     def __repr_args__(self) -> 'ReprArgs':
         return [
             (name, value)
@@ -76,6 +146,20 @@ class DerivedStyleEncoding(StyleEncoding, ABC):
 
 
 class DirectStyleEncoding(StyleEncoding):
+    """Encodes style values directly.
+
+    The style values are encoded directly in the array attribute, so that
+    attribute can be written to make persistent updates.
+
+    Attributes
+    ----------
+    default : np.ndarray
+        The default style value that is used when requesting a value that
+        is out of bounds in the array attribute. In general this is a numpy
+        array because color is a 1D RGBA numpy array, but mostly this will
+        be a 0D numpy array (i.e. a scalar).
+    """
+
     default: np.ndarray
 
     def _apply(
@@ -91,6 +175,8 @@ class DirectStyleEncoding(StyleEncoding):
 
 
 class DirectColorEncoding(DirectStyleEncoding):
+    """Encodes color values directly in an array."""
+
     @validator('array', pre=True, always=True)
     def _check_array(cls, array):
         return np.empty((0, 4)) if len(array) == 0 else transform_color(array)
@@ -101,6 +187,16 @@ class DirectColorEncoding(DirectStyleEncoding):
 
 
 class ConstantColorEncoding(DerivedStyleEncoding):
+    """Encodes color values from a constant.
+
+    Attributes
+    ----------
+    constant : np.ndarray
+        The color that is always returned regardless of property values.
+        Can be provided as any of the types in :class:`ColorType`, but will
+        be coerced to an RGBA numpy array of shape (4,).
+    """
+
     constant: np.ndarray
 
     def _apply(
@@ -114,6 +210,14 @@ class ConstantColorEncoding(DerivedStyleEncoding):
 
 
 class IdentityColorEncoding(DerivedStyleEncoding):
+    """Encodes color values directly from a property column.
+
+    Attributes
+    ----------
+    property_name : str
+        The name of the property that contains the desired color values.
+    """
+
     property_name: str = Field(..., allow_mutation=False)
 
     def _apply(
@@ -126,6 +230,16 @@ class IdentityColorEncoding(DerivedStyleEncoding):
 
 
 class DiscreteColorEncoding(DerivedStyleEncoding):
+    """Encodes color values from a discrete property column whose values are mapped to colors.
+
+    Attributes
+    ----------
+    property_name : str
+        The name of the property that contains the discrete values from which to map.
+    categorical_colormap : CategoricalColormap
+        Maps the selected property values to colors.
+    """
+
     property_name: str = Field(..., allow_mutation=False)
     categorical_colormap: CategoricalColormap
 
@@ -140,6 +254,21 @@ class DiscreteColorEncoding(DerivedStyleEncoding):
 
 
 class ContinuousColorEncoding(DerivedStyleEncoding):
+    """Encodes color values from a continuous property column whose values are mapped to colors.
+
+    Attributes
+    ----------
+    property_name : str
+        The name of the property that contains the continuous values from which to map.
+    continuous_colormap : Colormap
+        Maps the selected property values to colors.
+    contrast_limits : Optional[Tuple[float, float]]
+        The (min, max) property values that should respectively map to the first and last
+        colors in the colormap. If None, then this will attempt to calculate these values
+        from the property values the first time this generate color values. If that attempt
+        fails, these are effectively (0, 1).
+    """
+
     property_name: str = Field(..., allow_mutation=False)
     continuous_colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
@@ -178,6 +307,14 @@ class ContinuousColorEncoding(DerivedStyleEncoding):
 
 
 class ConstantStringEncoding(DerivedStyleEncoding):
+    """Encodes string values directly in an array.
+
+    Attributes
+    ----------
+    constant : str
+        The string that is always returned regardless of property values.
+    """
+
     constant: str
 
     def _apply(
@@ -187,6 +324,15 @@ class ConstantStringEncoding(DerivedStyleEncoding):
 
 
 class FormatStringEncoding(DerivedStyleEncoding):
+    """Encodes string values by formatting property values.
+
+    Attributes
+    ----------
+    format_string : str
+        A format string with the syntax supported by :func:`str.format`,
+        where all format fields should be property names.
+    """
+
     format_string: str = Field(..., allow_mutation=False)
 
     def _apply(
@@ -206,6 +352,8 @@ class FormatStringEncoding(DerivedStyleEncoding):
 
 
 class DirectStringEncoding(DirectStyleEncoding):
+    """Encodes string values directly in an array."""
+
     @validator('array', pre=True, always=True)
     def _check_array(cls, array) -> np.ndarray:
         return np.array(array, dtype=str)
@@ -215,15 +363,29 @@ class DirectStringEncoding(DirectStyleEncoding):
         return np.array(default, dtype=str)
 
 
-def parse_obj_as_union(union: Tuple[type, ...], obj: Dict[str, Any]):
+def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
+    """Parses the given kwargs as one of the given encodings.
+
+    Parameters
+    ----------
+    encodings : Tuple[type, ...]
+        The supported encoding types, each of which must be a subclass of
+        :class:`StyleEncoding`. The first encoding that can be constructed
+        from the given kwargs will be returned.
+
+    Raises
+    ------
+    ValueError
+        If the provided kwargs cannot be used to construct any of the given encodings.
+    """
     try:
-        return parse_obj_as(Union[union], obj)
+        return parse_obj_as(Union[encodings], kwargs)
     except ValidationError as error:
         raise ValueError(
             'Failed to parse a supported encoding from kwargs:\n'
-            f'{obj}\n\n'
+            f'{kwargs}\n\n'
             'The kwargs must specify the fields of exactly one of the following encodings:\n'
-            f'{union}\n\n'
+            f'{encodings}\n\n'
             'Original error:\n'
             f'{error}'
         )
@@ -232,6 +394,25 @@ def parse_obj_as_union(union: Tuple[type, ...], obj: Dict[str, Any]):
 def is_format_string(
     properties: Dict[str, np.ndarray], format_string: str
 ) -> bool:
+    """Returns true if the given string can be used in :class:`StringFormatEncoding`.
+
+    Parameters
+    ----------
+    properties : Dict[str, np.ndarray]
+        The properties of a layer.
+    format_string : str
+        The format string.
+
+    Returns
+    -------
+    True if format_string contains at least one field, False otherwise.
+
+    Raises
+    ------
+    ValueError
+        If the format_string is not valid (e.g. mismatching braces), or one of the
+        format fields is not a property name.
+    """
     fields = tuple(
         field
         for _, field, _, _ in Formatter().parse(format_string)
@@ -249,6 +430,8 @@ def is_format_string(
 # isinstance without relying on get_args, which was only added in python 3.8.
 # The order of the encoding matters because we rely on Pydantic for parsing dict kwargs
 # inputs for each encoding - it will use the first encoding that can be defined with those kwargs.
+
+"""The color encodings supported by napari in order of precedence."""
 COLOR_ENCODINGS = (
     ContinuousColorEncoding,
     DiscreteColorEncoding,
@@ -257,6 +440,7 @@ COLOR_ENCODINGS = (
     DirectColorEncoding,
 )
 
+"""The string encodings supported by napari in order of precedence."""
 STRING_ENCODINGS = (
     FormatStringEncoding,
     ConstantStringEncoding,
@@ -264,8 +448,7 @@ STRING_ENCODINGS = (
 )
 
 
-def _append_maybe_empty(left: np.ndarray, right: np.ndarray):
-    """Like numpy.append, except that the dimensionality of empty arrays is ignored."""
+def _append_maybe_empty(left: np.ndarray, right: np.ndarray) -> np.ndarray:
     if right.size == 0:
         return left
     if left.size == 0:

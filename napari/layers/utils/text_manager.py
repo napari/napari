@@ -23,7 +23,7 @@ from .style_encoding import (
     FormatStringEncoding,
     IdentityColorEncoding,
     is_format_string,
-    parse_obj_as_union,
+    parse_kwargs_as_encoding,
 )
 
 DEFAULT_COLOR = 'cyan'
@@ -98,12 +98,14 @@ class TextManager(EventedModel):
         self._on_color_changed()
 
     def refresh_text(self, properties: Dict[str, np.ndarray], n_text: int):
-        """Refresh all text values from the given layer properties.
+        """Refresh all text elements from the given layer properties.
 
         Parameters
         ----------
         properties : Dict[str, np.ndarray]
             The properties of a layer.
+        n_text : int
+            The number of text elements to generate which should match the number of rows in properties.
         """
         # This shares the same instance of properties as the layer, so when
         # that instance is modified, we won't detect the change. But when
@@ -116,7 +118,7 @@ class TextManager(EventedModel):
         self._on_properties_changed()
 
     def add(self, num_to_add: int):
-        """Adds a number of a new text values based on the given layer properties.
+        """Adds a number of a new text elements.
 
         Parameters
         ----------
@@ -128,12 +130,21 @@ class TextManager(EventedModel):
         self.color.update_tail(self.properties, self._n_text)
 
     def paste(self, strings: np.ndarray, colors: np.ndarray):
+        """Pastes and appends some new text elements.
+
+        Parameters
+        ----------
+        strings : np.ndarray
+            The text string values to append.
+        colors : np.ndarray
+            The text color values to append.
+        """
         self._n_text += len(strings)
         self.text.append(strings)
         self.color.append(colors)
 
     def remove(self, indices: Iterable[int]):
-        """Removes some text values by index.
+        """Removes some text elements by index.
 
         Parameters
         ----------
@@ -147,7 +158,7 @@ class TextManager(EventedModel):
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
     ) -> Tuple[np.ndarray, str, str]:
-        """Calculate the coordinates for each text element in view
+        """Calculate the coordinates for each text element in view.
 
         Parameters
         ----------
@@ -210,6 +221,33 @@ class TextManager(EventedModel):
         # if no elements in this slice send dummy data
         return np.zeros((1, 4))
 
+    @classmethod
+    def from_layer_kwargs(
+        cls,
+        text: Union['TextManager', dict, str, Sequence[str], None],
+        n_text: int,
+        properties: Dict[str, np.ndarray],
+    ):
+        """Create a TextManager from a layer.
+
+        Parameters
+        ----------
+        text : Union[TextManager, dict, str, Sequence[str], None]
+            The strings to be displayed, or a format string to be filled out using properties.
+        properties : Dict[str, np.ndarray]
+            The property values, which typically come from a layer.
+        n_text : int
+            The number of text elements to generate which should match the number of rows in the property table.
+        """
+        if isinstance(text, TextManager):
+            kwargs = text.dict()
+        elif isinstance(text, dict):
+            kwargs = text
+        else:
+            kwargs = {'text': text}
+        kwargs['properties'] = properties
+        return cls(n_text=n_text, **kwargs)
+
     @validator('properties', pre=True, always=True)
     def _check_properties(
         cls, properties: Dict[str, np.ndarray], values: dict
@@ -238,7 +276,7 @@ class TextManager(EventedModel):
                 return FormatStringEncoding(format_string=text)
             return ConstantStringEncoding(constant=text)
         if isinstance(text, dict):
-            return parse_obj_as_union(STRING_ENCODINGS, text)
+            return parse_kwargs_as_encoding(STRING_ENCODINGS, **text)
         if isinstance(text, Sequence):
             return DirectStringEncoding(array=text, default='')
         raise TypeError(
@@ -264,7 +302,7 @@ class TextManager(EventedModel):
         if isinstance(color, str) and color in properties:
             return IdentityColorEncoding(property_name=color)
         if isinstance(color, dict):
-            return parse_obj_as_union(COLOR_ENCODINGS, color)
+            return parse_kwargs_as_encoding(COLOR_ENCODINGS, **color)
         color_array = transform_color(color)
         # TODO: distinguish between single color and array of length one as constant vs. direct.
         if color_array.shape[0] > 1:
@@ -320,31 +358,6 @@ class TextManager(EventedModel):
     def _on_properties_changed(self, event=None):
         self.text.update_all(self.properties, self._n_text)
         self.color.update_all(self.properties, self._n_text)
-
-    @classmethod
-    def from_layer_kwargs(
-        cls,
-        text: Union['TextManager', dict, str, Sequence[str], None],
-        n_text: int,
-        properties: Dict[str, np.ndarray],
-    ):
-        """Create a TextManager from a layer.
-
-        Parameters
-        ----------
-        text : Union[TextManager, dict, str, Sequence[str], None]
-            The strings to be displayed, or a format string to be filled out using properties.
-        properties: Dict[str, np.ndarray]
-            Stores properties data that will be used to generate text.
-        """
-        if isinstance(text, TextManager):
-            kwargs = text.dict()
-        elif isinstance(text, dict):
-            kwargs = text
-        else:
-            kwargs = {'text': text}
-        kwargs['properties'] = properties
-        return cls(n_text=n_text, **kwargs)
 
 
 def _properties_equal(left, right):
