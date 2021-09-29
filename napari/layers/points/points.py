@@ -273,6 +273,7 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
+        fixed_size=False,
         antialias=1,
         spherical=False,
     ):
@@ -311,6 +312,7 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
+            fixed_size=Event,
             antialias=Event,
             spherical=Event,
         )
@@ -398,6 +400,7 @@ class Points(Layer):
             else self._property_choices,
         )
 
+        self.fixed_size = fixed_size
         self.size = size
         self.antialias = antialias
         self.spherical = spherical
@@ -632,7 +635,6 @@ class Points(Layer):
 
     @symbol.setter
     def symbol(self, symbol: Union[str, Symbol]) -> None:
-
         if isinstance(symbol, str):
             # Convert the alias string to the deduplicated string
             if symbol in SYMBOL_ALIAS:
@@ -683,6 +685,15 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
+
+    @property
+    def fixed_size(self):
+        return self._fixed_size
+
+    @fixed_size.setter
+    def fixed_size(self, value) -> bool:
+        self._fixed_size = bool(value)
+        self.events.fixed_size()
 
     @property
     def antialias(self):

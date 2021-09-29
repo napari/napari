@@ -19,7 +19,6 @@ class VispyPointsLayer(VispyBaseLayer):
         node = PointsVisual()
         super().__init__(layer, node)
 
-        self.layer.events.symbol.connect(self._on_data_change)
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer._edge.events.colors.connect(self._on_data_change)
@@ -30,6 +29,8 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.text._connect_update_events(
             self._on_text_change, self._on_blending_change
         )
+        self.layer.events.symbol.connect(self._on_symbol_change)
+        self.layer.events.fixed_size.connect(self._on_fixed_size_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.events.antialias.connect(self._on_antialias_change)
         self.layer.events.spherical.connect(self._on_spherical_change)
@@ -169,6 +170,12 @@ class VispyPointsLayer(VispyBaseLayer):
         text_blending_kwargs = BLENDING_MODES[self.layer.text.blending]
         text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
+
+    def _on_symbol_change(self, event=None):
+        self.node.symbol = self.layer.symbol
+
+    def _on_fixed_size_change(self, event=None):
+        self.node.scaling = not self.layer.fixed_size
 
     def _on_antialias_change(self, event=None):
         self.node.antialias = self.layer.antialias
