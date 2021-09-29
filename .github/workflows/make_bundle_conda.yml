@@ -48,6 +48,7 @@ jobs:
           dependencies:
             - python ${{ matrix.python-version }}
             - pip
+            - constructor
           EOF
       - name: install micromamba
         uses: mamba-org/provision-with-micromamba@main

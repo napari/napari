@@ -30,17 +30,20 @@ LINUX = sys.platform.startswith("linux")
 HERE = os.path.abspath(os.path.dirname(__file__))
 PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
+ARCH = (platform.machine() or "generic").lower().replace("amd64", "x86_64")
 
 if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
     APP_DIR = os.path.join(BUILD_DIR, APP, 'src')
+    EXT, OS = 'msi', 'Windows'
 elif LINUX:
     BUILD_DIR = os.path.join(HERE, 'linux')
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.AppDir')
+    EXT, OS = 'AppImage', 'Linux'
 elif MACOS:
     BUILD_DIR = os.path.join(HERE, 'macOS')
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
-
+    EXT, OS = 'dmg', 'macOS'
 
 with open(os.path.join(HERE, "napari", "_version.py")) as f:
     match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
@@ -63,9 +66,7 @@ def patched_toml():
     # Initialize EXTRA_REQS from setup.cfg 'options.extras_require.bundle_run'
     bundle_run = parser.get("options.extras_require", "bundle_run")
     EXTRA_REQS = [
-        requirement.split('#')[0].strip()
-        for requirement in bundle_run.splitlines()
-        if requirement
+        requirement.split('#')[0].strip() for requirement in bundle_run.splitlines() if requirement
     ]
 
     # parse command line arguments
@@ -202,9 +203,7 @@ def patch_wxs():
 
 def patch_python_lib_location():
     # must run after briefcase create
-    support = os.path.join(
-        BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support"
-    )
+    support = os.path.join(BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support")
     python_resources = os.path.join(support, "Python", "Resources")
     if os.path.exists(python_resources):
         return
@@ -231,27 +230,12 @@ def add_sentinel_file():
         print("!!! Sentinel files not yet implemented in", sys.platform)
 
 
-def architecture():
-    arch = platform.machine() or "generic"
-    # Try to canonicalize across OS
-    replacements = {
-        "amd64": "x86_64",
-    }
-    return replacements.get(arch.lower(), arch)
-
-
 def make_zip():
     import glob
     import zipfile
 
-    if WINDOWS:
-        ext, OS = '*.msi', 'Windows'
-    elif LINUX:
-        ext, OS = '*.AppImage', 'Linux'
-    elif MACOS:
-        ext, OS = '*.dmg', 'macOS'
-    artifact = glob.glob(os.path.join(BUILD_DIR, ext))[0]
-    dest = f'napari-{VERSION}-{OS}-{architecture()}.zip'
+    artifact = glob.glob(os.path.join(BUILD_DIR, f"*.{EXT}"))[0]
+    dest = f'napari-{VERSION}-{OS}-{ARCH}.zip'
 
     with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(artifact, arcname=os.path.basename(artifact))
@@ -312,6 +296,6 @@ if __name__ == "__main__":
         print(VERSION)
         sys.exit()
     if '--arch' in sys.argv:
-        print(architecture())
+        print(ARCH)
         sys.exit()
     print('created', bundle())

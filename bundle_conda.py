@@ -20,18 +20,22 @@ from distutils.spawn import find_executable
 from pathlib import Path
 
 import tomlkit
+from ruamel import yaml
 
 from bundle import (
     APP,
     APP_DIR,
+    ARCH,
     BUILD_DIR,
+    EXT,
+    HERE,
     LINUX,
     MACOS,
+    OS,
     PYPROJECT_TOML,
     VERSION,
     WINDOWS,
     add_sentinel_file,
-    architecture,
     clean,
     make_zip,
     patch_environment_variables,
@@ -56,6 +60,60 @@ def _generate_conda_build_recipe():
 
 def _conda_build():
     pass
+
+
+def _constructor(with_local=False, version=VERSION):
+    constructor = find_executable("constructor")
+    if not constructor:
+        raise RuntimeError("Constructor must be installed.")
+    micromamba = os.environ.get("MAMBA_EXE", find_executable("micromamba"))
+
+    output_filename = f"{APP}-{version}-{OS}-{ARCH}.{'exe' if WINDOWS else 'sh'}"
+    definitions = {
+        "name": APP,
+        "company": "Napari",
+        "version": version,
+        "channels": ["conda-forge"],
+        "conda_default_channels": ["conda-forge"],
+        "installer_filename": output_filename,
+        "specs": [
+            f"napari={version}",
+            f"python={sys.version_info.major}.{sys.version_info.minor}.*",
+            "conda",
+            "mamba",
+            "pip",
+        ],
+        "menu_packages": [
+            "napari",
+        ],
+    }
+    if with_local:
+        definitions["channels"].insert(0, "local")
+    if MACOS:
+        definitions["installer_type"] = "pkg"
+    if WINDOWS:
+        definitions["conda_default_channels"].append("defaults")
+        definitions.update(
+            {
+                # TODO: create banner images for installer
+                # "welcome_image":,
+                # "header_image":,
+                "icon_image": os.path.join(HERE, "resources", "icon.ico"),
+                "default_image_color": "blue",
+                "welcome_image_text": f"{APP} v{version}",
+                "header_image_text": f"{APP} v{version}",
+            }
+        )
+
+    with open("construct.yaml", "w") as fin:
+        yaml.dump(definitions, fin, default_flow_style=False)
+        print("-----")
+        subprocess.check_call(
+            [constructor] + (["--conda-exe", micromamba] if micromamba else []) + ["."],
+        )
+        print("-----")
+
+    return output_filename
 
 
 def _micromamba(root=None, with_local=False, version=VERSION):
@@ -166,6 +224,12 @@ def main():
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
 
+    if WINDOWS:
+        return _constructor(with_local, version)
+    return _briefcase(with_local, version)
+
+
+def _briefcase(with_local, version):
     print("Patching runtime conditions...")
 
     if LINUX:
@@ -212,6 +276,6 @@ if __name__ == "__main__":
         print(VERSION)
         sys.exit()
     if '--arch' in sys.argv:
-        print(architecture())
+        print(ARCH)
         sys.exit()
     print('created', main())
