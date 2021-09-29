@@ -57,15 +57,21 @@ jobs:
         run: |
           python -m pip install -e '.[bundle_build]'
 
-      - name: get tag / arch-suffix
+      - name: get tag / arch-suffix / extension / artifact-name
         shell: bash -l {0}
         run: |
-          VER=`python bundle.py --version`
+          VER=`python bundle_conda.py --version`
           echo "version=${VER}" >> $GITHUB_ENV
           echo "Version: $VER"
-          ARCH_SUFFIX=`python bundle.py --arch`
+          ARCH_SUFFIX=`python bundle_conda.py --arch`
           echo "arch-suffix=${ARCH_SUFFIX}" >> $GITHUB_ENV
           echo "Machine: ${ARCH_SUFFIX}"
+          EXTENSION=`python bundle_conda.py --ext`
+          echo "extension=${EXTENSION}" >> $GITHUB_ENV
+          echo "Extension: ${EXTENSION}"
+          ARTIFACT_NAME=`python bundle_conda.py --artifact-name`
+          echo "artifact-name=${ARTIFACT_NAME}" >> $GITHUB_ENV
+          echo "Expected artifact name: ${ARTIFACT_NAME}"
 
       - name: Make Bundle (Linux)
         if: runner.os == 'Linux'
@@ -85,8 +91,8 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
-          path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
+          name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
       - name: Get Release
         if: startsWith(github.ref, 'refs/tags/v')
         id: get_release

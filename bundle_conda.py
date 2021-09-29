@@ -46,12 +46,26 @@ from bundle import (
 
 if LINUX:
     CONDA_ROOT = Path(APP_DIR) / "usr" / "conda"
+    EXT = "AppImage"  # using briefcase
 elif MACOS:
     CONDA_ROOT = Path(APP_DIR) / "Contents" / "Resources" / "conda"
+    EXT = "dmg"  # using briefcase
 elif WINDOWS:
     CONDA_ROOT = Path(APP_DIR) / "conda"
+    EXT = "exe"  # using constructor
 else:
     CONDA_ROOT = Path(BUILD_DIR) / "conda"
+
+
+VERSION = "0.4.11"  # overwriting for testing purposes
+OUTPUT_FILENAME = f"{APP}-{VERSION}-{OS}-{ARCH}.{EXT}"
+
+
+def _use_local():
+    """
+    Detect whether we need to build Napari locally
+    (dev snapshots).
+    """
 
 
 def _generate_conda_build_recipe():
@@ -62,20 +76,19 @@ def _conda_build():
     pass
 
 
-def _constructor(with_local=False, version=VERSION):
+def _constructor(version=VERSION):
     constructor = find_executable("constructor")
     if not constructor:
         raise RuntimeError("Constructor must be installed.")
     micromamba = os.environ.get("MAMBA_EXE", find_executable("micromamba"))
 
-    output_filename = f"{APP}-{version}-{OS}-{ARCH}.{'exe' if WINDOWS else 'sh'}"
     definitions = {
         "name": APP,
         "company": "Napari",
         "version": version,
         "channels": ["conda-forge"],
         "conda_default_channels": ["conda-forge"],
-        "installer_filename": output_filename,
+        "installer_filename": OUTPUT_FILENAME,
         "specs": [
             f"napari={version}",
             f"python={sys.version_info.major}.{sys.version_info.minor}.*",
@@ -87,7 +100,7 @@ def _constructor(with_local=False, version=VERSION):
             "napari",
         ],
     }
-    if with_local:
+    if _use_local():
         definitions["channels"].insert(0, "local")
     if MACOS:
         definitions["installer_type"] = "pkg"
@@ -113,10 +126,10 @@ def _constructor(with_local=False, version=VERSION):
         )
         print("-----")
 
-    return output_filename
+    return OUTPUT_FILENAME
 
 
-def _micromamba(root=None, with_local=False, version=VERSION):
+def _micromamba(root=None, version=VERSION):
     micromamba = os.environ.get("MAMBA_EXE", find_executable("micromamba"))
     if not micromamba:
         raise RuntimeError("Micromamba must be installed and in PATH.")
@@ -135,7 +148,7 @@ def _micromamba(root=None, with_local=False, version=VERSION):
             "-n",
             "napari",
         ]
-        + (["-c", "local"] if with_local else [])
+        + (["-c", "local"] if _use_local() else [])
         + [
             "-c",
             "conda-forge",
@@ -211,13 +224,9 @@ def main():
     print("Cleaning...")
     clean()
 
-    with_local = False
     if not "release":  # TODO: implement actual checks for non-final releases
         _generate_conda_build_recipe()
         _conda_build()
-        with_local = True
-    # else: we just build a bundle of the last release in conda-forge
-    version = "0.4.11"  # hardcoded now for testing purposes
 
     print("Debugging info...")
 
@@ -225,11 +234,15 @@ def main():
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
 
     if WINDOWS:
-        return _constructor(with_local, version)
-    return _briefcase(with_local, version)
+        _constructor()
+    else:
+        _briefcase()
+
+    assert Path(OUTPUT_FILENAME).exists()
+    return OUTPUT_FILENAME
 
 
-def _briefcase(with_local, version):
+def _briefcase(version=VERSION):
     print("Patching runtime conditions...")
 
     if LINUX:
@@ -249,7 +262,7 @@ def _briefcase(with_local, version):
 
         print("Installing conda environment...")
         CONDA_ROOT.mkdir(parents=True, exist_ok=True)
-        _micromamba(CONDA_ROOT, with_local=with_local, version=version)
+        _micromamba(CONDA_ROOT, version=version)
 
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
@@ -260,12 +273,10 @@ def _briefcase(with_local, version):
         cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
         subprocess.check_call(cmd)
 
-        # compress
-        print("Creating zipfile...")
-        dest = make_zip()
-        # clean()
-
-        return dest
+        # Rename to desired artifact name
+        artifact = next(Path(BUILD_DIR).glob(f"*.{EXT}"))
+        print(f"Renaming {artifact.name} to {OUTPUT_FILENAME}")
+        artifact.rename(OUTPUT_FILENAME)
 
 
 if __name__ == "__main__":
@@ -277,5 +288,11 @@ if __name__ == "__main__":
         sys.exit()
     if '--arch' in sys.argv:
         print(ARCH)
+        sys.exit()
+    if '--ext' in sys.argv:
+        print(EXT)
+        sys.exit()
+    if '--artifact-name' in sys.argv:
+        print(OUTPUT_FILENAME)
         sys.exit()
     print('created', main())
