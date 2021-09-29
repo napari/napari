@@ -129,6 +129,12 @@ class Points(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
+    fixed_size : bool
+        If active, point sizes do not change when zooming.
+    antialias : float
+        If non-zero, defines the width in pixels of antialiasing.
+    spherical : bool
+        Render lighting and shading on points to give a 3D spherical appearance.
 
     Attributes
     ----------
@@ -147,6 +153,12 @@ class Points(Layer):
     size : array (N, D)
         Array of sizes for each point in each dimension. Must have the same
         shape as the layer `data`.
+    fixed_size : bool
+        If active, point sizes do not change when zooming.
+    antialias : float
+        If non-zero, defines the width in pixels of antialiasing.
+    spherical : bool
+        Render lighting and shading on points to give a 3D spherical appearance.
     edge_width : float
         Width of the marker edges in pixels for all points
     edge_color : Nx4 numpy array
