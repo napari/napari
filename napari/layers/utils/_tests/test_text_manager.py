@@ -40,10 +40,11 @@ def test_empty_text_manager_format():
 
 
 def test_text_manager_property():
+    n_text = 3
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager = TextManager(text=text, n_text=3, properties=properties)
+    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
     np.testing.assert_equal(text_manager.text.array, classes)
 
     # add new text with properties
@@ -60,13 +61,14 @@ def test_text_manager_property():
 
 
 def test_text_manager_format():
+    n_text = 3
     text = 'confidence: {confidence:.2f}'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     expected_text = np.array(
         ['confidence: 0.50', 'confidence: 0.30', 'confidence: 1.00']
     )
-    text_manager = TextManager(text=text, n_text=3, properties=properties)
+    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
     np.testing.assert_equal(text_manager.text.array, expected_text)
 
     # add new text with properties
@@ -111,39 +113,39 @@ def test_text_manager_format_string_contains_non_property():
 
 
 def test_refresh_text():
+    n_text = 3
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-    text_manager = TextManager(text=text, n_text=3, properties=properties)
+    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
 
     new_classes = np.array(['D', 'E', 'F'])
     new_properties = {
         'class': new_classes,
         'confidence': np.array([0.5, 0.3, 1]),
     }
-    text_manager.refresh_text(new_properties, 3)
+    text_manager.refresh_text(new_properties, n_text)
     np.testing.assert_equal(new_classes, text_manager.text.array)
 
 
 def test_equality():
+    n_text = 3
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager_1 = TextManager(
-        text=text, n_text=3, properties=properties, color='red'
+        text=text, n_text=n_text, properties=properties, color='red'
     )
     text_manager_2 = TextManager(
-        text=text, n_text=3, properties=properties, color='red'
+        text=text, n_text=n_text, properties=properties, color='red'
     )
 
     assert text_manager_1 == text_manager_2
     assert not (text_manager_1 != text_manager_2)
 
-    text_manager_3 = TextManager(
-        text=text, n_text=3, properties=properties, color='blue'
-    )
-    assert text_manager_1 != text_manager_3
-    assert not (text_manager_1 == text_manager_3)
+    text_manager_2.color = 'blue'
+    assert text_manager_1 != text_manager_2
+    assert not (text_manager_1 == text_manager_2)
 
 
 def test_blending_modes():
