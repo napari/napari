@@ -7,11 +7,12 @@ from napari._qt.dialogs.preferences_dialog import (
     QMessageBox,
 )
 from napari.settings import NapariSettings, get_settings
+from napari.utils.action_manager import ActionManager
 
 
 @pytest.fixture
 def pref(qtbot):
-    dlg = PreferencesDialog()
+    dlg = PreferencesDialog(ActionManager())
     qtbot.addWidget(dlg)
     settings = get_settings()
     assert settings.appearance.theme == 'dark'

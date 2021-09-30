@@ -2,12 +2,13 @@ import numpy as np
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari.layers import Image
+from napari.utils.action_manager import ActionManager
 
 
 def test_interpolation_combobox(qtbot):
     """Changing the model attribute should update the view"""
     layer = Image(np.random.rand(8, 8))
-    qtctrl = QtImageControls(layer)
+    qtctrl = QtImageControls(layer, action_manager=ActionManager())
     qtbot.addWidget(qtctrl)
     combo = qtctrl.interpComboBox
     opts = {combo.itemText(i) for i in range(combo.count())}
@@ -20,7 +21,7 @@ def test_interpolation_combobox(qtbot):
 def test_rendering_combobox(qtbot):
     """Changing the model attribute should update the view"""
     layer = Image(np.random.rand(8, 8))
-    qtctrl = QtImageControls(layer)
+    qtctrl = QtImageControls(layer, action_manager=ActionManager())
     qtbot.addWidget(qtctrl)
     combo = qtctrl.renderComboBox
     opts = {combo.itemText(i) for i in range(combo.count())}

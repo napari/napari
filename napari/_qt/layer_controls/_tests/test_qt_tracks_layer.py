@@ -4,6 +4,7 @@ from qtpy.QtCore import Qt
 
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari.layers import Tracks
+from napari.utils.action_manager import ActionManager
 
 _TRACKS = np.zeros((2, 4))
 _PROPERTIES = {'speed': [50, 30], 'time': [0, 1]}
@@ -17,7 +18,7 @@ def test_tracks_controls_color_by(qtbot):
             _TRACKS, properties=_PROPERTIES, color_by=inital_color_by
         )
     assert "Previous color_by key 'time' not present" in str(wrn[0].message)
-    qtctrl = QtTracksControls(layer)
+    qtctrl = QtTracksControls(layer, action_manager=ActionManager())
     qtbot.addWidget(qtctrl)
 
     # verify the color_by argument is initialized correctly

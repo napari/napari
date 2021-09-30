@@ -12,6 +12,7 @@ from napari._qt.layer_controls.qt_image_controls_base import (
     QtBaseImageControls,
 )
 from napari.layers import Image, Surface
+from napari.utils.action_manager import ActionManager
 
 _IMAGE = np.arange(100).astype(np.uint16).reshape((10, 10))
 _SURF = (
@@ -24,7 +25,7 @@ _SURF = (
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
 def test_base_controls_creation(qtbot, layer):
     """Check basic creation of QtBaseImageControls works"""
-    qtctrl = QtBaseImageControls(layer)
+    qtctrl = QtBaseImageControls(layer, action_manager=ActionManager())
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)
     slider_clims = qtctrl.contrastLimitsSlider.value()
@@ -37,7 +38,7 @@ def test_base_controls_creation(qtbot, layer):
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
 def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     """Right clicking on the contrast limits slider should show a popup."""
-    qtctrl = QtBaseImageControls(layer)
+    qtctrl = QtBaseImageControls(layer, action_manager=ActionManager())
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
     assert hasattr(qtctrl, 'clim_popup')
@@ -50,7 +51,7 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
 def test_changing_model_updates_view(qtbot, layer):
     """Changing the model attribute should update the view"""
-    qtctrl = QtBaseImageControls(layer)
+    qtctrl = QtBaseImageControls(layer, action_manager=ActionManager())
     qtbot.addWidget(qtctrl)
     new_clims = (20, 40)
     layer.contrast_limits = new_clims
@@ -61,7 +62,7 @@ def test_changing_model_updates_view(qtbot, layer):
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
 def test_range_popup_clim_buttons(mock_show, qtbot, layer):
     """The buttons in the clim_popup should adjust the contrast limits value"""
-    qtctrl = QtBaseImageControls(layer)
+    qtctrl = QtBaseImageControls(layer, action_manager=ActionManager())
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)
     layer.contrast_limits = (20, 40)
@@ -114,7 +115,7 @@ def test_clim_slider_step_size_and_precision(qtbot, mag):
 
 def test_qt_image_controls_change_contrast(qtbot):
     layer = Image(np.random.rand(8, 8))
-    qtctrl = QtBaseImageControls(layer)
+    qtctrl = QtBaseImageControls(layer, action_manager=ActionManager())
     qtbot.addWidget(qtctrl)
     qtctrl.contrastLimitsSlider.setValue((0.1, 0.8))
     assert tuple(layer.contrast_limits) == (0.1, 0.8)

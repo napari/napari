@@ -9,6 +9,7 @@ from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.qt_event_loop import get_app
 from napari._qt.qt_resources import get_stylesheet
 from napari.settings import NapariSettings
+from napari.utils.action_manager import ActionManager
 
 REPO_ROOT_PATH = Path(__file__).resolve().parents[1]
 GUIDES_PATH = REPO_ROOT_PATH / "docs" / "guides"
@@ -96,7 +97,7 @@ def generate_images():
     """
 
     app = get_app()
-    pref = PreferencesDialog()
+    pref = PreferencesDialog(ActionManager())
     pref.setStyleSheet(get_stylesheet("dark"))
     pref.show()
     QTimer.singleShot(1000, pref.close)
