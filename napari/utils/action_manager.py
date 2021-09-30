@@ -565,4 +565,38 @@ class ActionManager:
         return active_shortcuts
 
 
-action_manager = ActionManager()
+class ActionManagerDeprecated:
+    @staticmethod
+    def bind_shortcut(name: str, shortcut: str) -> None:
+        warnings.warn(
+            "Global interface of ActionManager is deprecated. Use Viewer.action_manager instead. Calling ActionManager.bind_class_shortcut.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        ActionManager.bind_class_shortcut(name, shortcut)
+
+    @staticmethod
+    def register_action(
+        name: str,
+        command: callable,
+        description: str,
+        keymapprovider: KeymapProvider,
+    ):
+        warnings.warn(
+            "Global interface of ActionManager is deprecated. Use Viewer.action_manager instead. Calling ActionManager.register_class_action.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        ActionManager.register_class_action(
+            name, command, description, keymapprovider
+        )
+
+
+def __getattr__(name):
+    if name == "action_manager":
+        warnings.warn(
+            "global interface of ActionManager is deprecated. Use Viewer.action_manager instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return ActionManagerDeprecated
