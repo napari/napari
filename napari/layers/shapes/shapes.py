@@ -1488,7 +1488,7 @@ class Shapes(Layer):
                 'ndim': self.ndim,
                 'properties': self.properties,
                 'property_choices': self._property_choices,
-                'text': self.text,
+                'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
