@@ -11,6 +11,7 @@ from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
+from .._vendor.events.qt_event_filter import QTooltipEventFilter
 from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
@@ -23,7 +24,6 @@ from .dialogs.qt_notification import (
     NapariQtNotification,
     NotificationDispatcher,
 )
-from .qt_event_filter import QTooltipEventFilter
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 from .utils import _maybe_allow_interrupt

@@ -3,8 +3,7 @@ import html
 from qtpy.QtCore import QEvent, QObject, Qt
 from qtpy.QtWidgets import QWidget
 
-from ..utils.translations import trans
-
+from ...utils.translations import trans
 
 class QTooltipEventFilter(QObject):
     def eventFilter(self, widget: QObject, event: QEvent) -> bool:
