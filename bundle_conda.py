@@ -37,7 +37,6 @@ from bundle import (
     WINDOWS,
     add_sentinel_file,
     clean,
-    make_zip,
     patch_environment_variables,
     patch_python_lib_location,
     patch_wxs,
@@ -46,15 +45,15 @@ from bundle import (
 
 if LINUX:
     CONDA_ROOT = Path(APP_DIR) / "usr" / "conda"
-    EXT = "AppImage"  # using briefcase
+    EXT = "sh"  # using constructor
 elif MACOS:
     CONDA_ROOT = Path(APP_DIR) / "Contents" / "Resources" / "conda"
-    EXT = "dmg"  # using briefcase
+    EXT = "pkg"  # using constructor
 elif WINDOWS:
     CONDA_ROOT = Path(APP_DIR) / "conda"
     EXT = "exe"  # using constructor
 else:
-    CONDA_ROOT = Path(BUILD_DIR) / "conda"
+    raise RuntimeError(f"Unrecognized OS: {sys.platform}")
 
 
 VERSION = "0.4.11"  # overwriting for testing purposes
@@ -225,21 +224,17 @@ def main():
         _generate_conda_build_recipe()
         _conda_build()
 
-    print("Debugging info...")
-
-    # smoke test, and build resources
-    subprocess.check_call([sys.executable, '-m', APP, '--info'])
-
-    if WINDOWS:
-        _constructor()
-    else:
-        _briefcase()
+    _constructor()
 
     assert Path(OUTPUT_FILENAME).exists()
     return OUTPUT_FILENAME
 
 
 def _briefcase(version=VERSION):
+    print("Debugging info...")
+
+    # smoke test, and build resources
+    subprocess.check_call([sys.executable, '-m', APP, '--info'])
     print("Patching runtime conditions...")
 
     if LINUX:
