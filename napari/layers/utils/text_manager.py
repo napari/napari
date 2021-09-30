@@ -369,8 +369,17 @@ class TextManager(EventedModel):
         self.color.update_all(self.properties, self._n_text)
 
 
-# The properties table may be large and we typically want to store
-# a reference to another table, like the one from the owning layer,
-# so the equality operator should just check identity, rather than
-# all the values in the table.
-TextManager.__eq_operators__['properties'] = lambda a, b: a is b
+def _properties_equal(left, right):
+    if left is right:
+        return True
+    if not (isinstance(left, dict) and isinstance(right, dict)):
+        return False
+    if left.keys() != right.keys():
+        return False
+    for key in left:
+        if np.any(left[key] != right[key]):
+            return False
+    return True
+
+
+TextManager.__eq_operators__['properties'] = _properties_equal
