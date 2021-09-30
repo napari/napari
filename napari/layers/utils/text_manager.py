@@ -226,8 +226,8 @@ class TextManager(EventedModel):
         cls,
         *,
         text: Union['TextManager', dict, str, Sequence[str], None],
-        n_text: int,
         properties: Dict[str, np.ndarray],
+        n_text: int,
     ):
         """Create a TextManager from a layer.
 
