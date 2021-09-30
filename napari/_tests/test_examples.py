@@ -28,6 +28,10 @@ examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
 if os.getenv("CI") and os.name == 'nt' and API_NAME == 'PyQt5':
     examples = []
 
+if os.getenv("CI") and os.name == 'nt':
+    if 'to_screenshot.py' in examples:
+        examples.remove('to_screenshot.py')
+
 
 @pytest.fixture
 def qapp():
