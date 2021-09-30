@@ -56,6 +56,10 @@ class Viewer(ViewerModel):
     def window(self) -> 'Window':
         return self._window
 
+    @property
+    def action_manager(self):
+        return self.window.qt_viewer.action_manager
+
     def update_console(self, variables):
         """Update console's namespace with desired variables.
 

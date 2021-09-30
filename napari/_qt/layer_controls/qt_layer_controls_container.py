@@ -29,7 +29,7 @@ if config.async_loading:
     layer_to_controls[_OctreeImageBase] = QtImageControls
 
 
-def create_qt_layer_controls(layer):
+def create_qt_layer_controls(layer, action_manager):
     """
     Create a qt controls widget for a layer based on its layer type.
 
@@ -46,7 +46,7 @@ def create_qt_layer_controls(layer):
 
     for layer_type, controls in layer_to_controls.items():
         if isinstance(layer, layer_type):
-            return controls(layer)
+            return controls(layer, action_manager)
 
     raise TypeError(
         trans._(
@@ -76,10 +76,11 @@ class QtLayerControlsContainer(QStackedWidget):
         widgets[layer] = controls
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer, action_manager):
         super().__init__()
         self.setProperty("emphasized", True)
         self.viewer = viewer
+        self.action_manager = action_manager
 
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
@@ -115,7 +116,7 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        controls = create_qt_layer_controls(layer)
+        controls = create_qt_layer_controls(layer, self.action_manager)
         self.addWidget(controls)
         self.widgets[layer] = controls
 

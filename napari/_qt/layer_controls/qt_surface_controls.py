@@ -22,8 +22,8 @@ class QtSurfaceControls(QtBaseImageControls):
 
     """
 
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self, layer, action_manager):
+        super().__init__(layer, action_manager)
 
         colormap_layout = QHBoxLayout()
         colormap_layout.addWidget(self.colorbarLabel)

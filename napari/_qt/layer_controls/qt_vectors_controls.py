@@ -42,8 +42,8 @@ class QtVectorsControls(QtLayerControls):
         Spin box widget controlling edge line width of vectors.
     """
 
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self, layer, action_manager):
+        super().__init__(layer, action_manager)
 
         self.layer.events.edge_width.connect(self._on_edge_width_change)
         self.layer.events.length.connect(self._on_length_change)

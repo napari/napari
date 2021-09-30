@@ -19,7 +19,6 @@ from ...layers.labels._labels_constants import (
 )
 from ...layers.labels._labels_utils import get_dtype
 from ...utils._dtype import get_dtype_limits
-from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
@@ -75,8 +74,8 @@ class QtLabelsControls(QtLayerControls):
         FILL.
     """
 
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self, layer, action_manager):
+        super().__init__(layer, action_manager)
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events._ndisplay.connect(self._on_ndisplay_change)

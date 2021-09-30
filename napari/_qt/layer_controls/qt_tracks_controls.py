@@ -24,8 +24,8 @@ class QtTracksControls(QtLayerControls):
 
     """
 
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self, layer, action_manager):
+        super().__init__(layer, action_manager)
 
         # NOTE(arl): there are no events fired for changing checkboxes
         self.layer.events.tail_width.connect(self._on_tail_width_change)

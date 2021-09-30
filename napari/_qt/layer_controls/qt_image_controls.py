@@ -42,8 +42,8 @@ class QtImageControls(QtBaseImageControls):
         Label for the rendering mode dropdown menu.
     """
 
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self, layer, action_manager):
+        super().__init__(layer, action_manager)
 
         self.layer.events.interpolation.connect(self._on_interpolation_change)
         self.layer.events.rendering.connect(self._on_rendering_change)

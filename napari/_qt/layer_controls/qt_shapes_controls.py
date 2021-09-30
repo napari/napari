@@ -5,7 +5,6 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QLabel
 
 from ...layers.shapes._shapes_constants import Mode
-from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
@@ -77,8 +76,8 @@ class QtShapesControls(QtLayerControls):
         Raise error if shapes mode is not recognized.
     """
 
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self, layer, action_manager):
+        super().__init__(layer, action_manager)
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.edge_width.connect(self._on_edge_width_change)

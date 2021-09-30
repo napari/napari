@@ -9,7 +9,6 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
-from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
@@ -65,8 +64,8 @@ class QtPointsControls(QtLayerControls):
         Points mode must be one of: ADD, PAN_ZOOM, or SELECT.
     """
 
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self, layer, action_manager):
+        super().__init__(layer, action_manager)
 
         self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)

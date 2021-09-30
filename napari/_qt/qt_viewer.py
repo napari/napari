@@ -11,7 +11,7 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
-from ..utils.action_manager import action_manager
+from ..utils.action_manager import ActionManager, action_manager
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.history import (
     get_open_history,
@@ -52,7 +52,7 @@ from .._vispy import (  # isort:skip
 
 
 if TYPE_CHECKING:
-    from ..viewer import Viewer
+    from ..components import ViewerModel
 
 from ..settings import get_settings
 from ..utils.io import imsave_extensions
@@ -101,7 +101,7 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer: Viewer, show_welcome_screen: bool = False):
+    def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
@@ -114,9 +114,12 @@ class QtViewer(QSplitter):
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
         )
 
+        self.action_manager: ActionManager = action_manager  # ActionManager()
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
-        self.controls = QtLayerControlsContainer(self.viewer)
+        self.controls = QtLayerControlsContainer(
+            self.viewer, self.action_manager
+        )
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
@@ -170,13 +173,13 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        action_manager.register_action(
+        self.action_manager.register_action(
             "napari:toggle_console_visibility",
             self.toggle_console_visibility,
             trans._("Show/Hide IPython console"),
             self.viewer,
         )
-        action_manager.bind_button(
+        self.action_manager.bind_button(
             'napari:toggle_console_visibility',
             self.viewerButtons.consoleButton,
         )
@@ -262,9 +265,9 @@ class QtViewer(QSplitter):
     def _bind_shortcuts(self):
         """Bind shortcuts stored in SETTINGS to actions."""
         for action, shortcuts in get_settings().shortcuts.shortcuts.items():
-            action_manager.unbind_shortcut(action)
+            self.action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, shortcut)
+                self.action_manager.bind_shortcut(action, shortcut)
 
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
@@ -345,7 +348,10 @@ class QtViewer(QSplitter):
                     warnings.filterwarnings("ignore")
                     self.console = QtConsole(self.viewer)
                     self.console.push(
-                        {'napari': napari, 'action_manager': action_manager}
+                        {
+                            'napari': napari,
+                            'action_manager': self.action_manager,
+                        }
                     )
             except ImportError:
                 warnings.warn(

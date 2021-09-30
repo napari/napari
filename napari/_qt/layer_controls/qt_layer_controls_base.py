@@ -28,7 +28,7 @@ class QtLayerControls(QFrame):
         Slider controlling opacity of the layer.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer, action_manager):
         super().__init__()
 
         self.layer = layer
