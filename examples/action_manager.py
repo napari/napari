@@ -6,7 +6,6 @@ from skimage import data
 import napari
 from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 from napari.components import ViewerModel
-from napari.utils.action_manager import action_manager
 
 
 def rotate45(viewer: napari.Viewer):
@@ -33,6 +32,8 @@ def rotate45(viewer: napari.Viewer):
 
 # create the viewer with an image
 viewer = napari.view_image(data.astronaut(), rgb=True)
+
+action_manager = viewer.action_manager
 
 layer_buttons = viewer.window.qt_viewer.layerButtons
 

@@ -11,7 +11,7 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
-from ..utils.action_manager import ActionManager, action_manager
+from ..utils.action_manager import ActionManager
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.history import (
     get_open_history,
@@ -114,7 +114,7 @@ class QtViewer(QSplitter):
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
         )
 
-        self.action_manager: ActionManager = action_manager  # ActionManager()
+        self.action_manager = ActionManager()
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
         self.controls = QtLayerControlsContainer(

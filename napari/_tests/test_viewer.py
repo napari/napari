@@ -12,7 +12,7 @@ from napari._tests.utils import (
     skip_local_popups,
 )
 from napari.utils._tests.test_naming import eval_with_filename
-from napari.utils.action_manager import action_manager
+from napari.utils.action_manager import ActionManager
 
 
 def _get_all_keybinding_methods(type_):
@@ -20,6 +20,7 @@ def _get_all_keybinding_methods(type_):
     obj_methods.update(type_.class_keymap.values())
 
     # need to get methods in action_manager
+    action_manager = ActionManager()
     am_methods = action_manager._get_layer_actions(type_)
     for name, action in am_methods.items():
         obj_methods.add(action.command)
