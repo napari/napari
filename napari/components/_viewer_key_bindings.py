@@ -1,5 +1,5 @@
 from ..settings import get_settings
-from ..utils.action_manager import action_manager
+from ..utils.action_manager import ActionManager
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from .viewer_model import ViewerModel
@@ -15,7 +15,7 @@ def register_viewer_action(description):
 
     def _inner(func):
         name = 'napari:' + func.__name__
-        action_manager.register_action(
+        ActionManager.register_class_action(
             name=name,
             command=func,
             description=description,

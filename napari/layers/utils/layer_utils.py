@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 import dask
 import numpy as np
 
-from ...utils.action_manager import action_manager
+from ...utils.action_manager import ActionManager
 from ...utils.events.custom_types import Array
 from ...utils.transforms import Affine
 from ...utils.translations import trans
@@ -45,7 +45,7 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     def _inner(func):
         nonlocal shortcuts
         name = 'napari:' + func.__name__
-        action_manager.register_action(
+        ActionManager.register_class_action(
             name=name,
             command=func,
             description=description,
@@ -56,7 +56,7 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
                 shortcuts = [shortcuts]
 
             for shortcut in shortcuts:
-                action_manager.bind_shortcut(name, shortcut)
+                ActionManager.bind_class_shortcut(name, shortcut)
         return func
 
     return _inner

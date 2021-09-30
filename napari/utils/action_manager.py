@@ -171,6 +171,8 @@ class ActionManager:
     """
 
     _actions: Dict[str, Action]
+    _class_actions: Dict[str, Action] = {}
+    _class_shortcuts: Dict[str, Set[str]] = defaultdict(set)
 
     def __init__(self):
         # map associating a name/id with a Comm
@@ -181,12 +183,17 @@ class ActionManager:
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
 
+        for name, action in self._class_actions.items():
+            self._actions[name] = action
+            self._update_shortcut_bindings(name)
+
     def _debug(self, val):
         self._tooltip_include_action_name = val
         for name in self._buttons.keys():
             self._update_gui_elements(name)
 
-    def _validate_action_name(self, name):
+    @staticmethod
+    def _validate_action_name(name):
         if len(name.split(':')) != 2:
             raise ValueError(
                 trans._(
@@ -195,6 +202,60 @@ class ActionManager:
                     deferred=True,
                 )
             )
+
+    @classmethod
+    def register_class_action(
+        cls,
+        name: str,
+        command: callable,
+        description: str,
+        keymapprovider: KeymapProvider,
+    ):
+        """
+        Register an action for future usage
+
+        An action is generally a callback associated with
+         - a name (unique), usually `packagename:name`
+         - a description
+         - A keymap provider (easier for focus and backward compatibility).
+
+        Actions can then be later bound/unbound from button elements, and
+        shortcuts; and the action manager will take care of modifying the keymap
+        of instances to handle shortcuts; and UI elements to have tooltips with
+        descriptions and shortcuts;
+
+        Parameters
+        ----------
+        name : str
+            unique name/id of the command that can be used to refer to this
+            command
+        command : callable
+            take 0, or 1 parameter; if `keymapprovider` is not None, will be
+            called with `keymapprovider` as first parameter.
+        description : str
+            Long string to describe what the command does, will be used in
+            tooltips.
+        keymapprovider : KeymapProvider
+            KeymapProvider class or instance to use to bind the shortcut(s) when
+            registered. This make sure the shortcut is active only when an
+            instance of this is in focus.
+
+        Notes
+        -----
+        Registering an action, binding buttons and shortcuts can happen in any
+        order and should have the same effect. In particular registering an
+        action can happen later (plugin loading), while user preference
+        (keyboard shortcut), has already been happen. When this is the case, the
+        button and shortcut binding is delayed until an action with the
+        corresponding name is registered.
+
+        See Also
+        --------
+        bind_button, bind_shortcut
+
+        """
+        cls._validate_action_name(name)
+        cls._class_actions[name] = Action(command, description, keymapprovider)
 
     def register_action(
         self,
@@ -298,7 +359,8 @@ class ActionManager:
         action = self._actions[name]
         if name not in self._shortcuts:
             return
-        shortcuts = self._shortcuts.get(name)
+        shortcuts = self._shortcuts[name]
+        shortcuts.update(self._class_shortcuts[name])
         keymapprovider = action.keymapprovider
         if hasattr(keymapprovider, 'bind_key'):
             for shortcut in shortcuts:
@@ -337,6 +399,9 @@ class ActionManager:
         assert button not in [x._button() for x in self._buttons[name]]
 
         self._buttons[name].add(button_wrap)
+        if name not in self._actions and name in self._class_actions:
+            self._actions[name] = self._class_actions[name]
+            self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
     def bind_shortcut(self, name: str, shortcut: str) -> None:
@@ -362,6 +427,28 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
+    @classmethod
+    def bind_class_shortcut(cls, name: str, shortcut: str) -> None:
+        """
+        bind shortcut `shortcut` to trigger action `name`
+
+        Parameters
+        ----------
+        name : str
+            name of the corresponding action in the form ``packagename:name``
+        shortcut : str
+            Shortcut to assign to this action use dash as separator. See
+            `Shortcut` for known modifiers.
+
+        Notes
+        -----
+        calling `bind_button` can be done before an action with the
+        corresponding name is registered, in which case the effect will be
+        delayed until the corresponding action is registered.
+        """
+        cls._validate_action_name(name)
+        cls._class_shortcuts[name].add(shortcut)
+
     def unbind_shortcut(self, name: str) -> Union[Set[str], None]:
         """
         Unbind all shortcuts for a given action name.
@@ -385,7 +472,7 @@ class ActionManager:
 
         """
         action = self._actions.get(name, None)
-        if action is None:
+        if action is None and name not in self._class_actions:
             warnings.warn(
                 trans._(
                     "Attempting to unbind an action which does not exists ({name}), "

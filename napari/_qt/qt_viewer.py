@@ -122,7 +122,7 @@ class QtViewer(QSplitter):
         )
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
-        self.viewerButtons = QtViewerButtons(self.viewer)
+        self.viewerButtons = QtViewerButtons(self.viewer, self.action_manager)
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
         self._console = None

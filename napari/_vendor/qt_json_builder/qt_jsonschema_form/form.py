@@ -70,10 +70,12 @@ class WidgetBuilder:
     def __init__(self, validator_cls=None):
         self.widget_map = deepcopy(self.default_widget_map)
         self.validator_cls = validator_cls
+        self.action_manager = None
 
     def create_form(
-        self, schema: dict, ui_schema: dict, state=None
+        self, schema: dict, ui_schema: dict, state=None, action_manager=None
     ) -> widgets.SchemaWidgetMixin:
+        self.action_manager = action_manager
         validator_cls = self.validator_cls
         if validator_cls is None:
             validator_cls = validator_for(schema)
@@ -120,7 +122,10 @@ class WidgetBuilder:
 
         widget_variant = ui_schema.get('ui:widget', default_variant)
         widget_cls = self.widget_map[schema_type][widget_variant]
-        widget = widget_cls(schema, ui_schema, self)
+        if issubclass(widget_cls, widgets.ShortcutEditor):
+            widget = widget_cls(schema, ui_schema, self, action_manager=self.action_manager)
+        else:
+            widget = widget_cls(schema, ui_schema, self)
         default_state = get_widget_state(schema, state)
         if default_state is not None:
             widget.state = default_state

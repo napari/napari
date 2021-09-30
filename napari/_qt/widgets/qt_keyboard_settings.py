@@ -22,7 +22,7 @@ from qtpy.QtWidgets import (
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
 from ...settings import get_settings
-from ...utils.action_manager import action_manager
+from ...utils.action_manager import ActionManager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..qt_resources import get_stylesheet
@@ -42,6 +42,7 @@ class ShortcutEditor(QWidget):
 
     def __init__(
         self,
+        action_manager: ActionManager,
         parent: QWidget = None,
         description: str = "",
         value: dict = None,
@@ -62,6 +63,8 @@ class ShortcutEditor(QWidget):
             Surface,
             Vectors,
         ]
+
+        self.action_manager = action_manager
 
         self.key_bindings_strs = OrderedDict()
 
@@ -138,9 +141,9 @@ class ShortcutEditor(QWidget):
             action,
             shortcuts,
         ) in get_settings().shortcuts.shortcuts.items():
-            action_manager.unbind_shortcut(action)
+            self.action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, shortcut)
+                self.action_manager.bind_shortcut(action, shortcut)
 
         self._set_table(layer_str=self.layer_combo_box.currentText())
 
@@ -214,7 +217,7 @@ class ShortcutEditor(QWidget):
             # Go through all the actions in the layer and add them to the table.
             for row, (action_name, action) in enumerate(actions.items()):
 
-                shortcuts = action_manager._shortcuts.get(action_name, [])
+                shortcuts = self.action_manager._shortcuts.get(action_name, [])
                 # Set action description.  Make sure its not selectable/editable.
                 item = QTableWidgetItem(action.description)
                 item.setFlags(Qt.NoItemFlags)
@@ -291,14 +294,14 @@ class ShortcutEditor(QWidget):
 
             # get the original shortcutS
             current_shortcuts = list(
-                action_manager._shortcuts.get(current_action, {})
+                self.action_manager._shortcuts.get(current_action, {})
             )
 
             # Flag to indicate whether to set the new shortcut.
             replace = True
             # Go through all layer actions to determine if the new shortcut is already here.
             for row1, (action_name, action) in enumerate(actions_all.items()):
-                shortcuts = action_manager._shortcuts.get(action_name, [])
+                shortcuts = self.action_manager._shortcuts.get(action_name, [])
 
                 if new_shortcut in shortcuts:
                     # Shortcut is here (either same action or not), don't replace in settings.
@@ -352,20 +355,20 @@ class ShortcutEditor(QWidget):
                 # This shortcut is not taken.
 
                 #  Unbind current action from shortcuts in action manager.
-                action_manager.unbind_shortcut(current_action)
+                self.action_manager.unbind_shortcut(current_action)
 
                 if new_shortcut != "":
                     # Bind the new shortcut.
                     try:
-                        action_manager.bind_shortcut(
+                        self.action_manager.bind_shortcut(
                             current_action, new_shortcut
                         )
                     except TypeError:
                         # Shortcut is not valid.
-                        action_manager._shortcuts[current_action] = set()
+                        self.action_manager._shortcuts[current_action] = set()
                         # need to rebind the old shortcut
-                        action_manager.unbind_shortcut(current_action)
-                        action_manager.bind_shortcut(
+                        self.action_manager.unbind_shortcut(current_action)
+                        self.action_manager.bind_shortcut(
                             current_action, current_shortcuts[0]
                         )
 
@@ -407,7 +410,7 @@ class ShortcutEditor(QWidget):
 
                 else:
                     # There is not a new shortcut to bind.  Keep track of it.
-                    if action_manager._shortcuts[current_action] != "":
+                    if self.action_manager._shortcuts[current_action] != "":
                         new_value_dict = {current_action: [""]}
 
                 if new_value_dict:
@@ -496,9 +499,9 @@ class ShortcutEditor(QWidget):
         value = {}
 
         for row, (action_name, action) in enumerate(
-            action_manager._actions.items()
+            self.action_manager._actions.items()
         ):
-            shortcuts = action_manager._shortcuts.get(action_name, [])
+            shortcuts = self.action_manager._shortcuts.get(action_name, [])
             value[action_name] = list(shortcuts)
 
         return value

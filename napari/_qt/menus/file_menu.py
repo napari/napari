@@ -12,11 +12,12 @@ from ..dialogs.screenshot_dialog import ScreenshotDialog
 from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
+    from ...utils.action_manager import ActionManager
     from ..qt_main_window import Window
 
 
 class FileMenu(NapariMenu):
-    def __init__(self, window: 'Window'):
+    def __init__(self, window: 'Window', action_manager: 'ActionManager'):
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
         self.open_sample_menu = NapariMenu('Open Sample', self)
@@ -109,6 +110,7 @@ class FileMenu(NapariMenu):
             },
         ]
         populate_menu(self, ACTIONS)
+        self.action_manager = action_manager
 
         self._pref_dialog = None
 
@@ -136,7 +138,9 @@ class FileMenu(NapariMenu):
     def _open_preferences(self):
         """Edit preferences from the menubar."""
         if self._pref_dialog is None:
-            win = PreferencesDialog(parent=self._win._qt_window)
+            win = PreferencesDialog(
+                parent=self._win._qt_window, action_manager=self.action_manager
+            )
             self._pref_dialog = win
 
             app_pref = get_settings().application

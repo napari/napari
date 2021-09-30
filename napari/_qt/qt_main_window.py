@@ -579,7 +579,9 @@ class Window:
             self._toggle_menubar_visible
         )
 
-        self.file_menu = menus.FileMenu(self)
+        self.file_menu = menus.FileMenu(
+            self, self._qt_window.qt_viewer.action_manager
+        )
         self.main_menu.addMenu(self.file_menu)
         self.view_menu = menus.ViewMenu(self)
         self.main_menu.addMenu(self.view_menu)

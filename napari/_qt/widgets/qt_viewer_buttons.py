@@ -9,7 +9,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
@@ -106,7 +105,7 @@ class QtViewerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer, action_manager):
         super().__init__()
 
         self.viewer = viewer

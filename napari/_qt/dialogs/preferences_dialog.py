@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from pydantic.fields import ModelField
     from qtpy.QtGui import QCloseEvent, QKeyEvent
 
+    from ...utils.action_manager import ActionManager
+
 
 class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
@@ -32,7 +34,7 @@ class PreferencesDialog(QDialog):
 
     resized = Signal(QSize)
 
-    def __init__(self, parent=None):
+    def __init__(self, action_manager: 'ActionManager', parent=None):
         from ...settings import get_settings
 
         super().__init__(parent)
@@ -43,6 +45,7 @@ class PreferencesDialog(QDialog):
         self._list = QListWidget(self)
         self._list.setObjectName("Preferences")
         self._list.currentRowChanged.connect(self._stack.setCurrentIndex)
+        self.action_manager = action_manager
 
         # Set up buttons
         self._button_cancel = QPushButton(trans._("Cancel"))
@@ -115,7 +118,9 @@ class PreferencesDialog(QDialog):
         schema, values = self._get_page_dict(field)
         name = field.field_info.title or field.name
 
-        form = WidgetBuilder().create_form(schema, self.ui_schema)
+        form = WidgetBuilder().create_form(
+            schema, self.ui_schema, action_manager=self.action_manager
+        )
         # set state values for widget
         form.widget.state = values
         # make settings follow state of the form widget
