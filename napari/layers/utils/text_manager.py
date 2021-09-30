@@ -87,6 +87,11 @@ class TextManager(EventedModel):
         # This means external clients do not need to reconnect to the events of
         # any mutable fields when their instance changes.
         self.events.add(text_update=Event)
+        self.events.rotation.connect(self.events.text_update)
+        self.events.translation.connect(self.events.text_update)
+        self.events.anchor.connect(self.events.text_update)
+        self.events.size.connect(self.events.text_update)
+        self.events.visible.connect(self.events.text_update)
         # Use connect_no_arg to workaround issue that TextManager is not hashable,
         # so any method bound to it (e.g. _on_text_changed) is not hashable either,
         # which is required by EventEmitter.
@@ -346,14 +351,6 @@ class TextManager(EventedModel):
         This is typically used in the vispy view file.
         """
         self.events.text_update.connect(text_update_function)
-        # connect the function for updating the text node
-        self.events.rotation.connect(self.events.text_update)
-        self.events.translation.connect(self.events.text_update)
-        self.events.anchor.connect(self.events.text_update)
-        self.events.size.connect(self.events.text_update)
-        self.events.visible.connect(self.events.text_update)
-
-        # connect the function for updating the text node blending
         self.events.blending.connect(blending_update_function)
 
     def _on_text_changed(self, event=None):
