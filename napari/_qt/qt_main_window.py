@@ -1178,6 +1178,7 @@ class Window:
         _themes.events.added.disconnect(register_napari_themes)
         _themes.events.removed.disconnect(self._remove_theme)
         self.qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
+        #
         for menu in self.file_menu._INSTANCES:
             try:
                 menu.close()
