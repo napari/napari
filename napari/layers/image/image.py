@@ -499,7 +499,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         volume is displayed.  Options include:
 
         * ``translucent``: voxel colors are blended along the view ray until
-              the result is opaque.
+            the result is opaque.
         * ``mip``: maximum intensity projection. Cast a ray and display the
             maximum value that was encountered.
         * ``minip``: minimum intensity projection. Cast a ray and display the
