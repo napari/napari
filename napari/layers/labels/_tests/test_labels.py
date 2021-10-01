@@ -28,7 +28,7 @@ def test_random_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -40,7 +40,7 @@ def test_all_zeros_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -52,7 +52,7 @@ def test_3D_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
+    np.testing.assert_array_equal(layer.extent.data[1], shape)
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -101,7 +101,7 @@ def test_changing_labels():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
+    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
     assert layer._data_view.shape == shape_b[-2:]
 
     data_c = np.zeros(shape_c, dtype=bool)
@@ -125,7 +125,7 @@ def test_changing_labels_dims():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
+    np.testing.assert_array_equal(layer.extent.data[1], shape_b)
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -797,8 +797,8 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.randint(20, size=(shape))
     layer = Labels(data)
-    extent = np.array(((0,) * 3, np.subtract(shape, 1)))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    extent = np.array(((0,) * 3, shape))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
 
 
 @pytest.mark.parametrize(
@@ -1159,7 +1159,7 @@ def test_cursor_ray_3d():
         mouse_event_1.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [1, 0, 11, 5])
-    np.testing.assert_allclose(end_point, [1, 19, 11, 5])
+    np.testing.assert_allclose(end_point, [1, 20, 11, 5])
 
     # click in the background
     mouse_event_2 = MouseEvent(
@@ -1192,7 +1192,7 @@ def test_cursor_ray_3d():
         mouse_event_3.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [0, 0, 11, 5])
-    np.testing.assert_allclose(end_point, [0, 19, 11, 5])
+    np.testing.assert_allclose(end_point, [0, 20, 11, 5])
 
 
 def test_cursor_ray_3d_rolled():
@@ -1220,7 +1220,7 @@ def test_cursor_ray_3d_rolled():
         mouse_event_1.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [0, 11, 5, 1])
-    np.testing.assert_allclose(end_point, [19, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [20, 11, 5, 1])
 
 
 def test_cursor_ray_3d_transposed():
@@ -1248,7 +1248,7 @@ def test_cursor_ray_3d_transposed():
         mouse_event_1.dims_displayed,
     )
     np.testing.assert_allclose(start_point, [0, 11, 5, 1])
-    np.testing.assert_allclose(end_point, [19, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [20, 11, 5, 1])
 
 
 def test_labels_state_update():

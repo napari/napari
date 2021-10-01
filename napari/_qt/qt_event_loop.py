@@ -23,6 +23,7 @@ from .dialogs.qt_notification import (
     NapariQtNotification,
     NotificationDispatcher,
 )
+from .qt_event_filters import QtToolTipEventFilter
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 from .utils import _maybe_allow_interrupt
@@ -152,6 +153,10 @@ def get_app(
         app.setOrganizationName(kwargs.get('org_name'))
         app.setOrganizationDomain(kwargs.get('org_domain'))
         set_app_id(kwargs.get('app_id'))
+
+        # Intercept tooltip events in order to convert all text to rich text
+        # to allow for text wrapping of tooltips
+        app.installEventFilter(QtToolTipEventFilter(app))
 
     if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(

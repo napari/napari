@@ -1,12 +1,12 @@
 import numpy as np
 
-from .mesh import Mesh
-from .vispy_base_layer import VispyBaseLayer
+from ..visuals.vectors import VectorsVisual
+from .base import VispyBaseLayer
 
 
 class VispyVectorsLayer(VispyBaseLayer):
     def __init__(self, layer):
-        node = Mesh()
+        node = VectorsVisual()
         super().__init__(layer, node)
 
         self.layer.events.edge_color.connect(self._on_data_change)
@@ -42,7 +42,3 @@ class VispyVectorsLayer(VispyBaseLayer):
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
-
-    def reset(self):
-        self._reset_base()
-        self._on_data_change()
