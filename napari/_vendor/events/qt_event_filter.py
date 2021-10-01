@@ -10,7 +10,7 @@ class QTooltipEventFilter(QObject):
         '''
         Tooltip-specific event filter handling the passed Qt object and event.
 
-        https://stackoverflow.com/a/46212292
+        This code is used from https://stackoverflow.com/a/46212292 under CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/
         '''
         # If this is a tooltip event...
         if event.type() == QEvent.ToolTipChange:
