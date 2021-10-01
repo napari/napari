@@ -35,6 +35,7 @@ from ..utils.misc import is_sequence
 from ..utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
+RICH_TEXT_PATTERN = re.compile("<[^\n]+>")
 
 
 def is_qbyte(string: str) -> bool:
@@ -400,4 +401,4 @@ def qt_might_be_rich_text(text) -> bool:
     try:
         return _Qt.mightBeRichText(text)
     except Exception:
-        return bool(re.search("<[^\n]+>", text))
+        return bool(RICH_TEXT_PATTERN.search(text))
