@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import signal
 import socket
 import weakref
@@ -396,4 +397,7 @@ def qt_might_be_rich_text(text) -> bool:
     else:
         from qtpy.QtCore import Qt as _Qt
 
-    return _Qt.mightBeRichText(text)
+    try:
+        return _Qt.mightBeRichText(text)
+    except Exception:
+        return bool(re.search("<[^\n]+>", text))
