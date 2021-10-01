@@ -1,11 +1,9 @@
-"""Qt event filters providing custom handling of some events."""
+"""Qt event filters providing custom handling of events."""
 
 import html
 
 from qtpy.QtCore import QEvent, QObject, Qt
 from qtpy.QtWidgets import QWidget
-
-from ..utils.translations import trans
 
 
 class QtToolTipEventFilter(QObject):
@@ -14,11 +12,13 @@ class QtToolTipEventFilter(QObject):
     tooltips.
     """
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.ToolTipChange and isinstance(obj, QWidget):
-            tooltip = widget.toolTip()
-            if tooltip and Qt.mightBeRichText(tooltip):
-                widget.setToolTip(f'<qt>{html.escape(tooltip)}</qt>')
+    def eventFilter(self, qobject: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.ToolTipChange and isinstance(
+            qobject, QWidget
+        ):
+            tooltip = qobject.toolTip()
+            if tooltip and not Qt.mightBeRichText(tooltip):
+                qobject.setToolTip(f'<qt>{html.escape(tooltip)}</qt>')
                 return True
 
-        return super().eventFilter(widget, event)
+        return super().eventFilter(qobject, event)
