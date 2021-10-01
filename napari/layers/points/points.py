@@ -1504,12 +1504,11 @@ class Points(Layer):
                 colors=self._clipboard['text_color'],
             )
 
-            num_pasted_points = len(self._clipboard['data'])
             self._selected_view = list(
-                range(npoints, npoints + num_pasted_points)
+                range(npoints, npoints + len(self._clipboard['data']))
             )
             self._selected_data = set(
-                range(totpoints, totpoints + num_pasted_points)
+                range(totpoints, totpoints + len(self._clipboard['data']))
             )
             self.refresh()
 
