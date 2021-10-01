@@ -30,6 +30,7 @@ from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
+from ..utils.events.evented_model import add_to_exclude_kwarg
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
@@ -210,9 +211,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # and mouse and keybindings don't belong on model
         # https://github.com/samuelcolvin/pydantic/pull/2231
         # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
-        exclude = kwargs.pop('exclude', set())
-        exclude = exclude.union(EXCLUDE_JSON)
-        return super().json(exclude=exclude, **kwargs)
+        add_to_exclude_kwarg(kwargs, EXCLUDE_JSON)
+        return super().json(**kwargs)
 
     def dict(self, **kwargs):
         """Convert to a dictionary."""
@@ -220,9 +220,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # and mouse and keybindings don't belong on model
         # https://github.com/samuelcolvin/pydantic/pull/2231
         # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
-        exclude = kwargs.pop('exclude', set())
-        exclude = exclude.union(EXCLUDE_DICT)
-        return super().dict(exclude=exclude, **kwargs)
+        add_to_exclude_kwarg(kwargs, EXCLUDE_DICT)
+        return super().dict(**kwargs)
 
     def __hash__(self):
         return id(self)
