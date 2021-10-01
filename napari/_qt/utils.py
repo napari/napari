@@ -385,3 +385,15 @@ class Sentry(QObject):
 
     def alert(self, *_):
         self.alerted.emit()
+
+
+def qt_might_be_rich_text(text) -> bool:
+    """
+    Check if a text might be rich text in a cross-bidning compatible way.
+    """
+    if qtpy.PYSIDE2:
+        from qtpy.QtGui import Qt as _Qt
+    else:
+        from qtpy.QtCore import Qt as _Qt
+
+    return _Qt.mightBeRichText(text)

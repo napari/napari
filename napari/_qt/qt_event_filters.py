@@ -2,8 +2,10 @@
 
 import html
 
-from qtpy.QtCore import QEvent, QObject, Qt
+from qtpy.QtCore import QEvent, QObject
 from qtpy.QtWidgets import QWidget
+
+from .utils import qt_might_be_rich_text
 
 
 class QtToolTipEventFilter(QObject):
@@ -17,7 +19,7 @@ class QtToolTipEventFilter(QObject):
             qobject, QWidget
         ):
             tooltip = qobject.toolTip()
-            if tooltip and not Qt.mightBeRichText(tooltip):
+            if tooltip and not qt_might_be_rich_text(tooltip):
                 qobject.setToolTip(f'<qt>{html.escape(tooltip)}</qt>')
                 return True
 
