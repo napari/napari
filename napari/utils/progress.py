@@ -1,18 +1,11 @@
-import inspect
 from typing import Iterable, Optional
 
 from tqdm import tqdm
 
 from napari.utils.events.event import EmitterGroup, Event
 
-from ..utils.events.containers import EventedList
+from ..utils.events.containers import EventedSet
 from ..utils.translations import trans
-
-_tqdm_kwargs = {
-    p.name
-    for p in inspect.signature(tqdm.__init__).parameters.values()
-    if p.kind is not inspect.Parameter.VAR_KEYWORD and p.name != "self"
-}
 
 
 class progress(tqdm):
@@ -60,8 +53,7 @@ class progress(tqdm):
     """
 
     monitor_interval = 0  # set to 0 to disable the thread
-    progress_list = EventedList()
-    gui_available = False
+    progress_list = EventedSet()
 
     def __init__(
         self,
@@ -75,26 +67,19 @@ class progress(tqdm):
         self.events = EmitterGroup(
             value=Event,
             description=Event,
-            close=Event,
         )
         self.nest_under = nest_under
-
         super().__init__(iterable, desc, total, *args, **kwargs)
 
-        if desc:
-            self.set_description(desc)
-        else:
+        if not self.desc:
             self.set_description(trans._("progress"))
-        progress.progress_list.append(self)
+        progress.progress_list.add(self)
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
         self.events.value(value=self.n)
-        if not progress.gui_available:
+        if not self.gui:
             super().display(msg, pos)
-
-    def update(self, n):
-        super().update(n)
 
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
@@ -111,10 +96,10 @@ class progress(tqdm):
         self.events.description(value=desc)
 
     def close(self):
-        """Closes and deletes the progress bar widget"""
+        """Closes and deletes the progress object"""
         if self.disable:
             return
-        self.events.close()
+        progress.progress_list.remove(self)
         super().close()
 
     # def close_pbar(self):

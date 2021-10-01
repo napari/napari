@@ -13,9 +13,12 @@ from qtpy.QtWidgets import (
 class ProgressBar(QWidget):
     """QProgressBar with QLabels for description and ETA."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent=None, prog=None) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
+        self.prog = prog
+
         self.pbar = QProgressBar()
         self.description_label = QLabel()
         self.eta_label = QLabel()
@@ -39,21 +42,20 @@ class ProgressBar(QWidget):
 
     def setValue(self, value):
         self.pbar.setValue(value)
+        QApplication.processEvents()
 
     def setDescription(self, value):
         self.description_label.setText(value)
+        QApplication.processEvents()
 
     def _set_value(self, event):
-        print(f"Ticked, setting {event.value}")
-        self.pbar.setValue(event.value)
-        QApplication.processEvents()
+        self.setValue(event.value)
 
     def _get_value(self):
         return self.pbar.value()
 
     def _set_description(self, event):
-        self.description_label.setText(event.value)
-        QApplication.processEvents()
+        self.setDescription(event.value)
 
     def _set_eta(self, eta):
         self.eta_label.setText(eta)

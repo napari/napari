@@ -116,8 +116,19 @@ class ActivityDialog(QDialog):
 
         # self.initialize_pbars()
         # connect add method to progress.add
-        progress.progress_list.events.inserted.connect(self.make_new_pbar)
         progress.gui_available = True
+        progress.progress_list.events.changed.connect(
+            self.handle_progress_change
+        )
+
+    def handle_progress_change(self, event):
+        removed_progress = event.removed
+        for prog in removed_progress:
+            self.close_progress_bar(prog)
+            pass
+        added_progress = event.added
+        for prog in added_progress:
+            self.make_new_pbar(prog)
 
     # def initialize_pbars(self):
     #     current_progress = progress.progress_list
@@ -125,10 +136,15 @@ class ActivityDialog(QDialog):
     #     for prog in current_progress:
     #         self.make_new_pbar(prog)
 
-    def make_new_pbar(self, event):
-        prog = event.value
+    def make_new_pbar(self, prog):
+        prog.gui = True
         # make a progress bar
-        pbar = ProgressBar()
+        pbar = ProgressBar(prog=prog)
+        self.add_progress_bar(pbar, nest_under=prog.nest_under)
+
+        # connect progress object events to updating progress bar
+        prog.events.value.connect(pbar._set_value)
+        prog.events.description.connect(pbar._set_description)
 
         # set its range etc. based on progress object
         if prog.total is not None:
@@ -139,14 +155,7 @@ class ActivityDialog(QDialog):
             prog.total = 0
         pbar.setDescription(prog.desc)
 
-        # connect its tick event to this pbar's update method somehow
-        prog.events.value.connect(pbar._set_value)
-        prog.events.close.connect(pbar._close)
-        prog.events.description.connect(pbar._set_description)
         # prog.close.connect()
-
-        self.add_progress_bar(pbar, nest_under=prog.nest_under)
-        QApplication.processEvents()
 
     def add_progress_bar(self, pbar, nest_under=None):
         """Add progress bar to the activity_dialog, making ProgressBarGroup if needed.
@@ -160,15 +169,14 @@ class ActivityDialog(QDialog):
         ----------
         pbar : ProgressBar
             progress bar to add to activity dialog
-        nest_under : Optional[ProgressBar]
-            parent progress bar pbar should be nested under, by default None
+        nest_under : Optional[progress]
+            parent progress object whose ProgressBar we need to nest under
         """
         if nest_under is None:
             self._activityLayout.addWidget(pbar)
         else:
-            # this is going to be nested, remove separators
-            # as the group will have its own
-            parent_pbar = nest_under._pbar
+            # TODO: can parent be non gui pbar?
+            parent_pbar = self.get_pbar_from_prog(nest_under)
             current_pbars = [parent_pbar, pbar]
             remove_separators(current_pbars)
 
@@ -178,7 +186,7 @@ class ActivityDialog(QDialog):
                 nested_layout = parent_widg.layout()
             # create ProgressBarGroup for this pbar
             else:
-                new_group = ProgressBarGroup(nest_under._pbar)
+                new_group = ProgressBarGroup(parent_pbar)
                 new_group.destroyed.connect(self.maybe_hide_progress_indicator)
                 nested_layout = new_group.layout()
                 self._activityLayout.addWidget(new_group)
@@ -189,6 +197,28 @@ class ActivityDialog(QDialog):
         self._toggleButton._inProgressIndicator.movie().start()
         self._toggleButton._inProgressIndicator.show()
         pbar.destroyed.connect(self.maybe_hide_progress_indicator)
+        QApplication.processEvents()
+
+    def get_pbar_from_prog(self, prog):
+        pbars = self._baseWidget.findChildren(ProgressBar)
+        if pbars:
+            for potential_parent in pbars:
+                if potential_parent.prog is prog:
+                    return potential_parent
+
+    def close_progress_bar(self, prog):
+        current_pbar = self.get_pbar_from_prog(prog)
+        parent_widget = current_pbar.parent()
+        current_pbar.close()
+        current_pbar.deleteLater()
+        if isinstance(parent_widget, ProgressBarGroup):
+            pbar_children = [
+                child
+                for child in parent_widget.children()
+                if isinstance(child, ProgressBar)
+            ]
+            if not any(child.isVisible() for child in pbar_children):
+                parent_widget.close()
 
     def move_to_bottom_right(self, offset=(8, 8)):
         """Position widget at the bottom right edge of the parent."""
