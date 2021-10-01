@@ -114,10 +114,10 @@ class ActivityDialog(QDialog):
         self.resize(520, self.MIN_HEIGHT)
         self.move_to_bottom_right()
 
-        # self.initialize_pbars()
+        # TODO: what do we do with any existing progress objects in action?
         # connect add method to progress.add
         progress.gui_available = True
-        progress.progress_list.events.changed.connect(
+        progress.all_progress.events.changed.connect(
             self.handle_progress_change
         )
 
@@ -130,12 +130,6 @@ class ActivityDialog(QDialog):
         for prog in added_progress:
             self.make_new_pbar(prog)
 
-    # def initialize_pbars(self):
-    #     current_progress = progress.progress_list
-
-    #     for prog in current_progress:
-    #         self.make_new_pbar(prog)
-
     def make_new_pbar(self, prog):
         prog.gui = True
         # make a progress bar
@@ -145,6 +139,8 @@ class ActivityDialog(QDialog):
         # connect progress object events to updating progress bar
         prog.events.value.connect(pbar._set_value)
         prog.events.description.connect(pbar._set_description)
+        prog.events.overflow.connect(pbar._make_indeterminate)
+        prog.events.eta.connect(pbar._set_eta)
 
         # set its range etc. based on progress object
         if prog.total is not None:
@@ -154,8 +150,6 @@ class ActivityDialog(QDialog):
             pbar.setRange(0, 0)
             prog.total = 0
         pbar.setDescription(prog.desc)
-
-        # prog.close.connect()
 
     def add_progress_bar(self, pbar, nest_under=None):
         """Add progress bar to the activity_dialog, making ProgressBarGroup if needed.

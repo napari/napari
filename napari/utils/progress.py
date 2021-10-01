@@ -53,7 +53,7 @@ class progress(tqdm):
     """
 
     monitor_interval = 0  # set to 0 to disable the thread
-    progress_list = EventedSet()
+    all_progress = EventedSet()
 
     def __init__(
         self,
@@ -65,28 +65,31 @@ class progress(tqdm):
         **kwargs,
     ) -> None:
         self.events = EmitterGroup(
-            value=Event,
-            description=Event,
+            value=Event, description=Event, overflow=Event, eta=Event
         )
         self.nest_under = nest_under
         super().__init__(iterable, desc, total, *args, **kwargs)
 
         if not self.desc:
             self.set_description(trans._("progress"))
-        progress.progress_list.add(self)
+        progress.all_progress.add(self)
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
-        self.events.value(value=self.n)
         if not self.gui:
             super().display(msg, pos)
+        # TODO: This could break if user is formatting their own terminal tqdm
+        if self.total != 0:
+            etas = str(self).split('|')[-1]
+
+        self.events.eta(value=etas)
+        self.events.value(value=self.n)
 
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
         if self.n == self.total:
             self.total = 0
-            # if self._pbar:
-            #     self._pbar.setRange(0, 0)
+            self.events.overflow()
         else:
             self.update(1)
 
@@ -99,30 +102,8 @@ class progress(tqdm):
         """Closes and deletes the progress object"""
         if self.disable:
             return
-        progress.progress_list.remove(self)
+        progress.all_progress.remove(self)
         super().close()
-
-    # def close_pbar(self):
-    #     if self.disable or not self._pbar:
-    #         return
-
-    #     from napari._qt.widgets.qt_progress_bar import (
-    #         ProgressBar,
-    #         ProgressBarGroup,
-    #     )
-
-    #     parent_widget = self._pbar.parent()
-    #     self._pbar.close()
-    #     self._pbar.deleteLater()
-    #     if isinstance(parent_widget, ProgressBarGroup):
-    #         pbar_children = [
-    #             child
-    #             for child in parent_widget.children()
-    #             if isinstance(child, ProgressBar)
-    #         ]
-    #         if not any(child.isVisible() for child in pbar_children):
-    #             parent_widget.close()
-    #     self._pbar = None
 
 
 def progrange(*args, **kwargs):

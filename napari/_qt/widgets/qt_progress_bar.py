@@ -57,8 +57,11 @@ class ProgressBar(QWidget):
     def _set_description(self, event):
         self.setDescription(event.value)
 
-    def _set_eta(self, eta):
-        self.eta_label.setText(eta)
+    def _make_indeterminate(self, event):
+        self.setRange(0, 0)
+
+    def _set_eta(self, event):
+        self.eta_label.setText(event.value)
 
     def _close(self, event):
         super().close()
