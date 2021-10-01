@@ -1,17 +1,11 @@
-from ._vispy_tracks_shader import TrackShader
-from .vispy_base_layer import VispyBaseLayer
-from .vispy_tracks_visual import TracksVisual
+from ..visuals.tracks import TracksVisual
+from .base import VispyBaseLayer
 
 
 class VispyTracksLayer(VispyBaseLayer):
     """VispyTracksLayer
 
     Track layer for visualizing tracks.
-
-    Components:
-        - Track lines (vispy.LineVisual)
-        - Track IDs (vispy.TextVisual)
-        - Graph edges (vispy.LineVisual)
 
     """
 
@@ -35,27 +29,14 @@ class VispyTracksLayer(VispyBaseLayer):
         self.layer.events.rebuild_tracks.connect(self._on_tracks_change)
         self.layer.events.rebuild_graph.connect(self._on_graph_change)
 
-        # build and attach the shader to the track
-        self.track_shader = TrackShader()
-        self.graph_shader = TrackShader()
-        node._subvisuals[0].attach(self.track_shader)
-        node._subvisuals[2].attach(self.graph_shader)
-
-        # text label properties
-        self.node._subvisuals[1].color = 'white'
-        self.node._subvisuals[1].font_size = 8
-
-        self._reset_base()
-
+        self.reset()
         self._on_data_change()
-        self._on_appearance_change()
 
     def _on_data_change(self, event=None):
         """Update the display."""
 
         # update the shaders
-        self.track_shader.current_time = self.layer.current_time
-        self.graph_shader.current_time = self.layer.current_time
+        self.node.tracks_filter.current_time = self.layer.current_time
 
         # add text labels if they're visible
         if self.node._subvisuals[1].visible:
@@ -71,12 +52,9 @@ class VispyTracksLayer(VispyBaseLayer):
         """Change the appearance of the data."""
 
         # update shader properties related to appearance
-        self.track_shader.use_fade = self.layer.use_fade
-        self.track_shader.tail_length = self.layer.tail_length
-        self.track_shader.head_length = self.layer.head_length
-        self.graph_shader.use_fade = self.layer.use_fade
-        self.graph_shader.tail_length = self.layer.tail_length
-        self.graph_shader.head_length = self.layer.head_length
+        self.node.tracks_filter.use_fade = self.layer.use_fade
+        self.node.tracks_filter.tail_length = self.layer.tail_length
+        self.node.tracks_filter.head_length = self.layer.head_length
 
         # set visibility of subvisuals
         self.node._subvisuals[0].visible = self.layer.display_tail
@@ -95,9 +73,9 @@ class VispyTracksLayer(VispyBaseLayer):
     def _on_tracks_change(self, event=None):
         """Update the shader when the track data changes."""
 
-        self.track_shader.use_fade = self.layer.use_fade
-        self.track_shader.tail_length = self.layer.tail_length
-        self.track_shader.vertex_time = self.layer.track_times
+        self.node.tracks_filter.use_fade = self.layer.use_fade
+        self.node.tracks_filter.tail_length = self.layer.tail_length
+        self.node.tracks_filter.vertex_time = self.layer.track_times
 
         # change the data to the vispy line visual
         self.node._subvisuals[0].set_data(
@@ -113,9 +91,9 @@ class VispyTracksLayer(VispyBaseLayer):
     def _on_graph_change(self, event=None):
         """Update the shader when the graph data changes."""
 
-        self.graph_shader.use_fade = self.layer.use_fade
-        self.graph_shader.tail_length = self.layer.tail_length
-        self.graph_shader.vertex_time = self.layer.graph_times
+        self.node.tracks_filter.use_fade = self.layer.use_fade
+        self.node.tracks_filter.tail_length = self.layer.tail_length
+        self.node.tracks_filter.vertex_time = self.layer.track_times
 
         # if the user clears a graph after it has been created, vispy offers
         # no method to clear the data, therefore, we need to set private
@@ -135,3 +113,9 @@ class VispyTracksLayer(VispyBaseLayer):
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
+
+    def reset(self):
+        super().reset()
+        self._on_appearance_change()
+        self._on_tracks_change()
+        self._on_graph_change()

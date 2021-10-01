@@ -1,22 +1,16 @@
 import numpy as np
 
-from ..settings import get_settings
-from ..utils.events import disconnect_events
-from ._text_utils import update_text
-from .vispy_base_layer import VispyBaseLayer
-from .vispy_shapes_visual import ShapesVisual
+from ...settings import get_settings
+from ...utils.events import disconnect_events
+from ..utils.gl import BLENDING_MODES
+from ..utils.text import update_text
+from ..visuals.shapes import ShapesVisual
+from .base import VispyBaseLayer
 
 
 class VispyShapesLayer(VispyBaseLayer):
     def __init__(self, layer):
-        # Create a compound visual with the following four subvisuals:
-        # Markers: corresponding to the vertices of the interaction box or the
-        # shapes that are used for highlights.
-        # Lines: The lines of the interaction box used for highlights.
-        # Mesh: The mesh of the outlines for each shape used for highlights.
-        # Mesh: The actual meshes of the shape faces and edges
         node = ShapesVisual()
-
         super().__init__(layer, node)
 
         self.layer.events.edge_width.connect(self._on_data_change)
@@ -152,14 +146,16 @@ class VispyShapesLayer(VispyBaseLayer):
 
     def _on_blending_change(self, event=None):
         """Function to set the blending mode"""
-        self.node.set_gl_state(self.layer.blending)
+        shapes_blending_kwargs = BLENDING_MODES[self.layer.blending]
+        self.node.set_gl_state(**shapes_blending_kwargs)
 
         text_node = self._get_text_node()
-        text_node.set_gl_state(str(self.layer.text.blending))
+        text_blending_kwargs = BLENDING_MODES[self.layer.text.blending]
+        text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
 
     def reset(self):
-        self._reset_base()
+        super().reset()
         self._on_highlight_change()
         self._on_blending_change()
 

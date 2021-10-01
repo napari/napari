@@ -137,6 +137,14 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     assert isinstance(dw.widget().viewer, napari.Viewer)
     # Add twice is ok, only does a show
     action.trigger()
+    # Check that widget is still there when closed.
+    widg = dw.widget()
+    dw.title.hide_button.click()
+    assert widg
+    # Check that widget is destroyed when closed.
+    dw.destroyOnClose()
+    assert action not in viewer.window.plugins_menu.actions()
+    assert not widg.parent()
 
 
 def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):

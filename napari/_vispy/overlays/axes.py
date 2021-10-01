@@ -2,10 +2,10 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Mesh, Text
 from vispy.visuals.transforms import STTransform
 
-from ..layers.shapes._shapes_utils import triangulate_ellipse
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.theme import get_theme
-from ..utils.translations import trans
+from ...layers.shapes._shapes_utils import triangulate_ellipse
+from ...utils.colormaps.standardize_color import transform_color
+from ...utils.theme import get_theme
+from ...utils.translations import trans
 
 
 def make_dashed_line(num_dashes, axis):
@@ -127,7 +127,7 @@ def color_arrowheads(colors, num_segments):
         )
 
 
-class VispyAxesVisual:
+class VispyAxesOverlay:
     """Axes indicating world coordinate origin and orientation."""
 
     _NUM_SEGMENTS_ARROWHEAD = 100

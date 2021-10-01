@@ -5,8 +5,8 @@ from vispy.gloo import VertexBuffer
 from vispy.visuals.filters.base_filter import Filter
 
 
-class TrackShader(Filter):
-    """TrackShader.
+class TracksFilter(Filter):
+    """TracksFilter.
 
     Custom vertex and fragment shaders for visualizing tracks quickly with
     vispy. The central assumption is that the tracks are rendered as a

@@ -9,7 +9,7 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
-from ..utils.translations import trans
+from ...utils.translations import trans
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -104,3 +104,16 @@ def fix_data_dtype(data):
                 )
             )
         return data.astype(dtype)
+
+
+BLENDING_MODES = {
+    'opaque': dict(preset='opaque'),
+    'translucent': dict(preset='translucent'),
+    'translucent_no_depth': dict(
+        depth_test=False,
+        cull_face=False,
+        blend=True,
+        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+    ),
+    'additive': dict(preset='additive'),
+}
