@@ -40,7 +40,7 @@ def test_dask_not_greedy():
     )
     layer = layers.Image(arr2)
     assert FETCH_COUNT == 1
-    assert tuple(layer.contrast_limits) != (0, 2 ** 8 - 1)
+    assert tuple(layer.contrast_limits) == (0, 255)
 
 
 def test_dask_array_creates_cache():

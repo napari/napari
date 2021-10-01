@@ -300,12 +300,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._should_calc_clims = False  # calc clims on next set_view_slice?
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
-                dtype = getattr(data, 'dtype', None)
-                if np.issubdtype(normalize_dtype(dtype), np.integer):
+                dtype = normalize_dtype(getattr(data, 'dtype', None))
+                if np.issubdtype(dtype, np.integer):
                     self.contrast_limits_range = get_dtype_limits(dtype)
                 else:
                     self.contrast_limits_range = (0, 1)
-                self._should_calc_clims = True
+                self._should_calc_clims = dtype != np.uint8
             else:
                 self.contrast_limits_range = self._calc_data_range()
         else:
