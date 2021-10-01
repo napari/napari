@@ -115,13 +115,19 @@ class ActivityDialog(QDialog):
         self.move_to_bottom_right()
 
         # TODO: what do we do with any existing progress objects in action?
-        # connect add method to progress.add
-        progress.gui_available = True
+        # connect callback to handle new progress objects being added/removed
         progress.all_progress.events.changed.connect(
             self.handle_progress_change
         )
 
     def handle_progress_change(self, event):
+        """Handle addition and/or removal of new progress objects
+
+        Parameters
+        ----------
+        event : Event
+            EventedSet `changed` event with `added` and `removed` objects
+        """
         removed_progress = event.removed
         for prog in removed_progress:
             self.close_progress_bar(prog)
@@ -131,8 +137,16 @@ class ActivityDialog(QDialog):
             self.make_new_pbar(prog)
 
     def make_new_pbar(self, prog):
+        """Make new `ProgressBar` for this `progress` object and add to viewer.
+
+        Parameters
+        ----------
+        prog : progress
+            progress object to associated with new progress bar
+        """
         prog.gui = True
-        # make a progress bar
+
+        # make and add progress bar
         pbar = ProgressBar(prog=prog)
         self.add_progress_bar(pbar, nest_under=prog.nest_under)
 
@@ -154,7 +168,7 @@ class ActivityDialog(QDialog):
     def add_progress_bar(self, pbar, nest_under=None):
         """Add progress bar to the activity_dialog, making ProgressBarGroup if needed.
 
-        Check whether pbar is nested and create ProgressBarGroup if it is, removing
+        Check whether pbar needs nesting and create ProgressBarGroup if it is, removing
         existing separators and creating new ones. Show and start inProgressIndicator
         to highlight to user the existence of a progress bar in the dock even when
         the dock is hidden.
@@ -184,6 +198,7 @@ class ActivityDialog(QDialog):
                 new_group.destroyed.connect(self.maybe_hide_progress_indicator)
                 nested_layout = new_group.layout()
                 self._activityLayout.addWidget(new_group)
+            # progress bar needs to go before separator
             new_pbar_index = nested_layout.count() - 1
             nested_layout.insertWidget(new_pbar_index, pbar)
 
@@ -194,6 +209,18 @@ class ActivityDialog(QDialog):
         QApplication.processEvents()
 
     def get_pbar_from_prog(self, prog):
+        """Given prog `progress` object, find associated `ProgressBar`
+
+        Parameters
+        ----------
+        prog : progress
+            progress object with associated progress bar
+
+        Returns
+        -------
+        ProgressBar
+            Qt ProgressBar widget associated with this progress object
+        """
         pbars = self._baseWidget.findChildren(ProgressBar)
         if pbars:
             for potential_parent in pbars:
@@ -201,6 +228,13 @@ class ActivityDialog(QDialog):
                     return potential_parent
 
     def close_progress_bar(self, prog):
+        """Close `ProgressBar` and parent `ProgressBarGroup` if needed
+
+        Parameters
+        ----------
+        prog : progress
+            progress object whose ProgressBar to close
+        """
         current_pbar = self.get_pbar_from_prog(prog)
         parent_widget = current_pbar.parent()
         current_pbar.close()
@@ -211,6 +245,7 @@ class ActivityDialog(QDialog):
                 for child in parent_widget.children()
                 if isinstance(child, ProgressBar)
             ]
+            # only close group if it has no visible progress bars
             if not any(child.isVisible() for child in pbar_children):
                 parent_widget.close()
 

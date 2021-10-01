@@ -14,11 +14,13 @@ class progress(tqdm):
     directly by wrapping an iterable or by providing a total number
     of expected updates.
 
+    While this interface is primarily designed to be displayed in
+    the viewer, it can also be used without a viewer open, in which
+    case it behaves identically to tqdm and produces the progress
+    bar in the terminal.
+
     See tqdm.tqdm API for valid args and kwargs:
     https://tqdm.github.io/docs/tqdm/
-
-    Also, any keyword arguments to the :class:`ProgressBar` `QWidget`
-    are also accepted and will be passed to the ``ProgressBar``.
 
     Examples
     --------
@@ -53,7 +55,7 @@ class progress(tqdm):
     """
 
     monitor_interval = 0  # set to 0 to disable the thread
-    all_progress = EventedSet()
+    all_progress = EventedSet()  # track all currently active progress objects
 
     def __init__(
         self,
@@ -75,7 +77,8 @@ class progress(tqdm):
         progress.all_progress.add(self)
 
     def display(self, msg: str = None, pos: int = None) -> None:
-        """Update the display."""
+        """Update the display and emit relevant events."""
+        # just plain tqdm if we don't have gui
         if not self.gui:
             super().display(msg, pos)
         # TODO: This could break if user is formatting their own terminal tqdm
@@ -94,12 +97,12 @@ class progress(tqdm):
             self.update(1)
 
     def set_description(self, desc):
-        """Update progress bar description"""
+        """Update progress description and emits description event."""
         super().set_description(desc, refresh=True)
         self.events.description(value=desc)
 
     def close(self):
-        """Closes and deletes the progress object"""
+        """Closes and deletes the progress object."""
         if self.disable:
             return
         progress.all_progress.remove(self)
