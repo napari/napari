@@ -10,6 +10,7 @@ from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
     skip_local_popups,
+    skip_on_win_ci,
 )
 from napari.utils._tests.test_naming import eval_with_filename
 from napari.utils.action_manager import action_manager
@@ -140,6 +141,7 @@ def test_add_layer_magic_name(
     assert layer.name == "a_unique_name"
 
 
+@skip_on_win_ci
 def test_screenshot(make_napari_viewer):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
@@ -174,6 +176,7 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
+@skip_on_win_ci
 def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
     viewer = make_napari_viewer(show=False)
