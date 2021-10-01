@@ -242,17 +242,23 @@ class TextManager(EventedModel):
         text: Union['TextManager', dict, str, Sequence[str], None],
         properties: Dict[str, np.ndarray],
         n_text: int,
-    ):
+    ) -> 'TextManager':
         """Create a TextManager from a layer.
 
         Parameters
         ----------
         text : Union[TextManager, dict, str, Sequence[str], None]
-            The strings to be displayed, or a format string to be filled out using properties.
+            Another instance of a TextManager, a dict that contains some of its state,
+            a string that may be a constant, a property name, or a format string,
+            or sequence of strings specified directly.
         properties : Dict[str, np.ndarray]
             The property values, which typically come from a layer.
         n_text : int
             The number of text elements to generate which should match the number of rows in the property table.
+
+        Returns
+        -------
+        TextManager
         """
         if isinstance(text, TextManager):
             kwargs = text.dict()
