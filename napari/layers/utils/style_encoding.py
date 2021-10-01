@@ -7,13 +7,17 @@ from typing import (
     Iterable,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Union,
 )
 
 import numpy as np
 from pydantic import Field, ValidationError, parse_obj_as, validator
+
+from ...utils.events.evented_model import (
+    add_to_exclude_kwarg,
+    get_repr_args_without,
+)
 
 if TYPE_CHECKING:
     from pydantic.typing import ReprArgs
@@ -130,19 +134,15 @@ class DerivedStyleEncoding(StyleEncoding, ABC):
     """
 
     def __repr_args__(self) -> 'ReprArgs':
-        return [
-            (name, value)
-            for name, value in super().__repr_args__()
-            if name != 'array'
-        ]
+        return get_repr_args_without(super().__repr_args__(), {'array'})
 
-    def json(self, **kwargs):
-        exclude = _add_to_exclude(kwargs.pop('exclude', None), 'array')
-        return super().json(exclude=exclude, **kwargs)
+    def json(self, **kwargs) -> str:
+        add_to_exclude_kwarg(kwargs, {'array'})
+        return super().json(**kwargs)
 
-    def dict(self, **kwargs):
-        exclude = _add_to_exclude(kwargs.pop('exclude', None), 'array')
-        return super().dict(exclude=exclude, **kwargs)
+    def dict(self, **kwargs) -> Dict[str, Any]:
+        add_to_exclude_kwarg(kwargs, {'array'})
+        return super().dict(**kwargs)
 
 
 class DirectStyleEncoding(StyleEncoding):
@@ -473,13 +473,6 @@ def _get_property_row(
     properties: Dict[str, np.ndarray], index: int
 ) -> Dict[str, Any]:
     return {name: values[index] for name, values in properties.items()}
-
-
-def _add_to_exclude(excluded: Optional[Set[str]], to_exclude: str):
-    if excluded is None:
-        return {to_exclude}
-    excluded.add(to_exclude)
-    return excluded
 
 
 def _check_property_name(

@@ -1,11 +1,15 @@
 import operator
 import sys
+import typing
 import warnings
 from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
+
+if typing.TYPE_CHECKING:
+    from pydantic.typing import ReprArgs
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
@@ -263,3 +267,40 @@ def get_defaults(obj: BaseModel):
             d = get_defaults(v.type_)
         dflt[k] = d
     return dflt
+
+
+def add_to_exclude_kwarg(kwargs: Dict[str, Any], to_add: Set[str]):
+    """Adds the given strings to the 'exclude' set in kwargs.
+
+    Parameters
+    ----------
+    kwargs : Dict[str, Any]
+        Keyword arguments typically from BaseModel.json and dict methods.
+        This is modified in place to exclude additional fields.
+    to_add : Set[str]
+        The field names to additionally exclude.
+    """
+    if 'exclude' in kwargs and kwargs['exclude'] is not None:
+        kwargs['exclude'].update(to_add)
+
+
+def get_repr_args_without(
+    repr_args: 'ReprArgs', to_exclude: Set[str]
+) -> 'ReprArgs':
+    """Gets repr_args excluding the given field names.
+
+    Parameters
+    ----------
+    repr_args : ReprArgs
+        The repr args typically from BaseModel.__repr_args__
+    to_exclude : Set[str]
+        The field names to exclude.
+
+    Returns
+    -------
+    ReprArgs
+        The repr args without the excluded field names.
+    """
+    return [
+        (name, value) for name, value in repr_args if name not in to_exclude
+    ]

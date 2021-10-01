@@ -1,8 +1,17 @@
 import warnings
-from typing import Dict, Iterable, Sequence, Tuple, Union
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
+
+from ...utils.events.evented_model import (
+    add_to_exclude_kwarg,
+    get_repr_args_without,
+)
+
+if TYPE_CHECKING:
+    from pydantic.typing import ReprArgs
 
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import Event, EventedModel
@@ -248,11 +257,22 @@ class TextManager(EventedModel):
         if isinstance(text, TextManager):
             kwargs = text.dict()
         elif isinstance(text, dict):
-            kwargs = text
+            kwargs = deepcopy(text)
         else:
             kwargs = {'text': text}
         kwargs['properties'] = properties
         return cls(n_text=n_text, **kwargs)
+
+    def __repr_args__(self) -> 'ReprArgs':
+        return get_repr_args_without(super().__repr_args__(), {'properties'})
+
+    def json(self, **kwargs) -> str:
+        add_to_exclude_kwarg(kwargs, {'properties'})
+        return super().json(**kwargs)
+
+    def dict(self, **kwargs) -> Dict[str, Any]:
+        add_to_exclude_kwarg(kwargs, {'properties'})
+        return super().dict(**kwargs)
 
     @validator('properties', pre=True, always=True)
     def _check_properties(
