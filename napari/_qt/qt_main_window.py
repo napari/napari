@@ -1180,7 +1180,7 @@ class Window:
         self.qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
         for menu in self.file_menu._INSTANCES:
             try:
-                menu.close()
+                menu._destroy()
             except RuntimeError:
                 pass
 
