@@ -271,6 +271,11 @@ class LayerList(SelectableEventedList[Layer]):
                 for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
             ]
             min_v, max_v = self._get_min_and_max(mins, maxs)
+            # same 512 element default extent as `_get_extent_world`
+            min_v = np.asarray(min_v)
+            min_v[np.isnan(min_v)] = -0.5
+            max_v = np.asarray(max_v)
+            max_v[np.isnan(max_v)] = 511.5
 
             # form range tuples, switching back to original dimension order
             return [
