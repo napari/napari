@@ -297,13 +297,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._experimental_slicing_plane = SlicingPlane(
             thickness=1, enabled=False
         )
+        # Whether to calculate clims on the next set_view_slice
+        self._should_calc_clims = False
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
-                dtype = getattr(data, 'dtype', None)
-                if np.issubdtype(normalize_dtype(dtype), np.integer):
+                dtype = normalize_dtype(getattr(data, 'dtype', None))
+                if np.issubdtype(dtype, np.integer):
                     self.contrast_limits_range = get_dtype_limits(dtype)
                 else:
                     self.contrast_limits_range = (0, 1)
+                self._should_calc_clims = dtype != np.uint8
             else:
                 self.contrast_limits_range = self._calc_data_range()
         else:
@@ -691,8 +694,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self, image_indices, image, thumbnail_source
         )
         self._load_slice(data)
-        if self._keep_autoscale:
+        if self._keep_autoscale or self._should_calc_clims:
             self.reset_contrast_limits()
+            self._should_calc_clims = False
 
     @property
     def _SliceDataClass(self):
