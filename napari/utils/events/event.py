@@ -511,7 +511,21 @@ class EventEmitter:
         # make the connection without making a strong reference to the
         # instance.
         if inspect.ismethod(callback):
+            old_callback = callback
             callback = (callback.__self__, callback.__name__)
+            if (
+                not hasattr(callback[0], callback[1])
+                or getattr(callback[0], callback[1]) != old_callback
+            ):
+                for name in dir(callback[0]):
+                    meth = getattr(callback[0], name)
+                    if inspect.ismethod(meth) and meth == old_callback:
+                        callback = callback[0], name
+                        break
+                else:
+                    raise RuntimeError(
+                        f"During bind method {callback[1]} of object {callback[0]} an error happen"
+                    )
 
         # always use a weak ref
         if isinstance(callback, tuple) and not isinstance(

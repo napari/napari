@@ -17,3 +17,36 @@ def test_event_blocker_count():
         e()
         e()
     assert block.count == 3
+
+
+def test_error_on_connect():
+    def rename(newname):
+        def decorator(f):
+            f.__name__ = newname
+            return f
+
+        return decorator
+
+    class Test:
+        def __init__(self):
+            self.m1, self.m2 = 0, 0
+
+        @rename("nonexist")
+        def meth1(self, _event):
+            self.m1 += 1
+
+        @rename("meth1")
+        def meth2(self, _event):
+            self.m2 += 1
+
+    t = Test()
+
+    e = EventEmitter(type="test")
+
+    e.connect(t.meth1)
+    e()
+    assert (t.m1, t.m2) == (1, 0)
+
+    e.connect(t.meth2)
+    e()
+    assert (t.m1, t.m2) == (2, 1)
