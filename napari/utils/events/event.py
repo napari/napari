@@ -522,9 +522,9 @@ class EventEmitter:
         if isinstance(callback, tuple) and not isinstance(
             callback[0], weakref.ref
         ):
-            callback = (weakref.ref(callback[0]), callback[1])
+            callback = (weakref.ref(callback[0]), *callback[1:])
 
-        if isinstance(callback, tuple):
+        if isinstance(callback, tuple) and len(callback) == 2:
             callback_fun = getattr(callback[0](), callback[1])
             signature = inspect.signature(callback_fun)
             allow_event = any(
