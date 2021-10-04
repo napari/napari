@@ -201,7 +201,12 @@ _event_repr_depth = 0
 
 
 Callback = Callable[[Event], None]
-CallbackRef = Tuple['weakref.ReferenceType[Any]', str]  # dereferenced method
+CallbackRef = Tuple[
+    'weakref.ReferenceType[Any]', str, bool
+]  # dereferenced method
+CallbackStr = Tuple[
+    Union['weakref.ReferenceType[Any]', object], str
+]  # dereferenced method
 
 
 class EventEmitter:
@@ -342,7 +347,7 @@ class EventEmitter:
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, 'EmitterGroup'],
+        callback: Union[Callback, CallbackRef, CallbackStr, 'EmitterGroup'],
         ref: Union[bool, str] = False,
         position: Union[Literal['first'], Literal['last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
@@ -517,7 +522,23 @@ class EventEmitter:
         if isinstance(callback, tuple) and not isinstance(
             callback[0], weakref.ref
         ):
-            callback = (weakref.ref(callback[0]),) + callback[1:]
+            callback = (weakref.ref(callback[0]), callback[1])
+
+        if isinstance(callback, tuple):
+            callback_fun = getattr(callback[0](), callback[1])
+            signature = inspect.signature(callback_fun)
+            allow_event = any(
+                map(
+                    lambda x: x.kind
+                    in [
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        inspect.Parameter.VAR_POSITIONAL,
+                    ],
+                    signature.parameters.values(),
+                )
+            )
+            callback = callback + (allow_event,)
 
         return callback
 
@@ -558,11 +579,14 @@ class EventEmitter:
 
             rem: List[CallbackRef] = []
             for cb in self._callbacks[:]:
+                event_ref = event
                 if isinstance(cb, tuple):
                     obj = cb[0]()
                     if obj is None:
                         rem.append(cb)  # add dead weakref
                         continue
+                    if not cb[2]:
+                        event_ref = None
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
                         continue
@@ -572,7 +596,7 @@ class EventEmitter:
                     self._block_counter.update([cb])
                     continue
 
-                self._invoke_callback(cb, event)
+                self._invoke_callback(cb, event_ref)
                 if event.blocked:
                     break
 
@@ -591,9 +615,12 @@ class EventEmitter:
 
         return event
 
-    def _invoke_callback(self, cb: Callback, event: Event):
+    def _invoke_callback(self, cb: Callback, event: Optional[Event]):
         try:
-            cb(event)
+            if event is not None:
+                cb(event)
+            else:
+                cb()
         except Exception as e:
             # dead Qt object with living python pointer. not importing Qt
             # here... but this error is consistent across backends
@@ -851,7 +878,7 @@ class EmitterGroup(EventEmitter):
                     source=self.source, type=name, event_class=emitter  # type: ignore
                 )
             elif not isinstance(emitter, EventEmitter):
-                raise Exception(
+                raise RuntimeError(
                     trans._(
                         'Emitter must be specified as either an EventEmitter instance or Event subclass. (got {name}={emitter})',
                         deferred=True,
@@ -866,7 +893,11 @@ class EmitterGroup(EventEmitter):
             setattr(self, name, emitter)  # this is a bummer for typing.
             self._emitters[name] = emitter
 
-            if auto_connect and self.source is not None:
+            if (
+                auto_connect
+                and self.source is not None
+                and hasattr(self.source, self.auto_connect_format % name)
+            ):
                 emitter.connect((self.source, self.auto_connect_format % name))
 
             # If emitters are connected to the group already, then this one
