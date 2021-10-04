@@ -22,6 +22,19 @@ def test_empty_text_manager_property():
     np.testing.assert_equal(text_manager.values, ['0.5'])
 
 
+def test_add_many_text_property():
+    properties = {'confidence': np.empty(0, dtype=float)}
+    text_manager = TextManager(
+        text='confidence',
+        n_text=0,
+        properties=properties,
+    )
+
+    text_manager.add({'confidence': np.array([0.5])}, 2)
+
+    np.testing.assert_equal(text_manager.values, ['0.5'] * 2)
+
+
 def test_empty_text_manager_format():
     """Test creating an empty text manager in formatted mode.
     This is for creating an empty layer with text initialized.
@@ -36,6 +49,20 @@ def test_empty_text_manager_format():
     new_properties = {'confidence': np.array([0.5])}
     text_manager.add(new_properties, 1)
     np.testing.assert_equal(text_manager.values, ['confidence: 0.50'])
+
+
+@pytest.mark.skip(reason='To be fixed with properties refactor.')
+def test_add_many_text_formatted():
+    properties = {'confidence': np.empty(0, dtype=float)}
+    text_manager = TextManager(
+        text='confidence: {confidence:.2f}',
+        n_text=0,
+        properties=properties,
+    )
+
+    text_manager.add({'confidence': np.array([0.5])}, 2)
+
+    np.testing.assert_equal(text_manager.values, ['confidence: 0.50'] * 2)
 
 
 def test_text_manager_property():

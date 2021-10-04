@@ -186,37 +186,6 @@ def test_empty_layer_with_text_formatted():
     np.testing.assert_equal(layer.text.values, ['point_type: 1.50'])
 
 
-def test_add_data_as_batch_with_text_property():
-    np.random.seed(0)
-    n_points = 4
-    data_to_add = np.random.rand(n_points, 2)
-    default_properties = {'point_type': np.array(['A'], dtype=str)}
-    layer = Points(
-        property_choices=default_properties,
-        text='point_type',
-    )
-
-    layer.add(data_to_add)
-
-    np.testing.assert_equal(layer.text.values, ['A'] * n_points)
-
-
-@pytest.mark.skip(reason='To be fixed with properties refactor.')
-def test_add_data_as_batch_with_text_formatted():
-    np.random.seed(0)
-    n_points = 4
-    data_to_add = np.random.rand(n_points, 2)
-    default_properties = {'point_type': np.array([1.5], dtype=float)}
-    layer = Points(
-        property_choices=default_properties,
-        text='point_type: {point_type:.2f}',
-    )
-
-    layer.add(data_to_add)
-
-    np.testing.assert_equal(layer.text.values, ['point_type: 1.50'] * n_points)
-
-
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
