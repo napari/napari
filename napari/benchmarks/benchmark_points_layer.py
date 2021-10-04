@@ -46,6 +46,42 @@ class Points2DSuite:
         return self.data
 
 
+class Points2DTextSuite:
+    """Benchmarks for creating and modifying a 2D Points layer with text."""
+
+    param_names = ['num_points', 'text']
+    params = [
+        [2 ** i for i in range(4, 18, 2)],
+        [
+            None,
+            'constant',
+            'string_property',
+            'float_property',
+            '{string_property}: {float_property:.2f}',
+        ],
+    ]
+
+    def setup(self, n, text):
+        np.random.seed(0)
+        self.data = np.random.random((n, 2))
+        self.data_to_add = np.random.random((512, 2))
+        self.properties = {
+            'string_property': np.random.choice(('cat', 'car'), n),
+            'float_property': np.random.rand(n),
+        }
+        self.layer = Points(self.data, properties=self.properties, text=text)
+
+    def time_create(self, n, text):
+        Points(self.data, properties=self.properties, text=text)
+
+    def time_set_text(self, n, text):
+        self.layer.text = text
+
+    def time_add_points_iteratively(self, n, text):
+        for point in self.data_to_add:
+            self.layer.add(point)
+
+
 class Points3DSuite:
     """Benchmarks for the Points layer with 3D data."""
 
