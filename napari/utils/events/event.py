@@ -49,6 +49,7 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 import inspect
+import warnings
 import weakref
 from collections import Counter
 from typing import (
@@ -580,8 +581,14 @@ class EventEmitter:
                     if obj is None:
                         rem.append(cb)  # add dead weakref
                         continue
+                    old_cb = cb
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
+                        warnings.warn(
+                            f"Problem with function {old_cb[1]} of {obj} connected to event {self}",
+                            stacklevel=2,
+                            category=RuntimeWarning,
+                        )
                         continue
                     cb = cast(Callback, cb)
 
@@ -883,7 +890,11 @@ class EmitterGroup(EventEmitter):
             setattr(self, name, emitter)  # this is a bummer for typing.
             self._emitters[name] = emitter
 
-            if auto_connect and self.source is not None:
+            if (
+                auto_connect
+                and self.source is not None
+                and hasattr(self.source, self.auto_connect_format % name)
+            ):
                 emitter.connect((self.source, self.auto_connect_format % name))
 
             # If emitters are connected to the group already, then this one

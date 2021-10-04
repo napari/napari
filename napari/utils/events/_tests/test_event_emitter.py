@@ -38,7 +38,7 @@ def test_error_on_connect():
 
     class Test:
         def __init__(self):
-            self.m1, self.m2 = 0, 0
+            self.m1, self.m2, self.m4 = 0, 0, 0
 
         @rename("nonexist")
         def meth1(self, _event):
@@ -50,6 +50,9 @@ def test_error_on_connect():
 
         def meth3(self):
             pass
+
+        def meth4(self, _event):
+            self.m4 += 1
 
     t = Test()
 
@@ -69,3 +72,12 @@ def test_error_on_connect():
 
     with pytest.raises(RuntimeError):
         e.connect(meth)
+
+    e.connect(t.meth4)
+    assert t.m4 == 0
+    e()
+    assert t.m4 == 1
+    t.meth4 = None
+    with pytest.warns(RuntimeWarning, match="Problem with function"):
+        e()
+    assert t.m4 == 1
