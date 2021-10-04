@@ -1,3 +1,5 @@
+import pytest
+
 from napari.utils.events import EventEmitter
 
 
@@ -26,6 +28,7 @@ def test_error_on_connect():
     will not be equal to getattr(obj, obj.method.__name__). We check here
     that event binding will be correct even in these situations.
     """
+
     def rename(newname):
         def decorator(f):
             f.__name__ = newname
@@ -45,6 +48,9 @@ def test_error_on_connect():
         def meth2(self, _event):
             self.m2 += 1
 
+        def meth3(self):
+            pass
+
     t = Test()
 
     e = EventEmitter(type="test")
@@ -56,3 +62,10 @@ def test_error_on_connect():
     e.connect(t.meth2)
     e()
     assert (t.m1, t.m2) == (2, 1)
+
+    meth = t.meth3
+
+    t.meth3 = "aaaa"
+
+    with pytest.raises(RuntimeError):
+        e.connect(meth)
