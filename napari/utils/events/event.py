@@ -517,6 +517,9 @@ class EventEmitter:
                 not hasattr(callback[0], callback[1])
                 or getattr(callback[0], callback[1]) != old_callback
             ):
+                # some decorators will alter method.__name__, so that obj.method
+                # will not be equal to getattr(obj, obj.method.__name__). We check
+                # for that case here and traverse to find the right method here.
                 for name in dir(callback[0]):
                     meth = getattr(callback[0], name)
                     if inspect.ismethod(meth) and meth == old_callback:

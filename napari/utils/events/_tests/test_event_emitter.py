@@ -20,6 +20,12 @@ def test_event_blocker_count():
 
 
 def test_error_on_connect():
+    """Check that connections happen correctly even on decorated methods.
+
+    Some decorators will alter method.__name__, so that obj.method
+    will not be equal to getattr(obj, obj.method.__name__). We check here
+    that event binding will be correct even in these situations.
+    """
     def rename(newname):
         def decorator(f):
             f.__name__ = newname
