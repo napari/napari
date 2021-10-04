@@ -615,7 +615,9 @@ class EventEmitter:
 
         return event
 
-    def _invoke_callback(self, cb: Callback, event: Optional[Event]):
+    def _invoke_callback(
+        self, cb: Union[Callback, Callable[[], None]], event: Optional[Event]
+    ):
         try:
             if event is not None:
                 cb(event)
