@@ -152,3 +152,73 @@ def test_blending_modes():
     with pytest.warns(RuntimeWarning):
         text_manager.blending = 'opaque'
         assert text_manager.blending == 'translucent'
+
+
+def test_text_with_invalid_format_string_then_constant_text():
+    n_text = 3
+    text = 'confidence: {confidence:.2f'
+    properties = {'confidence': np.array([0.5, 0.3, 1])}
+
+    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
+
+    np.testing.assert_array_equal(text_manager.values, [text] * n_text)
+
+
+def test_text_with_format_string_missing_property_then_constant_text():
+    n_text = 3
+    text = 'score: {score:.2f}'
+    properties = {'confidence': np.array([0.5, 0.3, 1])}
+
+    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
+
+    np.testing.assert_array_equal(text_manager.values, [text] * n_text)
+
+
+def test_text_constant_then_repeat_values():
+    n_text = 3
+    properties = {'class': np.array(['A', 'B', 'C'])}
+
+    text_manager = TextManager(
+        text='point', n_text=n_text, properties=properties
+    )
+
+    np.testing.assert_array_equal(text_manager.values, ['point'] * n_text)
+
+
+def test_text_constant_with_no_properties_then_no_values():
+    text_manager = TextManager(text='point', n_text=3)
+    assert len(text_manager.values) == 0
+
+
+def test_add_with_text_constant_then_ignored():
+    n_text = 3
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    text_manager = TextManager(
+        text='point', n_text=n_text, properties=properties
+    )
+    assert len(text_manager.values) == n_text
+
+    text_manager.add({'class': np.array(['C'])}, 2)
+
+    assert len(text_manager.values) == n_text
+
+
+def test_add_with_text_constant_init_empty_then_ignored():
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    text_manager = TextManager(text='point', n_text=0, properties=properties)
+
+    text_manager.add({'class': np.array(['C'])}, 2)
+
+    assert len(text_manager.values) == 0
+
+
+def test_remove_with_text_constant_then_ignored():
+    n_text = 5
+    properties = {'class': np.array(['A', 'B', 'C', 'D', 'E'])}
+    text_manager = TextManager(
+        text='point', n_text=n_text, properties=properties
+    )
+
+    text_manager.remove([1, 3])
+
+    np.testing.assert_equal(text_manager.values, ['point'] * n_text)

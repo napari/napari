@@ -2104,3 +2104,43 @@ def test_to_mask_3d_with_size_2():
         dtype=bool,
     )
     np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_set_properties_updates_text_values():
+    points = np.random.rand(3, 2)
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    layer = Points(points, properties=properties, text='class')
+
+    layer.properties = {'class': np.array(['D', 'E', 'F'])}
+
+    np.testing.assert_array_equal(layer.text.values, ['D', 'E', 'F'])
+
+
+def test_set_properties_with_invalid_shape_errors_safely():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
+
+    with pytest.raises(ValueError):
+        points.properties = {'class': np.array(['D', 'E'])}
+
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
+
+
+def test_set_properties_with_missing_text_property_text_becomes_constant():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
+
+    points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+
+    np.testing.assert_array_equal(
+        points.text.values, ['class', 'class', 'class']
+    )
