@@ -1,9 +1,8 @@
 from typing import List, Optional
 
 from typing_extensions import Protocol
-from vispy.visuals.filters.base_filter import Filter
-
-from ..vendored.filters.clipping_planes import PlanesClipper
+from vispy.visuals.filters import Filter
+from vispy.visuals.filters.clipping_planes import PlanesClipper
 
 
 class _PVisual(Protocol):
