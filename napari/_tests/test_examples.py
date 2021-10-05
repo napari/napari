@@ -8,7 +8,7 @@ from qtpy import API_NAME
 import napari
 from napari.utils.notifications import notification_manager
 
-from .utils import slow
+from napari._tests.utils import slow
 
 # not testing these examples
 skip = [
