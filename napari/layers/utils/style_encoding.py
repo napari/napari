@@ -187,6 +187,26 @@ class ConstantStringEncoding(DerivedStyleEncoding):
         return np.repeat(self.constant, len(indices))
 
 
+class IdentityStringEncoding(DerivedStyleEncoding):
+    """Encodes strings directly from a property column.
+
+    Attributes
+    ----------
+    property_name : str
+        The name of the property that contains the desired strings.
+    """
+
+    property_name: str = Field(..., allow_mutation=False)
+
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> np.ndarray:
+        return np.array(properties[self.property_name][indices], dtype=str)
+
+    def validate_properties(self, properties: Dict[str, np.ndarray]):
+        _check_property_name(properties, self.property_name)
+
+
 class FormatStringEncoding(DerivedStyleEncoding):
     """Encodes string values by formatting property values.
 
@@ -298,6 +318,7 @@ def is_format_string(
 """The string encodings supported by napari in order of precedence."""
 STRING_ENCODINGS = (
     FormatStringEncoding,
+    IdentityStringEncoding,
     ConstantStringEncoding,
     DirectStringEncoding,
 )

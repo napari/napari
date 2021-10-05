@@ -26,6 +26,7 @@ from .style_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
     FormatStringEncoding,
+    IdentityStringEncoding,
     is_format_string,
     parse_kwargs_as_encoding,
 )
@@ -269,7 +270,7 @@ class TextManager(EventedModel):
             encoding = text
         elif isinstance(text, str):
             if text in properties:
-                encoding = FormatStringEncoding(format_string=f'{{{text}}}')
+                encoding = IdentityStringEncoding(property_name=text)
             elif is_format_string(properties, text):
                 encoding = FormatStringEncoding(format_string=text)
             else:
