@@ -105,3 +105,20 @@ class Colormap(EventedModel):
     @property
     def colorbar(self):
         return make_colorbar(self)
+
+
+class LabelColormap(Colormap):
+    """Colormap that shuffles values before mapping to colors.
+    
+    Attributes
+    ----------
+    seed : float
+    """
+    seed : float = 0.5
+    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.ZERO
+
+    def map(self, values):
+        from .colormap_utils import low_discrepancy_image
+        values_low_discr = low_discrepancy_image(values, seed=self.seed)
+        mapped = super().map(values_low_discr)
+        return mapped
