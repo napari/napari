@@ -4,11 +4,11 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
-from ..utils.translations import trans
-from .image import Image as ImageNode
-from .utils_gl import fix_data_dtype
-from .vispy_base_layer import VispyBaseLayer
-from .volume import Volume as VolumeNode
+from ...utils.translations import trans
+from ..utils.gl import fix_data_dtype
+from ..visuals.image import Image as ImageNode
+from ..visuals.volume import Volume as VolumeNode
+from .base import VispyBaseLayer
 
 
 class ImageLayerNode:
@@ -68,11 +68,7 @@ class VispyLabelsLayer(VispyBaseLayer):
             self._on_experimental_slicing_plane_normal_change
         )
 
-        self.layer.experimental_clipping_planes.events.connect(
-            self._on_experimental_clipping_planes_change
-        )
-
-        self._on_display_change()
+        self.reset()
         self._on_data_change()
 
     def _on_display_change(self, data=None):
@@ -191,14 +187,8 @@ class VispyLabelsLayer(VispyBaseLayer):
                 self.layer.experimental_slicing_plane.normal
             )
 
-    def _on_experimental_clipping_planes_change(self, event=None):
-        if isinstance(self.node, VolumeNode):
-            self.node.clipping_planes = (
-                self.layer.experimental_clipping_planes.as_array()
-            )
-
     def reset(self, event=None):
-        self._reset_base()
+        super().reset()
         self._on_interpolation_change()
         self._on_colormap_change()
         self._on_contrast_limits_change()
@@ -208,7 +198,6 @@ class VispyLabelsLayer(VispyBaseLayer):
         self._on_experimental_slicing_plane_position_change()
         self._on_experimental_slicing_plane_normal_change()
         self._on_experimental_slicing_plane_thickness_change()
-        self._on_experimental_clipping_planes_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.
