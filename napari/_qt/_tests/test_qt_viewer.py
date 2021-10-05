@@ -15,6 +15,7 @@ from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
     skip_local_popups,
+    skip_on_win_ci,
 )
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
@@ -195,6 +196,7 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
 
+@skip_on_win_ci
 def test_screenshot(make_napari_viewer):
     "Test taking a screenshot"
     viewer = make_napari_viewer()
@@ -499,3 +501,24 @@ def test_canvas_color(make_napari_viewer, theme):
     get_settings().appearance.theme = theme
     viewer = make_napari_viewer()
     assert viewer.theme == theme
+
+
+def test_remove_points(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_points([(1, 2), (2, 3)])
+    del viewer.layers[0]
+    viewer.add_points([(1, 2), (2, 3)])
+
+
+def test_remove_image(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_image(np.random.rand(10, 10))
+    del viewer.layers[0]
+    viewer.add_image(np.random.rand(10, 10))
+
+
+def test_remove_labels(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+    del viewer.layers[0]
+    viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))

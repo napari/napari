@@ -23,6 +23,7 @@ from .dialogs.qt_notification import (
     NapariQtNotification,
     NotificationDispatcher,
 )
+from .qt_event_filters import QtToolTipEventFilter
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 from .utils import _maybe_allow_interrupt
@@ -55,6 +56,7 @@ _defaults = {
 
 # store reference to QApplication to prevent garbage collection
 _app_ref = None
+_IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
 
 
 def get_app(
@@ -152,6 +154,10 @@ def get_app(
         app.setOrganizationDomain(kwargs.get('org_domain'))
         set_app_id(kwargs.get('app_id'))
 
+        # Intercept tooltip events in order to convert all text to rich text
+        # to allow for text wrapping of tooltips
+        app.installEventFilter(QtToolTipEventFilter(app))
+
     if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
@@ -165,7 +171,8 @@ def get_app(
 
     if ipy_interactive is None:
         ipy_interactive = get_settings().application.ipy_interactive
-    _try_enable_ipython_gui('qt' if ipy_interactive else None)
+    if _IPYTHON_WAS_HERE_FIRST:
+        _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.

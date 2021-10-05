@@ -69,7 +69,7 @@ class Viewer(ViewerModel):
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
-        if self.window.qt_viewer.console is None:
+        if self.window.qt_viewer._console is None:
             return
         else:
             self.window.qt_viewer.console.push(variables)

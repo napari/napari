@@ -37,7 +37,7 @@ from ..utils import perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
-from ..utils.theme import _themes
+from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
 from .dialogs.activity_dialog import ActivityDialog
@@ -74,8 +74,8 @@ class _QtMainWindow(QMainWindow):
         super().__init__(parent)
         self._ev = None
         self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
-
         self._quit_app = False
+
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
@@ -306,7 +306,7 @@ class _QtMainWindow(QMainWindow):
             condition = (
                 self.isMaximized() if os.name == "nt" else self.isFullScreen()
             )
-            if condition:
+            if condition and self._old_size is not None:
                 if self._positions and len(self._positions) > 1:
                     self._window_pos = self._positions[-2]
 
@@ -408,7 +408,6 @@ class Window:
     """
 
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
-
         # create QApplication if it doesn't already exist
         get_app()
 
@@ -433,20 +432,27 @@ class Window:
         self._update_theme()
         get_settings().appearance.events.theme.connect(self._update_theme)
 
-        self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerControls, tabify=False
+            self.qt_viewer.dockConsole, tabify=False, menu=self.window_menu
         )
         self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerList, tabify=False
+            self.qt_viewer.dockLayerControls,
+            tabify=False,
+            menu=self.window_menu,
+        )
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
         )
         if perf.USE_PERFMON:
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+            self._add_viewer_dock_widget(
+                self.qt_viewer.dockPerformance, menu=self.window_menu
+            )
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
+        viewer.layers.events.connect(self.file_menu.update)
 
         if show:
             self.show()
@@ -486,7 +492,7 @@ class Window:
         # connect console-specific attributes only if QtConsole
         # is present. The `console` is called which might slow
         # things down a little.
-        if self.qt_viewer.console:
+        if self.qt_viewer._console:
             theme.events.console.connect(self.qt_viewer.console._update_theme)
             theme.events.syntax_style.connect(
                 self.qt_viewer.console._update_theme
@@ -509,7 +515,7 @@ class Window:
         )
         # disconnect console-specific attributes only if QtConsole
         # is present and they were previously connected
-        if self.qt_viewer.console:
+        if self.qt_viewer._console:
             theme.events.console.disconnect(
                 self.qt_viewer.console._update_theme
             )
@@ -654,7 +660,6 @@ class Window:
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             dock_widget = self._dock_widgets[full_name]
-            dock_widget.show()
             wdg = dock_widget.widget()
             if hasattr(wdg, '_magic_widget'):
                 wdg = wdg._magic_widget
@@ -694,7 +699,6 @@ class Window:
         """
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            self._dock_widgets[full_name].show()
             return
 
         func = plugin_manager._function_widgets[plugin_name][widget_name]
@@ -713,6 +717,7 @@ class Window:
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
+        menu=None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -754,12 +759,15 @@ class Window:
             try:
                 name = widget.objectName()
             except AttributeError:
-                name = trans._(
-                    "Dock widget {number}",
-                    number=self._unnamed_dockwidget_count,
-                )
+                pass
+
+            name = name or trans._(
+                "Dock widget {number}",
+                number=self._unnamed_dockwidget_count,
+            )
 
             self._unnamed_dockwidget_count += 1
+
         if shortcut is not _sentinel:
             warnings.warn(
                 _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
@@ -785,7 +793,7 @@ class Window:
                 add_vertical_stretch=add_vertical_stretch,
             )
 
-        self._add_viewer_dock_widget(dock_widget)
+        self._add_viewer_dock_widget(dock_widget, menu=menu)
 
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
@@ -802,7 +810,7 @@ class Window:
         return dock_widget
 
     def _add_viewer_dock_widget(
-        self, dock_widget: QtViewerDockWidget, tabify=False
+        self, dock_widget: QtViewerDockWidget, tabify=False, menu=None
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -837,57 +845,21 @@ class Window:
                 sizes = list(range(1, len(_wdg) * 4, 4))
                 self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
 
-        action = dock_widget.toggleViewAction()
-        action.setStatusTip(dock_widget.name)
-        action.setText(dock_widget.name)
-        import warnings
+        if menu:
+            action = dock_widget.toggleViewAction()
+            action.setStatusTip(dock_widget.name)
+            action.setText(dock_widget.name)
+            import warnings
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", FutureWarning)
-            # deprecating with 0.4.8, but let's try to keep compatibility.
-            shortcut = dock_widget.shortcut
-        if shortcut is not None:
-            action.setShortcut(shortcut)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", FutureWarning)
+                # deprecating with 0.4.8, but let's try to keep compatibility.
+                shortcut = dock_widget.shortcut
+            if shortcut is not None:
+                action.setShortcut(shortcut)
 
-        # dock widgets can have a menu item on the window menu or the plugin menu.
-
-        # check for plugins menu first.  Need to check submenus too.  If the action in the
-        # plugin menu is toggled for the first time, it will be replaced with the toggleViewAction
-        # directly in the plugins menu.
-        actions = [a.text() for a in self.plugins_menu.actions()]
-        if dock_widget.name in actions:
-            idx = actions.index(dock_widget.name)
-            old_action = self.plugins_menu.actions()[idx]
-            dock_widget.setVisible(True)
-            self.plugins_menu.insertAction(old_action, action)
-            self.plugins_menu.removeAction(old_action)
-            return
-        else:
-            # if the action is not here, it may be in a submenu
-            for cnt, current_action in enumerate(self.plugins_menu.actions()):
-                if current_action.menu() is not None:
-                    sub_actions = [
-                        plugin_menu_item_template.format(
-                            current_action.text(), a.text()
-                        )
-                        for a in current_action.menu().actions()
-                    ]
-                    if dock_widget.name in sub_actions:
-                        idx = sub_actions.index(dock_widget.name)
-                        old_action = (
-                            self.plugins_menu.actions()[cnt]
-                            .menu()
-                            .actions()[idx]
-                        )
-                        self.plugins_menu.actions()[cnt].menu().insertAction(
-                            old_action, action
-                        )
-                        self.plugins_menu.actions()[cnt].menu().removeAction(
-                            old_action
-                        )
-                        return
-
-        self.window_menu.addAction(action)
+            menu.addAction(action)
+        # self.window_menu.addAction(action)
 
     def _remove_dock_widget(self, event=None):
         names = list(self._dock_widgets.keys())
@@ -1103,10 +1075,13 @@ class Window:
         try:
             if event:
                 value = event.value
-                settings.appearance.theme = value
                 self.qt_viewer.viewer.theme = value
+                settings.appearance.theme = value
             else:
-                value = self.qt_viewer.viewer.theme
+                if settings.appearance.theme == "system":
+                    value = get_system_theme()
+                else:
+                    value = self.qt_viewer.viewer.theme
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
         except (AttributeError, RuntimeError):
@@ -1202,6 +1177,12 @@ class Window:
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.added.disconnect(register_napari_themes)
         _themes.events.removed.disconnect(self._remove_theme)
+        self.qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
+        for menu in self.file_menu._INSTANCES:
+            try:
+                menu._destroy()
+            except RuntimeError:
+                pass
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
