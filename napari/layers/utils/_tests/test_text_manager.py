@@ -3,7 +3,6 @@ import pytest
 from pydantic import ValidationError
 
 from napari.layers.utils.text_manager import TextManager
-from napari.utils.colormaps.standardize_color import transform_color
 
 
 def test_empty_text_manager_property():
@@ -149,12 +148,13 @@ def test_equality():
 
 
 def test_blending_modes():
+    n_text = 3
     text = 'class'
     classes = np.array(['A', 'B', 'C'])
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager = TextManager(
         text=text,
-        n_text=3,
+        n_text=n_text,
         properties=properties,
         color='red',
         blending='translucent',
@@ -201,13 +201,13 @@ def test_constant_add_then_remove():
     np.testing.assert_equal(text_manager.text.array, ['point'])
 
 
-def test_direct():
+def test_text_direct():
     values = ['one', 'two', 'three']
     text_manager = TextManager(text=values, n_text=3, properties={})
     np.testing.assert_array_equal(text_manager.text.array, values)
 
 
-def test_direct_add():
+def test_text_direct_add():
     values = ['one', 'two', 'three']
     text_manager = TextManager(text=values, n_text=3, properties={})
 
@@ -218,149 +218,10 @@ def test_direct_add():
     )
 
 
-def test_direct_remove():
+def test_text_direct_remove():
     values = ['one', 'two', 'three', 'four']
     text_manager = TextManager(text=values, n_text=4, properties={})
 
     text_manager.remove([1, 3])
 
     np.testing.assert_array_equal(text_manager.text.array, ['one', 'three'])
-
-
-def test_multi_color_direct():
-    classes = np.array(['A', 'B', 'C'])
-    colors = np.array(['red', 'green', 'blue'])
-    properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
-
-    text_manager = TextManager(
-        text='class', n_text=3, properties=properties, color=colors
-    )
-
-    np.testing.assert_array_equal(
-        text_manager.color.array, transform_color(colors)
-    )
-
-
-def test_multi_color_property():
-    colors = np.array(['red', 'green', 'blue'])
-    properties = {'class': colors, 'confidence': np.array([0.5, 0.3, 1])}
-
-    text_manager = TextManager(
-        text='class', n_text=3, properties=properties, color='class'
-    )
-
-    np.testing.assert_array_equal(
-        text_manager.color.array, transform_color(colors)
-    )
-
-
-def test_multi_color_non_property():
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-    }
-    with pytest.raises(ValidationError):
-        TextManager(
-            text='class', n_text=3, properties=properties, color='class_color'
-        )
-
-
-def test_multi_color_property_discrete_map():
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([0.5, 0.3, 1]),
-    }
-    color = {
-        'property_name': 'class',
-        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
-    }
-
-    text_manager = TextManager(
-        text='class', n_text=3, properties=properties, color=color
-    )
-
-    np.testing.assert_array_equal(
-        text_manager.color.array,
-        transform_color(['red', 'green', 'blue']),
-    )
-
-
-def test_multi_color_property_continuous_map():
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([0.5, 0, 1]),
-    }
-    color = {
-        'property_name': 'confidence',
-        'continuous_colormap': 'gray',
-    }
-
-    text_manager = TextManager(
-        text='class', n_text=3, properties=properties, color=color
-    )
-
-    np.testing.assert_allclose(
-        text_manager.color.array,
-        transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
-    )
-
-
-def test_multi_color_property_continuous_map_with_contrast_limits():
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([0, -1.5, 2]),
-    }
-    color = {
-        'property_name': 'confidence',
-        'continuous_colormap': 'gray',
-        'contrast_limits': [-1, 1],
-    }
-
-    text_manager = TextManager(
-        text='class', n_text=3, properties=properties, color=color
-    )
-
-    np.testing.assert_allclose(
-        text_manager.color.array,
-        transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
-    )
-
-
-def test_color_missing_field():
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([0.5, 0, 1]),
-    }
-    color = {
-        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
-    }
-
-    # TODO: maybe worth asserting the error message contains some custom
-    # text that is more understandable than the pydantic default.
-    with pytest.raises(ValueError):
-        TextManager(text='class', n_text=3, properties=properties, color=color)
-
-
-def test_color_too_many_fields_use_first_matching():
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([0.5, 0, 1]),
-    }
-    color = {
-        'property_name': 'confidence',
-        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
-        'continuous_colormap': 'gray',
-    }
-
-    text_manager = TextManager(
-        text='class', n_text=3, properties=properties, color=color
-    )
-
-    # ContinuousColorEncoding is the first in the ColorEncoding
-    # and can be instantiated with a subset of the dictionary's
-    # entries, so is instantiated without an error or warning.
-    # To change this behavior to error, update the model config
-    # with `extra = 'forbid'`.
-    np.testing.assert_allclose(
-        text_manager.color.array,
-        transform_color([[0.5] * 3, [0] * 3, [1] * 3]),
-    )

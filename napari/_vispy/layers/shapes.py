@@ -136,7 +136,7 @@ class VispyShapesLayer(VispyBaseLayer):
             coords=text_coords,
             anchor=(anchor_x, anchor_y),
             rotation=self.layer._text.rotation,
-            color=self.layer._view_text_colors,
+            color=self.layer._text.color,
             size=self.layer._text.size,
             ndisplay=ndisplay,
             text_node=text_node,

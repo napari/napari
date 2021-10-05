@@ -1160,10 +1160,6 @@ class Points(Layer):
         return self.text.compute_text_coords(self._view_data, self._ndisplay)
 
     @property
-    def _view_text_colors(self) -> np.ndarray:
-        return self.text.view_colors(self._indices_view)
-
-    @property
     def _view_size(self) -> np.ndarray:
         """Get the sizes of the points in view
 
@@ -1499,10 +1495,7 @@ class Points(Layer):
                     axis=0,
                 )
 
-            self.text.paste(
-                strings=self._clipboard['text_string'],
-                colors=self._clipboard['text_color'],
-            )
+            self.text.paste(self._clipboard['text_string'])
 
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
@@ -1526,7 +1519,6 @@ class Points(Layer):
                 },
                 'indices': self._slice_indices,
                 'text_string': deepcopy(self.text.text.array[index]),
-                'text_color': deepcopy(self.text.color.array[index, :]),
             }
         else:
             self._clipboard = {}

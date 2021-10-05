@@ -165,12 +165,12 @@ def test_empty_layer_with_text_properties():
         text=text_kwargs,
     )
     assert layer.text.text.array.size == 0
-    assert layer.text.color.array.size == 0
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])
     np.testing.assert_equal(layer.text.text.array, ['1.5'])
-    np.testing.assert_allclose(layer.text.color.array, [[1, 0, 0, 1]])
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
 
 def test_empty_layer_with_text_formatted():
@@ -746,11 +746,8 @@ def test_set_text_with_kwarg_dict(properties):
     expected_text = ['type: ' + v for v in properties['point_type']]
     np.testing.assert_equal(layer.text.text.array, expected_text)
 
-    expected_color = [text_kwargs['color']] * len(data)
-    np.testing.assert_equal(layer.text.color.array, expected_color)
-
     for property, value in text_kwargs.items():
-        if property in ('text', 'color'):
+        if property == 'text':
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
@@ -2113,11 +2110,7 @@ def test_to_mask_3d_with_size_2():
 
 
 def test_text_direct_copy_paste():
-    text = {
-        'text': ['A', 'B', 'C'],
-        'color': ['red', 'green', 'blue'],
-    }
-    points = Points(np.random.rand(3, 2), text=text)
+    points = Points(np.random.rand(3, 2), text=['A', 'B', 'C'])
     points.selected_data = [0, 2]
 
     points._copy_data()
@@ -2125,10 +2118,6 @@ def test_text_direct_copy_paste():
 
     np.testing.assert_array_equal(
         points.text.text.array, ['A', 'B', 'C', 'A', 'C']
-    )
-    np.testing.assert_array_equal(
-        points.text.color.array,
-        transform_color(['red', 'green', 'blue', 'red', 'blue']),
     )
 
 

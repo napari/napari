@@ -27,23 +27,6 @@ def test_change_text_string_updates_node_strings(make_napari_viewer):
     np.testing.assert_array_equal(text_node.text, ['two'] * len(shapes))
 
 
-def test_change_text_color_updates_node_colors(make_napari_viewer):
-    viewer = make_napari_viewer()
-    shapes = np.random.rand(3, 4, 2)
-    layer = viewer.add_shapes(shapes, text={'color': [1, 0, 0]})
-    vispy_layer = viewer.window.qt_viewer.layer_to_visual[layer]
-    text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(
-        text_node.color.rgb, [[1, 0, 0]] * len(shapes)
-    )
-
-    layer.text.color = [0, 0, 1]
-
-    np.testing.assert_array_equal(
-        text_node.color.rgb, [[0, 0, 1]] * len(shapes)
-    )
-
-
 def test_change_properties_updates_node_strings(make_napari_viewer):
     viewer = make_napari_viewer()
     shapes = np.random.rand(3, 4, 2)

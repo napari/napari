@@ -1546,10 +1546,6 @@ class Shapes(Layer):
         )
 
     @property
-    def _view_text_colors(self) -> np.ndarray:
-        return self.text.view_colors(self._indices_view)
-
-    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -2846,7 +2842,6 @@ class Shapes(Layer):
                 },
                 'indices': self._slice_indices,
                 'text_string': deepcopy(self.text.text.array[index]),
-                'text_color': deepcopy(self.text.color.array[index, :]),
             }
         else:
             self._clipboard = {}
@@ -2881,10 +2876,7 @@ class Shapes(Layer):
                     shape, face_color=face_color, edge_color=edge_color
                 )
 
-            self.text.paste(
-                strings=self._clipboard['text_string'],
-                colors=self._clipboard['text_color'],
-            )
+            self.text.paste(self._clipboard['text_string'])
 
             self.selected_data = set(
                 range(cur_shapes, cur_shapes + len(self._clipboard['data']))
