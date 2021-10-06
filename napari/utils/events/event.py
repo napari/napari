@@ -379,7 +379,7 @@ class EventEmitter:
         -----
         If ``ref=True``, the callback reference will be determined from:
 
-            1. If ``callback`` is ``tuple``, the secend element in the tuple.
+            1. If ``callback`` is ``tuple``, the second element in the tuple.
             2. The ``__name__`` attribute.
             3. The ``__class__.__name__`` attribute.
 

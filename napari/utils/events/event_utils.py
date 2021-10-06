@@ -46,7 +46,7 @@ def connect_setattr(emitter: Emitter, obj, attr: str):
         setattr(ref(), attr, value[0] if len(value) == 1 else value)
 
     emitter.connect(_cb)
-    # There are scenarios where emmiter is deleted before obj.
+    # There are scenarios where emitter is deleted before obj.
     # Also there is no option to create weakref to QT Signal
     # but even if keep reference to base object and signal name it is possible to meet
     # problem with C++ "wrapped C/C++ object has been deleted"
