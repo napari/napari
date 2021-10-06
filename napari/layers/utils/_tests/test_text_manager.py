@@ -21,6 +21,20 @@ def test_empty_text_manager_property():
     np.testing.assert_equal(text_manager.text.array, ['0.5'])
 
 
+def test_add_many_text_property():
+    properties = {'confidence': np.empty(0, dtype=float)}
+    text_manager = TextManager(
+        text='confidence',
+        n_text=0,
+        properties=properties,
+    )
+
+    properties['confidence'] = np.array([0.5, 0.5])
+    text_manager.add(2)
+
+    np.testing.assert_equal(text_manager.text.array, ['0.5'] * 2)
+
+
 def test_empty_text_manager_format():
     """Test creating an empty text manager in formatted mode.
     This is for creating an empty layer with text initialized.
@@ -36,6 +50,20 @@ def test_empty_text_manager_format():
     )
     text_manager.add(1)
     np.testing.assert_equal(text_manager.text.array, ['confidence: 0.50'])
+
+
+def test_add_many_text_formatted():
+    properties = {'confidence': np.empty(0, dtype=float)}
+    text_manager = TextManager(
+        text='confidence: {confidence:.2f}',
+        n_text=0,
+        properties=properties,
+    )
+
+    properties['confidence'] = np.append(properties['confidence'], [0.5] * 2)
+    text_manager.add(2)
+
+    np.testing.assert_equal(text_manager.text.array, ['confidence: 0.50'] * 2)
 
 
 def test_text_manager_property():
@@ -171,34 +199,75 @@ def test_blending_modes():
         assert text_manager.blending == 'translucent'
 
 
-def test_constant():
-    text_manager = TextManager(text='point', n_text=0, properties={})
-    assert len(text_manager.text.array) == 0
+def test_text_with_invalid_format_string_then_raises_on_validation():
+    n_text = 3
+    text = 'confidence: {confidence:.2f'
+    properties = {'confidence': np.array([0.5, 0.3, 1])}
+
+    with pytest.raises(ValidationError):
+        TextManager(text=text, n_text=n_text, properties=properties)
 
 
-def test_constant_add():
-    text_manager = TextManager(text='point', n_text=0, properties={})
+def test_text_with_format_string_missing_property_then_raises_on_validation():
+    n_text = 3
+    text = 'score: {score:.2f}'
+    properties = {'confidence': np.array([0.5, 0.3, 1])}
+
+    with pytest.raises(ValidationError):
+        TextManager(text=text, n_text=n_text, properties=properties)
+
+
+def test_text_constant():
+    n_text = 3
+    properties = {'class': np.array(['A', 'B', 'C'])}
+
+    text_manager = TextManager(
+        text='point', n_text=n_text, properties=properties
+    )
+
+    np.testing.assert_array_equal(text_manager.text.array, ['point'] * n_text)
+
+
+def test_text_constant_with_empty_properties():
+    n_text = 3
+    text_manager = TextManager(text='point', n_text=n_text, properties={})
+    np.testing.assert_array_equal(text_manager.text.array, ['point'] * n_text)
+
+
+def test_add_with_text_constant():
+    n_text = 3
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    text_manager = TextManager(
+        text='point', n_text=n_text, properties=properties
+    )
+    assert len(text_manager.text.array) == n_text
+
+    properties['class'] = np.append(properties['class'], ['C', 'C'])
     text_manager.add(2)
-    np.testing.assert_equal(text_manager.text.array, ['point', 'point'])
+
+    np.testing.assert_array_equal(text_manager.text.array, ['point'] * 5)
 
 
-def test_constant_remove():
-    text_manager = TextManager(text='point', n_text=0, properties={})
-    text_manager.add(5)
+def test_add_with_text_constant_init_empty():
+    properties = {'class': np.empty((0,), dtype=str)}
+    text_manager = TextManager(text='point', n_text=0, properties=properties)
+
+    properties['class'] = np.append(properties['class'], ['C', 'C'])
+    text_manager.add(2)
+
+    np.testing.assert_array_equal(text_manager.text.array, ['point'] * 2)
+
+
+def test_remove_with_text_constant():
+    n_text = 5
+    properties = {'class': np.array(['A', 'B', 'C', 'D', 'E'])}
+    text_manager = TextManager(
+        text='point', n_text=n_text, properties=properties
+    )
 
     text_manager.remove([1, 3])
 
-    np.testing.assert_equal(
-        text_manager.text.array, ['point', 'point', 'point']
-    )
-
-
-def test_constant_add_then_remove():
-    text_manager = TextManager(text='point', n_text=0, properties={})
-    text_manager.add(2)
-    np.testing.assert_equal(text_manager.text.array, ['point', 'point'])
-    text_manager.remove([0])
-    np.testing.assert_equal(text_manager.text.array, ['point'])
+    np.testing.assert_equal(text_manager.text.array, ['point'] * 3)
 
 
 def test_text_direct():

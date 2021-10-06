@@ -89,6 +89,7 @@ class TextManager(EventedModel):
         # This means external clients do not need to reconnect to the events of
         # any mutable fields when their instance changes.
         self.events.add(text_update=Event)
+        self.events.color.connect(self.events.text_update)
         self.events.rotation.connect(self.events.text_update)
         self.events.translation.connect(self.events.text_update)
         self.events.anchor.connect(self.events.text_update)

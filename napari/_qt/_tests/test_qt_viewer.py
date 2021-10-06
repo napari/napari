@@ -15,6 +15,8 @@ from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
     skip_local_popups,
+    skip_on_win_ci,
+    slow,
 )
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
@@ -195,6 +197,8 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
 
+@skip_on_win_ci
+@slow(15)
 def test_screenshot(make_napari_viewer):
     "Test taking a screenshot"
     viewer = make_napari_viewer()

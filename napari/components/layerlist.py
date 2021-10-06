@@ -313,12 +313,13 @@ class LayerList(SelectableEventedList[Layer]):
 
 
 def get_active_layer_dtype(layer):
+    dtype = None
     if layer.active:
-        return normalize_dtype(
-            getattr(layer.active.data, 'dtype', '')
-        ).__name__
-    else:
-        return None
+        try:
+            dtype = normalize_dtype(layer.active.data.dtype).__name__
+        except AttributeError:
+            pass
+    return dtype
 
 
 _CONTEXT_KEYS = {

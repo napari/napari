@@ -453,7 +453,7 @@ def test_name():
     assert layer.name == 'pts'
 
 
-def test_visiblity():
+def test_visibility():
     """Test setting layer visibility."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
@@ -2121,7 +2121,17 @@ def test_text_direct_copy_paste():
     )
 
 
-def test_set_properties_invalid_errors_safely():
+def test_set_properties_updates_text_values():
+    points = np.random.rand(3, 2)
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    layer = Points(points, properties=properties, text='class')
+
+    layer.properties = {'class': np.array(['D', 'E', 'F'])}
+
+    np.testing.assert_array_equal(layer.text.text.array, ['D', 'E', 'F'])
+
+
+def test_set_properties_with_invalid_shape_errors_safely():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
@@ -2130,13 +2140,13 @@ def test_set_properties_invalid_errors_safely():
     np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])
 
     with pytest.raises(ValueError):
-        points.properties = {'not_class': np.array(['D', 'E'])}
+        points.properties = {'class': np.array(['D', 'E'])}
 
     assert points.properties == properties
     np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])
 
 
-def test_set_properties_invalid_with_text_errors_safely():
+def test_set_properties_with_missing_text_property_text_raises_on_validation():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
