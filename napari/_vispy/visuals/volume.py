@@ -1,6 +1,4 @@
 from vispy.scene.visuals import Volume as BaseVolume
-from vispy.visuals.shaders import Function
-from vispy.visuals.volume import frag_dict
 
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
@@ -151,56 +149,7 @@ ISO_CATEGORICAL_SNIPPETS = dict(
 )
 
 
-frag_dict['iso_categorical'] = ISO_CATEGORICAL_SNIPPETS
-
-
 class Volume(BaseVolume):
-    # override these methods to use our frag_dict
-    @property
-    def _before_loop_snippet(self):
-        return frag_dict[self.method]['before_loop']
-
-    @property
-    def _in_loop_snippet(self):
-        return frag_dict[self.method]['in_loop']
-
-    @property
-    def _after_loop_snippet(self):
-        return frag_dict[self.method]['after_loop']
-
-    @property
-    def method(self):
-        return super().method
-
-    @method.setter
-    def method(self, method):
-        # Check and save
-        known_methods = list(frag_dict.keys())
-        if method not in known_methods:
-            raise ValueError(
-                'Volume render method should be in %r, not %r'
-                % (known_methods, method)
-            )
-        self._method = method
-        # Get rid of specific variables - they may become invalid
-        if 'u_threshold' in self.shared_program:
-            self.shared_program['u_threshold'] = None
-        if 'u_attenuation' in self.shared_program:
-            self.shared_program['u_attenuation'] = None
-
-        # $sample needs to be unset and re-set, since it's present inside the snippets.
-        #       Program should probably be able to do this automatically
-        self.shared_program.frag['sample'] = None
-        self.shared_program.frag[
-            'raycasting_setup'
-        ] = self._raycasting_setup_snippet
-        self.shared_program.frag['before_loop'] = self._before_loop_snippet
-        self.shared_program.frag['in_loop'] = self._in_loop_snippet
-        self.shared_program.frag['after_loop'] = self._after_loop_snippet
-        self.shared_program.frag[
-            'sampler_type'
-        ] = self._texture.glsl_sampler_type
-        self.shared_program.frag['sample'] = self._texture.glsl_sample
-        self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
-        self.shared_program['texture2D_LUT'] = self.cmap.texture_lut()
-        self.update()
+    # add the new rendering method to the snippets dict
+    _rendering_methods = BaseVolume._rendering_methods.copy()
+    _rendering_methods['iso_categorical'] = ISO_CATEGORICAL_SNIPPETS
