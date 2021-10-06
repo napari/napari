@@ -20,6 +20,11 @@ skip_on_win_ci = pytest.mark.skipif(
     reason='Screenshot tests are not supported on windows CI.',
 )
 
+skip_on_mac_ci = pytest.mark.skipif(
+    sys.platform.startswith('darwin') and os.getenv('CI', '0') != '0',
+    reason='This test seem to be problematic on mac.',
+)
+
 skip_local_popups = pytest.mark.skipif(
     not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
     reason='Tests requiring GUI windows are skipped locally by default.',
@@ -196,3 +201,19 @@ def check_layer_world_data_extent(
     translated_world_extent = np.add(scaled_world_extent, translate)
     np.testing.assert_almost_equal(layer.extent.data, extent)
     np.testing.assert_almost_equal(layer.extent.world, translated_world_extent)
+
+
+def slow(timeout):
+    """
+    Both mark a function as slow, and with a timeout which is easily scalable
+    via an env variable.
+    """
+    factor = int(os.getenv('NAPARI_TESTING_TIMEOUT_SCALING', '1'))
+
+    def _slow(func):
+
+        func = pytest.mark.timeout(timeout * factor)(func)
+        func = pytest.mark.slow(func)
+        return func
+
+    return _slow
