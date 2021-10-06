@@ -1,25 +1,14 @@
 import numpy as np
-import pytest
-
-
-@pytest.mark.parametrize("opacity", [(0), (0.3), (0.7), (1)])
-def test_VispyPointsLayer(make_napari_viewer, opacity):
-    """Test on the VispyPointsLayer object."""
-    viewer = make_napari_viewer()
-    points = np.array([[100, 100], [200, 200], [300, 100]])
-    layer = viewer.add_points(points, size=30, opacity=opacity)
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
-    assert visual.node.opacity == opacity
 
 
 def test_change_text_updates_node_string(make_napari_viewer):
     viewer = make_napari_viewer()
-    points = np.random.rand(3, 2)
+    shapes = np.random.rand(3, 4, 2)
     properties = {
         'class': np.array(['A', 'B', 'C']),
         'name': np.array(['D', 'E', 'F']),
     }
-    layer = viewer.add_points(points, text='class', properties=properties)
+    layer = viewer.add_shapes(shapes, properties=properties, text='class')
     vispy_layer = viewer.window.qt_viewer.layer_to_visual[layer]
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, properties['class'])
@@ -31,10 +20,10 @@ def test_change_text_updates_node_string(make_napari_viewer):
 
 def test_change_text_color_updates_node_color(make_napari_viewer):
     viewer = make_napari_viewer()
-    points = np.random.rand(3, 2)
+    shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     text = {'text': 'class', 'color': [1, 0, 0]}
-    layer = viewer.add_points(points, text=text, properties=properties)
+    layer = viewer.add_shapes(shapes, properties=properties, text=text)
     vispy_layer = viewer.window.qt_viewer.layer_to_visual[layer]
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.color.rgb, [[1, 0, 0]])
@@ -46,9 +35,9 @@ def test_change_text_color_updates_node_color(make_napari_viewer):
 
 def test_change_properties_updates_node_strings(make_napari_viewer):
     viewer = make_napari_viewer()
-    points = np.random.rand(3, 2)
+    shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = viewer.add_points(points, properties=properties, text='class')
+    layer = viewer.add_shapes(shapes, properties=properties, text='class')
     vispy_layer = viewer.window.qt_viewer.layer_to_visual[layer]
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
@@ -62,9 +51,9 @@ def test_update_property_value_then_refresh_text_updates_node_strings(
     make_napari_viewer,
 ):
     viewer = make_napari_viewer()
-    points = np.random.rand(3, 2)
+    shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = viewer.add_points(points, properties=properties, text='class')
+    layer = viewer.add_shapes(shapes, properties=properties, text='class')
     vispy_layer = viewer.window.qt_viewer.layer_to_visual[layer]
     text_node = vispy_layer._get_text_node()
     np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
