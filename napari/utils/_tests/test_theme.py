@@ -4,6 +4,7 @@ import sys
 import pytest
 from pydantic import ValidationError
 
+from napari._tests.utils import slow
 from napari.settings import get_settings
 from napari.utils.theme import (
     Theme,
@@ -101,6 +102,7 @@ def test_rebuild_theme_settings():
     settings.appearance.theme = "another-theme"
 
 
+@slow(15)
 @pytest.mark.skipif(
     os.getenv('CI') and sys.version_info < (3, 9),
     reason="Testing theme on CI is extremely slow ~ 15s per test."
