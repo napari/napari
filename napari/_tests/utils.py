@@ -40,7 +40,6 @@ layer_test_data = [
     (Points, 20 * np.random.random((10, 3)), 3),
     (Vectors, 20 * np.random.random((10, 2, 2)), 2),
     (Shapes, 20 * np.random.random((10, 4, 2)), 2),
-    (Shapes, 20 * np.random.random((10, 4, 2)), 2),
     (
         Surface,
         (

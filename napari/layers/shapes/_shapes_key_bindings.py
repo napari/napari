@@ -139,7 +139,9 @@ def select_all_shapes(layer):
 @register_shapes_action(trans._('Delete any selected shapes'))
 def delete_selected_shapes(layer):
     """."""
-    layer.remove_selected()
+
+    if not layer._is_creating:
+        layer.remove_selected()
 
 
 @register_shapes_action(trans._('Move to front'))
