@@ -49,6 +49,7 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 import inspect
+import warnings
 import weakref
 from collections import Counter
 from typing import (
@@ -380,7 +381,7 @@ class EventEmitter:
         -----
         If ``ref=True``, the callback reference will be determined from:
 
-            1. If ``callback`` is ``tuple``, the secend element in the tuple.
+            1. If ``callback`` is ``tuple``, the second element in the tuple.
             2. The ``__name__`` attribute.
             3. The ``__class__.__name__`` attribute.
 
@@ -513,7 +514,24 @@ class EventEmitter:
         # make the connection without making a strong reference to the
         # instance.
         if inspect.ismethod(callback):
+            old_callback = callback
             callback = (callback.__self__, callback.__name__)
+            if (
+                not hasattr(callback[0], callback[1])
+                or getattr(callback[0], callback[1]) != old_callback
+            ):
+                # some decorators will alter method.__name__, so that obj.method
+                # will not be equal to getattr(obj, obj.method.__name__). We check
+                # for that case here and traverse to find the right method here.
+                for name in dir(callback[0]):
+                    meth = getattr(callback[0], name)
+                    if inspect.ismethod(meth) and meth == old_callback:
+                        callback = callback[0], name
+                        break
+                else:
+                    raise RuntimeError(
+                        f"During bind method {callback[1]} of object {callback[0]} an error happen"
+                    )
 
         # always use a weak ref
         if isinstance(callback, tuple) and not isinstance(
@@ -584,8 +602,14 @@ class EventEmitter:
                     if obj is None:
                         rem.append(cb)  # add dead weakref
                         continue
+                    old_cb = cb
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
+                        warnings.warn(
+                            f"Problem with function {old_cb[1]} of {obj} connected to event {self}",
+                            stacklevel=2,
+                            category=RuntimeWarning,
+                        )
                         continue
                     cb = cast(Callback, cb)
 
