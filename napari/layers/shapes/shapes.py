@@ -1984,7 +1984,7 @@ class Shapes(Layer):
                 for k in self.properties:
                     self.properties[k] = self.properties[k][:total_shapes]
 
-            self.text.add(n_new_shapes)
+            self.text.add(num_to_add=n_new_shapes)
 
             self._add_shapes(
                 data,
@@ -2223,7 +2223,7 @@ class Shapes(Layer):
 
     @text.setter
     def text(self, text):
-        self._text = TextManager.from_layer_kwargs(
+        self._text = TextManager._from_layer_kwargs(
             text=text, properties=self.properties, n_text=self.nshapes
         )
         self.events.text()
@@ -2233,7 +2233,7 @@ class Shapes(Layer):
 
         This is generally used if the properties were updated without changing the data
         """
-        self.text.refresh_text(self.properties, self.nshapes)
+        self.text.refresh_text(self.properties)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
@@ -2876,7 +2876,7 @@ class Shapes(Layer):
                     shape, face_color=face_color, edge_color=edge_color
                 )
 
-            self.text.paste(self._clipboard['text_string'])
+            self.text._paste(self._clipboard['text_string'])
 
             self.selected_data = set(
                 range(cur_shapes, cur_shapes + len(self._clipboard['data']))

@@ -17,7 +17,7 @@ def test_empty_text_manager_property():
 
     # add a text element
     properties['confidence'] = np.array([0.5])
-    text_manager.add(1)
+    text_manager.add(num_to_add=1)
     np.testing.assert_equal(text_manager.text.array, ['0.5'])
 
 
@@ -30,7 +30,7 @@ def test_add_many_text_property():
     )
 
     properties['confidence'] = np.array([0.5, 0.5])
-    text_manager.add(2)
+    text_manager.add(num_to_add=2)
 
     np.testing.assert_equal(text_manager.text.array, ['0.5'] * 2)
 
@@ -48,7 +48,7 @@ def test_empty_text_manager_format():
     properties['confidence'] = np.concatenate(
         (properties['confidence'], [0.5])
     )
-    text_manager.add(1)
+    text_manager.add(num_to_add=1)
     np.testing.assert_equal(text_manager.text.array, ['confidence: 0.50'])
 
 
@@ -61,7 +61,7 @@ def test_add_many_text_formatted():
     )
 
     properties['confidence'] = np.append(properties['confidence'], [0.5] * 2)
-    text_manager.add(2)
+    text_manager.add(num_to_add=2)
 
     np.testing.assert_equal(text_manager.text.array, ['confidence: 0.50'] * 2)
 
@@ -79,7 +79,7 @@ def test_text_manager_property():
     properties['confidence'] = np.concatenate(
         (properties['confidence'], [0.5])
     )
-    text_manager.add(1)
+    text_manager.add(num_to_add=1)
     np.testing.assert_equal(text_manager.text.array, properties['class'])
 
     # remove the first text element
@@ -103,7 +103,7 @@ def test_text_manager_format():
     properties['confidence'] = np.concatenate(
         (properties['confidence'], [0.5])
     )
-    text_manager.add(1)
+    text_manager.add(num_to_add=1)
     expected_text_2 = np.concatenate([expected_text, ['confidence: 0.50']])
     np.testing.assert_equal(text_manager.text.array, expected_text_2)
 
@@ -151,7 +151,7 @@ def test_refresh_text():
         'class': new_classes,
         'confidence': np.array([0.5, 0.3, 1]),
     }
-    text_manager.refresh_text(new_properties, n_text)
+    text_manager.refresh_text(new_properties)
     np.testing.assert_equal(new_classes, text_manager.text.array)
 
 
@@ -243,7 +243,7 @@ def test_add_with_text_constant():
     assert len(text_manager.text.array) == n_text
 
     properties['class'] = np.append(properties['class'], ['C', 'C'])
-    text_manager.add(2)
+    text_manager.add(num_to_add=2)
 
     np.testing.assert_array_equal(text_manager.text.array, ['point'] * 5)
 
@@ -253,7 +253,7 @@ def test_add_with_text_constant_init_empty():
     text_manager = TextManager(text='point', n_text=0, properties=properties)
 
     properties['class'] = np.append(properties['class'], ['C', 'C'])
-    text_manager.add(2)
+    text_manager.add(num_to_add=2)
 
     np.testing.assert_array_equal(text_manager.text.array, ['point'] * 2)
 
@@ -280,7 +280,7 @@ def test_text_direct_add():
     values = ['one', 'two', 'three']
     text_manager = TextManager(text=values, n_text=3, properties={})
 
-    text_manager.add(2)
+    text_manager.add(num_to_add=2)
 
     np.testing.assert_array_equal(
         text_manager.text.array, ['one', 'two', 'three', '', '']
@@ -312,3 +312,17 @@ def test_text_direct_set_deprecated_values_field():
         np.testing.assert_array_equal(text_manager.values, values)
         text_manager.values = new_values
         np.testing.assert_array_equal(text_manager.values, new_values)
+
+
+def test_text_add_with_deprecated_properties_succeeds():
+    n_text = 3
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    text_manager = TextManager(
+        text='class', n_text=n_text, properties=properties
+    )
+
+    properties['class'] = np.append(properties['class'], ['C', 'C'])
+    with pytest.warns(DeprecationWarning):
+        text_manager.add({'class': np.array(['C'])}, 2)
+
+    np.testing.assert_array_equal(text_manager.text.array, properties['class'])

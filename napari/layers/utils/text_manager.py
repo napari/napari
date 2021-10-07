@@ -1,6 +1,15 @@
 import warnings
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -116,15 +125,13 @@ class TextManager(EventedModel):
         elif key == 'text':
             self._on_text_changed()
 
-    def refresh_text(self, properties: Dict[str, np.ndarray], n_text: int):
+    def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all text elements from the given layer properties.
 
         Parameters
         ----------
         properties : Dict[str, np.ndarray]
             The properties of a layer.
-        n_text : int
-            The number of text elements to generate which should match the number of rows in properties.
         """
         # This shares the same instance of properties as the layer, so when
         # that instance is modified, we won't detect the change. But when
@@ -133,41 +140,42 @@ class TextManager(EventedModel):
         # updates always occur exactly once and this always refreshes derived values.
         with self.events.properties.blocker():
             self.properties = properties
-        self._n_text = n_text
         self._on_properties_changed()
 
-    def add(self, num_to_add: int):
+    def add(self, properties: Optional[dict] = None, num_to_add: int = 0):
         """Adds a number of a new text elements.
 
         Parameters
         ----------
+        properties : dict
+            The properties to draw the text from.
         num_to_add : int
             The number of text elements to add.
         """
+        if properties is not None:
+            warnings.warn(
+                trans._(
+                    '`properties` is a deprecated parameter and has no effect. Set TextManager.properties instead.'
+                ),
+                DeprecationWarning,
+            )
         self._n_text += num_to_add
         self.text.update_tail(self.properties, self._n_text)
 
-    def paste(self, strings: np.ndarray):
-        """Pastes and appends some new text elements.
-
-        Parameters
-        ----------
-        strings : np.ndarray
-            The text string values to append.
-        """
+    def _paste(self, strings: np.ndarray):
         self._n_text += len(strings)
         self.text.append(strings)
 
-    def remove(self, indices: Iterable[int]):
+    def remove(self, indices_to_remove: Iterable[int]):
         """Removes some text elements by index.
 
         Parameters
         ----------
-        indices : Iterable[int]
+        indices_to_remove : Iterable[int]
             The indices to remove.
         """
-        self._n_text -= len(set(indices))
-        self.text.delete(indices)
+        self._n_text -= len(set(indices_to_remove))
+        self.text.delete(indices_to_remove)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -219,7 +227,7 @@ class TextManager(EventedModel):
         return np.array([''])
 
     @classmethod
-    def from_layer_kwargs(
+    def _from_layer_kwargs(
         cls,
         *,
         text: Union['TextManager', dict, str, Sequence[str], None],

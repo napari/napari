@@ -466,7 +466,7 @@ class Points(Layer):
                                 (self._size, size), axis=0
                             )
 
-                            self.text.add(adding)
+                            self.text.add(num_to_add=adding)
 
                             self.selected_data = set(
                                 np.arange(cur_npoints, len(data))
@@ -588,7 +588,7 @@ class Points(Layer):
 
     @text.setter
     def text(self, text):
-        self._text = TextManager.from_layer_kwargs(
+        self._text = TextManager._from_layer_kwargs(
             text=text, properties=self.properties, n_text=len(self.data)
         )
         self.events.text()
@@ -598,7 +598,7 @@ class Points(Layer):
 
         This is generally used if the properties were updated without changing the data
         """
-        self.text.refresh_text(self.properties, len(self.data))
+        self.text.refresh_text(self.properties)
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -1495,7 +1495,7 @@ class Points(Layer):
                     axis=0,
                 )
 
-            self.text.paste(self._clipboard['text_string'])
+            self.text._paste(self._clipboard['text_string'])
 
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))

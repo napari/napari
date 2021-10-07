@@ -25,11 +25,8 @@ class TextManagerSuite:
     def setup(self, n, text):
         np.random.seed(0)
         self.properties = {
-            'string_property': np.random.choice(('cat', 'car'), n),
-            'float_property': np.random.rand(n),
-        }
-        self.current_properties = {
-            k: np.array([v[-1]]) for k, v in self.properties.items()
+            'string_property': np.random.choice(('cat', 'car'), n + 512),
+            'float_property': np.random.rand(n + 512),
         }
         self.manager = TextManager(
             n_text=n, properties=self.properties, text=text
@@ -42,9 +39,12 @@ class TextManagerSuite:
     def time_refresh(self, n, text):
         self.manager.refresh_text(self.properties)
 
+    def time_add_as_batch(self, n, text):
+        self.manager.add(num_to_add=512)
+
     def time_add_iteratively(self, n, text):
         for _ in range(512):
-            self.manager.add(self.current_properties, 1)
+            self.manager.add(num_to_add=1)
 
     def time_remove_as_batch(self, n, text):
         self.manager.remove(self.indices_to_remove)
