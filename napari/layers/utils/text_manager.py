@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
-from ...utils.events.event_utils import connect_no_arg
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor
@@ -84,10 +83,13 @@ class TextManager(EventedModel):
     _n_text: int
 
     def __init__(self, *, n_text, **kwargs):
+        if 'values' in kwargs and 'text' not in kwargs:
+            _warn_about_deprecated_values_field()
+            kwargs['text'] = kwargs.pop('values')
         super().__init__(**kwargs)
         # Add a custom event that is emitted when text needs to be re-rendered.
         # This means external clients do not need to reconnect to the events of
-        # any mutable fields when their instance changes.
+        # any mutable fields (e.g. text) when their instance changes.
         self.events.add(text_update=Event)
         self.events.color.connect(self.events.text_update)
         self.events.rotation.connect(self.events.text_update)
@@ -95,13 +97,24 @@ class TextManager(EventedModel):
         self.events.anchor.connect(self.events.text_update)
         self.events.size.connect(self.events.text_update)
         self.events.visible.connect(self.events.text_update)
-        # Use connect_no_arg to workaround issue that TextManager is not hashable,
-        # so any method bound to it (e.g. _on_text_changed) is not hashable either,
-        # which is required by EventEmitter.
-        connect_no_arg(self.events.properties, self, '_on_properties_changed')
-        connect_no_arg(self.events.text, self, '_on_text_changed')
         self._n_text = n_text
         self._on_text_changed()
+
+    @property
+    def values(self):
+        _warn_about_deprecated_values_field()
+        return self.text.array
+
+    def __setattr__(self, key, value):
+        if key == 'values':
+            _warn_about_deprecated_values_field()
+            self.text = value
+        else:
+            super().__setattr__(key, value)
+        if key == 'properties':
+            self._on_properties_changed()
+        elif key == 'text':
+            self._on_text_changed()
 
     def refresh_text(self, properties: Dict[str, np.ndarray], n_text: int):
         """Refresh all text elements from the given layer properties.
@@ -328,6 +341,15 @@ class TextManager(EventedModel):
 
     def _on_properties_changed(self, event=None):
         self.text.update_all(self.properties, self._n_text)
+
+
+def _warn_about_deprecated_values_field():
+    warnings.warn(
+        trans._(
+            '`values` is a deprecated attribute. Use `text.array` instead.'
+        ),
+        DeprecationWarning,
+    )
 
 
 def _properties_equal(left, right):

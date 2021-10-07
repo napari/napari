@@ -294,3 +294,21 @@ def test_text_direct_remove():
     text_manager.remove([1, 3])
 
     np.testing.assert_array_equal(text_manager.text.array, ['one', 'three'])
+
+
+def test_text_direct_deprecated_values_field():
+    values = ['one', 'two', 'three']
+    with pytest.warns(DeprecationWarning):
+        text_manager = TextManager(values=values, n_text=3, properties={})
+        np.testing.assert_array_equal(text_manager.values, values)
+
+
+def test_text_direct_set_deprecated_values_field():
+    values = ['one', 'two', 'three']
+    text_manager = TextManager(text=values, n_text=3, properties={})
+
+    new_values = ['four', 'five', 'six']
+    with pytest.warns(DeprecationWarning):
+        np.testing.assert_array_equal(text_manager.values, values)
+        text_manager.values = new_values
+        np.testing.assert_array_equal(text_manager.values, new_values)
