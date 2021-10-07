@@ -46,7 +46,7 @@ class StyleEncoding(EventedModel, ABC):
     ) -> np.ndarray:
         pass
 
-    def validate_properties(self, properties: Dict[str, np.ndarray]):
+    def _validate_properties(self, properties: Dict[str, np.ndarray]):
         """Validates that the given properties are compatible with this encoding.
 
         Parameters
@@ -61,7 +61,7 @@ class StyleEncoding(EventedModel, ABC):
         """
         pass
 
-    def update_all(self, properties: Dict[str, np.ndarray], n_rows: int):
+    def _update_all(self, properties: Dict[str, np.ndarray], n_rows: int):
         """Updates all style values based on the given properties.
 
         Parameters
@@ -76,7 +76,7 @@ class StyleEncoding(EventedModel, ABC):
         indices = range(0, n_rows)
         self.array = self._apply(properties, indices)
 
-    def update_tail(self, properties: Dict[str, np.ndarray], n_rows: int):
+    def _update_tail(self, properties: Dict[str, np.ndarray], n_rows: int):
         """Generates style values for newly added elements in properties and appends them to this.
 
         Parameters
@@ -91,9 +91,9 @@ class StyleEncoding(EventedModel, ABC):
         n_values = self.array.shape[0]
         indices = range(n_values, n_rows)
         array = self._apply(properties, indices)
-        self.append(array)
+        self._append(array)
 
-    def append(self, array: np.ndarray):
+    def _append(self, array: np.ndarray):
         """Appends raw style values to this.
 
         This is useful for supporting the paste operation in layers.
@@ -105,7 +105,7 @@ class StyleEncoding(EventedModel, ABC):
         """
         self.array = _append_maybe_empty(self.array, array)
 
-    def delete(self, indices: Iterable[int]):
+    def _delete(self, indices: Iterable[int]):
         """Deletes style values from this by index.
 
         Parameters
@@ -203,7 +203,7 @@ class IdentityStringEncoding(DerivedStyleEncoding):
     ) -> np.ndarray:
         return np.array(properties[self.property_name][indices], dtype=str)
 
-    def validate_properties(self, properties: Dict[str, np.ndarray]):
+    def _validate_properties(self, properties: Dict[str, np.ndarray]):
         _check_property_name(properties, self.property_name)
 
 
@@ -231,7 +231,7 @@ class FormatStringEncoding(DerivedStyleEncoding):
             ]
         )
 
-    def validate_properties(self, properties: Dict[str, np.ndarray]):
+    def _validate_properties(self, properties: Dict[str, np.ndarray]):
         is_format_string(properties, self.format_string)
 
 

@@ -160,11 +160,11 @@ class TextManager(EventedModel):
                 DeprecationWarning,
             )
         self._n_text += num_to_add
-        self.text.update_tail(self.properties, self._n_text)
+        self.text._update_tail(self.properties, self._n_text)
 
     def _paste(self, strings: np.ndarray):
         self._n_text += len(strings)
-        self.text.append(strings)
+        self.text._append(strings)
 
     def remove(self, indices_to_remove: Iterable[int]):
         """Removes some text elements by index.
@@ -175,7 +175,7 @@ class TextManager(EventedModel):
             The indices to remove.
         """
         self._n_text -= len(set(indices_to_remove))
-        self.text.delete(indices_to_remove)
+        self.text._delete(indices_to_remove)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -276,7 +276,7 @@ class TextManager(EventedModel):
         cls, properties: Dict[str, np.ndarray], values: dict
     ):
         if 'text' in values:
-            values['text'].validate_properties(properties)
+            values['text']._validate_properties(properties)
         return properties
 
     @validator('text', pre=True, always=True)
@@ -308,7 +308,7 @@ class TextManager(EventedModel):
                     deferred=True,
                 )
             )
-        encoding.validate_properties(properties)
+        encoding._validate_properties(properties)
         return encoding
 
     @validator('color', pre=True, always=True)
@@ -345,10 +345,10 @@ class TextManager(EventedModel):
 
     def _on_text_changed(self, event=None):
         self.text.events.array.connect(self.events.text_update)
-        self.text.update_all(self.properties, self._n_text)
+        self.text._update_all(self.properties, self._n_text)
 
     def _on_properties_changed(self, event=None):
-        self.text.update_all(self.properties, self._n_text)
+        self.text._update_all(self.properties, self._n_text)
 
 
 def _warn_about_deprecated_values_field():
