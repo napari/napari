@@ -24,9 +24,8 @@ class VispyShapesLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_layer_text_change(self, event=None):
-        self.layer.text._connect_update_events(
-            self._on_text_change, self._on_blending_change
-        )
+        self.layer.text.events.text_update.connect(self._on_text_change)
+        self.layer.text.events.blending.connect(self._on_blending_change)
         self._on_text_change()
 
     def _on_data_change(self, event=None):
