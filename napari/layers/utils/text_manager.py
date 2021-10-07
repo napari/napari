@@ -47,7 +47,7 @@ class TextManager(EventedModel):
     ----------
     properties : Dict[str, np.ndarray]
         The property values, which typically come from a layer.
-    text : StringEncoding
+    text : Union[STRING_ENCODINGS]
         Defines the string for each text element.
     visible : bool
         True if the text should be displayed, false otherwise.
