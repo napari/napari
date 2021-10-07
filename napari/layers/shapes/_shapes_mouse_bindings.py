@@ -29,7 +29,12 @@ def select(layer, event):
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
             else:
-                layer.selected_data.add(shape_under_cursor)
+                if len(layer.selected_data):
+                    # one or more shapes already selected
+                    layer.selected_data.add(shape_under_cursor)
+                else:
+                    # first shape being selected
+                    layer.selected_data = {shape_under_cursor}
         elif shape_under_cursor is not None:
             if shape_under_cursor not in layer.selected_data:
                 layer.selected_data = {shape_under_cursor}
