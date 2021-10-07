@@ -1,3 +1,5 @@
+import pytest
+
 from napari.utils.events import EventEmitter
 
 
@@ -21,15 +23,11 @@ def test_event_blocker_count():
 
 def test_no_event_arg():
     class TestOb:
-        def __init__(self):
-            self.count = 0
-
         def fun(self):
-            self.count += 1
+            pass
 
     t = TestOb()
 
     e = EventEmitter(type="test")
-    e.connect(t.fun)
-    e()
-    assert t.count == 1
+    with pytest.raises(RuntimeError):
+        e.connect(t.fun)

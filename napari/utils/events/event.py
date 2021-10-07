@@ -202,9 +202,6 @@ _event_repr_depth = 0
 
 Callback = Callable[[Event], None]
 CallbackRef = Tuple[
-    'weakref.ReferenceType[Any]', str, bool
-]  # dereferenced method
-CallbackStr = Tuple[
     Union['weakref.ReferenceType[Any]', object], str
 ]  # dereferenced method
 
@@ -347,7 +344,7 @@ class EventEmitter:
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, CallbackStr, 'EmitterGroup'],
+        callback: Union[Callback, CallbackRef, 'EmitterGroup'],
         ref: Union[bool, str] = False,
         position: Union[Literal['first'], Literal['last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
@@ -538,7 +535,10 @@ class EventEmitter:
                     signature.parameters.values(),
                 )
             )
-            callback = callback + (allow_event,)
+            if not allow_event:
+                raise RuntimeError(
+                    "Function need take at least one positional argument to be connected to the event."
+                )
 
         return callback
 
@@ -579,14 +579,11 @@ class EventEmitter:
 
             rem: List[CallbackRef] = []
             for cb in self._callbacks[:]:
-                event_ref = event
                 if isinstance(cb, tuple):
                     obj = cb[0]()
                     if obj is None:
                         rem.append(cb)  # add dead weakref
                         continue
-                    if not cb[2]:
-                        event_ref = None
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
                         continue
@@ -596,7 +593,7 @@ class EventEmitter:
                     self._block_counter.update([cb])
                     continue
 
-                self._invoke_callback(cb, event_ref)
+                self._invoke_callback(cb, event)
                 if event.blocked:
                     break
 
@@ -616,13 +613,10 @@ class EventEmitter:
         return event
 
     def _invoke_callback(
-        self, cb: Union[Callback, Callable[[], None]], event: Optional[Event]
+        self, cb: Union[Callback, Callable[[], None]], event: Event
     ):
         try:
-            if event is not None:
-                cb(event)
-            else:
-                cb()
+            cb(event)
         except Exception as e:
             # dead Qt object with living python pointer. not importing Qt
             # here... but this error is consistent across backends
