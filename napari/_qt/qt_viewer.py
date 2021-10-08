@@ -478,6 +478,7 @@ class QtViewer(QSplitter):
             raise OSError(trans._("Nothing to save"))
 
         # prepare list of extensions for drop down menu.
+        # TODO: (nclack) populate this nicely w npe2
         if selected and len(self.viewer.layers.selection) == 1:
             selected_layer = list(self.viewer.layers.selection)[0]
             # single selected layer.
