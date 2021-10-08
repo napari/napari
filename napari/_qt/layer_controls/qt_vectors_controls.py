@@ -252,7 +252,10 @@ class QtVectorsControls(QtLayerControls):
 
     def _on_edge_color_change(self):
         """Receive layer model edge color  change event & update dropdown."""
-        if self.layer._edge.color_mode == ColorMode.DIRECT:
+        if (
+            self.layer._edge.color_mode == ColorMode.DIRECT
+            and len(self.layer.data) > 0
+        ):
             with qt_signals_blocked(self.edgeColorEdit):
                 self.edgeColorEdit.setColor(self.layer.edge_color[0])
         elif self.layer._edge.color_mode in (
