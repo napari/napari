@@ -91,9 +91,33 @@ def test_no_event_arg():
         def fun(self):
             self.count += 1
 
+    count = [0]
+
+    def simple_fun():
+        count[0] += 1
+
     t = TestOb()
 
     e = EventEmitter(type="test")
     e.connect(t.fun)
+    e.connect(simple_fun)
     e()
     assert t.count == 1
+    assert count[0] == 1
+
+
+def test_to_many_positional():
+    class TestOb:
+        def fun(self, a, b, c=1):
+            pass
+
+    def simple_fun(a, b):
+        pass
+
+    t = TestOb()
+
+    e = EventEmitter(type="test")
+    with pytest.raises(RuntimeError):
+        e.connect(t.fun)
+    with pytest.raises(RuntimeError):
+        e.connect(simple_fun)
