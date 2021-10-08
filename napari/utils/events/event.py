@@ -253,9 +253,10 @@ class EventEmitter:
         event_class: Type[Event] = Event,
     ):
         # connected callbacks
-        self._callbacks: List[Tuple[Union[Callback, CallbackRef], bool]] = []
+        self._callbacks: List[Union[Callback, CallbackRef]] = []
         # used when connecting new callbacks at specific positions
         self._callback_refs: List[Optional[str]] = []
+        self._callback_pass_env: List[bool] = []
 
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
@@ -485,8 +486,9 @@ class EventEmitter:
         idx = bounds[1] if position == 'first' else bounds[0]  # 'last'
 
         # actually add the callback
-        self._callbacks.insert(idx, (callback, pass_event))
+        self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
+        self._callback_pass_env.insert(idx, pass_event)
         return callback  # allows connect to be used as a decorator
 
     def disconnect(self, callback: Union[Callback, CallbackRef, None] = None):
@@ -499,11 +501,12 @@ class EventEmitter:
             self._callbacks = []
             self._callback_refs = []
         else:
-            callback = self._normalize_cb(callback)
+            callback, _pass_event = self._normalize_cb(callback)
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
+                self._callback_pass_env.pop(idx)
 
     @staticmethod
     def _get_proper_name(callback):
@@ -556,6 +559,7 @@ class EventEmitter:
         # dereference methods into a (self, method_name) pair so that we can
         # make the connection without making a strong reference to the
         # instance.
+        start_callback = callback
         if inspect.ismethod(callback):
             callback = self._get_proper_name(callback)
         # always use a weak ref
@@ -564,11 +568,15 @@ class EventEmitter:
         ):
             callback = (weakref.ref(callback[0]), *callback[1:])
 
-        if isinstance(callback, tuple) and len(callback) == 2:
-            callback_fun = getattr(callback[0](), callback[1])
-            callback = callback, self._check_signature(callback_fun)
+        if isinstance(start_callback, Callable):
+            callback = callback, self._check_signature(start_callback)
         else:
-            callback = callback, self._check_signature(callback)
+            obj = callback[0]()
+            if obj is None:
+                callback = callback, False
+            else:
+                callback_fun = getattr(obj, callback[1])
+                callback = callback, self._check_signature(callback_fun)
 
         return callback
 
@@ -608,7 +616,9 @@ class EventEmitter:
                 return event
 
             rem: List[CallbackRef] = []
-            for cb, pass_event in self._callbacks[:]:
+            for cb, pass_event in zip(
+                self._callbacks[:], self._callback_pass_env[:]
+            ):
                 if isinstance(cb, tuple):
                     obj = cb[0]()
                     if obj is None:
