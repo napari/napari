@@ -22,7 +22,7 @@ version = "0.0.1"
 formal_name = "napari"
 description = "napari: a multi-dimensional image viewer"
 sources = ['napari']
-icon = "resources/icon"
+icon = "napari/resources/icon"
 # populated in bundle.py
 requires = []
 
