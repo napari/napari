@@ -324,7 +324,7 @@ def _write_layers_with_npe2(
         When the path has a file extension, find a compatible writer that has
         that same extension.
 
-        When there's not extension, and a single layer find a compatible
+        When there is no extension and only a single layer, find a compatible
         writer and append the extension.
 
         Otherwise, find a compatible no-extension writer and write to that.
