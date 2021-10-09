@@ -6,7 +6,6 @@ from logging import getLogger
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from napari_plugin_engine import HookImplementation, PluginCallError
-from npe2.manifest.io import WriterContribution
 
 from ..layers import Layer
 from ..types import LayerData
@@ -312,6 +311,7 @@ def _write_layers_with_npe2(
 
     try:
         import npe2
+        from npe2.manifest.io import WriterContribution
     except ImportError:
         return [None]
 
