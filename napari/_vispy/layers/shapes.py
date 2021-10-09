@@ -29,7 +29,7 @@ class VispyShapesLayer(VispyBaseLayer):
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
 
-        # Note that the indices of the vertices need to be resversed to
+        # Note that the indices of the vertices need to be reversed to
         # go from numpy style to xyz
         if vertices is not None:
             vertices = vertices[:, ::-1]

@@ -136,6 +136,19 @@ class NapariMenu(QMenu):
         super().__init__(*args, **kwargs)
         self._INSTANCES.append(self)
 
+    def _destroy(self):
+        """Clean up action data to avoid widget leaks."""
+        for ax in self.actions():
+            ax.setData(None)
+
+            try:
+                ax._destroy()
+            except AttributeError:
+                pass
+
+        if self in self._INSTANCES:
+            self._INSTANCES.remove(self)
+
     def update(self, event=None):
         """Update action enabled/disabled state based on action data."""
         for ax in self.actions():
@@ -143,11 +156,3 @@ class NapariMenu(QMenu):
             if data:
                 enabled_func = data.get('enabled', lambda event: True)
                 ax.setEnabled(bool(enabled_func(event)))
-
-    def closeEvent(self, event):
-        """Override qt method to clean up action data."""
-        for ax in self.actions():
-            ax.setData(None)
-
-        self._INSTANCES.remove(self)
-        super().closeEvent(event)
