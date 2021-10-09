@@ -11,19 +11,24 @@ contributions:
     title: Builtin Reader
   - id: napari_builtins.write_image
     python_name: napari.plugins._builtins:napari_write_image
-    title: Write Image
+    title: napari built-in image writer
+    short_title: napari images
   - id: napari_builtins.write_labels
     python_name: napari.plugins._builtins:napari_write_labels
-    title: Write Labels
+    title: napari built-in label field writer
+    short_title: napari labels
   - id: napari_builtins.write_points
     python_name: napari.plugins._builtins:napari_write_points
-    title: Write Points
+    title: napari built-in points writer
+    short_title: napari points
   - id: napari_builtins.write_shapes
     python_name: napari.plugins._builtins:napari_write_shapes
-    title: Write Shapes
+    title: napari built-in shapes writer
+    short_title: napari shapes
   - id: napari_builtins.write_directory
     python_name: napari.plugins._builtins:write_layer_data_with_plugins
-    title: Write to folder
+    title: napari built-in write to directory
+    short_title: Directory
 
   readers:
   - command: napari_builtins.get_reader

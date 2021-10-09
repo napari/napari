@@ -284,7 +284,7 @@ def _is_null_layer_sentinel(layer_data: Union[LayerData, Any]) -> bool:
 
 
 def _write_layers_with_npe2(
-    path: str, layers: List[Layer], plugin_name: Optional[str] = None
+    path: str, layers: List[Layer], plugin_command_name: Optional[str] = None
 ) -> List[Optional[str]]:
     """
     Write layers to a file using an NPE2 plugin.
@@ -318,15 +318,6 @@ def _write_layers_with_npe2(
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
 
-    # TODO: (nclack) if a plugin command id is provided, use npe2 to load it
-    if plugin_name:
-        # For now, if a plugin_name is provided, fall back to
-        # the original napari_plugin_engine implementation.
-        logger.warn(
-            "TODO: Specifying a writer plugin by name w npe2. Falling back."
-        )
-        return [None]
-
     def _lookup_writer(path: str) -> Tuple[WriterContribution, str, str]:
         """Returns (writer,new_path,ext)
 
@@ -339,10 +330,20 @@ def _write_layers_with_npe2(
         Otherwise, find a compatible no-extension writer and write to that.
         No-extension writers typically write to a folder.
         """
+        ext = os.path.splitext(path)[1].lower() if path else ''  # type: str
+
+        if plugin_command_name:
+            return (
+                npe2.plugin_manager.get_writer_for_command(
+                    plugin_command_name
+                ),
+                path,
+                ext,
+            )
+
         writers = list(
             npe2.plugin_manager.iter_compatible_writers(layer_types)
         )  # type: List[WriterContribution]
-        ext = os.path.splitext(path)[1].lower() if path else ''  # type: str
 
         if not writers:
             return (None, path, ext)

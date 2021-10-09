@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import logging
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+
+from napari.layers.base.base import Layer
 
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
@@ -31,7 +34,7 @@ from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
 from ..utils.misc import in_ipython
 from ..utils.theme import get_theme
-from ..utils.translations import trans
+from ..utils.translations import TranslationBundle, trans
 from .containers import QtLayerList
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
@@ -478,9 +481,122 @@ class QtViewer(QSplitter):
             raise OSError(trans._("Nothing to save"))
 
         # prepare list of extensions for drop down menu.
-        # TODO: (nclack) populate this nicely w npe2
-        if selected and len(self.viewer.layers.selection) == 1:
-            selected_layer = list(self.viewer.layers.selection)[0]
+        ext_str, writers = self._extension_string_for_layers(
+            list(self.viewer.layers.selection)
+            if selected
+            else self.viewer.layers
+        )
+
+        msg = trans._("selected") if selected else trans._("all")
+        dlg = QFileDialog()
+        hist = get_save_history()
+        dlg.setHistory(hist)
+
+        filename, selected_filter = dlg.getSaveFileName(
+            parent=self,
+            caption=trans._('Save {msg} layers', msg=msg),
+            directory=hist[0],  # home dir by default,
+            filter=ext_str,
+            options=(
+                QFileDialog.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Options()
+            ),
+        )
+        logging.debug(
+            f'QFileDialog - filename: {filename if filename else None} '
+            f'selected_filter: {selected_filter if selected_filter else None}'
+        )
+
+        plugin_command = QtViewer._npe2_decode_selected_filter(
+            ext_str, selected_filter, writers
+        )
+
+        if filename:
+            with warnings.catch_warnings(record=True) as wa:
+                saved = self.viewer.layers.save(
+                    filename, selected=selected, plugin=plugin_command
+                )
+                logging.debug(f'Saved {saved}')
+                error_messages = "\n".join(
+                    [str(x.message.args[0]) for x in wa]
+                )
+
+            if not saved:
+                raise OSError(
+                    trans._(
+                        "File {filename} save failed.\n{error_messages}",
+                        deferred=True,
+                        filename=filename,
+                        error_messages=error_messages,
+                    )
+                )
+            else:
+                update_save_history(saved[0])
+
+    @staticmethod
+    def _npe2_decode_selected_filter(
+        ext_str: str, selected_filter: str, writers: List[Any]
+    ) -> Optional[str]:
+        for entry, writer in zip(
+            ext_str.split(";;"),
+            writers,
+        ):
+            if entry.startswith(selected_filter):
+                return writer.command
+        return None
+
+    @staticmethod
+    def _npe2_file_extensions_string_for_layers(
+        layers: List[Layer],
+    ) -> Optional[TranslationBundle | str]:
+        try:
+            import npe2
+        except ImportError:
+            return None
+
+        layer_types = [layer.as_layer_data_tuple()[2] for layer in layers]
+        writers = list(
+            npe2.plugin_manager.iter_compatible_writers(layer_types)
+        )
+
+        def _items():
+            """Lookup the command name and its supported extensions"""
+            for writer in writers:
+                cmd = npe2.plugin_manager.get_command(writer.command)
+                title = cmd.short_title if cmd.short_title else cmd.title
+                yield title, writer.filename_extensions
+
+        # extension strings are in the format:
+        #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
+
+        def to_str(es):
+            if es:
+                return "(" + " ".join(["*" + e for e in es if e]) + ")"
+            else:
+                return "(*.*)"
+
+        return (
+            ";;".join(f"{name} {to_str(exts)}" for name, exts in _items()),
+            writers,
+        )
+
+    @staticmethod
+    def _extension_string_for_layers(
+        layers: List[Layer],
+    ) -> Tuple[TranslationBundle | str, Optional[List[Any]]]:
+
+        # try to use npe2
+        ext_str, writers = QtViewer._npe2_file_extensions_string_for_layers(
+            layers
+        )
+        if ext_str:
+            return ext_str, writers
+
+        # fallback to old behavior
+
+        if len(layers) == 1:
+            selected_layer = layers[0]
             # single selected layer.
             if selected_layer._type_string == 'image':
 
@@ -508,42 +624,7 @@ class QtViewer(QSplitter):
         else:
             # multiple layers.
             ext_str = trans._("All Files (*);;")
-
-        msg = trans._("selected") if selected else trans._("all")
-        dlg = QFileDialog()
-        hist = get_save_history()
-        dlg.setHistory(hist)
-
-        filename, _ = dlg.getSaveFileName(
-            parent=self,
-            caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default,
-            filter=ext_str,
-            options=(
-                QFileDialog.DontUseNativeDialog
-                if in_ipython()
-                else QFileDialog.Options()
-            ),
-        )
-
-        if filename:
-            with warnings.catch_warnings(record=True) as wa:
-                saved = self.viewer.layers.save(filename, selected=selected)
-                error_messages = "\n".join(
-                    [str(x.message.args[0]) for x in wa]
-                )
-
-            if not saved:
-                raise OSError(
-                    trans._(
-                        "File {filename} save failed.\n{error_messages}",
-                        deferred=True,
-                        filename=filename,
-                        error_messages=error_messages,
-                    )
-                )
-            else:
-                update_save_history(saved[0])
+        return ext_str, None
 
     def _update_welcome_screen(self, event=None):
         """Update welcome screen display based on layer count.
