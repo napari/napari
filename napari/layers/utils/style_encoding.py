@@ -26,25 +26,28 @@ from ...utils.events import EventedModel
 
 
 class StyleEncoding(EventedModel, ABC):
-    """Defines a way to encode style values, like colors and strings.
+    """Defines a way to encode style values, like colors and strings."""
 
-    This also updates and stores values generated using that encoding.
+    _array: np.ndarray = []
 
-    Attributes
-    ----------
-    array : np.ndarray
-        Stores the generated style values. The first dimension should have
-        length N, where N is the number of expected style values. The other
-        dimensions should describe the dimensionality of the style value.
-    """
-
-    array: np.ndarray = []
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._array = np.empty((0,))
 
     @abstractmethod
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
         pass
+
+    def _get_array(
+        self,
+        properties: Dict[str, np.ndarray],
+        n_rows: int,
+        indices: Sequence[int],
+    ) -> np.ndarray:
+        self._update_tail(properties, n_rows)
+        return self._array[indices]
 
     def _validate_properties(self, properties: Dict[str, np.ndarray]):
         """Validates that the given properties are compatible with this encoding.
@@ -74,7 +77,7 @@ class StyleEncoding(EventedModel, ABC):
             number of style values generated.
         """
         indices = range(0, n_rows)
-        self.array = self._apply(properties, indices)
+        self._array = self._apply(properties, indices)
 
     def _update_tail(self, properties: Dict[str, np.ndarray], n_rows: int):
         """Generates style values for newly added elements in properties and appends them to this.
@@ -88,7 +91,7 @@ class StyleEncoding(EventedModel, ABC):
             correspond to the number of elements in a layer, and will be the
             number of style values generated.
         """
-        n_values = self.array.shape[0]
+        n_values = self._array.shape[0]
         indices = range(n_values, n_rows)
         array = self._apply(properties, indices)
         self._append(array)
@@ -103,7 +106,7 @@ class StyleEncoding(EventedModel, ABC):
         array : np.ndarray
             The values to append. The dimensionality of these should match that of the existing style values.
         """
-        self.array = _append_maybe_empty(self.array, array)
+        self._array = _append_maybe_empty(self._array, array)
 
     def _delete(self, indices: Iterable[int]):
         """Deletes style values from this by index.
@@ -113,11 +116,7 @@ class StyleEncoding(EventedModel, ABC):
         indices : Iterable[int]
             The indices of the style values to remove.
         """
-        self.array = np.delete(self.array, list(indices), axis=0)
-
-    @validator('array', pre=True, always=True)
-    def _check_array(cls, array):
-        return np.array(array)
+        self._array = np.delete(self._array, list(indices), axis=0)
 
 
 class DerivedStyleEncoding(StyleEncoding, ABC):

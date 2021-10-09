@@ -221,10 +221,7 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        if len(indices_view) > 0:
-            return self.text.array[indices_view]
-        # if no elements in this slice send dummy data
-        return np.array([''])
+        return self.text._get_array(self.properties, indices_view)
 
     @classmethod
     def _from_layer_kwargs(

@@ -1519,7 +1519,7 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.view_text(self._indices_view)
+        return self.text.text._get_array(self.properties, self._indices_view)
 
     @property
     def _view_text_coords(self) -> np.ndarray:

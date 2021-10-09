@@ -18,7 +18,9 @@ def test_empty_text_manager_property():
     # add a text element
     properties['confidence'] = np.array([0.5])
     text_manager.add(num_to_add=1)
-    np.testing.assert_equal(text_manager.text.array, ['0.5'])
+    np.testing.assert_equal(
+        text_manager.text._get_values(properties, [0]), ['0.5']
+    )
 
 
 def test_add_many_text_property():
@@ -109,7 +111,7 @@ def test_text_manager_format():
 
     # test getting the text elements when there are none in view
     text_view = text_manager.view_text([])
-    np.testing.assert_equal(text_view, [''])
+    np.testing.assert_equal(text_view, np.empty((0,), dtype=str))
 
     # test getting the text elements when the first two elements are in view
     text_view = text_manager.view_text([0, 1])

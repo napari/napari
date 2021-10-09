@@ -33,6 +33,12 @@ class TextManagerSuite:
         )
         self.indices_to_remove = list(range(0, n, 2))
 
+    def time_get_text_values(self, n, text):
+        self.manager.text._get_values(self.properties, range(n))
+
+    def time_get_text_array(self, n, text):
+        self.manager.text._get_array(self.properties, range(n))
+
     def time_create(self, n, text):
         TextManager(n_text=n, properties=self.properties, text=text)
 
