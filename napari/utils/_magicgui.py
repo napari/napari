@@ -15,7 +15,6 @@ import weakref
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Type
 
-import toolz as tz
 from typing_extensions import get_args
 
 if TYPE_CHECKING:
@@ -25,16 +24,6 @@ if TYPE_CHECKING:
 
     from ..layers import Layer
     from ..viewer import Viewer
-
-
-# TODO: make register_type a better decorator upstream
-@tz.curry
-def register_type(type_: type, **kwargs) -> type:
-    """Decorator to register a type with magicgui."""
-    import magicgui
-
-    magicgui.register_type(type_, **kwargs)
-    return type_
 
 
 def add_layer_data_to_viewer(gui, result, return_type):
