@@ -1,26 +1,9 @@
 from abc import ABC, abstractmethod
 from string import Formatter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import Field, ValidationError, parse_obj_as, validator
-
-from ...utils.events.evented_model import (
-    add_to_exclude_kwarg,
-    get_repr_args_without,
-)
-
-if TYPE_CHECKING:
-    from pydantic.typing import ReprArgs
 
 from ...utils.events import EventedModel
 
@@ -28,11 +11,7 @@ from ...utils.events import EventedModel
 class StyleEncoding(EventedModel, ABC):
     """Defines a way to encode style values, like colors and strings."""
 
-    _array: np.ndarray = []
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._array = np.empty((0,))
+    _array: np.ndarray = np.empty((0,))
 
     @abstractmethod
     def _apply(
@@ -46,55 +25,38 @@ class StyleEncoding(EventedModel, ABC):
         n_rows: int,
         indices: Sequence[int],
     ) -> np.ndarray:
-        self._update_tail(properties, n_rows)
-        return self._array[indices]
-
-    def _validate_properties(self, properties: Dict[str, np.ndarray]):
-        """Validates that the given properties are compatible with this encoding.
+        """Get the array of values generated from this and the given properties.
 
         Parameters
         ----------
         properties : Dict[str, np.ndarray]
-            The properties of a layer.
+            The properties from which to derive the output values.
+        n_rows : int
+            The total number of rows in the properties table.
+        indices : Sequence[int]
+            The row indices for which to return values.
+
+        Returns
+        -------
+        np.ndarray
+            The numpy array of derived values. This is either a single value or
+            has the same length as the given indices.
 
         Raises
         ------
         ValueError
-            If the given properties are not compatible with this encoding.
+            If this is not compatible with the given properties. In this case, you
+            should probably fall back to a safer encoding (e.g. a constant).
         """
-        pass
+        current_length = self._array.shape[0]
+        tail_indices = range(current_length, n_rows)
+        tail_array = self._apply(properties, tail_indices)
+        self._append(tail_array)
+        return self._array[indices]
 
-    def _update_all(self, properties: Dict[str, np.ndarray], n_rows: int):
-        """Updates all style values based on the given properties.
-
-        Parameters
-        ----------
-        properties : Dict[str, np.ndarray]
-            The properties of a layer.
-        n_rows : int
-            The total number of rows in the properties table, which should
-            correspond to the number of elements in a layer, and will be the
-            number of style values generated.
-        """
-        indices = range(0, n_rows)
-        self._array = self._apply(properties, indices)
-
-    def _update_tail(self, properties: Dict[str, np.ndarray], n_rows: int):
-        """Generates style values for newly added elements in properties and appends them to this.
-
-        Parameters
-        ----------
-        properties : Dict[str, np.ndarray]
-            The properties of a layer.
-        n_rows : int
-            The total number of rows in the properties table, which should
-            correspond to the number of elements in a layer, and will be the
-            number of style values generated.
-        """
-        n_values = self._array.shape[0]
-        indices = range(n_values, n_rows)
-        array = self._apply(properties, indices)
-        self._append(array)
+    def _clear(self):
+        """Clear the stored values. Call this before _get_array to refresh values."""
+        self._array = np.empty((0,))
 
     def _append(self, array: np.ndarray):
         """Appends raw style values to this.
@@ -117,27 +79,6 @@ class StyleEncoding(EventedModel, ABC):
             The indices of the style values to remove.
         """
         self._array = np.delete(self._array, list(indices), axis=0)
-
-
-class DerivedStyleEncoding(StyleEncoding, ABC):
-    """Encodes style values from properties.
-
-    The style values can always be regenerated from properties, so the
-    array attribute should read, but not written for persistent storage,
-    as updating this type of encoding will clobber the written values.
-    For the same reason, the array attribute is not serialized.
-    """
-
-    def __repr_args__(self) -> 'ReprArgs':
-        return get_repr_args_without(super().__repr_args__(), {'array'})
-
-    def json(self, **kwargs) -> str:
-        add_to_exclude_kwarg(kwargs, {'array'})
-        return super().json(**kwargs)
-
-    def dict(self, **kwargs) -> Dict[str, Any]:
-        add_to_exclude_kwarg(kwargs, {'array'})
-        return super().dict(**kwargs)
 
 
 class DirectStyleEncoding(StyleEncoding):
@@ -169,7 +110,7 @@ class DirectStyleEncoding(StyleEncoding):
         )
 
 
-class ConstantStringEncoding(DerivedStyleEncoding):
+class ConstantStringEncoding(StyleEncoding):
     """Encodes string values directly in an array.
 
     Attributes
@@ -186,7 +127,7 @@ class ConstantStringEncoding(DerivedStyleEncoding):
         return np.repeat(self.constant, len(indices))
 
 
-class IdentityStringEncoding(DerivedStyleEncoding):
+class IdentityStringEncoding(StyleEncoding):
     """Encodes strings directly from a property column.
 
     Attributes
@@ -206,7 +147,7 @@ class IdentityStringEncoding(DerivedStyleEncoding):
         _check_property_name(properties, self.property_name)
 
 
-class FormatStringEncoding(DerivedStyleEncoding):
+class FormatStringEncoding(StyleEncoding):
     """Encodes string values by formatting property values.
 
     Attributes
