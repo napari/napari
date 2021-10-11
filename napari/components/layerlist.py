@@ -134,7 +134,7 @@ class LayerList(SelectableEventedList[Layer]):
         with warnings.catch_warnings():
             # Taking the nanmin and nanmax of an axis of all nan
             # raises a warning and returns nan for that axis
-            # as we have do an explict nan_to_num below this
+            # as we have do an explicit nan_to_num below this
             # behaviour is acceptable and we can filter the
             # warning
             warnings.filterwarnings(
@@ -251,7 +251,7 @@ class LayerList(SelectableEventedList[Layer]):
                 for layer in self
             ]
 
-            # Non-pixel layers need the an offset of the range stop by min_steps since the upper
+            # Non-pixel layers need an offset of the range stop by min_steps since the upper
             # limit of Dims.range is non-inclusive.
             point_offsets = [
                 [0] * len(min_steps)
