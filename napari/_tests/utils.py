@@ -37,6 +37,7 @@ Used as pytest params for testing layer add and view functionality (Layer class,
 """
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
+    (Image, ts.array(np.random.random((10, 15))), 2),
     (Image, np.random.random((10, 15, 20)), 3),
     (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
