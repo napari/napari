@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+import magicgui as mgui
+
 from .components.viewer_model import ViewerModel
 from .utils import _magicgui, config
 
@@ -8,7 +10,7 @@ if TYPE_CHECKING:
     from ._qt.qt_main_window import Window
 
 
-@_magicgui.register_type(bind=_magicgui.find_viewer_ancestor)
+@mgui.register_type(bind=_magicgui.find_viewer_ancestor)
 class Viewer(ViewerModel):
     """Napari ndarray viewer.
 
