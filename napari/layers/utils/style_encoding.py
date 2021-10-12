@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from string import Formatter
-from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import Field, ValidationError, parse_obj_as, validator
@@ -8,22 +8,15 @@ from pydantic import Field, ValidationError, parse_obj_as, validator
 from ...utils.events import EventedModel
 
 
-class StyleEncoding(EventedModel, ABC):
+class StyleEncoding(ABC):
     """Defines a way to encode style values, like colors and strings."""
 
-    _array: np.ndarray = np.empty((0,))
-
     @abstractmethod
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> np.ndarray:
-        pass
-
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Sequence[int],
+        indices: Optional,
     ) -> np.ndarray:
         """Get the array of values generated from this and the given properties.
 
@@ -33,8 +26,9 @@ class StyleEncoding(EventedModel, ABC):
             The properties from which to derive the output values.
         n_rows : int
             The total number of rows in the properties table.
-        indices : Sequence[int]
-            The row indices for which to return values.
+        indices : Optional
+            The row indices for which to return values. If None, return all of them.
+            If not None, must be usable as indices for np.ndarray.
 
         Returns
         -------
@@ -48,16 +42,14 @@ class StyleEncoding(EventedModel, ABC):
             If this is not compatible with the given properties. In this case, you
             should probably fall back to a safer encoding (e.g. a constant).
         """
-        current_length = self._array.shape[0]
-        tail_indices = range(current_length, n_rows)
-        tail_array = self._apply(properties, tail_indices)
-        self._append(tail_array)
-        return self._array[indices]
+        pass
 
+    @abstractmethod
     def _clear(self):
         """Clear the stored values. Call this before _get_array to refresh values."""
-        self._array = np.empty((0,))
+        pass
 
+    @abstractmethod
     def _append(self, array: np.ndarray):
         """Appends raw style values to this.
 
@@ -68,20 +60,89 @@ class StyleEncoding(EventedModel, ABC):
         array : np.ndarray
             The values to append. The dimensionality of these should match that of the existing style values.
         """
-        self._array = _append_maybe_empty(self._array, array)
+        pass
 
-    def _delete(self, indices: Iterable[int]):
+    @abstractmethod
+    def _delete(self, indices):
         """Deletes style values from this by index.
 
         Parameters
         ----------
-        indices : Iterable[int]
-            The indices of the style values to remove.
+        indices
+            The indices of the style values to remove. Must be usable as indices for np.ndarray.
         """
-        self._array = np.delete(self._array, list(indices), axis=0)
+        pass
 
 
-class DirectStyleEncoding(StyleEncoding):
+class ConstantStyleEncoding(EventedModel, StyleEncoding):
+    """Encodes a constant style value.
+
+    The _get_array method returns the constant value to be broadcast as needed.
+
+    Attributes
+    ----------
+    constant : np.ndarray
+        The constant style value.
+    """
+
+    constant: np.ndarray
+
+    def _get_array(
+        self,
+        properties: Dict[str, np.ndarray],
+        n_rows: int,
+        indices: Optional[Sequence[int]],
+    ) -> np.ndarray:
+        return self.constant
+
+    def _append(self, array: np.ndarray):
+        pass
+
+    def _delete(self, indices):
+        pass
+
+    def _clear(self):
+        pass
+
+
+class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
+    """Encodes style values by deriving them from property values."""
+
+    _array: np.ndarray
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._array = np.empty((0,))
+
+    @abstractmethod
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> np.ndarray:
+        pass
+
+    def _get_array(
+        self,
+        properties: Dict[str, np.ndarray],
+        n_rows: int,
+        indices: Optional[Sequence[int]],
+    ) -> np.ndarray:
+        current_length = self._array.shape[0]
+        tail_indices = range(current_length, n_rows)
+        tail_array = self._apply(properties, tail_indices)
+        self._append(tail_array)
+        return self._array if indices is None else self._array[indices]
+
+    def _append(self, array: np.ndarray):
+        self._array = _append_maybe_empty(self._array, array)
+
+    def _delete(self, indices):
+        self._array = np.delete(self._array, indices, axis=0)
+
+    def _clear(self):
+        self._array = np.empty((0,))
+
+
+class DirectStyleEncoding(EventedModel, StyleEncoding):
     """Encodes style values directly.
 
     The style values are encoded directly in the array attribute, so that
@@ -89,6 +150,8 @@ class DirectStyleEncoding(StyleEncoding):
 
     Attributes
     ----------
+    array : np.ndarray
+        The array of values.
     default : np.ndarray
         The default style value that is used when requesting a value that
         is out of bounds in the array attribute. In general this is a numpy
@@ -96,38 +159,39 @@ class DirectStyleEncoding(StyleEncoding):
         be a 0D numpy array (i.e. a scalar).
     """
 
+    array: np.ndarray
     default: np.ndarray
 
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    def _get_array(
+        self,
+        properties: Dict[str, np.ndarray],
+        n_rows: int,
+        indices: Optional[Sequence[int]],
     ) -> np.ndarray:
-        n_values = self.array.shape[0]
-        in_bound_indices = [index for index in indices if index < n_values]
-        n_default = len(indices) - len(in_bound_indices)
-        return _append_maybe_empty(
-            self.array[in_bound_indices],
-            np.array([self.default] * n_default),
-        )
+        current_length = self.array.shape[0]
+        tail_array = np.array([self.default] * (n_rows - current_length))
+        self._append(tail_array)
+        return self.array if indices is None else self.array[indices]
+
+    def _append(self, array: np.ndarray):
+        self.array = _append_maybe_empty(self.array, array)
+
+    def _delete(self, indices):
+        self.array = np.delete(self.array, list(indices), axis=0)
+
+    def _clear(self):
+        self.array = np.empty((0,))
 
 
-class ConstantStringEncoding(StyleEncoding):
-    """Encodes string values directly in an array.
+class ConstantStringEncoding(ConstantStyleEncoding):
+    """Encodes a constant string value."""
 
-    Attributes
-    ----------
-    constant : str
-        The string that is always returned regardless of property values.
-    """
-
-    constant: str
-
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> np.ndarray:
-        return np.repeat(self.constant, len(indices))
+    @validator('constant', pre=True, always=True)
+    def _validate_constant(cls, constant):
+        return np.array(constant, dtype=str)
 
 
-class IdentityStringEncoding(StyleEncoding):
+class IdentityStringEncoding(DerivedStyleEncoding):
     """Encodes strings directly from a property column.
 
     Attributes
@@ -143,11 +207,8 @@ class IdentityStringEncoding(StyleEncoding):
     ) -> np.ndarray:
         return np.array(properties[self.property_name][indices], dtype=str)
 
-    def _validate_properties(self, properties: Dict[str, np.ndarray]):
-        _check_property_name(properties, self.property_name)
 
-
-class FormatStringEncoding(StyleEncoding):
+class FormatStringEncoding(DerivedStyleEncoding):
     """Encodes string values by formatting property values.
 
     Attributes
@@ -171,19 +232,16 @@ class FormatStringEncoding(StyleEncoding):
             ]
         )
 
-    def _validate_properties(self, properties: Dict[str, np.ndarray]):
-        is_format_string(properties, self.format_string)
-
 
 class DirectStringEncoding(DirectStyleEncoding):
     """Encodes string values directly in an array."""
 
     @validator('array', pre=True, always=True)
-    def _check_array(cls, array) -> np.ndarray:
+    def _validate_array(cls, array) -> np.ndarray:
         return np.array(array, dtype=str)
 
     @validator('default', pre=True, always=True)
-    def _check_default(cls, default) -> np.ndarray:
+    def _validate_default(cls, default) -> np.ndarray:
         return np.array(default, dtype=str)
 
 
@@ -272,27 +330,7 @@ def _append_maybe_empty(left: np.ndarray, right: np.ndarray) -> np.ndarray:
     return np.append(left, right, axis=0)
 
 
-def _calculate_contrast_limits(
-    values: np.ndarray,
-) -> Optional[Tuple[float, float]]:
-    contrast_limits = None
-    if values.size > 0:
-        min_value = np.min(values)
-        max_value = np.max(values)
-        # Use < instead of != to handle nans.
-        if min_value < max_value:
-            contrast_limits = (min_value, max_value)
-    return contrast_limits
-
-
 def _get_property_row(
     properties: Dict[str, np.ndarray], index: int
 ) -> Dict[str, Any]:
     return {name: values[index] for name, values in properties.items()}
-
-
-def _check_property_name(
-    properties: Dict[str, np.ndarray], property_name: str
-):
-    if property_name not in properties:
-        raise ValueError(f'{property_name} is not in properties: {properties}')

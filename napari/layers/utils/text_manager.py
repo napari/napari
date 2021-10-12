@@ -1,15 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -96,23 +87,22 @@ class TextManager(EventedModel):
             _warn_about_deprecated_values_field()
             kwargs['text'] = kwargs.pop('values')
         super().__init__(**kwargs)
-        # Add a custom event that is emitted when text needs to be re-rendered.
-        # This means external clients do not need to reconnect to the events of
-        # any mutable fields (e.g. text) when their instance changes.
+        self._n_text = n_text
         self.events.add(text_update=Event)
+        # When most of the fields change, listeners typically respond in the
+        # same way, so create a super event that they all emit.
+        self.events.text.connect(self.events.text_update)
         self.events.color.connect(self.events.text_update)
         self.events.rotation.connect(self.events.text_update)
         self.events.translation.connect(self.events.text_update)
         self.events.anchor.connect(self.events.text_update)
         self.events.size.connect(self.events.text_update)
         self.events.visible.connect(self.events.text_update)
-        self._n_text = n_text
-        self._on_text_changed()
 
     @property
     def values(self):
         _warn_about_deprecated_values_field()
-        return self.text.array
+        return self.text._get_array(self.properties, self._n_text, None)
 
     def __setattr__(self, key, value):
         if key == 'values':
@@ -122,8 +112,6 @@ class TextManager(EventedModel):
             super().__setattr__(key, value)
         if key == 'properties':
             self._on_properties_changed()
-        elif key == 'text':
-            self._on_text_changed()
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all text elements from the given layer properties.
@@ -142,7 +130,7 @@ class TextManager(EventedModel):
             self.properties = properties
         self._on_properties_changed()
 
-    def add(self, properties: Optional[dict] = None, num_to_add: int = 0):
+    def add(self, properties: dict, num_to_add: int = 0):
         """Adds a number of a new text elements.
 
         Parameters
@@ -152,30 +140,34 @@ class TextManager(EventedModel):
         num_to_add : int
             The number of text elements to add.
         """
-        if properties is not None:
-            warnings.warn(
-                trans._(
-                    '`properties` is a deprecated parameter and has no effect. Set TextManager.properties instead.'
-                ),
-                DeprecationWarning,
-            )
+        warnings.warn(
+            trans._(
+                'add is a deprecated method. '
+                'Instead of pre-emptively adding text elements, '
+                'use view_text to access the strings instead.'
+            ),
+            DeprecationWarning,
+        )
         self._n_text += num_to_add
-        self.text._update_tail(self.properties, self._n_text)
+        # Calling _get_array ensures that the new value is added at this time.
+        properties = {k: np.array(v[0] * self._n_text) for k, v in properties}
+        self.text._get_array(properties, self._n_text)
 
     def _paste(self, strings: np.ndarray):
         self._n_text += len(strings)
         self.text._append(strings)
 
-    def remove(self, indices_to_remove: Iterable[int]):
+    def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
         """Removes some text elements by index.
 
         Parameters
         ----------
-        indices_to_remove : Iterable[int]
+        indices_to_remove : set, list, np.ndarray
             The indices to remove.
         """
-        self._n_text -= len(set(indices_to_remove))
-        self.text._delete(indices_to_remove)
+        selected_indices = list(indices_to_remove)
+        self._n_text -= len(np.unique(selected_indices))
+        self.text._delete(selected_indices)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -209,19 +201,23 @@ class TextManager(EventedModel):
             anchor_y = 'center'
         return text_coords, anchor_x, anchor_y
 
-    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
+    def view_text(self, indices_view: Optional = None) -> np.ndarray:
         """Get the values of the text elements in view
 
         Parameters
         ----------
-        indices_view : (N x 1) np.ndarray
-            Indices of the text elements in view
+        indices_view : (N x 1) slice, range, or indices
+            Indices of the text elements in view. If None, all values are returned.
+            If not None, must be usable as indices for np.ndarray.
+
         Returns
         -------
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text._get_array(self.properties, indices_view)
+        return self.text._get_array(
+            self.properties, self._n_text, indices_view
+        )
 
     @classmethod
     def _from_layer_kwargs(
@@ -268,14 +264,6 @@ class TextManager(EventedModel):
         add_to_exclude_kwarg(kwargs, {'properties'})
         return super().dict(**kwargs)
 
-    @validator('properties', pre=True, always=True)
-    def _check_properties(
-        cls, properties: Dict[str, np.ndarray], values: dict
-    ):
-        if 'text' in values:
-            values['text']._validate_properties(properties)
-        return properties
-
     @validator('text', pre=True, always=True)
     def _check_text(
         cls,
@@ -305,7 +293,6 @@ class TextManager(EventedModel):
                     deferred=True,
                 )
             )
-        encoding._validate_properties(properties)
         return encoding
 
     @validator('color', pre=True, always=True)
@@ -330,22 +317,8 @@ class TextManager(EventedModel):
 
         return blending_mode
 
-    def _connect_update_events(
-        self, text_update_function, blending_update_function
-    ):
-        """Function to connect all property update events to the update callback.
-
-        This is typically used in the vispy view file.
-        """
-        self.events.text_update.connect(text_update_function)
-        self.events.blending.connect(blending_update_function)
-
-    def _on_text_changed(self, event=None):
-        self.text.events.array.connect(self.events.text_update)
-        self.text._update_all(self.properties, self._n_text)
-
     def _on_properties_changed(self, event=None):
-        self.text._update_all(self.properties, self._n_text)
+        self.text._clear()
 
 
 def _warn_about_deprecated_values_field():
