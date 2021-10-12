@@ -7,6 +7,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+import tensorstore as ts
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
@@ -61,6 +62,9 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
+    if isinstance(data, ts.TensorStore):
+        pytest.skip("async+tensorstore is failing")
+
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window.qt_viewer
 
