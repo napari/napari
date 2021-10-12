@@ -20,6 +20,7 @@ from napari._tests.utils import (
     slow,
 )
 from napari.settings import get_settings
+from napari.utils.config import async_loading
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
 from napari.utils.theme import available_themes
@@ -62,7 +63,7 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
-    if isinstance(data, ts.TensorStore):
+    if async_loading and isinstance(data, ts.TensorStore):
         pytest.skip("async+tensorstore is failing")
 
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
