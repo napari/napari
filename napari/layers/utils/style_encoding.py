@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from string import Formatter
-from typing import Any, Dict, Sequence, Tuple, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import Field, ValidationError, parse_obj_as, validator
@@ -15,7 +15,8 @@ class StyleEncoding(ABC):
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
-        indices,
+        n_rows: int,
+        indices: Optional,
     ) -> np.ndarray:
         """Get the array of values generated from this and the given properties.
 
@@ -23,8 +24,11 @@ class StyleEncoding(ABC):
         ----------
         properties : Dict[str, np.ndarray]
             The properties from which to derive the output values.
-        indices :
-            The row indices for which to return values. Must be usable as indices for np.ndarray.
+        n_rows : int
+            The total number of rows in the properties table.
+        indices : Optional
+            The row indices for which to return values. If None, return all of them.
+            If not None, must be usable as indices for np.ndarray.
 
         Returns
         -------
@@ -86,7 +90,8 @@ class ConstantStyleEncoding(EventedModel, StyleEncoding):
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
-        indices,
+        n_rows: int,
+        indices: Optional[Sequence[int]],
     ) -> np.ndarray:
         return self.constant
 
@@ -118,14 +123,14 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
-        indices,
+        n_rows: int,
+        indices: Optional[Sequence[int]],
     ) -> np.ndarray:
         current_length = self._array.shape[0]
-        n_rows = max(indices, default=-1) + 1
         tail_indices = range(current_length, n_rows)
         tail_array = self._apply(properties, tail_indices)
         self._append(tail_array)
-        return self._array[indices]
+        return self._array if indices is None else self._array[indices]
 
     def _append(self, array: np.ndarray):
         self._array = _append_maybe_empty(self._array, array)
@@ -160,13 +165,13 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
-        indices,
+        n_rows: int,
+        indices: Optional[Sequence[int]],
     ) -> np.ndarray:
         current_length = self.array.shape[0]
-        n_rows = max(indices, default=-1) + 1
         tail_array = np.array([self.default] * (n_rows - current_length))
         self._append(tail_array)
-        return self.array[indices]
+        return self.array if indices is None else self.array[indices]
 
     def _append(self, array: np.ndarray):
         self.array = _append_maybe_empty(self.array, array)
@@ -175,7 +180,7 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         self.array = np.delete(self.array, list(indices), axis=0)
 
     def _clear(self):
-        pass
+        self.array = np.empty((0,))
 
 
 class ConstantStringEncoding(ConstantStyleEncoding):
