@@ -13,10 +13,10 @@ def test_empty_text_manager_property():
     text_manager = TextManager(
         text='confidence', n_text=0, properties=properties
     )
-    assert len(text_manager.view_text()) == 0
+    assert len(text_manager.view_text(range(0))) == 0
 
     properties['confidence'] = np.array([0.5])
-    text = text_manager.view_text()
+    text = text_manager.view_text(range(1))
 
     np.testing.assert_equal(text, ['0.5'])
 
@@ -30,7 +30,7 @@ def test_add_many_text_property():
     )
 
     properties['confidence'] = np.array([0.5, 0.5])
-    text = text_manager.view_text()
+    text = text_manager.view_text(range(2))
 
     np.testing.assert_equal(text, ['0.5'] * 2)
 
@@ -271,19 +271,6 @@ def test_text_direct():
     np.testing.assert_array_equal(text_manager.view_text(), values)
 
 
-def test_text_direct_add():
-    values = ['one', 'two', 'three']
-    text_manager = TextManager(text=values, n_text=3, properties={})
-
-    # TODO: ugh.
-    with pytest.warns(DeprecationWarning):
-        text_manager.add({}, num_to_add=2)
-
-    np.testing.assert_array_equal(
-        text_manager.text.array, ['one', 'two', 'three', '', '']
-    )
-
-
 def test_text_direct_remove():
     values = ['one', 'two', 'three', 'four']
     text_manager = TextManager(text=values, n_text=4, properties={})
@@ -291,37 +278,3 @@ def test_text_direct_remove():
     text_manager.remove([1, 3])
 
     np.testing.assert_array_equal(text_manager.view_text(), ['one', 'three'])
-
-
-def test_text_direct_deprecated_values_field():
-    values = ['one', 'two', 'three']
-    with pytest.warns(DeprecationWarning):
-        text_manager = TextManager(values=values, n_text=3, properties={})
-        np.testing.assert_array_equal(text_manager.values, values)
-
-
-def test_text_direct_set_deprecated_values_field():
-    values = ['one', 'two', 'three']
-    text_manager = TextManager(text=values, n_text=3, properties={})
-
-    new_values = ['four', 'five', 'six']
-    with pytest.warns(DeprecationWarning):
-        np.testing.assert_array_equal(text_manager.values, values)
-        text_manager.values = new_values
-        np.testing.assert_array_equal(text_manager.values, new_values)
-
-
-def test_text_add_with_deprecated_properties_succeeds():
-    n_text = 3
-    properties = {'class': np.array(['A', 'B', 'C'])}
-    text_manager = TextManager(
-        text='class', n_text=n_text, properties=properties
-    )
-
-    properties['class'] = np.append(properties['class'], ['C', 'C'])
-    with pytest.warns(DeprecationWarning):
-        text_manager.add({'class': np.array(['C'])}, 2)
-
-    np.testing.assert_array_equal(
-        text_manager.view_text(), properties['class']
-    )

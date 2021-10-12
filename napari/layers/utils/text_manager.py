@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -59,13 +59,6 @@ class TextManager(EventedModel):
         Offset from the anchor point.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
-
-    Private Attributes
-    ------------------
-    _n_text : int
-        The number of text elements managed, which should correspond to the number
-        of rows in the properties table. Should be removed if/when the properties
-        table reliably stores that count.
     """
 
     # Declare properties as a generic dict so that a copy is not made on validation
@@ -80,14 +73,9 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    _n_text: int
 
-    def __init__(self, *, n_text, **kwargs):
-        if 'values' in kwargs and 'text' not in kwargs:
-            _warn_about_deprecated_values_field()
-            kwargs['text'] = kwargs.pop('values')
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._n_text = n_text
         self.events.add(text_update=Event)
         # When most of the fields change, listeners typically respond in the
         # same way, so create a super event that they all emit.
@@ -99,17 +87,8 @@ class TextManager(EventedModel):
         self.events.size.connect(self.events.text_update)
         self.events.visible.connect(self.events.text_update)
 
-    @property
-    def values(self):
-        _warn_about_deprecated_values_field()
-        return self.text._get_array(self.properties, self._n_text, None)
-
     def __setattr__(self, key, value):
-        if key == 'values':
-            _warn_about_deprecated_values_field()
-            self.text = value
-        else:
-            super().__setattr__(key, value)
+        super().__setattr__(key, value)
         if key == 'properties':
             self._on_properties_changed()
 
@@ -130,31 +109,7 @@ class TextManager(EventedModel):
             self.properties = properties
         self._on_properties_changed()
 
-    def add(self, properties: dict, num_to_add: int = 0):
-        """Adds a number of a new text elements.
-
-        Parameters
-        ----------
-        properties : dict
-            The properties to draw the text from.
-        num_to_add : int
-            The number of text elements to add.
-        """
-        warnings.warn(
-            trans._(
-                'add is a deprecated method. '
-                'Instead of pre-emptively adding text elements, '
-                'use view_text to access the strings instead.'
-            ),
-            DeprecationWarning,
-        )
-        self._n_text += num_to_add
-        # Calling _get_array ensures that the new value is added at this time.
-        properties = {k: np.array(v[0] * self._n_text) for k, v in properties}
-        self.text._get_array(properties, self._n_text)
-
     def _paste(self, strings: np.ndarray):
-        self._n_text += len(strings)
         self.text._append(strings)
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
@@ -165,9 +120,7 @@ class TextManager(EventedModel):
         indices_to_remove : set, list, np.ndarray
             The indices to remove.
         """
-        selected_indices = list(indices_to_remove)
-        self._n_text -= len(np.unique(selected_indices))
-        self.text._delete(selected_indices)
+        self.text._delete(list(indices_to_remove))
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -201,23 +154,20 @@ class TextManager(EventedModel):
             anchor_y = 'center'
         return text_coords, anchor_x, anchor_y
 
-    def view_text(self, indices_view: Optional = None) -> np.ndarray:
+    def view_text(self, indices_view) -> np.ndarray:
         """Get the values of the text elements in view
 
         Parameters
         ----------
         indices_view : (N x 1) slice, range, or indices
-            Indices of the text elements in view. If None, all values are returned.
-            If not None, must be usable as indices for np.ndarray.
+            Indices of the text elements in view. Must be usable as indices for np.ndarray.
 
         Returns
         -------
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text._get_array(
-            self.properties, self._n_text, indices_view
-        )
+        return self.text._get_array(self.properties, indices_view)
 
     @classmethod
     def _from_layer_kwargs(
@@ -225,7 +175,6 @@ class TextManager(EventedModel):
         *,
         text: Union['TextManager', dict, str, Sequence[str], None],
         properties: Dict[str, np.ndarray],
-        n_text: int,
     ) -> 'TextManager':
         """Create a TextManager from a layer.
 
@@ -237,8 +186,6 @@ class TextManager(EventedModel):
             or sequence of strings specified directly.
         properties : Dict[str, np.ndarray]
             The property values, which typically come from a layer.
-        n_text : int
-            The number of text elements to generate which should match the number of rows in the property table.
 
         Returns
         -------
@@ -251,7 +198,7 @@ class TextManager(EventedModel):
         else:
             kwargs = {'text': text}
         kwargs['properties'] = properties
-        return cls(n_text=n_text, **kwargs)
+        return cls(**kwargs)
 
     def __repr_args__(self) -> 'ReprArgs':
         return get_repr_args_without(super().__repr_args__(), {'properties'})
@@ -319,15 +266,6 @@ class TextManager(EventedModel):
 
     def _on_properties_changed(self, event=None):
         self.text._clear()
-
-
-def _warn_about_deprecated_values_field():
-    warnings.warn(
-        trans._(
-            '`values` is a deprecated attribute. Use `text.array` instead.'
-        ),
-        DeprecationWarning,
-    )
 
 
 def _properties_equal(left, right):
