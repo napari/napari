@@ -13,6 +13,7 @@ import qtpy
 from qtpy.QtCore import (
     QByteArray,
     QObject,
+    QPoint,
     QPropertyAnimation,
     QSize,
     QSocketNotifier,
@@ -161,6 +162,31 @@ def square_pixmap(size):
     painter.drawRect(0, 0, size - 1, size - 1)
     painter.setPen(Qt.black)
     painter.drawRect(1, 1, size - 3, size - 3)
+    painter.end()
+    return pixmap
+
+
+@lru_cache(maxsize=64)
+def crosshair_pixmap(size):
+    """Create a cross cursor with white/black hollow square pixmap in the middle.
+    For use as points cursor."""
+
+    # painter.drawLine(QPointF(0, size/2), QPointF(size/2-gap,size/2))
+    # painter.drawLine(QPointF(size/2+gap, size/2), QPointF(size, size/2))
+    # painter.drawLine(QPointF(size/2, 0), QPointF(size/2,size/2-gap))
+    # painter.drawLine(QPointF(size/2, size/2+gap), QPointF(size/2, size))
+    size = max(int(size), 1)
+    pixmap = QPixmap(QSize(size, size))
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    painter.setPen(Qt.white)
+    painter.drawRect(0, 0, size - 1, size - 1)
+    painter.setPen(Qt.black)
+    painter.drawRect(1, 1, size - 2, size - 2)
+    painter.drawLine(QPoint(0, size - 2), QPoint(0, size - 3))
+    painter.drawLine(QPoint(0, size + 2), QPoint(0, size + 3))
+    painter.drawLine(QPoint(size - 2, 0), QPoint(size - 3, 0))
+    painter.drawLine(QPoint(size + 2, 0), QPoint(size + 3, 0))
     painter.end()
     return pixmap
 

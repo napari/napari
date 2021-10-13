@@ -41,7 +41,7 @@ from ..utils.translations import trans
 from .containers import QtLayerList
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
-from .utils import QImg2array, circle_pixmap, square_pixmap
+from .utils import QImg2array, circle_pixmap, crosshair_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
@@ -796,6 +796,7 @@ class QtViewer(QSplitter):
         else:
             size = self.viewer.cursor.size
 
+        print(cursor)
         if cursor == 'square':
             # make sure the square fits within the current canvas
             if size < 8 or size > (
@@ -806,6 +807,8 @@ class QtViewer(QSplitter):
                 q_cursor = QCursor(square_pixmap(size))
         elif cursor == 'circle':
             q_cursor = QCursor(circle_pixmap(size))
+        elif cursor == 'crosshair':
+            q_cursor = QCursor(crosshair_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
 

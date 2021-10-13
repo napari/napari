@@ -1071,7 +1071,7 @@ class Points(Layer):
         Mode.PAN_ZOOM: no_op,
     }
     _cursor_modes = {
-        Mode.ADD: 'pointing',
+        Mode.ADD: 'crosshair',
         Mode.SELECT: 'standard',
         Mode.PAN_ZOOM: 'standard',
     }
