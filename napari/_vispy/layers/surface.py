@@ -51,10 +51,10 @@ class VispySurfaceLayer(VispyBaseLayer):
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
 
-        self._on_shading_change()
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
+        self._on_shading_change()
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
