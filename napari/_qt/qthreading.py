@@ -155,6 +155,9 @@ def create_worker(
 
         worker.pbar = pbar
 
+    if _start_thread is None:
+        _start_thread = _connect is not None
+
     if _start_thread:
         worker.start()
     return worker
@@ -273,11 +276,12 @@ def thread_worker(
             kwargs['_ignore_errors'] = kwargs.get(
                 '_ignore_errors', ignore_errors
             )
-            return create_worker(
+            w = create_worker(
                 func,
                 *args,
                 **kwargs,
             )
+            return w
 
         return worker_function
 
