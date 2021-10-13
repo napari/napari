@@ -1,9 +1,6 @@
-import warnings
-
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 
-from ...utils.translations import trans
 from ..visuals.surface import SurfaceVisual
 from .base import VispyBaseLayer
 
@@ -84,22 +81,24 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_colormap_change()
 
     def _on_shading_change(self, event=None):
-        if self.layer.shading == 'none':
-            self.node.shading = None
-            if self.node.shading_filter is not None:
-                self.node.shading_filter._attached = False
-        elif self.layer._ndisplay < 3:
-            warnings.warn(
-                trans._(
-                    "Alternative shading modes are only available in 3D, defaulting to none"
-                )
-            )
-            self.node.shading = None
-            if self.node.shading_filter is not None:
-                self.node.shading_filter._attached = False
-        else:
-            self.node.shading = self.layer.shading
-        self.node.mesh_data_changed()
+        # if self.layer.shading == 'none':
+        #     self.node.shading = None
+        #     if self.node.shading_filter is not None:
+        #         self.node.shading_filter._attached = False
+        # elif self.layer._ndisplay < 3:
+        #     warnings.warn(
+        #         trans._(
+        #             "Alternative shading modes are only available in 3D, defaulting to none"
+        #         )
+        #     )
+        #     self.node.shading = None
+        #     if self.node.shading_filter is not None:
+        #         self.node.shading_filter._attached = False
+        # else:
+        shading = None if self.layer.shading == 'none' else self.layer.shading
+        if self.layer._ndisplay == 3:
+            self.node.shading = shading
+        self.node.update()
 
     def reset(self, event=None):
         super().reset()
