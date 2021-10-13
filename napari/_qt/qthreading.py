@@ -112,8 +112,6 @@ def create_worker(
         worker = create_worker(long_function, 10)
 
     """
-    worker: Union[FunctionWorker, GeneratorWorker]
-
     # provide our own classes with the notification mixins
     if not _worker_class:
         if inspect.isgeneratorfunction(func):
@@ -137,7 +135,7 @@ def create_worker(
             _progress = {}
 
         desc = _progress.get('desc', None)
-        total = _progress.get('total', 0)
+        total = int(_progress.get('total', 0))
         if isinstance(worker, FunctionWorker) and total != 0:
             warnings.warn(
                 trans._(
@@ -276,12 +274,11 @@ def thread_worker(
             kwargs['_ignore_errors'] = kwargs.get(
                 '_ignore_errors', ignore_errors
             )
-            w = create_worker(
+            return create_worker(
                 func,
                 *args,
                 **kwargs,
             )
-            return w
 
         return worker_function
 
