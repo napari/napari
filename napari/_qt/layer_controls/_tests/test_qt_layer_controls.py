@@ -1,15 +1,11 @@
-import pytest
 import numpy as np
+import pytest
 
 from napari._qt.layer_controls.qt_layer_controls_container import (
     create_qt_layer_controls,
     layer_to_controls,
 )
 from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
-
-from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
-from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
-
 from napari.layers import Shapes
 
 _SHAPES = np.random.random((10, 4, 2))
@@ -32,7 +28,7 @@ def test_unknown_raises(qtbot):
 
 def test_inheritance(qtbot):
     class QtLinesControls(QtShapesControls):
-        """Yes I'm the same """
+        """Yes I'm the same"""
 
     class Lines(Shapes):
         """Here too"""
