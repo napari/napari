@@ -43,8 +43,9 @@ authors:
   affiliation: '@chanzuckerberg'
 - given-names: Pam
   family-names: ''
-- given-names: alisterburt
-  family-names: ''
+- given-names: Alister
+  family-names: Burt
+  affiliation: MRC-LMB
 - given-names: Genevieve
   family-names: Buckley
   affiliation: Monash University
