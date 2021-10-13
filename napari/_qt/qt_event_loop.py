@@ -19,10 +19,7 @@ from ..utils.notifications import (
 )
 from ..utils.perf import perf_config
 from ..utils.translations import trans
-from .dialogs.qt_notification import (
-    NapariQtNotification,
-    NotificationDispatcher,
-)
+from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_filters import QtToolTipEventFilter
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
@@ -191,9 +188,6 @@ def get_app(
 
     # Add the dispatcher attribute to the application to be able to dispatch
     # notifications coming from threads
-    dispatcher = getattr(app, "_dispatcher", None)
-    if dispatcher is None:
-        app._dispatcher = NotificationDispatcher()
 
     return app
 
