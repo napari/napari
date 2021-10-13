@@ -61,6 +61,7 @@ def create_qt_layer_controls(layer):
         )
 
     layer_cls = layer.__class__
+    # Sort the list of candidates by 'lineage'
     candidates.sort(key=lambda layer_type: layer_cls.mro().index(layer_type))
     controls = layer_to_controls[candidates[0]]
     return controls(layer)
