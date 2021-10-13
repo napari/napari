@@ -1,0 +1,96 @@
+# YAML 1.2
+# Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
+cff-version: 1.0.3
+message: If you use this software, please cite it using these metadata.
+# FIXME title as repository name might not be the best name, please make human readable
+title: 'napari/napari: 0.4.11'
+doi: 10.5281/zenodo.5399494
+# FIXME splitting of full names is error prone, please check if given/family name are correct
+authors:
+- given-names: Nicholas
+  family-names: Sofroniew
+  affiliation: CZI
+- given-names: Talley
+  family-names: Lambert
+  affiliation: Harvard University
+- given-names: Kira
+  family-names: Evans
+  affiliation: '@chanzuckerberg'
+- given-names: Juan
+  family-names: Nunez-Iglesias
+  affiliation: Biomedicine Discovery Institute, Monash University
+- given-names: Grzegorz
+  family-names: Bokota
+  affiliation: University of Warszaw, CeNT
+- given-names: Philip
+  family-names: Winston
+- given-names: Gonzalo
+  family-names: Peña-Castellanos
+  affiliation: Quansight, Inc. / SIHSA Ltda
+- given-names: Kevin
+  family-names: Yamauchi
+  affiliation: Iber Lab - ETH Zürich
+- given-names: Matthias
+  family-names: Bussonnier
+  affiliation: '@Quansight-Labs'
+- given-names: Draga
+  family-names: Pop
+  name-particle: Doncila
+- given-names: ACS
+  family-names: ''
+  affiliation: Chan Zuckerberg Biohub
+- given-names: ziyangczi
+  family-names: ''
+  affiliation: '@chanzuckerberg'
+- given-names: Pam
+  family-names: ''
+- given-names: alisterburt
+  family-names: ''
+- given-names: Genevieve
+  family-names: Buckley
+  affiliation: Monash University
+- given-names: Andy
+  family-names: Sweet
+- given-names: Lukasz
+  family-names: Migas
+  affiliation: Delft University of Technology
+- given-names: Volker
+  family-names: Hilsenstein
+- given-names: Lorenzo
+  family-names: Gaifas
+  affiliation: '@gutsche-lab'
+- given-names: Jordão
+  family-names: Bragantini
+  affiliation: Chan Zuckerberg Biohub
+- given-names: Jaime
+  family-names: Rodríguez-Guerra
+  affiliation: '@quansight'
+- given-names: Hector
+  family-names: ''
+  affiliation: AMDI
+- given-names: Jeremy
+  family-names: Freeman
+  affiliation: '@carbonplan'
+- given-names: Peter
+  family-names: Boone
+- given-names: Alan
+  family-names: Lowe
+  name-particle: R
+  affiliation: UCL & The Alan Turing Institute
+- given-names: Christoph
+  family-names: Gohlke
+  affiliation: University of California, Irvine
+- given-names: Loic
+  family-names: Royer
+  affiliation: Chan Zuckerberg Biohub
+- given-names: Andrea
+  family-names: PIERRÉ
+- given-names: Hagai
+  family-names: Har-Gil
+- given-names: Abigail
+  family-names: McGovern
+  affiliation: Monash University
+version: 0.4.11
+date-released: 2021-09-03
+repository-code: https://github.com/napari/napari
+license: other-open
