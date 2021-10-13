@@ -3,7 +3,7 @@
 cff-version: 1.0.3
 message: If you use this software, please cite it using these metadata.
 # FIXME title as repository name might not be the best name, please make human readable
-title: 'napari/napari: 0.4.11'
+title: 'napari: a multi-dimensional image viewer for Python'
 doi: 10.5281/zenodo.5399494
 # FIXME splitting of full names is error prone, please check if given/family name are correct
 authors:
@@ -93,4 +93,4 @@ authors:
 version: 0.4.11
 date-released: 2021-09-03
 repository-code: https://github.com/napari/napari
-license: other-open
+license: BSD-3-Clause
