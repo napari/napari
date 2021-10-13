@@ -405,72 +405,58 @@ class Points(Layer):
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
-                    with self.text.events.text_update.blocker():
-                        if len(data) < cur_npoints:
-                            # If there are now fewer points, remove the extra property and style
-                            # extra ones
-                            if len(self._edge.colors) > len(data):
-                                self._edge._remove(
-                                    np.arange(
-                                        len(data), len(self._edge.colors)
-                                    )
-                                )
-                            if len(self._face.colors) > len(data):
-                                self._face._remove(
-                                    np.arange(
-                                        len(data), len(self._face.colors)
-                                    )
-                                )
-                            self._size = self._size[: len(data)]
+                    if len(data) < cur_npoints:
+                        # If there are now fewer points, remove the extra property and style
+                        # extra ones
+                        if len(self._edge.colors) > len(data):
+                            self._edge._remove(
+                                np.arange(len(data), len(self._edge.colors))
+                            )
+                        if len(self._face.colors) > len(data):
+                            self._face._remove(
+                                np.arange(len(data), len(self._face.colors))
+                            )
+                        self._size = self._size[: len(data)]
 
-                            for k in self.properties:
-                                self.properties[k] = self.properties[k][
-                                    : len(data)
-                                ]
+                        for k in self.properties:
+                            self.properties[k] = self.properties[k][
+                                : len(data)
+                            ]
 
-                            # remove_selected removes the specific indices, but then also updates
-                            # data, which is why we need this check here and similar above.
-                            if self.text._n_text > len(data):
-                                self.text.remove(
-                                    range(len(data), self.text._n_text)
-                                )
+                    elif len(data) > cur_npoints:
+                        # If there are now more points, add the size and colors of the
+                        # new ones
+                        adding = len(data) - cur_npoints
+                        if len(self._size) > 0:
+                            new_size = copy(self._size[-1])
+                            for i in self._dims_displayed:
+                                new_size[i] = self.current_size
+                        else:
+                            # Add the default size, with a value for each dimension
+                            new_size = np.repeat(
+                                self.current_size, self._size.shape[1]
+                            )
+                        size = np.repeat([new_size], adding, axis=0)
 
-                        elif len(data) > cur_npoints:
-                            # If there are now more points, add the size and colors of the
-                            # new ones
-                            adding = len(data) - cur_npoints
-                            if len(self._size) > 0:
-                                new_size = copy(self._size[-1])
-                                for i in self._dims_displayed:
-                                    new_size[i] = self.current_size
-                            else:
-                                # Add the default size, with a value for each dimension
-                                new_size = np.repeat(
-                                    self.current_size, self._size.shape[1]
-                                )
-                            size = np.repeat([new_size], adding, axis=0)
-
-                            for k in self.properties:
-                                new_property = np.repeat(
-                                    self.current_properties[k], adding, axis=0
-                                )
-                                self.properties[k] = np.concatenate(
-                                    (self.properties[k], new_property), axis=0
-                                )
-
-                            # add new colors
-                            self._edge._add(n_colors=adding)
-                            self._face._add(n_colors=adding)
-
-                            self.size = np.concatenate(
-                                (self._size, size), axis=0
+                        for k in self.properties:
+                            new_property = np.repeat(
+                                self.current_properties[k], adding, axis=0
+                            )
+                            self.properties[k] = np.concatenate(
+                                (self.properties[k], new_property), axis=0
                             )
 
-                            self.text.add(num_to_add=adding)
+                        # add new colors
+                        self._edge._add(n_colors=adding)
+                        self._face._add(n_colors=adding)
 
-                            self.selected_data = set(
-                                np.arange(cur_npoints, len(data))
-                            )
+                        self.size = np.concatenate((self._size, size), axis=0)
+
+                        self.selected_data = set(
+                            np.arange(cur_npoints, len(data))
+                        )
+
+        self.text.text._clear()
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -589,7 +575,8 @@ class Points(Layer):
     @text.setter
     def text(self, text):
         self._text = TextManager._from_layer_kwargs(
-            text=text, properties=self.properties, n_text=len(self.data)
+            text=text,
+            properties=self.properties,
         )
         self.events.text()
 
@@ -1146,7 +1133,9 @@ class Points(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.text._get_array(self.properties, self._indices_view)
+        return self.text.text._get_array(
+            self.properties, len(self.data), self._indices_view
+        )
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:

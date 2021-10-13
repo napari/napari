@@ -26,6 +26,7 @@ from .style_encoding import (
     DirectStringEncoding,
     FormatStringEncoding,
     IdentityStringEncoding,
+    _infer_n_rows,
     is_format_string,
     parse_kwargs_as_encoding,
 )
@@ -59,13 +60,6 @@ class TextManager(EventedModel):
         Offset from the anchor point.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
-
-    Private Attributes
-    ------------------
-    _n_text : int
-        The number of text elements managed, which should correspond to the number
-        of rows in the properties table. Should be removed if/when the properties
-        table reliably stores that count.
     """
 
     # Declare properties as a generic dict so that a copy is not made on validation
@@ -80,14 +74,12 @@ class TextManager(EventedModel):
     # Use a scalar default translation to broadcast to any dimensionality.
     translation: Array[float] = 0
     rotation: float = 0
-    _n_text: int
 
-    def __init__(self, *, n_text, **kwargs):
+    def __init__(self, **kwargs):
         if 'values' in kwargs and 'text' not in kwargs:
             _warn_about_deprecated_values_field()
             kwargs['text'] = kwargs.pop('values')
         super().__init__(**kwargs)
-        self._n_text = n_text
         self.events.add(text_update=Event)
         # When most of the fields change, listeners typically respond in the
         # same way, so create a super event that they all emit.
@@ -102,7 +94,8 @@ class TextManager(EventedModel):
     @property
     def values(self):
         _warn_about_deprecated_values_field()
-        return self.text._get_array(self.properties, self._n_text, None)
+        n_text = _infer_n_rows(self.text, self.properties)
+        return self.text._get_array(self.properties, n_text, None)
 
     def __setattr__(self, key, value):
         if key == 'values':
@@ -121,40 +114,31 @@ class TextManager(EventedModel):
         properties : Dict[str, np.ndarray]
             The properties of a layer.
         """
-        # This shares the same instance of properties as the layer, so when
-        # that instance is modified, we won't detect the change. But when
-        # layer.properties is reassigned to a new instance, we will.
-        # Therefore, manually call _on_properties_changed to ensure those
-        # updates always occur exactly once and this always refreshes derived values.
-        with self.events.properties.blocker():
-            self.properties = properties
-        self._on_properties_changed()
+        self.properties = properties
 
-    def add(self, properties: dict, num_to_add: int = 0):
+    def add(self, properties: dict, num_to_add: int):
         """Adds a number of a new text elements.
 
         Parameters
         ----------
         properties : dict
-            The properties to draw the text from.
+            The current properties to draw the text from.
         num_to_add : int
             The number of text elements to add.
         """
         warnings.warn(
             trans._(
-                'add is a deprecated method. '
-                'Instead of pre-emptively adding text elements, '
-                'use view_text to access the strings instead.'
+                'TextManager.add is a deprecated method. '
+                'Use TextManager.text._array(...) to get the strings instead.'
             ),
             DeprecationWarning,
         )
-        self._n_text += num_to_add
-        # Calling _get_array ensures that the new value is added at this time.
-        properties = {k: np.array(v[0] * self._n_text) for k, v in properties}
-        self.text._get_array(properties, self._n_text)
+        # Assumes that the current properties passed have already been appended
+        # to the properties table, then calls _get_array to append new values now.
+        n_text = _infer_n_rows(self.text, self.properties)
+        self.text._get_array(self.properties, n_text)
 
     def _paste(self, strings: np.ndarray):
-        self._n_text += len(strings)
         self.text._append(strings)
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
@@ -165,9 +149,7 @@ class TextManager(EventedModel):
         indices_to_remove : set, list, np.ndarray
             The indices to remove.
         """
-        selected_indices = list(indices_to_remove)
-        self._n_text -= len(np.unique(selected_indices))
-        self.text._delete(selected_indices)
+        self.text._delete(list(indices_to_remove))
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -215,9 +197,15 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text._get_array(
-            self.properties, self._n_text, indices_view
+        warnings.warn(
+            trans._(
+                'TextManager.view_text() is a deprecated method. '
+                'Use TextManager.text._array(...) to get the strings instead.'
+            ),
+            DeprecationWarning,
         )
+        n_text = _infer_n_rows(self.text, self.properties)
+        return self.text._get_array(self.properties, n_text, indices_view)
 
     @classmethod
     def _from_layer_kwargs(
@@ -225,7 +213,6 @@ class TextManager(EventedModel):
         *,
         text: Union['TextManager', dict, str, Sequence[str], None],
         properties: Dict[str, np.ndarray],
-        n_text: int,
     ) -> 'TextManager':
         """Create a TextManager from a layer.
 
@@ -237,8 +224,6 @@ class TextManager(EventedModel):
             or sequence of strings specified directly.
         properties : Dict[str, np.ndarray]
             The property values, which typically come from a layer.
-        n_text : int
-            The number of text elements to generate which should match the number of rows in the property table.
 
         Returns
         -------
@@ -251,7 +236,7 @@ class TextManager(EventedModel):
         else:
             kwargs = {'text': text}
         kwargs['properties'] = properties
-        return cls(n_text=n_text, **kwargs)
+        return cls(**kwargs)
 
     def __repr_args__(self) -> 'ReprArgs':
         return get_repr_args_without(super().__repr_args__(), {'properties'})

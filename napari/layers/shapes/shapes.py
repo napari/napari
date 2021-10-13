@@ -1519,7 +1519,9 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.text._get_array(self.properties, self._indices_view)
+        return self.text.text._get_array(
+            self.properties, self.nshapes, self._indices_view
+        )
 
     @property
     def _view_text_coords(self) -> np.ndarray:
@@ -2224,7 +2226,8 @@ class Shapes(Layer):
     @text.setter
     def text(self, text):
         self._text = TextManager._from_layer_kwargs(
-            text=text, properties=self.properties, n_text=self.nshapes
+            text=text,
+            properties=self.properties,
         )
         self.events.text()
 

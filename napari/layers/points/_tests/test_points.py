@@ -164,12 +164,14 @@ def test_empty_layer_with_text_properties():
         property_choices=default_properties,
         text=text_kwargs,
     )
-    assert layer.text.text.array.size == 0
+    layer._indices_view = np.array([], dtype=int)
+    assert layer._view_text.size == 0
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])
-    np.testing.assert_equal(layer.text.text.array, ['1.5'])
+    layer._indices_view = np.array([0], dtype=int)
+    np.testing.assert_equal(layer._view_text, ['1.5'])
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
 

@@ -16,7 +16,7 @@ class StyleEncoding(ABC):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional,
+        indices: Optional = None,
     ) -> np.ndarray:
         """Get the array of values generated from this and the given properties.
 
@@ -91,7 +91,7 @@ class ConstantStyleEncoding(EventedModel, StyleEncoding):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional[Sequence[int]],
+        indices: Optional = None,
     ) -> np.ndarray:
         return self.constant
 
@@ -124,7 +124,7 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional[Sequence[int]],
+        indices: Optional = None,
     ) -> np.ndarray:
         current_length = self._array.shape[0]
         tail_indices = range(current_length, n_rows)
@@ -166,7 +166,7 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional[Sequence[int]],
+        indices: Optional = None,
     ) -> np.ndarray:
         current_length = self.array.shape[0]
         tail_array = np.array([self.default] * (n_rows - current_length))
@@ -334,3 +334,11 @@ def _get_property_row(
     properties: Dict[str, np.ndarray], index: int
 ) -> Dict[str, Any]:
     return {name: values[index] for name, values in properties.items()}
+
+
+def _infer_n_rows(encoding, properties: Dict[str, np.ndarray]) -> int:
+    if isinstance(encoding, DirectStyleEncoding):
+        return len(encoding.array)
+    if isinstance(encoding, DerivedStyleEncoding):
+        return len(next(iter(properties)))
+    return 1
