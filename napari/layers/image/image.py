@@ -656,7 +656,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 for d in self._displayed_axes:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
-                        self.corner_pixels[1, d] + 1,
+                        self.corner_pixels[1, d],
                         1,
                     )
                 self._transforms['tile2data'].translate = (
