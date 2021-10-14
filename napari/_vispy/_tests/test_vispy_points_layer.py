@@ -33,7 +33,7 @@ def test_change_text_color_updates_node_color(make_napari_viewer):
     viewer = make_napari_viewer()
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    text = {'text': 'class', 'color': [1, 0, 0]}
+    text = {'string': 'class', 'color': [1, 0, 0]}
     layer = viewer.add_points(points, text=text, properties=properties)
     vispy_layer = viewer.window.qt_viewer.layer_to_visual[layer]
     text_node = vispy_layer._get_text_node()

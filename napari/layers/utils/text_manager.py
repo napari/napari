@@ -39,7 +39,7 @@ class TextManager(EventedModel):
     ----------
     properties : Dict[str, np.ndarray]
         The property values, which typically come from a layer.
-    text : Union[STRING_ENCODINGS]
+    string : Union[STRING_ENCODINGS]
         Defines the string for each text element.
     visible : bool
         True if the text should be displayed, false otherwise.
@@ -65,7 +65,7 @@ class TextManager(EventedModel):
     # Declare properties as a generic dict so that a copy is not made on validation
     # and we can rely on a layer and this sharing the same instance.
     properties: dict
-    text: Union[STRING_ENCODINGS] = ConstantStringEncoding(constant='')
+    string: Union[STRING_ENCODINGS] = ConstantStringEncoding(constant='')
     color: Array[float, (4,)] = 'cyan'
     visible: bool = True
     size: PositiveInt = 12
@@ -76,14 +76,17 @@ class TextManager(EventedModel):
     rotation: float = 0
 
     def __init__(self, **kwargs):
-        if 'values' in kwargs and 'text' not in kwargs:
+        if 'values' in kwargs and 'string' not in kwargs:
             _warn_about_deprecated_values_field()
-            kwargs['text'] = kwargs.pop('values')
+            kwargs['string'] = kwargs.pop('values')
+        if 'text' in kwargs and 'string' not in kwargs:
+            _warn_about_deprecated_text_parameter()
+            kwargs['string'] = kwargs.pop('text')
         super().__init__(**kwargs)
         self.events.add(text_update=Event)
         # When most of the fields change, listeners typically respond in the
         # same way, so create a super event that they all emit.
-        self.events.text.connect(self.events.text_update)
+        self.events.string.connect(self.events.text_update)
         self.events.color.connect(self.events.text_update)
         self.events.rotation.connect(self.events.text_update)
         self.events.translation.connect(self.events.text_update)
@@ -94,13 +97,13 @@ class TextManager(EventedModel):
     @property
     def values(self):
         _warn_about_deprecated_values_field()
-        n_text = _infer_n_rows(self.text, self.properties)
-        return self.text._get_array(self.properties, n_text)
+        n_text = _infer_n_rows(self.string, self.properties)
+        return self.string._get_array(self.properties, n_text)
 
     def __setattr__(self, key, value):
         if key == 'values':
             _warn_about_deprecated_values_field()
-            self.text = value
+            self.string = value
         else:
             super().__setattr__(key, value)
         if key == 'properties':
@@ -129,17 +132,17 @@ class TextManager(EventedModel):
         warnings.warn(
             trans._(
                 'TextManager.add is a deprecated method. '
-                'Use TextManager.text._array(...) to get the strings instead.'
+                'Use TextManager.string._array(...) to get the strings instead.'
             ),
             DeprecationWarning,
         )
         # Assumes that the current properties passed have already been appended
         # to the properties table, then calls _get_array to append new values now.
-        n_text = _infer_n_rows(self.text, self.properties)
-        self.text._get_array(self.properties, n_text)
+        n_text = _infer_n_rows(self.string, self.properties)
+        self.string._get_array(self.properties, n_text)
 
     def _paste(self, strings: np.ndarray):
-        self.text._append(strings)
+        self.string._append(strings)
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
         """Removes some text elements by index.
@@ -149,7 +152,7 @@ class TextManager(EventedModel):
         indices_to_remove : set, list, np.ndarray
             The indices to remove.
         """
-        self.text._delete(list(indices_to_remove))
+        self.string._delete(list(indices_to_remove))
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -200,12 +203,12 @@ class TextManager(EventedModel):
         warnings.warn(
             trans._(
                 'TextManager.view_text() is a deprecated method. '
-                'Use TextManager.text._array(...) to get the strings instead.'
+                'Use TextManager.string._array(...) to get the strings instead.'
             ),
             DeprecationWarning,
         )
-        n_text = _infer_n_rows(self.text, self.properties)
-        return self.text._get_array(self.properties, n_text, indices_view)
+        n_text = _infer_n_rows(self.string, self.properties)
+        return self.string._get_array(self.properties, n_text, indices_view)
 
     @classmethod
     def _from_layer_kwargs(
@@ -219,7 +222,7 @@ class TextManager(EventedModel):
         Parameters
         ----------
         text : Union[TextManager, dict, str, Sequence[str], None]
-            Another instance of a TextManager, a dict that contains some of its state,
+            An instance of TextManager, a dict that contains some of its state,
             a string that may be a constant, a property name, or a format string,
             or sequence of strings specified directly.
         properties : Dict[str, np.ndarray]
@@ -234,7 +237,7 @@ class TextManager(EventedModel):
         elif isinstance(text, dict):
             kwargs = deepcopy(text)
         else:
-            kwargs = {'text': text}
+            kwargs = {'string': text}
         kwargs['properties'] = properties
         return cls(**kwargs)
 
@@ -249,30 +252,30 @@ class TextManager(EventedModel):
         add_to_exclude_kwarg(kwargs, {'properties'})
         return super().dict(**kwargs)
 
-    @validator('text', pre=True, always=True)
-    def _check_text(
+    @validator('string', pre=True, always=True)
+    def _check_string(
         cls,
-        text: Union[str, Sequence[str], Union[STRING_ENCODINGS], dict, None],
+        string: Union[str, Sequence[str], Union[STRING_ENCODINGS], dict, None],
         values,
     ) -> Union[STRING_ENCODINGS]:
-        if text is None:
+        if string is None:
             return ConstantStringEncoding(constant='')
-        if isinstance(text, STRING_ENCODINGS):
-            return text
-        if isinstance(text, str):
+        if isinstance(string, STRING_ENCODINGS):
+            return string
+        if isinstance(string, str):
             properties = values['properties']
-            if text in properties:
-                return IdentityStringEncoding(property_name=text)
-            if is_format_string(properties, text):
-                return FormatStringEncoding(format_string=text)
-            return ConstantStringEncoding(constant=text)
-        if isinstance(text, dict):
-            return parse_kwargs_as_encoding(STRING_ENCODINGS, **text)
-        if isinstance(text, Sequence):
-            return DirectStringEncoding(array=text, default='')
+            if string in properties:
+                return IdentityStringEncoding(property_name=string)
+            if is_format_string(properties, string):
+                return FormatStringEncoding(format_string=string)
+            return ConstantStringEncoding(constant=string)
+        if isinstance(string, dict):
+            return parse_kwargs_as_encoding(STRING_ENCODINGS, **string)
+        if isinstance(string, Sequence):
+            return DirectStringEncoding(array=string, default='')
         raise TypeError(
             trans._(
-                'text should be a StringEncoding, string, dict, sequence, or None',
+                'string should be a StringEncoding, string, dict, sequence, or None',
                 deferred=True,
             )
         )
@@ -300,15 +303,22 @@ class TextManager(EventedModel):
         return blending_mode
 
     def _on_properties_changed(self, event=None):
-        self.text._clear()
+        self.string._clear()
         self.events.text_update()
 
 
 def _warn_about_deprecated_values_field():
     warnings.warn(
         trans._(
-            '`TextManager.values` is a deprecated. Use `TextManager.text` instead.'
+            '`TextManager.values` is a deprecated field. Use `TextManager.string` instead.'
         ),
+        DeprecationWarning,
+    )
+
+
+def _warn_about_deprecated_text_parameter():
+    warnings.warn(
+        trans._('`text` is a deprecated parameter. Use `string` instead.'),
         DeprecationWarning,
     )
 

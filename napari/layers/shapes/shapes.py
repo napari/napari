@@ -671,7 +671,7 @@ class Shapes(Layer):
                 )
             )
 
-        self.text.text._clear()
+        self.text.string._clear()
 
         self._data_view = ShapeList()
         self.add(
@@ -1516,7 +1516,7 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        text_array = self.text.text._get_array(
+        text_array = self.text.string._get_array(
             self.properties, len(self.data), self._indices_view
         )
         return np.broadcast_to(text_array, (len(self._indices_view),))
@@ -2840,7 +2840,7 @@ class Shapes(Layer):
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self._slice_indices,
-                'text_string': self.text.text._get_array(
+                'text_string': self.text.string._get_array(
                     self.properties, self.nshapes, index
                 ),
             }

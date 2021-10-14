@@ -197,7 +197,7 @@ def test_setting_current_properties():
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'text': 'shape_type', 'color': 'red'}
+    text_kwargs = {'string': 'shape_type', 'color': 'red'}
     layer = Shapes(
         property_choices=default_properties,
         text=text_kwargs,
@@ -272,7 +272,7 @@ def test_text_from_property_fstring(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
-        'text': 'type: {shape_type}',
+        'string': 'type: {shape_type}',
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
@@ -289,7 +289,7 @@ def test_set_text_with_kwarg_dict(properties):
     np.testing.assert_equal(layer._view_text, expected_text)
 
     for property, value in text_kwargs.items():
-        if property == 'text':
+        if property == 'string':
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
@@ -336,7 +336,7 @@ def test_nd_text():
         [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
     ]
     properties = {'shape_type': ['A', 'B']}
-    text_kwargs = {'text': 'shape_type', 'anchor': 'center'}
+    text_kwargs = {'string': 'shape_type', 'anchor': 'center'}
     layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
     assert layer.ndim == 4
 
@@ -2161,6 +2161,4 @@ def test_text_direct_copy_paste():
     shapes._copy_data()
     shapes._paste_data()
 
-    np.testing.assert_array_equal(
-        shapes.text.text.array, ['A', 'B', 'C', 'A', 'C']
-    )
+    np.testing.assert_array_equal(shapes._view_text, ['A', 'B', 'C', 'A', 'C'])
