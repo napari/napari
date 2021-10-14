@@ -20,7 +20,7 @@ import napari.resources
 
 from ...utils.progress import progress
 from ...utils.translations import trans
-from ..widgets.qt_progress_bar import ProgressBarGroup, QtLabeledProgressBar
+from ..widgets.qt_progress_bar import QtLabeledProgressBar, QtProgressBarGroup
 
 
 class ActivityToggleItem(QWidget):
@@ -166,19 +166,19 @@ class ActivityDialog(QDialog):
         pbar.setDescription(prog.desc)
 
     def add_progress_bar(self, pbar, nest_under=None):
-        """Add progress bar to the activity_dialog, making ProgressBarGroup if needed.
+        """Add progress bar to activity_dialog,in QtProgressBarGroup if needed.
 
-        Check whether pbar needs nesting and create ProgressBarGroup if it is, removing
-        existing separators and creating new ones. Show and start inProgressIndicator
-        to highlight to user the existence of a progress bar in the dock even when
-        the dock is hidden.
+        Check whether pbar needs nesting and create QtProgressBarGroup, removing
+        existing separators and creating new ones. Show and start
+        inProgressIndicator to highlight to user the existence of a progress bar
+        in the dock even when the dock is hidden.
 
         Parameters
         ----------
         pbar : QtLabeledProgressBar
             progress bar to add to activity dialog
         nest_under : Optional[progress]
-            parent progress object whose QtLabeledProgressBar we need to nest under
+            parent `progress` whose QtLabeledProgressBar we need to nest under
         """
         if nest_under is None:
             self._activityLayout.addWidget(pbar)
@@ -190,11 +190,11 @@ class ActivityDialog(QDialog):
 
             parent_widg = parent_pbar.parent()
             # if we are already in a group, add pbar to existing group
-            if isinstance(parent_widg, ProgressBarGroup):
+            if isinstance(parent_widg, QtProgressBarGroup):
                 nested_layout = parent_widg.layout()
-            # create ProgressBarGroup for this pbar
+            # create QtProgressBarGroup for this pbar
             else:
-                new_group = ProgressBarGroup(parent_pbar)
+                new_group = QtProgressBarGroup(parent_pbar)
                 new_group.destroyed.connect(self.maybe_hide_progress_indicator)
                 nested_layout = new_group.layout()
                 self._activityLayout.addWidget(new_group)
@@ -228,7 +228,7 @@ class ActivityDialog(QDialog):
                     return potential_parent
 
     def close_progress_bar(self, prog):
-        """Close `QtLabeledProgressBar` and parent `ProgressBarGroup` if needed
+        """Close `QtLabeledProgressBar` and parent `QtProgressBarGroup` if needed
 
         Parameters
         ----------
@@ -239,7 +239,7 @@ class ActivityDialog(QDialog):
         parent_widget = current_pbar.parent()
         current_pbar.close()
         current_pbar.deleteLater()
-        if isinstance(parent_widget, ProgressBarGroup):
+        if isinstance(parent_widget, QtProgressBarGroup):
             pbar_children = [
                 child
                 for child in parent_widget.children()
@@ -259,7 +259,7 @@ class ActivityDialog(QDialog):
     def maybe_hide_progress_indicator(self):
         """Hide progress indicator when all progress bars have finished."""
         pbars = self._baseWidget.findChildren(QtLabeledProgressBar)
-        pbar_groups = self._baseWidget.findChildren(ProgressBarGroup)
+        pbar_groups = self._baseWidget.findChildren(QtProgressBarGroup)
 
         progress_visible = any([pbar.isVisible() for pbar in pbars])
         progress_group_visible = any(
@@ -274,7 +274,7 @@ def get_pbar(prog, nest_under=None, **kwargs):
     """Adds QtLabeledProgressBar to viewer ActivityDialog and returns it.
 
     If nest_under is valid QtLabeledProgressBar, nests new bar underneath
-    parent in a ProgressBarGroup
+    parent in a QtProgressBarGroup
 
     Parameters
     ----------
