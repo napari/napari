@@ -20,16 +20,15 @@ from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
-from .style_encoding import (
+from .string_encoding import (
     STRING_ENCODINGS,
     ConstantStringEncoding,
     DirectStringEncoding,
     FormatStringEncoding,
     IdentityStringEncoding,
-    _infer_n_rows,
     is_format_string,
-    parse_kwargs_as_encoding,
 )
+from .style_encoding import _infer_n_rows, parse_kwargs_as_encoding
 
 
 class TextManager(EventedModel):
