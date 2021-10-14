@@ -175,7 +175,7 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
             tail_array = self._apply(properties, tail_indices)
             self._append(tail_array)
             return self._array if indices is None else self._array[indices]
-        except KeyError as error:
+        except (KeyError, ValueError) as error:
             self_str = repr(self)
             warnings.warn(
                 '\n'

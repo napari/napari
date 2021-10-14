@@ -274,7 +274,7 @@ class TextManager(EventedModel):
         else:
             raise TypeError(
                 trans._(
-                    'text should be a string, iterable, StringEncoding, dict, or None',
+                    'text should be a StringEncoding, string, dict, sequence, or None',
                     deferred=True,
                 )
             )
@@ -309,7 +309,7 @@ class TextManager(EventedModel):
 def _warn_about_deprecated_values_field():
     warnings.warn(
         trans._(
-            '`values` is a deprecated attribute. Use `text.array` instead.'
+            '`TextManager.values` is a deprecated. Use `TextManager.text` instead.'
         ),
         DeprecationWarning,
     )
