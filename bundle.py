@@ -263,9 +263,7 @@ def bundle():
 
         add_site_packages_to_path()
 
-        if WINDOWS:
-            patch_wxs()
-        elif MACOS:
+        if MACOS:
             patch_python_lib_location()
 
         # build
