@@ -18,12 +18,12 @@ logger = getLogger(__name__)
 
 def _read_with_npe2(
     path: Union[str, Sequence[str]], plugin: Optional[str] = None
-) -> Tuple[Optional[List[LayerData]], Optional[HookImplementation]]:
+) -> Optional[Tuple[List[LayerData], Optional[HookImplementation]]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
     try:
         from npe2 import execute_command, plugin_manager
     except ImportError:
-        return (None, None)
+        return None
 
     for rdr in plugin_manager.iter_compatible_readers(path):
         read_func = execute_command(rdr.command, kwargs={'path': path})
