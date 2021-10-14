@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 import pytest
+import tensorstore as ts
 
 from napari import Viewer
 from napari.layers import (
@@ -14,6 +15,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.utils.config import async_loading
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -69,6 +71,10 @@ layer_test_data = [
         4,
     ),
 ]
+
+if not async_loading:
+    # Tensorstore arrays currently break with async
+    layer_test_data.append((Image, ts.array(np.random.random((10, 15))), 2))
 
 
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
