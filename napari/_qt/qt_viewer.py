@@ -5,7 +5,6 @@ import warnings
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 import numpy as np
-from npe2.manifest.io import WriterContribution
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
@@ -35,7 +34,7 @@ from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
 from ..utils.misc import in_ipython
 from ..utils.theme import get_theme
-from ..utils.translations import TranslationBundle, trans
+from ..utils.translations import trans
 from .containers import QtLayerList
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
@@ -539,6 +538,14 @@ class QtViewer(QSplitter):
     def _npe2_decode_selected_filter(
         ext_str: str, selected_filter: str, writers: List[Any]
     ) -> Optional[str]:
+        """When npe2 can be imported, resolves a selected file extension
+        string into a specific writer. Otherwise, returns None.
+
+        Returns the writer command that should be invoked to save data.
+        """
+        # When npe2 is not present, `writers` is expect to be an empty list, `[]`.
+        # This function will return None.
+
         for entry, writer in zip(
             ext_str.split(";;"),
             writers,
@@ -550,7 +557,17 @@ class QtViewer(QSplitter):
     @staticmethod
     def _npe2_file_extensions_string_for_layers(
         layers: List[Layer] | LayerList,
-    ) -> Tuple[Optional[TranslationBundle | str], List[WriterContribution]]:
+    ) -> Tuple[Optional[str], List[Any]]:
+        """When npe2 can be imported, returns an extension string and the list
+        of corresponding writers. Otherwise returns (None,[]).
+
+        The extension string is a ";;" delimeted string of entries. Each entry
+        has a brief description of the file type and a list of extensions.
+
+        The writers, when provided, are the
+        npe2.manifest.io.WriterContribution objects. There is one writer per
+        entry in the extension string.
+        """
         try:
             import npe2
         except ImportError:
@@ -589,7 +606,16 @@ class QtViewer(QSplitter):
     @staticmethod
     def _extension_string_for_layers(
         layers: List[Layer] | LayerList,
-    ) -> Tuple[TranslationBundle | str, Optional[List[Any]]]:
+    ) -> Tuple[str, List[Any]]:
+        """Returns an extension string and the list of corresponding writers.
+
+        The extension string is a ";;" delimeted string of entries. Each entry
+        has a brief description of the file type and a list of extensions.
+
+        The writers, when provided, are the npe2.manifest.io.WriterContribution
+        objects. There is one writer per entry in the extension string. If npe2
+        is not importable, the list of writers will be empty.
+        """
 
         # try to use npe2
         ext_str, writers = QtViewer._npe2_file_extensions_string_for_layers(
@@ -629,7 +655,7 @@ class QtViewer(QSplitter):
         else:
             # multiple layers.
             ext_str = trans._("All Files (*);;")
-        return ext_str, None
+        return ext_str, []
 
     def _update_welcome_screen(self, event=None):
         """Update welcome screen display based on layer count.
