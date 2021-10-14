@@ -224,7 +224,7 @@ class ActivityDialog(QDialog):
         pbars = self._baseWidget.findChildren(QtLabeledProgressBar)
         if pbars:
             for potential_parent in pbars:
-                if potential_parent.prog is prog:
+                if potential_parent.progress is prog:
                     return potential_parent
 
     def close_progress_bar(self, prog):
