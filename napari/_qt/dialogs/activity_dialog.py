@@ -168,9 +168,9 @@ class ActivityDialog(QDialog):
     def add_progress_bar(self, pbar, nest_under=None):
         """Add progress bar to activity_dialog,in QtProgressBarGroup if needed.
 
-        Check whether pbar needs nesting and create QtProgressBarGroup, removing
+        Check if pbar needs nesting and create QtProgressBarGroup, removing
         existing separators and creating new ones. Show and start
-        inProgressIndicator to highlight to user the existence of a progress bar
+        inProgressIndicator to highlight the existence of a progress bar
         in the dock even when the dock is hidden.
 
         Parameters
