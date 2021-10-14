@@ -10,7 +10,7 @@ from qtpy.QtWidgets import (
 )
 
 
-class ProgressBar(QWidget):
+class QtLabeledProgressBar(QWidget):
     """QProgressBar with QLabels for description and ETA."""
 
     def __init__(self, parent=None, prog=None) -> None:
