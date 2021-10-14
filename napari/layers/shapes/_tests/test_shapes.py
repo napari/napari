@@ -202,12 +202,12 @@ def test_empty_layer_with_text_property_choices():
         property_choices=default_properties,
         text=text_kwargs,
     )
-    assert layer.text.text.array.size == 0
+    assert layer._view_text.size == 0
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
     # add a shape and check that the appropriate text value was added
     layer.add(np.random.random((1, 4, 2)))
-    np.testing.assert_equal(layer.text.text.array, ['1.5'])
+    np.testing.assert_equal(layer._view_text, ['1.5'])
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
 
@@ -218,11 +218,11 @@ def test_empty_layer_with_text_formatted():
         property_choices=default_properties,
         text='shape_type: {shape_type:.2f}',
     )
-    assert layer.text.text.array.size == 0
+    assert layer._view_text.size == 0
 
     # add a shape and check that the appropriate text value was added
     layer.add(np.random.random((1, 4, 2)))
-    np.testing.assert_equal(layer.text.text.array, ['shape_type: 1.50'])
+    np.testing.assert_equal(layer._view_text, ['shape_type: 1.50'])
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
@@ -233,7 +233,7 @@ def test_text_from_property_value(properties):
     data = 20 * np.random.random(shape)
     layer = Shapes(data, properties=copy(properties), text='shape_type')
 
-    np.testing.assert_equal(layer.text.text.array, properties['shape_type'])
+    np.testing.assert_equal(layer._view_text, properties['shape_type'])
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
@@ -247,26 +247,26 @@ def test_text_from_property_fstring(properties):
     )
 
     expected_text = ['type: ' + v for v in properties['shape_type']]
-    np.testing.assert_equal(layer.text.text.array, expected_text)
+    np.testing.assert_equal(layer._view_text, expected_text)
 
     # test updating the text
     layer.text = 'type-ish: {shape_type}'
     expected_text_2 = ['type-ish: ' + v for v in properties['shape_type']]
-    np.testing.assert_equal(layer.text.text.array, expected_text_2)
+    np.testing.assert_equal(layer._view_text, expected_text_2)
 
     # copy/paste
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
     expected_text_3 = expected_text_2 + ['type-ish: A']
-    np.testing.assert_equal(layer.text.text.array, expected_text_3)
+    np.testing.assert_equal(layer._view_text, expected_text_3)
 
     # add shape
     layer.selected_data = {0}
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
     expected_text_4 = expected_text_3 + ['type-ish: A']
-    np.testing.assert_equal(layer.text.text.array, expected_text_4)
+    np.testing.assert_equal(layer._view_text, expected_text_4)
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
@@ -286,7 +286,7 @@ def test_set_text_with_kwarg_dict(properties):
     layer = Shapes(data, properties=copy(properties), text=text_kwargs)
 
     expected_text = ['type: ' + v for v in properties['shape_type']]
-    np.testing.assert_equal(layer.text.text.array, expected_text)
+    np.testing.assert_equal(layer._view_text, expected_text)
 
     for property, value in text_kwargs.items():
         if property == 'text':
@@ -326,9 +326,7 @@ def test_refresh_text():
 
     new_properties = {'shape_type': ['B'] * shape[0]}
     layer.properties = new_properties
-    np.testing.assert_equal(
-        layer.text.text.array, new_properties['shape_type']
-    )
+    np.testing.assert_equal(layer._view_text, new_properties['shape_type'])
 
 
 def test_nd_text():
@@ -363,18 +361,18 @@ def test_data_setter_with_text(properties):
     n_new_shapes = 4
     new_data = 20 * np.random.random((n_new_shapes, 4, 2))
     layer.data = new_data
-    assert len(layer.text.text.array) == n_new_shapes
+    assert len(layer._view_text) == n_new_shapes
 
     # test setting to data with more shapes
     n_new_shapes_2 = 6
     new_data_2 = 20 * np.random.random((n_new_shapes_2, 4, 2))
     layer.data = new_data_2
-    assert len(layer.text.text.array) == n_new_shapes_2
+    assert len(layer._view_text) == n_new_shapes_2
 
     # test setting to data with same shapes
     new_data_3 = 20 * np.random.random((n_new_shapes_2, 4, 2))
     layer.data = new_data_3
-    assert len(layer.text.text.array) == n_new_shapes_2
+    assert len(layer._view_text) == n_new_shapes_2
 
 
 def test_data_setter_with_text_no_properties():
@@ -387,18 +385,18 @@ def test_data_setter_with_text_no_properties():
     n_new_shapes = 4
     new_data = 20 * np.random.random((n_new_shapes, 4, 2))
     layer.data = new_data
-    assert len(layer.text.text.array) == n_new_shapes
+    assert len(layer._view_text) == n_new_shapes
 
     # test setting to data with more shapes
     n_new_shapes_2 = 6
     new_data_2 = 20 * np.random.random((n_new_shapes_2, 4, 2))
     layer.data = new_data_2
-    assert len(layer.text.text.array) == n_new_shapes_2
+    assert len(layer._view_text) == n_new_shapes_2
 
     # test setting to data with same shapes
     new_data_3 = 20 * np.random.random((n_new_shapes_2, 4, 2))
     layer.data = new_data_3
-    assert len(layer.text.text.array) == n_new_shapes_2
+    assert len(layer._view_text) == n_new_shapes_2
 
 
 @pytest.mark.parametrize(

@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from string import Formatter
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
@@ -20,6 +21,9 @@ class StyleEncoding(ABC):
     ) -> np.ndarray:
         """Get the array of values generated from this and the given properties.
 
+        If generating values from the given properties fails, this will fall back
+        to returning some safe/default value.
+
         Parameters
         ----------
         properties : Dict[str, np.ndarray]
@@ -35,18 +39,12 @@ class StyleEncoding(ABC):
         np.ndarray
             The numpy array of derived values. This is either a single value or
             has the same length as the given indices.
-
-        Raises
-        ------
-        ValueError
-            If this is not compatible with the given properties. In this case, you
-            should probably fall back to a safer encoding (e.g. a constant).
         """
         pass
 
     @abstractmethod
     def _clear(self):
-        """Clear the stored values. Call this before _get_array to refresh values."""
+        """Clears all currently stored values. Call this before _get_array to refresh values."""
         pass
 
     @abstractmethod
@@ -105,43 +103,6 @@ class ConstantStyleEncoding(EventedModel, StyleEncoding):
         pass
 
 
-class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
-    """Encodes style values by deriving them from property values."""
-
-    _array: np.ndarray
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._array = np.empty((0,))
-
-    @abstractmethod
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> np.ndarray:
-        pass
-
-    def _get_array(
-        self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
-        indices: Optional = None,
-    ) -> np.ndarray:
-        current_length = self._array.shape[0]
-        tail_indices = range(current_length, n_rows)
-        tail_array = self._apply(properties, tail_indices)
-        self._append(tail_array)
-        return self._array if indices is None else self._array[indices]
-
-    def _append(self, array: np.ndarray):
-        self._array = _append_maybe_empty(self._array, array)
-
-    def _delete(self, indices):
-        self._array = np.delete(self._array, indices, axis=0)
-
-    def _clear(self):
-        self._array = np.empty((0,))
-
-
 class DirectStyleEncoding(EventedModel, StyleEncoding):
     """Encodes style values directly.
 
@@ -183,12 +144,81 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         self.array = np.empty((0,))
 
 
+class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
+    """Encodes style values by deriving them from property values."""
+
+    _array: np.ndarray
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._array = np.empty((0,))
+
+    @abstractmethod
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
+    ) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def _fallback_value(self) -> np.ndarray:
+        pass
+
+    def _get_array(
+        self,
+        properties: Dict[str, np.ndarray],
+        n_rows: int,
+        indices: Optional = None,
+    ) -> np.ndarray:
+        current_length = self._array.shape[0]
+        tail_indices = range(current_length, n_rows)
+        try:
+            tail_array = self._apply(properties, tail_indices)
+            self._append(tail_array)
+            return self._array if indices is None else self._array[indices]
+        except KeyError as error:
+            self_str = repr(self)
+            warnings.warn(
+                '\n'
+                'Applying the following derived encoding:\n'
+                f'{self_str}\n'
+                'failed with error:\n'
+                f'{error}\n'
+                f'Returning safe constant value instead.',
+                category=RuntimeWarning,
+            )
+        return self._fallback_value()
+
+    def _append(self, array: np.ndarray):
+        self._array = _append_maybe_empty(self._array, array)
+
+    def _delete(self, indices):
+        self._array = np.delete(self._array, indices, axis=0)
+
+    def _clear(self):
+        self._array = np.empty((0,))
+
+
 class ConstantStringEncoding(ConstantStyleEncoding):
     """Encodes a constant string value."""
 
     @validator('constant', pre=True, always=True)
     def _validate_constant(cls, constant):
         return np.array(constant, dtype=str)
+
+
+class DirectStringEncoding(DirectStyleEncoding):
+    """Encodes string values directly in an array."""
+
+    @validator('array', pre=True, always=True)
+    def _validate_array(cls, array) -> np.ndarray:
+        return np.array(array, dtype=str)
+
+    @validator('default', pre=True, always=True)
+    def _validate_default(cls, default) -> np.ndarray:
+        return np.array(default, dtype=str)
+
+
+FALLBACK_STRING = np.array('')
 
 
 class IdentityStringEncoding(DerivedStyleEncoding):
@@ -206,6 +236,9 @@ class IdentityStringEncoding(DerivedStyleEncoding):
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
         return np.array(properties[self.property_name][indices], dtype=str)
+
+    def _fallback_value(self) -> np.ndarray:
+        return FALLBACK_STRING
 
 
 class FormatStringEncoding(DerivedStyleEncoding):
@@ -232,17 +265,8 @@ class FormatStringEncoding(DerivedStyleEncoding):
             ]
         )
 
-
-class DirectStringEncoding(DirectStyleEncoding):
-    """Encodes string values directly in an array."""
-
-    @validator('array', pre=True, always=True)
-    def _validate_array(cls, array) -> np.ndarray:
-        return np.array(array, dtype=str)
-
-    @validator('default', pre=True, always=True)
-    def _validate_default(cls, default) -> np.ndarray:
-        return np.array(default, dtype=str)
+    def _fallback_value(self) -> np.ndarray:
+        return FALLBACK_STRING
 
 
 def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):

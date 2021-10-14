@@ -164,13 +164,11 @@ def test_empty_layer_with_text_properties():
         property_choices=default_properties,
         text=text_kwargs,
     )
-    layer._indices_view = np.array([], dtype=int)
     assert layer._view_text.size == 0
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])
-    layer._indices_view = np.array([0], dtype=int)
     np.testing.assert_equal(layer._view_text, ['1.5'])
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
@@ -182,11 +180,11 @@ def test_empty_layer_with_text_formatted():
         property_choices=default_properties,
         text='point_type: {point_type:.2f}',
     )
-    assert layer.text.text.array.size == 0
+    assert layer._view_text.size == 0
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])
-    np.testing.assert_equal(layer.text.text.array, ['point_type: 1.50'])
+    np.testing.assert_equal(layer._view_text, ['point_type: 1.50'])
 
 
 def test_random_points():
@@ -693,7 +691,7 @@ def test_text_from_property_value(properties):
     data = 20 * np.random.random(shape)
     layer = Points(data, properties=copy(properties), text='point_type')
 
-    np.testing.assert_equal(layer.text.text.array, properties['point_type'])
+    np.testing.assert_equal(layer._view_text, properties['point_type'])
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
@@ -707,26 +705,26 @@ def test_text_from_property_fstring(properties):
     )
 
     expected_text = ['type: ' + v for v in properties['point_type']]
-    np.testing.assert_equal(layer.text.text.array, expected_text)
+    np.testing.assert_equal(layer._view_text, expected_text)
 
     # test updating the text
     layer.text = 'type-ish: {point_type}'
     expected_text_2 = ['type-ish: ' + v for v in properties['point_type']]
-    np.testing.assert_equal(layer.text.text.array, expected_text_2)
+    np.testing.assert_equal(layer._view_text, expected_text_2)
 
     # copy/paste
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
     expected_text_3 = expected_text_2 + ['type-ish: A']
-    np.testing.assert_equal(layer.text.text.array, expected_text_3)
+    np.testing.assert_equal(layer._view_text, expected_text_3)
 
     # add point
     layer.selected_data = {0}
     new_shape = np.random.random((1, 2))
     layer.add(new_shape)
     expected_text_4 = expected_text_3 + ['type-ish: A']
-    np.testing.assert_equal(layer.text.text.array, expected_text_4)
+    np.testing.assert_equal(layer._view_text, expected_text_4)
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
@@ -746,7 +744,7 @@ def test_set_text_with_kwarg_dict(properties):
     layer = Points(data, properties=copy(properties), text=text_kwargs)
 
     expected_text = ['type: ' + v for v in properties['point_type']]
-    np.testing.assert_equal(layer.text.text.array, expected_text)
+    np.testing.assert_equal(layer._view_text, expected_text)
 
     for property, value in text_kwargs.items():
         if property == 'text':
@@ -786,9 +784,7 @@ def test_refresh_text():
 
     new_properties = {'point_type': ['B'] * shape[0]}
     layer.properties = new_properties
-    np.testing.assert_equal(
-        layer.text.text.array, new_properties['point_type']
-    )
+    np.testing.assert_equal(layer._view_text, new_properties['point_type'])
 
 
 def test_points_errors():
@@ -2130,7 +2126,7 @@ def test_set_properties_updates_text_values():
 
     layer.properties = {'class': np.array(['D', 'E', 'F'])}
 
-    np.testing.assert_array_equal(layer.text.text.array, ['D', 'E', 'F'])
+    np.testing.assert_array_equal(layer._view_text, ['D', 'E', 'F'])
 
 
 def test_set_properties_with_invalid_shape_errors_safely():
@@ -2139,25 +2135,36 @@ def test_set_properties_with_invalid_shape_errors_safely():
     }
     points = Points(np.random.rand(3, 2), text='class', properties=properties)
     assert points.properties == properties
-    np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(points._view_text, ['A', 'B', 'C'])
 
     with pytest.raises(ValueError):
         points.properties = {'class': np.array(['D', 'E'])}
 
     assert points.properties == properties
-    np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(points._view_text, ['A', 'B', 'C'])
 
 
-def test_set_properties_with_missing_text_property_text_raises_on_validation():
+def test_set_properties_with_missing_text_property_text_becomes_constant_with_warning():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
     points = Points(np.random.rand(3, 2), text='class', properties=properties)
     assert points.properties == properties
-    np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(points._view_text, ['A', 'B', 'C'])
 
-    with pytest.raises(ValidationError):
-        points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+    points.properties = {'not_class': np.array(['D', 'E', 'F'])}
 
-    assert points.properties == properties
-    np.testing.assert_array_equal(points.text.text.array, ['A', 'B', 'C'])
+    with pytest.warns(RuntimeWarning):
+        np.testing.assert_array_equal(points._view_text, ['', '', ''])
+
+
+def test_copy_paste_direct():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    points.selected_data = [0, 2]
+    points._copy_data()
+    points._paste_data()
+
+    np.testing.assert_array_equal(points._view_text, ['A', 'B', 'C', 'A', 'C'])

@@ -351,7 +351,7 @@ class Points(Layer):
         self._drag_start = None
 
         # initialize view data
-        self._indices_view = np.empty(0)
+        self._indices_view = np.empty(0, dtype=int)
         self._view_size_scale = []
 
         self._drag_box = None
@@ -507,20 +507,9 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
-        properties, property_choices = prepare_properties(
+        self._properties, self._property_choices = prepare_properties(
             properties, self._property_choices, len(self.data)
         )
-
-        # This may raise a ValidationError if properties is not compatible with
-        # the rest of the state in TextManager. That is done before assigning
-        # properties to self, so that this does not become inconsistent.
-        # If similar assignments are added that may also raise an exception,
-        # they will likely need to be a try block that revert to the previous
-        # value of properties.
-        self.text.properties = properties
-
-        self._properties = properties
-        self._property_choices = property_choices
 
         # Updating current_properties can modify properties, so block to avoid
         # infinite recursion when explicitly setting the properties.
@@ -540,6 +529,9 @@ class Points(Layer):
             self._current_properties,
             "edge_color",
         )
+
+        self.text.properties = properties
+
         self.events.properties()
 
     @property
@@ -1133,9 +1125,10 @@ class Points(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.text._get_array(
+        text_array = self.text.text._get_array(
             self.properties, len(self.data), self._indices_view
         )
+        return np.broadcast_to(text_array, (len(self._indices_view),))
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
@@ -1280,7 +1273,7 @@ class Points(Layer):
         # get the indices of points in view
         indices, scale = self._slice_data(self._slice_indices)
         self._view_size_scale = scale
-        self._indices_view = np.array(indices)
+        self._indices_view = np.array(indices, dtype=int)
         # get the selected points that are in view
         self._selected_view = list(
             np.intersect1d(
@@ -1421,8 +1414,7 @@ class Points(Layer):
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
                 )
-            with self.text.events.text_update.blocker():
-                self.text.remove(index)
+            self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = set()
@@ -1469,14 +1461,6 @@ class Points(Layer):
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
-            self._edge._paste(
-                colors=self._clipboard['edge_color'],
-                properties=self._clipboard['properties'],
-            )
-            self._face._paste(
-                colors=self._clipboard['face_color'],
-                properties=self._clipboard['properties'],
-            )
 
             for k in self.properties:
                 self.properties[k] = np.concatenate(
@@ -1485,6 +1469,15 @@ class Points(Layer):
                 )
 
             self.text._paste(self._clipboard['text_string'])
+
+            self._edge._paste(
+                colors=self._clipboard['edge_color'],
+                properties=self._clipboard['properties'],
+            )
+            self._face._paste(
+                colors=self._clipboard['face_color'],
+                properties=self._clipboard['properties'],
+            )
 
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
@@ -1507,7 +1500,9 @@ class Points(Layer):
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self._slice_indices,
-                'text_string': deepcopy(self.text.text.array[index]),
+                'text_string': self.text.text._get_array(
+                    self.properties, len(self.data), index
+                ),
             }
         else:
             self._clipboard = {}

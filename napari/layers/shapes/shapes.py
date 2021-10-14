@@ -671,9 +671,7 @@ class Shapes(Layer):
                 )
             )
 
-        # Remove all text values. These will either be repopulated from new property
-        # values or will get default values, which is fine.
-        self.text.remove(range(self.nshapes))
+        self.text.text._clear()
 
         self._data_view = ShapeList()
         self.add(
@@ -1519,9 +1517,10 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.text._get_array(
-            self.properties, self.nshapes, self._indices_view
+        text_array = self.text.text._get_array(
+            self.properties, len(self.data), self._indices_view
         )
+        return np.broadcast_to(text_array, (len(self._indices_view),))
 
     @property
     def _view_text_coords(self) -> np.ndarray:
@@ -1985,8 +1984,6 @@ class Shapes(Layer):
             if total_shapes < n_prop_values:
                 for k in self.properties:
                     self.properties[k] = self.properties[k][:total_shapes]
-
-            self.text.add(num_to_add=n_new_shapes)
 
             self._add_shapes(
                 data,
@@ -2844,7 +2841,9 @@ class Shapes(Layer):
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self._slice_indices,
-                'text_string': deepcopy(self.text.text.array[index]),
+                'text_string': self.text.text._get_array(
+                    self.properties, self.nshapes, index
+                ),
             }
         else:
             self._clipboard = {}
@@ -2865,6 +2864,8 @@ class Shapes(Layer):
                     axis=0,
                 )
 
+            self.text._paste(self._clipboard['text_string'])
+
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
@@ -2878,8 +2879,6 @@ class Shapes(Layer):
                 self._data_view.add(
                     shape, face_color=face_color, edge_color=edge_color
                 )
-
-            self.text._paste(self._clipboard['text_string'])
 
             self.selected_data = set(
                 range(cur_shapes, cur_shapes + len(self._clipboard['data']))
