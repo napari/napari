@@ -83,7 +83,7 @@ class ConstantStyleEncoding(EventedModel, StyleEncoding):
         The constant style value.
     """
 
-    constant: np.ndarray
+    constant: np.ndarray = Field(..., allow_mutation=False)
 
     def _get_array(
         self,
@@ -130,8 +130,9 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         indices: Optional = None,
     ) -> np.ndarray:
         current_length = self.array.shape[0]
-        tail_array = np.array([self.default] * (n_rows - current_length))
-        self._append(tail_array)
+        if n_rows > current_length:
+            tail_array = np.array([self.default] * (n_rows - current_length))
+            self._append(tail_array)
         return self.array if indices is None else self.array[indices]
 
     def _append(self, array: np.ndarray):
@@ -172,8 +173,9 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
         current_length = self._array.shape[0]
         tail_indices = range(current_length, n_rows)
         try:
-            tail_array = self._apply(properties, tail_indices)
-            self._append(tail_array)
+            if len(tail_indices) > 0:
+                tail_array = self._apply(properties, tail_indices)
+                self._append(tail_array)
             return self._array if indices is None else self._array[indices]
         except (KeyError, ValueError) as error:
             self_str = repr(self)

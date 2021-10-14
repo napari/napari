@@ -95,7 +95,7 @@ class TextManager(EventedModel):
     def values(self):
         _warn_about_deprecated_values_field()
         n_text = _infer_n_rows(self.text, self.properties)
-        return self.text._get_array(self.properties, n_text, None)
+        return self.text._get_array(self.properties, n_text)
 
     def __setattr__(self, key, value):
         if key == 'values':
@@ -255,30 +255,27 @@ class TextManager(EventedModel):
         text: Union[str, Sequence[str], Union[STRING_ENCODINGS], dict, None],
         values,
     ) -> Union[STRING_ENCODINGS]:
-        properties = values['properties']
         if text is None:
-            encoding = ConstantStringEncoding(constant='')
-        elif isinstance(text, STRING_ENCODINGS):
-            encoding = text
-        elif isinstance(text, str):
+            return ConstantStringEncoding(constant='')
+        if isinstance(text, STRING_ENCODINGS):
+            return text
+        if isinstance(text, str):
+            properties = values['properties']
             if text in properties:
-                encoding = IdentityStringEncoding(property_name=text)
-            elif is_format_string(properties, text):
-                encoding = FormatStringEncoding(format_string=text)
-            else:
-                encoding = ConstantStringEncoding(constant=text)
-        elif isinstance(text, dict):
-            encoding = parse_kwargs_as_encoding(STRING_ENCODINGS, **text)
-        elif isinstance(text, Sequence):
-            encoding = DirectStringEncoding(array=text, default='')
-        else:
-            raise TypeError(
-                trans._(
-                    'text should be a StringEncoding, string, dict, sequence, or None',
-                    deferred=True,
-                )
+                return IdentityStringEncoding(property_name=text)
+            if is_format_string(properties, text):
+                return FormatStringEncoding(format_string=text)
+            return ConstantStringEncoding(constant=text)
+        if isinstance(text, dict):
+            return parse_kwargs_as_encoding(STRING_ENCODINGS, **text)
+        if isinstance(text, Sequence):
+            return DirectStringEncoding(array=text, default='')
+        raise TypeError(
+            trans._(
+                'text should be a StringEncoding, string, dict, sequence, or None',
+                deferred=True,
             )
-        return encoding
+        )
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
@@ -304,6 +301,7 @@ class TextManager(EventedModel):
 
     def _on_properties_changed(self, event=None):
         self.text._clear()
+        self.events.text_update()
 
 
 def _warn_about_deprecated_values_field():
