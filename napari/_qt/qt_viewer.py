@@ -5,6 +5,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 import numpy as np
+from npe2.manifest.io import WriterContribution
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
@@ -548,12 +549,12 @@ class QtViewer(QSplitter):
 
     @staticmethod
     def _npe2_file_extensions_string_for_layers(
-        layers: List[Layer],
-    ) -> Optional[TranslationBundle | str]:
+        layers: List[Layer] | LayerList,
+    ) -> Tuple[Optional[TranslationBundle | str], List[WriterContribution]]:
         try:
             import npe2
         except ImportError:
-            return None
+            return None, []
 
         layer_types = [layer.as_layer_data_tuple()[2] for layer in layers]
         writers = list(
@@ -564,7 +565,11 @@ class QtViewer(QSplitter):
             """Lookup the command name and its supported extensions"""
             for writer in writers:
                 cmd = npe2.plugin_manager.get_command(writer.command)
-                title = cmd.short_title if cmd.short_title else cmd.title
+                title = (
+                    writer.save_dialog_title
+                    if writer.save_dialog_title
+                    else cmd.title
+                )
                 yield title, writer.filename_extensions
 
         # extension strings are in the format:
@@ -583,7 +588,7 @@ class QtViewer(QSplitter):
 
     @staticmethod
     def _extension_string_for_layers(
-        layers: List[Layer],
+        layers: List[Layer] | LayerList,
     ) -> Tuple[TranslationBundle | str, Optional[List[Any]]]:
 
         # try to use npe2

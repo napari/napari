@@ -23,13 +23,13 @@ def _read_with_npe2(
     try:
         from npe2 import execute_command, plugin_manager
     except ImportError:
-        return
+        return (None, None)
 
     for rdr in plugin_manager.iter_compatible_readers(path):
         read_func = execute_command(rdr.command, kwargs={'path': path})
         if read_func:
             try:
-                layer_data = read_func(path)  # try to read data
+                layer_data = read_func(path)  # type: List[LayerData]
                 if layer_data:
                     # hookimpl just mocks `.plugin_name` attribute access
                     # until we drop support for the old hookimpl stuff.
@@ -183,7 +183,7 @@ def save_layers(
     layers: List[Layer],
     *,
     plugin: Optional[str] = None,
-) -> List[str]:
+) -> List[Optional[str]]:
     """Write list of layers or individual layer to a path using writer plugins.
 
     If ``plugin`` is not provided and only one layer is passed, then we
@@ -239,7 +239,7 @@ def save_layers(
         _written = _write_single_layer_with_plugins(
             path, layers[0], plugin_name=plugin
         )
-        written = [_written] if _written else []
+        written = [_written] if _written else []  # type: List[Optional[str]]
     else:
         written = []
 
@@ -318,7 +318,9 @@ def _write_layers_with_npe2(
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
 
-    def _lookup_writer(path: str) -> Tuple[WriterContribution, str, str]:
+    def _lookup_writer(
+        path: str,
+    ) -> Tuple[Optional[WriterContribution], str, str]:
         """Returns (writer,new_path,ext)
 
         When the path has a file extension, find a compatible writer that has
@@ -379,7 +381,7 @@ def _write_multiple_layers_with_plugins(
     layers: List[Layer],
     *,
     plugin_name: Optional[str] = None,
-) -> List[str]:
+) -> List[Optional[str]]:
     """Write data from multiple layers data with a plugin.
 
     If a ``plugin_name`` is not provided we loop through plugins to find the
