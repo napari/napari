@@ -151,6 +151,18 @@ class LayerList(SelectableEventedList[Layer]):
                 list(itertools.zip_longest(*maxes_list, fillvalue=np.nan)),
                 axis=1,
             )
+
+        # 512 element default extent as documented in `_get_extent_world`
+        try:
+            min_v = np.nan_to_num(min_v, nan=-0.5)
+            max_v = np.nan_to_num(max_v, nan=511.5)
+        except TypeError:
+            # In NumPy < 1.17, nan_to_num doesn't have a nan kwarg
+            min_v = np.asarray(min_v)
+            min_v[np.isnan(min_v)] = -0.5
+            max_v = np.asarray(max_v)
+            max_v[np.isnan(max_v)] = 511.5
+
         # switch back to original order
         return min_v[::-1], max_v[::-1]
 
@@ -165,25 +177,15 @@ class LayerList(SelectableEventedList[Layer]):
         extent_world : array, shape (2, D)
         """
         if len(self) == 0:
-            min_v = [np.nan] * self.ndim
-            max_v = [np.nan] * self.ndim
+            min_v = np.asarray([-0.5] * self.ndim)
+            max_v = np.asarray([511.5] * self.ndim)
         else:
             extrema = [extent.world for extent in layer_extent_list]
             mins = [e[0] for e in extrema]
             maxs = [e[1] for e in extrema]
             min_v, max_v = self._get_min_and_max(mins, maxs)
 
-        try:
-            min_vals = np.nan_to_num(min_v, nan=-0.5)
-            max_vals = np.nan_to_num(max_v, nan=511.5)
-        except TypeError:
-            # In NumPy < 1.17, nan_to_num doesn't have a nan kwarg
-            min_vals = np.asarray(min_v)
-            min_vals[np.isnan(min_vals)] = -0.5
-            max_vals = np.asarray(max_v)
-            max_vals[np.isnan(max_vals)] = 511.5
-
-        return np.vstack([min_vals, max_vals])
+        return np.vstack([min_v, max_v])
 
     @property
     def _step_size(self) -> np.ndarray:
@@ -271,11 +273,6 @@ class LayerList(SelectableEventedList[Layer]):
                 for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
             ]
             min_v, max_v = self._get_min_and_max(mins, maxs)
-            # same 512 element default extent as `_get_extent_world`
-            min_v = np.asarray(min_v)
-            min_v[np.isnan(min_v)] = -0.5
-            max_v = np.asarray(max_v)
-            max_v[np.isnan(max_v)] = 511.5
 
             # form range tuples, switching back to original dimension order
             return [
