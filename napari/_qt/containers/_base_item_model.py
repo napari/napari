@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 
 ItemType = TypeVar("ItemType")
 
-ItemRole = Qt.UserRole
-SortRole = Qt.UserRole + 1
+ItemRole = Qt.ItemDataRole.UserRole
+SortRole = Qt.ItemDataRole.UserRole + 1
 
 
 class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
@@ -91,7 +91,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         see: https://doc.qt.io/qt-5/qt.html#ItemDataRole-enum
 
         """
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRoleDisplayRole:
             return str(self.getItem(index))
         if role == ItemRole:
             return self.getItem(index)

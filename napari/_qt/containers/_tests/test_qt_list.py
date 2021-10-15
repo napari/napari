@@ -27,11 +27,11 @@ def test_list_model():
     root: SelectableEventedList[str] = SelectableEventedList('abcdef')
     model = QtListModel(root)
     assert all(
-        model.data(model.index(i), Qt.UserRole) == letter
+        model.data(model.index(i), Qt.ItemDataRole.UserRole) == letter
         for i, letter in enumerate('abcdef')
     )
     assert all(
-        model.data(model.index(i), Qt.DisplayRole) == letter
+        model.data(model.index(i), Qt.ItemDataRole.DisplayRole) == letter
         for i, letter in enumerate('abcdef')
     )
     # unknown data role

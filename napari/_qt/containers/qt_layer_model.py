@@ -4,24 +4,32 @@ from superqt.qtcompat.QtGui import QImage
 from ...layers import Layer
 from .qt_list_model import QtListModel
 
-ThumbnailRole = Qt.UserRole + 2
+ThumbnailRole = Qt.ItemDataRole.UserRole + 2
 
 
 class QtLayerListModel(QtListModel[Layer]):
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``."""
         layer = self.getItem(index)
-        if role == Qt.DisplayRole:  # used for item text
+        if role == Qt.ItemDataRole.DisplayRole:  # used for item text
             return layer.name
-        if role == Qt.TextAlignmentRole:  # alignment of the text
-            return Qt.AlignCenter
-        if role == Qt.EditRole:  # used to populate line edit when editing
+        if role == Qt.ItemDataRole.TextAlignmentRole:  # alignment of the text
+            return Qt.AlignmentFlag.AlignCenter
+        if (
+            role == Qt.ItemDataRole.EditRole
+        ):  # used to populate line edit when editing
             return layer.name
-        if role == Qt.ToolTipRole:  # for tooltip
+        if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
             return layer.name
-        if role == Qt.CheckStateRole:  # the "checked" state of this item
-            return Qt.Checked if layer.visible else Qt.Unchecked
-        if role == Qt.SizeHintRole:  # determines size of item
+        if (
+            role == Qt.ItemDataRole.CheckStateRole
+        ):  # the "checked" state of this item
+            return (
+                Qt.CheckState.Checked
+                if layer.visible
+                else Qt.CheckState.Unchecked
+            )
+        if role == Qt.ItemDataRole.SizeHintRole:  # determines size of item
             return QSize(200, 34)
         if role == ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
@@ -38,11 +46,11 @@ class QtLayerListModel(QtListModel[Layer]):
         return super().data(index, role)
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
-        if role == Qt.CheckStateRole:
+        if role == Qt.ItemDataRole.CheckStateRole:
             self.getItem(index).visible = value
-        elif role == Qt.EditRole:
+        elif role == Qt.ItemDataRole.EditRole:
             self.getItem(index).name = value
-            role = Qt.DisplayRole
+            role = Qt.ItemDataRole.DisplayRole
         else:
             return super().setData(index, value, role=role)
 
@@ -57,8 +65,8 @@ class QtLayerListModel(QtListModel[Layer]):
             return
         role = {
             'thumbnail': ThumbnailRole,
-            'visible': Qt.CheckStateRole,
-            'name': Qt.DisplayRole,
+            'visible': Qt.ItemDataRole.CheckStateRole,
+            'name': Qt.ItemDataRole.DisplayRole,
         }.get(event.type, None)
         roles = [role] if role is not None else []
         row = self.index(event.index)

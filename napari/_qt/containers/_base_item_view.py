@@ -125,6 +125,10 @@ def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:
     """Find the `QModelIndex` for a given object in the model."""
     fl = Qt.MatchExactly | Qt.MatchRecursive
     hits = model.match(
-        model.index(0, 0, QModelIndex()), Qt.UserRole, obj, hits=1, flags=fl
+        model.index(0, 0, QModelIndex()),
+        Qt.ItemDataRole.UserRole,
+        obj,
+        hits=1,
+        flags=fl,
     )
     return hits[0] if hits else QModelIndex()

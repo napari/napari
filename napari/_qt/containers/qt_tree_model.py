@@ -34,9 +34,9 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         its own "ItemDataRole".
         """
         item = self.getItem(index)
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return item._node_name()
-        if role == Qt.UserRole:
+        if role == Qt.ItemDataRole.UserRole:
             return self.getItem(index)
         return None
 
