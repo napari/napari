@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Sequence, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import Field, ValidationError, parse_obj_as
@@ -43,7 +43,7 @@ class StyleEncoding(ABC):
 
     @abstractmethod
     def _clear(self):
-        """Clears all currently stored values. Call this before _get_array to refresh values."""
+        """Clears all previously generated values. Call this before _get_array to refresh values."""
         pass
 
     @abstractmethod
@@ -138,7 +138,9 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         self.array = _append_maybe_empty(self.array, array)
 
     def _delete(self, indices):
-        self.array = np.delete(self.array, list(indices), axis=0)
+        # TODO: consider warning if any indices are OOB.
+        safe_indices = _in_bounds(indices, self.array.shape[0])
+        self.array = np.delete(self.array, safe_indices, axis=0)
 
     def _clear(self):
         self.array = np.empty((0,))
@@ -193,7 +195,9 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
         self._array = _append_maybe_empty(self._array, array)
 
     def _delete(self, indices):
-        self._array = np.delete(self._array, indices, axis=0)
+        # TODO: consider warning if any indices are OOB.
+        safe_indices = _in_bounds(indices, self._array.shape[0])
+        self._array = np.delete(self._array, safe_indices, axis=0)
 
     def _clear(self):
         self._array = np.empty((0,))
@@ -241,3 +245,7 @@ def _infer_n_rows(encoding, properties: Dict[str, np.ndarray]) -> int:
     if isinstance(encoding, DerivedStyleEncoding):
         return len(next(iter(properties)))
     return 1
+
+
+def _in_bounds(indices: Iterable[int], limit: int) -> List[int]:
+    return [index for index in indices if index < limit]
