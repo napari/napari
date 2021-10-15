@@ -1,5 +1,5 @@
-from vispy.scene.visuals import Line, Compound, Markers
 import numpy as np
+from vispy.scene.visuals import Compound, Line, Markers
 
 
 class VispyInteractionBox:
@@ -8,7 +8,9 @@ class VispyInteractionBox:
         self._viewer = viewer
         self.node = Compound([Line(), Markers()])
         self.layer = None
-        self._viewer.events.active_layer.connect(self._on_active_layer_change)
+        self._viewer.layers.selection.events.active.connect(
+            self._on_active_layer_change
+        )
         self._on_interaction_box_change()
 
     @property
@@ -22,11 +24,12 @@ class VispyInteractionBox:
         return self.node._subvisuals[0]
 
     def _on_active_layer_change(self, event):
+        print(event)
         if self.layer is not None:
             self.layer._interaction_box.events.points_changed.disconnect(
                 self._on_interaction_box_change
             )
-        self.layer = event.item
+        self.layer = event.value
         if self.layer is not None:
             self.layer._interaction_box.events.points_changed.connect(
                 self._on_interaction_box_change
@@ -34,8 +37,7 @@ class VispyInteractionBox:
         self._on_interaction_box_change()
 
     def _on_interaction_box_change(self, event=None):
-        """Called whenever the interaction box changed.
-        """
+        """Called whenever the interaction box changed."""
         if self.layer is None:
             self.marker_node.set_data(np.zeros((1, 2)))
             self.line_node.set_data(np.zeros((1, 2)))
@@ -52,7 +54,7 @@ class VispyInteractionBox:
         ) = self.layer._interaction_box._compute_vertices_and_box()
 
         if vertices is None or len(vertices) == 0:
-            vertices = np.zeros((1, self.layer.dims.ndisplay))
+            vertices = np.zeros((1, self._viewer.dims.ndisplay))
             size = 0
         else:
             vertices = vertices + 0.5
@@ -69,7 +71,7 @@ class VispyInteractionBox:
         )
 
         if pos is None or len(pos) == 0:
-            pos = np.zeros((1, self.layer.dims.ndisplay))
+            pos = np.zeros((1, self._viewer.dims.ndisplay))
             width = 0
         else:
             pos = pos + 0.5

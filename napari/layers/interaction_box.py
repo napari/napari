@@ -1,8 +1,8 @@
 import numpy as np
-from skimage.transform import SimilarityTransform, AffineTransform
+from skimage.transform import AffineTransform, SimilarityTransform
 
+from ..utils.events import EmitterGroup, Event
 from ._constants import Box
-from ..utils.event import EmitterGroup, Event
 
 
 def inside_boxes(boxes):
@@ -129,7 +129,7 @@ class InteractionBox:
         return angle
 
     def points_in_box(self, points):
-        """ Calculates from a list of points which are inside the box.
+        """Calculates from a list of points which are inside the box.
          Parameters
         ----------
         points : (2, 2) array
@@ -194,8 +194,7 @@ class InteractionBox:
         return vertices, face_color, edge_color, pos, width
 
     def _add_rotation_handle(self):
-        """Adds the rotation handle to the box
-        """
+        """Adds the rotation handle to the box"""
 
         box = self._box
 
@@ -217,8 +216,7 @@ class InteractionBox:
         self._box = box
 
     def _create_box_from_points(self):
-        """Creates the axis aligned interaction box from the list of points
-        """
+        """Creates the axis aligned interaction box from the list of points"""
         if self._points is None or len(self._points) < 1:
             self._box = None
             return
@@ -246,13 +244,10 @@ class InteractionBox:
         )
         self._box = box
 
-    def _set_drag_start_values(self, layer):
-        """ Gets called whenever a drag is started to remember starting values
-        """
+    def _set_drag_start_values(self, layer, position):
+        """Gets called whenever a drag is started to remember starting values"""
 
-        self._drag_start_coordinates = np.array(
-            [layer.coordinates[i] for i in layer.dims.displayed]
-        )
+        self._drag_start_coordinates = np.array(layer.world_to_data(position))
         self._drag_start_box = np.copy(self._box)
         if self._box is not None:
             self._drag_start_angle = self.angle
@@ -260,8 +255,7 @@ class InteractionBox:
         self._drag_scale = [1.0, 1.0]
 
     def _clear_drag_start_values(self):
-        """ Gets called at the end of a drag to reset remembered values
-        """
+        """Gets called at the end of a drag to reset remembered values"""
 
         self._drag_start_coordinates = None
         self._drag_start_box = None
@@ -270,8 +264,7 @@ class InteractionBox:
         self._drag_scale = [1.0, 1.0]
 
     def _on_drag_rotation(self, layer, event):
-        """ Gets called upon mouse_move in the case of a rotation
-        """
+        """Gets called upon mouse_move in the case of a rotation"""
         center = self._drag_start_box[Box.CENTER]
         new_offset = [
             layer.coordinates[i] for i in layer.dims.displayed
@@ -296,8 +289,7 @@ class InteractionBox:
         self.events.transform_changed_drag(transform=transform)
 
     def _on_drag_scale(self, layer, event):
-        """ Gets called upon mouse_move in the case of a scaling operation
-        """
+        """Gets called upon mouse_move in the case of a scaling operation"""
 
         # Transform everything in axis-aligned space with fixed point at origin
         center = self._drag_start_box[self._fixed_vertex]
@@ -338,8 +330,7 @@ class InteractionBox:
         self.events.transform_changed_drag(transform=transform)
 
     def _on_drag_translate(self, layer, event):
-        """ Gets called upon mouse_move in the case of a translation operation
-        """
+        """Gets called upon mouse_move in the case of a translation operation"""
 
         offset = (
             np.array([layer.coordinates[i] for i in layer.dims.displayed])
@@ -352,13 +343,12 @@ class InteractionBox:
         self.events.transform_changed_drag(transform=transform)
 
     def _on_drag_newbox(self, layer, event):
-        """ Gets called upon mouse_move in the case of a drawing a new box
-        """
+        """Gets called upon mouse_move in the case of a drawing a new box"""
 
         self.points = np.array(
             [
                 self._drag_start_coordinates,
-                np.array([layer.coordinates[i] for i in layer.dims.displayed]),
+                np.array(layer.world_to_data(event.position)),
             ]
         )
         self.show = True
@@ -369,8 +359,7 @@ class InteractionBox:
         )
 
     def _on_end_newbox(self, layer, event):
-        """ Gets called upon mouse_move in the case of a drawing a new box
-        """
+        """Gets called upon mouse_move in the case of a drawing a new box"""
         self.show = False
         self.show_handle = True
         self.show_vertices = True
@@ -381,8 +370,7 @@ class InteractionBox:
             )
 
     def initialize_mouse_events(self, layer):
-        """ Adds event handling functions to the layer
-        """
+        """Adds event handling functions to the layer"""
 
         @layer.mouse_move_callbacks.append
         def mouse_move(layer, event):
@@ -390,7 +378,7 @@ class InteractionBox:
                 return
 
             box = self._box
-            coord = [layer.coordinates[i] for i in layer.dims.displayed]
+            coord = layer.world_to_data(event.position)
             distances = abs(box - coord)
 
             # Get the vertex sizes
@@ -413,7 +401,7 @@ class InteractionBox:
             #    return
 
             # Handling drag start, decide what action to take
-            self._set_drag_start_values(layer)
+            self._set_drag_start_values(layer, event.position)
             drag_callback = None
             final_callback = None
             if self._show and self._selected_vertex is not None:

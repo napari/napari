@@ -54,9 +54,9 @@ from .._vispy import (  # isort:skip
 if TYPE_CHECKING:
     from ..viewer import Viewer
 
+from .._vispy.vispy_interaction_box import VispyInteractionBox
 from ..settings import get_settings
 from ..utils.io import imsave_extensions
-from .._vispy.vispy_interaction_box import VispyInteractionBox
 
 
 class QtViewer(QSplitter):
@@ -189,10 +189,6 @@ class QtViewer(QSplitter):
         self._canvas_overlay.set_welcome_visible(show_welcome_screen)
         self._canvas_overlay.sig_dropped.connect(self.dropEvent)
 
-        self._interaction_box_visual = VispyInteractionBox(viewer)
-        self._interaction_box_visual.node.parent = self.view.scene
-        self._interaction_box_visual.node.order = len(self.viewer.layers) + 1
-
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
@@ -237,6 +233,9 @@ class QtViewer(QSplitter):
 
         # Add axes, scale bar
         self._add_visuals()
+        self._interaction_box_visual = VispyInteractionBox(viewer)
+        self._interaction_box_visual.node.parent = self.view.scene
+        self._interaction_box_visual.node.order = len(self.viewer.layers) + 1
 
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
