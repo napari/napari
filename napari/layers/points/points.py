@@ -423,7 +423,7 @@ class Points(Layer):
                                 : len(data)
                             ]
 
-                        self.text.string._delete(range(len(data), cur_npoints))
+                        self.text.remove(list(range(len(data), cur_npoints)))
 
                     elif len(data) > cur_npoints:
                         # If there are now more points, add the size and colors of the
@@ -453,14 +453,9 @@ class Points(Layer):
                         self._face._add(n_colors=adding)
 
                         self.size = np.concatenate((self._size, size), axis=0)
-
                         self.selected_data = set(
                             np.arange(cur_npoints, len(data))
                         )
-
-        # TODO: this is inefficient for adding individual points.
-        # Probably want to remove if needed.
-        self.text.string._clear()
 
         self._update_dims()
         self.events.data(value=self.data)
