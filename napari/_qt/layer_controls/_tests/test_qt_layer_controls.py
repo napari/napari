@@ -14,7 +14,10 @@ _LINES = np.random.random((6, 2, 2))
 
 def test_create_shape(qtbot):
     shapes = Shapes(_SHAPES)
+
     ctrl = create_qt_layer_controls(shapes)
+    qtbot.addWidget(ctrl)
+
     assert isinstance(ctrl, QtShapesControls)
 
 
@@ -36,4 +39,5 @@ def test_inheritance(qtbot):
     lines = Lines(_LINES)
     layer_to_controls[Lines] = QtLinesControls
     ctrl = create_qt_layer_controls(lines)
+    qtbot.addWidget(ctrl)
     assert isinstance(ctrl, QtLinesControls)
