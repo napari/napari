@@ -57,7 +57,7 @@ class ActivityToggleItem(QWidget):
         self.layout().setContentsMargins(0, 0, 0, 0)
 
 
-class ActivityDialog(QDialog):
+class QtActivityDialog(QDialog):
     """Activity Dialog for Napari progress bars."""
 
     MIN_WIDTH = 250
