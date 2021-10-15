@@ -256,10 +256,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if label layer is n-dimensional.
         """
-        if state == Qt.Checked:
-            self.layer.n_dimensional = True
-        else:
-            self.layer.n_dimensional = False
+        self.layer.n_dimensional = state == Qt.Checked
 
     def change_text_visibility(self, state):
         """Toggle the visibiltiy of the text.
@@ -269,10 +266,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        if state == Qt.Checked:
-            self.layer.text.visible = True
-        else:
-            self.layer.text.visible = False
+        self.layer.text.visible = state == Qt.Checked
 
     def _on_text_visibility_change(self, event):
         """Receive layer model text visibiltiy change change event and update checkbox.

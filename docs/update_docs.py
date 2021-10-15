@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from jinja2 import Template
-from pydantic import BaseModel
+from pydantic.main import ModelMetaclass
 from superqt.qtcompat.QtCore import QTimer
 from superqt.qtcompat.QtWidgets import QMessageBox
 
@@ -132,7 +132,7 @@ def create_preferences_docs():
 
     for name, field in NapariSettings.__fields__.items():
 
-        if not issubclass(field.type_, BaseModel):
+        if not isinstance(field.type_, ModelMetaclass):
             continue
 
         excluded = getattr(field.type_.NapariConfig, "preferences_exclude", [])

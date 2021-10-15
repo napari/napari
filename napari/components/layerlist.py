@@ -7,6 +7,7 @@ import numpy as np
 
 from ..layers import Image, Labels, Layer
 from ..layers.utils._link_layers import get_linked_layers, layer_is_linked
+from ..utils._dtype import normalize_dtype
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
@@ -62,16 +63,10 @@ class LayerList(SelectableEventedList[Layer]):
         new_name : str
             Coerced, unique name.
         """
-        if layer is None:
-            for existing_name in sorted(x.name for x in self):
-                if name == existing_name:
-                    name = inc_name_count(name)
-        else:
-            for _layer in sorted(self, key=lambda x: x.name):
-                if _layer is layer:
-                    continue
-                if name == _layer.name:
-                    name = inc_name_count(name)
+        existing_layers = {x.name for x in self if x is not layer}
+        for i in range(len(self)):
+            if name in existing_layers:
+                name = inc_name_count(name)
         return name
 
     def _update_name(self, event):
@@ -84,22 +79,6 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         super().insert(index, new_layer)
-
-        # required for deprecated layer.selected property.  remove after 0.4.9
-        new_layer._deprecated_layerlist = self
-
-    @property
-    def selected(self):
-        """List of selected layers."""
-        warnings.warn(
-            trans._(
-                "'viewer.layers.selected' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection'",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.selection
 
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
@@ -126,25 +105,6 @@ class LayerList(SelectableEventedList[Layer]):
         offset = insert >= index
         self.move_multiple(moving, insert + offset)
 
-    def unselect_all(self, ignore=None):
-        """Unselects all layers expect any specified in ignore.
-
-        Parameters
-        ----------
-        ignore : Layer | None
-            Layer that should not be unselected if specified.
-        """
-        warnings.warn(
-            trans._(
-                "'viewer.layers.unselect_all()' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection.clear()'. To unselect everything but a set of ignored layers, use 'viewer.layers.selection.intersection_update({ignored})'",
-                deferred=True,
-                ignored=ignore,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        self.selection.intersection_update({ignore} if ignore else {})
-
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
         for layer in self.selection:
@@ -154,7 +114,8 @@ class LayerList(SelectableEventedList[Layer]):
     def _extent_world(self) -> np.ndarray:
         """Extent of layers in world coordinates.
 
-        Default to 2D with (0, 512) min/ max values if no data is present.
+        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
+        Corresponds to pixels centered at [0, ..., 511].
 
         Returns
         -------
@@ -165,7 +126,8 @@ class LayerList(SelectableEventedList[Layer]):
     def _get_extent_world(self, layer_extent_list):
         """Extent of layers in world coordinates.
 
-        Default to 2D with (0, 512) min/ max values if no data is present.
+        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
+        Corresponds to pixels centered at [0, ..., 511].
 
         Returns
         -------
@@ -200,9 +162,15 @@ class LayerList(SelectableEventedList[Layer]):
                     axis=1,
                 )
 
-        min_vals = np.nan_to_num(min_v[::-1])
-        max_vals = np.copy(max_v[::-1])
-        max_vals[np.isnan(max_vals)] = 511
+        try:
+            min_vals = np.nan_to_num(min_v[::-1], nan=-0.5)
+            max_vals = np.nan_to_num(max_v[::-1], nan=511.5)
+        except TypeError:
+            # In NumPy < 1.17, nan_to_num doesn't have a nan kwarg
+            min_vals = np.asarray(min_v[::-1])
+            min_vals[np.isnan(min_vals)] = -0.5
+            max_vals = np.asarray(max_v[::-1])
+            max_vals[np.isnan(max_vals)] = 511.5
 
         return np.vstack([min_vals, max_vals])
 
@@ -343,6 +311,17 @@ class LayerList(SelectableEventedList[Layer]):
 # `qt_action_context_menu.QtActionContextMenu` method to update the enabled
 # and/or visible items based on the state of the layerlist.
 
+
+def get_active_layer_dtype(layer):
+    dtype = None
+    if layer.active:
+        try:
+            dtype = normalize_dtype(layer.active.data.dtype).__name__
+        except AttributeError:
+            pass
+    return dtype
+
+
 _CONTEXT_KEYS = {
     'selection_count': lambda s: len(s),
     'all_layers_linked': lambda s: all(layer_is_linked(x) for x in s),
@@ -362,4 +341,5 @@ _CONTEXT_KEYS = {
     'same_shape': (
         lambda s: len({getattr(x.data, 'shape', ()) for x in s}) == 1
     ),
+    'active_layer_dtype': get_active_layer_dtype,
 }

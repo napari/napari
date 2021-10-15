@@ -7,6 +7,7 @@ from napari._qt.utils import (
     add_flash_animation,
     is_qbyte,
     qbytearray_to_str,
+    qt_might_be_rich_text,
     qt_signals_blocked,
     str_to_qbytearray,
 )
@@ -95,3 +96,10 @@ def test_add_flash_animation(qtbot):
     qtbot.wait(350)
     assert widget.graphicsEffect() is None
     assert not hasattr(widget, "_flash_animation")
+
+
+def test_qt_might_be_rich_text(qtbot):
+    widget = QMainWindow()
+    qtbot.addWidget(widget)
+    assert qt_might_be_rich_text("<b>rich text</b>")
+    assert not qt_might_be_rich_text("plain text")

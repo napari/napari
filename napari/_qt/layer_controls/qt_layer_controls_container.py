@@ -13,7 +13,7 @@ from .qt_vectors_controls import QtVectorsControls
 
 layer_to_controls = {
     Labels: QtLabelsControls,
-    Image: QtImageControls,  # must be after Labels layer
+    Image: QtImageControls,
     Points: QtPointsControls,
     Shapes: QtShapesControls,
     Surface: QtSurfaceControls,
@@ -130,6 +130,8 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
-        controls.close()
+        # controls.close()
+        controls.hide()
+        controls.deleteLater()
         controls = None
         del self.widgets[layer]

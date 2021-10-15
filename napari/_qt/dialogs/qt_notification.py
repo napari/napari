@@ -229,6 +229,7 @@ class NapariQtNotification(QDialog):
         self.row1.addWidget(self.severity_icon, alignment=Qt.AlignTop)
         self.message = QElidingLabel()
         self.message.setWordWrap(True)
+        self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.message.setMinimumWidth(self.MIN_WIDTH - 200)
         self.message.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding

@@ -1,6 +1,16 @@
-from napari._qt.qt_main_window import _QtMainWindow
+from unittest.mock import patch
+
+from napari._qt.qt_main_window import Window, _QtMainWindow
+from napari._tests.utils import slow
+from napari.utils.theme import (
+    _themes,
+    get_theme,
+    register_theme,
+    unregister_theme,
+)
 
 
+@slow(10)
 def test_current_viewer(make_napari_viewer, qapp):
     """Test that we can retrieve the "current" viewer window easily.
 
@@ -35,3 +45,41 @@ def test_current_viewer(make_napari_viewer, qapp):
     v1.close()
     assert _QtMainWindow._instances == []
     assert _QtMainWindow.current() is None
+
+
+@patch.object(Window, "_theme_icon_changed")
+@patch.object(Window, "_remove_theme")
+@patch.object(Window, "_add_theme")
+def test_update_theme(
+    mock_add_theme,
+    mock_remove_theme,
+    mock_icon_changed,
+    make_napari_viewer,
+    qapp,
+):
+    viewer = make_napari_viewer()
+
+    blue = get_theme("dark", False)
+    blue.name = "blue"
+    register_theme("blue", blue)
+
+    # triggered when theme was added
+    mock_add_theme.assert_called()
+    mock_remove_theme.assert_not_called()
+
+    unregister_theme("blue")
+    # triggered when theme was removed
+    mock_remove_theme.assert_called()
+
+    mock_icon_changed.assert_not_called()
+    viewer.theme = "light"
+    theme = _themes["light"]
+    theme.icon = "#FF0000"
+    mock_icon_changed.assert_called()
+
+
+def test_lazy_console(make_napari_viewer):
+    v = make_napari_viewer()
+    assert v.window.qt_viewer._console is None
+    v.update_console({"test": "test"})
+    assert v.window.qt_viewer._console is None

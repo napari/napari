@@ -75,12 +75,19 @@ QStatusBar {
     width: 12px;
     height: 12px;
     padding: 0;
-    image: url(":/themes/{{ folder }}/delete_shape.svg");
+    image: url(":/themes/{{ name }}/delete_shape.svg");
 }
 
 
 #QTitleBarFloatButton{
-    image: url(":/themes/{{ folder }}/pop_out.svg");
+    image: url(":/themes/{{ name }}/pop_out.svg");
+    width: 10px;
+    height: 8px;
+    padding: 2 1 2 1;
+}
+
+#QTitleBarHideButton{
+    image: url(":/themes/{{ name }}/visibility_off.svg");
     width: 10px;
     height: 8px;
     padding: 2 1 2 1;
@@ -201,11 +208,11 @@ QtLayerWidget > QCheckBox#visibility::indicator{
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/visibility_off_50.svg");
+  image: url(":/themes/{{ name }}/visibility_off_50.svg");
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:checked {
-  image: url(":/themes/{{ folder }}/visibility.svg");
+  image: url(":/themes/{{ name }}/visibility.svg");
 }
 
 
@@ -218,35 +225,35 @@ QLabel[layer_type_label="true"] {
 }
 
 QLabel#Shapes {
-  image: url(":/themes/{{ folder }}/new_shapes.svg");
+  image: url(":/themes/{{ name }}/new_shapes.svg");
 }
 
 QLabel#Points {
-  image: url(":/themes/{{ folder }}/new_points.svg");
+  image: url(":/themes/{{ name }}/new_points.svg");
 }
 
 QLabel#Labels {
-  image: url(":/themes/{{ folder }}/new_labels.svg");
+  image: url(":/themes/{{ name }}/new_labels.svg");
 }
 
 QLabel#Image {
-  image: url(":/themes/{{ folder }}/new_image.svg");
+  image: url(":/themes/{{ name }}/new_image.svg");
 }
 
 QLabel#Multiscale {
-  image: url(":/themes/{{ folder }}/new_image.svg");
+  image: url(":/themes/{{ name }}/new_image.svg");
 }
 
 QLabel#Surface {
-  image: url(":/themes/{{ folder }}/new_surface.svg");
+  image: url(":/themes/{{ name }}/new_surface.svg");
 }
 
 QLabel#Vectors {
-  image: url(":/themes/{{ folder }}/new_vectors.svg");
+  image: url(":/themes/{{ name }}/new_vectors.svg");
 }
 
 QLabel#logo_silhouette {
-  image: url(":/themes/{{ folder }}/logo_silhouette.svg");
+  image: url(":/themes/{{ name }}/logo_silhouette.svg");
 }
 
 
@@ -311,11 +318,11 @@ QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
-    image: url(":/themes/{{ folder }}/step_left.svg");
+    image: url(":/themes/{{ name }}/step_left.svg");
 }
 
 QtDimSliderWidget > QScrollBar::right-arrow:horizontal {
-    image: url(":/themes/{{ folder }}/step_right.svg");
+    image: url(":/themes/{{ name }}/step_right.svg");
 }
 
 QtDimSliderWidget > QLineEdit {
@@ -339,7 +346,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #playDirectionCheckBox::indicator {
-   image: url(":/themes/{{ folder }}/long_right_arrow.svg");
+   image: url(":/themes/{{ name }}/long_right_arrow.svg");
    width: 22px;
    height: 22px;
    padding: 0 6px;
@@ -351,7 +358,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #playDirectionCheckBox::indicator:checked {
-   image: url(":/themes/{{ folder }}/long_left_arrow.svg");
+   image: url(":/themes/{{ name }}/long_left_arrow.svg");
 }
 
 #playDirectionCheckBox::indicator:pressed {
@@ -470,17 +477,17 @@ NapariQtNotification #expand_button {
 }
 
 NapariQtNotification[expanded="false"] #expand_button {
-  image: url(":/themes/{{ folder }}/chevron_up.svg");
+  image: url(":/themes/{{ name }}/chevron_up.svg");
 }
 
 NapariQtNotification[expanded="true"] #expand_button {
-  image: url(":/themes/{{ folder }}/chevron_down.svg");
+  image: url(":/themes/{{ name }}/chevron_down.svg");
 }
 
 
 NapariQtNotification #close_button {
   background: none;
-  image: url(":/themes/{{ folder }}/delete_shape.svg");
+  image: url(":/themes/{{ name }}/delete_shape.svg");
   padding: 0px;
   margin: 0px;
   max-width: 20px;
@@ -524,49 +531,60 @@ PluginListItem {
   border-radius: 3px;
 }
 
-PluginListItem > QPushButton#install_button {
+QPushButton#install_button {
   background-color: {{ current }}
 }
 
-PluginListItem > QPushButton#install_button:hover {
+QPushButton#install_button:hover {
   background-color: {{ lighten(current, 10) }}
 }
 
-PluginListItem > QPushButton#install_button:pressed {
+QPushButton#install_button:pressed {
   background-color: {{ darken(current, 10) }}
 }
 
-PluginListItem > QPushButton#remove_button {
+QPushButton#remove_button {
   background-color: {{ warning }}
 }
 
-PluginListItem > QPushButton#remove_button:hover {
+QPushButton#remove_button:hover {
   background-color: {{ lighten(warning, 10) }}
 }
 
-PluginListItem > QPushButton#remove_button:pressed {
+QPushButton#remove_button:pressed {
   background-color: {{ darken(warning, 10) }}
 }
 
-PluginListItem > QPushButton#busy_button:pressed {
+QPushButton#busy_button:pressed {
   background-color: {{ darken(secondary, 10) }}
 }
 
-PluginListItem > QPushButton#busy_button {
+QPushButton#busy_button {
   background-color: {{ secondary }}
 }
 
-PluginListItem > QPushButton#busy_button:hover {
+QPushButton#busy_button:hover {
   background-color: {{ lighten(secondary, 10) }}
 }
 
-PluginListItem > QPushButton#busy_button:pressed {
+QPushButton#busy_button:pressed {
   background-color: {{ darken(secondary, 10) }}
 }
+
+QPushButton#close_button:disabled {
+  background-color: {{ lighten(secondary, 10) }}
+}
+
 
 #small_text {
   color: {{ opacity(text, 150) }};
   font-size: 10px;
+}
+
+#small_italic_text {
+  color: {{ opacity(text, 150) }};
+  font-size: 12px;
+  font-style: italic;
 }
 
 #pip_install_status{
@@ -575,14 +593,14 @@ PluginListItem > QPushButton#busy_button:pressed {
 }
 
 #info_icon {
-  image: url(":/themes/{{ folder }}/info.svg");
+  image: url(":/themes/{{ name }}/info.svg");
   min-width: 18px;
   min-height: 18px;
   margin: 2px;
 }
 
 #warning_icon {
-  image: url(":/themes/{{ folder }}/warning.svg");
+  image: url(":/themes/{{ name }}/warning.svg");
   max-width: 14px;
   max-height: 14px;
   min-width: 14px;
@@ -602,7 +620,7 @@ PluginListItem > QPushButton#busy_button:pressed {
 }
 
 #error_label {
-  image: url(":/themes/{{ folder }}/warning.svg");
+  image: url(":/themes/{{ name }}/warning.svg");
   max-width: 18px;
   max-height: 18px;
   min-width: 18px;
@@ -613,7 +631,7 @@ PluginListItem > QPushButton#busy_button:pressed {
 }
 
 #help_label {
-  image: url(":/themes/{{ folder }}/help.svg");
+  image: url(":/themes/{{ name }}/help.svg");
   max-width: 18px;
   max-height: 18px;
   min-width: 18px;
@@ -730,14 +748,14 @@ QtLayerList::indicator {
   height: 16px;
   position: absolute;
   left: 0px;
-  image: url(":/themes/{{ folder }}/visibility_off.svg");
+  image: url(":/themes/{{ name }}/visibility_off.svg");
 }
 
 QtLayerList::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/visibility_off_50.svg");
+  image: url(":/themes/{{ name }}/visibility_off_50.svg");
   
 }
 
 QtLayerList::indicator:checked {
-  image: url(":/themes/{{ folder }}/visibility.svg");
+  image: url(":/themes/{{ name }}/visibility.svg");
 }

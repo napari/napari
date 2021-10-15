@@ -5,8 +5,7 @@ in the viewer.
 import numpy as np
 import napari
 
-from time import sleep
-from napari.qt import progress
+from napari.utils import progress
 from superqt.qtcompat.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from skimage.filters import (
