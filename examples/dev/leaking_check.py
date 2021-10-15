@@ -6,7 +6,6 @@ import objgraph
 
 import napari
 import numpy as np
-import qtpy
 
 process = psutil.Process(os.getpid())
 viewer = napari.Viewer()
@@ -28,7 +27,7 @@ data_li = weakref.ref(li()._data)
 controls = weakref.ref(viewer.window.qt_viewer.controls.widgets[li()])
 objgraph.show_backrefs(li(), filename="base.png")
 del viewer.layers[0]
-qtpy.QtGui.QGuiApplication.processEvents()
+superqt.qtcompat.QtGui.QGuiApplication.processEvents()
 gc.collect()
 gc.collect()
 print(li())

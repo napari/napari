@@ -366,7 +366,7 @@ def run(
     if not app:
         raise RuntimeError(
             trans._(
-                'No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`',
+                'No Qt app has been created. One can be created by calling `get_app()` or `superqt.qtcompat.QtWidgets.QApplication([])`',
                 deferred=True,
             )
         )

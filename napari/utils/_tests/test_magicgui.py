@@ -84,7 +84,7 @@ def test_magicgui_add_future_data(make_napari_viewer, LayerType, data, ndim):
     from concurrent.futures import Future
     from functools import partial
 
-    from qtpy.QtCore import QTimer
+    from superqt.qtcompat.QtCore import QTimer
 
     viewer = make_napari_viewer()
     dtype = getattr(types, f'{LayerType.__name__}Data')

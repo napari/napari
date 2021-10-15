@@ -3,7 +3,7 @@ import runpy
 from pathlib import Path
 
 import pytest
-from qtpy import API_NAME
+from superqt.qtcompat import API_NAME
 
 import napari
 from napari.utils.notifications import notification_manager
