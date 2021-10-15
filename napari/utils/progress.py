@@ -106,7 +106,6 @@ class progress(tqdm):
 
     def close(self):
         """Closes and deletes the progress object."""
-        print("Closing...")
         if self.disable:
             return
         progress.all_progress.remove(self)
