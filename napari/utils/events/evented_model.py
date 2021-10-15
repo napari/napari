@@ -1,11 +1,11 @@
 import operator
-import sys
 import warnings
 from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
+from superqt.qtcompat import API_NAME
 
 from ...utils.misc import pick_equality_operator
 from ..translations import trans
@@ -46,18 +46,18 @@ def no_class_attributes():
     - https://codereview.qt-project.org/c/pyside/pyside-setup/+/261411
     """
 
-    if "PySide2" not in sys.modules:
+    if "PySide" in API_NAME:
+        # monkey patch the pydantic ClassAttribute object
+        # the second argument to ClassAttribute is the inspect.Signature object
+        main.ClassAttribute = lambda x, y: y
+        try:
+            yield
+        finally:
+            # undo our monkey patch
+            main.ClassAttribute = utils.ClassAttribute
+    else:
         yield
         return
-
-    # monkey patch the pydantic ClassAttribute object
-    # the second argument to ClassAttribute is the inspect.Signature object
-    main.ClassAttribute = lambda x, y: y
-    try:
-        yield
-    finally:
-        # undo our monkey patch
-        main.ClassAttribute = utils.ClassAttribute
 
 
 class EventedMetaclass(main.ModelMetaclass):
