@@ -92,24 +92,9 @@ def sys_info(as_html=False):
     text += f"<b>Python</b>: {sys_version}<br>"
 
     try:
-        from superqt.qtcompat import (
-            API_NAME,
-            PYQT_VERSION,
-            PYSIDE_VERSION,
-            QtCore,
-        )
+        from superqt.qtcompat import API_NAME, QtCore
 
-        if API_NAME == 'PySide2':
-            API_VERSION = PYSIDE_VERSION
-        elif API_NAME == 'PyQt5':
-            API_VERSION = PYQT_VERSION
-        else:
-            API_VERSION = ''
-
-        text += (
-            f"<b>Qt</b>: {QtCore.__version__}<br>"
-            f"<b>{API_NAME}</b>: {API_VERSION}<br>"
-        )
+        text += f"<b>Qt</b>: {QtCore.__version__} ({API_NAME})<br>"
 
     except Exception as e:
         text += f"<b>Qt</b>: Import failed ({e})<br>"

@@ -389,7 +389,13 @@ def _register_napari_resources(persist=True, force_rebuild=False):
         mod = import_module(modname)
         _clear_resources = getattr(mod, "qCleanupResources")
     else:
-        resources = _compile_napari_resources(save_path=persist and save_path)
+        try:
+            resources = _compile_napari_resources(
+                save_path=persist and save_path
+            )
+        except RuntimeError:
+            rpath = Path(__file__).parent / '_qt_resources_precompiled.py'
+            resources = rpath.read_text()
         exec(resources, globals())
         _clear_resources = globals()["qCleanupResources"]
 

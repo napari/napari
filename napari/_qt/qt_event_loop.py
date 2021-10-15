@@ -137,7 +137,9 @@ def get_app(
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        # gone on qt6
+        if hasattr(Qt, 'AA_EnableHighDpiScaling'):
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import QApplicationWithTracing
