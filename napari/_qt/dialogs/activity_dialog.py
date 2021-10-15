@@ -156,6 +156,9 @@ class ActivityDialog(QDialog):
         prog.events.overflow.connect(pbar._make_indeterminate)
         prog.events.eta.connect(pbar._set_eta)
 
+        # connect pbar close method if we're closed
+        self.destroyed.connect(prog.close)
+
         # set its range etc. based on progress object
         if prog.total is not None:
             pbar.setRange(prog.n, prog.total)

@@ -70,17 +70,20 @@ class progress(tqdm):
             value=Event, description=Event, overflow=Event, eta=Event
         )
         self.nest_under = nest_under
+        self.is_init = True
         super().__init__(iterable, desc, total, *args, **kwargs)
 
         if not self.desc:
             self.set_description(trans._("progress"))
+        self.is_init = False
         progress.all_progress.add(self)
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display and emit relevant events."""
         # just plain tqdm if we don't have gui
-        if not self.gui:
+        if not self.gui and not self.is_init:
             super().display(msg, pos)
+            return
         # TODO: This could break if user is formatting their own terminal tqdm
         if self.total != 0:
             etas = str(self).split('|')[-1]
@@ -103,6 +106,7 @@ class progress(tqdm):
 
     def close(self):
         """Closes and deletes the progress object."""
+        print("Closing...")
         if self.disable:
             return
         progress.all_progress.remove(self)
