@@ -28,29 +28,24 @@ class TextManagerSuite:
             'string_property': np.random.choice(('cat', 'car'), n + 512),
             'float_property': np.random.rand(n + 512),
         }
-        self.manager = TextManager(
-            n_text=n, properties=self.properties, text=text
-        )
+        self.manager = TextManager(text=text, properties=self.properties)
+        self.manager.string._get_array(self.properties, n)
         self.indices_to_remove = list(range(0, n, 2))
 
-    def time_get_text_values(self, n, text):
-        self.manager.text._get_values(self.properties, range(n))
-
-    def time_get_text_array(self, n, text):
-        self.manager.text._get_array(self.properties, range(n))
-
     def time_create(self, n, text):
-        TextManager(n_text=n, properties=self.properties, text=text)
+        manager = TextManager(text=text, properties=self.properties)
+        manager.string._get_array(self.properties, n)
 
     def time_refresh(self, n, text):
         self.manager.refresh_text(self.properties)
+        self.manager.string._get_array(self.properties, n)
 
     def time_add_as_batch(self, n, text):
-        self.manager.add(num_to_add=512)
+        self.manager.string._get_array(self.properties, n + 512)
 
     def time_add_iteratively(self, n, text):
-        for _ in range(512):
-            self.manager.add(num_to_add=1)
+        for i in range(512):
+            self.manager.string._get_array(self.properties, n + i)
 
     def time_remove_as_batch(self, n, text):
         self.manager.remove(self.indices_to_remove)
