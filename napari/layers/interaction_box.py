@@ -266,9 +266,7 @@ class InteractionBox:
     def _on_drag_rotation(self, layer, event):
         """Gets called upon mouse_move in the case of a rotation"""
         center = self._drag_start_box[Box.CENTER]
-        new_offset = [
-            layer.coordinates[i] for i in layer.dims.displayed
-        ] - center
+        new_offset = np.array(layer.world_to_data(event.position)) - center
         new_angle = -np.degrees(np.arctan2(new_offset[0], -new_offset[1])) - 90
 
         if np.linalg.norm(new_offset) < 1:
@@ -297,9 +295,7 @@ class InteractionBox:
         transform += SimilarityTransform(
             rotation=np.radians(self._drag_start_angle)
         )
-        coord = transform(
-            [layer.coordinates[i] for i in layer.dims.displayed]
-        )[0]
+        coord = transform(np.array(layer.world_to_data(event.position)))[0]
         drag_start = transform(self._drag_start_box[self._selected_vertex])[0]
         # If sidepoint of fixed aspect ratio project offset onto vector along which to scale
         # Since the fixed verted is now at the origin this vector is drag_start
@@ -333,7 +329,7 @@ class InteractionBox:
         """Gets called upon mouse_move in the case of a translation operation"""
 
         offset = (
-            np.array([layer.coordinates[i] for i in layer.dims.displayed])
+            np.array(layer.world_to_data(event.position))
             - self._drag_start_coordinates
         )
 
@@ -341,6 +337,11 @@ class InteractionBox:
         self._box = transform(self._drag_start_box)
         self.events.points_changed()
         self.events.transform_changed_drag(transform=transform)
+
+    def _on_final_tranform(self, layer, event):
+        """Gets called upon mouse_move in the case of a translation operation"""
+
+        self.events.transform_changed_final()
 
     def _on_drag_newbox(self, layer, event):
         """Gets called upon mouse_move in the case of a drawing a new box"""
@@ -407,10 +408,12 @@ class InteractionBox:
             if self._show and self._selected_vertex is not None:
                 if self._selected_vertex == Box.HANDLE:
                     drag_callback = self._on_drag_rotation
+                    final_callback = self._on_final_tranform
                     yield
                 else:
                     self._fixed_vertex = (self._selected_vertex + 4) % Box.LEN
                     drag_callback = self._on_drag_scale
+                    final_callback = self._on_final_tranform
                     yield
             else:
                 if (
@@ -421,6 +424,8 @@ class InteractionBox:
                     )[0]
                 ):
                     drag_callback = self._on_drag_translate
+                    final_callback = self._on_final_tranform
+
                     yield
                 else:
                     self.points = None
