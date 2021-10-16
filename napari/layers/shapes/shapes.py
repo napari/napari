@@ -1520,6 +1520,20 @@ class Shapes(Layer):
         return np.broadcast_to(text_array, (len(self._indices_view),))
 
     @property
+    def _view_text_colors(self) -> np.ndarray:
+        """Get the colors of the text elements in view
+
+        Returns
+        -------
+        text : (N x 4) np.ndarray
+            Array of colors for the N text elements in view
+        """
+        text_array = self.text.color._get_array(
+            self.properties, len(self.data), self._indices_view
+        )
+        return np.broadcast_to(text_array, (len(self._indices_view), 4))
+
+    @property
     def _view_text_coords(self) -> np.ndarray:
         """Get the coordinates of the text elements in view
 
@@ -2839,7 +2853,10 @@ class Shapes(Layer):
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self._slice_indices,
-                'text_string': self.text.string._get_array(
+                'text_strings': self.text.string._get_array(
+                    self.properties, self.nshapes, index
+                ),
+                'text_colors': self.text.color._get_array(
                     self.properties, self.nshapes, index
                 ),
             }
@@ -2862,7 +2879,9 @@ class Shapes(Layer):
                     axis=0,
                 )
 
-            self.text._paste(self._clipboard['text_string'])
+            self.text._paste(
+                self._clipboard['text_strings'], self._clipboard['text_colors']
+            )
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):

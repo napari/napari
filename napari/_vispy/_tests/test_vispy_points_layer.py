@@ -37,11 +37,11 @@ def test_change_text_color_updates_node_color(make_napari_viewer):
     layer = viewer.add_points(points, text=text, properties=properties)
     vispy_layer = viewer.window.qt_viewer.layer_to_visual[layer]
     text_node = vispy_layer._get_text_node()
-    np.testing.assert_array_equal(text_node.color.rgb, [[1, 0, 0]])
+    np.testing.assert_array_equal(text_node.color.rgb, [[1, 0, 0]] * 3)
 
     layer.text.color = [0, 0, 1]
 
-    np.testing.assert_array_equal(text_node.color.rgb, [[0, 0, 1]])
+    np.testing.assert_array_equal(text_node.color.rgb, [[0, 0, 1]] * 3)
 
 
 def test_change_properties_updates_node_strings(make_napari_viewer):

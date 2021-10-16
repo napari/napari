@@ -9,6 +9,13 @@ from ...utils.events.evented_model import (
     add_to_exclude_kwarg,
     get_repr_args_without,
 )
+from .color_encoding import (
+    COLOR_ENCODINGS,
+    ConstantColorEncoding,
+    DirectColorEncoding,
+    IdentityColorEncoding,
+)
+from .color_transformations import ColorType
 
 if TYPE_CHECKING:
     from pydantic.typing import ReprArgs
@@ -30,6 +37,8 @@ from .string_encoding import (
 )
 from .style_encoding import _infer_n_rows, parse_kwargs_as_encoding
 
+DEFAULT_COLOR = transform_color('cyan')
+
 
 class TextManager(EventedModel):
     """Manages properties related to text displayed in conjunction with the layer.
@@ -40,6 +49,8 @@ class TextManager(EventedModel):
         The property values, which typically come from a layer.
     string : Union[STRING_ENCODINGS]
         Defines the string for each text element.
+    color : Union[COLOR_ENCODINGS]
+        Defines the color for each text element.
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
@@ -65,7 +76,9 @@ class TextManager(EventedModel):
     # and we can rely on a layer and this sharing the same instance.
     properties: dict
     string: Union[STRING_ENCODINGS] = ConstantStringEncoding(constant='')
-    color: Array[float, (4,)] = 'cyan'
+    color: Union[COLOR_ENCODINGS] = ConstantColorEncoding(
+        constant=DEFAULT_COLOR
+    )
     visible: bool = True
     size: PositiveInt = 12
     blending: Blending = Blending.TRANSLUCENT
@@ -139,9 +152,11 @@ class TextManager(EventedModel):
         # to the properties table, then calls _get_array to append new values now.
         n_text = _infer_n_rows(self.string, self.properties)
         self.string._get_array(self.properties, n_text)
+        self.color._get_array(self.properties, n_text)
 
-    def _paste(self, strings: np.ndarray):
+    def _paste(self, strings: np.ndarray, colors: np.ndarray):
         self.string._append(strings)
+        self.color._append(colors)
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
         """Removes some text elements by index.
@@ -152,6 +167,7 @@ class TextManager(EventedModel):
             The indices to remove.
         """
         self.string._delete(list(indices_to_remove))
+        self.color._delete(list(indices_to_remove))
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -280,8 +296,29 @@ class TextManager(EventedModel):
         )
 
     @validator('color', pre=True, always=True)
-    def _check_color(cls, color):
-        return transform_color(color)[0]
+    def _check_color(
+        cls,
+        color: Union[
+            Union[COLOR_ENCODINGS], ColorType, Sequence[ColorType], dict, None
+        ],
+        values,
+    ) -> Union[COLOR_ENCODINGS]:
+        if color is None:
+            return ConstantColorEncoding(constant=DEFAULT_COLOR)
+        if isinstance(color, COLOR_ENCODINGS):
+            return color
+        if isinstance(color, dict):
+            return parse_kwargs_as_encoding(COLOR_ENCODINGS, **color)
+        properties = values['properties']
+        if isinstance(color, str) and color in properties:
+            return IdentityColorEncoding(property_name=color)
+        # TODO: distinguish between single color and array of length one as constant vs. direct.
+        color_array = transform_color(color)
+        if color_array.shape[0] > 1:
+            return DirectColorEncoding(
+                array=color_array, default=DEFAULT_COLOR
+            )
+        return ConstantColorEncoding(constant=color)
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
@@ -303,6 +340,7 @@ class TextManager(EventedModel):
 
     def _on_properties_changed(self, event=None):
         self.string._clear()
+        self.color._clear()
         self.events.text_update()
 
 
