@@ -80,9 +80,6 @@ class FormatStringEncoding(DerivedStringEncoding):
             ]
         )
 
-    def _fallback_value(self) -> np.ndarray:
-        return FALLBACK_STRING
-
 
 def is_format_string(
     properties: Dict[str, np.ndarray], format_string: str
