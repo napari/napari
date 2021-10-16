@@ -45,7 +45,7 @@ class PlaneWidget(QWidget):
         master_layout = QVBoxLayout(self)
 
         self.position_slider_box = QGroupBox('plane position (axis 1)')
-        self.position_slider = QLabeledDoubleSlider(Qt.Horizontal, self)
+        self.position_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal, self)
         self.position_slider.setMinimum(0.05)
         self.position_slider.setMaximum(64)
         self.position_slider.setValue(32)
@@ -54,7 +54,7 @@ class PlaneWidget(QWidget):
         position_layout.addWidget(self.position_slider)
 
         self.thickness_box = QGroupBox('plane thickness')
-        self.thickness_spinbox = QLabeledDoubleSlider(Qt.Horizontal, self)
+        self.thickness_spinbox = QLabeledDoubleSlider(Qt.Orientation.Horizontal, self)
         self.thickness_spinbox.setMinimum(1.0)
         self.thickness_spinbox.setMaximum(64)
         self.thickness_spinbox.setValue(10)

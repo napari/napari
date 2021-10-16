@@ -39,7 +39,7 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     """Right clicking on the contrast limits slider should show a popup."""
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
-    qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
+    qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.MouseButton.RightButton)
     assert hasattr(qtctrl, 'clim_popup')
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
@@ -65,7 +65,7 @@ def test_range_popup_clim_buttons(mock_show, qtbot, layer):
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)
     layer.contrast_limits = (20, 40)
-    qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
+    qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.MouseButton.RightButton)
 
     # pressing the reset button returns the clims to the default values
     reset_button = qtctrl.clim_popup.findChild(

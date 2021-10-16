@@ -150,7 +150,7 @@ class LayerDelegate(QStyledItemDelegate):
         """
         if (
             event.type() == event.MouseButtonRelease
-            and event.button() == Qt.RightButton
+            and event.button() == Qt.MouseButton.RightButton
         ):
             self.show_context_menu(
                 index, model, event.globalPos(), option.widget

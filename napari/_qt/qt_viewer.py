@@ -111,12 +111,13 @@ class QtViewer(QSplitter):
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._show_welcome_screen = show_welcome_screen
 
         QCoreApplication.setAttribute(
-            Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
+            Qt.ApplicationAttribute.AA_UseStyleSheetPropagationInWidgetStyles,
+            True,
         )
 
         self.viewer = viewer
@@ -201,13 +202,13 @@ class QtViewer(QSplitter):
         main_layout.setSpacing(10)
         main_widget.setLayout(main_layout)
 
-        self.setOrientation(Qt.Vertical)
+        self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
         self._cursors = {
-            'cross': Qt.CrossCursor,
-            'forbidden': Qt.ForbiddenCursor,
-            'pointing': Qt.PointingHandCursor,
+            'cross': Qt.CursorShape.CrossCursor,
+            'forbidden': Qt.CursorShape.ForbiddenCursor,
+            'pointing': Qt.CursorShape.PointingHandCursor,
             'standard': QCursor(),
         }
 

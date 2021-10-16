@@ -23,7 +23,9 @@ class QRangeSliderPopup(QtPopup):
         super().__init__(parent)
 
         # create slider
-        self.slider = QLabeledDoubleRangeSlider(Qt.Horizontal, parent)
+        self.slider = QLabeledDoubleRangeSlider(
+            Qt.Orientation.Horizontal, parent
+        )
         self.slider.label_shift_x = 2
         self.slider.label_shift_y = 2
         self.slider.setFocus()

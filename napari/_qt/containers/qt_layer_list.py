@@ -24,7 +24,7 @@ class ReverseProxyModel(QSortFilterProxyModel):
         super().__init__()
         self.setSourceModel(model)
         self.setSortRole(SortRole)
-        self.sort(0, Qt.DescendingOrder)
+        self.sort(0, Qt.SortOrder.DescendingOrder)
 
     def dropMimeData(self, data, action, destRow, col, parent):
         """Handle destination row for dropping with reversed indices."""

@@ -45,8 +45,8 @@ class QtLayerControls(QFrame):
         self.grid_layout.setColumnStretch(1, 1)
         self.setLayout(self.grid_layout)
 
-        sld = QDoubleSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QDoubleSlider(Qt.Orientation.Horizontal, parent=self)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(1)
         sld.setSingleStep(0.01)

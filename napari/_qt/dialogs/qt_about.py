@@ -62,8 +62,10 @@ class QtAbout(QDialog):
         self.infoCopyButton = QtCopyToClipboardButton(self.infoTextBox)
         self.info_layout = QHBoxLayout()
         self.info_layout.addWidget(self.infoTextBox, 1)
-        self.info_layout.addWidget(self.infoCopyButton, 0, Qt.AlignTop)
-        self.info_layout.setAlignment(Qt.AlignTop)
+        self.info_layout.addWidget(
+            self.infoCopyButton, 0, Qt.AlignmentFlag.AlignTop
+        )
+        self.info_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.layout.addLayout(self.info_layout)
 
         self.infoTextBox.setText(sys_info(as_html=True))
@@ -78,7 +80,9 @@ class QtAbout(QDialog):
         self.citationCopyButton = QtCopyToClipboardButton(self.citationTextBox)
         self.citation_layout = QHBoxLayout()
         self.citation_layout.addWidget(self.citationTextBox, 1)
-        self.citation_layout.addWidget(self.citationCopyButton, 0, Qt.AlignTop)
+        self.citation_layout.addWidget(
+            self.citationCopyButton, 0, Qt.AlignmentFlag.AlignTop
+        )
         self.layout.addLayout(self.citation_layout)
 
         self.setLayout(self.layout)

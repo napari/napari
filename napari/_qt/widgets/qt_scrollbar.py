@@ -31,7 +31,7 @@ class ModifiedScrollBar(QScrollBar):
             sr = self.style().subControlRect(
                 QStyle.CC_ScrollBar, opt, QStyle.SC_ScrollBarSlider, self
             )
-            if self.orientation() == Qt.Horizontal:
+            if self.orientation() == Qt.Orientation.Horizontal:
                 pos = event.pos().x()
                 sliderLength = sr.width()
                 sliderMin = gr.x()
@@ -54,13 +54,13 @@ class ModifiedScrollBar(QScrollBar):
             )
 
     def mouseMoveEvent(self, event):
-        if event.buttons() & Qt.LeftButton:
+        if event.buttons() & Qt.MouseButton.LeftButton:
             # dragging with the mouse button down should move the slider
             self._move_to_mouse_position(event)
         return super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             # clicking the mouse button should move slider to the clicked point
             self._move_to_mouse_position(event)
         return super().mousePressEvent(event)

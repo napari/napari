@@ -69,7 +69,9 @@ class ActivityDialog(QDialog):
         self.setMinimumWidth(self.MIN_WIDTH)
         self.setMinimumHeight(self.MIN_HEIGHT)
         self.setMaximumHeight(self.MIN_HEIGHT)
-        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
+        self.setSizePolicy(
+            QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed
+        )
         self.setWindowFlags(Qt.SubWindow | Qt.WindowStaysOnTopHint)
         self.setModal(False)
 

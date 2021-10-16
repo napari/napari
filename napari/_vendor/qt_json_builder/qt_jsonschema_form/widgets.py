@@ -217,7 +217,7 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
         widget_builder: 'WidgetBuilder',
     ):
         super().__init__(
-            schema, ui_schema, widget_builder, orientation=QtCore.Qt.Horizontal
+            schema, ui_schema, widget_builder, orientation=QtCore.Qt.Orientation.Horizontal
         )
 
     @state_property
@@ -296,7 +296,7 @@ class QColorButton(QtWidgets.QPushButton):
             self.setColor(dlg.currentColor().name())
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.RightButton:
+        if event.button() == QtCore.Qt.MouseButton.RightButton:
             self.setColor(None)
 
         return super().mousePressEvent(event)
@@ -659,7 +659,7 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
     ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)
-        layout.setAlignment(QtCore.Qt.AlignTop)
+        layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.setFlat(False)
 
         if 'title' in schema:

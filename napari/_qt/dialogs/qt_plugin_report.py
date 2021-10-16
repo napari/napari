@@ -105,7 +105,7 @@ class QtPluginErrReporter(QDialog):
         self.plugin_meta.setTextFormat(Qt.RichText)
         self.plugin_meta.setTextInteractionFlags(Qt.TextBrowserInteraction)
         self.plugin_meta.setOpenExternalLinks(True)
-        self.plugin_meta.setAlignment(Qt.AlignRight)
+        self.plugin_meta.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         # make layout
         row_1_layout = QHBoxLayout()

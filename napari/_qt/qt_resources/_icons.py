@@ -393,11 +393,13 @@ def _register_napari_resources(persist=True, force_rebuild=False):
             resources = _compile_napari_resources(
                 save_path=persist and save_path
             )
-        except RuntimeError:
-            rpath = Path(__file__).parent / '_qt_resources_precompiled.py'
-            resources = rpath.read_text()
-        exec(resources, globals())
-        _clear_resources = globals()["qCleanupResources"]
+            exec(resources, globals())
+            _clear_resources = globals()["qCleanupResources"]
+        except Exception:
+            import superqt.qtcompat
+
+            if '6' not in superqt.qtcompat.API_NAME:
+                raise
 
 
 def _unregister_napari_resources():

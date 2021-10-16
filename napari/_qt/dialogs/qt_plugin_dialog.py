@@ -352,7 +352,9 @@ class PluginListItem(QFrame):
         self.enabled_checkbox.setChecked(enabled)
         self.enabled_checkbox.stateChanged.connect(self._on_enabled_checkbox)
         self.enabled_checkbox.setToolTip(trans._("enable/disable"))
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
@@ -363,7 +365,9 @@ class PluginListItem(QFrame):
         self.enabled_checkbox.setText("")
         self.row1.addWidget(self.enabled_checkbox)
         self.plugin_name = QLabel(self)
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
@@ -383,22 +387,30 @@ class PluginListItem(QFrame):
 
         self.package_name = QLabel(self)
         self.package_name.setAlignment(
-            Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter
+            Qt.AlignmentFlag.AlignRight
+            | Qt.AlignTrailing
+            | Qt.AlignmentFlag.AlignVCenter
         )
         self.row1.addWidget(self.package_name)
 
         self.cancel_btn = QPushButton("cancel", self)
-        self.cancel_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.cancel_btn.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
         self.cancel_btn.setObjectName("remove_button")
         self.row1.addWidget(self.cancel_btn)
 
         self.update_btn = QPushButton(self)
-        self.update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.update_btn.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
         self.update_btn.setObjectName("install_button")
         self.row1.addWidget(self.update_btn)
         self.update_btn.setVisible(False)
         self.action_button = QPushButton(self)
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
@@ -410,13 +422,13 @@ class PluginListItem(QFrame):
         self.row2 = QHBoxLayout()
         self.error_indicator = QPushButton()
         self.error_indicator.setObjectName("warning_icon")
-        self.error_indicator.setCursor(Qt.PointingHandCursor)
+        self.error_indicator.setCursor(Qt.CursorShape.PointingHandCursor)
         self.error_indicator.hide()
         self.row2.addWidget(self.error_indicator)
         self.row2.setContentsMargins(-1, 4, 0, -1)
         self.summary = QElidingLabel(parent=self)
         sizePolicy = QSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
+            QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred
         )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -427,7 +439,9 @@ class PluginListItem(QFrame):
         self.summary.setObjectName("small_text")
         self.row2.addWidget(self.summary)
         self.package_author = QLabel(self)
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
@@ -644,9 +658,9 @@ class QtPluginDialog(QDialog):
         vlay_1 = QVBoxLayout(self)
         self.h_splitter = QSplitter(self)
         vlay_1.addWidget(self.h_splitter)
-        self.h_splitter.setOrientation(Qt.Horizontal)
+        self.h_splitter.setOrientation(Qt.Orientation.Horizontal)
         self.v_splitter = QSplitter(self.h_splitter)
-        self.v_splitter.setOrientation(Qt.Vertical)
+        self.v_splitter.setOrientation(Qt.Orientation.Vertical)
         self.v_splitter.setMinimumWidth(500)
 
         installed = QWidget(self.v_splitter)

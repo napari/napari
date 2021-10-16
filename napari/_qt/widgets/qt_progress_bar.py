@@ -15,7 +15,7 @@ class ProgressBar(QWidget):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
         self.pbar = QProgressBar()
         self.description_label = QLabel()
         self.eta_label = QLabel()
@@ -57,7 +57,7 @@ class ProgressBarGroup(QWidget):
 
     def __init__(self, pbar, parent=None) -> None:
         super().__init__(parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
 
         pbr_group_layout = QVBoxLayout()
         pbr_group_layout.addWidget(pbar)

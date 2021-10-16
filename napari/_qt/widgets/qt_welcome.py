@@ -44,8 +44,8 @@ class QtWelcomeWidget(QWidget):
         # Widget setup
         self.setAutoFillBackground(True)
         self.setAcceptDrops(True)
-        self._image.setAlignment(Qt.AlignCenter)
-        self._label.setAlignment(Qt.AlignCenter)
+        self._image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Layout
         text_layout = QVBoxLayout()

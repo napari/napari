@@ -77,10 +77,10 @@ class QtViewerDockWidget(QDockWidget):
         self.name = name
 
         areas = {
-            'left': Qt.LeftDockWidgetArea,
-            'right': Qt.RightDockWidgetArea,
-            'top': Qt.TopDockWidgetArea,
-            'bottom': Qt.BottomDockWidgetArea,
+            'left': Qt.DockWidgetArea.LeftDockWidgetArea,
+            'right': Qt.DockWidgetArea.RightDockWidgetArea,
+            'top': Qt.DockWidgetArea.TopDockWidgetArea,
+            'bottom': Qt.DockWidgetArea.BottomDockWidgetArea,
         }
         if area not in areas:
             raise ValueError(
@@ -121,7 +121,7 @@ class QtViewerDockWidget(QDockWidget):
                 )
             allowed_areas = reduce(ior, [areas[a] for a in allowed_areas])
         else:
-            allowed_areas = Qt.AllDockWidgetAreas
+            allowed_areas = Qt.DockWidgetArea.AllDockWidgetAreas
         self.setAllowedAreas(allowed_areas)
         self.setMinimumHeight(50)
         self.setMinimumWidth(50)
@@ -153,9 +153,9 @@ class QtViewerDockWidget(QDockWidget):
         (like a textedit or listwidget or something).
         """
         exempt_policies = {
-            QSizePolicy.Expanding,
-            QSizePolicy.MinimumExpanding,
-            QSizePolicy.Ignored,
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.MinimumExpanding,
+            QSizePolicy.Policy.Ignored,
         }
         if widget.sizePolicy().verticalPolicy() in exempt_policies:
             return
@@ -202,7 +202,10 @@ class QtViewerDockWidget(QDockWidget):
 
     def _set_title_orientation(self, area):
         vert_title = self.DockWidgetFeature.DockWidgetVerticalTitleBar
-        if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
+        if area in (
+            Qt.DockWidgetArea.LeftDockWidgetArea,
+            Qt.DockWidgetArea.RightDockWidgetArea,
+        ):
             features = self._features
             if features & vert_title:
                 features = features ^ vert_title
@@ -216,8 +219,8 @@ class QtViewerDockWidget(QDockWidget):
             par = self.parent()
             if par and hasattr(par, 'dockWidgetArea'):
                 return par.dockWidgetArea(self) in (
-                    Qt.LeftDockWidgetArea,
-                    Qt.RightDockWidgetArea,
+                    Qt.DockWidgetArea.LeftDockWidgetArea,
+                    Qt.DockWidgetArea.RightDockWidgetArea,
                 )
         return self.size().height() > self.size().width()
 
@@ -293,7 +296,7 @@ class QtCustomTitleBar(QLabel):
                 self.close_button = QPushButton(self)
                 self.close_button.setToolTip(trans._('close this panel'))
                 self.close_button.setObjectName("QTitleBarCloseButton")
-                self.close_button.setCursor(Qt.ArrowCursor)
+                self.close_button.setCursor(Qt.CursorShape.ArrowCursor)
                 self.close_button.clicked.connect(
                     lambda: self.parent().destroyOnClose()
                 )
@@ -304,13 +307,13 @@ class QtCustomTitleBar(QLabel):
         self.hide_button = QPushButton(self)
         self.hide_button.setToolTip(trans._('hide this panel'))
         self.hide_button.setObjectName("QTitleBarHideButton")
-        self.hide_button.setCursor(Qt.ArrowCursor)
+        self.hide_button.setCursor(Qt.CursorShape.ArrowCursor)
         self.hide_button.clicked.connect(lambda: self.parent().close())
 
         self.float_button = QPushButton(self)
         self.float_button.setToolTip(trans._('float this panel'))
         self.float_button.setObjectName("QTitleBarFloatButton")
-        self.float_button.setCursor(Qt.ArrowCursor)
+        self.float_button.setCursor(Qt.CursorShape.ArrowCursor)
         self.float_button.clicked.connect(
             lambda: self.parent().setFloating(not self.parent().isFloating())
         )
@@ -325,10 +328,16 @@ class QtCustomTitleBar(QLabel):
             layout.setContentsMargins(0, 8, 0, 8)
             line.setFixedWidth(1)
             if add_close:
-                layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
-            layout.addWidget(self.hide_button, 0, Qt.AlignHCenter)
-            layout.addWidget(self.float_button, 0, Qt.AlignHCenter)
-            layout.addWidget(line, 0, Qt.AlignHCenter)
+                layout.addWidget(
+                    self.close_button, 0, Qt.AlignmentFlag.AlignHCenter
+                )
+            layout.addWidget(
+                self.hide_button, 0, Qt.AlignmentFlag.AlignHCenter
+            )
+            layout.addWidget(
+                self.float_button, 0, Qt.AlignmentFlag.AlignHCenter
+            )
+            layout.addWidget(line, 0, Qt.AlignmentFlag.AlignHCenter)
             self.title.hide()
 
         else:
@@ -345,7 +354,7 @@ class QtCustomTitleBar(QLabel):
             layout.addWidget(self.title)
 
         self.setLayout(layout)
-        self.setCursor(Qt.OpenHandCursor)
+        self.setCursor(Qt.CursorShape.OpenHandCursor)
 
     def sizeHint(self):
         # this seems to be the correct way to set the height of the titlebar

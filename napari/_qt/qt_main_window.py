@@ -85,7 +85,7 @@ class _QtMainWindow(QMainWindow):
         self._quit_app = False
 
         self.setWindowIcon(QIcon(self._window_icon))
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
@@ -157,13 +157,13 @@ class _QtMainWindow(QMainWindow):
         return window.qt_viewer.viewer if window else None
 
     def event(self, e):
-        if e.type() == QEvent.Close:
+        if e.type() == QEvent.Type.Close:
             # when we close the MainWindow, remove it from the instances list
             try:
                 _QtMainWindow._instances.remove(self)
             except ValueError:
                 pass
-        if e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
+        if e.type() in {QEvent.Type.WindowActivate, QEvent.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
             try:
                 inst = _QtMainWindow._instances
@@ -852,7 +852,9 @@ class Window:
                 _wdg = current_dws_in_area + [dock_widget]
                 # add sizes to push lower widgets up
                 sizes = list(range(1, len(_wdg) * 4, 4))
-                self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
+                self._qt_window.resizeDocks(
+                    _wdg, sizes, Qt.Orientation.Vertical
+                )
 
         if menu:
             action = dock_widget.toggleViewAction()

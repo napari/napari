@@ -92,7 +92,7 @@ class ImplementationListItem(QFrame):
         self.plugin_name_label.setObjectName('small_text')
         self.plugin_name_label.setText(item.hook_implementation.plugin_name)
         plugin_name_size_policy = QSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
+            QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred
         )
         plugin_name_size_policy.setHorizontalStretch(2)
         self.plugin_name_label.setSizePolicy(plugin_name_size_policy)

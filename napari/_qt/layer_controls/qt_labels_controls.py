@@ -102,11 +102,11 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setRange(*dtype_lims)
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
-        self.selectionSpinBox.setAlignment(Qt.AlignCenter)
+        self.selectionSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_selected_label_change()
 
-        sld = QSlider(Qt.Horizontal)
-        sld.setFocusPolicy(Qt.NoFocus)
+        sld = QSlider(Qt.Orientation.Horizontal)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
@@ -127,7 +127,7 @@ class QtLabelsControls(QtLayerControls):
         ndim_sb.setMinimum(2)
         ndim_sb.setMaximum(self.layer.ndim)
         ndim_sb.setSingleStep(1)
-        ndim_sb.setAlignment(Qt.AlignCenter)
+        ndim_sb.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_n_edit_dimensions_change()
 
         self.contourSpinBox = QLargeIntSpinBox()
@@ -135,7 +135,7 @@ class QtLabelsControls(QtLayerControls):
         self.contourSpinBox.setToolTip(trans._('display contours of labels'))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
-        self.contourSpinBox.setAlignment(Qt.AlignCenter)
+        self.contourSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_contour_change()
 
         preserve_labels_cb = QCheckBox()
@@ -604,7 +604,7 @@ class QtColorBox(QWidget):
         )
         self.layer.events.opacity.connect(self._on_opacity_change)
 
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._height = 24
         self.setFixedWidth(self._height)

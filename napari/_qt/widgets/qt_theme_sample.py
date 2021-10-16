@@ -114,13 +114,13 @@ class SampleWidget(QWidget):
 
         lay.addWidget(TabDemo(emphasized=emphasized))
 
-        sld = QSlider(Qt.Horizontal)
+        sld = QSlider(Qt.Orientation.Horizontal)
         sld.setValue(50)
         lay.addWidget(sld)
-        scroll = QScrollBar(Qt.Horizontal)
+        scroll = QScrollBar(Qt.Orientation.Horizontal)
         scroll.setValue(50)
         lay.addWidget(scroll)
-        lay.addWidget(QRangeSlider(Qt.Horizontal, self))
+        lay.addWidget(QRangeSlider(Qt.Orientation.Horizontal, self))
         text = QTextEdit()
         text.setMaximumHeight(100)
         text.setHtml(blurb)

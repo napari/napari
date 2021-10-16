@@ -280,17 +280,17 @@ def test_play_button(qtbot):
     view = QtDims(Dims(ndim=ndim))
     qtbot.addWidget(view)
     button = view.slider_widgets[0].play_button
-    qtbot.mouseClick(button, Qt.LeftButton)
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
     qtbot.waitSignal(view._animation_thread.started, timeout=5000)
 
     with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
-        qtbot.mouseClick(button, Qt.LeftButton)
+        qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
 
     qtbot.wait(100)
     assert not view.is_playing
 
     with patch.object(button.popup, 'show_above_mouse') as mock_popup:
-        qtbot.mouseClick(button, Qt.RightButton)
+        qtbot.mouseClick(button, Qt.MouseButton.RightButton)
         mock_popup.assert_called_once()
 
 

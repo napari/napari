@@ -154,7 +154,9 @@ class QtViewerButtons(QFrame):
             self.viewer.grid.events,
         )
 
-        self.gridViewButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.gridViewButton.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
         self.gridViewButton.customContextMenuRequested.connect(
             self._open_grid_popup
         )
@@ -169,7 +171,9 @@ class QtViewerButtons(QFrame):
             2,
             3,
         )
-        self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ndisplayButton.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
         self.ndisplayButton.customContextMenuRequested.connect(
             self.open_perspective_popup
         )
@@ -194,7 +198,7 @@ class QtViewerButtons(QFrame):
             return
 
         # make slider connected to perspective parameter
-        sld = QSlider(Qt.Horizontal, self)
+        sld = QSlider(Qt.Orientation.Horizontal, self)
         sld.setRange(0, max(90, self.viewer.camera.perspective))
         sld.setValue(self.viewer.camera.perspective)
         sld.valueChanged.connect(
@@ -244,7 +248,7 @@ class QtViewerButtons(QFrame):
         stride_max = self.viewer.grid.__fields__['stride'].type_.le
         stride_not = self.viewer.grid.__fields__['stride'].type_.ne
         grid_stride.setObjectName("gridStrideBox")
-        grid_stride.setAlignment(Qt.AlignCenter)
+        grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_stride.setRange(stride_min, stride_max)
         grid_stride.setProhibitValue(stride_not)
         grid_stride.setValue(self.viewer.grid.stride)
@@ -254,7 +258,7 @@ class QtViewerButtons(QFrame):
         width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
         width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
         grid_width.setObjectName("gridWidthBox")
-        grid_width.setAlignment(Qt.AlignCenter)
+        grid_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_width.setMinimum(width_min)
         grid_width.setProhibitValue(width_not)
         grid_width.setValue(self.viewer.grid.shape[1])
@@ -268,7 +272,7 @@ class QtViewerButtons(QFrame):
             self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
         )
         grid_height.setObjectName("gridStrideBox")
-        grid_height.setAlignment(Qt.AlignCenter)
+        grid_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_height.setMinimum(height_min)
         grid_height.setProhibitValue(height_not)
         grid_height.setValue(self.viewer.grid.shape[0])

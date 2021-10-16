@@ -46,7 +46,7 @@ def test_error_reporter(qtbot, monkeypatch):
 
     monkeypatch.setattr(webbrowser, 'open', mock_webbrowser_open)
 
-    qtbot.mouseClick(report_widget.github_button, Qt.LeftButton)
+    qtbot.mouseClick(report_widget.github_button, Qt.MouseButton.LeftButton)
 
     # make sure we can copy traceback to clipboard
     report_widget.copyToClipboard()
