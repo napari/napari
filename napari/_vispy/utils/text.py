@@ -51,6 +51,11 @@ def update_text(
         else:
             positions = raw_positions
 
+    # Even when there are no text values/strings, vispy cannot handle
+    # an empty color, but can handle None as a default.
+    if color.size == 0:
+        color = None
+
     text_node.text = text_values
     text_node.pos = positions
     text_node.anchors = anchor

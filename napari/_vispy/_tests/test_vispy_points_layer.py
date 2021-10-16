@@ -1,6 +1,9 @@
 import numpy as np
 import pytest
 
+from napari._vispy.layers.points import VispyPointsLayer
+from napari.layers import Points
+
 
 @pytest.mark.parametrize("opacity", [(0), (0.3), (0.7), (1)])
 def test_VispyPointsLayer(make_napari_viewer, opacity):
@@ -10,6 +13,11 @@ def test_VispyPointsLayer(make_napari_viewer, opacity):
     layer = viewer.add_points(points, size=30, opacity=opacity)
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
     assert visual.node.opacity == opacity
+
+
+def test_no_points_no_error():
+    layer = Points()
+    VispyPointsLayer(layer)
 
 
 def test_change_text_updates_node_string(make_napari_viewer):
