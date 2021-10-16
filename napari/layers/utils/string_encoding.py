@@ -1,3 +1,4 @@
+from abc import ABC
 from string import Formatter
 from typing import Any, Dict, Sequence
 
@@ -33,7 +34,12 @@ class DirectStringEncoding(DirectStyleEncoding):
         return np.array(default, dtype=str)
 
 
-class IdentityStringEncoding(DerivedStyleEncoding):
+class DerivedStringEncoding(DerivedStyleEncoding, ABC):
+    def _fallback_value(self) -> np.ndarray:
+        return FALLBACK_STRING
+
+
+class IdentityStringEncoding(DerivedStringEncoding):
     """Encodes strings directly from a property column.
 
     Attributes
@@ -49,11 +55,8 @@ class IdentityStringEncoding(DerivedStyleEncoding):
     ) -> np.ndarray:
         return np.array(properties[self.property_name][indices], dtype=str)
 
-    def _fallback_value(self) -> np.ndarray:
-        return FALLBACK_STRING
 
-
-class FormatStringEncoding(DerivedStyleEncoding):
+class FormatStringEncoding(DerivedStringEncoding):
     """Encodes string values by formatting property values.
 
     Attributes
