@@ -46,23 +46,25 @@ class RawContextKey(Name, Generic[A, T]):
 
     def __init__(
         self,
-        key: str,
         default_value: Union[T, __missing] = MISSING,
         description: Optional[str] = None,
         updater: Optional[Callable[[A], T]] = None,
         *,
+        id: str = '',  # optional because of __set_name__
         hide: bool = False,
     ) -> None:
-        super().__init__(key)
+        super().__init__(id or '')
         self._default_value = default_value
         self._updater = updater
-        if not hide:
-            type_ = (
-                type(default_value)
-                if default_value not in (None, MISSING)
-                else None
-            )
-            self._info.append(RawContextKey.Info(key, type_, description))
+        self._description = description
+        self._type = (
+            type(default_value)
+            if default_value not in (None, MISSING)
+            else None
+        )
+        self._hidden = hide
+        if id and not hide:
+            self._store()
 
     def __str__(self) -> str:
         return self.id
@@ -71,15 +73,22 @@ class RawContextKey(Name, Generic[A, T]):
     def info(cls) -> List[RawContextKey.Info]:
         return list(cls._info)
 
+    def _store(self) -> None:
+        self._info.append(
+            RawContextKey.Info(self.id, self._type, self._description)
+        )
+
     def bind_to(self, service: _BaseContextKeyService) -> None:
         service[self.id] = self._default_value
 
-    def __set_name__(self, owner: Type, name):
-        if name != self.id:
+    def __set_name__(self, owner: Type, name: str):
+        if self.id:
             raise ValueError(
-                "Please use the same name for the class attribute and the key:"
-                f"\n{type(owner).__name__}.{name} != {self.key}"
+                f"Cannot change id of RawContextKey (already {self.id!r})"
             )
+        self.id = name
+        if not self._hidden:
+            self._store()
 
     @overload
     def __get__(
@@ -106,25 +115,20 @@ class RawContextKey(Name, Generic[A, T]):
 
 
 class ContextNamespace:
-    _service: _BaseContextKeyService
+    _service: _BaseContextKeyService = None
     _defaults: Dict[str, Any]
     _updaters: Dict[str, Callable]
 
-    @classmethod
-    def bind_to_service(
-        cls, service: _BaseContextKeyService
-    ) -> ContextNamespace:
-        obj = cls()
-        obj._service = service
-        obj._defaults = {}
-        obj._updaters = {}
-        for k, v in type(obj).__dict__.items():
+    def __init__(self, service: _BaseContextKeyService) -> None:
+        self._service = service
+        self._defaults = {}
+        self._updaters = {}
+        for k, v in type(self).__dict__.items():
             if isinstance(v, RawContextKey):
-                obj._defaults[k] = v._default_value
+                self._defaults[k] = v._default_value
                 v.bind_to(service)
                 if callable(v._updater):
-                    obj._updaters[k] = v._updater
-        return obj
+                    self._updaters[k] = v._updater
 
     def follow(self, on: EventEmitter, until: Optional[EventEmitter] = None):
         from napari.utils.events import Event

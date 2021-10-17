@@ -60,31 +60,26 @@ def _same_shape(s: LayerSel) -> bool:
 
 class LayerListContextKeys(ContextNamespace):
     layers_selection_count = RawContextKey(
-        "layers_selection_count",
         0,
         trans._("Number of layers currently selected"),
         _len,
     )
     all_layers_linked = RawContextKey(
-        "all_layers_linked",
         False,
         trans._("True when all selected layers are linked."),
         _all_linked,
     )
     unselected_linked_layers = RawContextKey(
-        "unselected_linked_layers",
         0,
         trans._("Number of unselected layers linked to selected layer(s)"),
         _n_unselected_links,
     )
     active_layer_is_rgb = RawContextKey(
-        "active_layer_is_rgb",
         False,
         trans._("True when the active layer is RGB"),
         _is_rgb,
     )
     active_layer_type = RawContextKey['LayerSel', Optional[str]](
-        "active_layer_type",
         None,
         trans._(
             "Lowercase name of active layer type, or None of none active."
@@ -92,7 +87,6 @@ class LayerListContextKeys(ContextNamespace):
         _active_type,
     )
     only_images_selected = RawContextKey(
-        "only_images_selected",
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are images"
@@ -100,7 +94,6 @@ class LayerListContextKeys(ContextNamespace):
         _only_img,
     )
     only_labels_selected = RawContextKey(
-        "only_labels_selected",
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are labels"
@@ -108,7 +101,6 @@ class LayerListContextKeys(ContextNamespace):
         _only_labels,
     )
     active_layer_ndim = RawContextKey['LayerSel', Optional[int]](
-        "active_layer_ndim",
         0,
         trans._(
             "Number of dimensions in the active layer, or `None` if nothing is active"
@@ -116,13 +108,11 @@ class LayerListContextKeys(ContextNamespace):
         _active_ndim,
     )
     active_layer_shape = RawContextKey['LayerSel', Optional[Tuple[int, ...]]](
-        "active_layer_shape",
         (),
         trans._("Shape of the active layer, or `None` if nothing is active."),
         _active_shape,
     )
     all_layers_same_shape = RawContextKey(
-        "all_layers_same_shape",
         False,
         trans._("True when all selected layers have the same shape"),
         _same_shape,

@@ -21,10 +21,7 @@ from typing import (
 import numpy as np
 from pydantic import Extra, Field, validator
 
-from napari.utils.context._service import (
-    ScopedContextKeyService,
-    create_context,
-)
+from napari.utils.context._service import Context, create_context
 
 from .. import layers
 from ..layers import Image, Layer
@@ -129,11 +126,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
-    _ctx: ScopedContextKeyService
+    _ctx: Context
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # allow extra attributes during model initialization, useful for mixins
-        self._ctx = create_context(self, depth=0)
+        self._ctx = create_context(self, max_depth=0)
         self.__config__.extra = Extra.allow
         super().__init__(
             title=title,
