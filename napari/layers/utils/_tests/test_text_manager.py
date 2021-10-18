@@ -22,6 +22,19 @@ def test_empty_text_manager_property():
     np.testing.assert_equal(text_manager.values, ['0.5'])
 
 
+def test_add_many_text_property():
+    properties = {'confidence': np.empty(0, dtype=float)}
+    text_manager = TextManager(
+        text='confidence',
+        n_text=0,
+        properties=properties,
+    )
+
+    text_manager.add({'confidence': np.array([0.5])}, 2)
+
+    np.testing.assert_equal(text_manager.values, ['0.5'] * 2)
+
+
 def test_empty_text_manager_format():
     """Test creating an empty text manager in formatted mode.
     This is for creating an empty layer with text initialized.
@@ -36,6 +49,20 @@ def test_empty_text_manager_format():
     new_properties = {'confidence': np.array([0.5])}
     text_manager.add(new_properties, 1)
     np.testing.assert_equal(text_manager.values, ['confidence: 0.50'])
+
+
+@pytest.mark.xfail(reason='To be fixed with properties refactor.')
+def test_add_many_text_formatted():
+    properties = {'confidence': np.empty(0, dtype=float)}
+    text_manager = TextManager(
+        text='confidence: {confidence:.2f}',
+        n_text=0,
+        properties=properties,
+    )
+
+    text_manager.add({'confidence': np.array([0.5])}, 2)
+
+    np.testing.assert_equal(text_manager.values, ['confidence: 0.50'] * 2)
 
 
 def test_text_manager_property():
@@ -152,3 +179,77 @@ def test_blending_modes():
     with pytest.warns(RuntimeWarning):
         text_manager.blending = 'opaque'
         assert text_manager.blending == 'translucent'
+
+
+def test_text_with_invalid_format_string_then_constant_text():
+    n_text = 3
+    text = 'confidence: {confidence:.2f'
+    properties = {'confidence': np.array([0.5, 0.3, 1])}
+
+    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
+
+    np.testing.assert_array_equal(text_manager.values, [text] * n_text)
+
+
+def test_text_with_format_string_missing_property_then_constant_text():
+    n_text = 3
+    text = 'score: {score:.2f}'
+    properties = {'confidence': np.array([0.5, 0.3, 1])}
+
+    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
+
+    np.testing.assert_array_equal(text_manager.values, [text] * n_text)
+
+
+def test_text_constant_then_repeat_values():
+    n_text = 3
+    properties = {'class': np.array(['A', 'B', 'C'])}
+
+    text_manager = TextManager(
+        text='point', n_text=n_text, properties=properties
+    )
+
+    np.testing.assert_array_equal(text_manager.values, ['point'] * n_text)
+
+
+def test_text_constant_with_no_properties_then_no_values():
+    # TODO: we may generate n_text copies as part of the properties refactor.
+    text_manager = TextManager(text='point', n_text=3)
+    assert len(text_manager.values) == 0
+
+
+def test_add_with_text_constant_then_ignored():
+    # TODO: we may choose not to ignore add as part of the properties refactor.
+    n_text = 3
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    text_manager = TextManager(
+        text='point', n_text=n_text, properties=properties
+    )
+    assert len(text_manager.values) == n_text
+
+    text_manager.add({'class': np.array(['C'])}, 2)
+
+    assert len(text_manager.values) == n_text
+
+
+def test_add_with_text_constant_init_empty_then_ignored():
+    # TODO: we may choose not to ignore add as part of the properties refactor.
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    text_manager = TextManager(text='point', n_text=0, properties=properties)
+
+    text_manager.add({'class': np.array(['C'])}, 2)
+
+    assert len(text_manager.values) == 0
+
+
+def test_remove_with_text_constant_then_ignored():
+    # TODO: we may choose not to ignore remove as part of the properties refactor.
+    n_text = 5
+    properties = {'class': np.array(['A', 'B', 'C', 'D', 'E'])}
+    text_manager = TextManager(
+        text='point', n_text=n_text, properties=properties
+    )
+
+    text_manager.remove([1, 3])
+
+    np.testing.assert_equal(text_manager.values, ['point'] * n_text)

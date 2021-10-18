@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import warnings
-from contextlib import suppress
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -43,11 +42,11 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from .widgets.qt_welcome import QtWidgetOverlay
 
 from .._vispy import (  # isort:skip
-    VispyAxesVisual,
+    VispyAxesOverlay,
     VispyCamera,
     VispyCanvas,
-    VispyScaleBarVisual,
-    VispyTextVisual,
+    VispyScaleBarOverlay,
+    VispyTextOverlay,
     create_vispy_visual,
 )
 
@@ -161,9 +160,7 @@ class QtViewer(QSplitter):
         self.dockConsole.setVisible(False)
         # because the console is loaded lazily in the @getter, this line just
         # gets (or creates) the console when the dock console is made visible.
-        self.dockConsole.visibilityChanged.connect(
-            lambda visible: self.console if visible else None
-        )
+        self.dockConsole.visibilityChanged.connect(self._ensure_connect)
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
@@ -258,6 +255,10 @@ class QtViewer(QSplitter):
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
+    def _ensure_connect(self):
+        # lazy load console
+        id(self.console)
+
     def _bind_shortcuts(self):
         """Bind shortcuts stored in SETTINGS to actions."""
         for action, shortcuts in get_settings().shortcuts.shortcuts.items():
@@ -292,29 +293,26 @@ class QtViewer(QSplitter):
         on_theme_change = self.canvas._on_theme_change
         theme.connect(on_theme_change)
 
-        def disconnect():
-            # strange EventEmitter has no attribute _callbacks errors sometimes
-            # maybe some sort of cleanup race condition?
-            with suppress(AttributeError):
-                theme.disconnect(on_theme_change)
+        self.canvas.destroyed.connect(self._diconnect_theme)
 
-        self.canvas.destroyed.connect(disconnect)
+    def _diconnect_theme(self):
+        self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
 
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
 
-        self.axes = VispyAxesVisual(
+        self.axes = VispyAxesOverlay(
             self.viewer,
             parent=self.view.scene,
             order=1e6,
         )
-        self.scale_bar = VispyScaleBarVisual(
+        self.scale_bar = VispyScaleBarOverlay(
             self.viewer,
             parent=self.view,
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-        self.text_overlay = VispyTextVisual(
+        self.text_overlay = VispyTextOverlay(
             self.viewer,
             parent=self.view,
             order=1e6 + 2,

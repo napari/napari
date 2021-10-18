@@ -86,6 +86,13 @@ QStatusBar {
     padding: 2 1 2 1;
 }
 
+#QTitleBarHideButton{
+    image: url(":/themes/{{ name }}/visibility_off.svg");
+    width: 10px;
+    height: 8px;
+    padding: 2 1 2 1;
+}
+
 /* ----------------- Console ------------------ */
 
 QtConsole {

@@ -102,6 +102,8 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
                 def _setchecked(e, action=action):
                     action.setChecked(e.value if hasattr(e, 'value') else e)
 
+        action.setData(ax)
+
 
 def populate_qmenu_from_manifest(menu: QMenu, menu_key: str):
     """Populate `menu` from a `menu_key` offering in the manifest."""
@@ -120,3 +122,37 @@ def populate_qmenu_from_manifest(menu: QMenu, menu_key: str):
             cmd = plugin_manager.get_command(item.command)
             action = menu.addAction(cmd.title)
             action.triggered.connect(lambda *_: execute_command(cmd.command))
+
+
+class NapariMenu(QMenu):
+    """
+    Base napari menu class that provides action handling and clean up on
+    close.
+    """
+
+    _INSTANCES: List['NapariMenu'] = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._INSTANCES.append(self)
+
+    def _destroy(self):
+        """Clean up action data to avoid widget leaks."""
+        for ax in self.actions():
+            ax.setData(None)
+
+            try:
+                ax._destroy()
+            except AttributeError:
+                pass
+
+        if self in self._INSTANCES:
+            self._INSTANCES.remove(self)
+
+    def update(self, event=None):
+        """Update action enabled/disabled state based on action data."""
+        for ax in self.actions():
+            data = ax.data()
+            if data:
+                enabled_func = data.get('enabled', lambda event: True)
+                ax.setEnabled(bool(enabled_func(event)))
