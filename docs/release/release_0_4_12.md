@@ -16,6 +16,10 @@ This is a bug fix release with many minor improvements and bug fixes. The user
 experience for users of dask arrays might be significantly improved by a new
 approach to setting the contrast limits based on the current slice (#3425).
 
+A progress bar will now display when opening multiple files (#3355). 
+Thanks to first-time contributor @tibuch the data type of labels layers can now 
+be converted from a context menu on the layer list (#3402).
+
 See the full list of merged pull requests below for further delails!
 
 ## New Features
@@ -25,12 +29,9 @@ See the full list of merged pull requests below for further delails!
 
 ## Improvements
 - Support for `Future` return type in magicgui widget  (#2581)
-- Add ability to provide empty data to vectors layer (#2995)
 - Don't register dask cache globally - but do use cache as context manager when slicing (#3285)
 - Hide or Destroy dock widgets (#3331)
 - `_vispy` module cleanup (#3333)
-- Update ubuntu image to 18.04 (#3348)
-- Bundle: canonicalize arch names (#3349)
 - Add expressions API (will eventually support `when` expressions for internal & plugin usage) (#3350)
 - Experimental npe2 support (#3354)
 - Disable save options if no layers available (#3363)
@@ -69,6 +70,7 @@ See the full list of merged pull requests below for further delails!
 - Fix teardown of menus to prevent widget test leaks (#3433)
 - Fix off-by one error in Dims.range for non pixel-based layers (#3444)
 - Fix naming inconsistency for windows bundle (#3476)
+- Add ability to provide empty data to vectors layer (#2995)
 
 
 ## API Changes
@@ -106,6 +108,8 @@ See the full list of merged pull requests below for further delails!
 - Add links to napari repo in README (#3484)
 - Bump minimum NumPy requirement to 1.18 (as per NEP29) (#3485)
 - Remove make_napari_viewer in vispy tests. (#3486)
+- Update ubuntu image to 18.04 (#3348)
+- Bundle: canonicalize arch names (#3349)
 
 
 ## 22 authors added to this release (alphabetical)
