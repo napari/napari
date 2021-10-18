@@ -36,31 +36,26 @@ contributions:
   - command: napari_builtins.write_image
     filename_extensions: ['.tif','.tiff','.bmp','.bsdf','.bw','.eps','.gif','.icns','.ico','.im','.lsm','.npz','.pbm','.pcx','.pgm','.png','.ppm','.ps','.rgb','.rgba','.sgi','.stk','.tga']
     layer_types: ['image']
-    api: v1_single_layer
     save_dialog_title: napari lossless
 
   - command: napari_builtins.write_image
     filename_extensions: ['.j2c','.j2k','.jfif','.jp2','.jpc','.jpe','.jpeg','.jpf','.jpg','.jpx','.mpo']
     layer_types: ['image']
-    api: v1_single_layer
     save_dialog_title: napari lossy
 
   - command: napari_builtins.write_labels
     filename_extensions: ['.tif','.tiff','.bsdf','.im','.lsm','.npz','.pbm','.pcx','.pgm','.ppm','.stk']
     layer_types: ['labels']
-    api: v1_single_layer
     save_dialog_title: napari labels
 
   - command: napari_builtins.write_points
     filename_extensions: ['.csv']
     layer_types: ['points']
-    api: v1_single_layer
     save_dialog_title: napari points
 
   - command: napari_builtins.write_shapes
     filename_extensions: ['.csv']
     layer_types: ['shapes']
-    api: v1_single_layer
     save_dialog_title: napari shapes
   
   - command: napari_builtins.write_directory
