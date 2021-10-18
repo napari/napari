@@ -247,6 +247,16 @@ def test_3D_points():
     assert len(layer.data) == 10
 
 
+def test_single_point_extent():
+    """Test extent of a single 3D point at the origin."""
+    shape = (1, 3)
+    data = np.zeros(shape)
+    layer = Points(data)
+    assert np.all(layer.extent.data == 0)
+    assert np.all(layer.extent.world == 0)
+    assert np.all(layer.extent.step == 1)
+
+
 def test_4D_points():
     """Test instantiating Points layer with random 4D data."""
     shape = (10, 4)

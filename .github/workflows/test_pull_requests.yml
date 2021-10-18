@@ -88,9 +88,17 @@ jobs:
           # Windows py37
           - python: 3.7
             platform: windows-latest
+            backend: pyqt
+          - python: 3.7
+            platform: windows-latest
+            backend: pyside
           # Windows py38
           - python: 3.8
             platform: windows-latest
+            backend: pyqt
+          - python: 3.8
+            platform: windows-latest
+            backend: pyside
           # macOS py38
           - python: 3.8
             platform: macos-latest
