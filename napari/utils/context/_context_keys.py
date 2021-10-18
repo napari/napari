@@ -22,7 +22,7 @@ from ._expressions import Name
 if TYPE_CHECKING:
     from napari.utils.events import Event, EventEmitter
 
-    from ._service import _BaseContextKeyService
+    from ._service import Context
 
 
 T = TypeVar("T")
@@ -78,7 +78,7 @@ class RawContextKey(Name, Generic[A, T]):
             RawContextKey.Info(self.id, self._type, self._description)
         )
 
-    def bind_to(self, service: _BaseContextKeyService) -> None:
+    def bind_to(self, service: Context) -> None:
         service[self.id] = self._default_value
 
     def __set_name__(self, owner: Type, name: str):
@@ -115,14 +115,10 @@ class RawContextKey(Name, Generic[A, T]):
 
 
 class ContextNamespace:
-    _service: _BaseContextKeyService = None
-    _defaults: Dict[str, Any]
-    _updaters: Dict[str, Callable]
-
-    def __init__(self, service: _BaseContextKeyService) -> None:
+    def __init__(self, service: Context) -> None:
         self._service = service
-        self._defaults = {}
-        self._updaters = {}
+        self._defaults: Dict[str, Any] = {}
+        self._updaters: Dict[str, Callable] = {}
         for k, v in type(self).__dict__.items():
             if isinstance(v, RawContextKey):
                 self._defaults[k] = v._default_value

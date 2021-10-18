@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     LayerSel = Selection[Layer]
 
 
-# defining these here rather than inline lambdas for the purpose of typing
 def _len(s: LayerSel) -> int:
     return len(s)
 

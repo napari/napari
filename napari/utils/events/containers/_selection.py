@@ -186,11 +186,15 @@ class Selection(EventedSet[_T]):
         return {'selection': super()._json_encode(), '_current': self._current}
 
 
+from napari.utils.context import create_context
+
+
 class Selectable(Generic[_S]):
     """Mixin that adds a selection model to an object."""
 
     def __init__(self, *args, **kwargs) -> None:
         self._selection: Selection[_S] = Selection()
+        self._ctx = create_context(self)
         super().__init__(*args, **kwargs)  # type: ignore
 
     @property

@@ -191,6 +191,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
         )
 
+    def __repr__(self) -> str:
+        try:
+            return super().__repr__()
+        except RuntimeError:
+            return 'ViewerModel'
+
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
