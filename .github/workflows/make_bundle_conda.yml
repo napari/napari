@@ -13,9 +13,50 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-name: Create Conda Bundle
+name: Conda
 
 jobs:
+  conda-build:
+    name: Package
+    runs-on: ubuntu-latest
+    if: github.repository == 'napari/napari'
+
+    steps:
+      - name: Checkout conda-forge feedstock
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          name: conda-forge/napari-feedstock
+
+      - name: Create environment.yml
+        shell: bash
+        run: |
+          cat <<EOF > environment.yml
+          name: smithy
+          channels:
+            - conda-forge
+          dependencies:
+            - conda-smithy
+          EOF
+
+      - name: install micromamba
+        uses: mamba-org/provision-with-micromamba@main
+
+      - name: Rerender
+        shell: bash -l {0}
+        run: conda-smithy rerender
+
+      - name: Run build scripts
+        shell: bash -l {0}
+        run: .scripts/run_docker_build.sh
+        env:
+          DOCKER_IMAGE: quay.io/condaforge/linux-anvil-comp7
+          CONFIG: linux_64_
+
+      - name: List artifacts
+        run: |
+          ls -alhR build_artifacts/{linux-64,noarch}
+
   bundle:
     name: Bundle ${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
@@ -52,6 +93,7 @@ jobs:
           EOF
       - name: install micromamba
         uses: mamba-org/provision-with-micromamba@main
+
       - name: set up build dependencies
         shell: bash -l {0}
         run: |
