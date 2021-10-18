@@ -1,4 +1,4 @@
-# Working Group  
+# Working Groups  
 Working groups are to
 - Have a regular public meeting (bonus points for it being on the napari community calendar). 
 Required meeting frequency is still a question here. I personally think a minimum of once a month sounds fair to account for any unusual events without disbanding a working group right away. Meeting at least every other week does sound like it'd be more helpful on a regular basis though.
