@@ -91,7 +91,7 @@ def _npe2_file_extensions_string_for_layers(
     has a brief description of the file type and a list of extensions.
 
     The writers, when provided, are the
-    npe2.manifest.io.WriterContribution objects. There is one writer per
+    `npe2.manifest.io.WriterContribution` objects. There is one writer per
     entry in the extension string.
     """
     try:
