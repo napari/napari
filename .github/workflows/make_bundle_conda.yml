@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          name: conda-forge/napari-feedstock
+          repository: conda-forge/napari-feedstock
 
       - name: Create environment.yml
         shell: bash
