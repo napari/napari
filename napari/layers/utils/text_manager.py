@@ -1,6 +1,15 @@
 import warnings
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -12,15 +21,13 @@ from ...utils.events.evented_model import (
 from .color_encoding import (
     COLOR_ENCODINGS,
     ConstantColorEncoding,
-    DirectColorEncoding,
-    IdentityColorEncoding,
+    parse_color_encoding,
 )
 from .color_transformations import ColorType
 
 if TYPE_CHECKING:
     from pydantic.typing import ReprArgs
 
-from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
@@ -30,14 +37,9 @@ from ._text_utils import get_text_anchors
 from .string_encoding import (
     STRING_ENCODINGS,
     ConstantStringEncoding,
-    DirectStringEncoding,
-    FormatStringEncoding,
-    IdentityStringEncoding,
-    is_format_string,
+    parse_string_encoding,
 )
-from .style_encoding import _infer_n_rows, parse_kwargs_as_encoding
-
-DEFAULT_COLOR = transform_color('cyan')
+from .style_encoding import _infer_n_rows
 
 
 class TextManager(EventedModel):
@@ -76,9 +78,7 @@ class TextManager(EventedModel):
     # and we can rely on a layer and this sharing the same instance.
     properties: dict
     string: Union[STRING_ENCODINGS] = ConstantStringEncoding(constant='')
-    color: Union[COLOR_ENCODINGS] = ConstantColorEncoding(
-        constant=DEFAULT_COLOR
-    )
+    color: Union[COLOR_ENCODINGS] = ConstantColorEncoding(constant='cyan')
     visible: bool = True
     size: PositiveInt = 12
     blending: Blending = Blending.TRANSLUCENT
@@ -270,55 +270,20 @@ class TextManager(EventedModel):
     @validator('string', pre=True, always=True)
     def _check_string(
         cls,
-        string: Union[str, Sequence[str], Union[STRING_ENCODINGS], dict, None],
+        string: Union[Union[STRING_ENCODINGS], dict, str, Iterable[str], None],
         values,
     ) -> Union[STRING_ENCODINGS]:
-        if string is None:
-            return ConstantStringEncoding(constant='')
-        if isinstance(string, STRING_ENCODINGS):
-            return string
-        if isinstance(string, str):
-            properties = values['properties']
-            if string in properties:
-                return IdentityStringEncoding(property_name=string)
-            if is_format_string(properties, string):
-                return FormatStringEncoding(format_string=string)
-            return ConstantStringEncoding(constant=string)
-        if isinstance(string, dict):
-            return parse_kwargs_as_encoding(STRING_ENCODINGS, **string)
-        if isinstance(string, Sequence):
-            return DirectStringEncoding(array=string, default='')
-        raise TypeError(
-            trans._(
-                'string should be a StringEncoding, string, dict, sequence, or None',
-                deferred=True,
-            )
-        )
+        return parse_string_encoding(string, values['properties'])
 
     @validator('color', pre=True, always=True)
     def _check_color(
         cls,
         color: Union[
-            Union[COLOR_ENCODINGS], ColorType, Sequence[ColorType], dict, None
+            Union[COLOR_ENCODINGS], dict, ColorType, Iterable[ColorType], None
         ],
         values,
     ) -> Union[COLOR_ENCODINGS]:
-        if color is None:
-            return ConstantColorEncoding(constant=DEFAULT_COLOR)
-        if isinstance(color, COLOR_ENCODINGS):
-            return color
-        if isinstance(color, dict):
-            return parse_kwargs_as_encoding(COLOR_ENCODINGS, **color)
-        properties = values['properties']
-        if isinstance(color, str) and color in properties:
-            return IdentityColorEncoding(property_name=color)
-        # TODO: distinguish between single color and array of length one as constant vs. direct.
-        color_array = transform_color(color)
-        if color_array.shape[0] > 1:
-            return DirectColorEncoding(
-                array=color_array, default=DEFAULT_COLOR
-            )
-        return ConstantColorEncoding(constant=color)
+        return parse_color_encoding(color, values['properties'])
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):

@@ -1,6 +1,6 @@
 from abc import ABC
 from string import Formatter
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Iterable, Sequence, Union
 
 import numpy as np
 from pydantic import Field, validator
@@ -9,9 +9,11 @@ from napari.layers.utils.style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
     DirectStyleEncoding,
+    parse_kwargs_as_encoding,
 )
+from napari.utils.translations import trans
 
-FALLBACK_STRING = np.array('')
+DEFAULT_STRING = np.array('')
 
 
 class ConstantStringEncoding(ConstantStyleEncoding):
@@ -36,7 +38,7 @@ class DirectStringEncoding(DirectStyleEncoding):
 
 class DerivedStringEncoding(DerivedStyleEncoding, ABC):
     def _fallback_value(self) -> np.ndarray:
-        return FALLBACK_STRING
+        return DEFAULT_STRING
 
 
 class IdentityStringEncoding(DerivedStringEncoding):
@@ -81,7 +83,45 @@ class FormatStringEncoding(DerivedStringEncoding):
         )
 
 
-def is_format_string(
+# Define supported encodings as tuples instead of Union, so that they can be used with
+# isinstance without relying on get_args, which was only added in python 3.8.
+
+"""The string encodings supported by napari in order of precedence."""
+STRING_ENCODINGS = (
+    FormatStringEncoding,
+    IdentityStringEncoding,
+    ConstantStringEncoding,
+    DirectStringEncoding,
+)
+
+
+def parse_string_encoding(
+    string: Union[Union[STRING_ENCODINGS], dict, str, Iterable[str], None],
+    properties: Dict[str, np.ndarray],
+) -> Union[STRING_ENCODINGS]:
+    if string is None:
+        return ConstantStringEncoding(constant=DEFAULT_STRING)
+    if isinstance(string, STRING_ENCODINGS):
+        return string
+    if isinstance(string, dict):
+        return parse_kwargs_as_encoding(STRING_ENCODINGS, **string)
+    if isinstance(string, str):
+        if string in properties:
+            return IdentityStringEncoding(property_name=string)
+        if _is_format_string(properties, string):
+            return FormatStringEncoding(format_string=string)
+        return ConstantStringEncoding(constant=string)
+    if isinstance(string, Sequence):
+        return DirectStringEncoding(array=string, default='')
+    raise TypeError(
+        trans._(
+            'string should be a StringEncoding, dict, str, iterable, or None',
+            deferred=True,
+        )
+    )
+
+
+def _is_format_string(
     properties: Dict[str, np.ndarray], format_string: str
 ) -> bool:
     """Returns true if the given string should be used in :class:`StringFormatEncoding`.
@@ -114,18 +154,6 @@ def is_format_string(
                 f'Found format string field {field} without a corresponding property'
             )
     return len(fields) > 0
-
-
-# Define supported encodings as tuples instead of Union, so that they can be used with
-# isinstance without relying on get_args, which was only added in python 3.8.
-
-"""The string encodings supported by napari in order of precedence."""
-STRING_ENCODINGS = (
-    FormatStringEncoding,
-    IdentityStringEncoding,
-    ConstantStringEncoding,
-    DirectStringEncoding,
-)
 
 
 def _get_property_row(

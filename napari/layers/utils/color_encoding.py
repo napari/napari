@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import Field, validator
@@ -8,14 +8,16 @@ from napari.layers.utils.style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
     DirectStyleEncoding,
+    parse_kwargs_as_encoding,
 )
 
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.standardize_color import transform_color
+from .color_transformations import ColorType
 
-FALLBACK_COLOR = np.array([0, 1, 1, 1])
+DEFAULT_COLOR = transform_color('cyan')
 
 
 class ConstantColorEncoding(ConstantStyleEncoding):
@@ -40,7 +42,7 @@ class DirectColorEncoding(DirectStyleEncoding):
 
 class DerivedColorEncoding(DerivedStyleEncoding, ABC):
     def _fallback_value(self) -> np.ndarray:
-        return FALLBACK_COLOR
+        return DEFAULT_COLOR
 
 
 class IdentityColorEncoding(DerivedColorEncoding):
@@ -134,6 +136,7 @@ class ContinuousColorEncoding(DerivedColorEncoding):
 # Define supported encodings as tuples instead of Union, so that they can be used with
 # isinstance without relying on get_args, which was only added in python 3.8.
 
+
 """The color encodings supported by napari in order of precedence."""
 COLOR_ENCODINGS = (
     ContinuousColorEncoding,
@@ -142,6 +145,27 @@ COLOR_ENCODINGS = (
     IdentityColorEncoding,
     DirectColorEncoding,
 )
+
+
+def parse_color_encoding(
+    color: Union[
+        Union[COLOR_ENCODINGS], dict, ColorType, Iterable[ColorType], None
+    ],
+    properties: Dict[str, np.ndarray],
+) -> Union[COLOR_ENCODINGS]:
+    if color is None:
+        return ConstantColorEncoding(constant=DEFAULT_COLOR)
+    if isinstance(color, COLOR_ENCODINGS):
+        return color
+    if isinstance(color, dict):
+        return parse_kwargs_as_encoding(COLOR_ENCODINGS, **color)
+    if isinstance(color, str) and color in properties:
+        return IdentityColorEncoding(property_name=color)
+    # TODO: distinguish between single color and array of length one as constant vs. direct.
+    color_array = transform_color(color)
+    if color_array.shape[0] > 1:
+        return DirectColorEncoding(array=color_array, default=DEFAULT_COLOR)
+    return ConstantColorEncoding(constant=color)
 
 
 def _calculate_contrast_limits(
