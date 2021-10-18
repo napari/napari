@@ -12,6 +12,11 @@ https://github.com/napari/napari
 
 ## Highlights
 
+This is a bug fix release with many minor improvements and bug fixes. The user
+experience for users of dask arrays might be significantly improved by a new
+approach to setting the contrast limits based on the current slice (#3425).
+
+See the full list of merged pull requests below for further delails!
 
 ## New Features
 - Add progress bar when opening list of files (#3355)
@@ -31,12 +36,11 @@ https://github.com/napari/napari
 - Disable save options if no layers available (#3363)
 - Add cancel and cancel all actions to plugin dialog and improve UI (#3369)
 - Add an option to change the theme to match the system one (#3370)
-- Add toggle visibliity to layer actions (#3372)
+- Add toggle visibility to layer actions (#3372)
 - Remove 0.4.9 deprecations (#3377)
 - Move `progress` outside of `qt` and eliminate need for `qt` imports in headless mode  (#3379)
 - Normalize_dtype() when setting contrast limits. (#3380)
-- Add example with data of mixed dimensionality (#3392)
-- Add tranlucent no depth blending mode (#3398)
+- Add translucent no depth blending mode (#3398)
 - Center data within points thumbnail (#3406)
 - Add back support for big-endian NumPy dtypes in get_dtype_limits (#3424)
 - Schedule contrast limits calculation for dask arrays after first set_view_slice (#3425)
@@ -55,7 +59,6 @@ https://github.com/napari/napari
 
 ## Bug Fixes
 - Fix `_old_size` attribute error in main window (#3329)
-- Fix docs order in _toc.yml for 0.4.11 (#3330)
 - Fix problem with local function signal binding (#3352)
 - Fix __getattr__ in WorkerBase (#3368)
 - Fix off-by-one bug in extent of Image and Labels layers (#3381)
@@ -71,6 +74,11 @@ https://github.com/napari/napari
 
 
 ## Deprecations
+
+
+## Documentation
+- Fix docs order in _toc.yml for 0.4.11 (#3330)
+- Add example with data of mixed dimensionality (#3392)
 
 
 ## Build Tools and Support
