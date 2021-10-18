@@ -61,6 +61,125 @@ from ..settings import get_settings
 from ..utils.io import imsave_extensions
 
 
+def _npe2_decode_selected_filter(
+    ext_str: str, selected_filter: str, writers: List[Any]
+) -> Optional[str]:
+    """When npe2 can be imported, resolves a selected file extension
+    string into a specific writer. Otherwise, returns None.
+
+    Returns the writer command that should be invoked to save data.
+    """
+    # When npe2 is not present, `writers` is expected to be an empty list,
+    # `[]`. This function will return None.
+
+    for entry, writer in zip(
+        ext_str.split(";;"),
+        writers,
+    ):
+        if entry.startswith(selected_filter):
+            return writer.command
+    return None
+
+
+def _npe2_file_extensions_string_for_layers(
+    layers: List[Layer] | LayerList,
+) -> Tuple[Optional[str], List[Any]]:
+    """When npe2 can be imported, returns an extension string and the list
+    of corresponding writers. Otherwise returns (None,[]).
+
+    The extension string is a ";;" delimeted string of entries. Each entry
+    has a brief description of the file type and a list of extensions.
+
+    The writers, when provided, are the
+    npe2.manifest.io.WriterContribution objects. There is one writer per
+    entry in the extension string.
+    """
+    try:
+        import npe2
+    except ImportError:
+        return None, []
+
+    layer_types = [layer.as_layer_data_tuple()[2] for layer in layers]
+    writers = list(npe2.plugin_manager.iter_compatible_writers(layer_types))
+
+    def _items():
+        """Lookup the command name and its supported extensions"""
+        for writer in writers:
+            cmd = npe2.plugin_manager.get_command(writer.command)
+            title = (
+                writer.save_dialog_title
+                if writer.save_dialog_title
+                else cmd.title
+            )
+            yield title, writer.filename_extensions
+
+    # extension strings are in the format:
+    #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
+
+    def to_str(es):
+        if es:
+            return "(" + " ".join(["*" + e for e in es if e]) + ")"
+        else:
+            return "(*.*)"
+
+    return (
+        ";;".join(f"{name} {to_str(exts)}" for name, exts in _items()),
+        writers,
+    )
+
+
+def _extension_string_for_layers(
+    layers: List[Layer] | LayerList,
+) -> Tuple[str, List[Any]]:
+    """Returns an extension string and the list of corresponding writers.
+
+    The extension string is a ";;" delimeted string of entries. Each entry
+    has a brief description of the file type and a list of extensions.
+
+    The writers, when provided, are the npe2.manifest.io.WriterContribution
+    objects. There is one writer per entry in the extension string. If npe2
+    is not importable, the list of writers will be empty.
+    """
+
+    # try to use npe2
+    ext_str, writers = _npe2_file_extensions_string_for_layers(layers)
+    if ext_str:
+        return ext_str, writers
+
+    # fallback to old behavior
+
+    if len(layers) == 1:
+        selected_layer = layers[0]
+        # single selected layer.
+        if selected_layer._type_string == 'image':
+
+            ext = imsave_extensions()
+
+            ext_list = []
+            for val in ext:
+                ext_list.append("*" + val)
+
+            ext_str = ';;'.join(ext_list)
+
+            ext_str = trans._(
+                "All Files (*);; Image file types:;;{ext_str}",
+                ext_str=ext_str,
+            )
+
+        elif selected_layer._type_string == 'points':
+
+            ext_str = trans._("All Files (*);; *.csv;;")
+
+        else:
+            # layer other than image or points
+            ext_str = trans._("All Files (*);;")
+
+    else:
+        # multiple layers.
+        ext_str = trans._("All Files (*);;")
+    return ext_str, []
+
+
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
 
@@ -481,7 +600,7 @@ class QtViewer(QSplitter):
             raise OSError(trans._("Nothing to save"))
 
         # prepare list of extensions for drop down menu.
-        ext_str, writers = self._extension_string_for_layers(
+        ext_str, writers = _extension_string_for_layers(
             list(self.viewer.layers.selection)
             if selected
             else self.viewer.layers
@@ -508,7 +627,7 @@ class QtViewer(QSplitter):
             f'selected_filter: {selected_filter if selected_filter else None}'
         )
 
-        plugin_command = QtViewer._npe2_decode_selected_filter(
+        plugin_command = _npe2_decode_selected_filter(
             ext_str, selected_filter, writers
         )
 
@@ -533,129 +652,6 @@ class QtViewer(QSplitter):
                 )
             else:
                 update_save_history(saved[0])
-
-    @staticmethod
-    def _npe2_decode_selected_filter(
-        ext_str: str, selected_filter: str, writers: List[Any]
-    ) -> Optional[str]:
-        """When npe2 can be imported, resolves a selected file extension
-        string into a specific writer. Otherwise, returns None.
-
-        Returns the writer command that should be invoked to save data.
-        """
-        # When npe2 is not present, `writers` is expect to be an empty list, `[]`.
-        # This function will return None.
-
-        for entry, writer in zip(
-            ext_str.split(";;"),
-            writers,
-        ):
-            if entry.startswith(selected_filter):
-                return writer.command
-        return None
-
-    @staticmethod
-    def _npe2_file_extensions_string_for_layers(
-        layers: List[Layer] | LayerList,
-    ) -> Tuple[Optional[str], List[Any]]:
-        """When npe2 can be imported, returns an extension string and the list
-        of corresponding writers. Otherwise returns (None,[]).
-
-        The extension string is a ";;" delimeted string of entries. Each entry
-        has a brief description of the file type and a list of extensions.
-
-        The writers, when provided, are the
-        npe2.manifest.io.WriterContribution objects. There is one writer per
-        entry in the extension string.
-        """
-        try:
-            import npe2
-        except ImportError:
-            return None, []
-
-        layer_types = [layer.as_layer_data_tuple()[2] for layer in layers]
-        writers = list(
-            npe2.plugin_manager.iter_compatible_writers(layer_types)
-        )
-
-        def _items():
-            """Lookup the command name and its supported extensions"""
-            for writer in writers:
-                cmd = npe2.plugin_manager.get_command(writer.command)
-                title = (
-                    writer.save_dialog_title
-                    if writer.save_dialog_title
-                    else cmd.title
-                )
-                yield title, writer.filename_extensions
-
-        # extension strings are in the format:
-        #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
-
-        def to_str(es):
-            if es:
-                return "(" + " ".join(["*" + e for e in es if e]) + ")"
-            else:
-                return "(*.*)"
-
-        return (
-            ";;".join(f"{name} {to_str(exts)}" for name, exts in _items()),
-            writers,
-        )
-
-    @staticmethod
-    def _extension_string_for_layers(
-        layers: List[Layer] | LayerList,
-    ) -> Tuple[str, List[Any]]:
-        """Returns an extension string and the list of corresponding writers.
-
-        The extension string is a ";;" delimeted string of entries. Each entry
-        has a brief description of the file type and a list of extensions.
-
-        The writers, when provided, are the npe2.manifest.io.WriterContribution
-        objects. There is one writer per entry in the extension string. If npe2
-        is not importable, the list of writers will be empty.
-        """
-
-        # try to use npe2
-        ext_str, writers = QtViewer._npe2_file_extensions_string_for_layers(
-            layers
-        )
-        if ext_str:
-            return ext_str, writers
-
-        # fallback to old behavior
-
-        if len(layers) == 1:
-            selected_layer = layers[0]
-            # single selected layer.
-            if selected_layer._type_string == 'image':
-
-                ext = imsave_extensions()
-
-                ext_list = []
-                for val in ext:
-                    ext_list.append("*" + val)
-
-                ext_str = ';;'.join(ext_list)
-
-                ext_str = trans._(
-                    "All Files (*);; Image file types:;;{ext_str}",
-                    ext_str=ext_str,
-                )
-
-            elif selected_layer._type_string == 'points':
-
-                ext_str = trans._("All Files (*);; *.csv;;")
-
-            else:
-                # layer other than image or points
-                ext_str = trans._("All Files (*);;")
-
-        else:
-            # multiple layers.
-            ext_str = trans._("All Files (*);;")
-        return ext_str, []
 
     def _update_welcome_screen(self, event=None):
         """Update welcome screen display based on layer count.
