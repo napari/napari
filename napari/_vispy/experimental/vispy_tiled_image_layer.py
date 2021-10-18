@@ -12,7 +12,7 @@ from vispy.scene.visuals import create_visual_node
 
 from ...utils.events import EmitterGroup
 from ...utils.perf import block_timer
-from ..vispy_image_layer import VispyImageLayer
+from ..layers.image import VispyImageLayer
 from .tile_grid import TileGrid
 from .tiled_image_visual import TiledImageVisual
 

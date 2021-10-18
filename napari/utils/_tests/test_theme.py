@@ -1,6 +1,10 @@
+import os
+import sys
+
 import pytest
 from pydantic import ValidationError
 
+from napari._tests.utils import slow
 from napari.settings import get_settings
 from napari.utils.theme import (
     Theme,
@@ -98,6 +102,12 @@ def test_rebuild_theme_settings():
     settings.appearance.theme = "another-theme"
 
 
+@slow(15)
+@pytest.mark.skipif(
+    os.getenv('CI') and sys.version_info < (3, 9),
+    reason="Testing theme on CI is extremely slow ~ 15s per test."
+    "Skip for now until we find the reason",
+)
 @pytest.mark.parametrize(
     "color",
     [
@@ -113,5 +123,8 @@ def test_theme(color):
     theme = get_theme("dark", False)
     theme.background = color
 
+
+def test_theme_syntax_highlight():
+    theme = get_theme("dark", False)
     with pytest.raises(ValidationError):
         theme.syntax_style = "invalid"

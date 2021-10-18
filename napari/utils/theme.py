@@ -17,6 +17,7 @@ try:
 except Exception:
     use_gradients = False
 
+from .._vendor import darkdetect
 from ..utils.translations import trans
 from .events import EventedModel
 from .events.containers._evented_dict import EventedDict
@@ -162,6 +163,16 @@ def template(css: str, **theme):
     return css
 
 
+def get_system_theme():
+    """Return the system default theme, either 'dark', or 'light'."""
+    try:
+        name = darkdetect.theme().lower()
+    except Exception:
+        name = "dark"
+
+    return name
+
+
 def get_theme(name, as_dict=True):
     """Get a copy of theme based on it's name.
 
@@ -184,6 +195,9 @@ def get_theme(name, as_dict=True):
         so that manipulating this theme can be done without
         side effects.
     """
+    if name == "system":
+        name = get_system_theme()
+
     if name in _themes:
         theme = _themes[name]
         _theme = theme.copy()
@@ -249,7 +263,7 @@ def available_themes():
     list of str
         Names of available themes.
     """
-    return tuple(_themes)
+    return tuple(_themes) + ("system",)
 
 
 def rebuild_theme_settings(event=None):
