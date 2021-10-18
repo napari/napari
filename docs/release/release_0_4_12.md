@@ -53,6 +53,7 @@ See the full list of merged pull requests below for further delails!
 - Multiscale slicing extends beyond shape (#3460)
 - Added float16 support to dtype normalization (#3463)
 - Updates for magicgui 0.3.0 (#3465)
+- Finds layer_controls based on layer's MRO (#3471)
 - Use `ensure_main_thread` instead of custom thread propagation mechanism in NapariQtNotification (#3473)
 - Drop pythonw patch in windows bundle (#3479)
 
@@ -107,7 +108,7 @@ See the full list of merged pull requests below for further delails!
 - Remove make_napari_viewer in vispy tests. (#3486)
 
 
-## 21 authors added to this release (alphabetical)
+## 22 authors added to this release (alphabetical)
 
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
@@ -116,6 +117,7 @@ See the full list of merged pull requests below for further delails!
 - [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Gregory R. Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
+- [Guillaume Gay](https://github.com/napari/napari/commits?author=glyg) - @glyg
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Jan-Hendrik Müller](https://github.com/napari/napari/commits?author=kolibril13) - @kolibril13
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
