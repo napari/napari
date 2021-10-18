@@ -22,11 +22,18 @@ jobs:
     if: github.repository == 'napari/napari'
 
     steps:
+      - name: Checkout napari
+        uses: actions/checkout@v2
+        with:
+          path: napari-source/
+
       - name: Checkout conda-forge feedstock
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          repository: conda-forge/napari-feedstock
+          # TODO: Match upstream, not fork!
+          repository: jaimergp/napari-feedstock
+          ref: menuinst
 
       - name: Create environment.yml
         shell: bash
@@ -37,14 +44,27 @@ jobs:
             - conda-forge
           dependencies:
             - conda-smithy
+            - python
+            - pip
           EOF
 
       - name: install micromamba
         uses: mamba-org/provision-with-micromamba@main
 
-      - name: Rerender
+      - name: install napari
         shell: bash -l {0}
-        run: conda-smithy rerender
+        run: |
+          pip install -e ./napari-source --no-deps
+
+      - name: Patch and rerender feedstock
+        shell: bash -l {0}
+        run: |
+          version=$(python napari-source/bundle.py --version)
+          sed -i "s|{% set version = \".*\" %}|{% set version = \"${version}\" %}|" recipe/meta.yaml
+          sed -i "s|\s\surl:.*|  path: napari-source/|" recipe/meta.yaml
+          sed -i "s|\s\ssha256:.*||" recipe/meta.yaml
+          conda-smithy rerender
+          git diff
 
       - name: Run build scripts
         shell: bash -l {0}
