@@ -58,17 +58,17 @@ jobs:
         shell: bash -l {0}
         working-directory: napari-source
         run: |
-          ls -alh
           pip install -e . --no-deps
+          version=$(python bundle.py --version)
+          echo "NAPARI_VERSION=${version}" >> $GITHUB_ENV
 
       - name: Patch and rerender feedstock
         shell: bash -l {0}
         working-directory: napari-feedstock
         run: |
-          version=$(python ${GITHUB_WORKSPACE}/napari-source/bundle.py --version)
-          sed -i "s|{% set version = \".*\" %}|{% set version = \"${version}\" %}|" recipe/meta.yaml
-          sed -i "s|\s\surl:.*|  path: ${GITHUB_WORKSPACE}/napari-source/|" recipe/meta.yaml
-          sed -i "s|\s\ssha256:.*||" recipe/meta.yaml
+          sed -i "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" recipe/meta.yaml
+          sed -i "s|  url:.*|  path: ${{ github.workspace }}/napari-source/|" recipe/meta.yaml
+          sed -i "s|  sha256:.*||" recipe/meta.yaml
           conda-smithy rerender
           git diff
 
