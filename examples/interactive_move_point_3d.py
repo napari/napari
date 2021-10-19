@@ -35,7 +35,7 @@ def drag_along_camera_plane(layer, event):
     layer.interactive = False
 
     # store start position of point and mouse event data
-    original_position = point.data[0].copy()
+    original_position = copy(point.data[0])
     start_position_world = copy(event.position)
     view_direction = copy(event.view_direction)
 
