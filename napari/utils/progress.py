@@ -85,6 +85,7 @@ class progress(tqdm):
             super().display(msg, pos)
             return
         # TODO: This could break if user is formatting their own terminal tqdm
+        etas = ""
         if self.total != 0:
             etas = str(self).split('|')[-1]
 
