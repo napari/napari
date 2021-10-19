@@ -20,16 +20,15 @@ class TextManager(EventedModel):
     Parameters
     ----------
     text : str
-        The string that may be a constant, a property name, or a format string
-        containing property names. The property name and format string will be
-        used to fill out strings n_text times using the data in properties. Any
-        constant will be repeated n_text times.
+        A a property name or a format string containing property names.
+        This will be used to fill out string values n_text times using the
+        data in properties.
     n_text : int
         The number of text elements to initially display, which should match
         the number of elements (e.g. points) in a layer.
     properties: dict
-        Stores properties data that will be used to generate strings when text
-        is a property name or format string. Typically comes from a layer.
+        Stores properties data that will be used to generate strings from the
+        given text. Typically comes from a layer.
 
     Attributes
     ----------
@@ -218,7 +217,7 @@ class TextManager(EventedModel):
         ----------
         text : Union[TextManager, dict, str, None]
             An instance of TextManager, a dict that contains some of its state,
-            a string that may be a constant, a property name, or a format string.
+            a string that should be a property name, or a format string.
         n_text : int
             The number of text elements to initially display, which should match
             the number of elements (e.g. points) in a layer.
