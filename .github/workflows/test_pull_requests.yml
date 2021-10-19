@@ -148,7 +148,10 @@ jobs:
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions
           python tools/minreq.py
-          pip install -U vispy@git+https://github.com/vispy/vispy.git@a7f84caf  # XXX remove, just for testing the PR!
+          # XXX remove, just for testing the PR!
+          pip uninstall -y vispy
+          pip install -U git+https://github.com/vispy/vispy.git@a7f84caf 
+          # XXX remove, just for testing the PR!
         env:
           # tools/minreq.py sets all deps to their minumim stated versions
           # it is a no-op if MIN_REQ is not set
