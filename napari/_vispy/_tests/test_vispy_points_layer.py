@@ -13,11 +13,6 @@ def test_VispyPointsLayer(opacity):
     assert visual.node.opacity == opacity
 
 
-def test_no_points_no_error():
-    layer = Points()
-    VispyPointsLayer(layer)
-
-
 def test_change_text_updates_node_string():
     points = np.random.rand(3, 2)
     properties = {

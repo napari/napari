@@ -144,7 +144,7 @@ class TextManager(EventedModel):
         warnings.warn(
             trans._(
                 'TextManager.add is a deprecated method. '
-                'Use TextManager.string._array(...) to get the strings instead.'
+                'Use TextManager.string._get_array(...) instead.'
             ),
             DeprecationWarning,
         )
@@ -218,7 +218,7 @@ class TextManager(EventedModel):
         warnings.warn(
             trans._(
                 'TextManager.view_text() is a deprecated method. '
-                'Use TextManager.string._array(...) to get the strings instead.'
+                'Use TextManager.string._get_array(...) instead.'
             ),
             DeprecationWarning,
         )
