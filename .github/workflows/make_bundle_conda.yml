@@ -22,11 +22,6 @@ jobs:
     if: github.repository == 'napari/napari'
 
     steps:
-      - name: Checkout napari
-        uses: actions/checkout@v2
-        with:
-          path: napari-source
-
       - name: Checkout conda-forge feedstock
         uses: actions/checkout@v2
         with:
@@ -35,6 +30,11 @@ jobs:
           repository: jaimergp/napari-feedstock
           ref: menuinst
           path: napari-feedstock
+
+      - name: Checkout napari source
+        uses: actions/checkout@v2
+        with:
+          path: napari-feedstock/napari-source
 
       - name: Create environment.yml
         shell: bash
@@ -56,7 +56,7 @@ jobs:
 
       - name: install napari
         shell: bash -l {0}
-        working-directory: napari-source
+        working-directory: napari-feedstock/napari-source
         run: |
           pip install -e . --no-deps
           version=$(python bundle.py --version)
@@ -68,7 +68,7 @@ jobs:
         run: |
           set -euxo pipefail
           sed -i "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" recipe/meta.yaml
-          sed -i "s|  git_url:.*|  path: ${{ github.workspace }}/napari-source/|" recipe/meta.yaml
+          sed -i "s|  git_url:.*|  path: ../napari-source|" recipe/meta.yaml
           sed -i "s|  git_rev:.*||" recipe/meta.yaml
           conda-smithy rerender
           git diff
