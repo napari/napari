@@ -69,7 +69,7 @@ jobs:
           set -euxo pipefail
           sed -i "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" recipe/meta.yaml
           # This will be path once mounted in Docker
-          sed -i "s|  git_url:.*|  path: /home/conda/feedstock-root/napari-source|" recipe/meta.yaml
+          sed -i "s|  git_url:.*|  path: /home/conda/feedstock_root/napari-source|" recipe/meta.yaml
           sed -i "s|  git_rev:.*||" recipe/meta.yaml
           conda-smithy rerender
           git diff
