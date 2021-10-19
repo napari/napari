@@ -45,6 +45,8 @@ class QtLabeledProgressBar(QWidget):
         QApplication.processEvents()
 
     def setDescription(self, value):
+        if not value.endswith(': '):
+            value = f'{value}: '
         self.description_label.setText(value)
         QApplication.processEvents()
 

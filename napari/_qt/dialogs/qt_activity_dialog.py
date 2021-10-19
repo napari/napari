@@ -273,39 +273,6 @@ class QtActivityDialog(QDialog):
             self._toggleButton._inProgressIndicator.hide()
 
 
-def get_pbar(prog, nest_under=None, **kwargs):
-    """Adds QtLabeledProgressBar to viewer ActivityDialog and returns it.
-
-    If nest_under is valid QtLabeledProgressBar, nests new bar underneath
-    parent in a QtProgressBarGroup
-
-    Parameters
-    ----------
-    prog : Progress
-        progress iterable this QtLabeledProgressBar will belong to
-    nest_under : Optional[QtLabeledProgressBar]
-        parent QtLabeledProgressBar to nest under, by default None
-
-    Returns
-    -------
-    QtLabeledProgressBar
-        progress bar to associate with iterable
-    """
-    from ..qt_main_window import _QtMainWindow
-
-    current_window = _QtMainWindow.current()
-    if current_window is None:
-        return
-    viewer_instance = current_window.qt_viewer
-    activity_dialog = viewer_instance.window()._activity_dialog
-
-    pbar = QtLabeledProgressBar(**kwargs)
-    activity_dialog.add_progress_bar(pbar, nest_under)
-    viewer_instance.destroyed.connect(prog.close_pbar)
-
-    return pbar
-
-
 def remove_separators(current_pbars):
     """Remove any existing line separators from current_pbars
     as they will get a separator from the group
