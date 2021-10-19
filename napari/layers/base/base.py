@@ -7,9 +7,9 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from typing import List, Optional, Tuple, Union
 
+import magicgui as mgui
 import numpy as np
 
-from ...utils import _magicgui as _mgui
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -60,7 +60,7 @@ def no_op(layer: Layer, event: Event) -> None:
     return None
 
 
-@_mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
+@mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
 class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
 
@@ -94,7 +94,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+        {'opaque', 'translucent', 'translucent_no_depth', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -118,6 +118,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Blending.TRANSLUCENT
                 Allows for multiple layers to be blended with different opacity
                 and corresponds to depth_test=True, cull_face=False,
+                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+            Blending.TRANSLUCENT_NO_DEPTH
+                Allows for multiple layers to be blended with different opacity,
+                but no depth testing is performed.
+                and corresponds to depth_test=False, cull_face=False,
                 blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
             Blending.ADDITIVE
                 Allows for multiple layers to be blended together with
