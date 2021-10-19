@@ -26,7 +26,7 @@ from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
-from ..utils.interactivity_utils import mouse_events_to_projected_distance
+from ..utils.interactivity_utils import drag_data_to_projected_distance
 from ..utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
@@ -1099,11 +1099,42 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         return None
 
-    def projected_distance_from_mouse_events(
-        self, start_event: Event, end_event: Event, vector: np.ndarray
+    def projected_distance_from_mouse_drag(
+        self,
+        start_position_world: np.ndarray,
+        end_position_world: np.ndarray,
+        view_direction: np.ndarray,
+        vector: np.ndarray,
     ):
-        return mouse_events_to_projected_distance(
-            start_event, end_event, self, vector
+        """Calculate the length of the projection of a line between two mouse
+        clicks onto a vector in data coordinates.
+
+        The general strategy is to
+        1) find mouse drag start and end positions, project them onto a
+           pseudo-canvas (a plane aligned with the canvas) in data coordinates.
+        2) project the mouse drag vector onto the (normalised) vector in data
+           coordinates
+        Parameters
+        ----------
+        start_position : np.ndarray
+            Starting point of the drag vector in data coordinates
+        end_position : np.ndarray
+            End point of the drag vector in data coordinates
+        view_direction : np.ndarray
+            Vector defining the plane normal of the plane onto which the drag
+            vector is projected.
+        vector : np.ndarray
+            (3,) unit vector or (n, 3) array thereof on which to project the drag
+            vector from start_event to end_event. This argument is defined in data
+            coordinates.
+        Returns
+        -------
+        projected_distance : (1, ) or (n, ) np.ndarray of float
+        """
+        start_position = np.array(start_position_world)[self._dims_mask]
+        end_position = np.array(end_position_world)[self._dims_mask]
+        return drag_data_to_projected_distance(
+            start_position, end_position, view_direction, vector
         )
 
     @contextmanager
@@ -1184,7 +1215,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return tuple(normalized_vector)
 
     @property
-    def _display_bounding_box(self):
+    def _displayed_bounding_box(self):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, self._dims_mask].T
 
@@ -1245,7 +1276,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 click_pos_data = np.asarray(position)[self._dims_mask]
 
             # Determine the front and back faces
-            bbox = self._display_bounding_box
+            bbox = self._displayed_bounding_box
 
             front_face_normal, back_face_normal = find_front_back_face(
                 click_pos_data, bbox, view_dir
