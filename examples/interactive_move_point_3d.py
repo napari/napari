@@ -7,6 +7,7 @@ import numpy as np
 
 import napari
 
+# Create viewer, point to move and bounding box
 viewer = napari.Viewer(ndisplay=3)
 
 bounding_box_data = [
@@ -19,13 +20,21 @@ bounding_box_data = [
     [1, 1, -1],
     [1, 1, 1]
 ]
-bounding_box = viewer.add_points(bounding_box_data, face_color='green',
-                                 size=0.2, edge_width=0)
-point = viewer.add_points([0, 0, 0], face_color='magenta', size=0.2,
-                          edge_width=0)
+bounding_box_layer = viewer.add_points(
+    bounding_box_data,
+    face_color='green',
+    size=0.2,
+    edge_width=0
+)
+point_layer = viewer.add_points(
+    [0, 0, 0],
+    face_color='magenta',
+    size=0.2,
+    edge_width=0
+)
 
 
-@point.mouse_drag_callbacks.append
+@point_layer.mouse_drag_callbacks.append
 def drag_along_camera_plane(layer, event):
     # early exit if shift isn't held
     if not 'Shift' in event.modifiers:
@@ -35,7 +44,7 @@ def drag_along_camera_plane(layer, event):
     layer.interactive = False
 
     # store start position of point and mouse event data
-    original_position = copy(point.data[0])
+    original_position = copy(point_layer.data[0])
     start_position_world = copy(event.position)
     view_direction = copy(event.view_direction)
 
@@ -61,20 +70,25 @@ def drag_along_camera_plane(layer, event):
 
         # Calculate shifts as projected distances multiplied by basis_vectors
         shifts = projected_distances[:, np.newaxis] * basis_vectors
+
+        # Update position
         updated_position = original_position + np.sum(shifts, axis=0)
 
-        # Clamp to bounding box
+        # Clamp updated position to bounding box
         clamped = np.where(updated_position > 1, 1, updated_position)
         clamped = np.where(clamped < -1, -1, clamped)
-        point.data = clamped
+
+        # update
+        point_layer.data = clamped
         yield
+    # reenable interactivity
     layer.interactive = True
 
-
+# setup viewer
 viewer.camera.angles = (45, 30, 30)
 viewer.camera.zoom = 100
 viewer.text_overlay.visible = True
 viewer.text_overlay.text = """'shift' + click and drag to move the pink point
-click and drag to rotate the scene
+normal click and drag to rotate the scene
 """
 napari.run()
