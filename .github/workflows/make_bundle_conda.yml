@@ -66,9 +66,10 @@ jobs:
         shell: bash -l {0}
         working-directory: napari-feedstock
         run: |
+          set -euxo pipefail
           sed -i "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" recipe/meta.yaml
-          sed -i "s|  url:.*|  path: ${{ github.workspace }}/napari-source/|" recipe/meta.yaml
-          sed -i "s|  sha256:.*||" recipe/meta.yaml
+          sed -i "s|  git_url:.*|  path: ${{ github.workspace }}/napari-source/|" recipe/meta.yaml
+          sed -i "s|  git_rev:.*||" recipe/meta.yaml
           conda-smithy rerender
           git diff
 
