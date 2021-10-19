@@ -1133,6 +1133,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         start_position = np.array(start_position_world)[self._dims_mask]
         end_position = np.array(end_position_world)[self._dims_mask]
+        view_direction = self._world_to_data_ray(view_direction)
         return drag_data_to_projected_distance(
             start_position, end_position, view_direction, vector
         )
