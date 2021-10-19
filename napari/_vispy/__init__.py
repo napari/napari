@@ -15,6 +15,7 @@ vispy_logger.setLevel(logging.WARNING)
 from .camera import VispyCamera
 from .canvas import VispyCanvas
 from .overlays.axes import VispyAxesOverlay
+from .overlays.interaction_box import VispyInteractionBox
 from .overlays.scale_bar import VispyScaleBarOverlay
 from .overlays.text import VispyTextOverlay
 from .utils.quaternion import quaternion2euler

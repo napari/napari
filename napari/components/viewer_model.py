@@ -42,6 +42,7 @@ from .camera import Camera
 from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
+from .interaction_box import InteractionBox
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
 from .text_overlay import TextOverlay
@@ -113,6 +114,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
     text_overlay: TextOverlay = Field(
         default_factory=TextOverlay, allow_mutation=False
+    )
+    interaction_box: InteractionBox = Field(
+        default_factory=InteractionBox, allow_mutation=False
     )
 
     help: str = ''
