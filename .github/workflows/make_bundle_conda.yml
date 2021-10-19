@@ -84,11 +84,19 @@ jobs:
       - name: List artifacts
         working-directory: napari-feedstock
         run: |
-          ls -alhR build_artifacts/{linux-64,noarch}
+          ls -alh build_artifacts/{linux-64,win-64,osx-64,noarch}/*.tar.bz2
+
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v2
+      #   if: false
+      #   with:
+      #     name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+      #     path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
 
   bundle:
     name: Bundle ${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
+    needs: conda-build
     if: github.repository == 'napari/napari'
     env:
       GITHUB_TOKEN: ${{ github.token }}
