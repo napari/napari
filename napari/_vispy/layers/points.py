@@ -27,17 +27,16 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer._face.events.colors.connect(self._on_data_change)
         self.layer._face.events.color_properties.connect(self._on_data_change)
-        self.layer.events.text.connect(self._on_layer_text_change)
+        self.layer.events.text.connect(self._on_text_instance_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
+        self.layer.text.events.connect(self._on_text_change)
 
-        self.reset()
-        self._on_layer_text_change()
         self._on_data_change()
 
-    def _on_layer_text_change(self, event=None):
-        self.layer.text.events.data_update.connect(self._on_text_change)
-        self.layer.text.events.blending.connect(self._on_blending_change)
-        self._on_text_change()
+    def _on_text_instance_change(self, event=None):
+        self.layer.text.events.connect(self._on_text_change)
+        self._update_text(update_node=False)
+        self._on_blending_change(None)
 
     def _on_data_change(self, event=None):
         if len(self.layer._indices_view) > 0:
@@ -69,10 +68,6 @@ class VispyPointsLayer(VispyBaseLayer):
             scaling=True,
         )
 
-        self._on_text_change(update_node=False)
-        self.node.update()
-
-        # Call to update order of translation values with new dims:
         self.reset()
 
     def _on_highlight_change(self, event=None):
@@ -122,7 +117,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
-    def _on_text_change(self, update_node=True):
+    def _update_text(self, *, update_node=True):
         """Function to update the text node properties
 
         Parameters
@@ -132,7 +127,7 @@ class VispyPointsLayer(VispyBaseLayer):
         """
         ndisplay = self.layer._ndisplay
         if (len(self.layer._indices_view) == 0) or (
-            self.layer._text.visible is False
+            self.layer.text.visible is False
         ):
             text_coords = np.zeros((1, ndisplay))
             text = []
@@ -163,6 +158,12 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self.node._subvisuals[-1]
         return text_node
 
+    def _on_text_change(self, event=None):
+        if event is not None and event.type == 'blending':
+            self._on_blending_change(event)
+        else:
+            self._update_text()
+
     def _on_blending_change(self, event=None):
         """Function to set the blending mode"""
         points_blending_kwargs = BLENDING_MODES[self.layer.blending]
@@ -175,8 +176,8 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def reset(self, event=None):
         super().reset()
+        self._update_text(update_node=False)
         self._on_blending_change()
-        self._on_text_change()
         self._on_highlight_change()
         self._on_matrix_change()
 

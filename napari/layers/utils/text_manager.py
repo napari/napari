@@ -6,7 +6,7 @@ import numpy as np
 from pydantic import PositiveInt, validator
 
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import Event, EventedModel
+from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
@@ -73,16 +73,6 @@ class TextManager(EventedModel):
             text = kwargs['values']
             n_text = len(text)
         self._set_text(text, n_text, properties=properties)
-        # When all the fields except blending change, listeners typically
-        # respond in the same way, so create an event that they all emit.
-        self.events.add(data_update=Event)
-        self.events.values.connect(self.events.data_update)
-        self.events.visible.connect(self.events.data_update)
-        self.events.size.connect(self.events.data_update)
-        self.events.color.connect(self.events.data_update)
-        self.events.anchor.connect(self.events.data_update)
-        self.events.translation.connect(self.events.data_update)
-        self.events.rotation.connect(self.events.data_update)
 
     def _set_text(
         self,

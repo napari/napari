@@ -16,17 +16,12 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
-        self.layer.events.text.connect(self._on_layer_text_change)
+        self.layer.events.text.connect(self._on_text_instance_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
+        self.layer.text.events.connect(self._on_text_change)
 
         self.reset()
-        self._on_layer_text_change()
         self._on_data_change()
-
-    def _on_layer_text_change(self, event=None):
-        self.layer.text.events.data_update.connect(self._on_text_change)
-        self.layer.text.events.blending.connect(self._on_blending_change)
-        self._on_text_change()
 
     def _on_data_change(self, event=None):
         faces = self.layer._data_view._mesh.displayed_triangles
@@ -52,7 +47,7 @@ class VispyShapesLayer(VispyBaseLayer):
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
-        self._on_text_change(update_node=False)
+        self._update_text(update_node=False)
         self.node.update()
 
     def _on_highlight_change(self, event=None):
@@ -108,7 +103,12 @@ class VispyShapesLayer(VispyBaseLayer):
             pos=pos, color=edge_color, width=width
         )
 
-    def _on_text_change(self, update_node=True):
+    def _on_text_instance_change(self, event=None):
+        self.layer.text.events.connect(self._on_text_change)
+        self._update_text(update_node=False)
+        self._on_blending_change(None)
+
+    def _update_text(self, update_node=True):
         """Function to update the text node properties
 
         Parameters
@@ -147,6 +147,12 @@ class VispyShapesLayer(VispyBaseLayer):
         """Function to get the text node from the Compound visual"""
         text_node = self.node._subvisuals[-1]
         return text_node
+
+    def _on_text_change(self, event=None):
+        if event is not None and event.type == 'blending':
+            self._on_blending_change(event)
+        else:
+            self._update_text()
 
     def _on_blending_change(self, event=None):
         """Function to set the blending mode"""
