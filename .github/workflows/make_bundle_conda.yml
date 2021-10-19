@@ -34,6 +34,7 @@ jobs:
           # TODO: Match upstream, not fork!
           repository: jaimergp/napari-feedstock
           ref: menuinst
+          path: napari-feedstock
 
       - name: Create environment.yml
         shell: bash
@@ -53,13 +54,14 @@ jobs:
 
       - name: install napari
         shell: bash -l {0}
+        working-directory: napari-source
         run: |
-          cd ${GITHUB_WORKSPACE}/napari-source
           ls -alh
           pip install -e . --no-deps
 
       - name: Patch and rerender feedstock
         shell: bash -l {0}
+        working-directory: napari-feedstock
         run: |
           version=$(python ${GITHUB_WORKSPACE}/napari-source/bundle.py --version)
           sed -i "s|{% set version = \".*\" %}|{% set version = \"${version}\" %}|" recipe/meta.yaml
@@ -70,12 +72,14 @@ jobs:
 
       - name: Run build scripts
         shell: bash -l {0}
+        working-directory: napari-feedstock
         run: .scripts/run_docker_build.sh
         env:
           DOCKER_IMAGE: quay.io/condaforge/linux-anvil-comp7
           CONFIG: linux_64_
 
       - name: List artifacts
+        working-directory: napari-feedstock
         run: |
           ls -alhR build_artifacts/{linux-64,noarch}
 
