@@ -1,11 +1,12 @@
 import warnings
-from typing import Optional, Tuple, Union
+from copy import deepcopy
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
 
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import EventedModel
+from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
@@ -18,15 +19,17 @@ class TextManager(EventedModel):
 
     Parameters
     ----------
-    text : array or str
-        The strings to be displayed, or a format string that will be filled out
-        n_text times using data in properties.
+    text : str
+        The string that may be a constant, a property name, or a format string
+        containing property names. The property name and format string will be
+        used to fill out strings n_text times using the data in properties. Any
+        constant will be repeated n_text times.
     n_text : int
-        The number of the strings to be displayed. This may be different to the
-        if text is a format string, or if text should be repeated.
+        The number of text elements to initially display, which should match
+        the number of elements (e.g. points) in a layer.
     properties: dict
         Stores properties data that will be used to generate strings when text
-        is a format a string.
+        is a property name or format string. Typically comes from a layer.
 
     Attributes
     ----------
@@ -71,6 +74,16 @@ class TextManager(EventedModel):
             text = kwargs['values']
             n_text = len(text)
         self._set_text(text, n_text, properties=properties)
+        # When all the fields except blending change, listeners typically
+        # respond in the same way, so create an event that they all emit.
+        self.events.add(data_update=Event)
+        self.events.values.connect(self.events.data_update)
+        self.events.visible.connect(self.events.data_update)
+        self.events.size.connect(self.events.data_update)
+        self.events.color.connect(self.events.data_update)
+        self.events.anchor.connect(self.events.data_update)
+        self.events.translation.connect(self.events.data_update)
+        self.events.rotation.connect(self.events.data_update)
 
     def _set_text(
         self,
@@ -191,6 +204,41 @@ class TextManager(EventedModel):
         # if no points in this slice send dummy data
         return np.array([''])
 
+    @classmethod
+    def _from_layer(
+        cls,
+        *,
+        text: Union['TextManager', dict, str, None],
+        n_text: int,
+        properties: Dict[str, np.ndarray],
+    ) -> 'TextManager':
+        """Create a TextManager from a layer.
+
+        Parameters
+        ----------
+        text : Union[TextManager, dict, str, None]
+            An instance of TextManager, a dict that contains some of its state,
+            a string that may be a constant, a property name, or a format string.
+        n_text : int
+            The number of text elements to initially display, which should match
+            the number of elements (e.g. points) in a layer.
+        properties : Dict[str, np.ndarray]
+            The properties of a layer.
+
+        Returns
+        -------
+        TextManager
+        """
+        if isinstance(text, TextManager):
+            kwargs = text.dict()
+        elif isinstance(text, dict):
+            kwargs = deepcopy(text)
+        else:
+            kwargs = {'text': text}
+        kwargs['n_text'] = n_text
+        kwargs['properties'] = properties
+        return cls(**kwargs)
+
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
         return transform_color(color)[0]
@@ -212,22 +260,3 @@ class TextManager(EventedModel):
             )
 
         return blending_mode
-
-    def _connect_update_events(
-        self, text_update_function, blending_update_function
-    ):
-        """Function to connect all property update events to the update callback.
-
-        This is typically used in the vispy view file.
-        """
-        # connect the function for updating the text node
-        self.events.values.connect(text_update_function)
-        self.events.rotation.connect(text_update_function)
-        self.events.translation.connect(text_update_function)
-        self.events.anchor.connect(text_update_function)
-        self.events.color.connect(text_update_function)
-        self.events.size.connect(text_update_function)
-        self.events.visible.connect(text_update_function)
-
-        # connect the function for updating the text node blending
-        self.events.blending.connect(blending_update_function)
