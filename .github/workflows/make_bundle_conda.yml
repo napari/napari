@@ -25,7 +25,7 @@ jobs:
       - name: Checkout napari
         uses: actions/checkout@v2
         with:
-          path: napari-source/
+          path: napari-source
 
       - name: Checkout conda-forge feedstock
         uses: actions/checkout@v2
@@ -54,7 +54,9 @@ jobs:
       - name: install napari
         shell: bash -l {0}
         run: |
-          pip install -e ${GITHUB_WORKSPACE}/napari-source --no-deps
+          cd ${GITHUB_WORKSPACE}/napari-source
+          ls -alh
+          pip install -e . --no-deps
 
       - name: Patch and rerender feedstock
         shell: bash -l {0}
