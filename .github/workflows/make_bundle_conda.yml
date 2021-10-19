@@ -47,6 +47,8 @@ jobs:
             - conda-smithy
             - python
             - pip
+            - tomlkit
+            - ruamel.yaml
           EOF
 
       - name: install micromamba
