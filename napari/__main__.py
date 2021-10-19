@@ -421,6 +421,13 @@ def main():
                 'conda install -c conda-forge python.app'
             )
             warnings.warn(msg)
+
+    # Prevent https://github.com/napari/napari/issues/3415
+    if sys.platform == "darwin" and sys.version_info >= (3, 8):
+        import multiprocessing
+
+        multiprocessing.set_start_method('fork')
+        
     _run()
 
 
