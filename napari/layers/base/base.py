@@ -1107,7 +1107,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         vector: np.ndarray,
     ):
         """Calculate the length of the projection of a line between two mouse
-        clicks onto a vector in data coordinates.
+        clicks onto a vector (or array of vectors) in data coordinates.
 
         The general strategy is to
         1) find mouse drag start and end positions, project them onto a
