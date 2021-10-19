@@ -5,7 +5,7 @@ from napari.utils import progrange, progress
 
 def test_progress_with_iterable():
     r = range(100)
-    pbr = progress(r)
+    pbr = progress(r, desc='iterable')
     assert pbr.iterable is r
     assert pbr.n == 0
 
@@ -15,7 +15,7 @@ def test_progress_with_iterable():
 
 def test_progress_with_ndarray():
     iter_ = np.random.random((100, 100))
-    pbr = progress(iter_)
+    pbr = progress(iter_, desc='ndarray')
 
     assert pbr.iterable is iter_
     assert pbr.n == 0
@@ -25,7 +25,7 @@ def test_progress_with_ndarray():
 
 
 def test_progress_with_total():
-    pbr = progress(total=5)
+    pbr = progress(total=5, desc='total')
 
     assert pbr.n == 0
     pbr.update(1)
@@ -36,13 +36,13 @@ def test_progress_with_total():
 
 
 def test_progress_with_context():
-    with progress(range(100)) as pbr:
+    with progress(range(100), desc='context') as pbr:
         assert pbr.n == 0
     assert not progress.all_progress
 
 
 def test_progress_update():
-    pbr = progress(total=10)
+    pbr = progress(total=10, desc='update')
     assert pbr.n == 0
 
     pbr.update(1)

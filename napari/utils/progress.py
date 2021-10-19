@@ -56,6 +56,11 @@ class progress(tqdm):
 
     monitor_interval = 0  # set to 0 to disable the thread
     all_progress = EventedSet()  # track all currently active progress objects
+    all_progress.events.changed.connect(
+        lambda e: print(
+            f"Added: {e.added}\nRemoved: {e.removed}\nCurrent: {progress.all_progress}"
+        )
+    )
 
     def __init__(
         self,
@@ -77,6 +82,9 @@ class progress(tqdm):
             self.set_description(trans._("progress"))
         self.is_init = False
         progress.all_progress.add(self)
+
+    def __repr__(self) -> str:
+        return self.desc
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display and emit relevant events."""
