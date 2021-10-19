@@ -136,7 +136,6 @@ class ContinuousColorEncoding(DerivedColorEncoding):
 # Define supported encodings as tuples instead of Union, so that they can be used with
 # isinstance without relying on get_args, which was only added in python 3.8.
 
-
 """The color encodings supported by napari in order of precedence."""
 COLOR_ENCODINGS = (
     ContinuousColorEncoding,
