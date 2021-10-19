@@ -131,14 +131,6 @@ class _QtMainWindow(QMainWindow):
         else:
             self.qt_viewer.setToolTip("")
 
-        # Connect the notification dispacther to correctly propagate
-        # notifications from threads. See: `napari._qt.qt_event_loop::get_app`
-        application_instance = QApplication.instance()
-        if application_instance:
-            application_instance._dispatcher.sig_notified.connect(
-                self.show_notification
-            )
-
     @classmethod
     def current(cls):
         return cls._instances[-1] if cls._instances else None
@@ -1180,7 +1172,7 @@ class Window:
         self.qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
         for menu in self.file_menu._INSTANCES:
             try:
-                menu.close()
+                menu._destroy()
             except RuntimeError:
                 pass
 

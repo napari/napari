@@ -297,13 +297,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._experimental_slicing_plane = SlicingPlane(
             thickness=1, enabled=False
         )
+        # Whether to calculate clims on the next set_view_slice
+        self._should_calc_clims = False
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
-                dtype = getattr(data, 'dtype', None)
-                if np.issubdtype(normalize_dtype(dtype), np.integer):
+                dtype = normalize_dtype(getattr(data, 'dtype', None))
+                if np.issubdtype(dtype, np.integer):
                     self.contrast_limits_range = get_dtype_limits(dtype)
                 else:
                     self.contrast_limits_range = (0, 1)
+                self._should_calc_clims = dtype != np.uint8
             else:
                 self.contrast_limits_range = self._calc_data_range()
         else:
@@ -531,18 +534,22 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         volume is displayed.  Options include:
 
         * ``translucent``: voxel colors are blended along the view ray until
-          the result is opaque.
+            the result is opaque.
         * ``mip``: maximum intensity projection. Cast a ray and display the
-          maximum value that was encountered.
-        * ``additive``: voxel colors are added along the view ray until the
-          result is saturated.
-        * ``iso``: isosurface. Cast a ray until a certain threshold is
-          encountered. At that location, lighning calculations are performed to
-          give the visual appearance of a surface.
+            maximum value that was encountered.
+        * ``minip``: minimum intensity projection. Cast a ray and display the
+            minimum value that was encountered.
         * ``attenuated_mip``: attenuated maximum intensity projection. Cast a
-          ray and attenuate values based on integral of encountered values,
-          display the maximum value that was encountered after attenuation.
-          This will make nearer objects appear more prominent.
+            ray and attenuate values based on integral of encountered values,
+            display the maximum value that was encountered after attenuation.
+            This will make nearer objects appear more prominent.
+        * ``additive``: voxel colors are added along the view ray until
+            the result is saturated.
+        * ``iso``: isosurface. Cast a ray until a certain threshold is
+            encountered. At that location, lighning calculations are
+            performed to give the visual appearance of a surface.
+        * ``average``: average intensity projection. Cast a ray and display the
+            average of values that were encountered.
 
         Returns
         -------
@@ -649,7 +656,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 for d in self._displayed_axes:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
-                        self.corner_pixels[1, d] + 1,
+                        self.corner_pixels[1, d],
                         1,
                     )
                 self._transforms['tile2data'].translate = (
@@ -691,8 +698,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self, image_indices, image, thumbnail_source
         )
         self._load_slice(data)
-        if self._keep_autoscale:
+        if self._keep_autoscale or self._should_calc_clims:
             self.reset_contrast_limits()
+            self._should_calc_clims = False
 
     @property
     def _SliceDataClass(self):
