@@ -160,17 +160,16 @@ jobs:
           )
           validate_recipe_outputs "%FEEDSTOCK_NAME%"
           if errorlevel 1 exit 1
+          echo platform-pkgs=%CONDA_BLD_PATH%\win-64 >> %GITHUB_ENV%
 
-      - name: Prepare artifacts
+      - name: Prepare artifacts (Unix)
+        if: runner.os != 'Windows'
         working-directory: napari-feedstock
         shell: bash -l {0}
         run: |
           case ${{ runner.os }} in
             macOS)
               echo "platform-pkgs=${CONDA_BLD_PATH}/osx-64" >> $GITHUB_ENV
-              ;;
-            Windows)
-              echo platform-pkgs=${CONDA_BLD_PATH//\\//}/win-64 >> $GITHUB_ENV
               ;;
             Linux)
               echo "platform-pkgs=$(pwd)/build_artifacts/linux-64" >> $GITHUB_ENV
