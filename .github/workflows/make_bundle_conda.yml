@@ -27,6 +27,8 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
+    env:
+      CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
 
     steps:
       - name: Checkout conda-forge feedstock
