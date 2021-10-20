@@ -79,7 +79,7 @@ jobs:
               source_path="/home/conda/feedstock_root/napari-source"
               ;;
             *)
-              source_path=$(cwd)/napari-source
+              source_path=$(pwd)/napari-source
               ;;
           esac
 
@@ -170,14 +170,14 @@ jobs:
         uses: actions/upload-artifact@v2
         if: env.noarch-pkgs
         with:
-          name: napari-${{ env.NAPARI_VERSION }}-${{ github.run_id }}
+          name: napari-${{ env.NAPARI_VERSION }}
           path: ${{ env.noarch-pkgs }}/*.tar.bz2
 
       - name: Upload Menu Artifact
         uses: actions/upload-artifact@v2
         if: false
         with:
-          name: napari-menu-${{ runner.os }}-${{ env.NAPARI_VERSION }}-${{ github.run_id }}
+          name: ${{ runner.os }}-napari-menu-${{ env.NAPARI_VERSION }}
           path: ${{ env.platform-pkgs }}/*.tar.bz2
 
   bundle:
@@ -238,6 +238,16 @@ jobs:
           ARTIFACT_NAME=`python bundle_conda.py --artifact-name`
           echo "artifact-name=${ARTIFACT_NAME}" >> $GITHUB_ENV
           echo "Expected artifact name: ${ARTIFACT_NAME}"
+
+      - name: Download local build artifacts (napari)
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{}}
+
+      - name: Download local build artifacts (napari-menu)
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{}}
 
       - name: Make Bundle (Linux)
         if: runner.os == 'Linux'
