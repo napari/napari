@@ -101,7 +101,6 @@ jobs:
 
           conda-smithy rerender
           git diff
-          rm -rf .git  # prevent weird setuptools_scm problems with nested repos in linux
 
       - name: Run build scripts (Linux)
         if: runner.os == 'Linux'
