@@ -5,19 +5,18 @@ from __future__ import annotations
 
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, ChainMap, Final, Optional
+from typing import Any, ChainMap, Dict, Final, Optional
 from weakref import WeakKeyDictionary
 
-from psygnal import Signal
-
-if TYPE_CHECKING:
-    from ..events.event import Event
+from ..events.event import Event, EventEmitter
 
 _null = object()
 
 
 class Context(ChainMap):
-    changed = Signal(set)  # the set of keys that changed
+    def __init__(self, *maps: Dict[str, Any]) -> None:
+        super().__init__(*maps)
+        self.changed = EventEmitter(self, 'changed')
 
     @contextmanager
     def buffered_changes(self):
