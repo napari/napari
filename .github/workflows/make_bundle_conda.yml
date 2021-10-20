@@ -32,7 +32,16 @@ jobs:
       - name: Checkout napari source
         uses: actions/checkout@v2
         with:
-          path: napari-feedstock/napari-source
+          path: napari-source
+
+      - name: Checkout conda-forge feedstock
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          # TODO: Match upstream, not fork!
+          repository: jaimergp/napari-feedstock
+          ref: menuinst
+          path: napari-feedstock
 
       - name: Create environment.yml
         shell: bash
@@ -61,22 +70,11 @@ jobs:
 
       - name: install napari
         shell: bash -l {0}
-        working-directory: napari-feedstock/napari-source
+        working-directory: napari-source
         run: |
           pip install -e . --no-deps
           version=$(python bundle.py --version)
           echo "NAPARI_VERSION=${version}" >> $GITHUB_ENV
-
-        # Checkout feedstock only _after_ getting the version
-        # Otherwise setuptools_scm gets confused with two nested repos
-      - name: Checkout conda-forge feedstock
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          # TODO: Match upstream, not fork!
-          repository: jaimergp/napari-feedstock
-          ref: menuinst
-          path: napari-feedstock
 
       - name: Patch and rerender feedstock
         shell: bash -l {0}
@@ -89,10 +87,10 @@ jobs:
               source_path="/home/conda/feedstock_root/napari-source"
               ;;
             macOS)
-              source_path="${{ github.workspace }}/napari-feedstock/napari-source"
+              source_path="${{ github.workspace }}/napari-source"
               ;;
             Windows)
-              source_path="${GITHUB_WORKSPACE//\\//}/napari-feedstock/napari-source"
+              source_path="${GITHUB_WORKSPACE//\\//}/napari-source"
               ;;
             esac
 
@@ -103,6 +101,7 @@ jobs:
 
           conda-smithy rerender
           git diff
+          rm -rf .git  # prevent weird setuptools_scm problems with nested repos in linux
 
       - name: Run build scripts (Linux)
         if: runner.os == 'Linux'
@@ -113,6 +112,7 @@ jobs:
           CONFIG: linux_64_
           CI: github_actions
         run: |
+          mv ${GITHUB_WORKSPACE}/napari-source .
           ./.scripts/run_docker_build.sh
 
       - name: Run build scripts (MacOS)
