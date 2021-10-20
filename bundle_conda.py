@@ -45,15 +45,15 @@ else:
     raise RuntimeError(f"Unrecognized OS: {sys.platform}")
 
 
-VERSION = "0.4.11"  # overwriting for testing purposes
 OUTPUT_FILENAME = f"{APP}-{VERSION}-{OS}-{ARCH}.{EXT}"
 
 
 def _use_local():
     """
     Detect whether we need to build Napari locally
-    (dev snapshots).
+    (dev snapshots). This env var is set in the GHA workflow.
     """
+    return os.environ.get("CONSTRUCTOR_USE_LOCAL")
 
 
 def _constructor(version=VERSION):

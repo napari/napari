@@ -47,7 +47,7 @@ jobs:
         shell: bash
         run: |
           cat <<EOF > environment.yml
-          name: smithy
+          name: test
           channels:
             - conda-forge
           dependencies:
@@ -58,8 +58,11 @@ jobs:
             - ruamel.yaml
           EOF
 
-      - name: install micromamba
-        uses: mamba-org/provision-with-micromamba@main
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniforge-version: latest
+          environment-file: environment.yml
 
       - name: install napari
         shell: bash -l {0}
@@ -117,12 +120,6 @@ jobs:
             export IS_PR_BUILD="False"
           fi
           ./.scripts/run_osx_build.sh
-
-      - name: Install Miniconda for windows
-        if: runner.os == 'Windows'
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniforge-version: latest
 
       - name: Run build scripts (Windows)
         if: runner.os == 'Windows'
@@ -188,6 +185,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ github.token }}
       DISPLAY: ":99.0"
+      CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
     strategy:
       fail-fast: false
       matrix:
@@ -242,12 +240,30 @@ jobs:
       - name: Download local build artifacts (napari)
         uses: actions/download-artifact@v2
         with:
-          name: ${{}}
+          name: napari-${{ env.version }}
+          path: ${{ env.CONDA_BLD_PATH }}
 
       - name: Download local build artifacts (napari-menu)
         uses: actions/download-artifact@v2
         with:
-          name: ${{}}
+          name: ${{ runner.os }}-napari-menu-${{ env.version }}
+          path: ${{ env.CONDA_BLD_PATH }}
+
+      - name: Index local packages (if any)
+        shell: bash -l {0}
+        run: |
+          cd ${CONDA_BLD_PATH}
+          pkgs=$(shopt -s nullglob dotglob; echo "${CONDA_BLD_PATH}/*.tar.bz2")
+          if (( ${#pkgs} )); then
+            subdir=$(conda info --json | jq -r .platform)
+            mkdir $subdir noarch
+            mv *napari-menu*.tar.bz2 $subdir
+            mv *napari*.tar.bz2 noarch
+            conda index .
+            echo "CONSTRUCTOR_USE_LOCAL=1" >> $GITHUB_ENV
+          else
+            echo "No local packages found, assuming latest release"
+          fi
 
       - name: Make Bundle (Linux)
         if: runner.os == 'Linux'
@@ -269,10 +285,12 @@ jobs:
         with:
           name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
           path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+
       - name: Get Release
         if: startsWith(github.ref, 'refs/tags/v')
         id: get_release
         uses: bruceadams/get-release@v1.2.2
+
       - name: Upload Release Asset
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-release-asset@v1
@@ -281,6 +299,7 @@ jobs:
           asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
           asset_name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
           asset_content_type: application/zip
+
       - name: Upload Nightly Build Asset
         if: ${{ github.event_name == 'schedule' }}
         uses: WebFreak001/deploy-nightly@v1.1.0
@@ -294,6 +313,7 @@ jobs:
           asset_name: napari-${{ runner.os }}-${{ env.arch-suffix }}.zip
           asset_content_type: application/zip
           max_releases: 1
+
       - name: Update latest tag
         uses: EndBug/latest-tag@latest
         if: ${{ github.event_name == 'schedule' }}
