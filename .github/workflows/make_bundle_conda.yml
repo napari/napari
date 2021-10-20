@@ -90,7 +90,7 @@ jobs:
               source_path="${{ github.workspace }}/napari-feedstock/napari-source"
               ;;
             Windows)
-              source_path="${{ github.workspace }}\napari-feedstock\napari-source"
+              source_path="${GITHUB_WORKSPACE//\\//}/napari-feedstock/napari-source"
               ;;
             esac
 
