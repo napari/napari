@@ -260,7 +260,7 @@ jobs:
       - name: Download local build artifacts (napari-menu)
         uses: actions/download-artifact@v2
         with:
-          name: ${{ runner.os }}-napari-menu-${{ env.version }}
+          name: napari-menu-${{ env.version }}-${{ runner.os }}
           path: ${{ env.CONDA_BLD_PATH }}
 
       - name: Index local packages (if any)
