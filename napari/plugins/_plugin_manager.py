@@ -696,6 +696,17 @@ class NapariPluginManager(PluginManager):
         ext_map = getattr(self, f'_extension2{type_}')
         if isinstance(extensions, str):
             extensions = [extensions]
+
+        # Remove extensions first
+        to_remove = []
+        for ext, plugin_ext in ext_map.items():
+            if plugin == plugin_ext:
+                to_remove.append(ext)
+
+        for ext in to_remove:
+            ext_map.pop(ext)
+
+        # Assign extensions to plugin
         for ext in extensions:
             if not ext.startswith("."):
                 ext = f".{ext}"

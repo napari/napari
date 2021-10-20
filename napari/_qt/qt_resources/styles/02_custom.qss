@@ -429,6 +429,10 @@ ShortcutEditor QHeaderView::section {
   border: None;
 }
 
+QtReaderWriterList QHeaderView::section {
+  padding: 2px;
+  border: None;
+}
 
 /* ------------ Plugin Sorter ------------ */
 

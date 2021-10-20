@@ -328,8 +328,8 @@ class QtPluginSorter(QWidget):
         self.hook_list.order_changed.connect(self._change_settings_plugins)
         self.hook_list.on_changed.connect(self._change_settings_plugins)
 
-        title = QLabel(trans._('Plugin Sorter'))
-        title.setObjectName("h3")
+        self._title = QLabel(trans._('Plugin Sorter'))
+        self._title.setObjectName("h3")
 
         instructions = QLabel(
             trans._(
@@ -352,7 +352,7 @@ class QtPluginSorter(QWidget):
         self.docstring.hide()
 
         layout = QVBoxLayout(self)
-        layout.addWidget(title)
+        layout.addWidget(self._title)
         layout.addWidget(instructions)
         layout.addWidget(self.hook_combo_box)
         layout.addLayout(doc_lay)

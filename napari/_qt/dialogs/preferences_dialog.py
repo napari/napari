@@ -28,6 +28,8 @@ class PreferencesDialog(QDialog):
         "call_order": {"ui:widget": "plugins"},
         "highlight_thickness": {"ui:widget": "highlight"},
         "shortcuts": {"ui:widget": "shortcuts"},
+        "extension2reader": {"ui:widget": "reader_list"},
+        "extension2writer": {"ui:widget": "writer_list"},
     }
 
     resized = Signal(QSize)
@@ -70,7 +72,7 @@ class PreferencesDialog(QDialog):
 
     def keyPressEvent(self, e: 'QKeyEvent'):
         if e.key() == Qt.Key_Escape:
-            # escape key should just close the window
+            # Escape key should just close the window
             # which implies "accept"
             e.accept()
             self.accept()

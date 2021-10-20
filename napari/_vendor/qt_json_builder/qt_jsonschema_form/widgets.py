@@ -1,5 +1,6 @@
 from functools import partial
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
+from PyQt5.QtWidgets import QListWidget
 
 from qtpy import QtCore, QtGui, QtWidgets
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
@@ -9,8 +10,8 @@ from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
 from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
-
 from ...._qt.widgets.qt_spinbox import QtSpinBox
+from ...._qt.widgets.qt_list import QtReaderList, QtWriterList
 
 
 if TYPE_CHECKING:
@@ -156,6 +157,41 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
         self.description = description
 
 
+class ReaderListWidget(SchemaWidgetMixin, QtReaderList):
+    @state_property
+    def state(self) -> int:
+        return self.value()
+
+    @state.setter
+    def state(self, state: int):
+        return None
+
+    def configure(self):
+        pass
+        # self.hook_list.order_changed.connect(self.on_changed.emit)
+
+    def setDescription(self, description: str):
+        self.description = description
+
+
+class WriterListWidget(SchemaWidgetMixin, QtWriterList):
+    @state_property
+    def state(self) -> int:
+        return self.value()
+
+    @state.setter
+    def state(self, state: int):
+        return None
+
+    def configure(self):
+        pass
+        # self.hook_list.order_changed.connect(self.on_changed.emit)
+
+    def setDescription(self, description: str):
+        self.description = description
+
+
+
 class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
     @state_property
     def state(self) -> int:
@@ -164,10 +200,28 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
     @state.setter
     def state(self, state: int):
         return None
-        # self.setValue(state)
 
     def configure(self):
+        self._title.setVisible(False)
         self.hook_list.order_changed.connect(self.on_changed.emit)
+
+    def setDescription(self, description: str):
+        self.description = description
+
+
+class ExtensionListWidget(SchemaWidgetMixin, QListWidget):
+
+    @state_property
+    def state(self) -> int:
+        # Return a dictionary.
+        return {}
+
+    @state.setter
+    def state(self, state: int):
+        return None
+
+    # def configure(self):
+    #     self.hook_list.order_changed.connect(self.on_changed.emit)
 
     def setDescription(self, description: str):
         self.description = description
