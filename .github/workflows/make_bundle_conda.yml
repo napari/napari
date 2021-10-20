@@ -156,8 +156,8 @@ jobs:
               echo "platform-pkgs=${CONDA//\\//}/conda-bld/win-64" >> $GITHUB_ENV
               ;;
             Linux)
-              echo "platform-pkgs=build_artifacts/linux-64" >> $GITHUB_ENV
-              echo "noarch-pkgs=build_artifacts/noarch" >> $GITHUB_ENV
+              echo "platform-pkgs=$(pwd)/build_artifacts/linux-64" >> $GITHUB_ENV
+              echo "noarch-pkgs=$(pwd)/build_artifacts/noarch" >> $GITHUB_ENV
               ;;
             esac
 
@@ -170,7 +170,6 @@ jobs:
 
       - name: Upload Menu Artifact
         uses: actions/upload-artifact@v2
-        if: false
         with:
           name: ${{ runner.os }}-napari-menu-${{ env.NAPARI_VERSION }}
           path: ${{ env.platform-pkgs }}/*.tar.bz2
