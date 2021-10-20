@@ -793,3 +793,34 @@ def test_tensorstore_image():
     )
     layer = Image(data)
     assert np.all(layer.data == data)
+
+
+@pytest.mark.parametrize(
+    "start_position, end_position, view_direction, vector, expected_value",
+    [
+        # drag vector parallel to view direction
+        # projected onto perpendicular vector
+        ([0, 0, 0], [0, 0, 1], [0, 0, 1], [1, 0, 0], 0),
+
+        # same as above, projection onto multiple perpendicular vectors
+        # should produce multiple results
+        ([0, 0, 0], [0, 0, 1], [0, 0, 1], [[1, 0, 0], [0, 1, 0]], [0, 0]),
+
+        # drag vector perpendicular to view direction
+        # projected onto itself
+        ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),
+
+        # drag vector perpendicular to view direction
+        # projected onto itself
+        ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),
+    ]
+)
+def test_projected_distance_from_mouse_drag(
+        start_position, end_position, view_direction, vector, expected_value
+):
+    image = Image(np.ones((32, 32, 32)))
+    image._slice_dims(point=[0, 0, 0], ndisplay=3)
+    result = image.projected_distance_from_mouse_drag(
+        start_position, end_position, view_direction, vector
+    )
+    assert np.allclose(result, expected_value)

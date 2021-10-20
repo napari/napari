@@ -37,8 +37,8 @@ def drag_data_to_projected_distance(
     vector = np.atleast_2d(vector)
 
     # Store the start and end positions in world coordinates
-    start_position = np.array(start_position)  # [layer._dims_mask]
-    end_position = np.array(end_position)  # [layer._dims_mask]
+    start_position = np.array(start_position)
+    end_position = np.array(end_position)
 
     # Project the start and end positions onto a pseudo-canvas, a plane
     # parallel to the rendered canvas in data coordinates.
@@ -51,5 +51,5 @@ def drag_data_to_projected_distance(
         end_position_canvas - start_position_canvas
     )
 
-    # Project the drag vector onto the specified axis and return the distance.
+    # Project the drag vector onto the specified vector(s), return the distance
     return np.einsum('j, ij -> i', drag_vector_canvas, vector).squeeze()
