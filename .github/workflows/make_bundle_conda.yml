@@ -74,9 +74,8 @@ jobs:
         working-directory: napari-source
         run: |
           pip install -e . --no-deps -vvv
-          cat napari/_version.py
           version=$(python bundle.py --version)
-          echo "NAPARI_VERSION=${version}" >> $GITHUB_ENV
+          echo NAPARI_VERSION=${version} >> $GITHUB_ENV
 
       - name: Patch and rerender feedstock
         shell: bash -l {0}
