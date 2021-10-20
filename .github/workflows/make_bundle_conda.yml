@@ -29,15 +29,6 @@ jobs:
           - windows-latest
 
     steps:
-      - name: Checkout conda-forge feedstock
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          # TODO: Match upstream, not fork!
-          repository: jaimergp/napari-feedstock
-          ref: menuinst
-          path: napari-feedstock
-
       - name: Checkout napari source
         uses: actions/checkout@v2
         with:
@@ -75,6 +66,17 @@ jobs:
           pip install -e . --no-deps
           version=$(python bundle.py --version)
           echo "NAPARI_VERSION=${version}" >> $GITHUB_ENV
+
+        # Checkout feedstock only _after_ getting the version
+        # Otherwise setuptools_scm gets confused with two nested repos
+      - name: Checkout conda-forge feedstock
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          # TODO: Match upstream, not fork!
+          repository: jaimergp/napari-feedstock
+          ref: menuinst
+          path: napari-feedstock
 
       - name: Patch and rerender feedstock
         shell: bash -l {0}
