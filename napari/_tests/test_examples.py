@@ -22,6 +22,11 @@ skip = [
     'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
     'new_theme.py',  # testing theme is extremely slow on CI
 ]
+
+
+if os.environ.get('MIN_REQ', '') == '1':
+    skip.extend(['spheres.py', 'clipping_planes_interactive.py'])
+
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)

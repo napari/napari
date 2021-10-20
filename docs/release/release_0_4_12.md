@@ -110,7 +110,8 @@ See the full list of merged pull requests below for further delails!
 - Remove make_napari_viewer in vispy tests. (#3486)
 - Update ubuntu image to 18.04 (#3348)
 - Bundle: canonicalize arch names (#3349)
-
+- Fix min_req text matrix by skiping test (#3496)
+- Bundle: make fork multiprocessing default in macos again (#3498)
 
 ## 22 authors added to this release (alphabetical)
 
