@@ -27,8 +27,6 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
-    env:
-      CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
 
     steps:
       - name: Checkout conda-forge feedstock
@@ -83,16 +81,23 @@ jobs:
         working-directory: napari-feedstock
         run: |
           set -euxo pipefail
-          source_path=$(pwd)/napari-source
-          if [[ ${{ runner.os }} == Linux ]]; then
+          case ${{ runner.os }} in
+            Linux)
               # This will be path once mounted in Docker
               source_path="/home/conda/feedstock_root/napari-source"
-          fi
+              ;;
+            MacOS)
+              source_path="${{ github.workspace }}/napari-feedstock/napari-source"
+              ;;
+            Windows)
+              source_path="${{ github.workspace }}\napari-feedstock\napari-source"
+              ;;
+            esac
 
           sed -i.bak -e "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" \
                      -e "s|  git_url:.*|  path: ${source_path}|" \
-                     -e "s|  git_rev:.*||" recipe/meta.yaml \
-                    recipe/meta.yaml
+                     -e "s|  git_rev:.*||"  \
+                     recipe/meta.yaml
 
           conda-smithy rerender
           git diff
@@ -115,6 +120,7 @@ jobs:
         env:
           CONFIG: osx_64_
           CI: github_actions
+          CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
         run: |
           export FEEDSTOCK_NAME="$(basename $GITHUB_REPOSITORY)"
           export GIT_BRANCH="$(basename $GITHUB_REF)"
@@ -133,6 +139,7 @@ jobs:
           CONFIG: win_64_
           PYTHONUNBUFFERED: 1
           CI: github_actions
+          CONDA_BLD_PATH: ${{ github.workspace }}\conda-bld
         run: |
           call activate base
           conda.exe install -c conda-forge 'python=3.6' conda-build conda conda-forge-ci-setup=3 pip
@@ -177,7 +184,7 @@ jobs:
       - name: Upload Menu Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ runner.os }}-napari-menu-${{ env.NAPARI_VERSION }}
+          name: napari-menu-${{ env.NAPARI_VERSION }}-${{ runner.os }}
           path: ${{ env.platform-pkgs }}/*.tar.bz2
 
   bundle:
