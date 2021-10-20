@@ -321,7 +321,9 @@ class QtViewer(QSplitter):
         self.canvas.events.resize.connect(
             self.text_overlay._on_position_change
         )
-        self.interaction_box = VispyInteractionBox()
+        self.interaction_box = VispyInteractionBox(
+            self.viewer, parent=self.view.scene, order=1e6 + 3
+        )
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
