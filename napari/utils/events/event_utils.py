@@ -62,3 +62,18 @@ def connect_no_arg(emitter: Emitter, obj, attr: str):
     emitter.connect(_cb)
     # as in connect_setattr
     # weakref.finalize(obj, emitter.disconnect, _cb)
+
+
+def transfer_connections(old_object, new_object):
+    for event_name, old_emitter in old_object.events.emitters.items():
+        new_emitter = getattr(new_object.events, event_name)
+        for cb in old_emitter.callbacks:
+            # Self-connections should not be transferred because we assume
+            # that the new instance will setup the new connection itself.
+            is_self_connection = False
+            if hasattr(cb, 'source'):
+                is_self_connection = cb.source is old_object
+            elif isinstance(cb, tuple):
+                is_self_connection = cb[0]() is old_object
+            if not is_self_connection:
+                new_emitter.connect(cb)
