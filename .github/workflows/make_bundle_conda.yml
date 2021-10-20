@@ -58,6 +58,10 @@ jobs:
             - ruamel.yaml
           EOF
 
+          if [[ ${{ runner.os }} == Windows ]]; then
+            echo "  - m2-sed" >> environment.yml
+          fi
+
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2
         with:
