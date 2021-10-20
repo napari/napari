@@ -17,9 +17,16 @@ name: Conda
 
 jobs:
   conda-build:
-    name: Package
-    runs-on: ubuntu-latest
+    name: Package ${{ runner.os }}
+    runs-on: ${{ matrix.os }}
     if: github.repository == 'napari/napari'
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
 
     steps:
       - name: Checkout conda-forge feedstock
@@ -67,32 +74,111 @@ jobs:
         working-directory: napari-feedstock
         run: |
           set -euxo pipefail
+          case ${{ runner.os }} in
+            Linux)
+              source_path="/home/conda/feedstock_root/napari-source"
+              ;;
+            *)
+              source_path=$(cwd)/napari-source
+              ;;
+          esac
+
           sed -i "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" recipe/meta.yaml
           # This will be path once mounted in Docker
-          sed -i "s|  git_url:.*|  path: /home/conda/feedstock_root/napari-source|" recipe/meta.yaml
+          sed -i "s|  git_url:.*|  path: ${source_path}|" recipe/meta.yaml
           sed -i "s|  git_rev:.*||" recipe/meta.yaml
           conda-smithy rerender
           git diff
 
-      - name: Run build scripts
+      - name: Run build scripts (Linux)
+        if: runner.os == 'Linux'
         shell: bash -l {0}
         working-directory: napari-feedstock
-        run: .scripts/run_docker_build.sh
         env:
           DOCKER_IMAGE: quay.io/condaforge/linux-anvil-comp7
           CONFIG: linux_64_
+          CI: github_actions
+        run: |
+          ./.scripts/run_docker_build.sh
 
-      - name: List artifacts
+      - name: Run build scripts (MacOS)
+        if: runner.os == 'macOS'
+        shell: bash -l {0}
+        working-directory: napari-feedstock
+        env:
+          CONFIG: osx_64_
+          CI: github_actions
+        run: |
+          export FEEDSTOCK_NAME="$(basename $GITHUB_REPOSITORY)"
+          export GIT_BRANCH="$(basename $GITHUB_REF)"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            export IS_PR_BUILD="True"
+          else
+            export IS_PR_BUILD="False"
+          fi
+          ./.scripts/run_osx_build.sh
+
+      - name: Install Miniconda for windows
+        if: runner.os == 'Windows'
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniforge-version: latest
+
+      - name: Run build scripts (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        working-directory: napari-feedstock
+        env:
+          CONFIG: win_64_
+          PYTHONUNBUFFERED: 1
+          CI: github_actions
+        run: |
+          call activate base
+          conda.exe install -c conda-forge 'python=3.6' conda-build conda conda_forge_ci_setup=3 pip
+          if errorlevel 1 exit 1
+          setup_conda_rc .\ .\recipe .\.ci_support\%CONFIG%.yaml
+          if errorlevel 1 exit 1
+          conda.exe build .\recipe -m .ci_support\%CONFIG%.yaml
+          if errorlevel 1 exit 1
+          set "FEEDSTOCK_NAME=%GITHUB_REPOSITORY:*/=%"
+          set "GIT_BRANCH=%GITHUB_REF:refs/heads/=%"
+          if /i "%GITHUB_EVENT_NAME%" == "pull_request" (
+            set "IS_PR_BUILD=True"
+          ) else (
+            set "IS_PR_BUILD=False"
+          )
+          validate_recipe_outputs "%FEEDSTOCK_NAME%"
+          if errorlevel 1 exit 1
+
+      - name: Prepare artifacts
         working-directory: napari-feedstock
         run: |
-          ls -alh build_artifacts/{linux-64,win-64,osx-64,noarch}/*.tar.bz2
+          case ${{ runner.os }} in
+            macOS)
+              echo "platform-pkgs=${HOME}/miniforge3/conda-bld/osx-64" >> $GITHUB_ENV
+              ;;
+            Windows)
+              echo "platform-pkgs=${CONDA//\\//}/conda-bld/win-64" >> $GITHUB_ENV
+              ;;
+            Linux)
+              echo "platform-pkgs=build_artifacts/linux-64" >> $GITHUB_ENV
+              echo "noarch-pkgs=build_artifacts/noarch" >> $GITHUB_ENV
+              ;;
+            esac
 
-      # - name: Upload Artifact
-      #   uses: actions/upload-artifact@v2
-      #   if: false
-      #   with:
-      #     name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
-      #     path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+      - name: Upload Napari Artifact
+        uses: actions/upload-artifact@v2
+        if: env.noarch-pkgs
+        with:
+          name: napari-${{ env.NAPARI_VERSION }}-${{ github.run_id }}
+          path: ${{ env.noarch-pkgs }}/*.tar.bz2
+
+      - name: Upload Menu Artifact
+        uses: actions/upload-artifact@v2
+        if: false
+        with:
+          name: napari-menu-${{ runner.os }}-${{ env.NAPARI_VERSION }}-${{ github.run_id }}
+          path: ${{ env.platform-pkgs }}/*.tar.bz2
 
   bundle:
     name: Bundle ${{ matrix.platform }}
