@@ -55,7 +55,12 @@ class progress(tqdm):
     """
 
     monitor_interval = 0  # set to 0 to disable the thread
-    all_progress = EventedSet()  # track all currently active progress objects
+    # to give us a way to hook into the creation and update of progress objects
+    # without progress knowing anything about a Viewer, we track all instances in
+    # this evented *class* attribute, accessed through `progress.all_progress`
+    # this allows the ActivityDialog to find out about new progress objects and
+    # hook up GUI progress bars to its update events
+    all_progress = EventedSet()
 
     def __init__(
         self,
