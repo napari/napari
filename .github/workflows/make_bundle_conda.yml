@@ -77,19 +77,17 @@ jobs:
         working-directory: napari-feedstock
         run: |
           set -euxo pipefail
-          case ${{ runner.os }} in
-            Linux)
+          source_path=$(pwd)/napari-source
+          if [[ ${{ runner.os }} == Linux ]]; then
+              # This will be path once mounted in Docker
               source_path="/home/conda/feedstock_root/napari-source"
-              ;;
-            *)
-              source_path=$(pwd)/napari-source
-              ;;
-          esac
+          fi
 
-          sed -i "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" recipe/meta.yaml
-          # This will be path once mounted in Docker
-          sed -i "s|  git_url:.*|  path: ${source_path}|" recipe/meta.yaml
-          sed -i "s|  git_rev:.*||" recipe/meta.yaml
+          sed -i.bak -e "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" \
+                     -e "s|  git_url:.*|  path: ${source_path}|" \
+                     -e "s|  git_rev:.*||" recipe/meta.yaml \
+                    recipe/meta.yaml
+
           conda-smithy rerender
           git diff
 
