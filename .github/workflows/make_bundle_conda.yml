@@ -133,7 +133,7 @@ jobs:
           CI: github_actions
         run: |
           call activate base
-          conda.exe install -c conda-forge 'python=3.6' conda-build conda conda_forge_ci_setup=3 pip
+          conda.exe install -c conda-forge 'python=3.6' conda-build conda conda-forge-ci-setup=3 pip
           if errorlevel 1 exit 1
           setup_conda_rc .\ .\recipe .\.ci_support\%CONFIG%.yaml
           if errorlevel 1 exit 1
