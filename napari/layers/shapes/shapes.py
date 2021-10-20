@@ -474,7 +474,6 @@ class Shapes(Layer):
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
-            text=Event,
         )
 
         # Flag set to false to block thumbnail refresh
@@ -2227,10 +2226,11 @@ class Shapes(Layer):
     def text(self, text):
         self._text = TextManager._from_layer(
             text=text,
-            n_text=self.nshapes,
+            n_text=len(self.data),
             properties=self.properties,
+            current_manager=getattr(self, '_text', None),
         )
-        self.events.text()
+        self._text.events(Event('TODO: what should this be?'))
 
     def refresh_text(self):
         """Refresh the text values.

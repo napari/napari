@@ -32,14 +32,14 @@ def test_transfer_connections_with_no_external_connections_then_no_change():
     b_cbs_before = copy(new_object.events.b.callbacks)
     c_cbs_before = copy(new_object.events.c.callbacks)
 
-    transfer_connections(old_object, new_object)
+    transfer_connections(old_object.events, new_object.events)
 
     assert new_object.events.a.callbacks == a_cbs_before
     assert new_object.events.b.callbacks == b_cbs_before
     assert new_object.events.c.callbacks == c_cbs_before
 
 
-def test_transfer_connection_with_external_connections_then_added():
+def test_transfer_connections_with_external_connections_then_added():
     old_object = EventedObject()
     old_object.events.a.connect(_event_callback)
     old_object.events.c.connect(_event_callback)
@@ -48,8 +48,19 @@ def test_transfer_connection_with_external_connections_then_added():
     b_cbs_before = copy(new_object.events.b.callbacks)
     c_cbs_before = copy(new_object.events.c.callbacks)
 
-    transfer_connections(old_object, new_object)
+    transfer_connections(old_object.events, new_object.events)
 
     assert new_object.events.a.callbacks == (_event_callback,) + a_cbs_before
     assert new_object.events.b.callbacks == b_cbs_before
     assert new_object.events.c.callbacks == (_event_callback,) + c_cbs_before
+
+
+def test_transfer_connections_from_emitter_group_then_added():
+    old_object = EventedObject()
+    old_object.events.connect(_event_callback)
+    new_object = EventedObject()
+    cbs_before = new_object.events.callbacks
+
+    transfer_connections(old_object.events, new_object.events)
+
+    assert new_object.events.callbacks == (_event_callback,) + cbs_before

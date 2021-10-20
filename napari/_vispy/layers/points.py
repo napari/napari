@@ -27,16 +27,10 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer._face.events.colors.connect(self._on_data_change)
         self.layer._face.events.color_properties.connect(self._on_data_change)
-        self.layer.events.text.connect(self._on_text_instance_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
 
         self._on_data_change()
-
-    def _on_text_instance_change(self, event=None):
-        self.layer.text.events.connect(self._on_text_change)
-        self._update_text(update_node=False)
-        self._on_blending_change(None)
 
     def _on_data_change(self, event=None):
         if len(self.layer._indices_view) > 0:

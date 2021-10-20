@@ -8,6 +8,7 @@ from pydantic import PositiveInt, validator
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
+from ...utils.events.event_utils import transfer_connections
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor, TextMode
@@ -200,6 +201,7 @@ class TextManager(EventedModel):
         text: Union['TextManager', dict, str, None],
         n_text: int,
         properties: Dict[str, np.ndarray],
+        current_manager: Optional['TextManager'],
     ) -> 'TextManager':
         """Create a TextManager from a layer.
 
@@ -213,6 +215,8 @@ class TextManager(EventedModel):
             the number of elements (e.g. points) in a layer.
         properties : Dict[str, np.ndarray]
             The properties of a layer.
+        current_manager: Optional[TextManager]
+            The layer's existing TextManager.
 
         Returns
         -------
@@ -226,7 +230,10 @@ class TextManager(EventedModel):
             kwargs = {'text': text}
         kwargs['n_text'] = n_text
         kwargs['properties'] = properties
-        return cls(**kwargs)
+        manager = cls(**kwargs)
+        if current_manager is not None:
+            transfer_connections(current_manager.events, manager.events)
+        return manager
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):

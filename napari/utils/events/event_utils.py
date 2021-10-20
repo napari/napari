@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import weakref
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
+
+from napari.utils.events import EmitterGroup
+from napari.utils.events.event import Callback, CallbackRef
 
 if TYPE_CHECKING:
     from typing import Callable
@@ -64,16 +67,40 @@ def connect_no_arg(emitter: Emitter, obj, attr: str):
     # weakref.finalize(obj, emitter.disconnect, _cb)
 
 
-def transfer_connections(old_object, new_object):
-    for event_name, old_emitter in old_object.events.emitters.items():
-        new_emitter = getattr(new_object.events, event_name)
+def transfer_connections(old_group: EmitterGroup, new_group: EmitterGroup):
+    """Transfers connections from an old emitter group to a new one.
+
+    This is useful when an attribute of a type with an EmitterGroup, like an
+    EventedModel, is reassigned to a new instance, but you want to maintain the
+    behavior triggered by any connections made.
+
+    The existing connections in the old emitter group are not removed, so the
+    transfer acts like a copy rather than a move.
+
+    Self-connections are not transferred because it is assumed that the new
+    instance will setup the new self-connections itself.
+
+    Parameters
+    ----------
+    old_group : EmitterGroup
+        The emitter group from which to transfer connections.
+    new_group : EmitterGroup
+        The emitter group to which to transfer connections.
+    """
+    old_source = old_group.source
+    for cb in old_group.callbacks:
+        if _get_callback_source(cb) is not old_source:
+            new_group.connect(cb)
+    for event_name, old_emitter in old_group.emitters.items():
+        new_emitter = getattr(new_group, event_name)
         for cb in old_emitter.callbacks:
-            # Self-connections should not be transferred because we assume
-            # that the new instance will setup the new connection itself.
-            is_self_connection = False
-            if hasattr(cb, 'source'):
-                is_self_connection = cb.source is old_object
-            elif isinstance(cb, tuple):
-                is_self_connection = cb[0]() is old_object
-            if not is_self_connection:
+            if _get_callback_source(cb) is not old_source:
                 new_emitter.connect(cb)
+
+
+def _get_callback_source(callback: Union[Callback, CallbackRef]) -> Optional:
+    if hasattr(callback, 'source'):
+        return callback.source
+    if isinstance(callback, tuple):
+        return callback[0]()
+    return None
