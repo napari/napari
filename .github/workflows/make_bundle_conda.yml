@@ -86,7 +86,7 @@ jobs:
               # This will be path once mounted in Docker
               source_path="/home/conda/feedstock_root/napari-source"
               ;;
-            MacOS)
+            macOS)
               source_path="${{ github.workspace }}/napari-feedstock/napari-source"
               ;;
             Windows)
@@ -162,6 +162,7 @@ jobs:
 
       - name: Prepare artifacts
         working-directory: napari-feedstock
+        shell: bash -l {0}
         run: |
           case ${{ runner.os }} in
             macOS)
