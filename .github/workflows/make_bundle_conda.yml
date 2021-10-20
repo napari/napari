@@ -226,6 +226,7 @@ jobs:
             - python ${{ matrix.python-version }}
             - pip
             - constructor
+            - conda-build
           EOF
       - name: install micromamba
         uses: mamba-org/provision-with-micromamba@main
