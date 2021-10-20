@@ -169,7 +169,7 @@ jobs:
               echo "platform-pkgs=${CONDA_BLD_PATH}/osx-64" >> $GITHUB_ENV
               ;;
             Windows)
-              echo "platform-pkgs=${CONDA_BLD_PATH//\\//}/win-64" >> $GITHUB_ENV
+              echo platform-pkgs=${CONDA_BLD_PATH//\\//}/win-64 >> $GITHUB_ENV
               ;;
             Linux)
               echo "platform-pkgs=$(pwd)/build_artifacts/linux-64" >> $GITHUB_ENV
