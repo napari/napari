@@ -122,6 +122,7 @@ jobs:
           CI: github_actions
           CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
         run: |
+          echo "CONDA_BLD_PATH=${CONDA_BLD_PATH}" >> $GITHUB_ENV
           export FEEDSTOCK_NAME="$(basename $GITHUB_REPOSITORY)"
           export GIT_BRANCH="$(basename $GITHUB_REF)"
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
@@ -141,6 +142,7 @@ jobs:
           CI: github_actions
           CONDA_BLD_PATH: ${{ github.workspace }}\conda-bld
         run: |
+          echo "CONDA_BLD_PATH=%CONDA_BLD_PATH%" >> %GITHUB_ENV%
           call activate base
           conda.exe install -c conda-forge 'python=3.6' conda-build conda conda-forge-ci-setup=3 pip
           if errorlevel 1 exit 1
@@ -163,10 +165,10 @@ jobs:
         run: |
           case ${{ runner.os }} in
             macOS)
-              echo "platform-pkgs=${HOME}/miniforge3/conda-bld/osx-64" >> $GITHUB_ENV
+              echo "platform-pkgs=${CONDA_BLD_PATH}/osx-64" >> $GITHUB_ENV
               ;;
             Windows)
-              echo "platform-pkgs=${CONDA//\\//}/conda-bld/win-64" >> $GITHUB_ENV
+              echo "platform-pkgs=${CONDA_BLD_PATH//\\//}/win-64" >> $GITHUB_ENV
               ;;
             Linux)
               echo "platform-pkgs=$(pwd)/build_artifacts/linux-64" >> $GITHUB_ENV
