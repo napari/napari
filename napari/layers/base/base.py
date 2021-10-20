@@ -1215,10 +1215,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(normalized_vector)
 
-    @property
-    def _displayed_bounding_box(self):
+    def _display_bounding_box(self, dims_displayed_mask: np.ndarray):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
-        return self._extent_data[:, self._dims_mask].T
+        return self._extent_data[:, dims_displayed_mask].T
 
     def get_ray_intersections(
         self,
@@ -1260,25 +1259,30 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             None is returned.
         """
         if len(dims_displayed) == 3:
+            # create a mask to select the in view dimensions
+            dims_displayed_mask = np.zeros_like(position, dtype=bool)
+            dims_displayed_mask[dims_displayed] = True
+
+            # create the bounding box in data coordinates
+            bbox = self._display_bounding_box(dims_displayed_mask)
+
             # get the view direction in data coords (only displayed dims)
             if world is True:
                 view_dir = np.asarray(self._world_to_data_ray(view_direction))[
-                    self._dims_mask
+                    dims_displayed_mask
                 ]
             else:
-                view_dir = np.asarray(view_direction)[self._dims_mask]
+                view_dir = np.asarray(view_direction)[dims_displayed_mask]
 
             # Get the clicked point in data coords (only displayed dims)
             if world is True:
                 click_pos_data = np.asarray(self.world_to_data(position))[
-                    self._dims_mask
+                    dims_displayed_mask
                 ]
             else:
-                click_pos_data = np.asarray(position)[self._dims_mask]
+                click_pos_data = np.asarray(position)[dims_displayed_mask]
 
             # Determine the front and back faces
-            bbox = self._displayed_bounding_box
-
             front_face_normal, back_face_normal = find_front_back_face(
                 click_pos_data, bbox, view_dir
             )
@@ -1298,9 +1302,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
                 # add the coordinates for the axes not displayed
                 start_point = np.asarray(position)
-                start_point[self._dims_mask] = start_point_disp_dims
+                start_point[dims_displayed_mask] = start_point_disp_dims
                 end_point = np.asarray(position)
-                end_point[self._dims_mask] = end_point_disp_dims
+                end_point[dims_displayed_mask] = end_point_disp_dims
 
             else:
                 # if the click doesn't intersect the data bounding box,
