@@ -56,11 +56,6 @@ class progress(tqdm):
 
     monitor_interval = 0  # set to 0 to disable the thread
     all_progress = EventedSet()  # track all currently active progress objects
-    all_progress.events.changed.connect(
-        lambda e: print(
-            f"Added: {e.added}\nRemoved: {e.removed}\nCurrent: {progress.all_progress}"
-        )
-    )
 
     def __init__(
         self,
@@ -80,14 +75,14 @@ class progress(tqdm):
 
         if not self.desc:
             self.set_description(trans._("progress"))
-        self.is_init = False
         progress.all_progress.add(self)
+        self.is_init = False
 
     def __repr__(self) -> str:
         return self.desc
 
     def display(self, msg: str = None, pos: int = None) -> None:
-        """Update the display and emit relevant events."""
+        """Update the display and emit eta event."""
         # just plain tqdm if we don't have gui
         if not self.gui and not self.is_init:
             super().display(msg, pos)
@@ -98,6 +93,10 @@ class progress(tqdm):
             etas = str(self).split('|')[-1]
 
         self.events.eta(value=etas)
+
+    def update(self, n):
+        """Update progress value by n and emit value event"""
+        super().update(n)
         self.events.value(value=self.n)
 
     def increment_with_overflow(self):
@@ -109,12 +108,12 @@ class progress(tqdm):
             self.update(1)
 
     def set_description(self, desc):
-        """Update progress description and emits description event."""
+        """Update progress description and emit description event."""
         super().set_description(desc, refresh=True)
         self.events.description(value=desc)
 
     def close(self):
-        """Closes and deletes the progress object."""
+        """Close progress object and emit event."""
         if self.disable:
             return
         progress.all_progress.remove(self)

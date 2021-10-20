@@ -1,6 +1,16 @@
+from contextlib import contextmanager
+
 import numpy as np
 
 from napari.utils import progrange, progress
+
+
+@contextmanager
+def assert_progress_added_to_all(prog):
+    """Check prog is added to `all_progress` on init & removed on close"""
+    assert prog in progress.all_progress
+    yield
+    assert prog not in progress.all_progress
 
 
 def test_progress_with_iterable():
@@ -9,8 +19,8 @@ def test_progress_with_iterable():
     assert pbr.iterable is r
     assert pbr.n == 0
 
-    pbr.close()
-    assert pbr not in progress.all_progress
+    with assert_progress_added_to_all(pbr):
+        pbr.close()
 
 
 def test_progress_with_ndarray():
@@ -20,8 +30,8 @@ def test_progress_with_ndarray():
     assert pbr.iterable is iter_
     assert pbr.n == 0
 
-    pbr.close()
-    assert pbr not in progress.all_progress
+    with assert_progress_added_to_all(pbr):
+        pbr.close()
 
 
 def test_progress_with_total():
@@ -31,12 +41,13 @@ def test_progress_with_total():
     pbr.update(1)
     assert pbr.n == 1
 
-    pbr.close()
-    assert pbr not in progress.all_progress
+    with assert_progress_added_to_all(pbr):
+        pbr.close()
 
 
 def test_progress_with_context():
     with progress(range(100), desc='context') as pbr:
+        assert pbr in progress.all_progress
         assert pbr.n == 0
     assert pbr not in progress.all_progress
 
@@ -53,8 +64,8 @@ def test_progress_update():
     pbr.refresh()
     assert pbr.n == 3
 
-    pbr.close()
-    assert pbr not in progress.all_progress
+    with assert_progress_added_to_all(pbr):
+        pbr.close()
 
 
 def test_progress_set_description():

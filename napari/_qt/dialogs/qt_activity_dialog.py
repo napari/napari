@@ -145,6 +145,7 @@ class QtActivityDialog(QDialog):
             progress object to associated with new progress bar
         """
         prog.gui = True
+        prog.leave = False
 
         # make and add progress bar
         pbar = QtLabeledProgressBar(prog=prog)
