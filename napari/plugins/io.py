@@ -332,7 +332,7 @@ def _write_layers_with_npe2(
         Otherwise, find a compatible no-extension writer and write to that.
         No-extension writers typically write to a folder.
         """
-ext: str = os.path.splitext(path)[1].lower() if path else ''
+        ext = os.path.splitext(path)[1].lower() if path else ''
 
         if plugin_command_name:
             return (
@@ -343,28 +343,17 @@ ext: str = os.path.splitext(path)[1].lower() if path else ''
                 ext,
             )
 
-        writers = list(
-            npe2.plugin_manager.iter_compatible_writers(layer_types)
-        )  # type: List[WriterContribution]
-
-        if not writers:
-            return (None, path, ext)
-
-        if ext:
-            writer = next(
-                (w for w in writers if ext in w.filename_extensions), None
-            )
-            if writer:
-                return writer, path, ext
-        elif len(layers) == 1:
-            # No extension, single layer.
-            writer = next(iter(writers))  # non-empty
-            ext = next((e for e in writer.filename_extensions if e), '')
-            return writer, path + ext, ext
-
-        # No extension, or unrecognized extension. multiple layers.
-        writer = next((w for w in writers if not w.filename_extensions), None)
-        return writer, path, ''
+        for writer in npe2.plugin_manager.iter_compatible_writers(layer_types):
+            if ext:
+                if ext in writer.filename_extensions:
+                    return writer, path, ext
+            elif len(layers) == 1:  # No extension, single layer.
+                ext = next(iter(writer.filename_extensions), '')
+                return writer, path + ext, ext
+            else:  # No extension, or unrecognized extension. multiple layers.
+                if not writer.filename_extensions:
+                    return writer, path, ''
+        return None, path, ext
 
     writer, new_path, ext = _lookup_writer(path)
     if writer:

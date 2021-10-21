@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -64,10 +64,10 @@ from ..utils.io import imsave_extensions
 def _npe2_decode_selected_filter(
     ext_str: str, selected_filter: str, writers: List[Any]
 ) -> Optional[str]:
-    """When npe2 can be imported, resolves a selected file extension
-    string into a specific writer. Otherwise, returns None.
+    """Determine the writer command that should be invoked to save data.
 
-    Returns the writer command that should be invoked to save data.
+    When npe2 can be imported, resolves a selected file extension
+    string into a specific writer. Otherwise, returns None.
     """
     # When npe2 is not present, `writers` is expected to be an empty list,
     # `[]`. This function will return None.
@@ -84,11 +84,16 @@ def _npe2_decode_selected_filter(
 def _npe2_file_extensions_string_for_layers(
     layers: List[Layer] | LayerList,
 ) -> Tuple[Optional[str], List[Any]]:
-    """When npe2 can be imported, returns an extension string and the list
+    """Create extensions string using npe2.
+
+    When npe2 can be imported, returns an extension string and the list
     of corresponding writers. Otherwise returns (None,[]).
 
     The extension string is a ";;" delimeted string of entries. Each entry
-    has a brief description of the file type and a list of extensions.
+    has a brief description of the file type and a list of extensions. For
+    example:
+
+        "Images (*.png *.jpg *.tif);;All Files (*.*)"
 
     The writers, when provided, are the
     `npe2.manifest.io.WriterContribution` objects. There is one writer per
@@ -103,7 +108,7 @@ def _npe2_file_extensions_string_for_layers(
     writers = list(npe2.plugin_manager.iter_compatible_writers(layer_types))
 
     def _items():
-        """Lookup the command name and its supported extensions"""
+        """Lookup the command name and its supported extensions."""
         for writer in writers:
             cmd = npe2.plugin_manager.get_command(writer.command)
             title = writer.save_dialog_title or cmd.title
@@ -112,22 +117,19 @@ def _npe2_file_extensions_string_for_layers(
     # extension strings are in the format:
     #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
 
-    def to_str(es):
-        if es:
-            return "(" + " ".join(["*" + e for e in es if e]) + ")"
-        else:
-            return "(*.*)"
+    def _fmt_exts(es):
+        return " ".join(["*" + e for e in es if e]) if es else "*.*"
 
     return (
-        ";;".join(f"{name} {to_str(exts)}" for name, exts in _items()),
+        ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
         writers,
     )
 
 
 def _extension_string_for_layers(
-    layers: List[Layer] | LayerList,
+    layers: Union[List[Layer], LayerList],
 ) -> Tuple[str, List[Any]]:
-    """Returns an extension string and the list of corresponding writers.
+    """Return an extension string and the list of corresponding writers.
 
     The extension string is a ";;" delimeted string of entries. Each entry
     has a brief description of the file type and a list of extensions.
@@ -136,7 +138,6 @@ def _extension_string_for_layers(
     objects. There is one writer per entry in the extension string. If npe2
     is not importable, the list of writers will be empty.
     """
-
     # try to use npe2
     ext_str, writers = _npe2_file_extensions_string_for_layers(layers)
     if ext_str:
