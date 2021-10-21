@@ -22,7 +22,6 @@ from bundle import (
     APP,
     APP_DIR,
     ARCH,
-    EXT,
     HERE,
     LINUX,
     MACOS,
