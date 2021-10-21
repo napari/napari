@@ -322,7 +322,11 @@ class Points(Layer):
             properties, property_choices, len(self.data), save_choices=True
         )
 
-        self.text = text
+        self._text = TextManager._from_layer(
+            text=text,
+            n_text=len(self.data),
+            properties=self.properties,
+        )
 
         # Save the point style params
         self.symbol = symbol
@@ -564,16 +568,11 @@ class Points(Layer):
 
     @text.setter
     def text(self, text):
-        self._text = TextManager._from_layer(
+        self._text._update_from_layer(
             text=text,
             n_text=len(self.data),
             properties=self.properties,
-            current_manager=getattr(self, '_text', None),
         )
-        with self._text.events.blocker():
-            for emitter in self._text.events.emitters.values():
-                emitter()
-        self._text.events(Event('Points.text.setter'))
 
     def refresh_text(self):
         """Refresh the text values.

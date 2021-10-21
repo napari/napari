@@ -8,7 +8,6 @@ from pydantic import PositiveInt, validator
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
-from ...utils.events.event_utils import transfer_connections
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor, TextMode
@@ -201,7 +200,6 @@ class TextManager(EventedModel):
         text: Union['TextManager', dict, str, None],
         n_text: int,
         properties: Dict[str, np.ndarray],
-        current_manager: Optional['TextManager'],
     ) -> 'TextManager':
         """Create a TextManager from a layer.
 
@@ -215,8 +213,6 @@ class TextManager(EventedModel):
             the number of elements (e.g. points) in a layer.
         properties : Dict[str, np.ndarray]
             The properties of a layer.
-        current_manager: Optional[TextManager]
-            The layer's existing TextManager.
 
         Returns
         -------
@@ -230,10 +226,31 @@ class TextManager(EventedModel):
             kwargs = {'text': text}
         kwargs['n_text'] = n_text
         kwargs['properties'] = properties
-        manager = cls(**kwargs)
-        if current_manager is not None:
-            transfer_connections(current_manager.events, manager.events)
-        return manager
+        return cls(**kwargs)
+
+    def _update_from_layer(self, *, text, n_text, properties):
+        """Updates this in place from a layer.
+
+        Parameters
+        ----------
+        See :meth:`TextManager._from_layer`.
+        """
+        # Create a new instance from the input to populate all fields.
+        new_manager = TextManager._from_layer(
+            text=text, n_text=n_text, properties=properties
+        )
+
+        # Update a copy of this so that any associated errors are raised
+        # before actually making the update.
+        current_manager = self.copy()
+        current_manager.update(new_manager)
+
+        # If we got here, then there were no errors, so update for real.
+        # Connected callbacks may raise errors, but those are bugs.
+        self.update(new_manager)
+
+        self._mode = new_manager._mode
+        self._text_format_string = new_manager._text_format_string
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):

@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import weakref
-from typing import TYPE_CHECKING, Any, Optional, Union
-
-from napari.utils.events import EmitterGroup
-from napari.utils.events.event import Callback, CallbackRef, EventEmitter
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Callable
@@ -65,52 +62,3 @@ def connect_no_arg(emitter: Emitter, obj, attr: str):
     emitter.connect(_cb)
     # as in connect_setattr
     # weakref.finalize(obj, emitter.disconnect, _cb)
-
-
-def transfer_connections(old_group: EmitterGroup, new_group: EmitterGroup):
-    """Transfers connections from an old emitter group to a new one.
-
-    This is useful when an attribute of a type with an EmitterGroup, like an
-    EventedModel, is reassigned to a new instance, but you want to maintain the
-    behavior triggered by any connections made.
-
-    The existing connections in the old emitter group are not removed, so the
-    transfer acts like a copy rather than a move.
-
-    Self-connections are not transferred because it is assumed that the new
-    instance will setup the new self-connections itself.
-
-    Parameters
-    ----------
-    old_group : EmitterGroup
-        The emitter group from which to transfer connections.
-    new_group : EmitterGroup
-        The emitter group to which to transfer connections.
-    """
-    old_source = old_group.source
-    _transfer_callbacks(
-        old_emitter=old_group, old_source=old_source, new_emitter=new_group
-    )
-    for event_name, old_emitter in old_group.emitters.items():
-        new_emitter = getattr(new_group, event_name)
-        _transfer_callbacks(
-            old_emitter=old_emitter,
-            old_source=old_source,
-            new_emitter=new_emitter,
-        )
-
-
-def _transfer_callbacks(
-    *, old_emitter: EventEmitter, old_source: Any, new_emitter: EventEmitter
-):
-    for cb in old_emitter.callbacks:
-        if _get_callback_source(cb) is not old_source:
-            new_emitter.connect(cb)
-
-
-def _get_callback_source(callback: Union[Callback, CallbackRef]) -> Optional:
-    if hasattr(callback, 'source'):
-        return callback.source
-    if isinstance(callback, tuple):
-        return callback[0]()
-    return None
