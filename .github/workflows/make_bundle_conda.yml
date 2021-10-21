@@ -25,22 +25,18 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            conda-bld-suffix: /napari-feedstock/build_artifacts
-            platform-pkgs-suffix: /napari-feedstock/build_artifacts/linux-64
-            noarch-pkgs-suffix: /napari-feedstock/build_artifacts/noarch
+            conda-bld-suffix: /napari-feedstock/build_artifacts/
+            noarch: true
 
           - os: macos-latest
-            conda-bld-suffix: /conda-bld
-            platform-pkgs-suffix: /conda-bld/osx-64
+            conda-bld-suffix: /conda-bld/
 
           - os: windows-latest
-            conda-bld-suffix: "\\conda-bld"
-            platform-pkgs-suffix: "\\conda-bld\\win-64"
+            conda-bld-suffix: "\\conda-bld\\"
 
     env:
       conda-bld-suffix: ${{ matrix.conda-bld-suffix }}
-      platform-pkgs-suffix: ${{ matrix.platform-pkgs-suffix }}
-      noarch-pkgs-suffix: ${{ matrix.noarch-pkgs-suffix }}
+      noarch: ${{ matrix.noarch }}
 
     steps:
       - name: Checkout napari source
@@ -89,7 +85,11 @@ jobs:
         run: |
           pip install -e . --no-deps -vvv
           version=$(python bundle.py --version)
+          arch=$(python bundle.py --arch)
+          platform=$(conda info --json | jq -r .platform)
           echo NAPARI_VERSION=${version} >> $GITHUB_ENV
+          echo NAPARI_ARCH=${arch} >> $GITHUB_ENV
+          echo NAPARI_PLATFORM=${platform} >> $GITHUB_ENV
 
       - name: Patch and rerender feedstock
         shell: bash -l {0}
@@ -177,16 +177,16 @@ jobs:
 
       - name: Upload Napari Artifact
         uses: actions/upload-artifact@v2
-        if: env.noarch-pkgs-suffix
+        if: env.noarch
         with:
-          name: napari-${{ env.NAPARI_VERSION }}
-          path: ${{ github.workspace }}${{ env.noarch-pkgs-suffix }}/*.tar.bz2
+          name: napari-${{ env.NAPARI_VERSION }}.tar.bz2
+          path: ${{ github.workspace }}${{ env.conda-bld-suffix }}noarch/*.tar.bz2
 
       - name: Upload Menu Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: napari-menu-${{ env.NAPARI_VERSION }}-${{ runner.os }}
-          path: ${{ github.workspace }}${{ env.platform-pkgs-suffix }}/*.tar.bz2
+          name: napari-menu-${{ env.NAPARI_VERSION }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
+          path: ${{ github.workspace }}${{ env.platform-pkgs-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2
 
   bundle:
     name: Bundle ${{ matrix.platform }}
@@ -237,29 +237,32 @@ jobs:
       - name: get tag / arch-suffix / extension / artifact-name
         shell: bash -l {0}
         run: |
-          VER=`python bundle_conda.py --version`
+          VER=$(python bundle_conda.py --version)
           echo "version=${VER}" >> $GITHUB_ENV
           echo "Version: $VER"
-          ARCH_SUFFIX=`python bundle_conda.py --arch`
+          ARCH_SUFFIX=$(python bundle_conda.py --arch)
           echo "arch-suffix=${ARCH_SUFFIX}" >> $GITHUB_ENV
           echo "Machine: ${ARCH_SUFFIX}"
-          EXTENSION=`python bundle_conda.py --ext`
+          EXTENSION=$(python bundle_conda.py --ext)
           echo "extension=${EXTENSION}" >> $GITHUB_ENV
           echo "Extension: ${EXTENSION}"
-          ARTIFACT_NAME=`python bundle_conda.py --artifact-name`
+          ARTIFACT_NAME=$(python bundle_conda.py --artifact-name)
           echo "artifact-name=${ARTIFACT_NAME}" >> $GITHUB_ENV
           echo "Expected artifact name: ${ARTIFACT_NAME}"
+          NAPARI_PLATFORM=$(conda info --json | jq -r .platform)
+          echo "NAPARI_PLATFORM=${NAPARI_PLATFORM}" >> $GITHUB_ENV
+          echo "Conda platform: ${NAPARI_PLATFORM}"
 
       - name: Download local build artifacts (napari)
         uses: actions/download-artifact@v2
         with:
-          name: napari-${{ env.version }}
+          name: napari-${{ env.version }}.tar.bz2
           path: ${{ env.CONDA_BLD_PATH }}
 
       - name: Download local build artifacts (napari-menu)
         uses: actions/download-artifact@v2
         with:
-          name: napari-menu-${{ env.version }}-${{ runner.os }}
+          name: napari-menu-${{ env.version }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
           path: ${{ env.CONDA_BLD_PATH }}
 
       - name: Index local packages (if any)
@@ -268,9 +271,8 @@ jobs:
           cd ${CONDA_BLD_PATH}
           pkgs=$(shopt -s nullglob dotglob; echo "${CONDA_BLD_PATH}/*.tar.bz2")
           if (( ${#pkgs} )); then
-            subdir=$(conda info --json | jq -r .platform)
-            mkdir $subdir noarch
-            mv *napari-menu*.tar.bz2 $subdir
+            mkdir $NAPARI_PLATFORM noarch
+            mv *napari-menu*.tar.bz2 $NAPARI_PLATFORM
             mv *napari*.tar.bz2 noarch
             conda index .
             conda search -c local --override-channels
