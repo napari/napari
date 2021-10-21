@@ -2230,7 +2230,10 @@ class Shapes(Layer):
             properties=self.properties,
             current_manager=getattr(self, '_text', None),
         )
-        self._text.events(Event('TODO: what should this be?'))
+        with self._text.events.blocker():
+            for emitter in self._text.events.emitters.values():
+                emitter()
+        self._text.events(Event('Shapes.text.setter'))
 
     def refresh_text(self):
         """Refresh the text values.

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import weakref
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from napari.utils.events import EmitterGroup
-from napari.utils.events.event import Callback, CallbackRef
+from napari.utils.events.event import Callback, CallbackRef, EventEmitter
 
 if TYPE_CHECKING:
     from typing import Callable
@@ -88,14 +88,24 @@ def transfer_connections(old_group: EmitterGroup, new_group: EmitterGroup):
         The emitter group to which to transfer connections.
     """
     old_source = old_group.source
-    for cb in old_group.callbacks:
-        if _get_callback_source(cb) is not old_source:
-            new_group.connect(cb)
+    _transfer_callbacks(
+        old_emitter=old_group, old_source=old_source, new_emitter=new_group
+    )
     for event_name, old_emitter in old_group.emitters.items():
         new_emitter = getattr(new_group, event_name)
-        for cb in old_emitter.callbacks:
-            if _get_callback_source(cb) is not old_source:
-                new_emitter.connect(cb)
+        _transfer_callbacks(
+            old_emitter=old_emitter,
+            old_source=old_source,
+            new_emitter=new_emitter,
+        )
+
+
+def _transfer_callbacks(
+    *, old_emitter: EventEmitter, old_source: Any, new_emitter: EventEmitter
+):
+    for cb in old_emitter.callbacks:
+        if _get_callback_source(cb) is not old_source:
+            new_emitter.connect(cb)
 
 
 def _get_callback_source(callback: Union[Callback, CallbackRef]) -> Optional:

@@ -570,9 +570,10 @@ class Points(Layer):
             properties=self.properties,
             current_manager=getattr(self, '_text', None),
         )
-        # TODO: should we use TextManager's EmitterGroup's main event, or should we
-        # add a text event to the Points layer?
-        self._text.events(Event('TODO: what should this be?'))
+        with self._text.events.blocker():
+            for emitter in self._text.events.emitters.values():
+                emitter()
+        self._text.events(Event('Points.text.setter'))
 
     def refresh_text(self):
         """Refresh the text values.
