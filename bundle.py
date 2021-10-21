@@ -271,7 +271,9 @@ def bundle():
         add_site_packages_to_path()
         add_sentinel_file()
 
-        if MACOS:
+        if WINDOWS:
+            patch_wxs()
+        elif MACOS:
             patch_python_lib_location()
 
         # build

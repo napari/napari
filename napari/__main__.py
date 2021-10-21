@@ -200,8 +200,7 @@ def parse_sys_argv():
         metavar="TYPE",
         choices=set(layers.NAMES),
         help=(
-            'force file to be interpreted as a specific layer type. '
-            f'one of {set(layers.NAMES)}'
+            'force file to be interpreted as a specific layer type. ' f'one of {set(layers.NAMES)}'
         ),
     )
     parser.add_argument(
@@ -254,10 +253,7 @@ def _run():
     if args.plugin:
         # make sure plugin is only used when files are specified
         if not args.paths:
-            sys.exit(
-                "error: The '--plugin' argument is only valid "
-                "when providing a file name"
-            )
+            sys.exit("error: The '--plugin' argument is only valid " "when providing a file name")
         # I *think* that Qt is looking in sys.argv for a flag `--plugins`,
         # which emits "WARNING: No such plugin for spec 'builtins'"
         # so remove --plugin from sys.argv to prevent that warningz
@@ -426,6 +422,12 @@ def main():
 
     if running_as_bundled_app():
         set_conda_config()
+
+        # Prevent https://github.com/napari/napari/issues/3415
+        if sys.platform == "darwin" and sys.version_info >= (3, 8):
+            import multiprocessing
+
+            multiprocessing.set_start_method('fork')
 
     _run()
 
