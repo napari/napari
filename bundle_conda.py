@@ -90,7 +90,9 @@ def _constructor(version=VERSION):
                 # TODO: create banner images for installer
                 # "welcome_image":,
                 # "header_image":,
-                "icon_image": os.path.join(HERE, "napari", "resources", "icon.ico"),
+                "icon_image": os.path.join(
+                    HERE, "napari", "resources", "icon.ico"
+                ),
                 "default_image_color": "blue",
                 "welcome_image_text": f"{APP}",
                 "header_image_text": f"{APP}",
