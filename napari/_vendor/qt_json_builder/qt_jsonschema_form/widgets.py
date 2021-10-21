@@ -11,7 +11,7 @@ from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
 from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
 from ...._qt.widgets.qt_spinbox import QtSpinBox
-from ...._qt.widgets.qt_list import QtReaderList, QtWriterList
+from ...._qt.widgets.qt_reader_writer_table import QtReaderTable, QtWriterTable
 
 
 if TYPE_CHECKING:
@@ -157,7 +157,7 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
         self.description = description
 
 
-class ReaderListWidget(SchemaWidgetMixin, QtReaderList):
+class ReaderTableWidget(SchemaWidgetMixin, QtReaderTable):
     @state_property
     def state(self) -> int:
         return self.value()
@@ -174,7 +174,7 @@ class ReaderListWidget(SchemaWidgetMixin, QtReaderList):
         self.description = description
 
 
-class WriterListWidget(SchemaWidgetMixin, QtWriterList):
+class WriterTableWidget(SchemaWidgetMixin, QtWriterTable):
     @state_property
     def state(self) -> int:
         return self.value()

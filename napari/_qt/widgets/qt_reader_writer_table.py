@@ -16,7 +16,7 @@ from napari.plugins import plugin_manager as napari_plugin_manager
 from napari.utils.translations import trans
 
 
-class QtReaderWriterList(QTableWidget):
+class QtReaderWriterTable(QTableWidget):
     """ """
 
     def __init__(self, parent=None, type_: str = 'reader'):
@@ -83,25 +83,17 @@ class QtReaderWriterList(QTableWidget):
         extensions_item = self.item(row, column)
         if extensions_item is not None:
             extensions = extensions_item.text().split(',')
-            extension_list = [
-                it.strip() for it in extensions if it.strip()
-            ]
+            extension_list = [it.strip() for it in extensions if it.strip()]
             assign_to_extension = getattr(
                 napari_plugin_manager,
                 f"assign_{self._type}_to_extensions",
                 None,
             )
             if assign_to_extension:
-                try:
-                    assign_to_extension(
-                        plugin_name, extensions=extension_list
-                    )
-                    print(plugin_name, extension_list)
-                except Exception as e:
-                    print(e)
+                assign_to_extension(plugin_name, extensions=extension_list)
 
 
-class QtReaderList(QWidget):
+class QtReaderTable(QWidget):
     """ """
 
     def __init__(self, parent=None):
@@ -111,7 +103,7 @@ class QtReaderList(QWidget):
                 "Add extensions separated by commas to directly read with plugin."
             )
         )
-        self._table = QtReaderWriterList(parent=self, type_='reader')
+        self._table = QtReaderWriterTable(parent=self, type_='reader')
 
         layout = QVBoxLayout()
         layout.addWidget(self._label)
@@ -119,7 +111,7 @@ class QtReaderList(QWidget):
         self.setLayout(layout)
 
 
-class QtWriterList(QWidget):
+class QtWriterTable(QWidget):
     """ """
 
     def __init__(self, parent=None):
@@ -129,7 +121,7 @@ class QtWriterList(QWidget):
                 "Add extensions separated by commas to directly write with plugin."
             )
         )
-        self._table = QtReaderWriterList(parent=self, type_='writer')
+        self._table = QtReaderWriterTable(parent=self, type_='writer')
 
         layout = QVBoxLayout()
         layout.addWidget(self._label)
@@ -139,6 +131,6 @@ class QtWriterList(QWidget):
 
 if __name__ == "__main__":
     app = QApplication([])
-    w = QtReaderList()
+    w = QtReaderTable()
     w.show()
     app.exec_()

@@ -27,8 +27,8 @@ class WidgetBuilder:
             "enum": widgets.EnumSchemaWidget,
             "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,
-            "reader_list": widgets.ReaderListWidget,
-            "writer_list": widgets.WriterListWidget,
+            "reader_list": widgets.ReaderTableWidget,
+            "writer_list": widgets.WriterTableWidget,
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
