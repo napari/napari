@@ -177,7 +177,7 @@ jobs:
 
       - name: Upload Napari Artifact
         uses: actions/upload-artifact@v2
-        if: env.noarch-pkgs
+        if: env.noarch-pkgs-suffix
         with:
           name: napari-${{ env.NAPARI_VERSION }}
           path: ${{ github.workspace }}${{ env.noarch-pkgs-suffix }}/*.tar.bz2
