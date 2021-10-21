@@ -239,7 +239,7 @@ def save_layers(
         _written = _write_single_layer_with_plugins(
             path, layers[0], plugin_name=plugin
         )
-        written = [_written] if _written else []  # type: List[Optional[str]]
+        written: List[Optional[str]] = [_written] if _written else []
     else:
         written = []
 
