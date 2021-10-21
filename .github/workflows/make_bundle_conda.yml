@@ -186,7 +186,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: napari-menu-${{ env.NAPARI_VERSION }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
-          path: ${{ github.workspace }}${{ env.platform-pkgs-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2
+          path: ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2
 
   bundle:
     name: Bundle ${{ matrix.platform }}
