@@ -291,17 +291,10 @@ jobs:
           echo "::endgroup::"
           xvfb-run --auto-servernum python bundle_conda.py
 
-      - name: Make Bundle (MacOS)
+      - name: Make Bundle (MacOS/Windows)
         shell: bash -l {0}
-        if: runner.os == 'macOS'
+        if: runner.os != 'Linux'
         run: python bundle_conda.py
-
-      - name: Make Bundle (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd /C CALL {0}
-        run: |
-          set "CONDA_BLD_PATH=%GITHUB_WORKSPACE%\conda-bld"
-          python.exe bundle_conda.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
