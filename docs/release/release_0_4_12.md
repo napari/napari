@@ -57,6 +57,7 @@ See the full list of merged pull requests below for further delails!
 - Finds layer_controls based on layer's MRO (#3471)
 - Use `ensure_main_thread` instead of custom thread propagation mechanism in NapariQtNotification (#3473)
 - Drop pythonw patch in windows bundle (#3479)
+- Revert "drop pythonw patch (#3479)" (#3501)
 
 
 ## Bug Fixes
