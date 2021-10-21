@@ -34,8 +34,8 @@ jobs:
             platform-pkgs: ${GITHUB_WORKSPACE}/conda-bld/osx-64
 
           - os: windows-latest
-            CONDA_BLD_PATH: %GITHUB_WORKSPACE%\conda-bld
-            platform-pkgs: %GITHUB_WORKSPACE%\conda-bld\win-64
+            CONDA_BLD_PATH: "%GITHUB_WORKSPACE%\\conda-bld"
+            platform-pkgs: "%GITHUB_WORKSPACE%\\conda-bld\\win-64"
 
     env:
       CONDA_BLD_PATH: ${{ matrix.CONDA_BLD_PATH }}
