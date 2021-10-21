@@ -183,7 +183,7 @@ def save_layers(
     layers: List[Layer],
     *,
     plugin: Optional[str] = None,
-) -> List[Optional[str]]:
+) -> List[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 
     If ``plugin`` is not provided and only one layer is passed, then we
@@ -256,7 +256,7 @@ def save_layers(
             )
         )
 
-    return written
+    return [path for path in written if path is not None]
 
 
 def _is_null_layer_sentinel(layer_data: Union[LayerData, Any]) -> bool:
