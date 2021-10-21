@@ -16,8 +16,8 @@ This is a bug fix release with many minor improvements and bug fixes. The user
 experience for users of dask arrays might be significantly improved by a new
 approach to setting the contrast limits based on the current slice (#3425).
 
-A progress bar will now display when opening multiple files (#3355). 
-Thanks to first-time contributor @tibuch the data type of labels layers can now 
+A progress bar will now display when opening multiple files (#3355).
+Thanks to first-time contributor @tibuch the data type of labels layers can now
 be converted from a context menu on the layer list (#3402).
 
 See the full list of merged pull requests below for further delails!
