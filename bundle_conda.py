@@ -98,11 +98,13 @@ def _constructor(version=VERSION):
             }
         )
 
+    print("Calling `constructor` with these definitions:")
+    print(yaml.dump(definitions, default_flow_style=False))
+
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
-        print("-----")
-        subprocess.check_call([constructor, "."])
-        print("-----")
+
+    subprocess.check_call([constructor, "-v", "."])
 
     return OUTPUT_FILENAME
 
