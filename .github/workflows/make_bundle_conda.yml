@@ -25,22 +25,22 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            CONDA_BLD_PATH: ${GITHUB_WORKSPACE}/napari-feedstock/build_artifacts
-            platform-pkgs: ${GITHUB_WORKSPACE}/napari-feedstock/build_artifacts/linux-64
-            noarch-pkgs: ${GITHUB_WORKSPACE}/napari-feedstock/build_artifacts/noarch
+            conda-bld-suffix: /napari-feedstock/build_artifacts
+            platform-pkgs-suffix: /napari-feedstock/build_artifacts/linux-64
+            noarch-pkgs-suffix: /napari-feedstock/build_artifacts/noarch
 
           - os: macos-latest
-            CONDA_BLD_PATH: ${GITHUB_WORKSPACE}/conda-bld
-            platform-pkgs: ${GITHUB_WORKSPACE}/conda-bld/osx-64
+            conda-bld-suffix: /conda-bld
+            platform-pkgs-suffix: /conda-bld/osx-64
 
           - os: windows-latest
-            CONDA_BLD_PATH: "%GITHUB_WORKSPACE%\\conda-bld"
-            platform-pkgs: "%GITHUB_WORKSPACE%\\conda-bld\\win-64"
+            conda-bld-suffix: "\\conda-bld"
+            platform-pkgs-suffix: "\\conda-bld\\win-64"
 
     env:
-      CONDA_BLD_PATH: ${{ matrix.CONDA_BLD_PATH }}
-      platform-pkgs: ${{ matrix.platform-pkgs }}
-      noarch-pkgs: ${{ matrix.noarch-pkgs }}
+      conda-bld-suffix: ${{ matrix.conda-bld-suffix }}
+      platform-pkgs-suffix: ${{ matrix.platform-pkgs-suffix }}
+      noarch-pkgs-suffix: ${{ matrix.noarch-pkgs-suffix }}
 
     steps:
       - name: Checkout napari source
@@ -126,6 +126,7 @@ jobs:
           CONFIG: linux_64_
           CI: github_actions
         run: |
+          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda-bld-suffix }}"
           mv ${GITHUB_WORKSPACE}/napari-source .
           ./.scripts/run_docker_build.sh
 
@@ -137,6 +138,7 @@ jobs:
           CONFIG: osx_64_
           CI: github_actions
         run: |
+          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda-bld-suffix }}"
           export FEEDSTOCK_NAME="$(basename $GITHUB_REPOSITORY)"
           export GIT_BRANCH="$(basename $GITHUB_REF)"
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
@@ -155,6 +157,7 @@ jobs:
           PYTHONUNBUFFERED: 1
           CI: github_actions
         run: |
+          set "CONDA_BLD_PATH=${{ github.workspace }}${{ env.conda-bld-suffix }}"
           call activate base
           conda.exe install -c conda-forge 'python=3.6' conda-build conda conda-forge-ci-setup=3 pip
           if errorlevel 1 exit 1
@@ -172,33 +175,18 @@ jobs:
           validate_recipe_outputs "%FEEDSTOCK_NAME%"
           if errorlevel 1 exit 1
 
-      - name: Prepare artifacts (Unix)
-        if: runner.os != 'Windows'
-        working-directory: napari-feedstock
-        shell: bash -l {0}
-        run: |
-          case ${{ runner.os }} in
-            macOS)
-              echo "platform-pkgs=${CONDA_BLD_PATH}/osx-64" >> $GITHUB_ENV
-              ;;
-            Linux)
-              echo "platform-pkgs=$(pwd)/build_artifacts/linux-64" >> $GITHUB_ENV
-              echo "noarch-pkgs=$(pwd)/build_artifacts/noarch" >> $GITHUB_ENV
-              ;;
-            esac
-
       - name: Upload Napari Artifact
         uses: actions/upload-artifact@v2
         if: env.noarch-pkgs
         with:
           name: napari-${{ env.NAPARI_VERSION }}
-          path: ${{ env.noarch-pkgs }}/*.tar.bz2
+          path: ${{ github.workspace }}${{ env.noarch-pkgs-suffix }}/*.tar.bz2
 
       - name: Upload Menu Artifact
         uses: actions/upload-artifact@v2
         with:
           name: napari-menu-${{ env.NAPARI_VERSION }}-${{ runner.os }}
-          path: ${{ env.platform-pkgs }}/*.tar.bz2
+          path: ${{ github.workspace }}${{ env.platform-pkgs-suffix }}/*.tar.bz2
 
   bundle:
     name: Bundle ${{ matrix.platform }}
@@ -285,7 +273,7 @@ jobs:
             mv *napari*.tar.bz2 noarch
             conda index .
             conda search -c local --override-channels
-            echo "CONSTRUCTOR_USE_LOCAL=1" >> $GITHUB_ENV
+            echo CONSTRUCTOR_USE_LOCAL=1 >> $GITHUB_ENV
           else
             echo "No local packages found, assuming latest release"
           fi
@@ -300,10 +288,17 @@ jobs:
             libxcb-xinerama0 libxcb-xfixes0 libxcb-shape0 libqt5gui5
           xvfb-run --auto-servernum python bundle_conda.py
 
-      - name: Make Bundle (MacOS/Windows)
+      - name: Make Bundle (MacOS)
         shell: bash -l {0}
-        if: runner.os != 'Linux'
+        if: runner.os == 'macOS'
         run: python bundle_conda.py
+
+      - name: Make Bundle (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd /C CALL {0}
+        run: |
+          set "CONDA_BLD_PATH=%GITHUB_WORKSPACE%\conda-bld"
+          python.exe bundle_conda.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
