@@ -429,7 +429,7 @@ ShortcutEditor QHeaderView::section {
   border: None;
 }
 
-QtReaderWriterList QHeaderView::section {
+QtReaderWriterTable QHeaderView::section {
   padding: 2px;
   border: None;
 }
