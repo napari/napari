@@ -23,10 +23,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
+        include:
+          - os: ubuntu-latest
+            CONDA_BLD_PATH: ${{ github.workspace }}/napari-feedstock/build_artifacts
+            platform-pkgs: ${{ github.workspace }}/napari-feedstock/build_artifacts/linux-64
+            noarch-pkgs: ${{ github.workspace }}/napari-feedstock/build_artifacts/noarch
+
+          - os: macos-latest
+            CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
+            platform-pkgs: ${{ github.workspace }}/conda-bld/osx-64
+
+          - os: windows-latest
+            CONDA_BLD_PATH: ${{ github.workspace }}\conda-bld
+            platform-pkgs: ${{ github.workspace }}\conda-bld\win-64
+
+    env:
+      CONDA_BLD_PATH: ${{ matrix.CONDA_BLD_PATH }}
+      platform-pkgs: ${{ matrix.platform-pkgs }}
+      noarch-pkgs: ${{ matrix.noarch-pkgs }}
 
     steps:
       - name: Checkout napari source
@@ -122,9 +136,7 @@ jobs:
         env:
           CONFIG: osx_64_
           CI: github_actions
-          CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
         run: |
-          echo "CONDA_BLD_PATH=${CONDA_BLD_PATH}" >> $GITHUB_ENV
           export FEEDSTOCK_NAME="$(basename $GITHUB_REPOSITORY)"
           export GIT_BRANCH="$(basename $GITHUB_REF)"
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
@@ -142,9 +154,7 @@ jobs:
           CONFIG: win_64_
           PYTHONUNBUFFERED: 1
           CI: github_actions
-          CONDA_BLD_PATH: ${{ github.workspace }}\conda-bld
         run: |
-          echo "CONDA_BLD_PATH=%CONDA_BLD_PATH%" >> %GITHUB_ENV%
           call activate base
           conda.exe install -c conda-forge 'python=3.6' conda-build conda conda-forge-ci-setup=3 pip
           if errorlevel 1 exit 1
@@ -161,7 +171,6 @@ jobs:
           )
           validate_recipe_outputs "%FEEDSTOCK_NAME%"
           if errorlevel 1 exit 1
-          echo platform-pkgs=%CONDA_BLD_PATH%\win-64 >> %GITHUB_ENV%
 
       - name: Prepare artifacts (Unix)
         if: runner.os != 'Windows'
@@ -275,6 +284,7 @@ jobs:
             mv *napari-menu*.tar.bz2 $subdir
             mv *napari*.tar.bz2 noarch
             conda index .
+            conda search -c local --override-channels
             echo "CONSTRUCTOR_USE_LOCAL=1" >> $GITHUB_ENV
           else
             echo "No local packages found, assuming latest release"
