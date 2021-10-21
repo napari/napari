@@ -99,18 +99,14 @@ def _npe2_file_extensions_string_for_layers(
     except ImportError:
         return None, []
 
-    layer_types = [layer.as_layer_data_tuple()[2] for layer in layers]
+    layer_types = [layer._type_string for layer in layers]
     writers = list(npe2.plugin_manager.iter_compatible_writers(layer_types))
 
     def _items():
         """Lookup the command name and its supported extensions"""
         for writer in writers:
             cmd = npe2.plugin_manager.get_command(writer.command)
-            title = (
-                writer.save_dialog_title
-                if writer.save_dialog_title
-                else cmd.title
-            )
+            title = writer.save_dialog_title or cmd.title
             yield title, writer.filename_extensions
 
     # extension strings are in the format:
@@ -155,10 +151,7 @@ def _extension_string_for_layers(
 
             ext = imsave_extensions()
 
-            ext_list = []
-            for val in ext:
-                ext_list.append("*" + val)
-
+            ext_list = [f"*{val}" for val in ext]
             ext_str = ';;'.join(ext_list)
 
             ext_str = trans._(

@@ -29,7 +29,7 @@ def _read_with_npe2(
         read_func = execute_command(rdr.command, kwargs={'path': path})
         if read_func:
             try:
-                layer_data = read_func(path)  # type: List[LayerData]
+                layer_data: List[LayerData] = read_func(path)
                 if layer_data:
                     # hookimpl just mocks `.plugin_name` attribute access
                     # until we drop support for the old hookimpl stuff.
@@ -332,7 +332,7 @@ def _write_layers_with_npe2(
         Otherwise, find a compatible no-extension writer and write to that.
         No-extension writers typically write to a folder.
         """
-        ext = os.path.splitext(path)[1].lower() if path else ''  # type: str
+ext: str = os.path.splitext(path)[1].lower() if path else ''
 
         if plugin_command_name:
             return (
