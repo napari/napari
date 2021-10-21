@@ -25,17 +25,17 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            CONDA_BLD_PATH: ${{ github.workspace }}/napari-feedstock/build_artifacts
-            platform-pkgs: ${{ github.workspace }}/napari-feedstock/build_artifacts/linux-64
-            noarch-pkgs: ${{ github.workspace }}/napari-feedstock/build_artifacts/noarch
+            CONDA_BLD_PATH: ${GITHUB_WORKSPACE}/napari-feedstock/build_artifacts
+            platform-pkgs: ${GITHUB_WORKSPACE}/napari-feedstock/build_artifacts/linux-64
+            noarch-pkgs: ${GITHUB_WORKSPACE}/napari-feedstock/build_artifacts/noarch
 
           - os: macos-latest
-            CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
-            platform-pkgs: ${{ github.workspace }}/conda-bld/osx-64
+            CONDA_BLD_PATH: ${GITHUB_WORKSPACE}/conda-bld
+            platform-pkgs: ${GITHUB_WORKSPACE}/conda-bld/osx-64
 
           - os: windows-latest
-            CONDA_BLD_PATH: ${{ github.workspace }}\conda-bld
-            platform-pkgs: ${{ github.workspace }}\conda-bld\win-64
+            CONDA_BLD_PATH: %GITHUB_WORKSPACE%\conda-bld
+            platform-pkgs: %GITHUB_WORKSPACE%\conda-bld\win-64
 
     env:
       CONDA_BLD_PATH: ${{ matrix.CONDA_BLD_PATH }}
