@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 import numpy as np
 import pytest
 
@@ -8,12 +10,14 @@ from napari._qt.layer_controls.qt_layer_controls_container import (
 from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari.layers import Points, Shapes
 
-_SHAPES = np.random.random((10, 4, 2))
-_LINES = np.random.random((6, 2, 2))
+LayerTypeWithData = namedtuple('LayerTypeWithData', ['type', 'data'])
+_POINTS = LayerTypeWithData(type=Points, data=np.random.random((5, 2)))
+_SHAPES = LayerTypeWithData(type=Shapes, data=np.random.random((10, 4, 2)))
+_LINES_DATA = np.random.random((6, 2, 2))
 
 
 def test_create_shape(qtbot):
-    shapes = Shapes(_SHAPES)
+    shapes = _SHAPES.type(_SHAPES.data)
 
     ctrl = create_qt_layer_controls(shapes)
     qtbot.addWidget(ctrl)
@@ -36,38 +40,42 @@ def test_inheritance(qtbot):
     class Lines(Shapes):
         """Here too"""
 
-    lines = Lines(_LINES)
+    lines = Lines(_LINES_DATA)
     layer_to_controls[Lines] = QtLinesControls
     ctrl = create_qt_layer_controls(lines)
     qtbot.addWidget(ctrl)
     assert isinstance(ctrl, QtLinesControls)
 
 
-def test_text_set_visible_updates_checkbox(qtbot):
+@pytest.mark.parametrize('layer_type_with_data', [_POINTS, _SHAPES])
+def test_text_set_visible_updates_checkbox(qtbot, layer_type_with_data):
     text = {
         'text': 'test',
         'visible': True,
     }
-    points = Points(np.random.random((4, 2)), text=text)
-    ctrl = create_qt_layer_controls(points)
+    layer = layer_type_with_data.type(layer_type_with_data.data, text=text)
+    ctrl = create_qt_layer_controls(layer)
     qtbot.addWidget(ctrl)
     assert ctrl.textDispCheckBox.isChecked()
 
-    points.text.visible = False
+    layer.text.visible = False
 
     assert not ctrl.textDispCheckBox.isChecked()
 
 
-def test_set_text_then_set_visible_updates_checkbox(qtbot):
-    points = Points(np.random.random((4, 2)))
-    ctrl = create_qt_layer_controls(points)
+@pytest.mark.parametrize('layer_type_with_data', [_POINTS, _SHAPES])
+def test_set_text_then_set_visible_updates_checkbox(
+    qtbot, layer_type_with_data
+):
+    layer = layer_type_with_data.type(layer_type_with_data.data)
+    ctrl = create_qt_layer_controls(layer)
     qtbot.addWidget(ctrl)
-    points.text = {
+    layer.text = {
         'text': 'another_test',
         'visible': False,
     }
     assert not ctrl.textDispCheckBox.isChecked()
 
-    points.text.visible = True
+    layer.text.visible = True
 
     assert ctrl.textDispCheckBox.isChecked()
