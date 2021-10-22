@@ -1302,7 +1302,7 @@ class Points(Layer):
         )
 
         # project the in view points onto the plane
-        projected_points, _ = project_points_onto_plane(
+        projected_points, projection_distances = project_points_onto_plane(
             points=self._view_data,
             plane_point=plane_point,
             plane_normal=plane_normal,
@@ -1324,10 +1324,10 @@ class Points(Layer):
         )
         indices = np.where(in_slice_matches)[0]
 
-        # todo: find the index of the closest index
-        closest_index = indices
-
-        if len(closest_index) > 0:
+        if len(indices) > 0:
+            # find the point that is most in the foreground
+            candidate_point_distances = projection_distances[indices]
+            closest_index = indices[np.argmin(candidate_point_distances)]
             selection = self._indices_view[closest_index]
         else:
             selection = None

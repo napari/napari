@@ -22,9 +22,13 @@ from napari.utils.geometry import (
 single_point = np.array([10, 10, 10])
 expected_point_single = np.array([[10, 0, 10]])
 expected_distance_single = np.array([10])
-multiple_point = np.array([[10, 10, 10], [20, 10, 30], [20, 40, 20]])
-expected_multiple_point = np.array([[10, 0, 10], [20, 0, 30], [20, 0, 20]])
-expected_distance_multiple = np.array([10, 10, 40])
+multiple_point = np.array(
+    [[10, 10, 10], [20, 10, 30], [20, 40, 20], [10, -5, 30]]
+)
+expected_multiple_point = np.array(
+    [[10, 0, 10], [20, 0, 30], [20, 0, 20], [10, 0, 30]]
+)
+expected_distance_multiple = np.array([10, 10, 40, -5])
 
 
 @pytest.mark.parametrize(
