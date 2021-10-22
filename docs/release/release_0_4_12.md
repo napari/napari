@@ -16,8 +16,8 @@ This is a bug fix release with many minor improvements and bug fixes. The user
 experience for users of dask arrays might be significantly improved by a new
 approach to setting the contrast limits based on the current slice (#3425).
 
-A progress bar will now display when opening multiple files (#3355). 
-Thanks to first-time contributor @tibuch the data type of labels layers can now 
+A progress bar will now display when opening multiple files (#3355).
+Thanks to first-time contributor @tibuch the data type of labels layers can now
 be converted from a context menu on the layer list (#3402).
 
 See the full list of merged pull requests below for further delails!
@@ -57,6 +57,7 @@ See the full list of merged pull requests below for further delails!
 - Finds layer_controls based on layer's MRO (#3471)
 - Use `ensure_main_thread` instead of custom thread propagation mechanism in NapariQtNotification (#3473)
 - Drop pythonw patch in windows bundle (#3479)
+- Revert "drop pythonw patch (#3479)" (#3501)
 
 
 ## Bug Fixes
