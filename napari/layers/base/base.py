@@ -615,17 +615,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         order[np.argsort(order)] = list(range(len(order)))
         return tuple(order)
 
-    @property
-    def _dims_mask(self):
-        """to be removed displayed dimensions mask"""
-        # Ultimately we aim to remove all slicing information from the layer
-        # itself so that layers can be sliced in different ways for multiple
-        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
-        # for additional discussion.
-        dims_displayed_mask = np.zeros(self._ndim, dtype=bool)
-        dims_displayed_mask[self._dims_displayed] = True
-        return dims_displayed_mask
-
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
@@ -1101,8 +1090,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def projected_distance_from_mouse_drag(
         self,
-        start_position_world: np.ndarray,
-        end_position_world: np.ndarray,
+        start_position: np.ndarray,
+        end_position: np.ndarray,
         view_direction: np.ndarray,
         vector: np.ndarray,
     ):
@@ -1131,8 +1120,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         -------
         projected_distance : (1, ) or (n, ) np.ndarray of float
         """
-        start_position = np.array(start_position_world)[self._dims_mask]
-        end_position = np.array(end_position_world)[self._dims_mask]
+        start_position = self.world_to_displayed_data(start_position)
+        end_position = self.world_to_displayed_data(end_position)
         view_direction = self._world_to_data_ray(view_direction)
         return drag_data_to_projected_distance(
             start_position, end_position, view_direction, vector
@@ -1183,6 +1172,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             coords = [0] * (self.ndim - len(position)) + list(position)
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
+
+    def world_to_displayed_data(
+        self, position_world: np.ndarray
+    ) -> np.ndarray:
+        """Convert from world to data coordinates in displayed dimensions only."""
+        position_data_nd = self.world_to_data(position_world)
+        return np.asarray(position_data_nd)[self._dims_displayed]
 
     @property
     def _data_to_world(self) -> Affine:
