@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 
@@ -14,17 +14,19 @@ FACE_NORMALS = {
 }
 
 
-def project_point_onto_plane(
-    point: np.ndarray, plane_point: np.ndarray, plane_normal: np.ndarray
-) -> np.ndarray:
-    """Project a point on to a plane that has
-    been defined as a point and a normal vector.
+def project_points_onto_plane(
+    points: np.ndarray, plane_point: np.ndarray, plane_normal: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Project points on to a plane.
+
+    Plane is defined by a point and a normal vector. This function
+    is designed to work with points and planes in 3D.
 
     Parameters
     ----------
-    point : np.ndarray
-        The coordinate of the point to be projected.
-        Should have shape (N,3).
+    points : np.ndarray
+        The coordinate of the point to be projected. The points
+        should be 3D and have shape shape (N,3) for N points.
     plane_point : np.ndarray
         The point on the plane used to define the plane.
         Should have shape (3,).
@@ -38,22 +40,24 @@ def project_point_onto_plane(
         The point that has been projected to the plane.
         This is always an Nx3 array.
     """
-    point = np.atleast_2d(point)
+    points = np.atleast_2d(points)
     plane_point = np.asarray(plane_point)
     # make the plane normals have the same shape as the points
-    plane_normal = np.tile(plane_normal, (point.shape[0], 1))
+    plane_normal = np.tile(plane_normal, (points.shape[0], 1))
 
     # get the vector from point on the plane
     # to the point to be projected
-    point_vector = point - plane_point
+    point_vector = points - plane_point
 
     # find the distance to the plane along the normal direction
-    dist_to_plane = np.multiply(point_vector, plane_normal).sum(axis=1)
+    distance_to_plane = np.multiply(point_vector, plane_normal).sum(axis=1)
 
     # project the point
-    projected_point = point - (dist_to_plane[:, np.newaxis] * plane_normal)
+    projected_points = points - (
+        distance_to_plane[:, np.newaxis] * plane_normal
+    )
 
-    return projected_point
+    return projected_points, distance_to_plane
 
 
 def rotation_matrix_from_vectors(vec_1, vec_2):
@@ -97,6 +101,37 @@ def rotation_matrix_from_vectors(vec_1, vec_2):
             # if the vectors are in opposite direction, rotate 180 degrees
             rotation_matrix = np.diag([-1, -1, 1])
     return rotation_matrix
+
+
+def rotate_points_on_plane(
+    points: np.ndarray,
+    current_plane_normal: np.ndarray,
+    new_plane_normal: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Rotate points that all lie on the same plane to a plane with a new normal vector.
+
+    Parameters
+    ----------
+    points : np.ndarray
+        The points to rotate. They should all lie on the same plane with the
+        normal vector current_plane_normal. Should be (NxD) array.
+    current_plane_normal : np.ndarray
+        The normal vector for the plane the points currently reside on.
+    new_plane_normal : np.ndarray
+        The normal vector for the plane the points will be rotated to.
+    Returns
+    -------
+    rotated_points : np.ndarray
+        The points that have been rotated
+    rotation_matrix : np.ndarray
+        The rotation matrix used for rotating the points.
+    """
+    rotation_matrix = rotation_matrix_from_vectors(
+        current_plane_normal, new_plane_normal
+    )
+    rotated_points = points @ rotation_matrix.T
+
+    return rotated_points, rotation_matrix
 
 
 def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
@@ -504,15 +539,18 @@ def line_in_quadrilateral_3d(
     """
 
     # project the vertices of the bound region on to the view plane
-    vertices_plane = project_point_onto_plane(
-        point=quadrilateral,
+    vertices_plane, _ = project_points_onto_plane(
+        points=quadrilateral,
         plane_point=line_point,
         plane_normal=line_direction,
     )
 
     # rotate the plane to make the triangles 2D
-    rotation_matrix = rotation_matrix_from_vectors(line_direction, [0, 0, 1])
-    rotated_vertices = vertices_plane @ rotation_matrix.T
+    rotated_vertices, rotation_matrix = rotate_points_on_plane(
+        points=vertices_plane,
+        current_plane_normal=line_direction,
+        new_plane_normal=[0, 0, 1],
+    )
     quadrilateral_2D = rotated_vertices[:, :2]
     click_pos_2D = rotation_matrix.dot(line_point)[:2]
 
@@ -547,10 +585,8 @@ def line_in_triangles_3d(
     """
     vertices = triangles.reshape((-1, triangles.shape[2]))
     # project the vertices of the bound region on to the view plane
-    vertices_plane = project_point_onto_plane(
-        point=vertices,
-        plane_point=line_point,
-        plane_normal=line_direction,
+    vertices_plane, _ = project_points_onto_plane(
+        points=vertices, plane_point=line_point, plane_normal=line_direction
     )
 
     # rotate the plane to make the triangles 2D

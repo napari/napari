@@ -15,31 +15,36 @@ from napari.utils.geometry import (
     line_in_quadrilateral_3d,
     line_in_triangles_3d,
     point_in_quadrilateral_2d,
-    project_point_onto_plane,
+    project_points_onto_plane,
     rotation_matrix_from_vectors,
 )
 
 single_point = np.array([10, 10, 10])
 expected_point_single = np.array([[10, 0, 10]])
+expected_distance_single = np.array([10])
 multiple_point = np.array([[10, 10, 10], [20, 10, 30], [20, 40, 20]])
 expected_multiple_point = np.array([[10, 0, 10], [20, 0, 30], [20, 0, 20]])
+expected_distance_multiple = np.array([10, 10, 40])
 
 
 @pytest.mark.parametrize(
-    "point,expected_projected_point",
+    "point,expected_projected_point,expected_distances",
     [
-        (single_point, expected_point_single),
-        (multiple_point, expected_multiple_point),
+        (single_point, expected_point_single, expected_distance_single),
+        (multiple_point, expected_multiple_point, expected_distance_multiple),
     ],
 )
-def test_project_point_to_plane(point, expected_projected_point):
+def test_project_point_to_plane(
+    point, expected_projected_point, expected_distances
+):
     plane_point = np.array([20, 0, 0])
     plane_normal = np.array([0, 1, 0])
-    projected_point = project_point_onto_plane(
+    projected_point, distance_to_plane = project_points_onto_plane(
         point, plane_point, plane_normal
     )
 
     np.testing.assert_allclose(projected_point, expected_projected_point)
+    np.testing.assert_allclose(distance_to_plane, expected_distances)
 
 
 @pytest.mark.parametrize(
