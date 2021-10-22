@@ -48,11 +48,22 @@ class VispySurfaceLayer(VispyBaseLayer):
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
 
+        # manually detach filters when we go to 2D to avoid dimensionality issues
+        # see comments in napari#3475. The filter is set again after set_data!
+        if self.layer._ndisplay == 2:
+            filt = self.node.shading_filter
+            try:
+                self.node.detach(filt)
+                self.node.shading = None
+                self.node.shading_filter = None
+            except ValueError:
+                # sometimes we try to detach non-attached filters, which causes a ValueError
+                pass
+
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
-        if self.layer._ndisplay == 3:
-            self._on_shading_change()
+        self._on_shading_change()
 
         self.node.update()
         # Call to update order of translation values with new dims:
