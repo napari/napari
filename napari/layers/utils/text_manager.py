@@ -235,7 +235,12 @@ class TextManager(EventedModel):
         n_text: int,
         properties: Dict[str, np.ndarray],
     ):
-        """Updates this in place from a layer.
+        """Updates this in-place from a layer.
+
+        This will effectively overwrite all existing state, but in-place
+        so that there is no need for any external components to reconnect
+        to any useful events. For this reason, only fields that change in
+        value will emit their corresponding events.
 
         Parameters
         ----------
@@ -247,7 +252,9 @@ class TextManager(EventedModel):
         )
 
         # Update a copy of this so that any associated errors are raised
-        # before actually making the update.
+        # before actually making the update. This does not need to be a
+        # deep copy because update will only try to reassign fields and
+        # should not mutate any existing fields in-place.
         current_manager = self.copy()
         current_manager.update(new_manager)
 
