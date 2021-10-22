@@ -17,6 +17,7 @@ _np_ints = {
 }
 
 _np_floats = {
+    16: np.float16,
     32: np.float32,
     64: np.float64,
 }

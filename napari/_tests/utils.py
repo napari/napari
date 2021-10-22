@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 import pytest
+import tensorstore as ts
 
 from napari import Viewer
 from napari.layers import (
@@ -14,10 +15,16 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.utils.config import async_loading
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
     reason='Screenshot tests are not supported on windows CI.',
+)
+
+skip_on_mac_ci = pytest.mark.skipif(
+    sys.platform.startswith('darwin') and os.getenv('CI', '0') != '0',
+    reason='This test seem to be problematic on mac.',
 )
 
 skip_local_popups = pytest.mark.skipif(
@@ -39,7 +46,6 @@ layer_test_data = [
     (Points, 20 * np.random.random((10, 2)), 2),
     (Points, 20 * np.random.random((10, 3)), 3),
     (Vectors, 20 * np.random.random((10, 2, 2)), 2),
-    (Shapes, 20 * np.random.random((10, 4, 2)), 2),
     (Shapes, 20 * np.random.random((10, 4, 2)), 2),
     (
         Surface,
@@ -65,6 +71,10 @@ layer_test_data = [
         4,
     ),
 ]
+
+if not async_loading:
+    # Tensorstore arrays currently break with async
+    layer_test_data.append((Image, ts.array(np.random.random((10, 15))), 2))
 
 
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
@@ -197,3 +207,19 @@ def check_layer_world_data_extent(
     translated_world_extent = np.add(scaled_world_extent, translate)
     np.testing.assert_almost_equal(layer.extent.data, extent)
     np.testing.assert_almost_equal(layer.extent.world, translated_world_extent)
+
+
+def slow(timeout):
+    """
+    Both mark a function as slow, and with a timeout which is easily scalable
+    via an env variable.
+    """
+    factor = int(os.getenv('NAPARI_TESTING_TIMEOUT_SCALING', '1'))
+
+    def _slow(func):
+
+        func = pytest.mark.timeout(timeout * factor)(func)
+        func = pytest.mark.slow(func)
+        return func
+
+    return _slow

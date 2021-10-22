@@ -17,8 +17,7 @@ import numpy as np
 from ...layers.image.experimental import OctreeChunk
 from ...types import ArrayLike
 from ...utils.translations import trans
-from ..vendored import ImageVisual
-from ..vendored.image import _build_color_transform
+from ..visuals.image import Image
 from .texture_atlas import TextureAtlas2D
 from .tile_set import TileSet
 
@@ -28,7 +27,7 @@ from .tile_set import TileSet
 SHAPE_IN_TILES = (16, 16)
 
 
-class TiledImageVisual(ImageVisual):
+class TiledImageVisual(Image):
     """An image that is drawn using one or more tiles.
 
     A regular ImageVisual is a single image drawn as a single rectangle
@@ -384,12 +383,11 @@ class TiledImageVisual(ImageVisual):
         # TODO_OCTREE: how does colortransform change for tiled?
         if self._need_colortransform_update:
             prg = view.view_program
-            grayscale = len(self.tile_shape) == 2 or self.tile_shape[2] == 1
+            # grayscale = len(self.tile_shape) == 2 or self.tile_shape[2] == 1
+            # XXX broken; we need a way to override the rgba/luminance check in the base class
             self.shared_program.frag[
                 'color_transform'
-            ] = _build_color_transform(
-                grayscale, self.clim_normalized, self.gamma, self.cmap
-            )
+            ] = Image._build_color_transform()
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = (
                 self.cmap.texture_lut()

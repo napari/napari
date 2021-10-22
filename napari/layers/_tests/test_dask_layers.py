@@ -29,7 +29,9 @@ def test_dask_not_greedy():
     )
     layer = layers.Image(arr)
     assert FETCH_COUNT == 1
-    assert tuple(layer.contrast_limits) == (0, 1)
+    expected = (np.min(arr[0, 0, 0]), np.max(arr[0, 0, 0]))
+    assert tuple(layer.contrast_limits) != expected
+    FETCH_COUNT = 1  # because we just fetched one more time
 
     arr2 = da.map_blocks(
         get_plane,
@@ -38,7 +40,7 @@ def test_dask_not_greedy():
     )
     layer = layers.Image(arr2)
     assert FETCH_COUNT == 1
-    assert tuple(layer.contrast_limits) == (0, 2 ** 8 - 1)
+    assert tuple(layer.contrast_limits) == (0, 255)
 
 
 def test_dask_array_creates_cache():

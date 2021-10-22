@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import signal
 import socket
 import weakref
@@ -34,6 +35,7 @@ from ..utils.misc import is_sequence
 from ..utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
+RICH_TEXT_PATTERN = re.compile("<[^\n]+>")
 
 
 def is_qbyte(string: str) -> bool:
@@ -385,3 +387,18 @@ class Sentry(QObject):
 
     def alert(self, *_):
         self.alerted.emit()
+
+
+def qt_might_be_rich_text(text) -> bool:
+    """
+    Check if a text might be rich text in a cross-binding compatible way.
+    """
+    if qtpy.PYSIDE2:
+        from qtpy.QtGui import Qt as _Qt
+    else:
+        from qtpy.QtCore import Qt as _Qt
+
+    try:
+        return _Qt.mightBeRichText(text)
+    except Exception:
+        return bool(RICH_TEXT_PATTERN.search(text))

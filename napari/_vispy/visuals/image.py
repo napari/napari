@@ -1,5 +1,6 @@
-from vispy.scene.visuals import create_visual_node
+from vispy.scene.visuals import Image as BaseImage
 
-from ..vendored import ImageVisual
 
-Image = create_visual_node(ImageVisual)
+class Image(BaseImage):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

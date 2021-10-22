@@ -7,9 +7,9 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from typing import List, Optional, Tuple, Union
 
+import magicgui as mgui
 import numpy as np
 
-from ...utils import _magicgui as _mgui
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -60,7 +60,7 @@ def no_op(layer: Layer, event: Event) -> None:
     return None
 
 
-@_mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
+@mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
 class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
 

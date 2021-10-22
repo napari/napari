@@ -4,13 +4,15 @@ Display two spheres with Surface layers
 
 try:
     from meshzoo import icosa_sphere
-except ImportError:
-    raise ImportError("This example uses a meshzoo but meshzoo is not installed. "
-                      "To install try 'pip install meshzoo'.")
+except ImportError as e:
+    raise ImportError(
+        "This example uses a meshzoo but meshzoo is not installed. "
+        "To install try 'pip install meshzoo'."
+    ) from e
 import napari
 
 
-vert, faces = icosa_sphere(10)
+vert, faces = icosa_sphere(50)
 
 vert *= 100
 

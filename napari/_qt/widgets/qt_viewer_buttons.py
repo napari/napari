@@ -275,15 +275,11 @@ class QtViewerButtons(QFrame):
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height
 
-        # The following is needed in order to make the tooltip wrap the text.
-        shape_help_txt = f"<FONT> {shape_help_msg}</FONT>"
-        stride_help_txt = f"<FONT> {stride_help_msg}</FONT>"
-
         shape_help_symbol.setObjectName("help_label")
-        shape_help_symbol.setToolTip(shape_help_txt)
+        shape_help_symbol.setToolTip(shape_help_msg)
 
         stride_help_symbol.setObjectName("help_label")
-        stride_help_symbol.setToolTip(stride_help_txt)
+        stride_help_symbol.setToolTip(stride_help_msg)
 
         # layout
         form_layout = QFormLayout()
