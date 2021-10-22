@@ -2154,21 +2154,3 @@ def test_set_properties_with_missing_text_property_text_becomes_constant():
     np.testing.assert_array_equal(
         points.text.values, ['class', 'class', 'class']
     )
-
-
-def test_remove_selected_with_derived_text():
-    data = np.array([[100, 100], [200, 300], [333, 111]])
-    properties = {
-        'confidence': np.array([1, 0.5, 0]),
-    }
-    points = Points(
-        data=data,
-        properties=properties,
-        text='confidence',
-    )
-    np.testing.assert_array_equal(points.text.values, ['1.0', '0.5', '0.0'])
-
-    points.selected_data = {1}
-    points.remove_selected()
-
-    np.testing.assert_array_equal(points.text.values, ['1.0', '0.0'])
