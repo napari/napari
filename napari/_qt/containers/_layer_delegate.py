@@ -54,6 +54,7 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
     from ...components.layerlist import LayerList
+    from .qt_layer_list import QtLayerList
 
 
 class LayerDelegate(QStyledItemDelegate):
@@ -172,7 +173,9 @@ class LayerDelegate(QStyledItemDelegate):
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
 
-    def show_context_menu(self, index, model, pos: QPoint, parent):
+    def show_context_menu(
+        self, index, model: QtLayerList, pos: QPoint, parent
+    ):
         """Show the layerlist context menu.
 
         To add a new item to the menu, update the _LAYER_ACTIONS dict.

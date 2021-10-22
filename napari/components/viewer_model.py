@@ -21,7 +21,7 @@ from typing import (
 import numpy as np
 from pydantic import Extra, Field, validator
 
-from napari.utils.context._service import Context, create_context
+from napari.utils.context import Context, create_context
 
 from .. import layers
 from ..layers import Image, Layer

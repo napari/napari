@@ -22,7 +22,7 @@ from ._expressions import Name
 if TYPE_CHECKING:
     from napari.utils.events import Event, EventEmitter
 
-    from ._service import Context
+    from ._context import Context
 
 
 T = TypeVar("T")

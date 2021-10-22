@@ -1,10 +1,6 @@
-"""
-Contexts
-"""
 from __future__ import annotations
 
 import sys
-from contextlib import contextmanager
 from typing import Any, ChainMap, Dict, Final, Optional
 from weakref import WeakKeyDictionary
 
@@ -18,22 +14,23 @@ class Context(ChainMap):
         super().__init__(*maps)
         self.changed = EventEmitter(self, 'changed')
 
-    @contextmanager
-    def buffered_changes(self):
-        with self.changed.paused(lambda a, b: (a[0].union(b[0]),)):
-            yield
+    # this requires some stuff from psygnal ...
+    # @contextmanager
+    # def buffered_changes(self):
+    #     with self.changed.paused(lambda a, b: (a[0].union(b[0]),)):
+    #         yield
 
     def __setitem__(self, k: str, v: Any) -> None:
         emit = self.get(k, _null) is not v
         super().__setitem__(k, v)
         if emit:
-            self.changed.emit({k})
+            self.changed(value={k})
 
     def __delitem__(self, k: str) -> None:
         emit = k in self
         super().__delitem__(k)
         if emit:
-            self.changed.emit({k})
+            self.changed(value={k})
 
     def __hash__(self):
         return id(self)
@@ -55,7 +52,7 @@ class SettingsAwareContext(Context):
         self._settings.events.changed.connect(self._update_key)
 
     def _update_key(self, event: Event):
-        self.changed.emit(f'{self._PREFIX}{event.key}')
+        self.changed(value={f'{self._PREFIX}{event.key}'})
 
     def __del__(self):
         self._settings.events.changed.disconnect(self._update_key)
@@ -72,14 +69,13 @@ class SettingsAwareContext(Context):
                 return val
         return super().__missing__(key)
 
-    def new_child(self, m: Optional[dict] = None):
+    def new_child(self, m: Optional[dict] = None) -> Context:  # type: ignore
         """New ChainMap with a new map followed by all previous maps.
 
         If no map is provided, an empty dict is used.
         """
-        if m is None:
-            m = {}
-        return Context(m, self)  # important to use self, not *self.maps
+        # important to use self, not *self.maps
+        return Context(m or {}, self)  # type: ignore
 
     def __setitem__(self, k: str, v: Any) -> None:
         if k.startswith(self._PREFIX):
@@ -90,17 +86,23 @@ class SettingsAwareContext(Context):
         return True
 
 
-ROOT_CONTEXT = SettingsAwareContext()
-_ALL_CONTEXTS: WeakKeyDictionary[object, Context] = WeakKeyDictionary()
+_ROOT_CONTEXT: Optional[SettingsAwareContext] = None
+_OBJ_TO_CONTEXT: WeakKeyDictionary[object, Context] = WeakKeyDictionary()
 
 
 def create_context(
     obj: object,
     max_depth: int = 20,
     start: int = 2,
-    root: Context = ROOT_CONTEXT,
+    root: Optional[Context] = None,
 ) -> Context:
-    if root is not ROOT_CONTEXT:
+
+    if root is None:
+        global _ROOT_CONTEXT
+        if _ROOT_CONTEXT is None:
+            _ROOT_CONTEXT = SettingsAwareContext()
+        root = _ROOT_CONTEXT
+    else:
         assert isinstance(root, Context), 'root must be an instance of Context'
 
     parent = root
@@ -117,7 +119,7 @@ def create_context(
                 # type is being declared and pydantic is checking defaults
                 break
             elif 'self' in frame.f_locals:
-                _ctx = _ALL_CONTEXTS.get(frame.f_locals['self'])
+                _ctx = _OBJ_TO_CONTEXT.get(frame.f_locals['self'])
                 if _ctx is not None:
                     parent = _ctx
                     break
@@ -125,9 +127,9 @@ def create_context(
             i += 1
 
     new_context = parent.new_child()
-    _ALL_CONTEXTS[obj] = new_context
+    _OBJ_TO_CONTEXT[obj] = new_context
     return new_context
 
 
 def get_context(obj: object) -> Optional[Context]:
-    return _ALL_CONTEXTS.get(obj)
+    return _OBJ_TO_CONTEXT.get(obj)

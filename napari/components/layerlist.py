@@ -6,8 +6,8 @@ from typing import Iterable, List, Optional, Union
 import numpy as np
 
 from ..layers import Layer
+from ..utils.context import create_context
 from ..utils.context._layerlist_context import LayerListContextKeys
-from ..utils.context._service import create_context
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
@@ -31,8 +31,7 @@ class LayerList(SelectableEventedList[Layer]):
             lookup={str: lambda e: e.name},
         )
         self._ctx = create_context(self, start=4)
-
-        self._ctx_keys = LayerListContextKeys(self.selection._ctx)
+        self._ctx_keys = LayerListContextKeys(self._ctx)
         self._ctx_keys.follow(self.selection.events.changed)
 
         # temporary: see note in _on_selection_event

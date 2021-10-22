@@ -1,1 +1,1 @@
-from ._service import create_context
+from ._context import Context, create_context, get_context
