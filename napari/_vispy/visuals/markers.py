@@ -1,8 +1,4 @@
-from vispy.scene.visuals import create_visual_node
-
-from ..vendored import MarkersVisual
-
-BaseMarkers = create_visual_node(MarkersVisual)
+from vispy.scene.visuals import Markers as BaseMarkers
 
 
 # Custom markers class is needed for entering 3D rendering mode when a points

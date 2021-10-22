@@ -1,7 +1,6 @@
-from vispy.scene.visuals import Compound, Line, Text
+from vispy.scene.visuals import Compound, Line, Markers, Text
 
 from .clipping_planes_mixin import ClippingPlanesMixin
-from .markers import Markers
 
 
 class PointsVisual(ClippingPlanesMixin, Compound):
