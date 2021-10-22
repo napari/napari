@@ -130,8 +130,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         # allow extra attributes during model initialization, useful for mixins
-        self._ctx = create_context(self, max_depth=0)
         self.__config__.extra = Extra.allow
+        # max_depth=0 means don't look for parent contexts.
+        self._ctx = create_context(self, max_depth=0)
         super().__init__(
             title=title,
             dims={
@@ -190,12 +191,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 type='active_layer',
             )
         )
-
-    def __repr__(self) -> str:
-        try:
-            return super().__repr__()
-        except RuntimeError:
-            return 'ViewerModel'
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value

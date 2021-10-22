@@ -113,7 +113,8 @@ class QtActionContextMenu(QMenu):
             if not d:
                 continue
             enable = d['enable_when']
-            enable = enable.eval(ctx) if isinstance(enable, Expr) else enable
+            if isinstance(enable, Expr):
+                enable = enable.eval(ctx)
             item.setEnabled(bool(enable))
             # if it's a menu, iterate (but don't toggle visibility)
             if isinstance(item, QtActionContextMenu):

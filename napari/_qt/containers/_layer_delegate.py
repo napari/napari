@@ -180,7 +180,6 @@ class LayerDelegate(QStyledItemDelegate):
         if not hasattr(self, '_context_menu'):
             self._context_menu = QtActionContextMenu(_LAYER_ACTIONS)
 
-        print(type(model))
         layer_list: LayerList = model.sourceModel()._root
         self._context_menu.update_from_context(layer_list._ctx)
         action = self._context_menu.exec_(pos)

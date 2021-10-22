@@ -259,6 +259,9 @@ class LayerList(SelectableEventedList[Layer]):
         layers: Optional[Iterable[Union[str, Layer]]] = None,
         attributes: Iterable[str] = (),
     ):
+        # adding this method here allows us to emit an event when
+        # layers in this group are linked/unlinked.
+
         from ..layers.utils import _link_layers
 
         if layers is not None:
