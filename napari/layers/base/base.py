@@ -7,11 +7,11 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from typing import List, Optional, Tuple, Union
 
+import magicgui as mgui
 import numpy as np
 
-from ...utils import _magicgui as _mgui
+from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
-from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
@@ -60,7 +60,7 @@ def no_op(layer: Layer, event: Event) -> None:
     return None
 
 
-@_mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
+@mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
 class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
 
@@ -94,7 +94,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}.
+        {'opaque', 'translucent', 'translucent_no_depth', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -118,6 +118,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Blending.TRANSLUCENT
                 Allows for multiple layers to be blended with different opacity
                 and corresponds to depth_test=True, cull_face=False,
+                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+            Blending.TRANSLUCENT_NO_DEPTH
+                Allows for multiple layers to be blended with different opacity,
+                but no depth testing is performed.
+                and corresponds to depth_test=False, cull_face=False,
                 blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
             Blending.ADDITIVE
                 Allows for multiple layers to be blended together with
@@ -147,6 +152,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
         smallest.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
@@ -204,6 +212,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         blending='translucent',
         visible=True,
         multiscale=False,
+        cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
     ):
         super().__init__()
@@ -212,7 +221,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             name = magic_name(data, path_prefix=ROOT_DIR)
 
         self._source = current_source()
-        self.dask_optimized_slicing = configure_dask(data)
+        self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
@@ -566,34 +575,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.translate()
 
     @property
-    def position(self):
-        """tuple: Cursor position in world slice coordinates."""
-        warnings.warn(
-            trans._(
-                "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self._position
-
-    @position.setter
-    def position(self, position):
-        warnings.warn(
-            trans._(
-                "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        _position = position[-self.ndim :]
-        if self._position == _position:
-            return
-        self._position = _position
-
-    @property
     def _is_moving(self):
         return self._private_is_moving
 
@@ -842,39 +823,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def ndim(self):
         """int: Number of dimensions in the data."""
         return self._ndim
-
-    @property
-    def selected(self):
-        """bool: Whether this layer is selected or not."""
-        warnings.warn(
-            trans._(
-                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `layer in viewer.layers.selection`",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        layers = getattr(self, '_deprecated_layerlist', None)
-        if layers is not None:
-            return self in layers.selection
-        return False
-
-    @selected.setter
-    def selected(self, selected):
-        warnings.warn(
-            trans._(
-                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `viewer.layers.selection.add(layer)` or `viewer.layers.selection.remove(layer)`",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        layers = getattr(self, '_deprecated_layerlist', None)
-        if layers is not None:
-            if selected:
-                layers.selection.add(self)
-            else:
-                layers.selection.discard(self)
 
     @property
     def help(self):
@@ -1163,20 +1111,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._update_thumbnail()
             self._set_highlight(force=True)
 
-    @property
-    def coordinates(self):
-        """Cursor position in data coordinates."""
-        warnings.warn(
-            trans._(
-                "layer.coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position. You can then transform that into data coordinates using the layer.world_to_data method.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        # Note we ignore the first transform which is tile2data
-        return self.world_to_data(self._position)
-
     def world_to_data(self, position):
         """Convert from world coordinates to data coordinates.
 
@@ -1409,26 +1343,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         else:
             self.corner_pixels = data_bbox_clipped
-
-    @property
-    def displayed_coordinates(self):
-        """list: List of currently displayed coordinates.
-
-        displayed_coordinates is deprecated and will be removed in version 0.4.9.
-        It should no longer be used as layers should will soon not know
-        which dimensions are displayed. Instead you should use
-        `[layer.coordinates[d] for d in viewer.dims.displayed]
-        """
-        warnings.warn(
-            trans._(
-                "displayed_coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should use [layer.coordinates[d] for d in viewer.dims.displayed]",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        coordinates = self.world_to_data(self._position)
-        return [coordinates[i] for i in self._dims_displayed]
 
     def get_status(
         self,

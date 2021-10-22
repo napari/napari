@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Tuple
 
-from napari.utils.translations import trans
-
+from ...utils._dtype import normalize_dtype
+from ...utils.translations import trans
 from ._context_keys import ContextNamespace, RawContextKey
 
 if TYPE_CHECKING:
+    from numpy.typing import DTypeLike
+
     from napari.layers import Layer
     from napari.utils.events import Selection
 
@@ -55,6 +57,16 @@ def _active_shape(s: LayerSel) -> Optional[Tuple[int, ...]]:
 
 def _same_shape(s: LayerSel) -> bool:
     return len({getattr(x.data, "shape", ()) for x in s}) == 1
+
+
+def _active_dtype(s: LayerSel) -> DTypeLike:
+    dtype = None
+    if s.active:
+        try:
+            dtype = normalize_dtype(s.active.data.dtype).__name__
+        except AttributeError:
+            pass
+    return dtype
 
 
 class LayerListContextKeys(ContextNamespace):
@@ -110,6 +122,11 @@ class LayerListContextKeys(ContextNamespace):
         (),
         trans._("Shape of the active layer, or `None` if nothing is active."),
         _active_shape,
+    )
+    active_layer_dtype = RawContextKey(
+        None,
+        trans._("Dtype of the active layer, or `None` if nothing is active."),
+        _active_dtype,
     )
     all_layers_same_shape = RawContextKey(
         False,
