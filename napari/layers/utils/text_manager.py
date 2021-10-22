@@ -228,7 +228,13 @@ class TextManager(EventedModel):
         kwargs['properties'] = properties
         return cls(**kwargs)
 
-    def _update_from_layer(self, *, text, n_text, properties):
+    def _update_from_layer(
+        self,
+        *,
+        text: Union['TextManager', dict, str, None],
+        n_text: int,
+        properties: Dict[str, np.ndarray],
+    ):
         """Updates this in place from a layer.
 
         Parameters

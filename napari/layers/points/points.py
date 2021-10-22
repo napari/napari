@@ -309,7 +309,6 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
-            text=Event,
         )
 
         self._colors = get_color_namelist()
