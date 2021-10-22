@@ -14,12 +14,14 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
+from ...utils.geometry import project_points_onto_plane, rotate_points_on_plane
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
+from ..utils.interactivity_utils import click_plane_from_intersection_points
 from ..utils.layer_utils import (
     coerce_current_properties,
     get_current_properties,
@@ -1241,7 +1243,7 @@ class Points(Layer):
             return [], np.empty(0)
 
     def _get_value(self, position) -> Union[None, int]:
-        """Value of the data at a position in data coordinates.
+        """Index of the point at a given 2D position in data coordinates.
 
         Parameters
         ----------
@@ -1268,6 +1270,67 @@ class Points(Layer):
             if len(indices) > 0:
                 selection = self._indices_view[indices[-1]]
 
+        return selection
+
+    def _get_value_3d(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Union[int, None]:
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value : Union[int, None]
+            The data value along the supplied ray.
+        """
+        if (start_point is None) or (end_point is None):
+            # if the ray doesn't intersect the data volume, no points could have been intersected
+            return None
+        plane_point, plane_normal = click_plane_from_intersection_points(
+            start_point, end_point, dims_displayed
+        )
+
+        # project the in view points onto the plane
+        projected_points, _ = project_points_onto_plane(
+            points=self._view_data,
+            plane_point=plane_point,
+            plane_normal=plane_normal,
+        )
+
+        # rotate points and plane to be axis aligned with normal [0, 0, 1]
+        rotated_points, rotation_matrix = rotate_points_on_plane(
+            points=projected_points,
+            current_plane_normal=plane_normal,
+            new_plane_normal=[0, 0, 1],
+        )
+        rotated_click_point = np.dot(rotation_matrix, plane_point)
+
+        # find the points the click intersects
+        distances = abs(rotated_points[:, :2] - rotated_click_point[:2])
+        in_slice_matches = np.all(
+            distances <= np.expand_dims(self._view_size, axis=1) / 2,
+            axis=1,
+        )
+        indices = np.where(in_slice_matches)[0]
+
+        # todo: find the index of the closest index
+        closest_index = indices
+
+        if len(closest_index) > 0:
+            selection = self._indices_view[closest_index]
+        else:
+            selection = None
         return selection
 
     def _set_view_slice(self):
