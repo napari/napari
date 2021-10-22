@@ -39,6 +39,10 @@ def project_points_onto_plane(
     projected_point : np.ndarray
         The point that has been projected to the plane.
         This is always an Nx3 array.
+    signed_distance_to_plane : np.ndarray
+        The signed projection distance between the points and the plane.
+        Positive values indicate the point is on the positive normal side of the plane.
+        Negative values indicate the point is on the negative normal side of the plane.
     """
     points = np.atleast_2d(points)
     plane_point = np.asarray(plane_point)
@@ -50,14 +54,16 @@ def project_points_onto_plane(
     point_vector = points - plane_point
 
     # find the distance to the plane along the normal direction
-    distance_to_plane = np.multiply(point_vector, plane_normal).sum(axis=1)
+    signed_distance_to_plane = np.multiply(point_vector, plane_normal).sum(
+        axis=1
+    )
 
     # project the point
     projected_points = points - (
-        distance_to_plane[:, np.newaxis] * plane_normal
+        signed_distance_to_plane[:, np.newaxis] * plane_normal
     )
 
-    return projected_points, distance_to_plane
+    return projected_points, signed_distance_to_plane
 
 
 def rotation_matrix_from_vectors(vec_1, vec_2):
