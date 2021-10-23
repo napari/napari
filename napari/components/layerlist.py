@@ -31,8 +31,9 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
-        self._ctx = create_context(self, start=2)
-        self._ctx_keys = LayerListContextKeys(self._ctx)
+        print("get layerlist ctx")
+        ctx = create_context(self)
+        self._ctx_keys = LayerListContextKeys(ctx)
         self._ctx_keys.follow(self.selection.events.changed)
 
         # temporary: see note in _on_selection_event

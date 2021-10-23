@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from typing import Any, ChainMap, Dict, Final, Optional
-from weakref import WeakKeyDictionary
+from weakref import finalize
 
 from ..events.event import Event, EventEmitter
 
@@ -87,7 +87,13 @@ class SettingsAwareContext(Context):
 
 
 _ROOT_CONTEXT: Optional[SettingsAwareContext] = None
-_OBJ_TO_CONTEXT: WeakKeyDictionary[object, Context] = WeakKeyDictionary()
+
+# note: it seems like WeakKeyDictionary would be a nice match here, but
+# it appears that the object somehow isn't initialized "enough" to register
+# as the same object in the WeakKeyDictionary later when queried with
+# `obj in _OBJ_TO_CONTEXT` ... so instead we use id(obj)
+# _OBJ_TO_CONTEXT: WeakKeyDictionary[object, Context] = WeakKeyDictionary()
+_OBJ_TO_CONTEXT: Dict[int, Context] = {}
 
 
 def create_context(
@@ -117,9 +123,10 @@ def create_context(
                 '_set_default_and_type',
             ):
                 # type is being declared and pydantic is checking defaults
-                break
+                # this context will never be used.
+                return Context()
             elif 'self' in frame.f_locals:
-                _ctx = _OBJ_TO_CONTEXT.get(frame.f_locals['self'])
+                _ctx = _OBJ_TO_CONTEXT.get(id(frame.f_locals['self']))
                 if _ctx is not None:
                     parent = _ctx
                     break
@@ -127,9 +134,12 @@ def create_context(
             i += 1
 
     new_context = parent.new_child()
-    _OBJ_TO_CONTEXT[obj] = new_context
+    obj_id = id(obj)
+    _OBJ_TO_CONTEXT[obj_id] = new_context
+    # remove key from dict when object is deleted
+    finalize(obj, lambda: _OBJ_TO_CONTEXT.pop(obj_id, None))
     return new_context
 
 
 def get_context(obj: object) -> Optional[Context]:
-    return _OBJ_TO_CONTEXT.get(obj)
+    return _OBJ_TO_CONTEXT.get(id(obj))

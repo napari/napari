@@ -35,13 +35,15 @@ class __missing:
 MISSING = __missing()
 
 
-class RawContextKey(Name, Generic[A, T]):
-    class Info(NamedTuple):
-        key: str
-        type: Optional[Type]
-        description: Optional[str]
+class ContextKeyInfo(NamedTuple):
+    key: str
+    type: Optional[Type]
+    description: Optional[str]
 
-    _info: List[Info] = []
+
+class RawContextKey(Name, Generic[A, T]):
+
+    _info: List[ContextKeyInfo] = []
 
     def __init__(
         self,
@@ -69,16 +71,13 @@ class RawContextKey(Name, Generic[A, T]):
         return self.id
 
     @classmethod
-    def info(cls) -> List[RawContextKey.Info]:
+    def info(cls) -> List[ContextKeyInfo]:
         return list(cls._info)
 
     def _store(self) -> None:
         self._info.append(
-            RawContextKey.Info(self.id, self._type, self._description)
+            ContextKeyInfo(self.id, self._type, self._description)
         )
-
-    def bind_to(self, service: Context) -> None:
-        service[self.id] = self._default_value
 
     def __set_name__(self, owner: Type, name: str):
         if self.id:
@@ -104,24 +103,23 @@ class RawContextKey(Name, Generic[A, T]):
     ) -> Union[T, None, RawContextKey[A, T]]:
         if obj is None:
             return self
-        return obj._service[self.id]
+        return obj._context[self.id]
 
     def __set__(self, obj: ContextNamespace, value: T) -> None:
-        obj._service[self.id] = value
+        obj._context[self.id] = value
 
     def __delete__(self, obj: ContextNamespace) -> None:
-        del obj._service[self.id]
+        del obj._context[self.id]
 
 
 class ContextNamespace:
-    def __init__(self, service: Context) -> None:
-        self._service = service
+    def __init__(self, context: Context) -> None:
+        self._context = context
         self._defaults: Dict[str, Any] = {}
         self._updaters: Dict[str, Callable] = {}
         for k, v in type(self).__dict__.items():
             if isinstance(v, RawContextKey):
-                self._defaults[k] = v._default_value
-                v.bind_to(service)
+                self._defaults[k] = context[v.id] = v._default_value
                 if callable(v._updater):
                     self._updaters[k] = v._updater
 
@@ -136,7 +134,6 @@ class ContextNamespace:
             until.connect(partial(on.disconnect, self._update))
 
     def _update(self, event: Event) -> None:
-        print('source', event.source)
         for k, updater in self._updaters.items():
             setattr(self, k, updater(event.source))
 
