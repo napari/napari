@@ -303,8 +303,8 @@ class LayerList(SelectableEventedList[Layer]):
         attributes: Iterable[str] = (),
     ):
         # adding this method here allows us to emit an event when
-        # layers in this group are linked/unlinked.
-
+        # layers in this group are linked/unlinked.  Which is necessary
+        # for updating context
         from ..layers.utils import _link_layers
 
         if layers is not None:
