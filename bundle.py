@@ -29,7 +29,6 @@ LINUX = sys.platform.startswith("linux")
 HERE = os.path.abspath(os.path.dirname(__file__))
 PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
-ARCH = platform.machine() or "generic"
 
 
 if WINDOWS:
@@ -230,7 +229,7 @@ def make_zip():
     elif MACOS:
         ext, OS = '*.dmg', 'macOS'
     artifact = glob.glob(os.path.join(BUILD_DIR, ext))[0]
-    dest = f'napari-{VERSION}-{OS}-{ARCH}.zip'
+    dest = f'napari-{VERSION}-{OS}-{architecture()}.zip'
 
     with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(artifact, arcname=os.path.basename(artifact))

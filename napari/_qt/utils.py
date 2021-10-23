@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+import re
 import signal
 import socket
+import weakref
 from contextlib import contextmanager
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Iterator, Sequence, Tuple, Union
@@ -13,6 +17,7 @@ from qtpy.QtCore import (
     QSize,
     QSocketNotifier,
     Qt,
+    Signal,
 )
 from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
@@ -34,6 +39,7 @@ if TYPE_CHECKING:
 
 
 QBYTE_FLAG = "!QBYTE_"
+RICH_TEXT_PATTERN = re.compile("<[^\n]+>")
 
 
 def is_qbyte(string: str) -> bool:
@@ -295,7 +301,7 @@ def add_flash_animation(
     # let's make sure to remove the animation from the widget because
     # if we don't, the widget will actually be black and white.
     widget._flash_animation.finished.connect(
-        partial(remove_flash_animation, widget)
+        partial(remove_flash_animation, weakref.ref(widget))
     )
 
     widget._flash_animation.start()
@@ -305,7 +311,7 @@ def add_flash_animation(
     widget._flash_animation.setKeyValueAt(0.1, QColor(*color))
 
 
-def remove_flash_animation(widget: QWidget):
+def remove_flash_animation(widget_ref: weakref.ref[QWidget]):
     """Remove flash animation from widget.
 
     Parameters
@@ -313,13 +319,16 @@ def remove_flash_animation(widget: QWidget):
     widget : QWidget
         Any Qt widget.
     """
+    if widget_ref() is None:
+        return
+    widget = widget_ref()
     widget.setGraphicsEffect(None)
     del widget._flash_animation
 
 
 def iter_qt_connections(
-    emitter: 'EventEmitter',
-) -> Iterator[Tuple['EventEmitter', 'CallbackRef']]:
+    emitter: EventEmitter,
+) -> Iterator[Tuple[EventEmitter, CallbackRef]]:
     for cb in emitter.callbacks:
         if isinstance(cb, tuple):
             obj = cb[0]()
@@ -332,7 +341,7 @@ def iter_qt_connections(
             yield from iter_qt_connections(emitter)
 
 
-def disconnect_qobjects(group: 'EmitterGroup', dead_only=True):
+def disconnect_qobjects(group: EmitterGroup, dead_only=True):
     for emitter, cb in iter_qt_connections(group):
         if dead_only and not qobject_is_alive(cb[0]()) or not dead_only:
             emitter.disconnect(cb)
@@ -404,3 +413,27 @@ def _maybe_allow_interrupt(qapp):
             signal.signal(signal.SIGINT, old_sigint_handler)
             if handler_args is not None:
                 old_sigint_handler(*handler_args)
+
+
+class Sentry(QObject):
+    """Small object to trigger events across threads."""
+
+    alerted = Signal()
+
+    def alert(self, *_):
+        self.alerted.emit()
+
+
+def qt_might_be_rich_text(text) -> bool:
+    """
+    Check if a text might be rich text in a cross-binding compatible way.
+    """
+    if qtpy.PYSIDE2:
+        from qtpy.QtGui import Qt as _Qt
+    else:
+        from qtpy.QtCore import Qt as _Qt
+
+    try:
+        return _Qt.mightBeRichText(text)
+    except Exception:
+        return bool(RICH_TEXT_PATTERN.search(text))

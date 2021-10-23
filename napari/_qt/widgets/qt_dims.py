@@ -74,12 +74,12 @@ class QtDims(QWidget):
 
     @property
     def nsliders(self):
-        """Returns the number of sliders displayed.
+        """Returns the number of sliders.
 
         Returns
         -------
         nsliders: int
-            Number of sliders displayed.
+            Number of sliders.
         """
         return len(self.slider_widgets)
 
