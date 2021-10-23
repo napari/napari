@@ -21,8 +21,6 @@ from typing import (
 import numpy as np
 from pydantic import Extra, Field, validator
 
-from napari.utils.context import Context, create_context
-
 from .. import layers
 from ..layers import Image, Layer
 from ..layers._source import layer_source
@@ -31,6 +29,7 @@ from ..layers.utils.stack_utils import split_channels
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
+from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
