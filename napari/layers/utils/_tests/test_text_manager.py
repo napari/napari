@@ -374,7 +374,7 @@ def test_multi_color_property_discrete_map():
         'confidence': np.array([0.5, 0.3, 1]),
     }
     color = {
-        'property_name': 'class',
+        'property': 'class',
         'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
     }
 
@@ -392,7 +392,7 @@ def test_multi_color_property_continuous_map():
         'confidence': np.array([0.5, 0, 1]),
     }
     color = {
-        'property_name': 'confidence',
+        'property': 'confidence',
         'continuous_colormap': 'gray',
     }
 
@@ -411,7 +411,7 @@ def test_multi_color_property_continuous_map_with_contrast_limits():
         'confidence': np.array([0, -1.5, 2]),
     }
     color = {
-        'property_name': 'confidence',
+        'property': 'confidence',
         'continuous_colormap': 'gray',
         'contrast_limits': [-1, 1],
     }
@@ -446,7 +446,7 @@ def test_color_too_many_fields_use_first_matching():
         'confidence': np.array([0.5, 0, 1]),
     }
     color = {
-        'property_name': 'confidence',
+        'property': 'confidence',
         'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
         'continuous_colormap': 'gray',
     }

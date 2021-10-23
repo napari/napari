@@ -1,6 +1,6 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from string import Formatter
-from typing import Any, Dict, Iterable, Sequence, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Union
 
 import numpy as np
 from pydantic import Field, validator
@@ -9,11 +9,31 @@ from napari.layers.utils.style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
     DirectStyleEncoding,
+    StyleEncoding,
     parse_kwargs_as_encoding,
 )
+from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 DEFAULT_STRING = np.array('')
+
+StringArray = Array[str, ()]
+MultiStringArray = Array[str, (-1,)]
+
+
+class StringEncoding(StyleEncoding, ABC):
+    @abstractmethod
+    def _get_array(
+        self,
+        properties: Dict[str, np.ndarray],
+        n_rows: int,
+        indices: Optional = None,
+    ) -> MultiStringArray:
+        pass
+
+    @abstractmethod
+    def _append(self, array: MultiStringArray):
+        pass
 
 
 class ConstantStringEncoding(ConstantStyleEncoding):
