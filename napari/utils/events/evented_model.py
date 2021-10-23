@@ -226,7 +226,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             for f_name, eq in self.__eq_operators__.items():
                 if f_name not in other.__eq_operators__:
                     return False
-                if not eq(getattr(self, f_name), getattr(other, f_name)):
+                if not eq(
+                    getattr(self, f_name, object()),
+                    getattr(other, f_name, object()),
+                ):
                     return False
             return True
         else:

@@ -137,8 +137,11 @@ class ContextNamespace:
             until.connect(partial(on.disconnect, self._update))
 
     def _update(self, event: Event) -> None:
+        print('source', event.source)
         for k, updater in self._updaters.items():
-            setattr(self, k, updater(event.source))
+            val = updater(event.source)
+            print(k, val)
+            setattr(self, k, val)
 
     def reset(self, key: str) -> None:
         val = self._defaults[key]

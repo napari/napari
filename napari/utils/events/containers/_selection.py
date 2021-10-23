@@ -58,8 +58,11 @@ class Selection(EventedSet[_T]):
         self._current_ = None
         super().__init__(data=data)
         self.events.add(_current=None, active=None)
-        self.events.changed.connect(self._update_active)
         self._update_active()
+
+    def _emit_change(self, added=set(), removed=set()):
+        self._update_active()
+        return super()._emit_change(added=added, removed=removed)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._set)})"

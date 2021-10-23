@@ -129,10 +129,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     _ctx: Context
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
+        # max_depth=0 means don't look for parent contexts.
+        print("in viewer")
+        self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.__config__.extra = Extra.allow
-        # max_depth=0 means don't look for parent contexts.
-        self._ctx = create_context(self, max_depth=0)
         super().__init__(
             title=title,
             dims={
