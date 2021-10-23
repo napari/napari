@@ -46,7 +46,7 @@ class SettingsAwareContext(Context):
 
     def __init__(self):
         super().__init__()
-        from napari.settings import get_settings
+        from ...settings import get_settings
 
         self._settings = get_settings()
         self._settings.events.changed.connect(self._update_key)

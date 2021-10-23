@@ -20,8 +20,7 @@ from typing import (
 from ._expressions import Name
 
 if TYPE_CHECKING:
-    from napari.utils.events import Event, EventEmitter
-
+    from ...utils.events import Event, EventEmitter
     from ._context import Context
 
 
@@ -127,7 +126,7 @@ class ContextNamespace:
                     self._updaters[k] = v._updater
 
     def follow(self, on: EventEmitter, until: Optional[EventEmitter] = None):
-        from napari.utils.events import Event
+        from ...utils.events import Event
 
         on.connect(self._update)
         e = Event(type='null')
@@ -139,9 +138,7 @@ class ContextNamespace:
     def _update(self, event: Event) -> None:
         print('source', event.source)
         for k, updater in self._updaters.items():
-            val = updater(event.source)
-            print(k, val)
-            setattr(self, k, val)
+            setattr(self, k, updater(event.source))
 
     def reset(self, key: str) -> None:
         val = self._defaults[key]
