@@ -52,7 +52,6 @@ import inspect
 import warnings
 import weakref
 from collections import Counter
-from functools import partial
 from typing import (
     Any,
     Callable,
@@ -244,8 +243,6 @@ class EventEmitter:
         The class of events that this emitter will generate.
     """
 
-    _callbacks = []
-
     def __init__(
         self,
         source: Any = None,
@@ -351,7 +348,6 @@ class EventEmitter:
         position: Union[Literal['first'], Literal['last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
-        until: Optional['EventEmitter'] = None,
     ):
         """Connect this emitter to a new callback.
 
@@ -378,10 +374,6 @@ class EventEmitter:
         after : str | callback | list of str or callback | None
             List of callbacks that the current callback should follow.
             Can be None if no after-criteria should be used.
-        until : EventEmitter | None
-            Optional event emitter. If provided, this connection will
-            disconnect itself when `until` is emitted.
-            `until.connect(lambda *a: self.disconnect(callback))`
 
         Notes
         -----
@@ -497,14 +489,6 @@ class EventEmitter:
         # actually add the callback
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
-
-        if until is not None:
-            until.connect(lambda *a: self.disconnect(callback))
-        elif isinstance(callback, tuple):
-            obj = callback[0]()
-            if any(i.__name__ == 'QObject' for i in type(obj).__mro__):
-                obj.destroyed.connect(partial(self.disconnect, callback))  # type: ignore
-
         return callback  # allows connect to be used as a decorator
 
     def disconnect(self, callback: Union[Callback, CallbackRef, None] = None):
