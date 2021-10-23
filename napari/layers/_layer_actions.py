@@ -19,7 +19,7 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
-from ..utils.context._layerlist_context import LayerListContextKeys as LLK
+from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
 from .base.base import Layer
 from .utils import stack_utils
@@ -189,7 +189,7 @@ def _projdict(key) -> ContextAction:
         'description': key,
         'action': partial(_project, mode=key),
         'enable_when': (
-            (LLK.active_layer_type == "image") & LLK.active_layer_ndim > 2
+            (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim > 2
         ),
         'show_when': True,
     }
@@ -199,8 +199,9 @@ def _labeltypedict(key) -> ContextAction:
     return {
         'description': key,
         'action': partial(_convert_dtype, mode=key),
-        'enable_when': f'only_labels_selected and active_layer_dtype != {key!r}',
-        'show_when': 'True',
+        'enable_when': LLCK.only_labels_selected
+        & (LLCK.active_layer_dtype != key),
+        'show_when': True,
     }
 
 
@@ -215,28 +216,28 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:convert_to_labels': {
             'description': trans._('Convert to Labels'),
             'action': partial(_convert, type_='labels'),
-            'enable_when': LLK.only_images_selected,
+            'enable_when': LLCK.only_images_selected,
             'show_when': True,
         },
         'napari:convert_to_image': {
             'description': trans._('Convert to Image'),
             'action': partial(_convert, type_='image'),
-            'enable_when': LLK.only_labels_selected,
+            'enable_when': LLCK.only_labels_selected,
             'show_when': True,
         },
         'napari:toggle_visibility': {
             'description': trans._('Toggle visibility'),
             'action': _toggle_visibility,
-            'enable_when': 'True',
-            'show_when': 'True',
+            'enable_when': True,
+            'show_when': True,
         },
     },
     # (each new dict creates a seperated section in the menu)
     {
         'napari:group:convert_type': {
             'description': trans._('Convert datatype'),
-            'enable_when': 'only_labels_selected',
-            'show_when': 'True',
+            'enable_when': LLCK.only_labels_selected,
+            'show_when': True,
             'action_group': {
                 'napari:to_int8': _labeltypedict('int8'),
                 'napari:to_int16': _labeltypedict('int16'),
@@ -253,7 +254,8 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:group:projections': {
             'description': trans._('Make Projection'),
             'enable_when': (
-                (LLK.active_layer_type == "image") & LLK.active_layer_ndim > 2
+                (LLCK.active_layer_type == "image") & LLCK.active_layer_ndim
+                > 2
             ),
             'show_when': True,
             'action_group': {
@@ -270,22 +272,22 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:split_stack': {
             'description': trans._('Split Stack'),
             'action': _split_stack,
-            'enable_when': LLK.active_layer_type == "image",
-            'show_when': ~LLK.active_layer_is_rgb,
+            'enable_when': LLCK.active_layer_type == "image",
+            'show_when': ~LLCK.active_layer_is_rgb,
         },
         'napari:split_rgb': {
             'description': trans._('Split RGB'),
             'action': _split_stack,
-            'enable_when': LLK.active_layer_is_rgb,
-            'show_when': LLK.active_layer_is_rgb,
+            'enable_when': LLCK.active_layer_is_rgb,
+            'show_when': LLCK.active_layer_is_rgb,
         },
         'napari:merge_stack': {
             'description': trans._('Merge to Stack'),
             'action': _merge_stack,
             'enable_when': (
-                (LLK.layers_selection_count > 1)
-                & LLK.only_images_selected
-                & LLK.all_layers_same_shape
+                (LLCK.layers_selection_count > 1)
+                & LLCK.only_images_selected
+                & LLCK.all_layers_same_shape
             ),
             'show_when': True,
         },
@@ -295,20 +297,20 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
             'description': trans._('Link Layers'),
             'action': lambda ll: ll.link_layers(ll.selection),
             'enable_when': (
-                (LLK.layers_selection_count > 1) & ~LLK.all_layers_linked
+                (LLCK.layers_selection_count > 1) & ~LLCK.all_layers_linked
             ),
-            'show_when': ~LLK.all_layers_linked,
+            'show_when': ~LLCK.all_layers_linked,
         },
         'napari:unlink_selected_layers': {
             'description': trans._('Unlink Layers'),
             'action': lambda ll: ll.unlink_layers(ll.selection),
-            'enable_when': LLK.all_layers_linked,
-            'show_when': LLK.all_layers_linked,
+            'enable_when': LLCK.all_layers_linked,
+            'show_when': LLCK.all_layers_linked,
         },
         'napari:select_linked_layers': {
             'description': trans._('Select Linked Layers'),
             'action': _select_linked_layers,
-            'enable_when': LLK.unselected_linked_layers,
+            'enable_when': LLCK.unselected_linked_layers,
             'show_when': True,
         },
     },
