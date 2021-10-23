@@ -75,7 +75,6 @@ def _current_theme() -> str:
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
-# @provides_context
 class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
