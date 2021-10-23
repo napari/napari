@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import Any, ChainMap, Dict, Final, Optional
+from typing import Any, ChainMap, Dict, Final, MutableMapping, Optional
 from weakref import finalize
 
 from ..events.event import Event, EventEmitter
@@ -14,7 +14,7 @@ class Context(ChainMap):
         super().__init__(*maps)
         self.changed = EventEmitter(self, 'changed')
 
-    # this requires some stuff from psygnal ...
+    # this requires psygnal or changes to events.py ...
     # @contextmanager
     # def buffered_changes(self):
     #     with self.changed.paused(lambda a, b: (a[0].union(b[0]),)):
@@ -31,6 +31,11 @@ class Context(ChainMap):
         super().__delitem__(k)
         if emit:
             self.changed(value={k})
+
+    def new_child(self, m: Optional[MutableMapping] = None) -> Context:
+        new = super().new_child(m=m)
+        self.changed.connect(new.changed)
+        return new
 
     def __hash__(self):
         return id(self)
@@ -101,7 +106,7 @@ def create_context(
     max_depth: int = 20,
     start: int = 2,
     root: Optional[Context] = None,
-) -> Context:
+) -> Optional[Context]:
 
     if root is None:
         global _ROOT_CONTEXT
@@ -124,7 +129,7 @@ def create_context(
             ):
                 # type is being declared and pydantic is checking defaults
                 # this context will never be used.
-                return Context()
+                return None
             elif 'self' in frame.f_locals:
                 _ctx = _OBJ_TO_CONTEXT.get(id(frame.f_locals['self']))
                 if _ctx is not None:

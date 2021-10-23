@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional, Tuple
 
 from ...utils._dtype import normalize_dtype
 from ...utils.translations import trans
-from ._context_keys import ContextNamespace, RawContextKey
+from ._context_keys import ContextKey, ContextNamespace
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
@@ -69,66 +69,72 @@ def _active_dtype(s: LayerSel) -> DTypeLike:
     return dtype
 
 
-class LayerListContextKeys(ContextNamespace):
-    layers_selection_count = RawContextKey(
+class LayerListContextKeys(ContextNamespace['LayerSel']):
+    """These are the available context keys relating to a LayerList.
+
+    along with default value, a description, and a function to retrieve the
+    current value from layers.selection
+    """
+
+    layers_selection_count = ContextKey(
         0,
         trans._("Number of layers currently selected"),
         _len,
     )
-    all_layers_linked = RawContextKey(
+    all_layers_linked = ContextKey(
         False,
         trans._("True when all selected layers are linked."),
         _all_linked,
     )
-    unselected_linked_layers = RawContextKey(
+    unselected_linked_layers = ContextKey(
         0,
         trans._("Number of unselected layers linked to selected layer(s)"),
         _n_unselected_links,
     )
-    active_layer_is_rgb = RawContextKey(
+    active_layer_is_rgb = ContextKey(
         False,
         trans._("True when the active layer is RGB"),
         _is_rgb,
     )
-    active_layer_type = RawContextKey['LayerSel', Optional[str]](
+    active_layer_type = ContextKey['LayerSel', Optional[str]](
         None,
         trans._(
             "Lowercase name of active layer type, or None of none active."
         ),
         _active_type,
     )
-    only_images_selected = RawContextKey(
+    only_images_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are images"
         ),
         _only_img,
     )
-    only_labels_selected = RawContextKey(
+    only_labels_selected = ContextKey(
         False,
         trans._(
             "True when there is at least one selected layer and all selected layers are labels"
         ),
         _only_labels,
     )
-    active_layer_ndim = RawContextKey['LayerSel', Optional[int]](
-        0,
+    active_layer_ndim = ContextKey['LayerSel', Optional[int]](
+        None,
         trans._(
             "Number of dimensions in the active layer, or `None` if nothing is active"
         ),
         _active_ndim,
     )
-    active_layer_shape = RawContextKey['LayerSel', Optional[Tuple[int, ...]]](
+    active_layer_shape = ContextKey['LayerSel', Optional[Tuple[int, ...]]](
         (),
         trans._("Shape of the active layer, or `None` if nothing is active."),
         _active_shape,
     )
-    active_layer_dtype = RawContextKey(
+    active_layer_dtype = ContextKey(
         None,
         trans._("Dtype of the active layer, or `None` if nothing is active."),
         _active_dtype,
     )
-    all_layers_same_shape = RawContextKey(
+    all_layers_same_shape = ContextKey(
         False,
         trans._("True when all selected layers have the same shape"),
         _same_shape,

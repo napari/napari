@@ -31,10 +31,10 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
-        print("get layerlist ctx")
         ctx = create_context(self)
-        self._ctx_keys = LayerListContextKeys(ctx)
-        self._ctx_keys.follow(self.selection.events.changed)
+        if ctx is not None:  # happens during Viewer type creation
+            self._ctx_keys = LayerListContextKeys(ctx)
+            self._ctx_keys.follow(self.selection.events.changed)
 
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
