@@ -153,9 +153,6 @@ def generate_class_stubs(cls: Type) -> Tuple[Set[str], str]:
     return imports, stub
 
 
-List
-
-
 def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
     """Generate a pyi stub for a module.
 
