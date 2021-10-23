@@ -1203,8 +1203,8 @@ class Window:
 
 def _iter_viewer_connections(
     viewer: Viewer,
-) -> Iterator[Tuple[Type, Optional[str], Type, str, Callable]]:
-    """(SourceType, event_name, receiver, method_name, disconnector)"""
+) -> Iterator[Tuple[Type, Optional[str], Optional[object], str, Callable]]:
+    """yields (SourceType, event_name, receiver, method_name, disconnector)"""
     from ..utils.events import EmitterGroup, iter_connections
 
     yield from iter_connections(viewer.events)

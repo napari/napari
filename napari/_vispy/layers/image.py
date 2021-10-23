@@ -1,4 +1,5 @@
 import warnings
+from typing import TYPE_CHECKING
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -9,6 +10,9 @@ from ..utils.gl import fix_data_dtype
 from ..visuals.image import Image as ImageNode
 from ..visuals.volume import Volume as VolumeNode
 from .base import VispyBaseLayer
+
+if TYPE_CHECKING:
+    from ...layers import Image
 
 
 class ImageLayerNode:
@@ -32,13 +36,13 @@ class ImageLayerNode:
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, node=None):
+    def __init__(self, layer: 'Image', node=None):
 
         # Use custom node from caller, or our standard image/volume nodes.
         self._layer_node = ImageLayerNode(node)
 
         # Default to 2D (image) node.
-        super().__init__(layer, self._layer_node.get_node(2))
+        super().__init__(layer, self._layer_node.get_node(layer._ndisplay))
 
         self._array_like = True
 

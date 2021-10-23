@@ -119,6 +119,7 @@ def make_napari_viewer(
         ViewerClass=Viewer,
         strict_qt=is_internal_test or os.getenv("NAPARI_STRICT_QT"),
         block_plugin_discovery=True,
+        window=False,
         **model_kwargs,
     ):
         nonlocal _strict
@@ -130,7 +131,7 @@ def make_napari_viewer(
         should_show = request.config.getoption("--show-napari-viewer")
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
-        if "napari._qt" in request.module.__name__:
+        if window or "napari._qt" in request.module.__name__:
             viewer._create_window()
         viewers.append(viewer)
 

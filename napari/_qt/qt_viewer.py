@@ -1053,10 +1053,8 @@ class QtViewer(QSplitter):
         # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
         self.dims.stop()
-        self.canvas.native.deleteLater()
         if self._console is not None:
             self.console.close()
-        self.dockConsole.deleteLater()
         event.accept()
 
 
