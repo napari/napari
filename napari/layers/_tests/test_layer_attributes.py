@@ -13,7 +13,7 @@ from napari.layers import Image
     ],
 )
 def test_layer_bounding_box_order(image_shape, dims_displayed, expected):
-    layer = Image(data=np.random.random((10, 20, 30)))
+    layer = Image(data=np.random.random(image_shape))
     #
     assert np.allclose(
         layer._display_bounding_box(dims_displayed=dims_displayed), expected
