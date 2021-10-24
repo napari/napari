@@ -386,7 +386,7 @@ class QtShapesControls(QtLayerControls):
         self.layer.current_edge_width = float(value) / 2
 
     def change_text_visibility(self, state):
-        """Toggle the visibiltiy of the text.
+        """Toggle the visibility of the text.
 
         Parameters
         ----------
@@ -399,7 +399,7 @@ class QtShapesControls(QtLayerControls):
             self.layer.text.visible = False
 
     def _on_text_visibility_change(self, event):
-        """Receive layer model text visibiltiy change change event and update checkbox.
+        """Receive layer model text visibility change change event and update checkbox.
 
         Parameters
         ----------
