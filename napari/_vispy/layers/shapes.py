@@ -22,7 +22,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self, event=None):
+    def _on_data_change(self):
         faces = self.layer._data_view._mesh.displayed_triangles
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
@@ -49,7 +49,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self._update_text(update_node=False)
         self.node.update()
 
-    def _on_highlight_change(self, event=None):
+    def _on_highlight_change(self):
         settings = get_settings()
         self.layer._highlight_width = settings.appearance.highlight_thickness
 
@@ -148,7 +148,7 @@ class VispyShapesLayer(VispyBaseLayer):
         else:
             self._update_text()
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self):
         """Function to set the blending mode"""
         shapes_blending_kwargs = BLENDING_MODES[self.layer.blending]
         self.node.set_gl_state(**shapes_blending_kwargs)

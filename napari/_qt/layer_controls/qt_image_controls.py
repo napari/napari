@@ -174,14 +174,8 @@ class QtImageControls(QtBaseImageControls):
         with self.layer.events.blocker(self._on_iso_threshold_change):
             self.layer.iso_threshold = value / 100
 
-    def _on_iso_threshold_change(self, event):
-        """Receive layer model isosurface change event and update the slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_iso_threshold_change(self):
+        """Receive layer model isosurface change event and update the slider."""
         with self.layer.events.iso_threshold.blocker():
             self.isoThresholdSlider.setValue(
                 int(self.layer.iso_threshold * 100)
@@ -198,14 +192,8 @@ class QtImageControls(QtBaseImageControls):
         with self.layer.events.blocker(self._on_attenuation_change):
             self.layer.attenuation = value / 200
 
-    def _on_attenuation_change(self, event):
-        """Receive layer model attenuation change event and update the slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_attenuation_change(self):
+        """Receive layer model attenuation change event and update the slider."""
         with self.layer.events.attenuation.blocker():
             self.attenuationSlider.setValue(int(self.layer.attenuation * 200))
 
@@ -224,14 +212,8 @@ class QtImageControls(QtBaseImageControls):
                 self.interpComboBox.addItem(interp_string)
             self.interpComboBox.setCurrentText(interp_string)
 
-    def _on_rendering_change(self, event):
-        """Receive layer model rendering change event and update dropdown menu.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_rendering_change(self):
+        """Receive layer model rendering change event and update dropdown menu."""
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(
                 self.layer.rendering, Qt.MatchFixedString
@@ -268,14 +250,8 @@ class QtImageControls(QtBaseImageControls):
         )
         self.interpComboBox.setCurrentIndex(index)
 
-    def _on_ndisplay_change(self, event=None):
-        """Toggle between 2D and 3D visualization modes.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, default is None.
-        """
+    def _on_ndisplay_change(self):
+        """Toggle between 2D and 3D visualization modes."""
         self._update_interpolation_combo()
         if self.layer._ndisplay == 2:
             self.isoThresholdSlider.hide()

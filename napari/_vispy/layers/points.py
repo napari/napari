@@ -32,7 +32,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self._on_data_change()
 
-    def _on_data_change(self, event=None):
+    def _on_data_change(self):
         if len(self.layer._indices_view) > 0:
             edge_color = self.layer._view_edge_color
             face_color = self.layer._view_face_color
@@ -64,7 +64,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.reset()
 
-    def _on_highlight_change(self, event=None):
+    def _on_highlight_change(self):
         settings = get_settings()
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
@@ -158,7 +158,7 @@ class VispyPointsLayer(VispyBaseLayer):
         else:
             self._update_text()
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self):
         """Function to set the blending mode"""
         points_blending_kwargs = BLENDING_MODES[self.layer.blending]
         self.node.set_gl_state(**points_blending_kwargs)
