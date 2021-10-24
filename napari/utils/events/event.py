@@ -256,7 +256,7 @@ class EventEmitter:
         self._callbacks: List[Union[Callback, CallbackRef]] = []
         # used when connecting new callbacks at specific positions
         self._callback_refs: List[Optional[str]] = []
-        self._callback_pass_env: List[bool] = []
+        self._callback_pass_event: List[bool] = []
 
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
@@ -488,7 +488,7 @@ class EventEmitter:
         # actually add the callback
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
-        self._callback_pass_env.insert(idx, pass_event)
+        self._callback_pass_event.insert(idx, pass_event)
         return callback  # allows connect to be used as a decorator
 
     def disconnect(self, callback: Union[Callback, CallbackRef, None] = None):
@@ -506,7 +506,7 @@ class EventEmitter:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
-                self._callback_pass_env.pop(idx)
+                self._callback_pass_event.pop(idx)
 
     @staticmethod
     def _get_proper_name(callback):
@@ -617,7 +617,7 @@ class EventEmitter:
 
             rem: List[CallbackRef] = []
             for cb, pass_event in zip(
-                self._callbacks[:], self._callback_pass_env[:]
+                self._callbacks[:], self._callback_pass_event[:]
             ):
                 if isinstance(cb, tuple):
                     obj = cb[0]()
