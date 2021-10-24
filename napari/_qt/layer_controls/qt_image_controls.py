@@ -103,7 +103,7 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.opacitySlider, 0, 1)
         self.grid_layout.addWidget(QLabel(trans._('contrast limits:')), 1, 0)
         self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('autoscale:')), 2, 0)
+        self.grid_layout.addWidget(QLabel(trans._('auto-contrast:')), 2, 0)
         self.grid_layout.addWidget(self.autoScaleBar, 2, 1)
         self.grid_layout.addWidget(QLabel(trans._('gamma:')), 3, 0)
         self.grid_layout.addWidget(self.gammaSlider, 3, 1)
