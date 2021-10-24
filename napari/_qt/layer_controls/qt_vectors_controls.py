@@ -229,36 +229,18 @@ class QtVectorsControls(QtLayerControls):
 
         return property_values
 
-    def _on_length_change(self, event=None):
-        """Change length of vectors.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_length_change(self):
+        """Change length of vectors."""
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
 
-    def _on_edge_width_change(self, event=None):
-        """Receive layer model width change event and update width spinbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_edge_width_change(self):
+        """Receive layer model width change event and update width spinbox."""
         with self.layer.events.edge_width.blocker():
             self.widthSpinBox.setValue(self.layer.edge_width)
 
-    def _on_edge_color_mode_change(self, event=None):
-        """Receive layer model edge color mode change event & update dropdown.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_edge_color_mode_change(self):
+        """Receive layer model edge color mode change event & update dropdown."""
         with qt_signals_blocked(self.color_mode_comboBox):
             mode = self.layer._edge.color_mode
             index = self.color_mode_comboBox.findText(
@@ -268,15 +250,12 @@ class QtVectorsControls(QtLayerControls):
 
             self._update_edge_color_gui(mode)
 
-    def _on_edge_color_change(self, event=None):
-        """Receive layer model edge color  change event & update dropdown.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
-        if self.layer._edge.color_mode == ColorMode.DIRECT:
+    def _on_edge_color_change(self):
+        """Receive layer model edge color  change event & update dropdown."""
+        if (
+            self.layer._edge.color_mode == ColorMode.DIRECT
+            and len(self.layer.data) > 0
+        ):
             with qt_signals_blocked(self.edgeColorEdit):
                 self.edgeColorEdit.setColor(self.layer.edge_color[0])
         elif self.layer._edge.color_mode in (

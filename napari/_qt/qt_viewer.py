@@ -42,11 +42,11 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from .widgets.qt_welcome import QtWidgetOverlay
 
 from .._vispy import (  # isort:skip
-    VispyAxesVisual,
+    VispyAxesOverlay,
     VispyCamera,
     VispyCanvas,
-    VispyScaleBarVisual,
-    VispyTextVisual,
+    VispyScaleBarOverlay,
+    VispyTextOverlay,
     create_vispy_visual,
 )
 
@@ -301,18 +301,18 @@ class QtViewer(QSplitter):
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
 
-        self.axes = VispyAxesVisual(
+        self.axes = VispyAxesOverlay(
             self.viewer,
             parent=self.view.scene,
             order=1e6,
         )
-        self.scale_bar = VispyScaleBarVisual(
+        self.scale_bar = VispyScaleBarOverlay(
             self.viewer,
             parent=self.view,
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-        self.text_overlay = VispyTextVisual(
+        self.text_overlay = VispyTextOverlay(
             self.viewer,
             parent=self.view,
             order=1e6 + 2,
@@ -377,14 +377,8 @@ class QtViewer(QSplitter):
         else:
             self.controls.setMaximumWidth(220)
 
-    def _on_active_change(self, event=None):
-        """When active layer changes change keymap handler.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_active_change(self):
+        """When active layer changes change keymap handler."""
         self._key_map_handler.keymap_providers = (
             [self.viewer]
             if self.viewer.layers.selection.active is None
@@ -441,16 +435,10 @@ class QtViewer(QSplitter):
         vispy_layer.close()
         del vispy_layer
         del self.layer_to_visual[layer]
-        self._reorder_layers(None)
+        self._reorder_layers()
 
-    def _reorder_layers(self, event):
-        """When the list is reordered, propagate changes to draw order.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _reorder_layers(self):
+        """When the list is reordered, propagate changes to draw order."""
         for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
             vispy_layer.order = i
@@ -485,10 +473,7 @@ class QtViewer(QSplitter):
 
                 ext = imsave_extensions()
 
-                ext_list = []
-                for val in ext:
-                    ext_list.append("*" + val)
-
+                ext_list = ["*" + val for val in ext]
                 ext_str = ';;'.join(ext_list)
 
                 ext_str = trans._(
@@ -528,9 +513,7 @@ class QtViewer(QSplitter):
         if filename:
             with warnings.catch_warnings(record=True) as wa:
                 saved = self.viewer.layers.save(filename, selected=selected)
-                error_messages = "\n".join(
-                    [str(x.message.args[0]) for x in wa]
-                )
+                error_messages = "\n".join(str(x.message.args[0]) for x in wa)
 
             if not saved:
                 raise OSError(
@@ -544,14 +527,8 @@ class QtViewer(QSplitter):
             else:
                 update_save_history(saved[0])
 
-    def _update_welcome_screen(self, event=None):
-        """Update welcome screen display based on layer count.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _update_welcome_screen(self):
+        """Update welcome screen display based on layer count."""
         if self._show_welcome_screen:
             self._canvas_overlay.set_welcome_visible(not self.viewer.layers)
 
@@ -688,24 +665,12 @@ class QtViewer(QSplitter):
             if isinstance(layer, _OctreeImageBase):
                 layer.display.show_grid = not layer.display.show_grid
 
-    def _on_interactive(self, event):
-        """Link interactive attributes of view and viewer.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_interactive(self):
+        """Link interactive attributes of view and viewer."""
         self.view.interactive = self.viewer.camera.interactive
 
-    def _on_cursor(self, event):
-        """Set the appearance of the mouse cursor.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_cursor(self):
+        """Set the appearance of the mouse cursor."""
         cursor = self.viewer.cursor.style
         # Scale size by zoom if needed
         if self.viewer.cursor.scaled:

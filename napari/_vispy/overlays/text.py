@@ -1,15 +1,12 @@
-"""Label visual."""
-# Third-party imports
 from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
 
-# Local imports
-from ..components._viewer_constants import TextOverlayPosition
-from ..utils.translations import trans
+from ...components._viewer_constants import TextOverlayPosition
+from ...utils.translations import trans
 
 
-class VispyTextVisual:
-    """Text overlay visual."""
+class VispyTextOverlay:
+    """Text overlay."""
 
     def __init__(self, viewer, parent=None, order=1e6):
         self._viewer = viewer
@@ -33,25 +30,25 @@ class VispyTextVisual:
         )
         self._viewer.camera.events.zoom.connect(self._on_position_change)
 
-        self._on_visible_change(None)
-        self._on_data_change(None)
-        self._on_text_change(None)
-        self._on_position_change(None)
+        self._on_visible_change()
+        self._on_data_change()
+        self._on_text_change()
+        self._on_position_change()
 
-    def _on_visible_change(self, event):
+    def _on_visible_change(self):
         """Change text visibility."""
         self.node.visible = self._viewer.text_overlay.visible
 
-    def _on_data_change(self, event):
+    def _on_data_change(self):
         """Change text value."""
         self.node.text = self._viewer.text_overlay.text
 
-    def _on_text_change(self, event):
+    def _on_text_change(self):
         """Update text size and color."""
         self.node.font_size = self._viewer.text_overlay.font_size
         self.node.color = self._viewer.text_overlay.color
 
-    def _on_position_change(self, event):
+    def _on_position_change(self, _event=None):
         """Change position of text visual."""
         position = self._viewer.text_overlay.position
         x_offset, y_offset = 10, 5

@@ -3,9 +3,9 @@ import warnings
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 
-from ..utils.translations import trans
-from .mesh import Mesh
-from .vispy_base_layer import VispyBaseLayer
+from ...utils.translations import trans
+from ..visuals.surface import SurfaceVisual
+from .base import VispyBaseLayer
 
 
 class VispySurfaceLayer(VispyBaseLayer):
@@ -17,8 +17,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     """
 
     def __init__(self, layer):
-        node = Mesh()
-
+        node = SurfaceVisual()
         super().__init__(layer, node)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -31,7 +30,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self, event=None):
+    def _on_data_change(self):
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
             vertices = None
             faces = None
@@ -60,7 +59,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
 
-    def _on_colormap_change(self, event=None):
+    def _on_colormap_change(self):
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap with 256 control
             # points from 0-1
@@ -76,13 +75,13 @@ class VispySurfaceLayer(VispyBaseLayer):
             )
         self.node.cmap = cmap
 
-    def _on_contrast_limits_change(self, event=None):
+    def _on_contrast_limits_change(self):
         self.node.clim = self.layer.contrast_limits
 
-    def _on_gamma_change(self, event=None):
+    def _on_gamma_change(self):
         self._on_colormap_change()
 
-    def _on_shading_change(self, event=None):
+    def _on_shading_change(self):
         if self.layer.shading == 'none':
             self.node.shading = None
             if self.node.shading_filter is not None:
@@ -101,6 +100,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.mesh_data_changed()
 
     def reset(self, event=None):
-        self._reset_base()
+        super().reset()
         self._on_colormap_change()
         self._on_contrast_limits_change()
+        self._on_shading_change()

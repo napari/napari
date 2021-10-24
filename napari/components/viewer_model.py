@@ -180,7 +180,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
-    def _update_viewer_grid(self, e=None):
+    def _update_viewer_grid(self):
         """Keep viewer grid settings up to date with settings values."""
 
         settings = settings_module.get_settings()
@@ -253,7 +253,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             return self.layers.extent.world[:, self.dims.displayed]
 
-    def reset_view(self, event=None):
+    def reset_view(self):
         """Reset the camera view."""
 
         extent = self._sliced_extent_world
@@ -300,7 +300,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         empty_labels = np.zeros(shape, dtype=int)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
-    def _update_layers(self, event=None, layers=None):
+    def _update_layers(self, *, layers=None):
         """Updates the contained layers.
 
         Parameters
@@ -327,25 +327,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
 
-    def _on_layers_change(self, event):
+    def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            extent = self.layers.extent
-            world = extent.world
-            ss = extent.step
-            ndim = world.shape[1]
+            ranges = self.layers._ranges
+            ndim = len(ranges)
             self.dims.ndim = ndim
-            for i in range(ndim):
-                self.dims.set_range(
-                    i,
-                    (
-                        world[0, i] + 0.5 * ss[i],
-                        world[1, i] + 0.5 * ss[i],
-                        ss[i],
-                    ),
-                )
+            for i, _range in enumerate(ranges):
+                self.dims.set_range(i, _range)
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -369,7 +360,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
 
-    def _on_cursor_position_change(self, event):
+    def _on_cursor_position_change(self):
         """Set the layer cursor position."""
         with warnings.catch_warnings():
             # Catch the deprecation warning on layer.position
@@ -397,7 +388,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     self.cursor.position, world=True
                 )
 
-    def _on_grid_change(self, event):
+    def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
         extent = self._sliced_extent_world
         n_layers = len(self.layers)
@@ -458,8 +449,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.name.connect(self.layers._update_name)
 
         # Update dims and grid model
-        self._on_layers_change(None)
-        self._on_grid_change(None)
+        self._on_layers_change()
+        self._on_grid_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
@@ -485,8 +476,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
-        self._on_layers_change(None)
-        self._on_grid_change(None)
+        self._on_layers_change()
+        self._on_grid_change()
 
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.

@@ -2,10 +2,10 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Mesh, Text
 from vispy.visuals.transforms import STTransform
 
-from ..layers.shapes._shapes_utils import triangulate_ellipse
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.theme import get_theme
-from ..utils.translations import trans
+from ...layers.shapes._shapes_utils import triangulate_ellipse
+from ...utils.colormaps.standardize_color import transform_color
+from ...utils.theme import get_theme
+from ...utils.translations import trans
 
 
 def make_dashed_line(num_dashes, axis):
@@ -127,7 +127,7 @@ def color_arrowheads(colors, num_segments):
         )
 
 
-class VispyAxesVisual:
+class VispyAxesOverlay:
     """Axes indicating world coordinate origin and orientation."""
 
     _NUM_SEGMENTS_ARROWHEAD = 100
@@ -219,20 +219,20 @@ class VispyAxesVisual:
         self._viewer.dims.events.axis_labels.connect(self._on_data_change)
         self._viewer.camera.events.zoom.connect(self._on_zoom_change)
 
-        self._on_visible_change(None)
-        self._on_data_change(None)
+        self._on_visible_change()
+        self._on_data_change()
 
     def _set_canvas_none(self):
         self.node._set_canvas(None)
         self.text_node._set_canvas(None)
 
-    def _on_visible_change(self, event):
+    def _on_visible_change(self):
         """Change visibiliy of axes."""
         self.node.visible = self._viewer.axes.visible
-        self._on_zoom_change(event)
-        self._on_data_change(event)
+        self._on_zoom_change()
+        self._on_data_change()
 
-    def _on_data_change(self, event):
+    def _on_data_change(self):
         """Change style of axes."""
         if not self._viewer.axes.visible:
             return
@@ -325,7 +325,7 @@ class VispyAxesVisual:
         self.text_node.color = axes_colors
         self.text_node.pos = text_data + self._text_offsets
 
-    def _on_zoom_change(self, event):
+    def _on_zoom_change(self):
         """Update axes length based on zoom scale."""
         if not self._viewer.axes.visible:
             return
