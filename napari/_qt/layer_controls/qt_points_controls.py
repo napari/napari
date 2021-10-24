@@ -258,7 +258,7 @@ class QtPointsControls(QtLayerControls):
         self.layer.n_dimensional = state == Qt.Checked
 
     def change_text_visibility(self, state):
-        """Toggle the visibiltiy of the text.
+        """Toggle the visibility of the text.
 
         Parameters
         ----------

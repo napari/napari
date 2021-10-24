@@ -1133,6 +1133,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
+    def world_to_displayed_data(
+        self, position: np.ndarray, dims_displayed: np.ndarray
+    ) -> tuple:
+        """Convert world to data coordinates for displayed dimensions only.
+
+        Parameters
+        ----------
+        position : tuple, list, 1D array
+            Position in world coordinates. If longer then the
+            number of dimensions of the layer, the later
+            dimensions will be used.
+        dims_displayed : list, 1D array
+            Indices of displayed dimensions of the data.
+
+        Returns
+        -------
+        tuple
+            Position in data coordinates for the displayed dimensions only
+        """
+        position_nd = self.world_to_data(position)
+        position_ndisplay = np.asarray(position_nd)[dims_displayed]
+        return tuple(position_ndisplay)
+
     @property
     def _data_to_world(self) -> Affine:
         """The transform from data to world coordinates.
@@ -1164,9 +1187,31 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(normalized_vector)
 
-    def _display_bounding_box(self, dims_displayed_mask: np.ndarray):
+    def _world_to_displayed_data_ray(
+        self, vector_world, dims_displayed
+    ) -> np.ndarray:
+        """Convert an orientation from world to displayed data coordinates.
+
+        For example, this would be used to convert the view ray.
+
+        Parameters
+        ----------
+        vector_world : tuple, list, 1D array
+            A vector in world coordinates.
+
+        Returns
+        -------
+        tuple
+            Vector in data coordinates.
+        """
+        vector_data_nd = np.asarray(self._world_to_data_ray(vector_world))
+        vector_data_ndisplay = vector_data_nd[dims_displayed]
+        vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
+        return vector_data_ndisplay
+
+    def _display_bounding_box(self, dims_displayed: np.ndarray):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
-        return self._extent_data[:, dims_displayed_mask].T
+        return self._extent_data[:, dims_displayed].T
 
     def get_ray_intersections(
         self,
@@ -1209,28 +1254,27 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         if len(dims_displayed) == 3:
             # create a mask to select the in view dimensions
-            dims_displayed = dims_displayed
             dims_displayed_mask = np.zeros_like(position, dtype=bool)
             dims_displayed_mask[dims_displayed] = True
 
             # create the bounding box in data coordinates
-            bbox = self._display_bounding_box(dims_displayed_mask)
+            bbox = self._display_bounding_box(dims_displayed)
 
             # get the view direction in data coords (only displayed dims)
             if world is True:
-                view_dir = np.asarray(self._world_to_data_ray(view_direction))[
-                    dims_displayed_mask
-                ]
+                view_dir = self._world_to_displayed_data_ray(
+                    view_direction, dims_displayed
+                )
             else:
-                view_dir = np.asarray(view_direction)[dims_displayed_mask]
+                view_dir = np.asarray(view_direction)[dims_displayed]
 
             # Get the clicked point in data coords (only displayed dims)
             if world is True:
-                click_pos_data = np.asarray(self.world_to_data(position))[
-                    dims_displayed_mask
-                ]
+                click_pos_data = self.world_to_displayed_data(
+                    position, dims_displayed
+                )
             else:
-                click_pos_data = np.asarray(position)[dims_displayed_mask]
+                click_pos_data = np.asarray(position)[dims_displayed]
 
             # Determine the front and back faces
             front_face_normal, back_face_normal = find_front_back_face(
@@ -1252,9 +1296,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
                 # add the coordinates for the axes not displayed
                 start_point = np.asarray(position)
-                start_point[dims_displayed_mask] = start_point_disp_dims
+                start_point[dims_displayed] = start_point_disp_dims
                 end_point = np.asarray(position)
-                end_point[dims_displayed_mask] = end_point_disp_dims
+                end_point[dims_displayed] = end_point_disp_dims
 
             else:
                 # if the click doesn't intersect the data bounding box,
