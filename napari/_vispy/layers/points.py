@@ -34,8 +34,8 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.events.antialias.connect(self._on_antialias_change)
         self.layer.events.spherical.connect(self._on_spherical_change)
+        self.layer.text.events.connect(self._on_text_change)
 
-        self.reset()
         self._on_data_change()
 
     def _on_data_change(self, event=None):
@@ -48,7 +48,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
-        # and the rows / columns need to be switch for vispys x / y ordering
+        # and the rows / columns need to be switched for vispy's x / y ordering
         if len(self.layer._indices_view) == 0:
             data = np.zeros((1, self.layer._ndisplay))
             size = [0]
@@ -68,9 +68,6 @@ class VispyPointsLayer(VispyBaseLayer):
             scaling=True,
         )
 
-        self.node.update()
-
-        # Call to update order of translation values with new dims:
         self.reset()
 
     def _on_highlight_change(self, event=None):
@@ -120,7 +117,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
-    def _on_text_change(self, update_node=True):
+    def _update_text(self, *, update_node=True):
         """Function to update the text node properties
 
         Parameters
@@ -130,7 +127,7 @@ class VispyPointsLayer(VispyBaseLayer):
         """
         ndisplay = self.layer._ndisplay
         if (len(self.layer._indices_view) == 0) or (
-            self.layer._text.visible is False
+            self.layer.text.visible is False
         ):
             text_coords = np.zeros((1, ndisplay))
             text = []
@@ -161,6 +158,12 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self.node._subvisuals[-1]
         return text_node
 
+    def _on_text_change(self, event=None):
+        if event is not None and event.type == 'blending':
+            self._on_blending_change(event)
+        else:
+            self._update_text()
+
     def _on_blending_change(self, event=None):
         """Function to set the blending mode"""
         points_blending_kwargs = BLENDING_MODES[self.layer.blending]
@@ -185,8 +188,8 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def reset(self, event=None):
         super().reset()
+        self._update_text(update_node=False)
         self._on_blending_change()
-        self._on_text_change()
         self._on_highlight_change()
         self._on_matrix_change()
         self._on_antialias_change()
