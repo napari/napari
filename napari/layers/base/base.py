@@ -1342,7 +1342,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.refresh()
 
         else:
-            corners = np.zeros((2, self.ndim))
+            corners = np.zeros((2, self.ndim), dtype=int)
             corners[:, displayed_axes] = data_bbox_clipped
             self.corner_pixels = corners
 
