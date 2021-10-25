@@ -141,7 +141,7 @@ def test_play_api(qtbot, view):
     """Test that the QtDims.play() function advances a few frames"""
     view.dims._frame = 0
 
-    def increment(e):
+    def increment():
         view.dims._frame += 1
         # if we don't "enable play" again, view.dims won't request a new frame
         view.dims._play_ready = True

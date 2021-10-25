@@ -44,14 +44,14 @@ class PluginsMenu(NapariMenu):
         # Add a menu item (QAction) for each available plugin widget
         self._add_registered_widget(self, call_all=True)
 
-    def _remove_unregistered_widget(self, event=None):
+    def _remove_unregistered_widget(self, event):
 
         for idx, action in enumerate(self.actions()):
             if event.value in action.text():
                 self.removeAction(action)
                 self._win._remove_dock_widget(event=event)
 
-    def _add_registered_widget(self, event=None, call_all=False):
+    def _add_registered_widget(self, event, call_all=False):
         from ...plugins import menu_item_template, plugin_manager
 
         for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
