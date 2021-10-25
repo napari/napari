@@ -1,5 +1,6 @@
 import warnings
-from typing import Optional, Tuple, Union
+from copy import deepcopy
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -18,15 +19,16 @@ class TextManager(EventedModel):
 
     Parameters
     ----------
-    text : array or str
-        The strings to be displayed, or a format string that will be filled out
-        n_text times using data in properties.
+    text : str
+        A a property name or a format string containing property names.
+        This will be used to fill out string values n_text times using the
+        data in properties.
     n_text : int
-        The number of the strings to be displayed. This may be different to the
-        if text is a format string, or if text should be repeated.
+        The number of text elements to initially display, which should match
+        the number of elements (e.g. points) in a layer.
     properties: dict
-        Stores properties data that will be used to generate strings when text
-        is a format a string.
+        Stores properties data that will be used to generate strings from the
+        given text. Typically comes from a layer.
 
     Attributes
     ----------
@@ -191,6 +193,78 @@ class TextManager(EventedModel):
         # if no points in this slice send dummy data
         return np.array([''])
 
+    @classmethod
+    def _from_layer(
+        cls,
+        *,
+        text: Union['TextManager', dict, str, None],
+        n_text: int,
+        properties: Dict[str, np.ndarray],
+    ) -> 'TextManager':
+        """Create a TextManager from a layer.
+
+        Parameters
+        ----------
+        text : Union[TextManager, dict, str, None]
+            An instance of TextManager, a dict that contains some of its state,
+            a string that should be a property name, or a format string.
+        n_text : int
+            The number of text elements to initially display, which should match
+            the number of elements (e.g. points) in a layer.
+        properties : Dict[str, np.ndarray]
+            The properties of a layer.
+
+        Returns
+        -------
+        TextManager
+        """
+        if isinstance(text, TextManager):
+            kwargs = text.dict()
+        elif isinstance(text, dict):
+            kwargs = deepcopy(text)
+        else:
+            kwargs = {'text': text}
+        kwargs['n_text'] = n_text
+        kwargs['properties'] = properties
+        return cls(**kwargs)
+
+    def _update_from_layer(
+        self,
+        *,
+        text: Union['TextManager', dict, str, None],
+        n_text: int,
+        properties: Dict[str, np.ndarray],
+    ):
+        """Updates this in-place from a layer.
+
+        This will effectively overwrite all existing state, but in-place
+        so that there is no need for any external components to reconnect
+        to any useful events. For this reason, only fields that change in
+        value will emit their corresponding events.
+
+        Parameters
+        ----------
+        See :meth:`TextManager._from_layer`.
+        """
+        # Create a new instance from the input to populate all fields.
+        new_manager = TextManager._from_layer(
+            text=text, n_text=n_text, properties=properties
+        )
+
+        # Update a copy of this so that any associated errors are raised
+        # before actually making the update. This does not need to be a
+        # deep copy because update will only try to reassign fields and
+        # should not mutate any existing fields in-place.
+        current_manager = self.copy()
+        current_manager.update(new_manager)
+
+        # If we got here, then there were no errors, so update for real.
+        # Connected callbacks may raise errors, but those are bugs.
+        self.update(new_manager)
+
+        self._mode = new_manager._mode
+        self._text_format_string = new_manager._text_format_string
+
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
         return transform_color(color)[0]
@@ -212,22 +286,3 @@ class TextManager(EventedModel):
             )
 
         return blending_mode
-
-    def _connect_update_events(
-        self, text_update_function, blending_update_function
-    ):
-        """Function to connect all property update events to the update callback.
-
-        This is typically used in the vispy view file.
-        """
-        # connect the function for updating the text node
-        self.events.values.connect(text_update_function)
-        self.events.rotation.connect(text_update_function)
-        self.events.translation.connect(text_update_function)
-        self.events.anchor.connect(text_update_function)
-        self.events.color.connect(text_update_function)
-        self.events.size.connect(text_update_function)
-        self.events.visible.connect(text_update_function)
-
-        # connect the function for updating the text node blending
-        self.events.blending.connect(blending_update_function)

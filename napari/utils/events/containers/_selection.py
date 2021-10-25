@@ -99,17 +99,16 @@ class Selection(EventedSet[_T]):
         self._current = value
         self.events.active(value=value)
 
-    def _update_active(self, event=None):
+    def _update_active(self):
         """On a selection event, update the active item based on selection.
 
         (An active item is a single selected item).
         """
         if len(self) == 1:
             self.active = list(self)[0]
-        else:
-            if self._active is not None:
-                self._active = None
-                self.events.active(value=None)
+        elif self._active is not None:
+            self._active = None
+            self.events.active(value=None)
 
     def clear(self, keep_current: bool = False) -> None:
         """Clear the selection."""
