@@ -379,7 +379,6 @@ class ImageVisual(Visual):
 
     @property
     def size(self):
-        print("**** Size request")
         return self._data.shape[:2][::-1]
 
     @property
