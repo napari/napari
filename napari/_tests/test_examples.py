@@ -61,6 +61,7 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
 
     from napari._qt.qt_main_window import Window
+    from napari import Viewer
 
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
@@ -78,3 +79,5 @@ def test_examples(qapp, fname, monkeypatch, capsys):
         # we use sys.exit(0) to gracefully exit from examples
         if e.code != 0:
             raise
+    finally:
+        Viewer.close_all()
