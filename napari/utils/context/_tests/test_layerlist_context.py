@@ -12,7 +12,8 @@ def test_layerlist_context():
     assert ctx['layers_selection_count'] == 0
 
     layers = LayerList()
-    llc.follow(layers.selection.events.changed)
+
+    layers.selection.events.changed.connect(llc.update)
     layers.append(Points())
     assert llc.layers_selection_count == 1
     assert ctx['layers_selection_count'] == 1

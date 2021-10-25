@@ -233,18 +233,18 @@ class ContextNamespace(Generic[A], metaclass=ContextNamespaceMeta):
         """
         from ...utils.events import Event
 
-        on.connect(self._update)
+        on.connect(self.update)
 
         # trigger the first update
         # we create a fake event to use the source from the `on` emitter
         e = Event(type='null')
         e._push_source(on.source)
-        self._update(e)
+        self.update(e)
 
         if until is not None:
-            until.connect(partial(on.disconnect, self._update))
+            until.connect(partial(on.disconnect, self.update))
 
-    def _update(self, event: Event) -> None:
+    def update(self, event: Event) -> None:
         """Trigger an update of all "getter" functions in this namespace."""
         for k, get in self._getters.items():
             setattr(self, k, get(event.source))
