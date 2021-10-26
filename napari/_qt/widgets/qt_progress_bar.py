@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, Optional
+
 from qtpy import QtCore
 from qtpy.QtWidgets import (
     QApplication,
@@ -9,11 +11,16 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+if TYPE_CHECKING:
+    from ...utils.progress import progress
+
 
 class QtLabeledProgressBar(QWidget):
     """QProgressBar with QLabels for description and ETA."""
 
-    def __init__(self, parent=None, prog=None) -> None:
+    def __init__(
+        self, parent: Optional[QWidget] = None, prog: progress = None
+    ) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
@@ -72,7 +79,11 @@ class QtLabeledProgressBar(QWidget):
 class QtProgressBarGroup(QWidget):
     """One or more QtLabeledProgressBars with a QFrame line separator at the bottom"""
 
-    def __init__(self, qt_progress_bar, parent=None) -> None:
+    def __init__(
+        self,
+        qt_progress_bar: QtLabeledProgressBar,
+        parent: Optional[QWidget] = None,
+    ) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 

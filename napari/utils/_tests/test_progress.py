@@ -7,10 +7,10 @@ from napari.utils import progrange, progress
 
 @contextmanager
 def assert_progress_added_to_all(prog):
-    """Check prog is added to `all_progress` on init & removed on close"""
-    assert prog in progress.all_progress
+    """Check prog is added to `progress_instances` on init & removed on close"""
+    assert prog in progress._instances
     yield
-    assert prog not in progress.all_progress
+    assert prog not in progress._instances
 
 
 def test_progress_with_iterable():
@@ -51,9 +51,9 @@ def test_progress_with_total():
 def test_progress_with_context():
     """Test context manager works as expected"""
     with progress(range(100), desc='context') as pbr:
-        assert pbr in progress.all_progress
+        assert pbr in progress._instances
         assert pbr.n == 0
-    assert pbr not in progress.all_progress
+    assert pbr not in progress._instances
 
 
 def test_progress_update():
@@ -81,7 +81,7 @@ def test_progress_set_description():
     assert pbr.desc == "Test: "
 
     pbr.close()
-    assert pbr not in progress.all_progress
+    assert pbr not in progress._instances
 
 
 def test_progrange():
@@ -89,4 +89,4 @@ def test_progrange():
     with progrange(10) as pbr:
         with progress(range(10)) as pbr2:
             assert pbr.iterable == pbr2.iterable
-    assert pbr not in progress.all_progress
+    assert pbr not in progress._instances

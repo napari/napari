@@ -116,9 +116,7 @@ class QtActivityDialog(QDialog):
 
         # TODO: what do we do with any existing progress objects in action?
         # connect callback to handle new progress objects being added/removed
-        progress.all_progress.events.changed.connect(
-            self.handle_progress_change
-        )
+        progress._instances.events.changed.connect(self.handle_progress_change)
 
     def handle_progress_change(self, event):
         """Handle addition and/or removal of new progress objects
