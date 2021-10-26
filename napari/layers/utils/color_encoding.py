@@ -125,7 +125,7 @@ class QuantitativeColorEncoding(DerivedStyleEncoding):
     ----------
     property : str
         The name of the property that contains the nominal values to be mapped to colors.
-    continuous_colormap : Colormap
+    colormap : Colormap
         Maps property values to colors.
     contrast_limits : Optional[Tuple[float, float]]
         The (min, max) property values that should respectively map to the first and last
@@ -138,7 +138,7 @@ class QuantitativeColorEncoding(DerivedStyleEncoding):
     """
 
     property: str
-    continuous_colormap: Colormap
+    colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
     fallback: ColorArray = DEFAULT_COLOR
 
@@ -151,13 +151,11 @@ class QuantitativeColorEncoding(DerivedStyleEncoding):
         values = all_values[indices]
         if self.contrast_limits is not None:
             values = np.interp(values, self.contrast_limits, (0, 1))
-        return self.continuous_colormap.map(values)
+        return self.colormap.map(values)
 
-    @validator('continuous_colormap', pre=True, always=True)
-    def _check_colormap(
-        cls, continuous_colormap: ValidColormapArg
-    ) -> Colormap:
-        return ensure_colormap(continuous_colormap)
+    @validator('colormap', pre=True, always=True)
+    def _check_colormap(cls, colormap: ValidColormapArg) -> Colormap:
+        return ensure_colormap(colormap)
 
     @validator('contrast_limits', pre=True, always=True)
     def _check_contrast_limits(

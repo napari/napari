@@ -393,7 +393,7 @@ def test_multi_color_property_continuous_map():
     }
     color = {
         'property': 'confidence',
-        'continuous_colormap': 'gray',
+        'colormap': 'gray',
     }
 
     text_manager = TextManager(
@@ -412,7 +412,7 @@ def test_multi_color_property_continuous_map_with_contrast_limits():
     }
     color = {
         'property': 'confidence',
-        'continuous_colormap': 'gray',
+        'colormap': 'gray',
         'contrast_limits': [-1, 1],
     }
 
@@ -434,9 +434,7 @@ def test_color_missing_field_errors():
         'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
     }
 
-    # TODO: maybe worth asserting the error message contains some custom
-    # text that is more understandable than the pydantic default.
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         TextManager(string='class', properties=properties, color=color)
 
 
@@ -448,7 +446,7 @@ def test_color_too_many_fields_use_first_matching():
     color = {
         'property': 'confidence',
         'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
-        'continuous_colormap': 'gray',
+        'colormap': 'gray',
     }
 
     text_manager = TextManager(
