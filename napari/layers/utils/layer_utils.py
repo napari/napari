@@ -102,21 +102,49 @@ def calc_data_range(data, rgb=False):
             center = [int(s // 2) for s in data.shape[-offset:]]
             cental_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
             reduced_data = [
-                [np.nanmax(data[idx + cental_slice]) for idx in idxs],
-                [np.nanmin(data[idx + cental_slice]) for idx in idxs],
+                [
+                    np.max(data[idx + cental_slice])
+                    if np.max(data[idx + cental_slice]) not in [np.nan, np.inf]
+                    else np.nanmax(data[idx + cental_slice])
+                    for idx in idxs
+                ],
+                [
+                    np.min(data[idx + cental_slice])
+                    if np.min(data[idx + cental_slice])
+                    not in [np.nan, -np.inf]
+                    else np.nanmin(data[idx + cental_slice])
+                    for idx in idxs
+                ],
             ]
         else:
             reduced_data = [
-                [np.nanmax(data[idx]) for idx in idxs],
-                [np.nanmin(data[idx]) for idx in idxs],
+                [
+                    np.max(data[idx])
+                    if np.max(data[idx]) not in [np.nan, np.inf]
+                    else np.nanmax(data[idx + cental_slice])
+                    for idx in idxs
+                ],
+                [
+                    np.min(data[idx])
+                    if np.min(data[idx]) not in [np.nan, -np.inf]
+                    else np.nanmin(data[idx + cental_slice])
+                    for idx in idxs
+                ],
             ]
         # compute everything in one go
         reduced_data = dask.compute(*reduced_data)
     else:
         reduced_data = data
 
-    min_val = np.nanmin(reduced_data)
-    max_val = np.nanmax(reduced_data)
+    if np.max(reduced_data) not in [np.nan, np.inf]:
+        max_val = np.max(reduced_data)
+    else:
+        max_val = np.nanmax(reduced_data)
+
+    if np.min(reduced_data) not in [np.nan, -np.inf]:
+        min_val = np.min(reduced_data)
+    else:
+        min_val = np.nanmin(reduced_data)
 
     if min_val == max_val:
         min_val = 0
