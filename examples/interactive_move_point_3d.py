@@ -57,15 +57,18 @@ def drag_along_camera_plane(layer, event):
             event.view_direction
         ))[event.dims_displayed]
 
+        # Project click position onto plane
+        # plane is parallel with canvas in data coords and contains original
+        # point position
         projected_position = project_point_onto_plane(
             point=point_to_project,
             plane_point=original_position,
             plane_normal=view_direction_data,
         )
 
-
-        # Calculate shifts as projected distances multiplied by basis_vectors
+        # Calculate shifts to apply to point
         shifts = projected_position - original_position
+
         # Update position
         updated_position = original_position + shifts
 
