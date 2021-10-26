@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from qtpy import QtCore
 from qtpy.QtWidgets import (
@@ -11,8 +11,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-if TYPE_CHECKING:
-    from ...utils.progress import progress
+from ...utils.progress import progress
 
 
 class QtLabeledProgressBar(QWidget):

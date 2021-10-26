@@ -57,10 +57,10 @@ class progress(tqdm):
     monitor_interval = 0  # set to 0 to disable the thread
     # to give us a way to hook into the creation and update of progress objects
     # without progress knowing anything about a Viewer, we track all instances in
-    # this evented *class* attribute, accessed through `progress._instances`
+    # this evented *class* attribute, accessed through `progress._all_instances`
     # this allows the ActivityDialog to find out about new progress objects and
     # hook up GUI progress bars to its update events
-    _instances: EventedSet['progress'] = EventedSet()
+    _all_instances: EventedSet['progress'] = EventedSet()
 
     def __init__(
         self,
@@ -80,7 +80,7 @@ class progress(tqdm):
 
         if not self.desc:
             self.set_description(trans._("progress"))
-        progress._instances.add(self)
+        progress._all_instances.add(self)
         self.is_init = False
 
     def __repr__(self) -> str:
@@ -121,7 +121,7 @@ class progress(tqdm):
         """Close progress object and emit event."""
         if self.disable:
             return
-        progress._instances.remove(self)
+        progress._all_instances.remove(self)
         super().close()
 
 
