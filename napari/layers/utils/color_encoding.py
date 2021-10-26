@@ -12,18 +12,17 @@ from typing import (
 import numpy as np
 from pydantic import validator
 
-from napari.layers.utils.style_encoding import (
-    ConstantStyleEncoding,
-    DerivedStyleEncoding,
-    DirectStyleEncoding,
-    parse_kwargs_as_encoding,
-)
-
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events.custom_types import Array
+from ._style_encoding import (
+    ConstantStyleEncoding,
+    DerivedStyleEncoding,
+    DirectStyleEncoding,
+    parse_kwargs_as_encoding,
+)
 from .color_transformations import ColorType
 
 """A 4x1 array that represents one RGBA color value."""

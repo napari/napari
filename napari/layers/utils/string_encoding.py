@@ -4,15 +4,16 @@ from typing import Any, Dict, Iterable, Sequence, Union
 import numpy as np
 from pydantic import validator
 
-from napari.layers.utils.style_encoding import (
+from napari.utils.events.custom_types import Array
+from napari.utils.translations import trans
+
+from ._style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
     DirectStyleEncoding,
-    _get_type_names,
+    get_type_names,
     parse_kwargs_as_encoding,
 )
-from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
 
 DEFAULT_STRING = np.array('')
 
@@ -124,7 +125,7 @@ STRING_ENCODINGS = (
     DirectStringEncoding,
 )
 
-STRING_ENCODING_NAMES = _get_type_names(STRING_ENCODINGS)
+STRING_ENCODING_NAMES = get_type_names(STRING_ENCODINGS)
 
 
 def parse_string_encoding(

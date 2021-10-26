@@ -219,7 +219,7 @@ def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
     try:
         return parse_obj_as(Union[encodings], kwargs)
     except ValidationError as error:
-        encoding_names = _get_type_names(encodings)
+        encoding_names = get_type_names(encodings)
         raise ValueError(
             'Original error:\n'
             f'{error}'
@@ -230,8 +230,20 @@ def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
         )
 
 
-def _get_type_names(types: Iterable[type]) -> Tuple[str, ...]:
+def get_type_names(types: Iterable[type]) -> Tuple[str, ...]:
+    """Gets the short names of the given types."""
     return tuple(type.__name__ for type in types)
+
+
+def infer_n_rows(
+    encoding: StyleEncoding, properties: Dict[str, np.ndarray]
+) -> int:
+    """Infers the number of rows in the given properties table."""
+    if len(properties) > 0:
+        return len(next(iter(properties)))
+    if isinstance(encoding, DirectStyleEncoding):
+        return len(encoding.array)
+    return 1
 
 
 def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
@@ -246,11 +258,3 @@ def _append_maybe_empty(left: np.ndarray, right: np.ndarray) -> np.ndarray:
     if left.size == 0:
         return right
     return np.append(left, right, axis=0)
-
-
-def _infer_n_rows(encoding, properties: Dict[str, np.ndarray]) -> int:
-    if isinstance(encoding, DirectStyleEncoding):
-        return len(encoding.array)
-    if isinstance(encoding, DerivedStyleEncoding):
-        return len(next(iter(properties)))
-    return 1

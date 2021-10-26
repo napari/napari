@@ -32,6 +32,7 @@ from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
+from ._style_encoding import infer_n_rows
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .string_encoding import (
@@ -39,7 +40,6 @@ from .string_encoding import (
     ConstantStringEncoding,
     parse_string_encoding,
 )
-from .style_encoding import _infer_n_rows
 
 
 class TextManager(EventedModel):
@@ -109,7 +109,7 @@ class TextManager(EventedModel):
     @property
     def values(self):
         _warn_about_deprecated_values_field()
-        n_text = _infer_n_rows(self.string, self.properties)
+        n_text = infer_n_rows(self.string, self.properties)
         return self.string._get_array(self.properties, n_text)
 
     def __setattr__(self, key, value):
@@ -150,7 +150,7 @@ class TextManager(EventedModel):
         )
         # Assumes that the current properties passed have already been appended
         # to the properties table, then calls _get_array to append new values now.
-        n_text = _infer_n_rows(self.string, self.properties)
+        n_text = infer_n_rows(self.string, self.properties)
         self.string._get_array(self.properties, n_text)
         self.color._get_array(self.properties, n_text)
 
@@ -222,7 +222,7 @@ class TextManager(EventedModel):
             ),
             DeprecationWarning,
         )
-        n_text = _infer_n_rows(self.string, self.properties)
+        n_text = infer_n_rows(self.string, self.properties)
         return self.string._get_array(self.properties, n_text, indices_view)
 
     @classmethod
