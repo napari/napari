@@ -1333,6 +1333,20 @@ class Points(Layer):
             selection = None
         return selection
 
+    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
+        """An augmented, axis-aligned (self._ndisplay, 2) bounding box.
+
+        This bounding box for includes the full size of displayed points
+        and enables calculation of intersections in `Layer._get_value_3d()`.
+        """
+        max_point_size = np.max(self._view_size)
+        bounding_box = np.copy(
+            self._display_bounding_box(dims_displayed)
+        ).astype(float)
+        bounding_box[:, 0] -= max_point_size / 2
+        bounding_box[:, 1] += max_point_size / 2
+        return bounding_box
+
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
