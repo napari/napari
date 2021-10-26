@@ -95,16 +95,6 @@ class TextManager(EventedModel):
             _warn_about_deprecated_text_parameter()
             kwargs['string'] = kwargs.pop('text')
         super().__init__(**kwargs)
-        self.events.add(text_update=Event)
-        # When most of the fields change, listeners typically respond in the
-        # same way, so create a super event that they all emit.
-        self.events.string.connect(self.events.text_update)
-        self.events.color.connect(self.events.text_update)
-        self.events.rotation.connect(self.events.text_update)
-        self.events.translation.connect(self.events.text_update)
-        self.events.anchor.connect(self.events.text_update)
-        self.events.size.connect(self.events.text_update)
-        self.events.visible.connect(self.events.text_update)
 
     @property
     def values(self):
@@ -367,7 +357,10 @@ class TextManager(EventedModel):
     def _on_properties_changed(self, event=None):
         self.string._clear()
         self.color._clear()
-        self.events.text_update()
+        # TODO: the top-level event is useful because we know that the vispy layer is
+        # connected to that, but that might change in the future. Consider emitting the
+        # string and color events, which may be less efficient, but is likely safer.
+        self.events(Event('TextManager._on_properties_changed'))
 
 
 def _warn_about_deprecated_values_field():
