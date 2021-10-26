@@ -114,43 +114,25 @@ class QtTracksControls(QtLayerControls):
         self._on_colormap_change()
         self._on_color_by_change()
 
-    def _on_tail_width_change(self, event=None):
-        """Receive layer model track line width change event and update slider.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_tail_width_change(self):
+        """Receive layer model track line width change event and update slider."""
         with self.layer.events.tail_width.blocker():
             value = int(2 * self.layer.tail_width)
             self.tail_width_slider.setValue(value)
 
-    def _on_tail_length_change(self, event=None):
-        """Receive layer model track line width change event and update slider.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_tail_length_change(self):
+        """Receive layer model track line width change event and update slider."""
         with self.layer.events.tail_length.blocker():
             value = self.layer.tail_length
             self.tail_length_slider.setValue(value)
 
-    def _on_head_length_change(self, event=None):
-        """Receive layer model track line width change event and update slider.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_head_length_change(self):
+        """Receive layer model track line width change event and update slider."""
         with self.layer.events.head_length.blocker():
             value = self.layer.head_length
             self.head_length_slider.setValue(value)
 
-    def _on_properties_change(self, event=None):
+    def _on_properties_change(self):
         """Change the properties that can be used to color the tracks."""
         with self.layer.events.properties.blocker():
 
@@ -158,27 +140,15 @@ class QtTracksControls(QtLayerControls):
                 self.color_by_combobox.clear()
             self.color_by_combobox.addItems(self.layer.properties_to_color_by)
 
-    def _on_colormap_change(self, event=None):
-        """Receive layer model colormap change event and update combobox.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_colormap_change(self):
+        """Receive layer model colormap change event and update combobox."""
         with self.layer.events.colormap.blocker():
             self.colormap_combobox.setCurrentIndex(
                 self.colormap_combobox.findData(self.layer.colormap)
             )
 
-    def _on_color_by_change(self, event=None):
-        """Receive layer model color_by change event and update combobox.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
+    def _on_color_by_change(self):
+        """Receive layer model color_by change event and update combobox."""
         with self.layer.events.color_by.blocker():
             color_by = self.layer.color_by
 

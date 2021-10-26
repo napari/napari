@@ -131,14 +131,6 @@ class _QtMainWindow(QMainWindow):
         else:
             self.qt_viewer.setToolTip("")
 
-        # Connect the notification dispacther to correctly propagate
-        # notifications from threads. See: `napari._qt.qt_event_loop::get_app`
-        application_instance = QApplication.instance()
-        if application_instance:
-            application_instance._dispatcher.sig_notified.connect(
-                self.show_notification
-            )
-
     @classmethod
     def current(cls):
         return cls._instances[-1] if cls._instances else None
@@ -432,15 +424,21 @@ class Window:
         self._update_theme()
         get_settings().appearance.events.theme.connect(self._update_theme)
 
-        self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerControls, tabify=False
+            self.qt_viewer.dockConsole, tabify=False, menu=self.window_menu
         )
         self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerList, tabify=False
+            self.qt_viewer.dockLayerControls,
+            tabify=False,
+            menu=self.window_menu,
+        )
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
         )
         if perf.USE_PERFMON:
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+            self._add_viewer_dock_widget(
+                self.qt_viewer.dockPerformance, menu=self.window_menu
+            )
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -469,14 +467,14 @@ class Window:
     def _connect_theme(self, theme):
         # connect events to update theme. Here, we don't want to pass the event
         # since it won't have the right `value` attribute.
-        theme.events.background.connect(lambda _: self._update_theme())
-        theme.events.foreground.connect(lambda _: self._update_theme())
-        theme.events.primary.connect(lambda _: self._update_theme())
-        theme.events.secondary.connect(lambda _: self._update_theme())
-        theme.events.highlight.connect(lambda _: self._update_theme())
-        theme.events.text.connect(lambda _: self._update_theme())
-        theme.events.warning.connect(lambda _: self._update_theme())
-        theme.events.current.connect(lambda _: self._update_theme())
+        theme.events.background.connect(self._update_theme_no_event)
+        theme.events.foreground.connect(self._update_theme_no_event)
+        theme.events.primary.connect(self._update_theme_no_event)
+        theme.events.secondary.connect(self._update_theme_no_event)
+        theme.events.highlight.connect(self._update_theme_no_event)
+        theme.events.text.connect(self._update_theme_no_event)
+        theme.events.warning.connect(self._update_theme_no_event)
+        theme.events.current.connect(self._update_theme_no_event)
         theme.events.icon.connect(self._theme_icon_changed)
         theme.events.canvas.connect(
             lambda _: self.qt_viewer.canvas._set_theme_change(
@@ -486,21 +484,21 @@ class Window:
         # connect console-specific attributes only if QtConsole
         # is present. The `console` is called which might slow
         # things down a little.
-        if self.qt_viewer.console:
+        if self.qt_viewer._console:
             theme.events.console.connect(self.qt_viewer.console._update_theme)
             theme.events.syntax_style.connect(
                 self.qt_viewer.console._update_theme
             )
 
     def _disconnect_theme(self, theme):
-        theme.events.background.disconnect(lambda _: self._update_theme())
-        theme.events.foreground.disconnect(lambda _: self._update_theme())
-        theme.events.primary.disconnect(lambda _: self._update_theme())
-        theme.events.secondary.disconnect(lambda _: self._update_theme())
-        theme.events.highlight.disconnect(lambda _: self._update_theme())
-        theme.events.text.disconnect(lambda _: self._update_theme())
-        theme.events.warning.disconnect(lambda _: self._update_theme())
-        theme.events.current.disconnect(lambda _: self._update_theme())
+        theme.events.background.disconnect(self._update_theme_no_event)
+        theme.events.foreground.disconnect(self._update_theme_no_event)
+        theme.events.primary.disconnect(self._update_theme_no_event)
+        theme.events.secondary.disconnect(self._update_theme_no_event)
+        theme.events.highlight.disconnect(self._update_theme_no_event)
+        theme.events.text.disconnect(self._update_theme_no_event)
+        theme.events.warning.disconnect(self._update_theme_no_event)
+        theme.events.current.disconnect(self._update_theme_no_event)
         theme.events.icon.disconnect(self._theme_icon_changed)
         theme.events.canvas.disconnect(
             lambda _: self.qt_viewer.canvas._set_theme_change(
@@ -509,7 +507,7 @@ class Window:
         )
         # disconnect console-specific attributes only if QtConsole
         # is present and they were previously connected
-        if self.qt_viewer.console:
+        if self.qt_viewer._console:
             theme.events.console.disconnect(
                 self.qt_viewer.console._update_theme
             )
@@ -527,7 +525,7 @@ class Window:
         theme = event.value
         self._disconnect_theme(theme)
 
-    def _theme_icon_changed(self, event=None):
+    def _theme_icon_changed(self):
         """Trigger rebuild of theme and all resources.
 
         This is really only required whenever there are changes to the `icon`
@@ -654,7 +652,6 @@ class Window:
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             dock_widget = self._dock_widgets[full_name]
-            dock_widget.show()
             wdg = dock_widget.widget()
             if hasattr(wdg, '_magic_widget'):
                 wdg = wdg._magic_widget
@@ -694,7 +691,6 @@ class Window:
         """
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            self._dock_widgets[full_name].show()
             return
 
         func = plugin_manager._function_widgets[plugin_name][widget_name]
@@ -713,6 +709,7 @@ class Window:
         allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
+        menu=None,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -788,7 +785,7 @@ class Window:
                 add_vertical_stretch=add_vertical_stretch,
             )
 
-        self._add_viewer_dock_widget(dock_widget)
+        self._add_viewer_dock_widget(dock_widget, menu=menu)
 
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
@@ -805,7 +802,7 @@ class Window:
         return dock_widget
 
     def _add_viewer_dock_widget(
-        self, dock_widget: QtViewerDockWidget, tabify=False
+        self, dock_widget: QtViewerDockWidget, tabify=False, menu=None
     ):
         """Add a QtViewerDockWidget to the main window
 
@@ -840,57 +837,21 @@ class Window:
                 sizes = list(range(1, len(_wdg) * 4, 4))
                 self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
 
-        action = dock_widget.toggleViewAction()
-        action.setStatusTip(dock_widget.name)
-        action.setText(dock_widget.name)
-        import warnings
+        if menu:
+            action = dock_widget.toggleViewAction()
+            action.setStatusTip(dock_widget.name)
+            action.setText(dock_widget.name)
+            import warnings
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", FutureWarning)
-            # deprecating with 0.4.8, but let's try to keep compatibility.
-            shortcut = dock_widget.shortcut
-        if shortcut is not None:
-            action.setShortcut(shortcut)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", FutureWarning)
+                # deprecating with 0.4.8, but let's try to keep compatibility.
+                shortcut = dock_widget.shortcut
+            if shortcut is not None:
+                action.setShortcut(shortcut)
 
-        # dock widgets can have a menu item on the window menu or the plugin menu.
-
-        # check for plugins menu first.  Need to check submenus too.  If the action in the
-        # plugin menu is toggled for the first time, it will be replaced with the toggleViewAction
-        # directly in the plugins menu.
-        actions = [a.text() for a in self.plugins_menu.actions()]
-        if dock_widget.name in actions:
-            idx = actions.index(dock_widget.name)
-            old_action = self.plugins_menu.actions()[idx]
-            dock_widget.setVisible(True)
-            self.plugins_menu.insertAction(old_action, action)
-            self.plugins_menu.removeAction(old_action)
-            return
-        else:
-            # if the action is not here, it may be in a submenu
-            for cnt, current_action in enumerate(self.plugins_menu.actions()):
-                if current_action.menu() is not None:
-                    sub_actions = [
-                        plugin_menu_item_template.format(
-                            current_action.text(), a.text()
-                        )
-                        for a in current_action.menu().actions()
-                    ]
-                    if dock_widget.name in sub_actions:
-                        idx = sub_actions.index(dock_widget.name)
-                        old_action = (
-                            self.plugins_menu.actions()[cnt]
-                            .menu()
-                            .actions()[idx]
-                        )
-                        self.plugins_menu.actions()[cnt].menu().insertAction(
-                            old_action, action
-                        )
-                        self.plugins_menu.actions()[cnt].menu().removeAction(
-                            old_action
-                        )
-                        return
-
-        self.window_menu.addAction(action)
+            menu.addAction(action)
+        # self.window_menu.addAction(action)
 
     def _remove_dock_widget(self, event=None):
         names = list(self._dock_widgets.keys())
@@ -1100,6 +1061,9 @@ class Window:
         self._qt_window.raise_()  # for macOS
         self._qt_window.activateWindow()  # for Windows
 
+    def _update_theme_no_event(self):
+        self._update_theme()
+
     def _update_theme(self, event=None):
         """Update widget color theme."""
         settings = get_settings()
@@ -1211,7 +1175,7 @@ class Window:
         self.qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
         for menu in self.file_menu._INSTANCES:
             try:
-                menu.close()
+                menu._destroy()
             except RuntimeError:
                 pass
 

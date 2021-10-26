@@ -46,8 +46,8 @@ def connect_setattr(emitter: Emitter, obj, attr: str):
         setattr(ref(), attr, value[0] if len(value) == 1 else value)
 
     emitter.connect(_cb)
-    # There are scenarios where emmiter is deleted before obj.
-    # Also there is no option to create weakref ot QT Signal
+    # There are scenarios where emitter is deleted before obj.
+    # Also there is no option to create weakref to QT Signal
     # but even if keep reference to base object and signal name it is possible to meet
     # problem with C++ "wrapped C/C++ object has been deleted"
     # weakref.finalize(obj, emitter.disconnect, _cb)
@@ -62,3 +62,13 @@ def connect_no_arg(emitter: Emitter, obj, attr: str):
     emitter.connect(_cb)
     # as in connect_setattr
     # weakref.finalize(obj, emitter.disconnect, _cb)
+
+
+def connect_setattr_value(emitter: Emitter, obj, attr: str):
+    """To get value from Event"""
+    ref = weakref.ref(obj)
+
+    def _cb(value):
+        setattr(ref(), attr, value.value)
+
+    emitter.connect(_cb)

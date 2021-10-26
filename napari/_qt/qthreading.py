@@ -18,6 +18,7 @@ from typing import (
     Union,
 )
 
+import magicgui
 import toolz as tz
 from qtpy.QtCore import (
     QObject,
@@ -31,8 +32,8 @@ from qtpy.QtCore import (
 
 from ..types import LayerDataTuple
 from ..utils import _magicgui as _mgui
+from ..utils import progress
 from ..utils.translations import trans
-from .qprogress import progress
 
 _Y = TypeVar("_Y")
 _S = TypeVar("_S")
@@ -939,10 +940,10 @@ def _new_worker_qthread(
 
 
 for _type in (LayerDataTuple, List[LayerDataTuple]):
-    _mgui.register_type(
+    magicgui.register_type(
         _type,
         return_callback=_mgui.add_layer_data_tuples_to_viewer,
     )
-    _mgui.register_type(
+    magicgui.register_type(
         FunctionWorker[_type], return_callback=_mgui.add_worker_data
     )
