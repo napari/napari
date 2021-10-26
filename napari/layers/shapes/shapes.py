@@ -474,7 +474,6 @@ class Shapes(Layer):
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
-            text=Event,
         )
 
         # Flag set to false to block thumbnail refresh
@@ -572,7 +571,10 @@ class Shapes(Layer):
             self._properties, self._property_choices, len(data)
         )
 
-        self.text = text
+        self._text = TextManager._from_layer(
+            text=text,
+            properties=self.properties,
+        )
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -1534,13 +1536,17 @@ class Shapes(Layer):
         return np.broadcast_to(text_array, (len(self._indices_view), 4))
 
     @property
-    def _view_text_coords(self) -> np.ndarray:
+    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
         -------
         text_coords : (N x D) np.ndarray
             Array of coordinates for the N text elements in view
+        anchor_x : str
+            The vispy text anchor for the x axis
+        anchor_y : str
+            The vispy text anchor for the y axis
         """
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
@@ -2234,11 +2240,10 @@ class Shapes(Layer):
 
     @text.setter
     def text(self, text):
-        self._text = TextManager._from_layer_kwargs(
+        self._text._update_from_layer(
             text=text,
             properties=self.properties,
         )
-        self.events.text()
 
     def refresh_text(self):
         """Refresh the text values.

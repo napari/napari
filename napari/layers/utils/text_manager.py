@@ -275,6 +275,67 @@ class TextManager(EventedModel):
     ) -> Union[STRING_ENCODINGS]:
         return parse_string_encoding(string, values['properties'])
 
+    @classmethod
+    def _from_layer(
+        cls,
+        *,
+        text: Union['TextManager', dict, str, None],
+        properties: Dict[str, np.ndarray],
+    ) -> 'TextManager':
+        """Create a TextManager from a layer.
+
+        Parameters
+        ----------
+        text : Union[TextManager, dict, str, None]
+            An instance of TextManager, a dict that contains some of its state,
+            a string that should be a property name, or a format string.
+        properties : Dict[str, np.ndarray]
+            The properties of a layer.
+
+        Returns
+        -------
+        TextManager
+        """
+        if isinstance(text, TextManager):
+            kwargs = text.dict()
+        elif isinstance(text, dict):
+            kwargs = deepcopy(text)
+        else:
+            kwargs = {'string': text}
+        kwargs['properties'] = properties
+        return cls(**kwargs)
+
+    def _update_from_layer(
+        self,
+        *,
+        text: Union['TextManager', dict, str, None],
+        properties: Dict[str, np.ndarray],
+    ):
+        """Updates this in-place from a layer.
+
+        This will effectively overwrite all existing state, but in-place
+        so that there is no need for any external components to reconnect
+        to any useful events. For this reason, only fields that change in
+        value will emit their corresponding events.
+
+        Parameters
+        ----------
+        See :meth:`TextManager._from_layer`.
+        """
+        # Create a new instance from the input to populate all fields.
+        new_manager = TextManager._from_layer(text=text, properties=properties)
+
+        # Update a copy of this so that any associated errors are raised
+        # before actually making the update. This does not need to be a
+        # deep copy because update will only try to reassign fields and
+        # should not mutate any existing fields in-place.
+        current_manager = self.copy()
+        current_manager.update(new_manager, recurse=False)
+
+        # If we got here, then there were no errors, so update for real.
+        # Connected callbacks may raise errors, but those are bugs.
+        self.update(new_manager, recurse=False)
+
     @validator('color', pre=True, always=True)
     def _check_color(
         cls,

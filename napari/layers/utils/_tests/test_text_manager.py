@@ -465,6 +465,99 @@ def test_color_too_many_fields_use_first_matching():
     _assert_colors_equal(color_array, expected_color_array)
 
 
+def test_from_layer():
+    text = {
+        'string': 'class',
+        'translation': [-0.5, 1],
+        'visible': False,
+    }
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+        'confidence': np.array([1, 0.5, 0]),
+    }
+
+    text_manager = TextManager._from_layer(
+        text=text,
+        properties=properties,
+    )
+
+    string_array = text_manager.string._get_array(properties, 3)
+    np.testing.assert_array_equal(string_array, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(text_manager.translation, [-0.5, 1])
+    assert not text_manager.visible
+
+
+def test_update_from_layer():
+    text = {
+        'string': 'class',
+        'translation': [-0.5, 1],
+        'visible': False,
+    }
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+        'confidence': np.array([1, 0.5, 0]),
+    }
+    text_manager = TextManager._from_layer(
+        text=text,
+        properties=properties,
+    )
+
+    text = {
+        'string': 'Conf: {confidence:.2f}',
+        'translation': [1.5, -2],
+        'size': 9000,
+    }
+    text_manager._update_from_layer(text=text, properties=properties)
+
+    string_array = text_manager.string._get_array(properties, 3)
+    np.testing.assert_array_equal(
+        string_array, ['Conf: 1.00', 'Conf: 0.50', 'Conf: 0.00']
+    )
+    np.testing.assert_array_equal(text_manager.translation, [1.5, -2])
+    assert text_manager.visible
+    assert text_manager.size == 9000
+
+
+def test_update_from_layer_with_invalid_value_fails_safely():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+        'confidence': np.array([1, 0.5, 0]),
+    }
+    text_manager = TextManager._from_layer(
+        text='class',
+        properties=properties,
+    )
+    before = text_manager.copy(deep=True)
+
+    text = {
+        'string': 'confidence',
+        'size': -3,
+    }
+
+    with pytest.raises(ValidationError):
+        text_manager._update_from_layer(text=text, properties=properties)
+
+    assert text_manager == before
+
+
+def test_update_from_layer_with_warning_only_one_emitted():
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    text_manager = TextManager._from_layer(
+        text='class',
+        properties=properties,
+    )
+
+    text = {
+        'string': 'class',
+        'blending': 'opaque',
+    }
+
+    with pytest.warns(RuntimeWarning) as record:
+        text_manager._update_from_layer(text=text, properties=properties)
+
+    assert len(record) == 1
+
+
 def _assert_colors_equal(actual, expected):
     actual_array = transform_color(actual)
     expected_array = transform_color(expected)

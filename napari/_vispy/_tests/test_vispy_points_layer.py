@@ -13,6 +13,21 @@ def test_VispyPointsLayer(opacity):
     assert visual.node.opacity == opacity
 
 
+def test_remove_selected_with_derived_text():
+    """See https://github.com/napari/napari/issues/3504"""
+    points = np.random.rand(3, 2)
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    layer = Points(points, text='class', properties=properties)
+    vispy_layer = VispyPointsLayer(layer)
+    text_node = vispy_layer._get_text_node()
+    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+
+    layer.selected_data = {1}
+    layer.remove_selected()
+
+    np.testing.assert_array_equal(text_node.text, ['A', 'C'])
+
+
 def test_change_text_updates_node_string():
     points = np.random.rand(3, 2)
     properties = {
@@ -43,7 +58,7 @@ def test_change_text_color_updates_node_color():
     np.testing.assert_array_equal(text_node.color.rgb, [[0, 0, 1]] * 3)
 
 
-def test_change_properties_updates_node_strings(make_napari_viewer):
+def test_change_properties_updates_node_strings():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(points, properties=properties, text='class')

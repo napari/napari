@@ -2,7 +2,7 @@ from string import Formatter
 from typing import Any, Dict, Iterable, Sequence, Union
 
 import numpy as np
-from pydantic import Field, validator
+from pydantic import validator
 
 from napari.layers.utils.style_encoding import (
     ConstantStyleEncoding,
@@ -32,7 +32,7 @@ class ConstantStringEncoding(ConstantStyleEncoding):
         The constant string value.
     """
 
-    constant: StringArray = Field(..., allow_mutation=False)
+    constant: StringArray
 
     @validator('constant', pre=True, always=True)
     def _validate_constant(cls, constant) -> np.ndarray:
@@ -75,7 +75,7 @@ class IdentityStringEncoding(DerivedStyleEncoding):
         does not contain valid string values.
     """
 
-    property: str = Field(..., allow_mutation=False)
+    property: str
     fallback: StringArray = DEFAULT_STRING
 
     def _apply(
@@ -97,7 +97,7 @@ class FormatStringEncoding(DerivedStyleEncoding):
         is not valid or contains fields other than property names.
     """
 
-    format_string: str = Field(..., allow_mutation=False)
+    format_string: str
     fallback: StringArray = DEFAULT_STRING
 
     def _apply(

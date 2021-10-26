@@ -309,7 +309,6 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
-            text=Event,
         )
 
         self._colors = get_color_namelist()
@@ -322,7 +321,10 @@ class Points(Layer):
             properties, property_choices, len(self.data), save_choices=True
         )
 
-        self.text = text
+        self._text = TextManager._from_layer(
+            text=text,
+            properties=self.properties,
+        )
 
         # Save the point style params
         self.symbol = symbol
@@ -564,11 +566,10 @@ class Points(Layer):
 
     @text.setter
     def text(self, text):
-        self._text = TextManager._from_layer_kwargs(
+        self._text._update_from_layer(
             text=text,
             properties=self.properties,
         )
-        self.events.text()
 
     def refresh_text(self):
         """Refresh the text values.
@@ -1150,6 +1151,10 @@ class Points(Layer):
         -------
         text_coords : (N x D) np.ndarray
             Array of coordinates for the N text elements in view
+        anchor_x : str
+            The vispy text anchor for the x axis
+        anchor_y : str
+            The vispy text anchor for the y axis
         """
         return self.text.compute_text_coords(self._view_data, self._ndisplay)
 

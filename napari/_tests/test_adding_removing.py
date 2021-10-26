@@ -112,7 +112,7 @@ def test_add_remove_layer_external_callbacks(
     assert layer.ndim == ndim
 
     # Connect a custom callback
-    def my_custom_callback(event):
+    def my_custom_callback():
         return
 
     layer.events.connect(my_custom_callback)

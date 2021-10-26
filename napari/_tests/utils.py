@@ -15,7 +15,6 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.utils.config import async_loading
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
@@ -38,9 +37,15 @@ Used as pytest params for testing layer add and view functionality (Layer class,
 """
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
+    (Image, ts.array(np.random.random((10, 15))), 2),
     (Image, np.random.random((10, 15, 20)), 3),
     (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
+    (
+        Image,
+        [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]],
+        2,
+    ),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
     (Points, 20 * np.random.random((10, 2)), 2),
@@ -71,10 +76,6 @@ layer_test_data = [
         4,
     ),
 ]
-
-if not async_loading:
-    # Tensorstore arrays currently break with async
-    layer_test_data.append((Image, ts.array(np.random.random((10, 15))), 2))
 
 
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]

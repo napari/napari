@@ -2175,3 +2175,25 @@ def test_set_properties_with_missing_text_property_text_becomes_constant_with_wa
 
     with pytest.warns(RuntimeWarning):
         np.testing.assert_array_equal(points._view_text, ['', '', ''])
+
+
+def test_text_param_and_setter_are_consistent():
+    """See https://github.com/napari/napari/issues/1833"""
+    data = np.random.rand(5, 3) * 100
+    properties = {
+        'accepted': np.random.choice([True, False], (5,)),
+    }
+    text = {'string': 'accepted', 'color': 'black'}
+
+    points_init = Points(data, properties=properties, text=text)
+
+    points_set = Points(data, properties=properties)
+    points_set.text = text
+
+    np.testing.assert_array_equal(
+        points_init.text.string,
+        points_set.text.string,
+    )
+    np.testing.assert_array_equal(
+        points_init.text.color, points_set.text.color
+    )
