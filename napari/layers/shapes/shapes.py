@@ -1516,10 +1516,9 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        text_array = self.text.string._get_array(
+        return self.text.string._get_array(
             self.properties, len(self.data), self._indices_view
         )
-        return np.broadcast_to(text_array, (len(self._indices_view),))
 
     @property
     def _view_text_colors(self) -> np.ndarray:
@@ -1530,10 +1529,9 @@ class Shapes(Layer):
         text : (N x 4) np.ndarray
             Array of colors for the N text elements in view
         """
-        text_array = self.text.color._get_array(
+        return self.text.color._get_array(
             self.properties, len(self.data), self._indices_view
         )
-        return np.broadcast_to(text_array, (len(self._indices_view), 4))
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
