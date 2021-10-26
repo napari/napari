@@ -128,12 +128,9 @@ class QtActivityDialog(QDialog):
         event : Event
             EventedSet `changed` event with `added` and `removed` objects
         """
-        removed_progress = event.removed
-        for prog in removed_progress:
+        for prog in event.removed:
             self.close_progress_bar(prog)
-            pass
-        added_progress = event.added
-        for prog in added_progress:
+        for prog in event.added:
             self.make_new_pbar(prog)
 
     def make_new_pbar(self, prog):
