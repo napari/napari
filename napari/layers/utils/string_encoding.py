@@ -2,7 +2,6 @@ from string import Formatter
 from typing import Any, Dict, Iterable, Sequence, Union
 
 import numpy as np
-from pydantic import validator
 
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
@@ -35,10 +34,6 @@ class ConstantStringEncoding(ConstantStyleEncoding):
 
     constant: StringArray
 
-    @validator('constant', pre=True, always=True)
-    def _validate_constant(cls, constant) -> np.ndarray:
-        return np.array(constant, dtype=str)
-
 
 class DirectStringEncoding(DirectStyleEncoding):
     """Encodes string values directly in an array.
@@ -54,14 +49,6 @@ class DirectStringEncoding(DirectStyleEncoding):
 
     array: MultiStringArray = []
     default: StringArray = DEFAULT_STRING
-
-    @validator('array', pre=True, always=True)
-    def _validate_array(cls, array) -> np.ndarray:
-        return np.array(array, dtype=str)
-
-    @validator('default', pre=True, always=True)
-    def _validate_default(cls, default) -> np.ndarray:
-        return np.array(default, dtype=str)
 
 
 class IdentityStringEncoding(DerivedStyleEncoding):

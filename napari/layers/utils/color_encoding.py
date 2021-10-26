@@ -1,4 +1,4 @@
-from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import validator
@@ -7,7 +7,6 @@ from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events.custom_types import Array
 from ._style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
@@ -16,11 +15,30 @@ from ._style_encoding import (
 )
 from .color_transformations import ColorType
 
-"""A 4x1 array that represents one RGBA color value."""
-ColorArray = Array[float, (4,)]
 
-"""An Nx4 array where each row of N represents one RGBA color value."""
-MultiColorArray = Array[float, (-1, 4)]
+class ColorArray(np.ndarray):
+    """A 4x1 array that represents one RGBA color value."""
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_type
+
+    @classmethod
+    def validate_type(cls, val):
+        return transform_color(val)[0]
+
+
+class MultiColorArray(np.ndarray):
+    """An Nx4 array where each row of N represents one RGBA color value."""
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_type
+
+    @classmethod
+    def validate_type(cls, val):
+        return np.empty((0, 4)) if len(val) == 0 else transform_color(val)
+
 
 """The default color to use, which may also be used a safe fallback color."""
 DEFAULT_COLOR = 'cyan'
@@ -36,10 +54,6 @@ class ConstantColorEncoding(ConstantStyleEncoding):
     """
 
     constant: ColorArray
-
-    @validator('constant', pre=True, always=True)
-    def _check_constant(cls, constant: ColorType) -> np.ndarray:
-        return transform_color(constant)[0]
 
 
 class DirectColorEncoding(DirectStyleEncoding):
@@ -57,14 +71,6 @@ class DirectColorEncoding(DirectStyleEncoding):
     array: MultiColorArray
     default: ColorArray = DEFAULT_COLOR
 
-    @validator('array', pre=True, always=True)
-    def _check_array(cls, array: Collection[ColorType]) -> np.ndarray:
-        return np.empty((0, 4)) if len(array) == 0 else transform_color(array)
-
-    @validator('default', pre=True, always=True)
-    def _check_default(cls, default: ColorType) -> np.ndarray:
-        return transform_color(default)[0]
-
 
 class IdentityColorEncoding(DerivedStyleEncoding):
     """Encodes color values directly from a property column.
@@ -80,10 +86,6 @@ class IdentityColorEncoding(DerivedStyleEncoding):
 
     property: str
     fallback: ColorArray = DEFAULT_COLOR
-
-    @validator('fallback', pre=True, always=True)
-    def _check_fallback(cls, fallback: ColorType) -> np.ndarray:
-        return transform_color(fallback)[0]
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Iterable[int]
@@ -108,10 +110,6 @@ class NominalColorEncoding(DerivedStyleEncoding):
     property: str
     categorical_colormap: CategoricalColormap
     fallback: ColorArray = DEFAULT_COLOR
-
-    @validator('fallback', pre=True, always=True)
-    def _check_fallback(cls, fallback: ColorType) -> np.ndarray:
-        return transform_color(fallback)[0]
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Iterable[int]
@@ -172,10 +170,6 @@ class QuantitativeColorEncoding(DerivedStyleEncoding):
                 'contrast_limits must be a strictly increasing pair of values'
             )
         return contrast_limits
-
-    @validator('fallback', pre=True, always=True)
-    def _check_fallback(cls, fallback: ColorType) -> np.ndarray:
-        return transform_color(fallback)[0]
 
 
 # Define supported encodings as tuples instead of Union, so that they can be used with
