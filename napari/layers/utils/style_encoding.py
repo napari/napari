@@ -1,18 +1,9 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import (
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
-from pydantic import Field, ValidationError, parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 
 from ...utils.events import EventedModel
 
@@ -86,7 +77,7 @@ class StyleEncoding(ABC):
 class ConstantStyleEncoding(EventedModel, StyleEncoding):
     """Encodes a constant style value.
 
-    The _get_array method returns the constant value to be broadcast as needed.
+    The _get_array method returns the constant broadcasted to the required length.
 
     Attributes
     ----------
@@ -94,15 +85,17 @@ class ConstantStyleEncoding(EventedModel, StyleEncoding):
         The constant style value.
     """
 
-    constant: np.ndarray = Field(..., allow_mutation=False)
+    constant: np.ndarray
 
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional = None,
+        indices: Optional[Collection[int]] = None,
     ) -> np.ndarray:
-        return self.constant
+        output_length = n_rows if indices is None else len(indices)
+        output_shape = (output_length,) + self.constant.shape
+        return np.broadcast_to(self.constant, output_shape)
 
     def _append(self, array: np.ndarray):
         pass
@@ -138,7 +131,7 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional = None,
+        indices: Optional[Collection[int]] = None,
     ) -> np.ndarray:
         current_length = self.array.shape[0]
         if n_rows > current_length:
@@ -150,9 +143,7 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         self.array = _append_maybe_empty(self.array, array)
 
     def _delete(self, indices):
-        # TODO: consider warning if any indices are OOB.
-        safe_indices = _in_bounds(indices, self.array.shape[0])
-        self.array = np.delete(self.array, safe_indices, axis=0)
+        self.array = _delete_in_bounds(self.array, indices)
 
     def _clear(self):
         self.array = np.empty((0,))
@@ -161,6 +152,7 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
 class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
     """Encodes style values by deriving them from property values."""
 
+    fallback: np.ndarray
     _array: np.ndarray
 
     def __init__(self, **kwargs):
@@ -171,10 +163,6 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
-        pass
-
-    @abstractmethod
-    def _fallback_value(self) -> np.ndarray:
         pass
 
     def _get_array(
@@ -201,15 +189,13 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
                 f'Returning safe constant value instead.',
                 category=RuntimeWarning,
             )
-        return self._fallback_value()
+        return self.fallback
 
     def _append(self, array: np.ndarray):
         self._array = _append_maybe_empty(self._array, array)
 
     def _delete(self, indices):
-        # TODO: consider warning if any indices are OOB.
-        safe_indices = _in_bounds(indices, self._array.shape[0])
-        self._array = np.delete(self._array, safe_indices, axis=0)
+        self._array = _delete_in_bounds(self._array, indices)
 
     def _clear(self):
         self._array = np.empty((0,))
@@ -233,98 +219,25 @@ def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
     try:
         return parse_obj_as(Union[encodings], kwargs)
     except ValidationError as error:
+        encoding_names = _get_type_names(encodings)
         raise ValueError(
             'Original error:\n'
             f'{error}'
             'Failed to parse a supported encoding from kwargs:\n'
             f'{kwargs}\n\n'
             'The kwargs must specify the fields of exactly one of the following encodings:\n'
-            f'{encodings}\n\n'
+            f'{encoding_names}\n\n'
         )
 
 
-def _get_tail_direct(
-    array: np.ndarray, default: np.ndarray, n_rows: int
-) -> np.ndarray:
-    current_length = array.shape[0]
-    return (
-        np.array([default] * (n_rows - current_length))
-        if n_rows > current_length
-        else np.array([])
-    )
-
-
-def _get_array_direct(
-    array: np.ndarray,
-    default: np.ndarray,
-    n_rows: int,
-    indices: Optional,
-) -> Tuple[np.ndarray, np.ndarray]:
-    current_length = array.shape[0]
-    if current_length < n_rows:
-        tail_array = np.array([default] * (n_rows - current_length))
-        array = _append_maybe_empty(array, tail_array)
-    return array, _maybe_index_array(array, indices)
-
-
-def _get_tail_derived(
-    property_map: Callable[[Dict[str, np.ndarray], Iterable], np.ndarray],
-    array: np.ndarray,
-    properties: Dict[str, np.ndarray],
-    n_rows: int,
-) -> Optional[np.ndarray]:
-    current_length = array.shape[0]
-    tail_indices = range(current_length, n_rows)
-    try:
-        if len(tail_indices) > 0:
-            return property_map(properties, tail_indices)
-    except (KeyError, ValueError) as error:
-        warnings.warn(
-            'Applying a derived encoding failed with error:\n'
-            f'{error}\n'
-            f'Returning safe constant value instead.',
-            category=RuntimeWarning,
-        )
-    return None
-
-
-def _get_array_derived(
-    property_map: Callable[[Dict[str, np.ndarray], Iterable], np.ndarray],
-    array: np.ndarray,
-    fallback: np.ndarray,
-    properties: Dict[str, np.ndarray],
-    n_rows: int,
-    indices: Optional = None,
-) -> Tuple[np.ndarray, np.ndarray]:
-    current_length = array.shape[0]
-    tail_indices = range(current_length, n_rows)
-    try:
-        if len(tail_indices) > 0:
-            tail_array = property_map(properties, tail_indices)
-            array = _append_maybe_empty(array, tail_array)
-        return array, _maybe_index_array(array, indices)
-    except (KeyError, ValueError) as error:
-        warnings.warn(
-            'Applying a derived encoding failed with error:\n'
-            f'{error}\n'
-            f'Returning safe constant fallback value instead.',
-            category=RuntimeWarning,
-        )
-    return array, fallback
-
-
-def _maybe_index_array(array: np.ndarray, indices: Optional):
-    return array if indices is None else array[indices]
+def _get_type_names(types: Iterable[type]) -> Tuple[str, ...]:
+    return tuple(type.__name__ for type in types)
 
 
 def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
-    safe_indices = _in_bounds(indices, array.shape[0])
+    # TODO: consider warning if any indices are OOB.
+    safe_indices = [index for index in indices if index < array.shape[0]]
     return np.delete(array, safe_indices, axis=0)
-
-
-def _broadcast_to(constant: np.ndarray, n_rows: int, indices: Optional):
-    output_length = n_rows if indices is None else len(indices)
-    return np.broadcast_to(constant, (output_length,) + constant.shape)
 
 
 def _append_maybe_empty(left: np.ndarray, right: np.ndarray) -> np.ndarray:
@@ -341,7 +254,3 @@ def _infer_n_rows(encoding, properties: Dict[str, np.ndarray]) -> int:
     if isinstance(encoding, DerivedStyleEncoding):
         return len(next(iter(properties)))
     return 1
-
-
-def _in_bounds(indices: Iterable[int], limit: int) -> List[int]:
-    return [index for index in indices if index < limit]

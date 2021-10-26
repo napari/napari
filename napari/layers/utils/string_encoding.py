@@ -1,6 +1,5 @@
-from abc import ABC, abstractmethod
 from string import Formatter
-from typing import Any, Dict, Iterable, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, Sequence, Union
 
 import numpy as np
 from pydantic import Field, validator
@@ -9,7 +8,7 @@ from napari.layers.utils.style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
     DirectStyleEncoding,
-    StyleEncoding,
+    _get_type_names,
     parse_kwargs_as_encoding,
 )
 from napari.utils.events.custom_types import Array
@@ -17,35 +16,43 @@ from napari.utils.translations import trans
 
 DEFAULT_STRING = np.array('')
 
+"""A scalar array that represents one string value."""
 StringArray = Array[str, ()]
+
+"""An Nx1 array where each element represents one string value."""
 MultiStringArray = Array[str, (-1,)]
 
 
-class StringEncoding(StyleEncoding, ABC):
-    @abstractmethod
-    def _get_array(
-        self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
-        indices: Optional = None,
-    ) -> MultiStringArray:
-        pass
-
-    @abstractmethod
-    def _append(self, array: MultiStringArray):
-        pass
-
-
 class ConstantStringEncoding(ConstantStyleEncoding):
-    """Encodes a constant string value."""
+    """Encodes color values from a single constant color.
+
+    Attributes
+    ----------
+    constant : StringArray
+        The constant string value.
+    """
+
+    constant: StringArray = Field(..., allow_mutation=False)
 
     @validator('constant', pre=True, always=True)
-    def _validate_constant(cls, constant):
+    def _validate_constant(cls, constant) -> np.ndarray:
         return np.array(constant, dtype=str)
 
 
 class DirectStringEncoding(DirectStyleEncoding):
-    """Encodes string values directly in an array."""
+    """Encodes string values directly in an array.
+
+    Attributes
+    ----------
+    array : MultiStringArray
+        The array of string values.
+    default : StringArray
+        The default string value that is used when requesting a value that
+        is out of bounds in the array attribute.
+    """
+
+    array: MultiStringArray = []
+    default: StringArray = DEFAULT_STRING
 
     @validator('array', pre=True, always=True)
     def _validate_array(cls, array) -> np.ndarray:
@@ -56,29 +63,28 @@ class DirectStringEncoding(DirectStyleEncoding):
         return np.array(default, dtype=str)
 
 
-class DerivedStringEncoding(DerivedStyleEncoding, ABC):
-    def _fallback_value(self) -> np.ndarray:
-        return DEFAULT_STRING
-
-
-class IdentityStringEncoding(DerivedStringEncoding):
+class IdentityStringEncoding(DerivedStyleEncoding):
     """Encodes strings directly from a property column.
 
     Attributes
     ----------
-    property_name : str
+    property : str
         The name of the property that contains the desired strings.
+    fallback : StringArray
+        The safe constant fallback string to use if the property column
+        does not contain valid string values.
     """
 
-    property_name: str = Field(..., allow_mutation=False)
+    property: str = Field(..., allow_mutation=False)
+    fallback: StringArray = DEFAULT_STRING
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
     ) -> np.ndarray:
-        return np.array(properties[self.property_name][indices], dtype=str)
+        return np.array(properties[self.property][indices], dtype=str)
 
 
-class FormatStringEncoding(DerivedStringEncoding):
+class FormatStringEncoding(DerivedStyleEncoding):
     """Encodes string values by formatting property values.
 
     Attributes
@@ -86,9 +92,13 @@ class FormatStringEncoding(DerivedStringEncoding):
     format_string : str
         A format string with the syntax supported by :func:`str.format`,
         where all format fields should be property names.
+    fallback : StringArray
+        The safe constant fallback string to use if the format string
+        is not valid or contains fields other than property names.
     """
 
     format_string: str = Field(..., allow_mutation=False)
+    fallback: StringArray = DEFAULT_STRING
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
@@ -114,6 +124,8 @@ STRING_ENCODINGS = (
     DirectStringEncoding,
 )
 
+STRING_ENCODING_NAMES = _get_type_names(STRING_ENCODINGS)
+
 
 def parse_string_encoding(
     string: Union[Union[STRING_ENCODINGS], dict, str, Iterable[str], None],
@@ -127,7 +139,7 @@ def parse_string_encoding(
         return parse_kwargs_as_encoding(STRING_ENCODINGS, **string)
     if isinstance(string, str):
         if string in properties:
-            return IdentityStringEncoding(property_name=string)
+            return IdentityStringEncoding(property=string)
         if _is_format_string(properties, string):
             return FormatStringEncoding(format_string=string)
         return ConstantStringEncoding(constant=string)
@@ -135,7 +147,7 @@ def parse_string_encoding(
         return DirectStringEncoding(array=string, default='')
     raise TypeError(
         trans._(
-            'string should be a StringEncoding, dict, str, iterable, or None',
+            f'string should be one of {STRING_ENCODING_NAMES}, a dict, str, iterable, or None',
             deferred=True,
         )
     )

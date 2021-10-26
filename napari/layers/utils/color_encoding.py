@@ -1,16 +1,21 @@
-from abc import ABC, abstractmethod
-from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import (
+    Collection,
+    Dict,
+    Iterable,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
-from pydantic import Field, validator
+from pydantic import validator
 
 from napari.layers.utils.style_encoding import (
-    StyleEncoding,
-    _append_maybe_empty,
-    _broadcast_to,
-    _delete_in_bounds,
-    _get_array_derived,
-    _get_array_direct,
+    ConstantStyleEncoding,
+    DerivedStyleEncoding,
+    DirectStyleEncoding,
     parse_kwargs_as_encoding,
 )
 
@@ -18,59 +23,42 @@ from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from .color_transformations import ColorType
 
-"""A 4x1 RGBA array that represents a single color value."""
+"""A 4x1 array that represents one RGBA color value."""
 ColorArray = Array[float, (4,)]
 
-"""A Nx4 array where each row of N represents a single color value."""
+"""An Nx4 array where each row of N represents one RGBA color value."""
 MultiColorArray = Array[float, (-1, 4)]
 
 """The default color to use, which may also be used a safe fallback color."""
 DEFAULT_COLOR = 'cyan'
 
 
-class ConstantColorEncoding(EventedModel, StyleEncoding):
+class ConstantColorEncoding(ConstantStyleEncoding):
     """Encodes color values from a single constant color.
 
     Attributes
     ----------
     constant : ColorArray
-        The constant color value.
+        The constant color RGBA value.
     """
 
-    constant: ColorArray = Field(..., allow_mutation=False)
+    constant: ColorArray
+    type: Literal['constant'] = 'constant'
 
     @validator('constant', pre=True, always=True)
     def _check_constant(cls, constant: ColorType) -> np.ndarray:
         return transform_color(constant)[0]
 
-    def _get_array(
-        self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
-        indices: Optional = None,
-    ) -> np.ndarray:
-        return _broadcast_to(self.constant, n_rows, indices)
 
-    def _append(self, array: np.ndarray):
-        pass
-
-    def _delete(self, indices):
-        pass
-
-    def _clear(self):
-        pass
-
-
-class DirectColorEncoding(EventedModel, StyleEncoding):
+class DirectColorEncoding(DirectStyleEncoding):
     """Encodes color values directly in an array attribute.
 
     Attributes
     ----------
-    array : np.ndarray
+    array : MultiColorArray
         The array of color values. Can be written to directly to make
         persistent updates.
     default : ColorArray
@@ -79,40 +67,18 @@ class DirectColorEncoding(EventedModel, StyleEncoding):
 
     array: MultiColorArray
     default: ColorArray = DEFAULT_COLOR
+    type: Literal['direct'] = 'direct'
 
     @validator('array', pre=True, always=True)
     def _check_array(cls, array: Collection[ColorType]) -> np.ndarray:
-        return _transform_maybe_empty_colors(array)
+        return np.empty((0, 4)) if len(array) == 0 else transform_color(array)
 
     @validator('default', pre=True, always=True)
     def _check_default(cls, default: ColorType) -> np.ndarray:
         return transform_color(default)[0]
 
-    def _get_array(
-        self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
-        indices: Optional = None,
-    ) -> np.ndarray:
-        self.array, indexed_array = _get_array_direct(
-            self.array,
-            self.default,
-            n_rows,
-            indices,
-        )
-        return indexed_array
 
-    def _append(self, array: np.ndarray):
-        self.array = _append_maybe_empty(self.array, array)
-
-    def _delete(self, indices):
-        self.array = _delete_in_bounds(self.array, indices)
-
-    def _clear(self):
-        self.array = np.empty((0, 4))
-
-
-class DerivedColorEncoding(EventedModel, StyleEncoding, ABC):
+class IdentityColorEncoding(DerivedStyleEncoding):
     """Encodes color values directly from a property column.
 
     Attributes
@@ -124,52 +90,13 @@ class DerivedColorEncoding(EventedModel, StyleEncoding, ABC):
         does not contain valid color values.
     """
 
-    property: str = Field(..., allow_mutation=False)
+    property: str
     fallback: ColorArray = DEFAULT_COLOR
-    _array: MultiColorArray
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._clear()
+    type: Literal['identity'] = 'identity'
 
     @validator('fallback', pre=True, always=True)
-    def _check_fallback(cls, fallback: ColorType) -> ColorArray:
+    def _check_fallback(cls, fallback: ColorType) -> np.ndarray:
         return transform_color(fallback)[0]
-
-    @abstractmethod
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Iterable[int]
-    ) -> np.ndarray:
-        pass
-
-    def _get_array(
-        self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
-        indices: Optional = None,
-    ) -> np.ndarray:
-        self._array, indexed_array = _get_array_derived(
-            self._apply,
-            self._array,
-            self.fallback,
-            properties,
-            n_rows,
-            indices,
-        )
-        return indexed_array
-
-    def _append(self, array: np.ndarray):
-        self._array = _append_maybe_empty(self._array, array)
-
-    def _delete(self, indices):
-        self._array = _delete_in_bounds(self._array, indices)
-
-    def _clear(self):
-        self._array = np.empty((0, 4))
-
-
-class IdentityColorEncoding(DerivedColorEncoding):
-    """Encodes color values directly from a property column."""
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Iterable[int]
@@ -177,16 +104,28 @@ class IdentityColorEncoding(DerivedColorEncoding):
         return transform_color(properties[self.property][indices])
 
 
-class DiscreteColorEncoding(DerivedColorEncoding):
-    """Encodes color values from a discrete property column whose values are mapped to colors.
+class NominalColorEncoding(DerivedStyleEncoding):
+    """Encodes color values from a nominal property whose values are mapped to colors.
 
     Attributes
     ----------
+    property : str
+        The name of the property that contains the nominal values to be mapped to colors.
     categorical_colormap : CategoricalColormap
-        Maps the selected property values to colors.
+        Maps the property values to colors.
+    fallback : ColorArray
+        The safe constant fallback color to use if mapping the property values to
+        colors fails.
     """
 
+    type: Literal['nominal'] = 'nominal'
+    property: str
     categorical_colormap: CategoricalColormap
+    fallback: ColorArray = DEFAULT_COLOR
+
+    @validator('fallback', pre=True, always=True)
+    def _check_fallback(cls, fallback: ColorType) -> np.ndarray:
+        return transform_color(fallback)[0]
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Iterable[int]
@@ -195,22 +134,30 @@ class DiscreteColorEncoding(DerivedColorEncoding):
         return self.categorical_colormap.map(values)
 
 
-class ContinuousColorEncoding(DerivedColorEncoding):
-    """Encodes color values from a continuous property column whose values are mapped to colors.
+class QuantitativeColorEncoding(DerivedStyleEncoding):
+    """Encodes color values from a quantitative property whose values are mapped to colors.
 
     Attributes
     ----------
+    property : str
+        The name of the property that contains the nominal values to be mapped to colors.
     continuous_colormap : Colormap
-        Maps the selected property values to colors.
+        Maps property values to colors.
     contrast_limits : Optional[Tuple[float, float]]
         The (min, max) property values that should respectively map to the first and last
         colors in the colormap. If None, then this will attempt to calculate these values
         from the property values the first time this generate color values. If that attempt
         fails, these are effectively (0, 1).
+    fallback : ColorArray
+        The safe constant fallback color to use if mapping the property values to
+        colors fails.
     """
 
+    type: Literal['quantitative'] = 'quantitative'
+    property: str
     continuous_colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
+    fallback: ColorArray = DEFAULT_COLOR
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Sequence[int]
@@ -224,10 +171,10 @@ class ContinuousColorEncoding(DerivedColorEncoding):
         return self.continuous_colormap.map(values)
 
     @validator('continuous_colormap', pre=True, always=True)
-    def _check_continuous_colormap(
-        cls, colormap: ValidColormapArg
+    def _check_colormap(
+        cls, continuous_colormap: ValidColormapArg
     ) -> Colormap:
-        return ensure_colormap(colormap)
+        return ensure_colormap(continuous_colormap)
 
     @validator('contrast_limits', pre=True, always=True)
     def _check_contrast_limits(
@@ -241,22 +188,22 @@ class ContinuousColorEncoding(DerivedColorEncoding):
             )
         return contrast_limits
 
+    @validator('fallback', pre=True, always=True)
+    def _check_fallback(cls, fallback: ColorType) -> np.ndarray:
+        return transform_color(fallback)[0]
+
 
 # Define supported encodings as tuples instead of Union, so that they can be used with
 # isinstance without relying on get_args, which was only added in python 3.8.
 
 """The color encodings supported by napari in order of precedence."""
 COLOR_ENCODINGS = (
-    ContinuousColorEncoding,
-    DiscreteColorEncoding,
+    QuantitativeColorEncoding,
+    NominalColorEncoding,
     ConstantColorEncoding,
     IdentityColorEncoding,
     DirectColorEncoding,
 )
-
-
-def _transform_maybe_empty_colors(colors: Collection[ColorType]) -> np.ndarray:
-    return np.empty((0, 4)) if len(colors) == 0 else transform_color(colors)
 
 
 def parse_color_encoding(

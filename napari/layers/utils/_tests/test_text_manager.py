@@ -425,7 +425,7 @@ def test_multi_color_property_continuous_map_with_contrast_limits():
     _assert_colors_equal(color_array, expected_color_array)
 
 
-def test_color_missing_field():
+def test_color_missing_field_errors():
     properties = {
         'class': np.array(['A', 'B', 'C']),
         'confidence': np.array([0.5, 0, 1]),
