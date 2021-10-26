@@ -14,13 +14,14 @@ from ._style_encoding import (
     parse_kwargs_as_encoding,
 )
 
-DEFAULT_STRING = np.array('')
-
 """A scalar array that represents one string value."""
 StringArray = Array[str, ()]
 
 """An Nx1 array where each element represents one string value."""
 MultiStringArray = Array[str, (-1,)]
+
+"""The default string to use, which may also be used a safe fallback string."""
+DEFAULT_STRING = ''
 
 
 class ConstantStringEncoding(ConstantStyleEncoding):
