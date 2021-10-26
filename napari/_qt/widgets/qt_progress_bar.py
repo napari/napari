@@ -19,7 +19,7 @@ class QtLabeledProgressBar(QWidget):
     """QProgressBar with QLabels for description and ETA."""
 
     def __init__(
-        self, parent: Optional[QWidget] = None, prog: 'progress' = None
+        self, parent: Optional[QWidget] = None, prog: progress = None
     ) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
