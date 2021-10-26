@@ -1,13 +1,4 @@
-from typing import (
-    Collection,
-    Dict,
-    Iterable,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import validator
@@ -45,7 +36,6 @@ class ConstantColorEncoding(ConstantStyleEncoding):
     """
 
     constant: ColorArray
-    type: Literal['constant'] = 'constant'
 
     @validator('constant', pre=True, always=True)
     def _check_constant(cls, constant: ColorType) -> np.ndarray:
@@ -66,7 +56,6 @@ class DirectColorEncoding(DirectStyleEncoding):
 
     array: MultiColorArray
     default: ColorArray = DEFAULT_COLOR
-    type: Literal['direct'] = 'direct'
 
     @validator('array', pre=True, always=True)
     def _check_array(cls, array: Collection[ColorType]) -> np.ndarray:
@@ -91,7 +80,6 @@ class IdentityColorEncoding(DerivedStyleEncoding):
 
     property: str
     fallback: ColorArray = DEFAULT_COLOR
-    type: Literal['identity'] = 'identity'
 
     @validator('fallback', pre=True, always=True)
     def _check_fallback(cls, fallback: ColorType) -> np.ndarray:
@@ -117,7 +105,6 @@ class NominalColorEncoding(DerivedStyleEncoding):
         colors fails.
     """
 
-    type: Literal['nominal'] = 'nominal'
     property: str
     categorical_colormap: CategoricalColormap
     fallback: ColorArray = DEFAULT_COLOR
@@ -152,7 +139,6 @@ class QuantitativeColorEncoding(DerivedStyleEncoding):
         colors fails.
     """
 
-    type: Literal['quantitative'] = 'quantitative'
     property: str
     continuous_colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
