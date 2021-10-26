@@ -19,10 +19,8 @@ from ..utils.notifications import (
 )
 from ..utils.perf import perf_config
 from ..utils.translations import trans
-from .dialogs.qt_notification import (
-    NapariQtNotification,
-    NotificationDispatcher,
-)
+from .dialogs.qt_notification import NapariQtNotification
+from .qt_event_filters import QtToolTipEventFilter
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 from .utils import _maybe_allow_interrupt
@@ -153,6 +151,10 @@ def get_app(
         app.setOrganizationDomain(kwargs.get('org_domain'))
         set_app_id(kwargs.get('app_id'))
 
+        # Intercept tooltip events in order to convert all text to rich text
+        # to allow for text wrapping of tooltips
+        app.installEventFilter(QtToolTipEventFilter(app))
+
     if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
@@ -186,9 +188,6 @@ def get_app(
 
     # Add the dispatcher attribute to the application to be able to dispatch
     # notifications coming from threads
-    dispatcher = getattr(app, "_dispatcher", None)
-    if dispatcher is None:
-        app._dispatcher = NotificationDispatcher()
 
     return app
 

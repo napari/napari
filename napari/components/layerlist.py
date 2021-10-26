@@ -1,11 +1,12 @@
 import itertools
 import warnings
 from collections import namedtuple
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import numpy as np
 
 from ..layers import Image, Labels, Layer
+from ..layers.image.image import _ImageBase
 from ..layers.utils._link_layers import get_linked_layers, layer_is_linked
 from ..utils._dtype import normalize_dtype
 from ..utils.events.containers import SelectableEventedList
@@ -123,6 +124,41 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return self._get_extent_world([layer.extent for layer in self])
 
+    def _get_min_and_max(self, mins_list, maxes_list):
+
+        # Reverse dimensions since it is the last dimensions that are
+        # displayed.
+        mins_list = [mins[::-1] for mins in mins_list]
+        maxes_list = [maxes[::-1] for maxes in maxes_list]
+
+        with warnings.catch_warnings():
+            # Taking the nanmin and nanmax of an axis of all nan
+            # raises a warning and returns nan for that axis
+            # as we have do an explicit nan_to_num below this
+            # behaviour is acceptable and we can filter the
+            # warning
+            warnings.filterwarnings(
+                'ignore',
+                message=str(
+                    trans._('All-NaN axis encountered', deferred=True)
+                ),
+            )
+            min_v = np.nanmin(
+                list(itertools.zip_longest(*mins_list, fillvalue=np.nan)),
+                axis=1,
+            )
+            max_v = np.nanmax(
+                list(itertools.zip_longest(*maxes_list, fillvalue=np.nan)),
+                axis=1,
+            )
+
+        # 512 element default extent as documented in `_get_extent_world`
+        min_v = np.nan_to_num(min_v, nan=-0.5)
+        max_v = np.nan_to_num(max_v, nan=511.5)
+
+        # switch back to original order
+        return min_v[::-1], max_v[::-1]
+
     def _get_extent_world(self, layer_extent_list):
         """Extent of layers in world coordinates.
 
@@ -134,45 +170,15 @@ class LayerList(SelectableEventedList[Layer]):
         extent_world : array, shape (2, D)
         """
         if len(self) == 0:
-            min_v = [np.nan] * self.ndim
-            max_v = [np.nan] * self.ndim
+            min_v = np.asarray([-0.5] * self.ndim)
+            max_v = np.asarray([511.5] * self.ndim)
         else:
             extrema = [extent.world for extent in layer_extent_list]
-            mins = [e[0][::-1] for e in extrema]
-            maxs = [e[1][::-1] for e in extrema]
+            mins = [e[0] for e in extrema]
+            maxs = [e[1] for e in extrema]
+            min_v, max_v = self._get_min_and_max(mins, maxs)
 
-            with warnings.catch_warnings():
-                # Taking the nanmin and nanmax of an axis of all nan
-                # raises a warning and returns nan for that axis
-                # as we have do an explict nan_to_num below this
-                # behaviour is acceptable and we can filter the
-                # warning
-                warnings.filterwarnings(
-                    'ignore',
-                    message=str(
-                        trans._('All-NaN axis encountered', deferred=True)
-                    ),
-                )
-                min_v = np.nanmin(
-                    list(itertools.zip_longest(*mins, fillvalue=np.nan)),
-                    axis=1,
-                )
-                max_v = np.nanmax(
-                    list(itertools.zip_longest(*maxs, fillvalue=np.nan)),
-                    axis=1,
-                )
-
-        try:
-            min_vals = np.nan_to_num(min_v[::-1], nan=-0.5)
-            max_vals = np.nan_to_num(max_v[::-1], nan=511.5)
-        except TypeError:
-            # In NumPy < 1.17, nan_to_num doesn't have a nan kwarg
-            min_vals = np.asarray(min_v[::-1])
-            min_vals[np.isnan(min_vals)] = -0.5
-            max_vals = np.asarray(max_v[::-1])
-            max_vals[np.isnan(max_vals)] = 511.5
-
-        return np.vstack([min_vals, max_vals])
+        return np.vstack([min_v, max_v])
 
     @property
     def _step_size(self) -> np.ndarray:
@@ -188,18 +194,22 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return self._get_step_size([layer.extent for layer in self])
 
+    def _step_size_from_scales(self, scales):
+        # Reverse order so last axes of scale with different ndim are aligned
+        scales = [scale[::-1] for scale in scales]
+        full_scales = list(
+            np.array(list(itertools.zip_longest(*scales, fillvalue=np.nan)))
+        )
+        # restore original order
+        return np.nanmin(full_scales, axis=1)[::-1]
+
     def _get_step_size(self, layer_extent_list):
         if len(self) == 0:
             return np.ones(self.ndim)
         else:
-            scales = [extent.step[::-1] for extent in layer_extent_list]
-            full_scales = list(
-                np.array(
-                    list(itertools.zip_longest(*scales, fillvalue=np.nan))
-                ).T
-            )
-            min_scales = np.nanmin(full_scales, axis=0)
-            return min_scales[::-1]
+            scales = [extent.step for extent in layer_extent_list]
+            min_scales = self._step_size_from_scales(scales)
+            return min_scales
 
     @property
     def extent(self) -> Extent:
@@ -210,6 +220,58 @@ class LayerList(SelectableEventedList[Layer]):
             world=self._get_extent_world(extent_list),
             step=self._get_step_size(extent_list),
         )
+
+    @property
+    def _ranges(self) -> List[Tuple[float, float, float]]:
+        """Get ranges for Dims.range in world coordinates.
+
+        This shares some code in common with the `extent` property, but
+        determines Dims.range settings for each dimension such that each
+        range is aligned to pixel centers at the finest scale.
+        """
+        if len(self) == 0:
+            return [(0, 1, 1)] * self.ndim
+        else:
+            # Determine minimum step size across all layers
+            layer_extent_list = [layer.extent for layer in self]
+            scales = [extent.step for extent in layer_extent_list]
+            min_steps = self._step_size_from_scales(scales)
+
+            # Pixel-based layers need to be offset by 0.5 * min_steps to align
+            # Dims.range with pixel centers in world coordinates
+            pixel_offsets = [
+                0.5 * min_steps
+                if isinstance(layer, _ImageBase)
+                else [0] * len(min_steps)
+                for layer in self
+            ]
+
+            # Non-pixel layers need an offset of the range stop by min_steps since the upper
+            # limit of Dims.range is non-inclusive.
+            point_offsets = [
+                [0] * len(min_steps)
+                if isinstance(layer, _ImageBase)
+                else min_steps
+                for layer in self
+            ]
+
+            # Determine world coordinate extents similarly to
+            # `_get_extent_world`, but including offsets calculated above.
+            extrema = [extent.world for extent in layer_extent_list]
+            mins = [
+                e[0] + o1[: len(e[0])] for e, o1 in zip(extrema, pixel_offsets)
+            ]
+            maxs = [
+                e[1] + o1[: len(e[0])] + o2[: len(e[0])]
+                for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
+            ]
+            min_v, max_v = self._get_min_and_max(mins, maxs)
+
+            # form range tuples, switching back to original dimension order
+            return [
+                (start, stop, step)
+                for start, stop, step in zip(min_v, max_v, min_steps)
+            ]
 
     @property
     def ndim(self) -> int:
@@ -313,12 +375,13 @@ class LayerList(SelectableEventedList[Layer]):
 
 
 def get_active_layer_dtype(layer):
+    dtype = None
     if layer.active:
-        return normalize_dtype(
-            getattr(layer.active.data, 'dtype', '')
-        ).__name__
-    else:
-        return None
+        try:
+            dtype = normalize_dtype(layer.active.data.dtype).__name__
+        except AttributeError:
+            pass
+    return dtype
 
 
 _CONTEXT_KEYS = {

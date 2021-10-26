@@ -3,5 +3,5 @@ Version=1.0
 Type=Application
 Name=napari 0.4.x
 Exec=napari
-Icon=/home/jovyan/resources/icon.ico
+Icon=/home/jovyan/napari/resources/icon.ico
 Path=/home/jovyan/Desktop

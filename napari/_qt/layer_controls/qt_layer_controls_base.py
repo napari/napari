@@ -86,25 +86,13 @@ class QtLayerControls(QFrame):
         """
         self.layer.blending = self.blendComboBox.currentData()
 
-    def _on_opacity_change(self, event=None):
-        """Receive layer model opacity change event and update opacity slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_opacity_change(self):
+        """Receive layer model opacity change event and update opacity slider."""
         with self.layer.events.opacity.blocker():
             self.opacitySlider.setValue(self.layer.opacity)
 
-    def _on_blending_change(self, event=None):
-        """Receive layer model blending mode change event and update slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_blending_change(self):
+        """Receive layer model blending mode change event and update slider."""
         with self.layer.events.blending.blocker():
             self.blendComboBox.setCurrentIndex(
                 self.blendComboBox.findData(self.layer.blending)

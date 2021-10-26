@@ -111,7 +111,7 @@ def test_move(test_list):
     """Test the that we can move objects with the move method"""
     test_list.events = Mock(wraps=test_list.events)
 
-    def _fail(e):
+    def _fail():
         raise AssertionError("unexpected event called")
 
     test_list.events.removing.connect(_fail)
@@ -169,7 +169,7 @@ def test_move_multiple(sources, dest, expectation):
     el.events = Mock(wraps=el.events)
     assert el == [0, 1, 2, 3, 4, 5, 6, 7]
 
-    def _fail(e):
+    def _fail():
         raise AssertionError("unexpected event called")
 
     el.events.removing.connect(_fail)
