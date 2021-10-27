@@ -42,13 +42,12 @@ def drag_data_to_projected_distance(
 
     # Project the start and end positions onto a pseudo-canvas, a plane
     # parallel to the rendered canvas in data coordinates.
-    start_position_canvas = start_position
     end_position_canvas = project_point_onto_plane(
-        end_position, start_position_canvas, view_direction
+        end_position, start_position, view_direction
     )
     # Calculate the drag vector on the pseudo-canvas.
     drag_vector_canvas = np.squeeze(
-        end_position_canvas - start_position_canvas
+        end_position_canvas - start_position
     )
 
     # Project the drag vector onto the specified vector(s), return the distance
