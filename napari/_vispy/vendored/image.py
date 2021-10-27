@@ -317,10 +317,7 @@ class ImageVisual(Visual):
             clim = np.array(clim, float)
             if clim.shape != (2,):
                 raise ValueError('clim must have two elements')
-            if self._texture_limits is not None and (
-                (clim[0] < self._texture_limits[0])
-                or (clim[1] > self._texture_limits[1])
-            ):
+            if self._texture_limits is not None:
                 self._need_texture_upload = True
         self._clim = clim
         if self._texture_limits is not None:
