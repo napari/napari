@@ -251,8 +251,8 @@ def test_single_point_extent():
     shape = (1, 3)
     data = np.zeros(shape)
     layer = Points(data)
-    assert np.all(layer.extent.data == 0)
-    assert np.all(layer.extent.world == 0)
+    assert np.all(layer.extent.data == [[-10, -10, -10.0], [10, 10, 10.0]])
+    assert np.all(layer.extent.world == [[-10, -10, -10.0], [10, 10, 10.0]])
     assert np.all(layer.extent.step == 1)
 
 

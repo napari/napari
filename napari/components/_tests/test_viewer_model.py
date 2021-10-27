@@ -125,7 +125,7 @@ def test_single_point_dims():
     shape = (1, 3)
     data = np.zeros(shape)
     viewer.add_points(data)
-    assert all(r == (0.0, 1.0, 1.0) for r in viewer.dims.range)
+    assert all(r == (-10.0, 11.0, 1.0) for r in viewer.dims.range)
 
 
 def test_add_empty_points_to_empty_viewer():
