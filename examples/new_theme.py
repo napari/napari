@@ -6,27 +6,29 @@ from skimage import data
 import napari
 from napari.utils.theme import available_themes, get_theme, register_theme
 
-with napari.gui_qt():
-    # create the viewer with an image
-    viewer = napari.view_image(
-        data.astronaut(), rgb=True, name='astronaut'
-    )
 
-    # List themes
-    print('Originally themes', available_themes())
+# create the viewer with an image
+viewer = napari.view_image(data.astronaut(), rgb=True, name='astronaut')
 
-    blue_theme = get_theme('dark')
-    blue_theme.update(
-        background='rgb(28, 31, 48)',
-        foreground='rgb(45, 52, 71)',
-        primary='rgb(80, 88, 108)',
-        current='rgb(184, 112, 0)',
-    )
+# List themes
+print('Originally themes', available_themes())
 
-    register_theme('blue', blue_theme)
+blue_theme = get_theme('dark', False)
+blue_theme.name = "blue"
+blue_theme.icon = (
+    'rgb(0, 255, 255)'  # you can provide colors as rgb(XXX, YYY, ZZZ)
+)
+blue_theme.background = 28, 31, 48  # or as tuples
+blue_theme.foreground = [45, 52, 71]  # or as list
+blue_theme.primary = '#50586c'  # or as hexes
+blue_theme.current = 'orange'  # or as color name
 
-    # List themes
-    print('New themes', available_themes())
+register_theme('blue', blue_theme)
 
-    # Set theme
-    viewer.theme = 'blue'
+# List themes
+print('New themes', available_themes())
+
+# Set theme
+viewer.theme = 'blue'
+
+napari.run()

@@ -23,9 +23,9 @@ Both of these hook specs are marked as `experimental` as we're likely to evolve 
 
 In this release we also seperate out more of the Qt functionality from napari making it easier to run headless (#2039, #2055). We also added a `napari.run` method as an alternative to using the `napari.gui_qt` context manager (#2056).
 
-We've also made good progress on our `experimental` support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/docs/dev/events/rendering.html) for more details on how to use the octree and its current limitations.
+We've also made good progress on our `experimental` support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/guides/stable/rendering.html) for more details on how to use the octree and its current limitations.
 
-Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_4.html) and a [retrospective on our 0.3 roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_3_retrospective.html)!
+Finally we've added our [0.4 series roadmap](https://napari.org/roadmaps/0_4.html) and a [retrospective on our 0.3 roadmap](https://napari.org/roadmaps/0_3_retrospective.html)!
 
 
 ## New Features
@@ -62,6 +62,9 @@ Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/develop
 - Create QApplication on demand in viewer.Window, add napari.run function (#2056)
 - Remove global app logic from Window init (#2065)
 - async-45: Docs and Cleanup (#2067)
+- Better bound magicgui viewer (#2100)
+- reduce call of _extent_data in layer (#2106)
+
 
 ## Bug Fixes
 - Fix append and remove from layerlist (#1955)
@@ -123,13 +126,16 @@ can still provide keymappings, but no longer handles keymappings from other obje
 - Add examples tests (#2085)
 - Skip testing examples on CI (#2094)
 - Fix roadmap headings in docs (#2097)
+- Add PR 2106 to 0.4.3 release notes (#2107)
+- Fix `pytest --pyargs napari` test on pip install. Add CI test (#2109)
 
 
-## 8 authors added to this release (alphabetical)
+## 9 authors added to this release (alphabetical)
 
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Heath Patterson](https://github.com/napari/napari/commits?author=NHPatterson) - @NHPatterson
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [kir0ul](https://github.com/napari/napari/commits?author=kir0ul) - @kir0ul
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn

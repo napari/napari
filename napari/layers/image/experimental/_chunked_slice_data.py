@@ -2,16 +2,20 @@
 
 This is for pre-Octree Image class only.
 """
+from __future__ import annotations
+
 import logging
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from ....components.experimental.chunk import ChunkRequest, chunk_loader
-from ....types import ArrayLike
 from ...base import Layer
 from .._image_slice_data import ImageSliceData
 from ._image_location import ImageLocation
 
 LOGGER = logging.getLogger("napari.loader")
+
+if TYPE_CHECKING:
+    from ....types import ArrayLike
 
 
 class ChunkedSliceData(ImageSliceData):
@@ -57,8 +61,8 @@ class ChunkedSliceData(ImageSliceData):
     def load_chunks(self) -> bool:
         """Load this slice data's chunks sync or async.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if chunks were loaded synchronously.
         """
@@ -102,7 +106,6 @@ class ChunkedSliceData(ImageSliceData):
         ----------
         layer : Layer
             The layer for this request.
-
         request : ChunkRequest
             The request that was loaded.
         """

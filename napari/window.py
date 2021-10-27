@@ -6,6 +6,9 @@ could serve to define a window Protocol that a backend would need to implement
 to server as a graphical user interface for napari.
 """
 
+__all__ = ['Window']
+
+from .utils.translations import trans
 
 try:
     from ._qt import Window
@@ -21,5 +24,5 @@ except ImportError:
 
         def __getattr__(self, name):
             raise ImportError(
-                "could not import qtpy.  Cannot show napari window."
+                trans._("could not import `qtpy`. Cannot show napari window.")
             )

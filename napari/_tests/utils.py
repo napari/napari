@@ -1,4 +1,9 @@
+import os
+import sys
+
 import numpy as np
+import pytest
+import tensorstore as ts
 
 from napari import Viewer
 from napari.layers import (
@@ -11,20 +16,41 @@ from napari.layers import (
     Vectors,
 )
 
+skip_on_win_ci = pytest.mark.skipif(
+    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
+    reason='Screenshot tests are not supported on windows CI.',
+)
+
+skip_on_mac_ci = pytest.mark.skipif(
+    sys.platform.startswith('darwin') and os.getenv('CI', '0') != '0',
+    reason='This test seem to be problematic on mac.',
+)
+
+skip_local_popups = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows are skipped locally by default.',
+)
+
+
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
 """
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
+    (Image, ts.array(np.random.random((10, 15))), 2),
     (Image, np.random.random((10, 15, 20)), 3),
     (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
+    (
+        Image,
+        [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]],
+        2,
+    ),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
     (Points, 20 * np.random.random((10, 2)), 2),
     (Points, 20 * np.random.random((10, 3)), 3),
     (Vectors, 20 * np.random.random((10, 2, 2)), 2),
-    (Shapes, 20 * np.random.random((10, 4, 2)), 2),
     (Shapes, 20 * np.random.random((10, 4, 2)), 2),
     (
         Surface,
@@ -97,7 +123,7 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     viewer.dims.ndisplay = 2
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == ndim
     assert view.dims.nsliders == viewer.dims.ndim
@@ -151,13 +177,15 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         np.testing.assert_almost_equal(vis_vals, transf[disp_dims])
 
 
-def check_layer_world_data_extent(layer, extent, scale, translate):
+def check_layer_world_data_extent(
+    layer, extent, scale, translate, pixels=False
+):
     """Test extents after applying transforms.
 
     Parameters
     ----------
-    layer : napar.layers.Layer
-        Layet to be tested.
+    layer : napari.layers.Layer
+        Layer to be tested.
     extent : array, shape (2, D)
         Extent of data in layer.
     scale : array, shape (D,)
@@ -166,16 +194,33 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
         Translation to be applied to layer.
     """
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    np.testing.assert_almost_equal(layer.extent.world, extent)
+    world_extent = extent - 0.5 if pixels else extent
+    np.testing.assert_almost_equal(layer.extent.world, world_extent)
 
     # Apply scale transformation
     layer.scale = scale
-    scaled_extent = np.multiply(extent, scale)
+    scaled_world_extent = np.multiply(world_extent, scale)
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    np.testing.assert_almost_equal(layer.extent.world, scaled_extent)
+    np.testing.assert_almost_equal(layer.extent.world, scaled_world_extent)
 
     # Apply translation transformation
     layer.translate = translate
-    translated_extent = np.add(scaled_extent, translate)
+    translated_world_extent = np.add(scaled_world_extent, translate)
     np.testing.assert_almost_equal(layer.extent.data, extent)
-    np.testing.assert_almost_equal(layer.extent.world, translated_extent)
+    np.testing.assert_almost_equal(layer.extent.world, translated_world_extent)
+
+
+def slow(timeout):
+    """
+    Both mark a function as slow, and with a timeout which is easily scalable
+    via an env variable.
+    """
+    factor = int(os.getenv('NAPARI_TESTING_TIMEOUT_SCALING', '1'))
+
+    def _slow(func):
+
+        func = pytest.mark.timeout(timeout * factor)(func)
+        func = pytest.mark.slow(func)
+        return func
+
+    return _slow

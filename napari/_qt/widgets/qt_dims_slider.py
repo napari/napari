@@ -17,8 +17,10 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.events import Event
-from .._constants import LoopMode
+from ...settings import get_settings
+from ...settings._constants import LoopMode
+from ...utils.events.event_utils import connect_setattr_value
+from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from ..qthreading import _new_worker_qthread
 from .qt_scrollbar import ModifiedScrollBar
@@ -47,7 +49,9 @@ class QtDimSliderWidget(QWidget):
         self.slider = None
         self.play_button = None
         self.curslice_label = QLineEdit(self)
-        self.curslice_label.setToolTip(f'Current slice for axis {axis}')
+        self.curslice_label.setToolTip(
+            trans._('Current slice for axis {axis}', axis=axis)
+        )
         # if we set the QIntValidator to actually reflect the range of the data
         # then an invalid (i.e. too large) index doesn't actually trigger the
         # editingFinished event (the user is expected to change the value)...
@@ -58,17 +62,27 @@ class QtDimSliderWidget(QWidget):
 
         self.curslice_label.editingFinished.connect(self._set_slice_from_label)
         self.totslice_label = QLabel(self)
-        self.totslice_label.setToolTip(f'Total slices for axis {axis}')
+        self.totslice_label.setToolTip(
+            trans._('Total slices for axis {axis}', axis=axis)
+        )
         self.curslice_label.setObjectName('slice_label')
         self.totslice_label.setObjectName('slice_label')
         sep = QFrame(self)
         sep.setFixedSize(1, 14)
         sep.setObjectName('slice_label_sep')
 
-        self._fps = 10
+        settings = get_settings()
+        self._fps = settings.application.playback_fps
+        connect_setattr_value(
+            settings.application.events.playback_fps, self, "fps"
+        )
+
         self._minframe = None
         self._maxframe = None
-        self._loop_mode = LoopMode.LOOP
+        self._loop_mode = settings.application.playback_mode
+        connect_setattr_value(
+            settings.application.events.playback_mode, self, "loop_mode"
+        )
 
         layout = QHBoxLayout()
         self._create_axis_label_widget()
@@ -89,11 +103,17 @@ class QtDimSliderWidget(QWidget):
 
     def _set_slice_from_label(self):
         """Update the dims point based on the curslice_label."""
+        # On teardown some tests fail on OSX with an `IndexError`
+        try:
+            max_allowed = self.dims.nsteps[self.axis] - 1
+        except IndexError:
+            return
+
         val = int(self.curslice_label.text())
-        max_allowed = self.dims.nsteps[self.axis] - 1
         if val > max_allowed:
             val = max_allowed
             self.curslice_label.setText(str(val))
+
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
         self.dims.set_current_step(self.axis, val)
@@ -104,7 +124,7 @@ class QtDimSliderWidget(QWidget):
         label.setObjectName('axis_label')  # needed for _update_label
         label.setText(self.dims.axis_labels[self.axis])
         label.home(False)
-        label.setToolTip('Edit to change axis label')
+        label.setToolTip(trans._('Edit to change axis label'))
         label.setAcceptDrops(False)
         label.setEnabled(True)
         label.setAlignment(Qt.AlignRight)
@@ -145,7 +165,12 @@ class QtDimSliderWidget(QWidget):
 
     def _create_play_button_widget(self):
         """Creates the actual play button, which has the modal popup."""
-        self.play_button = QtPlayButton(self.qt_dims, self.axis)
+        self.play_button = QtPlayButton(
+            self.qt_dims, self.axis, fps=self._fps, mode=self._loop_mode
+        )
+        self.play_button.setToolTip(
+            trans._('Right click on button for playback setting options.')
+        )
         self.play_button.mode_combo.activated[str].connect(
             lambda x: self.__class__.loop_mode.fset(
                 self, LoopMode(x.replace(' ', '_'))
@@ -162,7 +187,7 @@ class QtDimSliderWidget(QWidget):
         self.play_stopped.connect(self.play_button._handle_stop)
         self.play_started.connect(self.play_button._handle_start)
 
-    def _pull_label(self, event):
+    def _pull_label(self):
         """Updates the label LineEdit from the dims model."""
         label = self.dims.axis_labels[self.axis]
         self.axis_label.setText(label)
@@ -186,7 +211,7 @@ class QtDimSliderWidget(QWidget):
         nsteps = self.dims.nsteps[self.axis] - 1
         if nsteps == 0:
             displayed_sliders[self.axis] = False
-            self.qt_dims.last_used = None
+            self.qt_dims.last_used = 0
             self.hide()
         else:
             if (
@@ -273,8 +298,11 @@ class QtDimSliderWidget(QWidget):
                 reversing direction when the maximum or minimum frame
                 has been reached.
         """
+        value = LoopMode(value)
         self._loop_mode = value
-        self.play_button.mode_combo.setCurrentText(str(value))
+        self.play_button.mode_combo.setCurrentText(
+            str(value).replace('_', ' ')
+        )
         self.mode_changed.emit(str(value))
 
     @property
@@ -294,11 +322,16 @@ class QtDimSliderWidget(QWidget):
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
         if not isinstance(value, (tuple, list, type(None))):
-            raise TypeError('frame_range value must be a list or tuple')
+            raise TypeError(
+                trans._('frame_range value must be a list or tuple')
+            )
+
         if value and not len(value) == 2:
-            raise ValueError('frame_range must have a length of 2')
+            raise ValueError(trans._('frame_range must have a length of 2'))
+
         if value is None:
             value = (None, None)
+
         self._minframe, self._maxframe = value
         self.range_changed.emit(tuple(value))
 
@@ -480,23 +513,25 @@ class QtPlayButton(QPushButton):
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
         form_layout.insertRow(
-            0, QLabel('frames per second:', parent=self.popup), fpsspin
+            0,
+            QLabel(trans._('frames per second:'), parent=self.popup),
+            fpsspin,
         )
         self.fpsspin = fpsspin
 
         revcheck = QCheckBox(self.popup)
         revcheck.setObjectName("playDirectionCheckBox")
         form_layout.insertRow(
-            1, QLabel('play direction:', parent=self.popup), revcheck
+            1, QLabel(trans._('play direction:'), parent=self.popup), revcheck
         )
         self.reverse_check = revcheck
 
         mode_combo = QComboBox(self.popup)
         mode_combo.addItems([str(i).replace('_', ' ') for i in LoopMode])
         form_layout.insertRow(
-            2, QLabel('play mode:', parent=self.popup), mode_combo
+            2, QLabel(trans._('play mode:'), parent=self.popup), mode_combo
         )
-        mode_combo.setCurrentText(str(self.mode))
+        mode_combo.setCurrentText(str(self.mode).replace('_', ' '))
         self.mode_combo = mode_combo
 
     def mouseReleaseEvent(self, event):
@@ -608,11 +643,13 @@ class AnimationWorker(QObject):
 
         if frame_range is not None:
             if frame_range[0] >= frame_range[1]:
-                raise ValueError("frame_range[0] must be <= frame_range[1]")
+                raise ValueError(
+                    trans._("frame_range[0] must be <= frame_range[1]")
+                )
             if frame_range[0] < self.dimsrange[0]:
-                raise IndexError("frame_range[0] out of range")
+                raise IndexError(trans._("frame_range[0] out of range"))
             if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
-                raise IndexError("frame_range[1] out of range")
+                raise IndexError(trans._("frame_range[1] out of range"))
         self.frame_range = frame_range
 
         if self.frame_range is not None:
@@ -685,8 +722,7 @@ class AnimationWorker(QObject):
         """Emit the finished event signal."""
         self.finished.emit()
 
-    @Slot(Event)
-    def _on_axis_changed(self, event):
+    def _on_axis_changed(self):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
         self.current = self.dims.current_step[self.axis]

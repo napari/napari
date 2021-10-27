@@ -1,12 +1,15 @@
 """OctreeChunkGeom, OctreeLocation and OctreeChunk classes.
 """
+from __future__ import annotations
+
 import logging
-from typing import List, NamedTuple
+from typing import TYPE_CHECKING, List, NamedTuple
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkLocation, LayerRef
-from ....types import ArrayLike
+if TYPE_CHECKING:
+    from ....components.experimental.chunk._request import OctreeLocation
+    from ....types import ArrayLike
 
 LOGGER = logging.getLogger("napari.octree")
 
@@ -16,52 +19,6 @@ class OctreeChunkGeom(NamedTuple):
 
     pos: np.ndarray
     size: np.ndarray
-
-
-class OctreeLocation(ChunkLocation):
-    """Location of one chunk within the octree.
-
-    Parameters
-    ----------
-    layer_ref : LayerRef
-        Referen to the layer this location is in.
-    slice_id : int
-        The id of the OctreeSlice we are in.
-    level_index : int
-        The octree level index.
-    row : int
-        The chunk row.
-    col : int
-        The chunk col.
-    """
-
-    def __init__(
-        self,
-        layer_ref: LayerRef,
-        slice_id: int,
-        level_index: int,
-        row: int,
-        col: int,
-    ):
-        super().__init__(layer_ref)
-        self.slice_id: int = slice_id
-        self.level_index: int = level_index
-        self.row: int = row
-        self.col: int = col
-
-    def __str__(self):
-        return f"location=({self.level_index}, {self.row}, {self.col}) "
-
-    def __eq__(self, other) -> bool:
-        return (
-            self.slice_id == other.slice_id
-            and self.level_index == other.level_index
-            and self.row == other.row
-            and self.col == other.col
-        )
-
-    def __hash__(self) -> int:
-        return hash((self.slice_id, self.level_index, self.row, self.col))
 
 
 class OctreeChunk:
@@ -147,8 +104,8 @@ class OctreeChunk:
     def in_memory(self) -> bool:
         """Return True if the data is fully in memory.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if data is fully in memory.
         """
@@ -161,9 +118,9 @@ class OctreeChunk:
         An unloaded chunk's data might be a Dask or similar deferred array.
         A loaded chunk's data is always an ndarray.
 
-        Return
-        ------
-            True if the chunk needs to be loaded.
+        Returns
+        -------
+        True if the chunk needs to be loaded.
         """
         return not self.in_memory and not self.loading
 
@@ -195,7 +152,7 @@ def log_chunks(
     ----------
     label : str
         Prefix the log message with this label.
-    chunk : List[OctreeChunk]
+    chunks : List[OctreeChunk]
         The chunks to log.
     location : Optional[OctreeLocation]
         Append the log message with this location.

@@ -1,25 +1,7 @@
+import base64
 from io import BytesIO
 
 __all__ = ['nbscreenshot']
-
-
-def nbscreenshot(viewer, *, canvas_only=False):
-    """Display napari screenshot in the jupyter notebook.
-
-    Parameters
-    ----------
-    viewer : napari.Viewer
-        The napari viewer.
-    canvas_only : bool, optional
-        If True includes the napari viewer frame in the screenshot,
-        otherwise just includes the canvas. By default, True.
-
-    Returns
-    -------
-    napari.utils.notebook_display.NotebookScreenshot
-        Napari screenshot rendered as rich display in the jupyter notebook.
-    """
-    return NotebookScreenshot(viewer, canvas_only=canvas_only)
 
 
 class NotebookScreenshot:
@@ -30,17 +12,26 @@ class NotebookScreenshot:
 
     https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html
 
+    Parameters
+    ----------
+    viewer : napari.Viewer
+        The napari viewer.
+    canvas_only : bool, optional
+        If True includes the napari viewer frame in the screenshot,
+        otherwise just includes the canvas. By default, True.
+
     Examples
     --------
     ```
     import napari
+    from napari.utils import nbscreenshot
     from skimage.data import chelsea
 
     viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
-    viewer.nbscreenshot()
+    nbscreenshot(viewer)
 
-    # screenshot just the canvas without the napari viewer framing it
-    viewer.nbscreenshot(with_viewer=False)
+    # screenshot just the canvas with the napari viewer framing it
+    nbscreenshot(viewer, canvas_only=False)
     ```
     """
 
@@ -69,9 +60,23 @@ class NotebookScreenshot:
         """
         from imageio import imsave
 
-        self.image = self.viewer.screenshot(canvas_only=self.canvas_only)
+        from .._qt.qt_event_loop import get_app
+
+        get_app().processEvents()
+        self.image = self.viewer.screenshot(
+            canvas_only=self.canvas_only, flash=False
+        )
         with BytesIO() as file_obj:
             imsave(file_obj, self.image, format='png')
             file_obj.seek(0)
             png = file_obj.read()
         return png
+
+    def _repr_html_(self):
+        png = self._repr_png_()
+        url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
+        html = f'<img src="{url}"></img>'
+        return html
+
+
+nbscreenshot = NotebookScreenshot

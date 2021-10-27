@@ -1,17 +1,21 @@
 """LayerRef, ChunkLocation and ChunkRequest classes.
 """
+from __future__ import annotations
+
 import contextlib
 import logging
 import time
 import weakref
-from typing import NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Tuple
 
 import numpy as np
 
-from ....types import ArrayLike, Dict
 from ....utils.perf import PerfEvent, block_timer
 
 LOGGER = logging.getLogger("napari.loader")
+
+if TYPE_CHECKING:
+    from ....types import ArrayLike
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
@@ -62,6 +66,52 @@ class ChunkLocation:
         return cls(LayerRef.from_layer(layer))
 
 
+class OctreeLocation(ChunkLocation):
+    """Location of one chunk within the octree.
+
+    Parameters
+    ----------
+    layer_ref : LayerRef
+        Referen to the layer this location is in.
+    slice_id : int
+        The id of the OctreeSlice we are in.
+    level_index : int
+        The octree level index.
+    row : int
+        The chunk row.
+    col : int
+        The chunk col.
+    """
+
+    def __init__(
+        self,
+        layer_ref: LayerRef,
+        slice_id: int,
+        level_index: int,
+        row: int,
+        col: int,
+    ):
+        super().__init__(layer_ref)
+        self.slice_id: int = slice_id
+        self.level_index: int = level_index
+        self.row: int = row
+        self.col: int = col
+
+    def __str__(self):
+        return f"location=({self.level_index}, {self.row}, {self.col}) "
+
+    def __eq__(self, other) -> bool:
+        return (
+            self.slice_id == other.slice_id
+            and self.level_index == other.level_index
+            and self.row == other.row
+            and self.col == other.col
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.slice_id, self.level_index, self.row, self.col))
+
+
 class ChunkRequest:
     """A request asking the ChunkLoader to load data.
 
@@ -108,8 +158,8 @@ class ChunkRequest:
     def elapsed_ms(self) -> float:
         """The total time elapsed since the request was created.
 
-        Return
-        ------
+        Returns
+        -------
         float
             The total time elapsed since the chunk was created.
         """
@@ -119,8 +169,8 @@ class ChunkRequest:
     def load_ms(self) -> float:
         """The total time it took to load all chunks.
 
-        Return
-        ------
+        Returns
+        -------
         float
             The total time it took to return all chunks.
         """
@@ -132,8 +182,8 @@ class ChunkRequest:
     def num_chunks(self) -> int:
         """The number of chunks in this request.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of chunks in this request.
         """
@@ -143,8 +193,8 @@ class ChunkRequest:
     def num_bytes(self) -> int:
         """The number of bytes that were loaded.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of bytes that were loaded.
         """
@@ -154,8 +204,8 @@ class ChunkRequest:
     def in_memory(self) -> bool:
         """True if all chunks are ndarrays.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if all chunks are ndarrays.
         """

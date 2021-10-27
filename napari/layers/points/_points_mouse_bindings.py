@@ -24,42 +24,48 @@ def select(layer, event):
         'Shift' in event.modifiers or 'Control' in event.modifiers
     )
 
+    # Get value under the cursor, for points, this is the index of the highlighted
+    # if any, or None.
+    value = layer.get_value(event.position, world=True)
     # if modifying selection add / remove any from existing selection
     if modify_selection:
-        # layer._value is defined in the base layer and contains the value
-        # under the cursor. For points, this is the index of the highlighted
-        # point.
-        if layer._value is not None:
-            layer.selected_data = _toggle_selected(
-                layer.selected_data, layer._value
-            )
+        if value is not None:
+            layer.selected_data = _toggle_selected(layer.selected_data, value)
     else:
-        if layer._value is not None:
+        if value is not None:
             # If the current index is not in the current list make it the only
             # index selected, otherwise don't change the selection so that
             # the current selection can be dragged together.
-            if layer._value not in layer.selected_data:
-                layer.selected_data = {layer._value}
+            if value not in layer.selected_data:
+                layer.selected_data = {value}
         else:
             layer.selected_data = set()
     layer._set_highlight()
 
     yield
 
+    is_moving = False
     # on move
     while event.type == 'mouse_move':
+        coordinates = layer.world_to_data(event.position)
         # If not holding modifying selection and points selected then drag them
         if not modify_selection and len(layer.selected_data) > 0:
-            layer._move(layer.selected_data, layer.coordinates)
+            is_moving = True
+            with layer.events.data.blocker():
+                layer._move(layer.selected_data, coordinates)
         else:
+            coord = [coordinates[i] for i in layer._dims_displayed]
             layer._is_selecting = True
             if layer._drag_start is None:
-                layer._drag_start = layer.displayed_coordinates
-            layer._drag_box = np.array(
-                [layer._drag_start, layer.displayed_coordinates]
-            )
+                layer._drag_start = coord
+            layer._drag_box = np.array([layer._drag_start, coord])
             layer._set_highlight()
         yield
+
+    # only emit data once dragging has finished
+    if is_moving:
+        layer._move([], coordinates)
+        is_moving = False
 
     # on release
     layer._drag_start = None
@@ -83,10 +89,22 @@ def select(layer, event):
     layer._set_highlight(force=True)
 
 
+DRAG_DIST_THRESHOLD = 5
+
+
 def add(layer, event):
     """Add a new point at the clicked position."""
-    # on press
-    layer.add(layer.coordinates)
+
+    if event.type == 'mouse_press':
+        start_pos = event.pos
+
+    while event.type != 'mouse_release':
+        yield
+
+    dist = np.linalg.norm(start_pos - event.pos)
+    if dist < DRAG_DIST_THRESHOLD:
+        coordinates = layer.world_to_data(event.position)
+        layer.add(coordinates)
 
 
 def highlight(layer, event):

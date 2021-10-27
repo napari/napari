@@ -1,11 +1,15 @@
 """ImageSliceData class.
 """
-from typing import Optional, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import numpy as np
 
-from ...types import ArrayLike
 from ..base import Layer
+
+if TYPE_CHECKING:
+    from ...types import ArrayLike
 
 
 class ImageSliceData:
@@ -50,7 +54,7 @@ class ImageSliceData:
         order : tuple
             Transpose the image into this order.
         """
-        self.image = self.image.transpose(order)
+        self.image = np.transpose(self.image, order)
 
         if self.thumbnail_source is not None:
-            self.thumbnail_source = self.thumbnail_source.transpose(order)
+            self.thumbnail_source = np.transpose(self.thumbnail_source, order)

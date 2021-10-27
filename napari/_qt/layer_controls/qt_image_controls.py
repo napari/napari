@@ -6,6 +6,7 @@ from ...layers.image._image_constants import (
     Interpolation3D,
     Rendering,
 )
+from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
 
 
@@ -52,17 +53,18 @@ class QtImageControls(QtBaseImageControls):
 
         self.interpComboBox = QComboBox(self)
         self.interpComboBox.activated[str].connect(self.changeInterpolation)
-        self.interpLabel = QLabel('interpolation:')
+        self.interpLabel = QLabel(trans._('interpolation:'))
 
         renderComboBox = QComboBox(self)
-        renderComboBox.addItems(Rendering.keys())
+        rendering_options = [i.value for i in Rendering.image_layer_subset()]
+        renderComboBox.addItems(rendering_options)
         index = renderComboBox.findText(
             self.layer.rendering, Qt.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
         renderComboBox.activated[str].connect(self.changeRendering)
         self.renderComboBox = renderComboBox
-        self.renderLabel = QLabel('rendering:')
+        self.renderLabel = QLabel(trans._('rendering:'))
 
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -72,7 +74,7 @@ class QtImageControls(QtBaseImageControls):
         sld.setValue(int(self.layer.iso_threshold * 100))
         sld.valueChanged.connect(self.changeIsoThreshold)
         self.isoThresholdSlider = sld
-        self.isoThresholdLabel = QLabel('iso threshold:')
+        self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
 
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -82,7 +84,7 @@ class QtImageControls(QtBaseImageControls):
         sld.setValue(int(self.layer.attenuation * 200))
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
-        self.attenuationLabel = QLabel('attenuation:')
+        self.attenuationLabel = QLabel(trans._('attenuation:'))
         self._on_ndisplay_change()
 
         colormap_layout = QHBoxLayout()
@@ -97,24 +99,26 @@ class QtImageControls(QtBaseImageControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
+        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
         self.grid_layout.addWidget(self.opacitySlider, 0, 1)
-        self.grid_layout.addWidget(QLabel('contrast limits:'), 1, 0)
+        self.grid_layout.addWidget(QLabel(trans._('contrast limits:')), 1, 0)
         self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1)
-        self.grid_layout.addWidget(QLabel('gamma:'), 2, 0)
-        self.grid_layout.addWidget(self.gammaSlider, 2, 1)
-        self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
-        self.grid_layout.addLayout(colormap_layout, 3, 1)
-        self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 1)
-        self.grid_layout.addWidget(self.interpLabel, 5, 0)
-        self.grid_layout.addWidget(self.interpComboBox, 5, 1)
-        self.grid_layout.addWidget(self.renderLabel, 6, 0)
-        self.grid_layout.addWidget(self.renderComboBox, 6, 1)
-        self.grid_layout.addWidget(self.isoThresholdLabel, 7, 0)
-        self.grid_layout.addWidget(self.isoThresholdSlider, 7, 1)
-        self.grid_layout.addWidget(self.attenuationLabel, 8, 0)
-        self.grid_layout.addWidget(self.attenuationSlider, 8, 1)
+        self.grid_layout.addWidget(QLabel(trans._('auto-contrast:')), 2, 0)
+        self.grid_layout.addWidget(self.autoScaleBar, 2, 1)
+        self.grid_layout.addWidget(QLabel(trans._('gamma:')), 3, 0)
+        self.grid_layout.addWidget(self.gammaSlider, 3, 1)
+        self.grid_layout.addWidget(QLabel(trans._('colormap:')), 4, 0)
+        self.grid_layout.addLayout(colormap_layout, 4, 1)
+        self.grid_layout.addWidget(QLabel(trans._('blending:')), 5, 0)
+        self.grid_layout.addWidget(self.blendComboBox, 5, 1)
+        self.grid_layout.addWidget(self.interpLabel, 6, 0)
+        self.grid_layout.addWidget(self.interpComboBox, 6, 1)
+        self.grid_layout.addWidget(self.renderLabel, 7, 0)
+        self.grid_layout.addWidget(self.renderComboBox, 7, 1)
+        self.grid_layout.addWidget(self.isoThresholdLabel, 8, 0)
+        self.grid_layout.addWidget(self.isoThresholdSlider, 8, 1)
+        self.grid_layout.addWidget(self.attenuationLabel, 9, 0)
+        self.grid_layout.addWidget(self.attenuationSlider, 9, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -170,14 +174,8 @@ class QtImageControls(QtBaseImageControls):
         with self.layer.events.blocker(self._on_iso_threshold_change):
             self.layer.iso_threshold = value / 100
 
-    def _on_iso_threshold_change(self, event):
-        """Receive layer model isosurface change event and update the slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_iso_threshold_change(self):
+        """Receive layer model isosurface change event and update the slider."""
         with self.layer.events.iso_threshold.blocker():
             self.isoThresholdSlider.setValue(
                 int(self.layer.iso_threshold * 100)
@@ -194,14 +192,8 @@ class QtImageControls(QtBaseImageControls):
         with self.layer.events.blocker(self._on_attenuation_change):
             self.layer.attenuation = value / 200
 
-    def _on_attenuation_change(self, event):
-        """Receive layer model attenuation change event and update the slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_attenuation_change(self):
+        """Receive layer model attenuation change event and update the slider."""
         with self.layer.events.attenuation.blocker():
             self.attenuationSlider.setValue(int(self.layer.attenuation * 200))
 
@@ -213,20 +205,15 @@ class QtImageControls(QtBaseImageControls):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        interp_string = event.value.value
+
         with self.layer.events.interpolation.blocker():
-            index = self.interpComboBox.findText(
-                self.layer.interpolation, Qt.MatchFixedString
-            )
-            self.interpComboBox.setCurrentIndex(index)
+            if self.interpComboBox.findText(interp_string) == -1:
+                self.interpComboBox.addItem(interp_string)
+            self.interpComboBox.setCurrentText(interp_string)
 
-    def _on_rendering_change(self, event):
-        """Receive layer model rendering change event and update dropdown menu.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_rendering_change(self):
+        """Receive layer model rendering change event and update dropdown menu."""
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(
                 self.layer.rendering, Qt.MatchFixedString
@@ -252,23 +239,19 @@ class QtImageControls(QtBaseImageControls):
 
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
-        interp_enum = (
-            Interpolation3D if self.layer._ndisplay == 3 else Interpolation
+        interp_names = (
+            Interpolation3D.keys()
+            if self.layer._ndisplay == 3
+            else [i.value for i in Interpolation.view_subset()]
         )
-        self.interpComboBox.addItems(interp_enum.keys())
+        self.interpComboBox.addItems(interp_names)
         index = self.interpComboBox.findText(
             self.layer.interpolation, Qt.MatchFixedString
         )
         self.interpComboBox.setCurrentIndex(index)
 
-    def _on_ndisplay_change(self, event=None):
-        """Toggle between 2D and 3D visualization modes.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, default is None.
-        """
+    def _on_ndisplay_change(self):
+        """Toggle between 2D and 3D visualization modes."""
         self._update_interpolation_combo()
         if self.layer._ndisplay == 2:
             self.isoThresholdSlider.hide()

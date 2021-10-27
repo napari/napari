@@ -3,10 +3,11 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
+import pytest
 
+from napari import utils
 from napari.components import ViewerModel
-from napari.plugins.io import read_data_with_plugins
-from napari.utils import io
+from napari.plugins import io
 
 
 def test_builtin_reader_plugin():
@@ -14,10 +15,32 @@ def test_builtin_reader_plugin():
 
     with NamedTemporaryFile(suffix='.tif', delete=False) as tmp:
         data = np.random.rand(20, 20)
-        io.imsave(tmp.name, data)
+        utils.io.imsave(tmp.name, data)
         tmp.seek(0)
-        layer_data = read_data_with_plugins(tmp.name)
+        layer_data, _ = io.read_data_with_plugins(tmp.name, 'builtins')
 
+        assert layer_data is not None
+        assert isinstance(layer_data, list)
+        assert len(layer_data) == 1
+        assert isinstance(layer_data[0], tuple)
+        assert np.allclose(data, layer_data[0][0])
+
+        viewer = ViewerModel()
+        viewer.open(tmp.name, plugin='builtins')
+
+        assert np.allclose(viewer.layers[0].data, data)
+
+
+def test_builtin_reader_plugin_npy():
+    """Test the builtin reader plugin reads a temporary npy file."""
+
+    with NamedTemporaryFile(suffix='.npy', delete=False) as tmp:
+        data = np.random.rand(20, 20)
+        np.save(tmp.name, data)
+        tmp.seek(0)
+        layer_data, _ = io.read_data_with_plugins(tmp.name, 'builtins')
+
+        assert layer_data is not None
         assert isinstance(layer_data, list)
         assert len(layer_data) == 1
         assert isinstance(layer_data[0], tuple)
@@ -36,9 +59,10 @@ def test_builtin_reader_plugin_csv(tmpdir):
     table = np.random.random((5, 3))
     data = table[:, 1:]
     # Write csv file
-    io.write_csv(tmp, table, column_names=column_names)
-    layer_data = read_data_with_plugins(tmp)
+    utils.io.write_csv(tmp, table, column_names=column_names)
+    layer_data, _ = io.read_data_with_plugins(tmp, 'builtins')
 
+    assert layer_data is not None
     assert isinstance(layer_data, list)
     assert len(layer_data) == 1
     assert isinstance(layer_data[0], tuple)
@@ -57,7 +81,7 @@ def test_builtin_reader_plugin_stacks():
     tmps = []
     for plane in data:
         tmp = NamedTemporaryFile(suffix='.tif', delete=False)
-        io.imsave(tmp.name, plane)
+        utils.io.imsave(tmp.name, plane)
         tmp.seek(0)
         tmps.append(tmp)
 
@@ -71,3 +95,29 @@ def test_builtin_reader_plugin_stacks():
     for tmp in tmps:
         tmp.close()
         os.unlink(tmp.name)
+
+
+def test_reader_plugin_can_return_null_layer_sentinel(
+    napari_plugin_manager, monkeypatch
+):
+    from napari_plugin_engine import napari_hook_implementation
+
+    with pytest.raises(ValueError) as e:
+        io.read_data_with_plugins('/')
+    assert 'No plugin found capable of reading' in str(e)
+
+    class sample_plugin:
+        @napari_hook_implementation(tryfirst=True)
+        def napari_get_reader(path):
+            def _reader(path):
+                return [(None,)]
+
+            return _reader
+
+    napari_plugin_manager.register(sample_plugin)
+
+    monkeypatch.setattr(io, 'plugin_manager', napari_plugin_manager)
+
+    layer_data, _ = io.read_data_with_plugins('')
+    assert layer_data is not None
+    assert len(layer_data) == 0

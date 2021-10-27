@@ -1,26 +1,29 @@
-from functools import wraps
+from functools import partial, wraps
+from pathlib import Path
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     NewType,
+    Sequence,
     Tuple,
     Type,
     Union,
 )
 
 import numpy as np
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     import dask.array
     import zarr
-
-
-if TYPE_CHECKING:
+    from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
+
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -36,8 +39,9 @@ ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 FullLayerData = Tuple[Any, Dict, str]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
-PathLike = Union[str, List[str]]
-ReaderFunction = Callable[[PathLike], List[LayerData]]
+PathLike = Union[str, Path]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
+ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
 WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 
 ExcInfo = Union[
@@ -46,10 +50,19 @@ ExcInfo = Union[
 ]
 
 # Types for GUI HookSpecs
-AugmentedFunction = Union[
-    Callable, Tuple[Callable, dict], Tuple[Callable, dict, dict]
-]
-AugmentedWidget = Union[Type['QWidget'], Tuple[Type['QWidget'], dict]]
+WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
+AugmentedWidget = Union[WidgetCallable, Tuple[WidgetCallable, dict]]
+
+
+# Sample Data for napari_provide_sample_data hookspec is either a string/path
+# or a function that returns an iterable of LayerData tuples
+SampleData = Union[PathLike, Callable[..., Iterable[LayerData]]]
+
+
+# or... they can provide a dict as follows:
+class SampleDict(TypedDict):
+    display_name: str
+    data: SampleData
 
 
 # these types are mostly "intentionality" placeholders.  While it's still hard
@@ -84,7 +97,7 @@ LayerDataTuple = NewType("LayerDataTuple", tuple)
 
 
 def image_reader_to_layerdata_reader(
-    func: Callable[[PathLike], ArrayLike]
+    func: Callable[[PathOrPaths], ArrayLike]
 ) -> ReaderFunction:
     """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
 
@@ -107,3 +120,41 @@ def image_reader_to_layerdata_reader(
         return [(result,)]
 
     return reader_function
+
+
+def _register_types_with_magicgui():
+    """Register napari.types objects with magicgui."""
+    import sys
+    from concurrent.futures import Future
+
+    from magicgui import register_type
+
+    from . import layers
+    from .utils import _magicgui as _mgui
+
+    for _type in (LayerDataTuple, List[LayerDataTuple]):
+        register_type(
+            _type,
+            return_callback=_mgui.add_layer_data_tuples_to_viewer,
+        )
+        if sys.version_info >= (3, 9):
+            register_type(Future[_type], return_callback=_mgui.add_future_data)
+
+    for layer_name in layers.NAMES:
+        data_type = globals().get(f'{layer_name.title()}Data')
+        register_type(
+            data_type,
+            choices=_mgui.get_layers_data,
+            return_callback=_mgui.add_layer_data_to_viewer,
+        )
+        if sys.version_info >= (3, 9):
+            register_type(
+                Future[data_type],  # type: ignore
+                choices=_mgui.get_layers_data,
+                return_callback=partial(
+                    _mgui.add_future_data, _from_tuple=False
+                ),
+            )
+
+
+_register_types_with_magicgui()

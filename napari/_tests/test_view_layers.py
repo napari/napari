@@ -124,8 +124,9 @@ def test_signature(layer):
         assert class_parameters == method_parameters, fail_msg
 
 
+# plugin_manager fixture is added to prevent errors due to installed plugins
 @pytest.mark.parametrize('layer_type, data, ndim', layer_test_data)
-def test_view(qtbot, layer_type, data, ndim):
+def test_view(qtbot, napari_plugin_manager, layer_type, data, ndim):
     np.random.seed(0)
     viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
         data, show=False
@@ -135,7 +136,8 @@ def test_view(qtbot, layer_type, data, ndim):
     viewer.close()
 
 
-def test_view_multichannel(qtbot):
+# plugin_manager fixture is added to prevent errors due to installed plugins
+def test_view_multichannel(qtbot, napari_plugin_manager):
     """Test adding image."""
     np.random.seed(0)
     data = np.random.random((15, 10, 5))
@@ -148,24 +150,15 @@ def test_view_multichannel(qtbot):
 
 def test_kwargs_passed(monkeypatch):
     viewer_mock = MagicMock(napari.Viewer)
-    monkeypatch.setattr(napari, 'Viewer', viewer_mock)
+    monkeypatch.setattr(napari.view_layers, 'Viewer', viewer_mock)
     napari.view_path(
-        path='some/path', title='my viewer', name='img name', scale=(1, 2, 3)
+        path='some/path',
+        title='my viewer',
+        ndisplay=3,
+        name='img name',
+        scale=(1, 2, 3),
     )
     assert viewer_mock.mock_calls == [
-        call(
-            title='my viewer',
-            ndisplay=2,
-            order=(),
-            axis_labels=(),
-            show=True,
-        ),
-        call().open(
-            path='some/path',
-            stack=False,
-            plugin=None,
-            layer_type=None,
-            name='img name',
-            scale=(1, 2, 3),
-        ),
+        call(title='my viewer', ndisplay=3),
+        call().open(path='some/path', name='img name', scale=(1, 2, 3)),
     ]

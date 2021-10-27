@@ -4,8 +4,10 @@ Custom layers must inherit from Layer and pass along the
 `visual node <http://vispy.org/scene.html#module-vispy.scene.visuals>`_
 to the super constructor.
 """
+import inspect as _inspect
+from importlib import import_module as _imp
 
-from ..utils.misc import all_subclasses
+from ..utils.misc import all_subclasses as _all_subcls
 from .base import Layer
 from .image import Image
 from .labels import Labels
@@ -15,5 +17,21 @@ from .surface import Surface
 from .tracks import Tracks
 from .vectors import Vectors
 
-NAMES = {subclass.__name__.lower() for subclass in all_subclasses(Layer)}
-del all_subclasses
+# isabstact check is to exclude _ImageBase class
+NAMES = {
+    subclass.__name__.lower()
+    for subclass in _all_subcls(Layer)
+    if not _inspect.isabstract(subclass)
+}
+
+__all__ = [
+    'Image',
+    'Labels',
+    'Layer',
+    'Points',
+    'Shapes',
+    'Surface',
+    'Tracks',
+    'Vectors',
+    'NAMES',
+]

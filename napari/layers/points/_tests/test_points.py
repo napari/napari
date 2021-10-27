@@ -9,7 +9,10 @@ from vispy.color import get_colormap
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.utils._text_constants import Anchor
+from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
+from napari.utils.transforms import CompositeAffine
 
 
 def _make_cycled_properties(values, length):
@@ -45,7 +48,7 @@ def test_empty_points_with_properties():
         'label': np.array(['label1', 'label2']),
         'cont_prop': np.array([0], dtype=float),
     }
-    pts = Points(properties=properties)
+    pts = Points(property_choices=properties)
     current_props = {k: v[0] for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
 
@@ -69,7 +72,7 @@ def test_empty_points_with_properties_list():
     See: https://github.com/napari/napari/pull/1069
     """
     properties = {'label': ['label1', 'label2'], 'cont_prop': [0]}
-    pts = Points(properties=properties)
+    pts = Points(property_choices=properties)
     current_props = {k: np.asarray(v[0]) for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
 
@@ -83,13 +86,13 @@ def test_empty_points_with_properties_list():
     np.testing.assert_equal(pts.properties, props)
 
 
-def test_empty_layer_with_face_colorap():
+def test_empty_layer_with_face_colormap():
     """Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         face_color='point_type',
         face_colormap='gray',
     )
@@ -98,7 +101,7 @@ def test_empty_layer_with_face_colorap():
 
     # verify the current_face_color is correct
     face_color = np.array([1, 1, 1, 1])
-    assert np.all(layer._current_face_color == face_color)
+    np.testing.assert_allclose(layer._face.current_color, face_color)
 
 
 def test_empty_layer_with_edge_colormap():
@@ -107,7 +110,7 @@ def test_empty_layer_with_edge_colormap():
     """
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         edge_color='point_type',
         edge_colormap='gray',
     )
@@ -116,7 +119,71 @@ def test_empty_layer_with_edge_colormap():
 
     # verify the current_face_color is correct
     edge_color = np.array([1, 1, 1, 1])
-    assert np.all(layer._current_edge_color == edge_color)
+    np.testing.assert_allclose(layer._edge.current_color, edge_color)
+
+
+@pytest.mark.parametrize('feature_name', ('edge', 'face'))
+def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
+    """Test setting current_properties an empty layer where the face/edge color
+    is a color cycle.
+
+    See: https://github.com/napari/napari/pull/3110
+    """
+    default_properties = {'annotation': np.array(['tail', 'nose', 'paw'])}
+    color_cycle = [[0, 1, 0, 1], [1, 0, 1, 1]]
+    color_parameters = {
+        'colors': 'annotation',
+        'categorical_colormap': color_cycle,
+        'mode': 'cycle',
+    }
+    color_name = f'{feature_name}_color'
+    points_kwargs = {
+        'property_choices': default_properties,
+        color_name: color_parameters,
+    }
+    layer = Points(**points_kwargs)
+
+    color_mode = getattr(layer, f'{feature_name}_color_mode')
+    assert color_mode == 'cycle'
+    layer.current_properties = {'annotation': np.array(['paw'])}
+
+    layer.add([10, 10])
+    colors = getattr(layer, color_name)
+    np.testing.assert_allclose(colors, [color_cycle[1]])
+    assert len(layer.data) == 1
+    cm = getattr(layer, f'_{feature_name}')
+    assert cm.color_properties.current_value == 'paw'
+
+
+def test_empty_layer_with_text_properties():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
+    text_kwargs = {'text': 'point_type', 'color': 'red'}
+    layer = Points(
+        property_choices=default_properties,
+        text=text_kwargs,
+    )
+    assert layer.text.values.size == 0
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+    # add a point and check that the appropriate text value was added
+    layer.add([1, 1])
+    np.testing.assert_equal(layer.text.values, ['1.5'])
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+
+def test_empty_layer_with_text_formatted():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
+    layer = Points(
+        property_choices=default_properties,
+        text='point_type: {point_type:.2f}',
+    )
+    assert layer.text.values.size == 0
+
+    # add a point and check that the appropriate text value was added
+    layer.add([1, 1])
+    np.testing.assert_equal(layer.text.values, ['point_type: 1.50'])
 
 
 def test_random_points():
@@ -177,6 +244,16 @@ def test_3D_points():
     assert layer.ndim == shape[1]
     assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
+
+
+def test_single_point_extent():
+    """Test extent of a single 3D point at the origin."""
+    shape = (1, 3)
+    data = np.zeros(shape)
+    layer = Points(data)
+    assert np.all(layer.extent.data == 0)
+    assert np.all(layer.extent.world == 0)
+    assert np.all(layer.extent.step == 1)
 
 
 def test_4D_points():
@@ -298,11 +375,32 @@ def test_removing_selected_points():
     assert len(layer.selected_data) == 0
     keep = [1, 2] + list(range(4, 10))
     assert np.all(layer.data == data[keep])
+    assert layer._value is None
 
     # Select another point and remove it
     layer.selected_data = {4}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 3
+
+
+def test_deleting_selected_value_changes():
+    """Test deleting selected points appropriately sets self._value"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # removing with self._value selected resets self._value to None
+    layer._value = 1
+    layer.selected_data = {1, 2}
+    layer.remove_selected()
+    assert layer._value is None
+
+    # removing with self._value outside selection doesn't change self._value
+    layer._value = 3
+    layer.selected_data = {4}
+    layer.remove_selected()
+    assert layer._value == 3
 
 
 def test_move():
@@ -337,7 +435,6 @@ def test_changing_modes():
 
     layer.mode = 'add'
     assert layer.mode == 'add'
-    assert layer.interactive is False
 
     layer.mode = 'select'
     assert layer.mode == 'select'
@@ -365,7 +462,7 @@ def test_name():
     assert layer.name == 'pts'
 
 
-def test_visiblity():
+def test_visibility():
     """Test setting layer visibility."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
@@ -500,9 +597,14 @@ def test_adding_properties(attribute):
     assert isinstance(layer.properties['point_type'], np.ndarray)
 
     # removing a property that was the _*_color_property should give a warning
-    setattr(layer, f'_{attribute}_color_property', 'vector_type')
+    color_manager = getattr(layer, f'_{attribute}')
+    color_manager.color_properties = {
+        'name': 'point_type',
+        'values': np.empty(0),
+        'current_value': 'A',
+    }
     properties_2 = {
-        'not_vector_type': _make_cycled_properties(['A', 'B'], shape[0])
+        'not_point_type': _make_cycled_properties(['A', 'B'], shape[0])
     }
     with pytest.warns(RuntimeWarning):
         layer.properties = properties_2
@@ -551,6 +653,39 @@ def test_updating_points_properties():
     updated_properties = properties
     updated_properties['point_type'][-1] = 'A'
     np.testing.assert_equal(layer.properties, updated_properties)
+
+
+def test_setting_current_properties():
+    shape = (2, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {
+        'annotation': ['paw', 'leg'],
+        'confidence': [0.5, 0.75],
+        'annotator': ['jane', 'ash'],
+        'model': ['worst', 'best'],
+    }
+    layer = Points(data, properties=copy(properties))
+    current_properties = {
+        'annotation': ['leg'],
+        'confidence': 1,
+        'annotator': 'ash',
+        'model': np.array(['best']),
+    }
+    layer.current_properties = current_properties
+
+    expected_current_properties = {
+        'annotation': np.array(['leg']),
+        'confidence': np.array([1]),
+        'annotator': np.array(['ash']),
+        'model': np.array(['best']),
+    }
+
+    coerced_current_properties = layer.current_properties
+    for k, v in coerced_current_properties.items():
+        value = coerced_current_properties[k]
+        assert isinstance(value, np.ndarray)
+        np.testing.assert_equal(value, expected_current_properties[k])
 
 
 properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -608,7 +743,7 @@ def test_set_text_with_kwarg_dict(properties):
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
-        'anchor': 'upper_left',
+        'anchor': Anchor.UPPER_LEFT,
         'size': 10,
         'visible': True,
     }
@@ -638,6 +773,16 @@ def test_text_error(properties):
         Points(data, properties=copy(properties), text=123)
 
 
+def test_select_properties_object_dtype():
+    """selecting points when they have a property of object dtype should not fail"""
+    # pandas uses object as dtype for strings by default
+    properties = pd.DataFrame({'color': ['red', 'green']})
+    pl = Points(np.ones((2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
+
+
 def test_refresh_text():
     """Test refreshing the text after setting new properties"""
     shape = (10, 2)
@@ -660,27 +805,6 @@ def test_points_errors():
     with pytest.raises(ValueError):
         annotations = {'point_type': np.array(['A', 'B'])}
         Points(data, properties=copy(annotations))
-
-
-def test_is_color_mapped():
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Points(data, properties=annotations)
-
-    # giving the name of an annotation should return True
-    assert layer._is_color_mapped('point_type')
-
-    # giving a list should return false (i.e., could be an RGBA color)
-    assert not layer._is_color_mapped([1, 1, 1, 1])
-
-    # giving an ndarray should return false (i.e., could be an RGBA color)
-    assert not layer._is_color_mapped(np.array([1, 1, 1, 1]))
-
-    # give an invalid color argument
-    with pytest.raises(ValueError):
-        layer._is_color_mapped((123, 323))
 
 
 def test_edge_width():
@@ -758,16 +882,18 @@ def test_switch_color_mode(attribute):
     )
 
     # there should not be an edge_color_property
-    color_property = getattr(layer, f'_{attribute}_color_property')
-    assert color_property == ''
+    color_manager = getattr(layer, f'_{attribute}')
+    color_property = color_manager.color_properties
+    assert color_property is None
 
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
     # the first property in points.properties is being automatically selected
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
-    color_property = getattr(layer, f'_{attribute}_color_property')
-    assert color_property == next(iter(properties))
+    color_manager = getattr(layer, f'_{attribute}')
+    color_property_name = color_manager.color_properties.name
+    assert color_property_name == next(iter(properties))
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(layer_color[-1], [1, 1, 1, 1])
 
@@ -949,16 +1075,14 @@ def test_color_cycle(attribute, color_cycle):
         np.vstack((color_array[1], color_array[3:], transform_color('red'))),
     )
 
-    # refresh colors
-    layer.refresh_colors(update_color_mapping=True)
-
     # test adding a point with a new property value
     layer.selected_data = {}
     current_properties = layer.current_properties
     current_properties['point_type'] = np.array(['new'])
     layer.current_properties = current_properties
     layer.add([10, 10])
-    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_manager = getattr(layer, f'_{attribute}')
+    color_cycle_map = color_manager.categorical_colormap.colormap
 
     assert 'new' in color_cycle_map
     np.testing.assert_allclose(
@@ -978,7 +1102,8 @@ def test_color_cycle_dict(attribute):
     }
     layer = Points(data, **points_kwargs)
 
-    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_manager = getattr(layer, f'_{attribute}')
+    color_cycle_map = color_manager.categorical_colormap.colormap
     np.testing.assert_allclose(color_cycle_map[2], [1, 0, 0, 1])  # 2 is red
     np.testing.assert_allclose(color_cycle_map[3], [0, 0, 1, 1])  # 3 is blue
     np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
@@ -993,15 +1118,16 @@ def test_add_color_cycle_to_empty_layer(attribute):
     default_properties = {'point_type': np.array(['A'])}
     color_cycle = ['red', 'blue']
     points_kwargs = {
-        'properties': default_properties,
+        'property_choices': default_properties,
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
     layer = Points(**points_kwargs)
 
     # verify the current_edge_color is correct
-    expected_color = transform_color(color_cycle[0])
-    current_color = getattr(layer, f'_current_{attribute}_color')
+    expected_color = transform_color(color_cycle[0])[0]
+    color_manager = getattr(layer, f'_{attribute}')
+    current_color = color_manager.current_color
     np.testing.assert_allclose(current_color, expected_color)
 
     # add a point
@@ -1045,12 +1171,14 @@ def test_adding_value_color_cycle(attribute):
     layer = Points(data, **points_kwargs)
 
     # make point 0 point_type C
-    point_types = layer.properties['point_type']
+    props = layer.properties
+    point_types = props['point_type']
     point_types[0] = 'C'
-    layer.properties['point_type'] = point_types
-    layer.refresh_colors(update_color_mapping=False)
+    props['point_type'] = point_types
+    layer.properties = props
 
-    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_manager = getattr(layer, f'_{attribute}')
+    color_cycle_map = color_manager.categorical_colormap.colormap
     color_map_keys = [*color_cycle_map]
     assert 'C' in color_map_keys
 
@@ -1111,7 +1239,6 @@ def test_color_colormap(attribute):
 
     # adjust the clims
     setattr(layer, f'{attribute}_contrast_limits', (0, 3))
-    layer.refresh_colors(update_color_mapping=False)
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color[-2], [0.5, 0.5, 0.5, 1])
 
@@ -1347,12 +1474,34 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
-    value = layer.get_value()
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0, 0))
     assert value == 9
 
     layer.data = layer.data + 20
-    value = layer.get_value()
+    value = layer.get_value((0, 0))
+    assert value is None
+
+
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
+        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
+    """Currently get_value should return None in 3D"""
+    np.random.seed(0)
+    data = np.random.random((10, 3))
+    layer = Points(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    value = layer.get_value(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
+    )
     assert value is None
 
 
@@ -1363,7 +1512,19 @@ def test_message():
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
-    msg = layer.get_message()
+    msg = layer.get_status((0,) * 2)
+    assert type(msg) == str
+
+
+def test_message_3d():
+    """Test converting values and coords to message in 3D."""
+    shape = (10, 3)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    msg = layer.get_status(
+        (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
+    )
     assert type(msg) == str
 
 
@@ -1377,6 +1538,37 @@ def test_thumbnail():
     layer = Points(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+def test_thumbnail_non_square_data():
+    """Test the image thumbnail for non-square data.
+
+    See: https://github.com/napari/napari/issues/1450
+    """
+    # The points coordinates are in a short and wide range.
+    data_range = [1, 32]
+    np.random.seed(0)
+    data = np.random.random((10, 2)) * data_range
+    # Make sure the random points span the range.
+    data[0, :] = [0, 0]
+    data[-1, :] = data_range
+    layer = Points(data)
+
+    layer._update_thumbnail()
+
+    assert layer.thumbnail.shape == layer._thumbnail_shape
+    # Check that the thumbnail only contains non-zero RGB values in the middle two rows.
+    mid_row = layer.thumbnail.shape[0] // 2
+    expected_zeros = np.zeros(shape=(mid_row - 1, 32, 3), dtype=np.uint8)
+    np.testing.assert_array_equal(
+        layer.thumbnail[: mid_row - 1, :, :3], expected_zeros
+    )
+    assert (
+        np.count_nonzero(layer.thumbnail[mid_row - 1 : mid_row + 1, :, :3]) > 0
+    )
+    np.testing.assert_array_equal(
+        layer.thumbnail[mid_row + 1 :, :, :3], expected_zeros
+    )
 
 
 def test_thumbnail_with_n_points_greater_than_max():
@@ -1490,4 +1682,497 @@ def test_world_data_extent():
     max_val = (17, 40, 25)
     layer = Points(data)
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+
+
+def test_slice_data():
+    data = [
+        (10, 2, 4),
+        (10 + 2 * 1e-7, 4, 6),
+        (8, 1, 7),
+        (10.1, 7, 2),
+        (10 - 2 * 1e-7, 1, 6),
+    ]
+    layer = Points(data)
+    assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
+    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 3
+    assert (
+        len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
+        == 3
+    )
+    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 1
+
+
+def test_scale_init():
+    layer = Points(None, scale=(1, 1, 1, 1))
+    assert layer.ndim == 4
+    layer1 = Points([], scale=(1, 1, 1, 1))
+    assert layer1.ndim == 4
+    layer2 = Points([])
+    assert layer2.ndim == 2
+
+    with pytest.raises(ValueError):
+        Points([[1, 1, 1]], scale=(1, 1, 1, 1))
+
+
+def test_update_none():
+    layer = Points([(1, 2, 3), (1, 3, 2)])
+    assert layer.ndim == 3
+    assert layer.data.size == 6
+    layer.data = None
+    assert layer.ndim == 3
+    assert layer.data.size == 0
+    layer.data = [(1, 2, 3), (1, 3, 2)]
+    assert layer.ndim == 3
+    assert layer.data.size == 6
+
+
+def test_set_face_color_mode_after_set_properties():
+    # See GitHub issue for more details:
+    # https://github.com/napari/napari/issues/2755
+    np.random.seed(0)
+    num_points = 3
+    points = Points(np.random.random((num_points, 2)))
+
+    points.properties = {
+        'cat': np.random.randint(low=0, high=num_points, size=num_points),
+        'cont': np.random.random(num_points),
+    }
+
+    # Initially the color_mode is DIRECT, which means that the face ColorManager
+    # has no color_properties, so the first property is used with a warning.
+    with pytest.warns(UserWarning):
+        points.face_color_mode = 'cycle'
+
+    first_property_key, first_property_values = next(
+        iter(points.properties.items())
+    )
+    expected_properties = ColorProperties(
+        name=first_property_key,
+        values=first_property_values,
+        current_value=first_property_values[-1],
+    )
+    assert points._face.color_properties == expected_properties
+
+
+def test_to_mask_2d_with_size_1():
+    points = Points([[1, 4]], size=1)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_2():
+    points = Points([[1, 4]], size=2)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_4():
+    points = Points([[1, 4]], size=4)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_4_top_left():
+    points = Points([[0, 0]], size=4)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [1, 1, 1, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_size_4_bottom_right():
+    points = Points([[4, 6]], size=4)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 1, 1],
+            [0, 0, 0, 0, 1, 1, 1],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_diff_sizes():
+    points = Points([[2, 2], [1, 4]], size=[[1, 1], [2, 2]])
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_overlap():
+    points = Points([[1, 3], [1, 4]], size=2)
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 1, 0],
+            [0, 0, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_translate():
+    points = Points([[1, 4]], size=2)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(translate=(-1, 2))
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0],
+            [0, 1, 1, 1, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_rotate():
+    # Make the size just over 2, instead of exactly 2, to ensure that all expected pixels are
+    # included, despite floating point imprecision caused by applying the rotation.
+    points = Points([[-4, 1]], size=2.1)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(rotate=90)
+    )
+
+    # The point [-4, 1] is defined in world coordinates, so after applying
+    # the inverse data_to_world transform will become [1, 4].
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_isotropic_scale():
+    points = Points([[2, 8]], size=4)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(scale=(2, 2))
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_negative_isotropic_scale():
+    points = Points([[2, -8]], size=4)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(scale=(2, -2))
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_anisotropic_scale_isotropic_output():
+    # With isotropic output, the size of the output ball is determined
+    # by the geometric mean of the scale which is sqrt(2), so absorb that
+    # into the size to keep the math simple.
+    points = Points([[2, 4]], size=2 * np.sqrt(2))
+
+    mask = points.to_mask(
+        shape=(5, 7),
+        data_to_world=CompositeAffine(scale=(2, 1)),
+        isotropic_output=True,
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_anisotropic_scale_anisotropic_output():
+    points = Points([[2, 4]], size=4)
+
+    mask = points.to_mask(
+        shape=(5, 7),
+        data_to_world=CompositeAffine(scale=(2, 1)),
+        isotropic_output=False,
+    )
+
+    # With anisotropic output, the output ball will be squashed
+    # in the dimension with scaling, so that after adding it back as an image
+    # with the same scaling, it should be roughly isotropic.
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_points_scale_but_no_mask_scale():
+    points = Points([[1, 4]], size=2, scale=(2, 2))
+
+    mask = points.to_mask(shape=(5, 7))
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_2d_with_same_points_and_mask_scale():
+    scale = (2, 2)
+    points = Points([[1, 4]], size=2, scale=scale)
+
+    mask = points.to_mask(
+        shape=(5, 7), data_to_world=CompositeAffine(scale=scale)
+    )
+
+    expected_mask = np.array(
+        [
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_3d_with_size_1():
+    points = Points([[1, 2, 3]], size=1)
+
+    mask = points.to_mask(shape=(3, 4, 5))
+
+    expected_mask = np.array(
+        [
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_to_mask_3d_with_size_2():
+    points = Points([[1, 2, 3]], size=2)
+
+    mask = points.to_mask(shape=(3, 4, 5))
+
+    expected_mask = np.array(
+        [
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 1, 1, 1],
+                [0, 0, 0, 1, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0],
+            ],
+        ],
+        dtype=bool,
+    )
+    np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_set_properties_updates_text_values():
+    points = np.random.rand(3, 2)
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    layer = Points(points, properties=properties, text='class')
+
+    layer.properties = {'class': np.array(['D', 'E', 'F'])}
+
+    np.testing.assert_array_equal(layer.text.values, ['D', 'E', 'F'])
+
+
+def test_set_properties_with_invalid_shape_errors_safely():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
+
+    with pytest.raises(ValueError):
+        points.properties = {'class': np.array(['D', 'E'])}
+
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
+
+
+def test_set_properties_with_missing_text_property_text_becomes_constant():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    assert points.properties == properties
+    np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
+
+    points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+
+    np.testing.assert_array_equal(
+        points.text.values, ['class', 'class', 'class']
+    )
+
+
+def test_text_param_and_setter_are_consistent():
+    """See https://github.com/napari/napari/issues/1833"""
+    data = np.random.rand(5, 3) * 100
+    properties = {
+        'accepted': np.random.choice([True, False], (5,)),
+    }
+    text = {'text': 'accepted', 'color': 'black'}
+
+    points_init = Points(data, properties=properties, text=text)
+
+    points_set = Points(data, properties=properties)
+    points_set.text = text
+
+    np.testing.assert_array_equal(
+        points_init.text.values,
+        points_set.text.values,
+    )
+    np.testing.assert_array_equal(
+        points_init.text.color, points_set.text.color
+    )

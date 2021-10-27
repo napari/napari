@@ -134,91 +134,24 @@ def test_clearing_layerlist():
     assert len(layers) == 0
 
 
-def test_unselect_all():
-    """
-    Test unselecting
-    """
-    layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)))
-    layer_b = Image(np.random.random((15, 15)))
-    layer_c = Image(np.random.random((15, 15)))
-    layers.append(layer_a)
-    layers.append(layer_b)
-    layers.append(layer_c)
-
-    layers.unselect_all()
-    assert [lay.selected for lay in layers] == [False] * 3
-
-    for lay in layers:
-        lay.selected = True
-    layers.unselect_all(ignore=layer_b)
-    assert [lay.selected for lay in layers] == [False, True, False]
-
-
 def test_remove_selected():
-    """
-    Test removing selected layers
-    """
+    """Test removing selected layers."""
     layers = LayerList()
     layer_a = Image(np.random.random((10, 10)))
     layer_b = Image(np.random.random((15, 15)))
     layer_c = Image(np.random.random((15, 15)))
-    layer_d = Image(np.random.random((15, 15)))
     layers.append(layer_a)
     layers.append(layer_b)
     layers.append(layer_c)
 
     # remove last added layer as only one selected
-    layer_a.selected = False
-    layer_b.selected = False
-    layer_c.selected = True
+    layers.selection.clear()
+    layers.selection.add(layer_c)
     layers.remove_selected()
     assert list(layers) == [layer_a, layer_b]
 
-    # check that the next to last layer is now selected
-    assert [lay.selected for lay in layers] == [False, True]
-
-    layers.remove_selected()
-    assert list(layers) == [layer_a]
-    assert [lay.selected for lay in layers] == [True]
-
-    # select and remove first layer only
-    layers.append(layer_b)
-    layers.append(layer_c)
-    assert list(layers) == [layer_a, layer_b, layer_c]
-    layer_a.selected = True
-    layer_b.selected = False
-    layer_c.selected = False
-    layers.remove_selected()
-    assert list(layers) == [layer_b, layer_c]
-    assert [lay.selected for lay in layers] == [True, False]
-
-    # select and remove first and last layer of four
-    layers.append(layer_a)
-    layers.append(layer_d)
-    assert list(layers) == [layer_b, layer_c, layer_a, layer_d]
-    layer_a.selected = False
-    layer_b.selected = True
-    layer_c.selected = False
-    layer_d.selected = True
-    layers.remove_selected()
-    assert list(layers) == [layer_c, layer_a]
-    assert [lay.selected for lay in layers] == [True, False]
-
-    # select and remove middle two layers of four
-    layers.append(layer_b)
-    layers.append(layer_d)
-    layer_a.selected = True
-    layer_b.selected = True
-    layer_c.selected = False
-    layer_d.selected = False
-    layers.remove_selected()
-    assert list(layers) == [layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [True, False]
-
     # select and remove all layersay
-    for lay in layers:
-        lay.selected = True
+    layers.select_all()
     layers.remove_selected()
     assert len(layers) == 0
 
@@ -238,34 +171,36 @@ def test_move_selected():
     layers.append(layer_d)
 
     # Check nothing moves if given same insert and origin
-    layers.unselect_all()
+    layers.selection.clear()
     layers.move_selected(2, 2)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [False, False, True, False]
+    assert layers.selection == {layer_c}
 
     # Move middle element to front of list and back
-    layers.unselect_all()
+    layers.selection.clear()
     layers.move_selected(2, 0)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
-    assert [lay.selected for lay in layers] == [True, False, False, False]
-    layers.unselect_all()
+    assert layers.selection == {layer_c}
+
+    layers.selection.clear()
     layers.move_selected(0, 2)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [False, False, True, False]
+    assert layers.selection == {layer_c}
 
     # Move middle element to end of list and back
-    layers.unselect_all()
+    layers.selection.clear()
     layers.move_selected(2, 3)
     assert list(layers) == [layer_a, layer_b, layer_d, layer_c]
-    assert [lay.selected for lay in layers] == [False, False, False, True]
-    layers.unselect_all()
+    assert layers.selection == {layer_c}
+
+    layers.selection.clear()
     layers.move_selected(3, 2)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [False, False, True, False]
+    assert layers.selection == {layer_c}
 
     # Select first two layers only
-    for layer, s in zip(layers, [True, True, False, False]):
-        layer.selected = s
+    layers.selection = layers[:2]
+
     # Move unselected middle element to front of list even if others selected
     layers.move_selected(2, 0)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
@@ -274,63 +209,61 @@ def test_move_selected():
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
 
     # Select first two layers only
-    for layer, s in zip(layers, [True, True, False, False]):
-        layer.selected = s
+    layers.selection = layers[:2]
     # Check nothing moves if given same insert and origin and multiple selected
     layers.move_selected(0, 0)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [True, True, False, False]
+    assert layers.selection == {layer_a, layer_b}
 
     # Check nothing moves if given same insert and origin and multiple selected
     layers.move_selected(1, 1)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [True, True, False, False]
+    assert layers.selection == {layer_a, layer_b}
 
     # Move first two selected to middle of list
     layers.move_selected(0, 2)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
-    assert [lay.selected for lay in layers] == [False, True, True, False]
+    assert layers.selection == {layer_a, layer_b}
 
     # Move middle selected to front of list
     layers.move_selected(2, 0)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [True, True, False, False]
+    assert layers.selection == {layer_a, layer_b}
 
     # Move first two selected to middle of list
     layers.move_selected(1, 2)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
-    assert [lay.selected for lay in layers] == [False, True, True, False]
+    assert layers.selection == {layer_a, layer_b}
 
     # Move middle selected to front of list
     layers.move_selected(1, 0)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [True, True, False, False]
+    assert layers.selection == {layer_a, layer_b}
 
     # Select first and third layers only
-    for layer, s in zip(layers, [True, False, True, False]):
-        layer.selected = s
+    layers.selection = layers[::2]
     # Move selection together to middle
     layers.move_selected(2, 2)
     assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [False, True, True, False]
+    assert layers.selection == {layer_a, layer_c}
     layers.move_multiple((1, 0, 2, 3), 0)
 
     # Move selection together to middle
     layers.move_selected(0, 1)
     assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
-    assert [lay.selected for lay in layers] == [False, True, True, False]
+    assert layers.selection == {layer_a, layer_c}
     layers.move_multiple((1, 0, 2, 3), 0)
 
     # Move selection together to end
     layers.move_selected(2, 3)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
-    assert [lay.selected for lay in layers] == [False, False, True, True]
+    assert layers.selection == {layer_a, layer_c}
     layers.move_multiple((2, 0, 3, 1), 0)
 
     # Move selection together to end
     layers.move_selected(0, 3)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
-    assert [lay.selected for lay in layers] == [False, False, True, True]
+    assert layers.selection == {layer_a, layer_c}
     layers.move_multiple((2, 0, 3, 1), 0)
 
     layer_e = Image(np.random.random((15, 15)))
@@ -347,8 +280,7 @@ def test_move_selected():
         layer_f,
     ]
     # Select second and firth layers only
-    for layer, s in zip(layers, [False, True, False, False, True, False]):
-        layer.selected = s
+    layers.selection = {layers[1], layers[4]}
 
     # Move selection together to middle
     layers.move_selected(1, 2)
@@ -360,14 +292,7 @@ def test_move_selected():
         layer_d,
         layer_f,
     ]
-    assert [lay.selected for lay in layers] == [
-        False,
-        False,
-        True,
-        True,
-        False,
-        False,
-    ]
+    assert layers.selection == {layer_b, layer_e}
 
 
 def test_toggle_visibility():
@@ -390,7 +315,7 @@ def test_toggle_visibility():
     layers[3].visible = True
 
     layers.select_all()
-    layers[0].selected = False
+    layers.selection.remove(layers[0])
 
     layers.toggle_selected_visibility()
 
@@ -432,7 +357,7 @@ def test_layers_save_none_selected(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
-    layers.unselect_all()
+    layers.selection.clear()
 
     path = os.path.join(tmpdir, 'layers_folder')
 
@@ -455,13 +380,12 @@ def test_layers_save_none_selected(tmpdir, layer_data_and_types):
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
-def test_layers_save_seleteced(tmpdir, layer_data_and_types):
+def test_layers_save_selected(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
-    layers.unselect_all()
-    layers[0].selected = True
-    layers[2].selected = True
+    layers.selection.clear()
+    layers.selection.update({layers[0], layers[2]})
 
     path = os.path.join(tmpdir, 'layers_folder')
 
@@ -506,8 +430,8 @@ def test_world_extent():
     layers = LayerList()
 
     # Empty data is taken to be 512 x 512
-    np.testing.assert_allclose(layers.extent.world[0], (0, 0))
-    np.testing.assert_allclose(layers.extent.world[1], (511, 511))
+    np.testing.assert_allclose(layers.extent.world[0], (-0.5, -0.5))
+    np.testing.assert_allclose(layers.extent.world[1], (511.5, 511.5))
     np.testing.assert_allclose(layers.extent.step, (1, 1))
 
     # Add one layer
@@ -515,10 +439,10 @@ def test_world_extent():
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
     layers.append(layer_a)
-    np.testing.assert_allclose(layer_a.extent.world[0], (10, 20, 5))
-    np.testing.assert_allclose(layer_a.extent.world[1], (25, 29, 19))
-    np.testing.assert_allclose(layers.extent.world[0], (10, 20, 5))
-    np.testing.assert_allclose(layers.extent.world[1], (25, 29, 19))
+    np.testing.assert_allclose(layer_a.extent.world[0], (8.5, 19.5, 4.5))
+    np.testing.assert_allclose(layer_a.extent.world[1], (26.5, 29.5, 19.5))
+    np.testing.assert_allclose(layers.extent.world[0], (8.5, 19.5, 4.5))
+    np.testing.assert_allclose(layers.extent.world[1], (26.5, 29.5, 19.5))
     np.testing.assert_allclose(layers.extent.step, (3, 1, 1))
 
     # Add another layer
@@ -526,10 +450,10 @@ def test_world_extent():
         np.random.random((8, 6, 15)), scale=(6, 2, 1), translate=(-5, -10, 10)
     )
     layers.append(layer_b)
-    np.testing.assert_allclose(layer_b.extent.world[0], (-5, -10, 10))
-    np.testing.assert_allclose(layer_b.extent.world[1], (37, 0, 24))
-    np.testing.assert_allclose(layers.extent.world[0], (-5, -10, 5))
-    np.testing.assert_allclose(layers.extent.world[1], (37, 29, 24))
+    np.testing.assert_allclose(layer_b.extent.world[0], (-8, -11, 9.5))
+    np.testing.assert_allclose(layer_b.extent.world[1], (40, 1, 24.5))
+    np.testing.assert_allclose(layers.extent.world[0], (-8, -11, 4.5))
+    np.testing.assert_allclose(layers.extent.world[1], (40, 29.5, 24.5))
     np.testing.assert_allclose(layers.extent.step, (3, 1, 1))
 
 
@@ -541,12 +465,18 @@ def test_world_extent_mixed_ndim():
     # Add 3D layer
     layer_a = Image(np.random.random((15, 15, 15)), scale=(4, 12, 2))
     layers.append(layer_a)
-    np.testing.assert_allclose(layers.extent.world[1], (56, 168, 28))
+    np.testing.assert_allclose(layers.extent.world[1], (58, 174, 29))
+    np.testing.assert_allclose(
+        layers.extent.world[1] - layers.extent.world[0], (60, 180, 30)
+    )
 
     # Add 2D layer
     layer_b = Image(np.random.random((10, 10)), scale=(6, 4))
     layers.append(layer_b)
-    np.testing.assert_allclose(layers.extent.world[1], (56, 168, 36))
+    np.testing.assert_allclose(layers.extent.world[1], (58, 174, 38))
+    np.testing.assert_allclose(
+        layers.extent.world[1] - layers.extent.world[0], (60, 180, 40)
+    )
     np.testing.assert_allclose(layers.extent.step, (4, 6, 2))
 
 
@@ -562,7 +492,7 @@ def test_world_extent_mixed_flipped():
         np.random.random((15, 15)), affine=[[0, 1, 0], [1, 0, 0], [0, 0, 1]]
     )
     layers.append(layer)
-    np.testing.assert_allclose(layer.scale, (1, -1))
+    np.testing.assert_allclose(layer._data_to_world.scale, (1, -1))
     np.testing.assert_allclose(layers.extent.step, (1, 1))
 
 

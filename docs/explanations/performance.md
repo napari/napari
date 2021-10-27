@@ -1,0 +1,2 @@
+```{include} ../guides/performance.md
+```

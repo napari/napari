@@ -3,24 +3,29 @@
 An eventual replacement for Image that combines single-scale and
 chunked (tiled) multi-scale into one implementation.
 """
+from __future__ import annotations
+
 import logging
-from typing import List, Set
+from typing import TYPE_CHECKING, List, Set
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.events import Event
-from ..image import Image
+from ....utils.translations import trans
+from ..image import _ImageBase
 from ._octree_slice import OctreeSlice, OctreeView
 from .octree_chunk import OctreeChunk
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import OctreeDisplayOptions, OctreeMetadata
 
+if TYPE_CHECKING:
+    from ....components.experimental.chunk import ChunkRequest
+
 LOGGER = logging.getLogger("napari.octree.image")
 
 
-class OctreeImage(Image):
+class _OctreeImageBase(_ImageBase):
     """Image layer rendered using an octree.
 
     Experimental variant of Image that renders using an octree. For 2D
@@ -81,8 +86,8 @@ class OctreeImage(Image):
         # this event after super().__init__(). Needs to be cleaned up.
         self._display.loaded_event = self.events.loaded
 
-    def _get_value(self):
-        """Override Image._get_value()."""
+    def _get_value(self, position):
+        """Override Image._get_value(position)."""
         return (0, (0, 0))  # TODO_OCTREE: need to implement this.
 
     @property
@@ -124,8 +129,8 @@ class OctreeImage(Image):
     def tile_size(self) -> int:
         """Return the edge length of single tile, for example 256.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The edge length of a single tile.
         """
@@ -150,8 +155,8 @@ class OctreeImage(Image):
     def tile_shape(self) -> tuple:
         """Return the shape of a single tile, for example 256x256x3.
 
-        Return
-        ------
+        Returns
+        -------
         tuple
             The shape of a single tile.
         """
@@ -172,8 +177,8 @@ class OctreeImage(Image):
     def meta(self) -> OctreeMetadata:
         """Information about the current octree.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeMetadata
             Octree dimensions and other info.
         """
@@ -218,7 +223,13 @@ class OctreeImage(Image):
         # Quickly check for less than 0. We can't check for a level
         # that's too high because the Octree might have extended levels?
         if level < 0:
-            raise ValueError(f"Octree level {level} is negative.")
+            raise ValueError(
+                trans._(
+                    "Octree level {level} is negative.",
+                    deferred=True,
+                    level=level,
+                )
+            )
 
         self._data_level = level
         self.events.octree_level()
@@ -233,8 +244,8 @@ class OctreeImage(Image):
     def num_octree_levels(self) -> int:
         """Return the total number of octree levels.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of octree levels.
         """
@@ -279,12 +290,12 @@ class OctreeImage(Image):
         visual quality, the imagery might look blurry.
 
         Parameters
-        -----------
-        drawn_chunk_set : Set[OctreeChunk]
+        ----------
+        drawn_set : Set[OctreeChunk]
             The chunks that are currently being drawn by the visual.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             The drawable chunks.
         """
@@ -329,7 +340,7 @@ class OctreeImage(Image):
         )
 
     def _update_draw(
-        self, scale_factor, corner_pixels, shape_threshold
+        self, scale_factor, corner_pixels_displayed, shape_threshold
     ) -> None:
         """Override Layer._update_draw completely.
 
@@ -342,21 +353,24 @@ class OctreeImage(Image):
         ----------
         scale_factor : float
             Scale factor going from canvas to world coordinates.
-        corner_pixels : array
-            Coordinates of the top-left and bottom-right canvas pixels in the
+        corner_pixels_displayed : array
+            Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
 
         """
         # Compute our 2D corners from the incoming n-d corner_pixels
-        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-        corners = data_corners[:, self._dims_displayed]
+        data_corners = (
+            self._transforms[1:]
+            .simplified.set_slice(self._displayed_axes)
+            .inverse(corner_pixels_displayed)
+        )
 
         # Update our self._view to to capture the state of things right
         # before we are drawn. Our self._view will used by our
         # drawable_chunks() method.
-        self._view = OctreeView(corners, shape_threshold, self.display)
+        self._view = OctreeView(data_corners, shape_threshold, self.display)
 
     def get_intersection(self) -> OctreeIntersection:
         """The the interesection between the current view and the octree.
@@ -374,8 +388,8 @@ class OctreeImage(Image):
     def _outside_data_range(self, indices) -> bool:
         """Return True if requested slice is outside of data range.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if requested slice is outside data range.
         """
@@ -402,6 +416,11 @@ class OctreeImage(Image):
         this class OctreeImage becomes Image. And the non-tiled multiscale
         logic in Image._set_view_slice goes away entirely.
         """
+        # Consider non-multiscale data as just having a single level
+        from ....components.experimental.chunk import LayerRef
+
+        multilevel_data = self.data if self.multiscale else [self.data]
+
         if self._slice is not None:
             # For now bail out so we don't nuke an existing slice which
             # contains an existing octree. Soon we'll need to figure out
@@ -416,18 +435,21 @@ class OctreeImage(Image):
         indices = self._get_slice_indices()
 
         # TODO_OCTREE: easier way to do this?
-        base_shape = self.data[0].shape
+        base_shape = multilevel_data[0].shape
         base_shape_2d = [base_shape[i] for i in self._dims_displayed]
 
         layer_ref = LayerRef.from_layer(self)
 
         meta = OctreeMetadata(
-            layer_ref, base_shape_2d, len(self.data), self._display.tile_size
+            layer_ref,
+            base_shape_2d,
+            len(multilevel_data),
+            self._display.tile_size,
         )
 
         # OctreeSlice wants all the levels, but only the dimensions
         # of each level that we are currently viewing.
-        slice_data = [level_data[indices] for level_data in self.data]
+        slice_data = [level_data[indices] for level_data in multilevel_data]
         layer_ref = LayerRef.from_layer(self)
 
         # Create the slice, it will create the actual Octree.
@@ -435,7 +457,6 @@ class OctreeImage(Image):
             slice_data,
             layer_ref,
             meta,
-            self._raw_to_displayed,
         )
 
     def _get_slice_indices(self) -> tuple:

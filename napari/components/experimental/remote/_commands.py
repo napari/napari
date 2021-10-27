@@ -3,7 +3,7 @@
 import json
 import logging
 
-from ....layers.image.experimental.octree_image import OctreeImage
+from ....layers.image.experimental.octree_image import _OctreeImageBase
 from ...layerlist import LayerList
 
 LOGGER = logging.getLogger("napari.monitor")
@@ -48,7 +48,7 @@ class RemoteCommands:
             If True the grid is shown.
         """
         for layer in self.layers.selected:
-            if isinstance(layer, OctreeImage):
+            if isinstance(layer, _OctreeImageBase):
                 layer.display.show_grid = show
 
     def process_command(self, event) -> None:
@@ -56,7 +56,7 @@ class RemoteCommands:
 
         Parameters
         ----------
-        command : dict
+        event : dict
             The remote command.
         """
         command = event.command

@@ -22,15 +22,15 @@ https://napari.org
 After the 0.2.5 release, which was our first publicly-announced release, we
 worked to rapidly turn napari into a mature library in the scientific Python
 ecosystem. We added a [code of
-conduct](https://napari.org/docs/developers/CODE_OF_CONDUCT.html), a [mission
+conduct](https://napari.org/community/code_of_conduct.html), a [mission
 and values
-document](https://napari.org/docs/developers/MISSION_AND_VALUES.html), and
+document](https://napari.org/docs/community/mission_and_values.html), and
 adopted a [community governance
-model](https://napari.org/docs/developers/GOVERNANCE.html) (based on
+model](https://napari.org/docs/community/governance.html) (based on
 scikit-image's, and since adopted with modifications by zarr). These are
 accessible from our [developer resources
-page](https://napari.org/docs/developers.html), together with a [public
-roadmap](https://napari.org/docs/developers/ROADMAP_0_3.html) explaining where
+page](https://napari.org/developers/index.html), together with a [public
+roadmap](https://napari.org/roadmaps/0_3.html) explaining where
 the core team will devote effort in the coming months.
 
 We are still humbled by the enthusiasm of the community response to napari and
@@ -59,11 +59,11 @@ supported by imageio, and zarr).  However, we can now *write* to all these
 formats, and read and write point and shape annotations in .csv format.
 Additionally, we have made it possible for anyone to create packages for napari
 to read and write in any other formats through plugins. You can read about our
-plugin architecture [here](https://napari.org/docs/plugins/index.html).
+plugin architecture [here](https://napari.org/plugins/stable/index.html).
 
 Want to drag and drop your favorite file format into napari and have it load
 automatically? See [this
-guide](https://napari.org/docs/plugins/for_plugin_developers.html) to
+guide](https://napari.org/plugins/stable/for_plugin_developers.html) to
 understand how to write your own plugin, see Jackson Brown's
 [napari-aicsimageio](https://github.com/AllenCellModeling/napari-aicsimageio)
 for an exemplar plugin, and get started with Talley's [cookiecutter napari

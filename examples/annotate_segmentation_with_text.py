@@ -111,18 +111,19 @@ text_parameters = {
     'translation': [-3, 0],
 }
 
-with napari.gui_qt():
-    # initialise viewer with coins image
-    viewer = napari.view_image(image, name='coins', rgb=False)
+# initialise viewer with coins image
+viewer = napari.view_image(image, name='coins', rgb=False)
 
-    # add the labels
-    label_layer = viewer.add_labels(label_image, name='segmentation')
+# add the labels
+label_layer = viewer.add_labels(label_image, name='segmentation')
 
-    shapes_layer = viewer.add_shapes(
-        bbox_rects,
-        face_color='transparent',
-        edge_color='green',
-        properties=properties,
-        text=text_parameters,
-        name='bounding box',
-    )
+shapes_layer = viewer.add_shapes(
+    bbox_rects,
+    face_color='transparent',
+    edge_color='green',
+    properties=properties,
+    text=text_parameters,
+    name='bounding box',
+)
+
+napari.run()

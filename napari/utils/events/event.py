@@ -48,16 +48,27 @@ to emit events. The EmitterGroup groups EventEmitter objects.
 For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
-
-
 import inspect
-import traceback
 import warnings
 import weakref
-from collections import OrderedDict
-from typing import Any
+from collections import Counter
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
-from vispy.util.logs import _handle_exception, logger
+from typing_extensions import Literal
+from vispy.util.logs import _handle_exception
+
+from ..translations import trans
 
 
 class Event:
@@ -85,11 +96,11 @@ class Event:
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, native=None, **kwargs):
+    def __init__(self, type: str, native: Any = None, **kwargs: Any):
         # stack of all sources this event has been emitted through
-        self._sources = []
-        self._handled = False
-        self._blocked = False
+        self._sources: List[Any] = []
+        self._handled: bool = False
+        self._blocked: bool = False
         # Store args
         self._type = type
         self._native = native
@@ -97,12 +108,12 @@ class Event:
             setattr(self, k, v)
 
     @property
-    def source(self):
+    def source(self) -> Any:
         """The object that the event applies to (i.e. the source of the event)."""
         return self._sources[-1] if self._sources else None
 
     @property
-    def sources(self):
+    def sources(self) -> List[Any]:
         """List of objects that the event applies to (i.e. are or have
         been a source of the event). Can contain multiple objects in case
         the event traverses a hierarchy of objects.
@@ -116,17 +127,17 @@ class Event:
         return self._sources.pop()
 
     @property
-    def type(self):
+    def type(self) -> str:
         # No docstring; documeted in class docstring
         return self._type
 
     @property
-    def native(self):
+    def native(self) -> Any:
         # No docstring; documeted in class docstring
         return self._native
 
     @property
-    def handled(self):
+    def handled(self) -> bool:
         """This boolean property indicates whether the event has already been
         acted on by an event handler. Since many handlers may have access to
         the same events, it is recommended that each check whether the event
@@ -136,11 +147,11 @@ class Event:
         return self._handled
 
     @handled.setter
-    def handled(self, val):
+    def handled(self, val) -> bool:
         self._handled = bool(val)
 
     @property
-    def blocked(self):
+    def blocked(self) -> bool:
         """This boolean property indicates whether the event will be delivered
         to event callbacks. If it is set to True, then no further callbacks
         will receive the event. When possible, it is recommended to use
@@ -149,10 +160,10 @@ class Event:
         return self._blocked
 
     @blocked.setter
-    def blocked(self, val):
+    def blocked(self, val) -> bool:
         self._blocked = bool(val)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # Try to generate a nice string representation of the event that
         # includes the interesting properties.
         # need to keep track of depth because it is
@@ -173,12 +184,12 @@ class Event:
                     continue
                 attr = getattr(self, name)
 
-                attrs.append(f"{name}={attr}")
+                attrs.append(f"{name}={attr!r}")
             return "<{} {}>".format(self.__class__.__name__, " ".join(attrs))
         finally:
             _event_repr_depth -= 1
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Shorter string representation"""
         return self.__class__.__name__
 
@@ -188,6 +199,13 @@ class Event:
 
 
 _event_repr_depth = 0
+
+
+Callback = Union[Callable[[Event], None], Callable[[], None]]
+CallbackRef = Tuple['weakref.ReferenceType[Any]', str]  # dereferenced method
+CallbackStr = Tuple[
+    Union['weakref.ReferenceType[Any]', object], str
+]  # dereferenced method
 
 
 class EventEmitter:
@@ -228,14 +246,24 @@ class EventEmitter:
         The class of events that this emitter will generate.
     """
 
-    def __init__(self, source=None, type=None, event_class=Event):
-        self._callbacks = []
-        self._callback_refs = []
+    def __init__(
+        self,
+        source: Any = None,
+        type: Optional[str] = None,
+        event_class: Type[Event] = Event,
+    ):
+        # connected callbacks
+        self._callbacks: List[Union[Callback, CallbackRef]] = []
+        # used when connecting new callbacks at specific positions
+        self._callback_refs: List[Optional[str]] = []
+        self._callback_pass_event: List[bool] = []
 
         # count number of times this emitter is blocked for each callback.
-        self._blocked = {None: 0}
+        self._blocked: Dict[Optional[Callback], int] = {None: 0}
+        self._block_counter: Counter[Optional[Callback]] = Counter()
 
         # used to detect emitter loops
+        self._emitting = False
         self.source = source
         self.default_args = {}
         if type is not None:
@@ -244,11 +272,11 @@ class EventEmitter:
         assert inspect.isclass(event_class)
         self.event_class = event_class
 
-        self._ignore_callback_errors = False  # True
+        self._ignore_callback_errors: bool = False  # True
         self.print_callback_errors = 'reminders'  # 'reminders'
 
     @property
-    def ignore_callback_errors(self):
+    def ignore_callback_errors(self) -> bool:
         """Whether exceptions during callbacks will be caught by the emitter
 
         This allows it to continue invoking other callbacks if an error
@@ -257,11 +285,11 @@ class EventEmitter:
         return self._ignore_callback_errors
 
     @ignore_callback_errors.setter
-    def ignore_callback_errors(self, val):
+    def ignore_callback_errors(self, val: bool):
         self._ignore_callback_errors = val
 
     @property
-    def print_callback_errors(self):
+    def print_callback_errors(self) -> str:
         """Print a message and stack trace if a callback raises an exception
 
         Valid values are "first" (only show first instance), "reminders" (show
@@ -275,26 +303,36 @@ class EventEmitter:
         return self._print_callback_errors
 
     @print_callback_errors.setter
-    def print_callback_errors(self, val):
+    def print_callback_errors(
+        self,
+        val: Union[
+            Literal['first'],
+            Literal['reminders'],
+            Literal['always'],
+            Literal['never'],
+        ],
+    ):
         if val not in ('first', 'reminders', 'always', 'never'):
             raise ValueError(
-                'print_callback_errors must be "first", '
-                '"reminders", "always", or "never"'
+                trans._(
+                    'print_callback_errors must be "first", "reminders", "always", or "never"',
+                    deferred=True,
+                )
             )
         self._print_callback_errors = val
 
     @property
-    def callback_refs(self):
+    def callback_refs(self) -> Tuple[Optional[str], ...]:
         """The set of callback references"""
         return tuple(self._callback_refs)
 
     @property
-    def callbacks(self):
+    def callbacks(self) -> Tuple[Union[Callback, CallbackRef], ...]:
         """The set of callbacks"""
         return tuple(self._callbacks)
 
     @property
-    def source(self):
+    def source(self) -> Any:
         """The object that events generated by this emitter apply to"""
         return (
             None if self._source is None else self._source()
@@ -302,13 +340,15 @@ class EventEmitter:
 
     @source.setter
     def source(self, s):
-        if s is None:
-            self._source = None
-        else:
-            self._source = weakref.ref(s)
+        self._source = None if s is None else weakref.ref(s)
 
     def connect(
-        self, callback, ref=False, position='first', before=None, after=None
+        self,
+        callback: Union[Callback, CallbackRef, CallbackStr, 'EmitterGroup'],
+        ref: Union[bool, str] = False,
+        position: Union[Literal['first'], Literal['last']] = 'first',
+        before: Union[str, Callback, List[Union[str, Callback]], None] = None,
+        after: Union[str, Callback, List[Union[str, Callback]], None] = None,
     ):
         """Connect this emitter to a new callback.
 
@@ -340,7 +380,7 @@ class EventEmitter:
         -----
         If ``ref=True``, the callback reference will be determined from:
 
-            1. If ``callback`` is ``tuple``, the secend element in the tuple.
+            1. If ``callback`` is ``tuple``, the second element in the tuple.
             2. The ``__name__`` attribute.
             3. The ``__class__.__name__`` attribute.
 
@@ -360,35 +400,49 @@ class EventEmitter:
         callbacks = self.callbacks
         callback_refs = self.callback_refs
 
-        callback = self._normalize_cb(callback)
+        callback, pass_event = self._normalize_cb(callback)
 
         if callback in callbacks:
             return
 
         # deal with the ref
+        _ref: Union[str, None]
         if isinstance(ref, bool):
             if ref:
                 if isinstance(callback, tuple):
-                    ref = callback[1]
+                    _ref = callback[1]
                 elif hasattr(callback, '__name__'):  # function
-                    ref = callback.__name__
+                    _ref = callback.__name__
                 else:  # Method, or other
-                    ref = callback.__class__.__name__
+                    _ref = callback.__class__.__name__
             else:
-                ref = None
-        elif not isinstance(ref, str):
-            raise TypeError('ref must be a bool or string')
-        if ref is not None and ref in self._callback_refs:
-            raise ValueError('ref "%s" is not unique' % ref)
+                _ref = None
+        elif isinstance(ref, str):
+            _ref = ref
+        else:
+            raise TypeError(
+                trans._(
+                    'ref must be a bool or string',
+                    deferred=True,
+                )
+            )
+        if _ref is not None and _ref in self._callback_refs:
+            raise ValueError(
+                trans._('ref "{ref}" is not unique', deferred=True, ref=_ref)
+            )
 
         # positions
         if position not in ('first', 'last'):
             raise ValueError(
-                'position must be "first" or "last", not %s' % position
+                trans._(
+                    'position must be "first" or "last", not {position}',
+                    deferred=True,
+                    position=position,
+                )
             )
 
-        # bounds
-        bounds = list()  # upper & lower bnds (inclusive) of possible cb locs
+        # bounds: upper & lower bnds (inclusive) of possible cb locs
+        bounds: List[int] = list()
         for ri, criteria in enumerate((before, after)):
             if criteria is None or criteria == []:
                 bounds.append(len(callback_refs) if ri == 0 else 0)
@@ -397,16 +451,19 @@ class EventEmitter:
                     criteria = [criteria]
                 for c in criteria:
                     count = sum(
-                        [
-                            (c == cn or c == cc)
-                            for cn, cc in zip(callback_refs, callbacks)
-                        ]
+                        c in [cn, cc]
+                        for cn, cc in zip(callback_refs, callbacks)
                     )
                     if count != 1:
                         raise ValueError(
-                            'criteria "%s" is in the current '
-                            'callback list %s times:\n%s\n%s'
-                            % (criteria, count, callback_refs, callbacks)
+                            trans._(
+                                'criteria "{criteria}" is in the current callback list {count} times:\n{callback_refs}\n{callbacks}',
+                                deferred=True,
+                                criteria=criteria,
+                                count=count,
+                                callback_refs=callback_refs,
+                                callbacks=callbacks,
+                            )
                         )
                 matches = [
                     ci
@@ -418,18 +475,23 @@ class EventEmitter:
                 bounds.append(matches[0] if ri == 0 else (matches[-1] + 1))
         if bounds[0] < bounds[1]:  # i.e., "place before" < "place after"
             raise RuntimeError(
-                'cannot place callback before "%s" '
-                'and after "%s" for callbacks: %s'
-                % (before, after, callback_refs)
+                trans._(
+                    'cannot place callback before "{before}" and after "{after}" for callbacks: {callback_refs}',
+                    deferred=True,
+                    before=before,
+                    after=after,
+                    callback_refs=callback_refs,
+                )
             )
         idx = bounds[1] if position == 'first' else bounds[0]  # 'last'
 
         # actually add the callback
         self._callbacks.insert(idx, callback)
-        self._callback_refs.insert(idx, ref)
+        self._callback_refs.insert(idx, _ref)
+        self._callback_pass_event.insert(idx, pass_event)
         return callback  # allows connect to be used as a decorator
 
-    def disconnect(self, callback=None):
+    def disconnect(self, callback: Union[Callback, CallbackRef, None] = None):
         """Disconnect a callback from this emitter.
 
         If no callback is specified, then *all* callbacks are removed.
@@ -439,28 +501,86 @@ class EventEmitter:
             self._callbacks = []
             self._callback_refs = []
         else:
-            callback = self._normalize_cb(callback)
+            callback, _pass_event = self._normalize_cb(callback)
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
+                self._callback_pass_event.pop(idx)
 
-    def _normalize_cb(self, callback):
+    @staticmethod
+    def _get_proper_name(callback):
+        assert inspect.ismethod(callback)
+        obj = callback.__self__
+        if (
+            not hasattr(obj, callback.__name__)
+            or getattr(obj, callback.__name__) != callback
+        ):
+            # some decorators will alter method.__name__, so that obj.method
+            # will not be equal to getattr(obj, obj.method.__name__). We check
+            # for that case here and traverse to find the right method here.
+            for name in dir(obj):
+                meth = getattr(obj, name)
+                if inspect.ismethod(meth) and meth == callback:
+                    return obj, name
+            raise RuntimeError(
+                f"During bind method {callback} of object {obj} an error happen"
+            )
+        return obj, callback.__name__
+
+    @staticmethod
+    def _check_signature(fun: Callable) -> bool:
+        """
+        Check if function will accept event parameter
+        """
+        signature = inspect.signature(fun)
+        parameters_list = list(signature.parameters.values())
+
+        if sum(map(_is_pos_arg, parameters_list)) > 1:
+            raise RuntimeError(
+                "Binning function cannot have more than one positional argument"
+            )
+
+        return any(
+            map(
+                lambda x: x.kind
+                in [
+                    inspect.Parameter.POSITIONAL_ONLY,
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    inspect.Parameter.VAR_POSITIONAL,
+                ],
+                signature.parameters.values(),
+            )
+        )
+
+    def _normalize_cb(
+        self, callback
+    ) -> Tuple[Union[CallbackRef, Callback], bool]:
         # dereference methods into a (self, method_name) pair so that we can
         # make the connection without making a strong reference to the
         # instance.
+        start_callback = callback
         if inspect.ismethod(callback):
-            callback = (callback.__self__, callback.__name__)
-
+            callback = self._get_proper_name(callback)
         # always use a weak ref
         if isinstance(callback, tuple) and not isinstance(
             callback[0], weakref.ref
         ):
-            callback = (weakref.ref(callback[0]),) + callback[1:]
+            callback = (weakref.ref(callback[0]), *callback[1:])
+
+        if isinstance(start_callback, Callable):
+            callback = callback, self._check_signature(start_callback)
+        else:
+            obj = callback[0]()
+            if obj is None:
+                callback = callback, False
+            else:
+                callback_fun = getattr(obj, callback[1])
+                callback = callback, self._check_signature(callback_fun)
 
         return callback
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Event:
         """__call__(**kwargs)
         Invoke all callbacks for this emitter.
 
@@ -489,25 +609,37 @@ class EventEmitter:
         # Add our source to the event; remove it after all callbacks have been
         # invoked.
         event._push_source(self.source)
+        self._emitting = True
         try:
             if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
+                self._block_counter.update([None])
                 return event
 
-            rem = []
-            for cb in self._callbacks[:]:
+            rem: List[CallbackRef] = []
+            for cb, pass_event in zip(
+                self._callbacks[:], self._callback_pass_event[:]
+            ):
                 if isinstance(cb, tuple):
                     obj = cb[0]()
                     if obj is None:
-                        rem.append(cb)
+                        rem.append(cb)  # add dead weakref
                         continue
+                    old_cb = cb
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
+                        warnings.warn(
+                            f"Problem with function {old_cb[1]} of {obj} connected to event {self}",
+                            stacklevel=2,
+                            category=RuntimeWarning,
+                        )
                         continue
+                    cb = cast(Callback, cb)
 
                 if blocked.get(cb, 0) > 0:
+                    self._block_counter.update([cb])
                     continue
 
-                self._invoke_callback(cb, event)
+                self._invoke_callback(cb, event if pass_event else None)
                 if event.blocked:
                     break
 
@@ -515,15 +647,35 @@ class EventEmitter:
             for cb in rem:
                 self.disconnect(cb)
         finally:
+            self._emitting = False
             if event._pop_source() != self.source:
-                raise RuntimeError("Event source-stack mismatch.")
+                raise RuntimeError(
+                    trans._(
+                        "Event source-stack mismatch.",
+                        deferred=True,
+                    )
+                )
 
         return event
 
-    def _invoke_callback(self, cb, event):
+    def _invoke_callback(
+        self, cb: Union[Callback, Callable[[], None]], event: Optional[Event]
+    ):
         try:
-            cb(event)
-        except Exception:
+            if event is not None:
+                cb(event)
+            else:
+                cb()
+        except Exception as e:
+            # dead Qt object with living python pointer. not importing Qt
+            # here... but this error is consistent across backends
+            if (
+                isinstance(e, RuntimeError)
+                and 'C++' in str(e)
+                and str(e).endswith(('has been deleted', 'already deleted.'))
+            ):
+                self.disconnect(cb)
+                return
             _handle_exception(
                 self.ignore_callback_errors,
                 self.print_callback_errors,
@@ -531,32 +683,34 @@ class EventEmitter:
                 cb_event=(cb, event),
             )
 
-    def _prepare_event(self, *args, **kwargs):
+    def _prepare_event(self, *args, **kwargs) -> Event:
         # When emitting, this method is called to create or otherwise alter
         # an event before it is sent to callbacks. Subclasses may extend
         # this method to make custom modifications to the event.
         if len(args) == 1 and not kwargs and isinstance(args[0], Event):
-            event = args[0]
+            event: Event = args[0]
             # Ensure that the given event matches what we want to emit
             assert isinstance(event, self.event_class)
         elif not args:
-            args = self.default_args.copy()
-            args.update(kwargs)
-            event = self.event_class(**args)
+            _kwargs = self.default_args.copy()
+            _kwargs.update(kwargs)
+            event = self.event_class(**_kwargs)
         else:
             raise ValueError(
-                "Event emitters can be called with an Event "
-                "instance or with keyword arguments only."
+                trans._(
+                    "Event emitters can be called with an Event instance or with keyword arguments only.",
+                    deferred=True,
+                )
             )
         return event
 
-    def blocked(self, callback=None):
+    def blocked(self, callback: Optional[Callback] = None) -> bool:
         """Return boolean indicating whether the emitter is blocked for
         the given callback.
         """
         return self._blocked.get(callback, 0) > 0
 
-    def block(self, callback=None):
+    def block(self, callback: Optional[Callback] = None):
         """Block this emitter. Any attempts to emit an event while blocked
         will be silently ignored. If *callback* is given, then the emitter
         is only blocked for that specific callback.
@@ -566,7 +720,7 @@ class EventEmitter:
         """
         self._blocked[callback] = self._blocked.get(callback, 0) + 1
 
-    def unblock(self, callback=None):
+    def unblock(self, callback: Optional[Callback] = None):
         """Unblock this emitter. See :func:`event.EventEmitter.block`.
 
         Note: Use of ``unblock(None)`` only reverses the effect of
@@ -575,8 +729,12 @@ class EventEmitter:
         """
         if callback not in self._blocked or self._blocked[callback] == 0:
             raise RuntimeError(
-                "Cannot unblock %s for callback %s; emitter "
-                "was not previously blocked." % (self, callback)
+                trans._(
+                    "Cannot unblock {self_} for callback {callback}; emitter was not previously blocked.",
+                    deferred=True,
+                    self_=self,
+                    callback=callback,
+                )
             )
         b = self._blocked[callback] - 1
         if b == 0 and callback is not None:
@@ -584,7 +742,7 @@ class EventEmitter:
         else:
             self._blocked[callback] = b
 
-    def blocker(self, callback=None):
+    def blocker(self, callback: Optional[Callback] = None):
         """Return an EventBlocker to be used in 'with' statements
 
         Notes
@@ -603,9 +761,18 @@ class WarningEmitter(EventEmitter):
     warning message.
     """
 
-    def __init__(self, message, *args, **kwargs):
+    def __init__(
+        self,
+        message,
+        category=FutureWarning,
+        stacklevel=3,
+        *args,
+        **kwargs,
+    ):
         self._message = message
         self._warned = False
+        self._category = category
+        self._stacklevel = stacklevel
         EventEmitter.__init__(self, *args, **kwargs)
 
     def connect(self, cb, *args, **kwargs):
@@ -624,8 +791,11 @@ class WarningEmitter(EventEmitter):
         if isinstance(cb, tuple) and getattr(cb[0], cb[1], None) is None:
             return
 
-        traceback.print_stack()
-        logger.warning(self._message)
+        import warnings
+
+        warnings.warn(
+            self._message, category=self._category, stacklevel=self._stacklevel
+        )
         self._warned = True
 
 
@@ -663,56 +833,49 @@ class EmitterGroup(EventEmitter):
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
         group of emitters to default callbacks.
-    deprecated: dict
-        dict with mapping old emitter name to new emitter name
     emitters : keyword arguments
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
 
     def __init__(
-        self, source=None, auto_connect=True, deprecated=None, **emitters
+        self,
+        source: Any = None,
+        auto_connect: bool = True,
+        **emitters: Union[Type[Event], EventEmitter, None],
     ):
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
-        self._deprecated = {} if deprecated is None else deprecated
         self.auto_connect_format = "on_%s"
-        self._emitters = OrderedDict()
+        self._emitters: Dict[str, EventEmitter] = dict()
         # whether the sub-emitters have been connected to the group:
-        self._emitters_connected = False
-        self.add(**emitters)
+        self._emitters_connected: bool = False
+        self.add(**emitters)  # type: ignore
 
-    # mypy fix for dynamic attribute access
-    def __getattr__(self, name: str) -> Any:
-        if name in self._deprecated:
-            warnings.warn(
-                f"emitter {name} is deprecated, {self._deprecated[name]} provided instead",
-                category=FutureWarning,
-            ),
-            return object.__getattribute__(self, self._deprecated[name])
+    def __getattr__(self, name) -> EventEmitter:
         return object.__getattribute__(self, name)
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> EventEmitter:
         """
         Return the emitter assigned to the specified name.
         Note that emitters may also be retrieved as an attribute of the
         EmitterGroup.
         """
-        if name in self._deprecated:
-            warnings.warn(
-                f"emitter {name} is deprecated, {self._deprecated[name]} provided instead",
-                category=FutureWarning,
-            ),
-            return self._emitters[self._deprecated[name]]
         return self._emitters[name]
 
-    def __setitem__(self, name, emitter):
+    def __setitem__(
+        self, name: str, emitter: Union[Type[Event], EventEmitter, None]
+    ):
         """
         Alias for EmitterGroup.add(name=emitter)
         """
-        self.add(**{name: emitter})
+        self.add(**{name: emitter})  # type: ignore
 
-    def add(self, auto_connect=None, **kwargs):
+    def add(
+        self,
+        auto_connect: Optional[bool] = None,
+        **kwargs: Union[Type[Event], EventEmitter, None],
+    ):
         """Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter
         instance or an Event subclass, in which case an EventEmitter will be
@@ -735,12 +898,19 @@ class EmitterGroup(EventEmitter):
         for name in kwargs:
             if name in self._emitters:
                 raise ValueError(
-                    "EmitterGroup already has an emitter named '%s'" % name
+                    trans._(
+                        "EmitterGroup already has an emitter named '{name}'",
+                        deferred=True,
+                        name=name,
+                    )
                 )
             elif hasattr(self, name):
                 raise ValueError(
-                    "The name '%s' cannot be used as an emitter; "
-                    "it is already an attribute of EmitterGroup" % name
+                    trans._(
+                        "The name '{name}' cannot be used as an emitter; it is already an attribute of EmitterGroup",
+                        deferred=True,
+                        name=name,
+                    )
                 )
 
         # add each emitter specified in the keyword arguments
@@ -748,24 +918,31 @@ class EmitterGroup(EventEmitter):
             if emitter is None:
                 emitter = Event
 
-            if inspect.isclass(emitter) and issubclass(emitter, Event):
+            if inspect.isclass(emitter) and issubclass(emitter, Event):  # type: ignore
                 emitter = EventEmitter(
-                    source=self.source, type=name, event_class=emitter
+                    source=self.source, type=name, event_class=emitter  # type: ignore
                 )
             elif not isinstance(emitter, EventEmitter):
-                raise Exception(
-                    'Emitter must be specified as either an '
-                    'EventEmitter instance or Event subclass. '
-                    '(got %s=%s)' % (name, emitter)
+                raise RuntimeError(
+                    trans._(
+                        'Emitter must be specified as either an EventEmitter instance or Event subclass. (got {name}={emitter})',
+                        deferred=True,
+                        name=name,
+                        emitter=emitter,
+                    )
                 )
 
             # give this emitter the same source as the group.
             emitter.source = self.source
 
-            setattr(self, name, emitter)
+            setattr(self, name, emitter)  # this is a bummer for typing.
             self._emitters[name] = emitter
 
-            if auto_connect and self.source is not None:
+            if (
+                auto_connect
+                and self.source is not None
+                and hasattr(self.source, self.auto_connect_format % name)
+            ):
                 emitter.connect((self.source, self.auto_connect_format % name))
 
             # If emitters are connected to the group already, then this one
@@ -774,11 +951,11 @@ class EmitterGroup(EventEmitter):
                 emitter.connect(self)
 
     @property
-    def emitters(self):
+    def emitters(self) -> Dict[str, EventEmitter]:
         """List of current emitters in this group."""
         return self._emitters
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[str, None, None]:
         """
         Iterates over the names of emitters in this group.
         """
@@ -797,7 +974,12 @@ class EmitterGroup(EventEmitter):
             em.unblock()
 
     def connect(
-        self, callback, ref=False, position='first', before=None, after=None
+        self,
+        callback: Union[Callback, CallbackRef, 'EmitterGroup'],
+        ref: Union[bool, str] = False,
+        position: Union[Literal['first'], Literal['last']] = 'first',
+        before: Union[str, Callback, List[Union[str, Callback]], None] = None,
+        after: Union[str, Callback, List[Union[str, Callback]], None] = None,
     ):
         """Connect the callback to the event group. The callback will receive
         events from *all* of the emitters in the group.
@@ -810,7 +992,7 @@ class EmitterGroup(EventEmitter):
             self, callback, ref, position, before, after
         )
 
-    def disconnect(self, callback=None):
+    def disconnect(self, callback: Optional[Callback] = None):
         """Disconnect the callback from this group. See
         :func:`connect() <vispy.event.EmitterGroup.connect>` and
         :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>` for
@@ -827,7 +1009,8 @@ class EmitterGroup(EventEmitter):
         # while simultaneously eliminating the overhead if nobody is listening.
         if connect:
             for emitter in self:
-                self[emitter].connect(self)
+                if not isinstance(self[emitter], WarningEmitter):
+                    self[emitter].connect(self)
         else:
             for emitter in self:
                 self[emitter].disconnect(self)
@@ -847,7 +1030,7 @@ class EmitterGroup(EventEmitter):
             elif isinstance(emitter, EmitterGroup):
                 emitter.ignore_callback_errors_all(ignore)
 
-    def blocker_all(self):
+    def blocker_all(self) -> 'EventBlockerAll':
         """Return an EventBlockerAll to be used in 'with' statements
 
         Notes
@@ -869,9 +1052,16 @@ class EventBlocker:
     def __init__(self, target, callback=None):
         self.target = target
         self.callback = callback
+        self._base_count = target._block_counter.get(callback, 0)
+
+    @property
+    def count(self):
+        n_blocked = self.target._block_counter.get(self.callback, 0)
+        return n_blocked - self._base_count
 
     def __enter__(self):
         self.target.block(self.callback)
+        return self
 
     def __exit__(self, *args):
         self.target.unblock(self.callback)
@@ -891,3 +1081,17 @@ class EventBlockerAll:
 
     def __exit__(self, *args):
         self.target.unblock_all()
+
+
+def _is_pos_arg(param: inspect.Parameter):
+    """
+    Check if param is positional or named and has no default parameter.
+    """
+    return (
+        param.kind
+        in [
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ]
+        and param.default == inspect.Parameter.empty
+    )

@@ -1,8 +1,9 @@
+import inspect
+
 import numpy as np
 import pytest
 
 from napari._tests.utils import layer_test_data
-from napari.utils.misc import callsignature
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -16,14 +17,14 @@ def test_attrs_arrays(Layer, data, ndim):
     properties = layer._get_state()
 
     # Check every property is in call signature
-    signature = callsignature(Layer)
+    signature = inspect.signature(Layer)
 
     for prop in properties.keys():
         assert prop in signature.parameters
 
     # Check number of properties is same as number in signature
-    # excluding affine transform which is not yet in `_get_state`
-    assert len(properties) == len(signature.parameters) - 1
+    # excluding affine transform and `cache` which is not yet in `_get_state`
+    assert len(properties) == len(signature.parameters) - 2
 
     # Check new layer can be created
     new_layer = Layer(**properties)

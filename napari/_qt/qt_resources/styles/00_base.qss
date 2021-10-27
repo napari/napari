@@ -10,6 +10,20 @@ might be possible to convert px to em by 1px = 0.0625em
 
 
 /* ----------------- QWidget ------------------ */
+/* 
+
+mappings between property and QPalette.ColorRole:
+these colors can be looked up dynamically in widgets using, e.g
+``widget.palette().color(QPalette.Window)``
+
+background -> QPalette.Window/QPalette.Background
+  background-color -> QPalette.Window/QPalette.Background
+color -> QPalette.WindowText/QPalette.Foreground
+selection-color -> QPalette.HighlightedText
+selection-background-color -> QPalette.Highlight
+alternate-background-color -> QPalette.AlternateBase
+
+*/
 
 QWidget {
   background-color: {{ background }};
@@ -84,6 +98,11 @@ QWidget[emphasized="true"] QPushButton:pressed {
   background-color: {{ secondary }};
 }
 
+
+QWidget[emphasized="true"] QPushButton:checked {
+  background-color: {{ current }};
+}
+
 /* ----------------- QComboBox ------------------ */
 
 QComboBox {
@@ -104,7 +123,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-   image: url(":/themes/{{ folder }}/drop_down.svg");
+   image: url(":/themes/{{ name }}/drop_down_50.svg");
    width: 14px;
    height: 14px;
 }
@@ -151,6 +170,11 @@ QAbstractSpinBox {
   min-width: 70px;
   min-height: 18px;
   border-radius: 2px;
+}
+
+QLabeledSlider > QAbstractSpinBox {
+  min-width: 10px;
+  padding: 0px;
 }
 
 QWidget[emphasized="true"] QAbstractSpinBox {
@@ -206,11 +230,15 @@ QAbstractSpinBox::down-arrow {
 }
 
 QAbstractSpinBox::up-arrow {
-   image: url(":/themes/{{ folder }}/plus.svg");
+   image: url(":/themes/{{ name }}/plus_50.svg");
 }
 
 QAbstractSpinBox::down-arrow {
-   image: url(":/themes/{{ folder }}/minus.svg");
+   image: url(":/themes/{{ name }}/minus_50.svg");
+}
+
+QLabeledRangeSlider > QAbstractSpinBox {
+  min-width: 5px;
 }
 
 /* ----------------- QCheckBox ------------------ */
@@ -239,11 +267,11 @@ QCheckBox::indicator:unchecked {
 }
 
 QCheckBox::indicator:checked {
-  image: url(":/themes/{{ folder }}/check.svg");
+  image: url(":/themes/{{ name }}/check.svg");
 }
 
 QCheckBox::indicator:indeterminate {
-  image: url(":/themes/{{ folder }}/minus.svg");
+  image: url(":/themes/{{ name }}/minus.svg");
   padding: 2px;
   width: 14px;
   height: 14px;
@@ -290,7 +318,7 @@ QRadioButton::indicator::checked {
 }
 
 QRadioButton::indicator::checked {
-  image: url(":/themes/{{ folder }}/circle.svg");
+  image: url(":/themes/{{ name }}/circle.svg");
   height: 6px;
   width: 6px;
   padding: 5px;
@@ -368,20 +396,12 @@ QWidget[emphasized="true"] QSlider::handle:hover {
 }
 
 
-
 QRangeSlider {
   qproperty-barColor: {{ primary }};
-  qproperty-backgroundColor: {{ foreground }};
-  qproperty-handleColor: {{ highlight }};
-  qproperty-handleBorderColor: {{ highlight }};
-  min-height: 18px;
 }
 
 QWidget[emphasized="true"] QRangeSlider {
   qproperty-barColor: {{ highlight }};
-  qproperty-backgroundColor: {{ primary }};
-  qproperty-handleColor: {{ secondary }};
-  qproperty-handleBorderColor: {{ secondary }};
 }
 
 /* ----------------- QScrollBar ------------------ */
@@ -467,19 +487,19 @@ QWidget[emphasized="true"] QScrollBar::sub-line:horizontal:pressed {
 }
 
 QScrollBar:left-arrow:horizontal {
-    image: url(":/themes/{{ folder }}/left_arrow.svg");
+    image: url(":/themes/{{ name }}/left_arrow.svg");
 }
 
 QScrollBar::right-arrow:horizontal {
-    image: url(":/themes/{{ folder }}/right_arrow.svg");
+    image: url(":/themes/{{ name }}/right_arrow.svg");
 }
 
 QScrollBar:up-arrow:vertical {
-    image: url(":/themes/{{ folder }}/up_arrow.svg");
+    image: url(":/themes/{{ name }}/up_arrow.svg");
 }
 
 QScrollBar::down-arrow:vertical {
-    image: url(":/themes/{{ folder }}/down_arrow.svg");
+    image: url(":/themes/{{ name }}/down_arrow.svg");
 }
 
 QScrollBar::left-arrow,
@@ -624,4 +644,10 @@ QLCDNumber {
 
 QStatusBar::item{
   border: None;
+}
+
+/* ----------------- QHeaderView ----------------- */
+QHeaderView::section {
+  background-color: {{ background }};
+  padding: 2px;
 }

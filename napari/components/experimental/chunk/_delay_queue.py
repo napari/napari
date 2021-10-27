@@ -2,15 +2,19 @@
 
 Delay load requests a configurable amount of time before submitting them.
 """
+from __future__ import annotations
+
 import logging
 import threading
 import time
-from typing import Callable, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Callable, List, NamedTuple, Optional
 
 from ....utils.perf import add_counter_event
-from ._request import ChunkRequest
 
 LOGGER = logging.getLogger("napari.loader")
+
+if TYPE_CHECKING:
+    from ._request import ChunkRequest
 
 
 class QueueEntry(NamedTuple):
@@ -126,8 +130,8 @@ class DelayQueue(threading.Thread):
         should_cancel : Callable[[ChunkRequest], bool]
             Cancel the request if this returns True.
 
-        Return
-        ------
+        Returns
+        -------
         List[ChunkRequests]
             The requests that were cancelled, if any.
         """
@@ -153,8 +157,8 @@ class DelayQueue(threading.Thread):
         now : float
             Current time in seconds.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the entry was submitted.
         """

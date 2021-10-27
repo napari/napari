@@ -2,6 +2,8 @@
 
 ChunkLoader has one or more of these. They load data in worker pools.
 """
+from __future__ import annotations
+
 import logging
 from concurrent.futures import (
     CancelledError,
@@ -9,10 +11,7 @@ from concurrent.futures import (
     ProcessPoolExecutor,
     ThreadPoolExecutor,
 )
-from typing import Callable, Dict, List, Optional, Union
-
-from ._delay_queue import DelayQueue
-from ._request import ChunkRequest
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 
 # Executor for either a thread pool or a process pool.
 PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
@@ -20,6 +19,9 @@ PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
 LOGGER = logging.getLogger("napari.loader")
 
 DoneCallback = Optional[Callable[[Future], None]]
+
+if TYPE_CHECKING:
+    from ._request import ChunkRequest
 
 
 class LoaderPool:
@@ -53,6 +55,8 @@ class LoaderPool:
     """
 
     def __init__(self, config: dict, on_done_loader: DoneCallback = None):
+        from ._delay_queue import DelayQueue
+
         self.config = config
         self._on_done_loader = on_done_loader
 
@@ -87,8 +91,8 @@ class LoaderPool:
         should_cancel : Callable[[ChunkRequest], bool]
             Cancel the request if this returns True.
 
-        Return
-        ------
+        Returns
+        -------
         List[ChunkRequests]
             The requests that were cancelled, if any.
         """

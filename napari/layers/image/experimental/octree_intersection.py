@@ -6,7 +6,9 @@ import numpy as np
 
 from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel
-from .octree_util import OctreeDisplayOptions
+from .octree_util import OctreeDisplayOptions, spiral_index
+
+MAX_NUM_CHUNKS = 81
 
 
 class OctreeView(NamedTuple):
@@ -33,8 +35,8 @@ class OctreeView(NamedTuple):
     def data_width(self) -> int:
         """The width between the corners, in data coordinates.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The width in data coordinates.
         """
@@ -44,8 +46,8 @@ class OctreeView(NamedTuple):
     def auto_level(self) -> bool:
         """True if the octree level should be selected automatically.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the octree level should be selected automatically.
         """
@@ -142,8 +144,8 @@ class OctreeIntersection:
         span : Tuple[float, float]
             The span in image coordinates, [y0..y1]
 
-        Return
-        ------
+        Returns
+        -------
         range
             The range of tiles across the columns.
         """
@@ -158,8 +160,8 @@ class OctreeIntersection:
         span : Tuple[float, float]
             The span in image coordinates, [x0..x1]
 
-        Return
-        ------
+        Returns
+        -------
         range
             The range of tiles across the columns.
         """
@@ -201,20 +203,27 @@ class OctreeIntersection:
         # OctreeChunks can be loaded or unloaded. Unloaded chunks are not
         # drawn until their data as been loaded in. But here we return
         # every chunk within the view.
-        for row in self._row_range:
-            for col in self._col_range:
-                chunk = self.level.get_chunk(row, col, create=create)
-                if chunk is not None:
-                    chunks.append(chunk)
 
+        # We use spiral indexing to get chunks from the center first
+        for i, (row, col) in enumerate(
+            spiral_index(self._row_range, self._col_range)
+        ):
+            chunk = self.level.get_chunk(row, col, create=create)
+            if chunk is not None:
+                chunks.append(chunk)
+            # We place a limit on the maximum number of chunks that
+            # we'll ever take from a level to deal with the single
+            # level tiled rendering case.
+            if i > MAX_NUM_CHUNKS:
+                break
         return chunks
 
     @property
     def tile_state(self) -> dict:
         """Return tile state, for the monitor.
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The tile state.
         """
@@ -232,8 +241,8 @@ class OctreeIntersection:
     def tile_config(self) -> dict:
         """Return tile config, for the monitor.
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The file config.
         """

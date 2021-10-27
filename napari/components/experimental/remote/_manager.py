@@ -17,13 +17,9 @@ class RemoteManager:
     napari except for utils.events.
 
     However RemoteManager and its children RemoteCommands and
-    RemoteMessages do very much depend on napari. RemoteCommands
-    executes commands sent to napari by clients. RemoteMessages
-    send message to remote clients, so as the current state
-    of the layers.
-
-    TODO_OCTREE: We expect this class to grow, if not we can nuke it
-    and let ViewerModel just create both of these directly.
+    RemoteMessages do very much depend on napari. RemoteCommands executes
+    commands sent to napari by clients. RemoteMessages sends messages to
+    remote clients, such as the current state of the layers.
 
     Parameters
     ----------

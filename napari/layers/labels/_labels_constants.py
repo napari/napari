@@ -1,7 +1,9 @@
 import sys
+from collections import OrderedDict
 from enum import auto
 
 from ...utils.misc import StringEnum
+from ...utils.translations import trans
 
 
 class Mode(StringEnum):
@@ -50,17 +52,11 @@ class LabelColorMode(StringEnum):
     DIRECT = auto()
 
 
-class LabelBrushShape(StringEnum):
-    """
-    LabelBrushShape: Labelling brush shape.
-
-    CIRCLE (default) uses circle paintbrush (case insensitive).
-
-    SQUARE uses square paintbrush (case insensitive).
-    """
-
-    CIRCLE = auto()
-    SQUARE = auto()
-
-
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
+
+LABEL_COLOR_MODE_TRANSLATIONS = OrderedDict(
+    [
+        (LabelColorMode.AUTO, trans._("auto")),
+        (LabelColorMode.DIRECT, trans._("direct")),
+    ]
+)

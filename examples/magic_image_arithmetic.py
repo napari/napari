@@ -22,7 +22,7 @@ class Operation(enum.Enum):
 # really matter. But this syntax would let you specify that a parameter is a
 # napari object type without actually importing or depending on napari.
 # Note: here we use `napari.types.ImageData` as our parameter annotations,
-# which means our function will be passed layer.data instead of 
+# which means our function will be passed layer.data instead of
 # the full layer instance
 def image_arithmetic(
     layerA: 'napari.types.ImageData',
@@ -30,19 +30,16 @@ def image_arithmetic(
     layerB: 'napari.types.ImageData',
 ) -> 'napari.types.ImageData':
     """Adds, subtracts, multiplies, or divides two same-shaped image layers."""
-    return operation.value(layerA, layerB)
+    if layerA is not None and layerB is not None:
+        return operation.value(layerA, layerB)
 
 
-# We also use the additional `call_button` option to add a button that
-# will trigger function execution.
-magic = {'call_button': "execute"}
+# create a new viewer with a couple image layers
+viewer = napari.Viewer()
+viewer.add_image(np.random.rand(20, 20), name="Layer 1")
+viewer.add_image(np.random.rand(20, 20), name="Layer 2")
 
+# Add our magic function to napari
+viewer.window.add_function_widget(image_arithmetic)
 
-with napari.gui_qt():
-    # create a new viewer with a couple image layers
-    viewer = napari.Viewer()
-    viewer.add_image(np.random.rand(20, 20), name="Layer 1")
-    viewer.add_image(np.random.rand(20, 20), name="Layer 2")
-
-    # Add our magic function to napari
-    viewer.window.add_function_widget(image_arithmetic, magic_kwargs=magic)
+napari.run()

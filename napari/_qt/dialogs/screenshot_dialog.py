@@ -4,6 +4,9 @@ from typing import Any, Callable
 
 from qtpy.QtWidgets import QFileDialog, QMessageBox
 
+from ...utils.misc import in_ipython
+from ...utils.translations import trans
+
 
 class ScreenshotDialog(QFileDialog):
     """
@@ -25,12 +28,19 @@ class ScreenshotDialog(QFileDialog):
         save_function: Callable[[str], Any],
         parent=None,
         directory=str(Path.home()),
+        history=None,
     ):
-        super().__init__(parent, "Save screenshot")
+        super().__init__(parent, trans._("Save screenshot"))
         self.setAcceptMode(QFileDialog.AcceptSave)
         self.setFileMode(QFileDialog.AnyFile)
-        self.setNameFilter("Image files (*.png *.bmp *.gif *.tif *.tiff)")
+        self.setNameFilter(
+            trans._("Image files (*.png *.bmp *.gif *.tif *.tiff)")
+        )
         self.setDirectory(directory)
+        self.setHistory(history)
+
+        if in_ipython():
+            self.setOptions(QFileDialog.DontUseNativeDialog)
 
         self.save_function = save_function
 
@@ -41,8 +51,11 @@ class ScreenshotDialog(QFileDialog):
             if os.path.exists(save_path):
                 res = QMessageBox().warning(
                     self,
-                    "Confirm overwrite",
-                    f"{save_path} already exists. Do you want to replace it?",
+                    trans._("Confirm overwrite"),
+                    trans._(
+                        "{save_path} already exists. Do you want to replace it?",
+                        save_path=save_path,
+                    ),
                     QMessageBox.Yes | QMessageBox.No,
                     QMessageBox.No,
                 )

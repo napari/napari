@@ -3,10 +3,10 @@ from contextlib import contextmanager
 import numpy as np
 import pytest
 
-from napari._qt._constants import LoopMode
 from napari._qt.widgets.qt_dims import QtDims
 from napari._qt.widgets.qt_dims_slider import AnimationWorker
 from napari.components import Dims
+from napari.settings._constants import LoopMode
 
 
 @contextmanager
@@ -14,13 +14,12 @@ def make_worker(
     qtbot, nframes=8, fps=20, frame_range=None, loop_mode=LoopMode.LOOP
 ):
     # sets up an AnimationWorker ready for testing, and breaks down when done
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     qtdims = QtDims(dims)
     qtbot.addWidget(qtdims)
     nz = 8
-    max_index = nz - 1
     step = 1
-    dims.set_range(0, (0, max_index, step))
+    dims.set_range(0, (0, nz, step))
     slider_widget = qtdims.slider_widgets[0]
     slider_widget.loop_mode = loop_mode
     slider_widget.fps = fps
@@ -98,9 +97,9 @@ def test_animation_thread_once(qtbot):
 
 
 @pytest.fixture()
-def view(make_test_viewer):
+def view(make_napari_viewer):
     """basic viewer with data that we will use a few times"""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     data = np.random.random((10, 10, 15))
@@ -142,7 +141,7 @@ def test_play_api(qtbot, view):
     """Test that the QtDims.play() function advances a few frames"""
     view.dims._frame = 0
 
-    def increment(e):
+    def increment():
         view.dims._frame += 1
         # if we don't "enable play" again, view.dims won't request a new frame
         view.dims._play_ready = True

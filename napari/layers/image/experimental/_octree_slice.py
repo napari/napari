@@ -2,23 +2,30 @@
 
 For viewing one slice of a multiscale image using an octree.
 """
+from __future__ import annotations
+
 import logging
 import math
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, LayerRef
-from ....types import ArrayLike
-from .._image_view import ImageView
+from ....utils.translations import trans
 from ._octree_loader import OctreeLoader
 from .octree import Octree
-from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
 from .octree_level import OctreeLevel, OctreeLevelInfo
 from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree.slice")
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk import (
+        ChunkRequest,
+        LayerRef,
+        OctreeLocation,
+    )
+    from .octree_chunk import OctreeChunk
 
 
 class OctreeSlice:
@@ -32,14 +39,11 @@ class OctreeSlice:
         Reference to the layer containing the slice.
     meta : OctreeMetadata
         The base shape and other info.
-    image_converter : Callable[[ArrayLike], ArrayLike]
-        For converting to displaying data.
 
     Attributes
     ----------
     loader : OctreeLoader
         Uses the napari ChunkLoader to load OctreeChunks.
-
     """
 
     def __init__(
@@ -47,7 +51,6 @@ class OctreeSlice:
         data,
         layer_ref: LayerRef,
         meta: OctreeMetadata,
-        image_converter: Callable[[ArrayLike], ArrayLike],
     ):
         self.data = data
         self._meta = meta
@@ -58,9 +61,9 @@ class OctreeSlice:
         self.loader: OctreeLoader = OctreeLoader(self._octree, layer_ref)
 
         thumbnail_image = np.zeros(
-            (64, 64, 3)
+            (32, 32, 3)
         )  # blank until we have a real one
-        self.thumbnail: ImageView = ImageView(thumbnail_image, image_converter)
+        self.thumbnail = thumbnail_image
 
     @property
     def loaded(self) -> bool:
@@ -69,8 +72,8 @@ class OctreeSlice:
         Because octree multiscale is async, we say we are loaded up front even
         though none of our chunks/tiles might be loaded yet.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the data as been loaded.
         """
@@ -80,8 +83,8 @@ class OctreeSlice:
     def octree_level_info(self) -> Optional[OctreeLevelInfo]:
         """Information about the current octree level.
 
-        Return
-        ------
+        Returns
+        -------
         Optional[OctreeLevelInfo]
             Information about current octree level, if there is one.
         """
@@ -94,7 +97,12 @@ class OctreeSlice:
             index = self.octree_level
             num_levels = len(self._octree.levels)
             raise IndexError(
-                f"Octree level {index} is not in range(0, {num_levels})"
+                trans._(
+                    "Octree level {index} is not in range(0, {num_levels})",
+                    deferred=True,
+                    index=index,
+                    num_levels=num_levels,
+                )
             ) from exc
 
     def get_intersection(self, view: OctreeView) -> OctreeIntersection:
@@ -110,8 +118,8 @@ class OctreeSlice:
         view : OctreeView
             Intersect this view with the octree.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeIntersection
             The given view's intersection with the octree.
         """
@@ -126,14 +134,20 @@ class OctreeSlice:
         view : OctreeView
             Get the OctreeLevel for this view.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeLevel
             The automatically chosen OctreeLevel.
         """
         index = self._get_auto_level_index(view)
         if index < 0 or index >= self._octree.num_levels:
-            raise ValueError(f"Invalid octree level {index}")
+            raise ValueError(
+                trans._(
+                    "Invalid octree level {index}",
+                    deferred=True,
+                    index=index,
+                )
+            )
 
         return self._octree.levels[index]
 
@@ -145,8 +159,8 @@ class OctreeSlice:
         view : OctreeView
             Get the octree level index for this view.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The automatically chosen octree level index.
         """
@@ -178,8 +192,8 @@ class OctreeSlice:
         location : OctreeLocation
             Return the chunk at this location.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeChunk
             The returned chunk.
         """
@@ -196,8 +210,8 @@ class OctreeSlice:
         request : ChunkRequest
             The request for the chunk that was loaded.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the chunk's data was added to the octree.
         """

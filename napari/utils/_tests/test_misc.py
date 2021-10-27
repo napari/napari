@@ -7,15 +7,17 @@ import pytest
 from napari.utils.misc import (
     StringEnum,
     abspath_or_url,
-    callsignature,
     ensure_iterable,
     ensure_sequence_of_iterables,
+    pick_equality_operator,
 )
 
 ITERABLE = (0, 1, 2)
 NESTED_ITERABLE = [ITERABLE, ITERABLE, ITERABLE]
 DICT = {'a': 1, 'b': 3, 'c': 5}
 LIST_OF_DICTS = [DICT, DICT, DICT]
+PARTLY_NESTED_ITERABLE = [ITERABLE, None, None]
+REPEATED_PARTLY_NESTED_ITERABLE = [PARTLY_NESTED_ITERABLE] * 3
 
 
 @pytest.mark.parametrize(
@@ -28,15 +30,25 @@ LIST_OF_DICTS = [DICT, DICT, DICT]
         [LIST_OF_DICTS, LIST_OF_DICTS],
         [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
         [None, (None, None, None)],
-        # BEWARE: only the first element of a nested sequence is checked.
-        [((0, 1), None, None), ((0, 1), None, None)],
+        [PARTLY_NESTED_ITERABLE, REPEATED_PARTLY_NESTED_ITERABLE],
+        [[], ([], [], [])],
     ],
 )
 def test_sequence_of_iterables(input, expected):
     """Test ensure_sequence_of_iterables returns a sequence of iterables."""
-    zipped = zip(range(3), ensure_sequence_of_iterables(input), expected)
+    zipped = zip(
+        range(3),
+        ensure_sequence_of_iterables(input, repeat_empty=True),
+        expected,
+    )
     for i, result, expectation in zipped:
         assert result == expectation
+
+
+def test_sequence_of_iterables_no_repeat_empty():
+    assert ensure_sequence_of_iterables([], repeat_empty=False) == []
+    with pytest.raises(ValueError):
+        ensure_sequence_of_iterables([], repeat_empty=False, length=3)
 
 
 def test_sequence_of_iterables_raises():
@@ -66,65 +78,6 @@ def test_ensure_iterable(input, expected):
     zipped = zip(range(3), ensure_iterable(input), expected)
     for i, result, expectation in zipped:
         assert result == expectation
-
-
-def test_callsignature():
-    # no arguments
-    assert str(callsignature(lambda: None)) == '()'
-
-    # one arg
-    assert str(callsignature(lambda a: None)) == '(a)'
-
-    # multiple args
-    assert str(callsignature(lambda a, b: None)) == '(a, b)'
-
-    # arbitrary args
-    assert str(callsignature(lambda *args: None)) == '(*args)'
-
-    # arg + arbitrary args
-    assert str(callsignature(lambda a, *az: None)) == '(a, *az)'
-
-    # default arg
-    assert str(callsignature(lambda a=42: None)) == '(a=a)'
-
-    # multiple default args
-    assert str(callsignature(lambda a=0, b=1: None)) == '(a=a, b=b)'
-
-    # arg + default arg
-    assert str(callsignature(lambda a, b=42: None)) == '(a, b=b)'
-
-    # arbitrary kwargs
-    assert str(callsignature(lambda **kwargs: None)) == '(**kwargs)'
-
-    # default arg + arbitrary kwargs
-    assert str(callsignature(lambda a=42, **kwargs: None)) == '(a=a, **kwargs)'
-
-    # arg + default arg + arbitrary kwargs
-    assert str(callsignature(lambda a, b=42, **kw: None)) == '(a, b=b, **kw)'
-
-    # arbitrary args + arbitrary kwargs
-    assert str(callsignature(lambda *args, **kw: None)) == '(*args, **kw)'
-
-    # arg + default arg + arbitrary kwargs
-    assert (
-        str(callsignature(lambda a, b=42, *args, **kwargs: None))
-        == '(a, b=b, *args, **kwargs)'
-    )
-
-    # kwonly arg
-    assert str(callsignature(lambda *, a: None)) == '(a=a)'
-
-    # arg + kwonly arg
-    assert str(callsignature(lambda a, *, b: None)) == '(a, b=b)'
-
-    # default arg + kwonly arg
-    assert str(callsignature(lambda a=42, *, b: None)) == '(a=a, b=b)'
-
-    # kwonly args + everything
-    assert (
-        str(callsignature(lambda a, b=42, *, c, d=5, **kwargs: None))
-        == '(a, b=b, c=c, d=d, **kwargs)'
-    )
 
 
 def test_string_enum():
@@ -170,6 +123,31 @@ def test_string_enum():
     with pytest.raises(ValueError):
         TestEnum(OtherEnum.SOMETHING)
 
+    # test string conversion
+    assert str(TestEnum.THING) == 'thing'
+
+    # test direct comparison with a string
+    assert TestEnum.THING == 'thing'
+    assert 'thing' == TestEnum.THING
+    assert TestEnum.THING != 'notathing'
+    assert 'notathing' != TestEnum.THING
+
+    # test comparison with another enum with same value names
+    class AnotherTestEnum(StringEnum):
+        THING = auto()
+        ANOTHERTHING = auto()
+
+    assert TestEnum.THING != AnotherTestEnum.THING
+
+    # test lookup in a set
+    assert TestEnum.THING in {TestEnum.THING, TestEnum.OTHERTHING}
+    assert TestEnum.THING not in {TestEnum.OTHERTHING}
+    assert TestEnum.THING in {'thing', TestEnum.OTHERTHING}
+    assert TestEnum.THING not in {
+        AnotherTestEnum.THING,
+        AnotherTestEnum.ANOTHERTHING,
+    }
+
 
 def test_abspath_or_url():
     relpath = "~" + sep + "something"
@@ -188,3 +166,23 @@ def test_abspath_or_url():
 
     with pytest.raises(TypeError):
         abspath_or_url({'a', '~'})
+
+
+def test_equality_operator():
+    import operator
+
+    import dask.array as da
+    import numpy as np
+    import xarray as xr
+    import zarr
+
+    class MyNPArray(np.ndarray):
+        pass
+
+    assert pick_equality_operator(np.ones((1, 1))) == np.array_equal
+    assert pick_equality_operator(MyNPArray([1, 1])) == np.array_equal
+    assert pick_equality_operator(da.ones((1, 1))) == operator.is_
+    assert pick_equality_operator(zarr.ones((1, 1))) == operator.is_
+    assert (
+        pick_equality_operator(xr.DataArray(np.ones((1, 1)))) == np.array_equal
+    )
