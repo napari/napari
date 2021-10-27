@@ -395,7 +395,7 @@ class QtPluginSorter(QWidget):
             self.info.hide()
             self.docstring.setToolTip('')
 
-    def refresh(self, event=None):
+    def refresh(self):
         self._on_hook_change(self.hook_combo_box.currentIndex())
 
     def _on_disabled(self, event):

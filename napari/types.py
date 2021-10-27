@@ -127,28 +127,28 @@ def _register_types_with_magicgui():
     import sys
     from concurrent.futures import Future
 
+    from magicgui import register_type
+
     from . import layers
     from .utils import _magicgui as _mgui
 
     for _type in (LayerDataTuple, List[LayerDataTuple]):
-        _mgui.register_type(
+        register_type(
             _type,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
         if sys.version_info >= (3, 9):
-            _mgui.register_type(
-                Future[_type], return_callback=_mgui.add_future_data  # type: ignore
-            )
+            register_type(Future[_type], return_callback=_mgui.add_future_data)
 
     for layer_name in layers.NAMES:
         data_type = globals().get(f'{layer_name.title()}Data')
-        _mgui.register_type(
+        register_type(
             data_type,
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
         if sys.version_info >= (3, 9):
-            _mgui.register_type(
+            register_type(
                 Future[data_type],  # type: ignore
                 choices=_mgui.get_layers_data,
                 return_callback=partial(

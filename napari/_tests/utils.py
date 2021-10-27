@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 import pytest
+import tensorstore as ts
 
 from napari import Viewer
 from napari.layers import (
@@ -36,9 +37,15 @@ Used as pytest params for testing layer add and view functionality (Layer class,
 """
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
+    (Image, ts.array(np.random.random((10, 15))), 2),
     (Image, np.random.random((10, 15, 20)), 3),
     (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
+    (
+        Image,
+        [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]],
+        2,
+    ),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
     (Points, 20 * np.random.random((10, 2)), 2),
