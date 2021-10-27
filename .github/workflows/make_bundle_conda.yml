@@ -67,6 +67,7 @@ jobs:
             - pip
             - tomlkit
             - ruamel.yaml
+            - anaconda-client
           EOF
 
           if [[ ${{ runner.os }} == Windows ]]; then
@@ -187,6 +188,17 @@ jobs:
         with:
           name: napari-menu-${{ env.NAPARI_VERSION }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
           path: ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2
+
+      - name: Upload to anaconda.org (nightly only)
+        shell: bash -l {0}
+        if: github.event_name == 'schedule'
+        run: |
+          anaconda upload \
+            -u napari \
+            -t ${{ secrets.ANACONDA_TOKEN }} \
+            -l nightly \
+            ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2 \
+            ${{ github.workspace }}${{ env.conda-bld-suffix }}noarch/*.tar.bz2
 
   bundle:
     name: Bundle ${{ matrix.platform }}
@@ -314,9 +326,9 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
-          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
-          asset_name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
-          asset_content_type: application/zip
+          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          asset_name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          asset_content_type: application/octet-stream
 
       - name: Upload Nightly Build Asset
         if: ${{ github.event_name == 'schedule' }}
@@ -327,9 +339,9 @@ jobs:
           # nightly build release from https://api.github.com/repos/napari/napari/releases
           upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label}
           release_id: 34273071
-          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.zip
-          asset_name: napari-${{ runner.os }}-${{ env.arch-suffix }}.zip
-          asset_content_type: application/zip
+          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          asset_name: napari-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          asset_content_type: application/octet-stream
           max_releases: 1
 
       - name: Update latest tag
