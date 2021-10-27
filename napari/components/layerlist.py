@@ -229,6 +229,7 @@ class LayerList(SelectableEventedList[Layer]):
         *,
         selected: bool = False,
         plugin: Optional[str] = None,
+        _command_id: Optional[str] = None,
     ) -> List[str]:
         """Save all or only selected layers to a path using writer plugins.
 
@@ -295,7 +296,9 @@ class LayerList(SelectableEventedList[Layer]):
             warnings.warn(msg)
             return []
 
-        return save_layers(path, layers, plugin=plugin)
+        return save_layers(
+            path, layers, plugin=plugin, _command_id=_command_id
+        )
 
     def _selection_context(self) -> dict:
         """Return context dict for current layerlist.selection"""

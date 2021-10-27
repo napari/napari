@@ -183,6 +183,7 @@ def save_layers(
     layers: List[Layer],
     *,
     plugin: Optional[str] = None,
+    _command_id: Optional[str] = None,
 ) -> List[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 
@@ -233,13 +234,13 @@ def save_layers(
     """
     if len(layers) > 1:
         written = _write_multiple_layers_with_plugins(
-            path, layers, plugin_name=plugin
+            path, layers, plugin_name=plugin, _command_id=_command_id
         )
     elif len(layers) == 1:
-        _written = _write_single_layer_with_plugins(
-            path, layers[0], plugin_name=plugin
+        written = _write_single_layer_with_plugins(
+            path, layers[0], plugin_name=plugin, _command_id=_command_id
         )
-        written: List[Optional[str]] = [_written] if _written else []
+        written = [written] if written else []
     else:
         written = []
 
@@ -256,7 +257,7 @@ def save_layers(
             )
         )
 
-    return [path for path in written if path is not None]
+    return written
 
 
 def _is_null_layer_sentinel(layer_data: Union[LayerData, Any]) -> bool:
@@ -283,8 +284,11 @@ def _is_null_layer_sentinel(layer_data: Union[LayerData, Any]) -> bool:
 
 
 def _write_layers_with_npe2(
-    path: str, layers: List[Layer], plugin_command_name: Optional[str] = None
-) -> List[Optional[str]]:
+    path: str,
+    layers: List[Layer],
+    plugin_name: Optional[str] = None,
+    command_id: Optional[str] = None,
+) -> List[str]:
     """
     Write layers to a file using an NPE2 plugin.
 
@@ -298,12 +302,15 @@ def _write_layers_with_npe2(
         Name of the plugin to write data with. If None then all plugins
         corresponding to appropriate hook specification will be looped
         through to find the first one that can write the data.
+    command_id : str, optional
+        npe2 command identifier that uniquely identifies the command to ivoke
+        to save layers. If specified, overrides, the plugin_name.
 
 
     Returns
     -------
-    None or list of str
-        None when no plugin was found, otherwise a list of file paths, if any,
+    list of str
+        Empty list when no plugin was found, otherwise a list of file paths, if any,
         that were written.
     """
 
@@ -313,7 +320,7 @@ def _write_layers_with_npe2(
         import npe2
         from npe2.manifest.io import WriterContribution
     except ImportError:
-        return [None]
+        return []
 
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
@@ -334,16 +341,20 @@ def _write_layers_with_npe2(
         """
         ext = os.path.splitext(path)[1].lower() if path else ''
 
-        if plugin_command_name:
+        if command_id:
             return (
-                npe2.plugin_manager.get_writer_for_command(
-                    plugin_command_name
-                ),
+                npe2.plugin_manager.get_writer_for_command(command_id),
                 path,
                 ext,
             )
 
         for writer in npe2.plugin_manager.iter_compatible_writers(layer_types):
+            if plugin_name:
+                # filter by plugin name if specified
+                mf = npe2.plugin_manager.get_manifest(writer.command)
+                if mf.name != plugin_name:
+                    continue
+
             if ext:
                 if ext in writer.filename_extensions:
                     return writer, path, ext
@@ -362,7 +373,7 @@ def _write_layers_with_npe2(
             f"File extension: {ext if ext else '(none)'}"
         )
         return npe2.write_layers(writer, new_path, layer_data)
-    return [None] * len(layers)
+    return []
 
 
 def _write_multiple_layers_with_plugins(
@@ -370,7 +381,8 @@ def _write_multiple_layers_with_plugins(
     layers: List[Layer],
     *,
     plugin_name: Optional[str] = None,
-) -> List[Optional[str]]:
+    _command_id: Optional[str] = None,
+) -> List[str]:
     """Write data from multiple layers data with a plugin.
 
     If a ``plugin_name`` is not provided we loop through plugins to find the
@@ -406,8 +418,10 @@ def _write_multiple_layers_with_plugins(
     """
 
     # Try to use NPE2 first
-    written_paths = _write_layers_with_npe2(path, layers, plugin_name)
-    if any(p is not None for p in written_paths):
+    written_paths = _write_layers_with_npe2(
+        path, layers, plugin_name, _command_id
+    )
+    if written_paths:
         return written_paths
     logger.debug("Falling back to original plugin engine.")
 
@@ -473,6 +487,7 @@ def _write_single_layer_with_plugins(
     layer: Layer,
     *,
     plugin_name: Optional[str] = None,
+    _command_id: Optional[str] = None,
 ) -> Optional[str]:
     """Write single layer data with a plugin.
 
@@ -507,8 +522,10 @@ def _write_single_layer_with_plugins(
     """
 
     # Try to use NPE2 first
-    written_paths = _write_layers_with_npe2(path, [layer], plugin_name)
-    if written_paths[0] is not None:
+    written_paths = _write_layers_with_npe2(
+        path, [layer], plugin_name, _command_id
+    )
+    if written_paths:
         return written_paths[0]
     logger.debug("Falling back to original plugin engine.")
 

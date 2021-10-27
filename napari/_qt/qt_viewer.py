@@ -110,8 +110,10 @@ def _npe2_file_extensions_string_for_layers(
     def _items():
         """Lookup the command name and its supported extensions."""
         for writer in writers:
-            cmd = npe2.plugin_manager.get_command(writer.command)
-            title = writer.save_dialog_title or cmd.title
+            name = npe2.plugin_manager.get_manifest(
+                writer.command
+            ).display_name
+            title = f"{name} {writer.name}" if writer.name else name
             yield title, writer.filename_extensions
 
     # extension strings are in the format:
@@ -621,14 +623,14 @@ class QtViewer(QSplitter):
             f'selected_filter: {selected_filter if selected_filter else None}'
         )
 
-        plugin_command = _npe2_decode_selected_filter(
+        command_id = _npe2_decode_selected_filter(
             ext_str, selected_filter, writers
         )
 
         if filename:
             with warnings.catch_warnings(record=True) as wa:
                 saved = self.viewer.layers.save(
-                    filename, selected=selected, plugin=plugin_command
+                    filename, selected=selected, _command_id=command_id
                 )
                 logging.debug(f'Saved {saved}')
                 error_messages = "\n".join(
