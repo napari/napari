@@ -251,8 +251,8 @@ def test_single_point_extent():
     shape = (1, 3)
     data = np.zeros(shape)
     layer = Points(data)
-    assert np.all(layer.extent.data == [[-10, -10, -10.0], [10, 10, 10.0]])
-    assert np.all(layer.extent.world == [[-10, -10, -10.0], [10, 10, 10.0]])
+    assert np.all(layer.extent.data == [[-5, -5, -5], [5, 5, 5]])
+    assert np.all(layer.extent.world == [[-5, -5, -5], [5, 5, 5]])
     assert np.all(layer.extent.step == 1)
 
 
@@ -1678,8 +1678,8 @@ def test_interaction_box():
 def test_world_data_extent():
     """Test extent after applying transforms."""
     data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
-    min_val = (-12, -15, -10)
-    max_val = (17, 40, 25)
+    min_val = (-7, -10, -5)
+    max_val = (12, 35, 20)
     layer = Points(data)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
