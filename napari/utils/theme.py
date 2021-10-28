@@ -213,7 +213,7 @@ def get_theme(name, as_dict=None):
         warnings.warn(
             trans._(
                 "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`."
-                "The `as_dict=True` option will be changed to `as_dict=False` in 0.X.X",
+                "The `as_dict=True` option will be changed to `as_dict=False` in 0.4.15",
                 deferred=True,
             ),
             category=FutureWarning,
