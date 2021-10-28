@@ -26,6 +26,7 @@ from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
+from ..utils.interactivity_utils import drag_data_to_projected_distance
 from ..utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
@@ -1087,6 +1088,49 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         return None
 
+    def projected_distance_from_mouse_drag(
+        self,
+        start_position: np.ndarray,
+        end_position: np.ndarray,
+        view_direction: np.ndarray,
+        vector: np.ndarray,
+        dims_displayed: Union[List, np.ndarray],
+    ):
+        """Calculate the length of the projection of a line between two mouse
+        clicks onto a vector (or array of vectors) in data coordinates.
+
+        Parameters
+        ----------
+        start_position : np.ndarray
+            Starting point of the drag vector in data coordinates
+        end_position : np.ndarray
+            End point of the drag vector in data coordinates
+        view_direction : np.ndarray
+            Vector defining the plane normal of the plane onto which the drag
+            vector is projected.
+        vector : np.ndarray
+            (3,) unit vector or (n, 3) array thereof on which to project the drag
+            vector from start_event to end_event. This argument is defined in data
+            coordinates.
+        dims_displayed: Union[List, np.ndarray]
+            (3,) list of currently displayed dimensions
+        Returns
+        -------
+        projected_distance : (1, ) or (n, ) np.ndarray of float
+        """
+        start_position = self._world_to_displayed_data(
+            start_position, dims_displayed
+        )
+        end_position = self._world_to_displayed_data(
+            end_position, dims_displayed
+        )
+        view_direction = self._world_to_displayed_data_ray(
+            view_direction, dims_displayed
+        )
+        return drag_data_to_projected_distance(
+            start_position, end_position, view_direction, vector
+        )
+
     @contextmanager
     def block_update_properties(self):
         self._update_properties = False
@@ -1133,7 +1177,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
-    def world_to_displayed_data(
+    def _world_to_displayed_data(
         self, position: np.ndarray, dims_displayed: np.ndarray
     ) -> tuple:
         """Convert world to data coordinates for displayed dimensions only.
@@ -1270,7 +1314,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
             # Get the clicked point in data coords (only displayed dims)
             if world is True:
-                click_pos_data = self.world_to_displayed_data(
+                click_pos_data = self._world_to_displayed_data(
                     position, dims_displayed
                 )
             else:
