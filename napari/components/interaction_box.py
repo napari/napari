@@ -21,17 +21,15 @@ class InteractionBox(EventedModel):
     """
 
     points: Array[float, (-1, 2)] = None
-
-    points: Array[float, (-1, 2)] = None
     show: bool = False
     show_handle: bool = False
     selection_box_drag: Array[float, (4, 2)] = None
     selection_box_final: Array[float, (4, 2)] = None
     angle: float = None
-    _show_vertices: bool = False
+    show_vertices: bool = False
     _selected_vertex: int = None
     _fixed_vertex: int = None
-    _fixed_aspect: bool = False
+    _fixed_aspect: float = None
     _vertex_size = 10
     _rotation_handle_length = 20
     _highlight_color = (0, 0.6, 1)
