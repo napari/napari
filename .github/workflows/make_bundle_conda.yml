@@ -191,7 +191,7 @@ jobs:
 
       - name: Upload to anaconda.org (nightly only)
         shell: bash -l {0}
-        if: github.event_name == 'schedule'
+        # if: github.event_name == 'schedule'
         run: |
           anaconda upload \
             -u napari \
