@@ -193,9 +193,10 @@ jobs:
         shell: bash -l {0}
         # if: github.event_name == 'schedule'
         run: |
-          anaconda upload \
-            -u napari \
+          anaconda \
             -t ${{ secrets.ANACONDA_TOKEN }} \
+            upload \
+            -u napari \
             -l nightly \
             ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2 \
             ${{ github.workspace }}${{ env.conda-bld-suffix }}noarch/*.tar.bz2
