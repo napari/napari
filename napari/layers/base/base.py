@@ -1117,7 +1117,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         start_position = self._world_to_displayed_data(start_position)
         end_position = self._world_to_displayed_data(end_position)
-        view_direction = self._world_to_displaray(view_direction)
+        view_direction = self._world_to_displayed_data_ray(view_direction)
         return drag_data_to_projected_distance(
             start_position, end_position, view_direction, vector
         )
