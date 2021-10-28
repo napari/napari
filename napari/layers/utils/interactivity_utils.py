@@ -46,9 +46,7 @@ def drag_data_to_projected_distance(
         end_position, start_position, view_direction
     )
     # Calculate the drag vector on the pseudo-canvas.
-    drag_vector_canvas = np.squeeze(
-        end_position_canvas - start_position
-    )
+    drag_vector_canvas = np.squeeze(end_position_canvas - start_position)
 
     # Project the drag vector onto the specified vector(s), return the distance
     return np.einsum('j, ij -> i', drag_vector_canvas, vector).squeeze()
