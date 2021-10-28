@@ -55,13 +55,15 @@ def drag_along_camera_plane(layer, event):
         point_to_project = np.asarray(layer.world_to_data(event.position))[
             list(event.dims_displayed)
         ]
+
+        # Calculate view direction in data coordinates
+        # this view direction, together with the click position, form a plane
+        # parallel to the canvas in data coordinates.
         view_direction_data = np.asarray(layer._world_to_data_ray(
             list(event.view_direction)
         ))[event.dims_displayed]
 
         # Project click position onto plane
-        # plane is parallel with canvas in data coords and contains original
-        # point position
         projected_position = project_point_onto_plane(
             point=point_to_project,
             plane_point=original_position,
