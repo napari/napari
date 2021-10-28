@@ -24,6 +24,11 @@ shapes_layer = viewer.add_shapes(
     data=shapes_data,
     face_color='blue'
 )
+viewer.camera.angles = (-170, -20, -170)
+viewer.camera.zoom = 1.5
+viewer.text_overlay.visible = True
+viewer.text_overlay.text = """'click and drag the rectangle to create copies along its normal vector
+"""
 
 
 @shapes_layer.mouse_drag_callbacks.append
@@ -45,7 +50,8 @@ def move_rectangle_along_normal(layer, event):
             start_position=start_position,
             end_position=event.position,
             view_direction=event.view_direction,
-            vector=normal_vector
+            vector=normal_vector,
+            dims_displayed=event.dims_displayed,
         )
         shift_data_coordinates = projected_distance * normal_vector
         new_rectangle = layer.data[shape_index] + shift_data_coordinates

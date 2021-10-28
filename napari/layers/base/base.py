@@ -1094,6 +1094,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         end_position: np.ndarray,
         view_direction: np.ndarray,
         vector: np.ndarray,
+        dims_displayed: Union[List, np.ndarray],
     ):
         """Calculate the length of the projection of a line between two mouse
         clicks onto a vector (or array of vectors) in data coordinates.
@@ -1111,13 +1112,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             (3,) unit vector or (n, 3) array thereof on which to project the drag
             vector from start_event to end_event. This argument is defined in data
             coordinates.
+        dims_displayed: Union[List, np.ndarray]
+            (3,) list of currently displayed dimensions
         Returns
         -------
         projected_distance : (1, ) or (n, ) np.ndarray of float
         """
-        start_position = self._world_to_displayed_data(start_position)
-        end_position = self._world_to_displayed_data(end_position)
-        view_direction = self._world_to_displayed_data_ray(view_direction)
+        start_position = self._world_to_displayed_data(
+            start_position, dims_displayed
+        )
+        end_position = self._world_to_displayed_data(
+            end_position, dims_displayed
+        )
+        view_direction = self._world_to_displayed_data_ray(
+            view_direction, dims_displayed
+        )
         return drag_data_to_projected_distance(
             start_position, end_position, view_direction, vector
         )
