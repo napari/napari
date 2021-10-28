@@ -554,6 +554,7 @@ def test_message_3d():
     np.random.seed(0)
     data = np.random.random((10, 15, 15))
     layer = Image(data)
+    layer._ndisplay = 3
     msg = layer.get_status(
         (0, 0, 0), view_direction=[1, 0, 0], dims_displayed=[0, 1, 2]
     )
@@ -792,3 +793,35 @@ def test_tensorstore_image():
     )
     layer = Image(data)
     assert np.all(layer.data == data)
+
+
+@pytest.mark.parametrize(
+    "start_position, end_position, view_direction, vector, expected_value",
+    [
+        # drag vector parallel to view direction
+        # projected onto perpendicular vector
+        ([0, 0, 0], [0, 0, 1], [0, 0, 1], [1, 0, 0], 0),
+        # same as above, projection onto multiple perpendicular vectors
+        # should produce multiple results
+        ([0, 0, 0], [0, 0, 1], [0, 0, 1], [[1, 0, 0], [0, 1, 0]], [0, 0]),
+        # drag vector perpendicular to view direction
+        # projected onto itself
+        ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),
+        # drag vector perpendicular to view direction
+        # projected onto itself
+        ([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0], 1),
+    ],
+)
+def test_projected_distance_from_mouse_drag(
+    start_position, end_position, view_direction, vector, expected_value
+):
+    image = Image(np.ones((32, 32, 32)))
+    image._slice_dims(point=[0, 0, 0], ndisplay=3)
+    result = image.projected_distance_from_mouse_drag(
+        start_position,
+        end_position,
+        view_direction,
+        vector,
+        dims_displayed=[0, 1, 2],
+    )
+    assert np.allclose(result, expected_value)

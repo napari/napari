@@ -513,7 +513,9 @@ class ImageVisual(Visual):
         self._need_texture_upload = False
 
     def _compute_bounds(self, axis, view):
-        if axis > 1:
+        if self._data is None:
+            return None
+        elif axis > 1:
             return (0, 0)
         else:
             return (0, self.size[axis])

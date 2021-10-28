@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
 
 from ...settings import get_settings
 from ...settings._constants import LoopMode
-from ...utils.events import Event
+from ...utils.events.event_utils import connect_setattr_value
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from ..qthreading import _new_worker_qthread
@@ -73,15 +73,15 @@ class QtDimSliderWidget(QWidget):
 
         settings = get_settings()
         self._fps = settings.application.playback_fps
-        settings.application.events.playback_fps.connect(
-            lambda e: setattr(self, 'fps', e.value)
+        connect_setattr_value(
+            settings.application.events.playback_fps, self, "fps"
         )
 
         self._minframe = None
         self._maxframe = None
         self._loop_mode = settings.application.playback_mode
-        settings.application.events.playback_mode.connect(
-            lambda e: setattr(self, 'loop_mode', e.value)
+        connect_setattr_value(
+            settings.application.events.playback_mode, self, "loop_mode"
         )
 
         layout = QHBoxLayout()
@@ -187,7 +187,7 @@ class QtDimSliderWidget(QWidget):
         self.play_stopped.connect(self.play_button._handle_stop)
         self.play_started.connect(self.play_button._handle_start)
 
-    def _pull_label(self, event):
+    def _pull_label(self):
         """Updates the label LineEdit from the dims model."""
         label = self.dims.axis_labels[self.axis]
         self.axis_label.setText(label)
@@ -722,8 +722,7 @@ class AnimationWorker(QObject):
         """Emit the finished event signal."""
         self.finished.emit()
 
-    @Slot(Event)
-    def _on_axis_changed(self, event):
+    def _on_axis_changed(self):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
         self.current = self.dims.current_step[self.axis]
