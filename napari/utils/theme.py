@@ -266,16 +266,11 @@ def available_themes():
     return tuple(_themes) + ("system",)
 
 
-def rebuild_theme_settings(event=None):
+def rebuild_theme_settings():
     """update theme information in settings.
 
     here we simply update the settings to reflect current list of available
     themes.
-
-    parameters
-    ----------
-    event : event
-        Unused event.
     """
     from ..settings import get_settings
 

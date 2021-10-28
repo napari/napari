@@ -1177,7 +1177,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
-    def world_to_displayed_data(
+    def _world_to_displayed_data(
         self, position: np.ndarray, dims_displayed: np.ndarray
     ) -> tuple:
         """Convert world to data coordinates for displayed dimensions only.
@@ -1314,7 +1314,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
             # Get the clicked point in data coords (only displayed dims)
             if world is True:
-                click_pos_data = self.world_to_displayed_data(
+                click_pos_data = self._world_to_displayed_data(
                     position, dims_displayed
                 )
             else:
