@@ -203,7 +203,7 @@ jobs:
             ${{ github.workspace }}${{ env.conda-bld-suffix }}noarch/*.tar.bz2
 
       - name: Upload to anaconda.org (Windows)
-        shell: bash -l {0}
+        shell: cmd
         # if: github.event_name == 'schedule'
         if: runner.os == 'Windows'
         run: |
