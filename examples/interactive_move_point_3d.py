@@ -52,7 +52,7 @@ def drag_along_camera_plane(layer, event):
     yield
     while event.type == 'mouse_move':
         # Calculate click position in data coords
-        point_to_project = layer._world_to_displayed_data(event.position)
+        point_to_project = layer.world_to_data(event.position)[event.dims_displayed]
         view_direction_data = np.asarray(layer._world_to_data_ray(
             event.view_direction
         ))[event.dims_displayed]
