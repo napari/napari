@@ -1120,8 +1120,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         -------
         projected_distance : (1, ) or (n, ) np.ndarray of float
         """
-        start_position = self.world_to_displayed_data(start_position)
-        end_position = self.world_to_displayed_data(end_position)
+        start_position = self._world_to_displayed_data(start_position)
+        end_position = self._world_to_displayed_data(end_position)
         view_direction = self._world_to_data_ray(view_direction)
         return drag_data_to_projected_distance(
             start_position, end_position, view_direction, vector
@@ -1173,7 +1173,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
-    def world_to_displayed_data(
+    def _world_to_displayed_data(
         self, position_world: np.ndarray
     ) -> np.ndarray:
         """Convert from world to data coordinates in displayed dimensions only."""
