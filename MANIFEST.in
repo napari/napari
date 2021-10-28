@@ -4,6 +4,7 @@ recursive-include napari *.pyi
 recursive-include napari _tests/*.py
 recursive-include napari *.pyi
 recursive-include napari *.png *.svg *.qss *.gif *.ico *.icns
+recursive-include napari *.yaml
 exclude napari/resources/_qt_resources*.py
 
 exclude requirements.txt
