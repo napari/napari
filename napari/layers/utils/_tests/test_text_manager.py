@@ -371,11 +371,10 @@ def test_multi_color_non_property():
 def test_multi_color_property_discrete_map():
     properties = {
         'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([0.5, 0.3, 1]),
     }
     color = {
         'property': 'class',
-        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
+        'colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
     }
 
     text_manager = TextManager(
@@ -384,6 +383,43 @@ def test_multi_color_property_discrete_map():
 
     color_array = text_manager.color._get_array(properties, 3)
     _assert_colors_equal(color_array, ['red', 'green', 'blue'])
+
+
+def test_nominal_color_encoding_with_bad_field_name_raises():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    # If the Pydantic model is configured with extra = 'allow',
+    # this could match an IdentityColorEncoding, which is undesirable.
+    color = {
+        'property': 'class',
+        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
+    }
+
+    with pytest.raises(ValidationError):
+        TextManager(string='class', properties=properties, color=color)
+
+
+def test_multi_color_property_cycle():
+    properties = {
+        'class': np.array(['A', 'B', 'C', 'B']),
+        'confidence': np.array([0.5, 0.3, 1, 0.6]),
+    }
+    color = {
+        'type': 'nominal',
+        'property': 'class',
+        'colormap': ['red', 'green', 'blue'],
+    }
+
+    # TODO: even though the type field will error with QuantitativeColorEncoding,
+    # the colormap field warns first, so catch it for now.
+    with pytest.warns(UserWarning):
+        text_manager = TextManager(
+            string='class', properties=properties, color=color
+        )
+
+    color_array = text_manager.color._get_array(properties, 4)
+    _assert_colors_equal(color_array, ['red', 'green', 'blue', 'green'])
 
 
 def test_multi_color_property_continuous_map():
@@ -431,36 +467,11 @@ def test_color_missing_field_errors():
         'confidence': np.array([0.5, 0, 1]),
     }
     color = {
-        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
+        'colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
     }
 
     with pytest.raises(ValidationError):
         TextManager(string='class', properties=properties, color=color)
-
-
-def test_color_too_many_fields_use_first_matching():
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([0.5, 0, 1]),
-    }
-    color = {
-        'property': 'confidence',
-        'categorical_colormap': {'A': 'red', 'B': 'green', 'C': 'blue'},
-        'colormap': 'gray',
-    }
-
-    text_manager = TextManager(
-        string='class', properties=properties, color=color
-    )
-
-    # ContinuousColorEncoding is the first in the ColorEncoding
-    # and can be instantiated with a subset of the dictionary's
-    # entries, so is instantiated without an error or warning.
-    # To change this behavior to error, update the model config
-    # with `extra = 'forbid'`.
-    color_array = text_manager.color._get_array(properties, 3)
-    expected_color_array = transform_color([[0.5] * 3, [0] * 3, [1] * 3])
-    _assert_colors_equal(color_array, expected_color_array)
 
 
 def test_from_layer():

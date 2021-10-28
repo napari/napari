@@ -1,7 +1,8 @@
+from abc import ABC, abstractmethod
 from typing import Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
-from pydantic import validator
+from pydantic import Field, validator
 
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
@@ -11,6 +12,7 @@ from ._style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
     DirectStyleEncoding,
+    EncodingType,
     parse_kwargs_as_encoding,
 )
 from .color_transformations import ColorType
@@ -40,11 +42,34 @@ class MultiColorArray(np.ndarray):
         return np.empty((0, 4)) if len(val) == 0 else transform_color(val)
 
 
+class ColorEncoding(ABC):
+    @abstractmethod
+    def _get_array(
+        self,
+        properties: Dict[str, np.ndarray],
+        n_rows: int,
+        indices: Optional = None,
+    ) -> MultiColorArray:
+        pass
+
+    @abstractmethod
+    def _clear(self):
+        pass
+
+    @abstractmethod
+    def _append(self, array: MultiColorArray):
+        pass
+
+    @abstractmethod
+    def _delete(self, indices):
+        pass
+
+
 """The default color to use, which may also be used a safe fallback color."""
 DEFAULT_COLOR = 'cyan'
 
 
-class ConstantColorEncoding(ConstantStyleEncoding):
+class ConstantColorEncoding(ConstantStyleEncoding, ColorEncoding):
     """Encodes color values from a single constant color.
 
     Attributes
@@ -53,10 +78,13 @@ class ConstantColorEncoding(ConstantStyleEncoding):
         The constant color RGBA value.
     """
 
+    type: EncodingType = Field(
+        EncodingType.CONSTANT, const=EncodingType.CONSTANT
+    )
     constant: ColorArray
 
 
-class DirectColorEncoding(DirectStyleEncoding):
+class DirectColorEncoding(DirectStyleEncoding, ColorEncoding):
     """Encodes color values directly in an array attribute.
 
     Attributes
@@ -68,11 +96,12 @@ class DirectColorEncoding(DirectStyleEncoding):
         The default color value.
     """
 
+    type: EncodingType = Field(EncodingType.DIRECT, const=EncodingType.DIRECT)
     array: MultiColorArray
     default: ColorArray = DEFAULT_COLOR
 
 
-class IdentityColorEncoding(DerivedStyleEncoding):
+class IdentityColorEncoding(DerivedStyleEncoding, ColorEncoding):
     """Encodes color values directly from a property column.
 
     Attributes
@@ -84,6 +113,9 @@ class IdentityColorEncoding(DerivedStyleEncoding):
         does not contain valid color values.
     """
 
+    type: EncodingType = Field(
+        EncodingType.IDENTITY, const=EncodingType.IDENTITY
+    )
     property: str
     fallback: ColorArray = DEFAULT_COLOR
 
@@ -93,32 +125,35 @@ class IdentityColorEncoding(DerivedStyleEncoding):
         return transform_color(properties[self.property][indices])
 
 
-class NominalColorEncoding(DerivedStyleEncoding):
+class NominalColorEncoding(DerivedStyleEncoding, ColorEncoding):
     """Encodes color values from a nominal property whose values are mapped to colors.
 
     Attributes
     ----------
     property : str
         The name of the property that contains the nominal values to be mapped to colors.
-    categorical_colormap : CategoricalColormap
+    colormap : CategoricalColormap
         Maps the property values to colors.
     fallback : ColorArray
         The safe constant fallback color to use if mapping the property values to
         colors fails.
     """
 
+    type: EncodingType = Field(
+        EncodingType.NOMINAL, const=EncodingType.NOMINAL
+    )
     property: str
-    categorical_colormap: CategoricalColormap
+    colormap: CategoricalColormap
     fallback: ColorArray = DEFAULT_COLOR
 
     def _apply(
         self, properties: Dict[str, np.ndarray], indices: Iterable[int]
     ) -> np.ndarray:
         values = properties[self.property][indices]
-        return self.categorical_colormap.map(values)
+        return self.colormap.map(values)
 
 
-class QuantitativeColorEncoding(DerivedStyleEncoding):
+class QuantitativeColorEncoding(DerivedStyleEncoding, ColorEncoding):
     """Encodes color values from a quantitative property whose values are mapped to colors.
 
     Attributes
@@ -137,6 +172,9 @@ class QuantitativeColorEncoding(DerivedStyleEncoding):
         colors fails.
     """
 
+    type: EncodingType = Field(
+        EncodingType.QUANTITATIVE, const=EncodingType.QUANTITATIVE
+    )
     property: str
     colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
@@ -183,12 +221,10 @@ COLOR_ENCODINGS = (
 )
 
 
-def parse_color_encoding(
-    color: Union[
-        Union[COLOR_ENCODINGS], dict, ColorType, Iterable[ColorType], None
-    ],
+def validate_color_encoding(
+    color: Union[ColorEncoding, dict, ColorType, Iterable[ColorType], None],
     properties: Dict[str, np.ndarray],
-) -> Union[COLOR_ENCODINGS]:
+) -> ColorEncoding:
     if color is None:
         return ConstantColorEncoding(constant=DEFAULT_COLOR)
     if isinstance(color, COLOR_ENCODINGS):

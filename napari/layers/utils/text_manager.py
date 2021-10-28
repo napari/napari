@@ -19,9 +19,9 @@ from ...utils.events.evented_model import (
     get_repr_args_without,
 )
 from .color_encoding import (
-    COLOR_ENCODINGS,
+    ColorEncoding,
     ConstantColorEncoding,
-    parse_color_encoding,
+    validate_color_encoding,
 )
 from .color_transformations import ColorType
 
@@ -57,9 +57,6 @@ class TextManager(EventedModel):
         True if the text should be displayed, false otherwise.
     size : float
         Font size of the text, which must be positive. Default value is 12.
-    color : array
-        Font color for the text as an [R, G, B, A] array. Can also be expressed
-        as a string on construction or setting.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
@@ -78,7 +75,7 @@ class TextManager(EventedModel):
     # and we can rely on a layer and this sharing the same instance.
     properties: dict
     string: Union[STRING_ENCODINGS] = ConstantStringEncoding(constant='')
-    color: Union[COLOR_ENCODINGS] = ConstantColorEncoding(constant='cyan')
+    color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
     size: PositiveInt = 12
     blending: Blending = Blending.TRANSLUCENT
@@ -330,11 +327,11 @@ class TextManager(EventedModel):
     def _check_color(
         cls,
         color: Union[
-            Union[COLOR_ENCODINGS], dict, ColorType, Iterable[ColorType], None
+            ColorEncoding, dict, ColorType, Iterable[ColorType], None
         ],
         values,
-    ) -> Union[COLOR_ENCODINGS]:
-        return parse_color_encoding(color, values['properties'])
+    ) -> ColorEncoding:
+        return validate_color_encoding(color, values['properties'])
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):

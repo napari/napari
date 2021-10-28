@@ -1,11 +1,24 @@
 import warnings
 from abc import ABC, abstractmethod
+from enum import auto
 from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as
 
 from ...utils.events import EventedModel
+from ...utils.misc import StringEnum
+
+
+class EncodingType(StringEnum):
+    """The encoding type, which is a constant field and useful for disambiguation of dict input."""
+
+    CONSTANT = auto()
+    DIRECT = auto()
+    IDENTITY = auto()
+    NOMINAL = auto()
+    QUANTITATIVE = auto()
+    FORMAT_STRING = auto()
 
 
 class StyleEncoding(ABC):
@@ -85,6 +98,9 @@ class ConstantStyleEncoding(EventedModel, StyleEncoding):
         The constant style value.
     """
 
+    class Config:
+        extra = 'forbid'
+
     constant: np.ndarray
 
     def _get_array(
@@ -124,6 +140,9 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         be a 0D numpy array (i.e. a scalar).
     """
 
+    class Config:
+        extra = 'forbid'
+
     array: np.ndarray
     default: np.ndarray
 
@@ -151,6 +170,9 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
 
 class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
     """Encodes style values by deriving them from property values."""
+
+    class Config:
+        extra = 'forbid'
 
     fallback: np.ndarray
     _array: np.ndarray
