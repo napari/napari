@@ -1680,7 +1680,7 @@ def test_world_data_extent():
     data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
     min_val = (-7, -10, -5)
     max_val = (12, 35, 20)
-    layer = Points(data)
+    layer = Points(data, size=10)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
 
