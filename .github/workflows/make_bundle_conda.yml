@@ -25,17 +25,17 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            conda-bld-suffix: /napari-feedstock/build_artifacts/
+            conda_bld_suffix: /napari-feedstock/build_artifacts/
             noarch: true
 
           - os: macos-latest
-            conda-bld-suffix: /conda-bld/
+            conda_bld_suffix: /conda-bld/
 
           - os: windows-latest
-            conda-bld-suffix: "\\conda-bld\\"
+            conda_bld_suffix: "\\conda-bld\\"
 
     env:
-      conda-bld-suffix: ${{ matrix.conda-bld-suffix }}
+      conda_bld_suffix: ${{ matrix.conda_bld_suffix }}
       noarch: ${{ matrix.noarch }}
 
     steps:
@@ -127,7 +127,7 @@ jobs:
           CONFIG: linux_64_
           CI: github_actions
         run: |
-          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda-bld-suffix }}"
+          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda_bld_suffix }}"
           mv ${GITHUB_WORKSPACE}/napari-source .
           ./.scripts/run_docker_build.sh
 
@@ -139,7 +139,7 @@ jobs:
           CONFIG: osx_64_
           CI: github_actions
         run: |
-          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda-bld-suffix }}"
+          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda_bld_suffix }}"
           export FEEDSTOCK_NAME="$(basename $GITHUB_REPOSITORY)"
           export GIT_BRANCH="$(basename $GITHUB_REF)"
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
@@ -158,7 +158,7 @@ jobs:
           PYTHONUNBUFFERED: 1
           CI: github_actions
         run: |
-          set "CONDA_BLD_PATH=${{ github.workspace }}${{ env.conda-bld-suffix }}"
+          set "CONDA_BLD_PATH=${{ github.workspace }}${{ env.conda_bld_suffix }}"
           call activate base
           conda.exe install -c conda-forge 'python=3.6' conda-build conda conda-forge-ci-setup=3 pip
           if errorlevel 1 exit 1
@@ -181,38 +181,30 @@ jobs:
         if: env.noarch
         with:
           name: napari-${{ env.NAPARI_VERSION }}.tar.bz2
-          path: ${{ github.workspace }}${{ env.conda-bld-suffix }}noarch/*.tar.bz2
+          path: ${{ github.workspace }}${{ env.conda_bld_suffix }}noarch/*.tar.bz2
 
       - name: Upload Menu Artifact
         uses: actions/upload-artifact@v2
         with:
           name: napari-menu-${{ env.NAPARI_VERSION }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
-          path: ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2
+          path: ${{ github.workspace }}${{ env.conda_bld_suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2
 
       - name: Upload to anaconda.org (Unix)
         shell: bash -l {0}
         # if: github.event_name == 'schedule'
-        if: runner.os != 'Windows'
         run: |
+          if [[ ${{ runner.os }} == Windows ]]; then
+            conda_bld_path="${GITHUB_WORKSPACE//\\//}${conda_bld_suffix//\\//}"
+          else
+            conda_bld_path="${GITHUB_WORKSPACE}${conda_bld_suffix}"
+          fi
           anaconda \
             -t ${{ secrets.ANACONDA_TOKEN }} \
             upload \
             -u napari \
             -l nightly \
-            ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2 \
-            ${{ github.workspace }}${{ env.conda-bld-suffix }}noarch/*.tar.bz2
-
-      - name: Upload to anaconda.org (Windows)
-        shell: cmd
-        # if: github.event_name == 'schedule'
-        if: runner.os == 'Windows'
-        run: |
-          anaconda ^
-            -t ${{ secrets.ANACONDA_TOKEN }} ^
-            upload ^
-            -u napari ^
-            -l nightly ^
-            ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}\*.tar.bz2
+            ${conda_bld_path}${{ env.NAPARI_PLATFORM }}/*.tar.bz2 \
+            ${conda_bld_path}noarch/*.tar.bz2
 
   bundle:
     name: Bundle ${{ matrix.platform }}
