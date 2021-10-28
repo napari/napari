@@ -26,7 +26,7 @@ class InfoAction(argparse.Action):
         errors = plugin_manager.get_errors()
         if errors:
             names = {e.plugin_name for e in errors}
-            print("\n‼️  Errors were detected in the following plugins:")
+            print("\n!!  Errors were detected in the following plugins:")
             print("(Run 'napari --plugin-info -v' for more details)")
             print("\n".join(f"  - {n}" for n in names))
         sys.exit()
@@ -43,7 +43,7 @@ class PluginInfoAction(argparse.Action):
 
         errors = plugin_manager.get_errors()
         if errors:
-            print("‼️  Some errors occurred:")
+            print("!!  Some errors occurred:")
             verbose = '-v' in sys.argv or '--verbose' in sys.argv
             if not verbose:
                 print("   (use '-v') to show full tracebacks")
@@ -398,6 +398,8 @@ def main():
     import platform
     from distutils.version import StrictVersion
 
+    from .packaging.bundle import running_as_bundled_app, set_conda_config
+
     _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
         platform.release()
     ) > StrictVersion('19.0.0')
@@ -435,11 +437,14 @@ def main():
             )
             warnings.warn(msg)
 
-    # Prevent https://github.com/napari/napari/issues/3415
-    if sys.platform == "darwin" and sys.version_info >= (3, 8):
-        import multiprocessing
+    if running_as_bundled_app():
+        set_conda_config()
 
-        multiprocessing.set_start_method('fork')
+        # Prevent https://github.com/napari/napari/issues/3415
+        if sys.platform == "darwin" and sys.version_info >= (3, 8):
+            import multiprocessing
+
+            multiprocessing.set_start_method('fork')
 
     _run()
 

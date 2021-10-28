@@ -1,0 +1,354 @@
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * *"
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+name: Conda
+
+jobs:
+  conda-build:
+    name: Package ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    if: github.repository == 'napari/napari'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            conda-bld-suffix: /napari-feedstock/build_artifacts/
+            noarch: true
+
+          - os: macos-latest
+            conda-bld-suffix: /conda-bld/
+
+          - os: windows-latest
+            conda-bld-suffix: "\\conda-bld\\"
+
+    env:
+      conda-bld-suffix: ${{ matrix.conda-bld-suffix }}
+      noarch: ${{ matrix.noarch }}
+
+    steps:
+      - name: Checkout napari source
+        uses: actions/checkout@v2
+        with:
+          path: napari-source
+          fetch-depth: 0
+
+      - name: Checkout conda-forge feedstock
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          # TODO: Match upstream, not fork!
+          repository: jaimergp/napari-feedstock
+          ref: menuinst
+          path: napari-feedstock
+
+      - name: Create environment.yml
+        shell: bash
+        run: |
+          cat <<EOF > environment.yml
+          name: test
+          channels:
+            - conda-forge
+          dependencies:
+            - conda-smithy
+            - python
+            - pip
+            - tomlkit
+            - ruamel.yaml
+            - anaconda-client
+          EOF
+
+          if [[ ${{ runner.os }} == Windows ]]; then
+            echo "  - m2-sed" >> environment.yml
+          fi
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniforge-version: latest
+          environment-file: environment.yml
+
+      - name: install napari
+        shell: bash -l {0}
+        working-directory: napari-source
+        run: |
+          pip install -e . --no-deps -vvv
+          version=$(python bundle.py --version)
+          arch=$(python bundle.py --arch)
+          platform=$(conda info --json | jq -r .platform)
+          echo NAPARI_VERSION=${version} >> $GITHUB_ENV
+          echo NAPARI_ARCH=${arch} >> $GITHUB_ENV
+          echo NAPARI_PLATFORM=${platform} >> $GITHUB_ENV
+
+      - name: Patch and rerender feedstock
+        shell: bash -l {0}
+        working-directory: napari-feedstock
+        run: |
+          set -euxo pipefail
+          case ${{ runner.os }} in
+            Linux)
+              # This will be path once mounted in Docker
+              source_path="/home/conda/feedstock_root/napari-source"
+              ;;
+            macOS)
+              source_path="${{ github.workspace }}/napari-source"
+              ;;
+            Windows)
+              source_path="${GITHUB_WORKSPACE//\\//}/napari-source"
+              ;;
+            esac
+
+          sed -i.bak -e "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" \
+                     -e "s|  git_url:.*|  path: ${source_path}|" \
+                     -e "s|  git_rev:.*||"  \
+                     recipe/meta.yaml
+
+          conda-smithy rerender
+          git diff
+
+      - name: Run build scripts (Linux)
+        if: runner.os == 'Linux'
+        shell: bash -l {0}
+        working-directory: napari-feedstock
+        env:
+          DOCKER_IMAGE: quay.io/condaforge/linux-anvil-comp7
+          CONFIG: linux_64_
+          CI: github_actions
+        run: |
+          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda-bld-suffix }}"
+          mv ${GITHUB_WORKSPACE}/napari-source .
+          ./.scripts/run_docker_build.sh
+
+      - name: Run build scripts (MacOS)
+        if: runner.os == 'macOS'
+        shell: bash -l {0}
+        working-directory: napari-feedstock
+        env:
+          CONFIG: osx_64_
+          CI: github_actions
+        run: |
+          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda-bld-suffix }}"
+          export FEEDSTOCK_NAME="$(basename $GITHUB_REPOSITORY)"
+          export GIT_BRANCH="$(basename $GITHUB_REF)"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            export IS_PR_BUILD="True"
+          else
+            export IS_PR_BUILD="False"
+          fi
+          ./.scripts/run_osx_build.sh
+
+      - name: Run build scripts (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        working-directory: napari-feedstock
+        env:
+          CONFIG: win_64_
+          PYTHONUNBUFFERED: 1
+          CI: github_actions
+        run: |
+          set "CONDA_BLD_PATH=${{ github.workspace }}${{ env.conda-bld-suffix }}"
+          call activate base
+          conda.exe install -c conda-forge 'python=3.6' conda-build conda conda-forge-ci-setup=3 pip
+          if errorlevel 1 exit 1
+          setup_conda_rc .\ .\recipe .\.ci_support\%CONFIG%.yaml
+          if errorlevel 1 exit 1
+          conda.exe build .\recipe -m .ci_support\%CONFIG%.yaml
+          if errorlevel 1 exit 1
+          set "FEEDSTOCK_NAME=%GITHUB_REPOSITORY:*/=%"
+          set "GIT_BRANCH=%GITHUB_REF:refs/heads/=%"
+          if /i "%GITHUB_EVENT_NAME%" == "pull_request" (
+            set "IS_PR_BUILD=True"
+          ) else (
+            set "IS_PR_BUILD=False"
+          )
+          validate_recipe_outputs "%FEEDSTOCK_NAME%"
+          if errorlevel 1 exit 1
+
+      - name: Upload Napari Artifact
+        uses: actions/upload-artifact@v2
+        if: env.noarch
+        with:
+          name: napari-${{ env.NAPARI_VERSION }}.tar.bz2
+          path: ${{ github.workspace }}${{ env.conda-bld-suffix }}noarch/*.tar.bz2
+
+      - name: Upload Menu Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: napari-menu-${{ env.NAPARI_VERSION }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
+          path: ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2
+
+      - name: Upload to anaconda.org (nightly only)
+        shell: bash -l {0}
+        if: github.event_name == 'schedule'
+        run: |
+          anaconda upload \
+            -u napari \
+            -t ${{ secrets.ANACONDA_TOKEN }} \
+            -l nightly \
+            ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2 \
+            ${{ github.workspace }}${{ env.conda-bld-suffix }}noarch/*.tar.bz2
+
+  bundle:
+    name: Bundle ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
+    needs: conda-build
+    if: github.repository == 'napari/napari'
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      DISPLAY: ":99.0"
+      CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-18.04
+            python-version: "3.9"
+          - platform: macos-latest
+            python-version: "3.9"
+          - platform: windows-latest
+            python-version: "3.8"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Create environment.yml
+        shell: bash
+        run: |
+          cat <<EOF > environment.yml
+          name: build-bundle
+          channels:
+            - conda-forge
+          dependencies:
+            - python ${{ matrix.python-version }}
+            - pip
+            - constructor
+            - conda-build
+            - ruamel.yaml
+          EOF
+      - name: install micromamba
+        uses: mamba-org/provision-with-micromamba@main
+
+      - name: set up build dependencies
+        shell: bash -l {0}
+        run: |
+          python -m pip install -e '.[bundle_build]'
+
+      - name: get tag / arch-suffix / extension / artifact-name
+        shell: bash -l {0}
+        run: |
+          VER=$(python bundle_conda.py --version)
+          echo "version=${VER}" >> $GITHUB_ENV
+          echo "Version: $VER"
+          ARCH_SUFFIX=$(python bundle_conda.py --arch)
+          echo "arch-suffix=${ARCH_SUFFIX}" >> $GITHUB_ENV
+          echo "Machine: ${ARCH_SUFFIX}"
+          EXTENSION=$(python bundle_conda.py --ext)
+          echo "extension=${EXTENSION}" >> $GITHUB_ENV
+          echo "Extension: ${EXTENSION}"
+          ARTIFACT_NAME=$(python bundle_conda.py --artifact-name)
+          echo "artifact-name=${ARTIFACT_NAME}" >> $GITHUB_ENV
+          echo "Expected artifact name: ${ARTIFACT_NAME}"
+          NAPARI_PLATFORM=$(conda info --json | jq -r .platform)
+          echo "NAPARI_PLATFORM=${NAPARI_PLATFORM}" >> $GITHUB_ENV
+          echo "Conda platform: ${NAPARI_PLATFORM}"
+
+      - name: Download local build artifacts (napari)
+        uses: actions/download-artifact@v2
+        with:
+          name: napari-${{ env.version }}.tar.bz2
+          path: ${{ env.CONDA_BLD_PATH }}
+
+      - name: Download local build artifacts (napari-menu)
+        uses: actions/download-artifact@v2
+        with:
+          name: napari-menu-${{ env.version }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
+          path: ${{ env.CONDA_BLD_PATH }}
+
+      - name: Index local packages (if any)
+        shell: bash -l {0}
+        run: |
+          cd ${CONDA_BLD_PATH}
+          pkgs=$(shopt -s nullglob dotglob; echo "${CONDA_BLD_PATH}/*.tar.bz2")
+          if (( ${#pkgs} )); then
+            mkdir $NAPARI_PLATFORM noarch
+            mv *napari-menu*.tar.bz2 $NAPARI_PLATFORM
+            mv *napari*.tar.bz2 noarch
+            conda index .
+            conda search -c local --override-channels
+            echo CONSTRUCTOR_USE_LOCAL=1 >> $GITHUB_ENV
+          else
+            echo "No local packages found, assuming latest release"
+          fi
+
+      - name: Make Bundle (Linux)
+        if: runner.os == 'Linux'
+        shell: bash -l {0}
+        run: |
+          echo "::group::Install apt dependencies"
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-xinerama0 libxcb-xfixes0 libxcb-shape0 libqt5gui5
+          echo "::endgroup::"
+          xvfb-run --auto-servernum python bundle_conda.py
+
+      - name: Make Bundle (MacOS/Windows)
+        shell: bash -l {0}
+        if: runner.os != 'Linux'
+        run: python bundle_conda.py
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+
+      - name: Get Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: get_release
+        uses: bruceadams/get-release@v1.2.2
+
+      - name: Upload Release Asset
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          asset_name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          asset_content_type: application/octet-stream
+
+      - name: Upload Nightly Build Asset
+        if: ${{ github.event_name == 'schedule' }}
+        uses: WebFreak001/deploy-nightly@v1.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # nightly build release from https://api.github.com/repos/napari/napari/releases
+          upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label}
+          release_id: 34273071
+          asset_path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          asset_name: napari-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          asset_content_type: application/octet-stream
+          max_releases: 1
+
+      - name: Update latest tag
+        uses: EndBug/latest-tag@latest
+        if: ${{ github.event_name == 'schedule' }}
+        with:
+          description: latest code released from nightly build
+          tag-name: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

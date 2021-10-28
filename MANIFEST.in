@@ -18,5 +18,5 @@ recursive-exclude napari *.pyc
 exclude napari/benchmarks/*
 recursive-exclude resources *
 recursive-exclude binder *
-exclude bundle.py
+exclude bundle.py bundle_conda.py
 exclude dockerfile
