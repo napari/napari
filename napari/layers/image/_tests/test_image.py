@@ -818,6 +818,10 @@ def test_projected_distance_from_mouse_drag(
     image = Image(np.ones((32, 32, 32)))
     image._slice_dims(point=[0, 0, 0], ndisplay=3)
     result = image.projected_distance_from_mouse_drag(
-        start_position, end_position, view_direction, vector
+        start_position,
+        end_position,
+        view_direction,
+        vector,
+        dims_displayed=[0, 1, 2],
     )
     assert np.allclose(result, expected_value)
