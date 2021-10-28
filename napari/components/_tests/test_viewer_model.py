@@ -325,6 +325,10 @@ def test_swappable_dims():
 
     labels_data = np.random.randint(20, size=(7, 12, 10, 15))
     labels_name = viewer.add_labels(labels_data).name
+    # after set first layer to viewer the point is set to lower `extent.world`
+    # so there is no point visible on current slice. Because of this there is
+    # a need to reset position to see points from slice `[0, 0, ...]`.
+    # To pass test in swapped orders setting all points to 0 is required.
     for i in range(labels_data.ndim):
         viewer.dims.set_point(i, 0)
     assert np.all(
