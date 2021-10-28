@@ -5,7 +5,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QStatusBar
 
 from ...utils.translations import trans
-from ..dialogs.activity_dialog import ActivityToggleItem
+from ..dialogs.qt_activity_dialog import ActivityToggleItem
 
 if TYPE_CHECKING:
     from ..qt_main_window import _QtMainWindow
