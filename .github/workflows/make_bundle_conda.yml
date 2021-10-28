@@ -189,9 +189,10 @@ jobs:
           name: napari-menu-${{ env.NAPARI_VERSION }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
           path: ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2
 
-      - name: Upload to anaconda.org (nightly only)
+      - name: Upload to anaconda.org (Unix)
         shell: bash -l {0}
         # if: github.event_name == 'schedule'
+        if: runner.os != 'Windows'
         run: |
           anaconda \
             -t ${{ secrets.ANACONDA_TOKEN }} \
@@ -200,6 +201,18 @@ jobs:
             -l nightly \
             ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2 \
             ${{ github.workspace }}${{ env.conda-bld-suffix }}noarch/*.tar.bz2
+
+      - name: Upload to anaconda.org (Windows)
+        shell: bash -l {0}
+        # if: github.event_name == 'schedule'
+        if: runner.os == 'Windows'
+        run: |
+          anaconda ^
+            -t ${{ secrets.ANACONDA_TOKEN }} ^
+            upload ^
+            -u napari ^
+            -l nightly ^
+            ${{ github.workspace }}${{ env.conda-bld-suffix }}${{ env.NAPARI_PLATFORM }}\*.tar.bz2
 
   bundle:
     name: Bundle ${{ matrix.platform }}
