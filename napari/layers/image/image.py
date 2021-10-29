@@ -15,10 +15,14 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 <<<<<<< HEAD
 from ...utils.translations import trans
+<<<<<<< HEAD
 =======
 from ...utils.naming import magic_name
 >>>>>>> 3c28e07dc (move magic name)
 from .._data_protocols import MultiScaleData
+=======
+from .._multiscale_data import MultiScaleData
+>>>>>>> 6366eb894 (rearrange)
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
