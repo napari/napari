@@ -41,12 +41,6 @@ def _raise_protocol_error(obj: Any, protocol: type):
     raise TypeError(message)
 
 
-def assert_protocol(obj: Any, protocol: type):
-    """Assert `obj` is an instance of `protocol` or raise helpful error."""
-    if not isinstance(obj, protocol):
-        _raise_protocol_error(obj, protocol)
-
-
 @runtime_checkable
 class LayerDataProtocol(Protocol):
     """A Protocol that all layer.data needs to support.
@@ -59,6 +53,12 @@ class LayerDataProtocol(Protocol):
 
     def __getitem__(self, item) -> LayerDataProtocol:
         ...
+
+
+def assert_protocol(obj: Any, protocol: Protocol = LayerDataProtocol):
+    """Assert `obj` is an instance of `protocol` or raise helpful error."""
+    if not isinstance(obj, protocol):
+        _raise_protocol_error(obj, protocol)
 
 
 class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
