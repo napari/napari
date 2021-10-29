@@ -358,7 +358,7 @@ class TextManager(EventedModel):
         # TODO: the top-level event is useful because we know that the vispy layer is
         # connected to that, but that might change in the future. Consider emitting the
         # string and color events, which may be less efficient, but is likely safer.
-        self.events(Event('TextManager._on_properties_changed'))
+        self.events(Event('_on_properties_changed'))
 
 
 def _warn_about_deprecated_values_field():
