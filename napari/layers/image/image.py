@@ -198,6 +198,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             )
 
         # Determine if data is a multiscale
+        self.data_raw = data  # TODO
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
         elif multiscale and not isinstance(data, MultiScaleData):
