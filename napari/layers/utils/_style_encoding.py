@@ -52,8 +52,8 @@ class StyleEncoding(ABC):
         Returns
         -------
         np.ndarray
-            The numpy array of derived values. This is either a single value or
-            has the same length as the given indices.
+            The numpy array of derived values. This has same length as the given indices
+            and in general is read-only.
         """
         pass
 
@@ -159,13 +159,13 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         return self.array if indices is None else self.array[indices]
 
     def _append(self, array: np.ndarray):
-        self.array = _append_maybe_empty(self.array, array)
+        self.array = np.append(self.array, array, axis=0)
 
     def _delete(self, indices):
         self.array = _delete_in_bounds(self.array, indices)
 
     def _clear(self):
-        self.array = np.empty((0,))
+        self.array = _empty_like_multi_array(self.default)
 
 
 class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
@@ -179,7 +179,7 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._array = np.empty((0,))
+        self._clear()
 
     @abstractmethod
     def _apply(
@@ -214,13 +214,13 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
         return self.fallback
 
     def _append(self, array: np.ndarray):
-        self._array = _append_maybe_empty(self._array, array)
+        self._array = np.append(self._array, array, axis=0)
 
     def _delete(self, indices):
         self._array = _delete_in_bounds(self._array, indices)
 
     def _clear(self):
-        self._array = np.empty((0,))
+        self._array = _empty_like_multi_array(self.fallback)
 
 
 def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
@@ -268,15 +268,12 @@ def infer_n_rows(
     return 1
 
 
+def _empty_like_multi_array(single_array: np.ndarray):
+    shape = (0,) + single_array.shape
+    return np.empty_like(single_array, shape=shape)
+
+
 def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
     # TODO: consider warning if any indices are OOB.
-    safe_indices = [index for index in indices if index < array.shape[0]]
+    safe_indices = [i for i in indices if i < array.shape[0]]
     return np.delete(array, safe_indices, axis=0)
-
-
-def _append_maybe_empty(left: np.ndarray, right: np.ndarray) -> np.ndarray:
-    if right.size == 0:
-        return left
-    if left.size == 0:
-        return right
-    return np.append(left, right, axis=0)

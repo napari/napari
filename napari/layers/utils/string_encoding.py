@@ -25,6 +25,8 @@ MultiStringArray = Array[str, (-1,)]
 
 
 class StringEncoding(ABC):
+    """Encodes strings from properties."""
+
     @abstractmethod
     def _get_array(
         self,

@@ -43,6 +43,8 @@ class MultiColorArray(np.ndarray):
 
 
 class ColorEncoding(ABC):
+    """Encodes colors from properties."""
+
     @abstractmethod
     def _get_array(
         self,
