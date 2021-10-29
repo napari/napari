@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
+from napari.layers.utils.color_encoding import IdentityColorEncoding
 from napari.layers.utils.text_manager import TextManager
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -366,6 +367,24 @@ def test_multi_color_non_property():
     }
     with pytest.raises(ValidationError):
         TextManager(string='class', properties=properties, color='class_color')
+
+
+def test_multi_color_removed_property_returns_fallback():
+    properties = {
+        'class': np.array(['red', 'green', 'blue']),
+    }
+    text_manager = TextManager(
+        string='class', properties=properties, color='class'
+    )
+    properties.pop('class')
+
+    with pytest.warns(RuntimeWarning):
+        color_array = text_manager.color._get_array(properties, 3)
+
+    assert isinstance(text_manager.color, IdentityColorEncoding)
+    np.testing.assert_array_equal(
+        color_array, [text_manager.color.fallback] * 3
+    )
 
 
 def test_multi_color_property_discrete_map():
