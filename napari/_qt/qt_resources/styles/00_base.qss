@@ -78,6 +78,10 @@ QPushButton:pressed {
   background-color: {{ highlight }};
 }
 
+QPushButton:checked {
+  background-color: {{ highlight }};
+}
+
 QPushButton:disabled {
   background-color: {{ background }};
 }
