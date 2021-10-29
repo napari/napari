@@ -124,3 +124,6 @@ class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
 
     def __rmul__(self, other) -> bool:
         return other * self._data
+
+    def __array__(self) -> np.ndarray:
+        return self._data[-1]
