@@ -21,6 +21,13 @@ class EncodingType(StringEnum):
     FORMAT_STRING = auto()
 
 
+class StrictEventedModel(EventedModel):
+    """An EventedModel that forbids extra attributes."""
+
+    class Config:
+        extra = 'forbid'
+
+
 class StyleEncoding(ABC):
     """Defines a way to encode style values, like colors and strings."""
 
@@ -87,7 +94,7 @@ class StyleEncoding(ABC):
         pass
 
 
-class ConstantStyleEncoding(EventedModel, StyleEncoding):
+class ConstantStyleEncoding(StrictEventedModel, StyleEncoding):
     """Encodes a constant style value.
 
     The _get_array method returns the constant broadcast to the required length.
@@ -97,9 +104,6 @@ class ConstantStyleEncoding(EventedModel, StyleEncoding):
     constant : np.ndarray
         The constant style value.
     """
-
-    class Config:
-        extra = 'forbid'
 
     constant: np.ndarray
 
@@ -121,7 +125,7 @@ class ConstantStyleEncoding(EventedModel, StyleEncoding):
         pass
 
 
-class DirectStyleEncoding(EventedModel, StyleEncoding):
+class DirectStyleEncoding(StrictEventedModel, StyleEncoding):
     """Encodes style values directly.
 
     The style values are encoded directly in the array attribute, so that
@@ -137,9 +141,6 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         array because color is a 1D RGBA numpy array, but mostly this will
         be a 0D numpy array (i.e. a scalar).
     """
-
-    class Config:
-        extra = 'forbid'
 
     array: np.ndarray
     default: np.ndarray
@@ -166,11 +167,8 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         self.array = _empty_like_multi_array(self.default)
 
 
-class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
+class DerivedStyleEncoding(StrictEventedModel, StyleEncoding, ABC):
     """Encodes style values by deriving them from property values."""
-
-    class Config:
-        extra = 'forbid'
 
     fallback: np.ndarray
     _array: np.ndarray
