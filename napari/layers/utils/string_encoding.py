@@ -13,7 +13,6 @@ from ._style_encoding import (
     DerivedStyleEncoding,
     DirectStyleEncoding,
     EncodingType,
-    get_type_names,
     parse_kwargs_as_encoding,
 )
 
@@ -152,7 +151,7 @@ _STRING_ENCODINGS = (
     DirectStringEncoding,
 )
 
-_STRING_ENCODING_NAMES = get_type_names(_STRING_ENCODINGS)
+_STRING_ENCODING_NAMES = tuple(enc.__name__ for enc in _STRING_ENCODINGS)
 
 
 def validate_string_encoding(

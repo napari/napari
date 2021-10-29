@@ -1,7 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
 from enum import auto
-from typing import Collection, Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import Collection, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as
@@ -241,7 +241,7 @@ def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
     try:
         return parse_obj_as(Union[encodings], kwargs)
     except ValidationError as error:
-        encoding_names = get_type_names(encodings)
+        encoding_names = tuple(enc.__name__ for enc in encodings)
         raise ValueError(
             'Original error:\n'
             f'{error}'
@@ -252,17 +252,11 @@ def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
         )
 
 
-def get_type_names(types: Iterable[type]) -> Tuple[str, ...]:
-    """Gets the short names of the given types."""
-    return tuple(type.__name__ for type in types)
-
-
 def _empty_like_multi_array(single_array: np.ndarray):
     shape = (0,) + single_array.shape
     return np.empty_like(single_array, shape=shape)
 
 
 def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
-    # TODO: consider warning if any indices are OOB.
     safe_indices = [i for i in indices if i < array.shape[0]]
     return np.delete(array, safe_indices, axis=0)
