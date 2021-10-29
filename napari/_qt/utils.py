@@ -318,8 +318,11 @@ def remove_flash_animation(widget_ref: weakref.ref[QWidget]):
     if widget_ref() is None:
         return
     widget = widget_ref()
-    widget.setGraphicsEffect(None)
-    del widget._flash_animation
+    try:
+        widget.setGraphicsEffect(None)
+        del widget._flash_animation
+    except RuntimeError:
+        pass  # in case it's already been deleted.
 
 
 @contextmanager
