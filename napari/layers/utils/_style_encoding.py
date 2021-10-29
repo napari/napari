@@ -109,9 +109,7 @@ class ConstantStyleEncoding(EventedModel, StyleEncoding):
         n_rows: int,
         indices: Optional[Collection[int]] = None,
     ) -> np.ndarray:
-        output_length = n_rows if indices is None else len(indices)
-        output_shape = (output_length,) + self.constant.shape
-        return np.broadcast_to(self.constant, output_shape)
+        return _broadcast_constant(self.constant, n_rows, indices)
 
     def _append(self, array: np.ndarray):
         pass
@@ -156,7 +154,7 @@ class DirectStyleEncoding(EventedModel, StyleEncoding):
         if n_rows > current_length:
             tail_array = np.array([self.default] * (n_rows - current_length))
             self._append(tail_array)
-        return self.array if indices is None else self.array[indices]
+        return _maybe_index_array(self.array, indices)
 
     def _append(self, array: np.ndarray):
         self.array = np.append(self.array, array, axis=0)
@@ -199,7 +197,7 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
             if len(tail_indices) > 0:
                 tail_array = self._apply(properties, tail_indices)
                 self._append(tail_array)
-            return self._array if indices is None else self._array[indices]
+            return _maybe_index_array(self._array, indices)
         except (KeyError, ValueError) as error:
             self_str = repr(self)
             warnings.warn(
@@ -208,10 +206,10 @@ class DerivedStyleEncoding(EventedModel, StyleEncoding, ABC):
                 f'{self_str}\n'
                 'failed with error:\n'
                 f'{error}\n'
-                f'Returning safe constant value instead.',
+                f'Returning safe fallback value instead.',
                 category=RuntimeWarning,
             )
-        return self.fallback
+        return _broadcast_constant(self.fallback, n_rows, indices)
 
     def _append(self, array: np.ndarray):
         self._array = np.append(self._array, array, axis=0)
@@ -260,3 +258,13 @@ def _empty_like_multi_array(single_array: np.ndarray):
 def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
     safe_indices = [i for i in indices if i < array.shape[0]]
     return np.delete(array, safe_indices, axis=0)
+
+
+def _broadcast_constant(constant: np.ndarray, n_rows: int, indices: Optional):
+    output_length = n_rows if indices is None else len(indices)
+    output_shape = (output_length,) + constant.shape
+    return np.broadcast_to(constant, output_shape)
+
+
+def _maybe_index_array(array: np.ndarray, indices: Optional):
+    return array if indices is None else array[indices]

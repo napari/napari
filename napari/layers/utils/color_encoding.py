@@ -255,7 +255,7 @@ def validate_color_encoding(
     """
     if color is None:
         return ConstantColorEncoding(constant=DEFAULT_COLOR)
-    if isinstance(color, _COLOR_ENCODINGS):
+    if isinstance(color, ColorEncoding):
         return color
     if isinstance(color, dict):
         return parse_kwargs_as_encoding(_COLOR_ENCODINGS, **color)
