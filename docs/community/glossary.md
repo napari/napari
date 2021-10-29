@@ -1,0 +1,3 @@
+napari terms	Description
+shapes	The shapes layer allows you to display a list of an NxD arrays, where each array corresponds to one shape, specified by N points in D coordinates. Currently supported shapes: rectangle, ellipses, polygons, paths, and lines. Can be used as a visualization tool to highlight ROI, or be used for downstream operations.
+widget	A small, composable graphical user interface . A widget could be a simple one parameter/control (e.g. a slider to adjust contrast limits, a drop-down box to select a mode) or a collection of multiple controls with data output.
