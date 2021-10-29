@@ -13,6 +13,7 @@ authors:
 - given-names: Talley
   family-names: Lambert
   affiliation: Harvard Medical School
+  orcid: "https://orcid.org/0000-0002-2409-0181"
 - given-names: Kira
   family-names: Evans
   affiliation: '@chanzuckerberg'
