@@ -15,7 +15,7 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.naming import magic_name
 from ...utils.translations import trans
-from .._data_protocols import MultiScaleData
+from .._multiscale_data import MultiScaleData
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range

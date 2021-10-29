@@ -2,31 +2,25 @@
 """
 from __future__ import annotations
 
-from types import GeneratorType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Tuple, Union
 
-import numpy as np
 from typing_extensions import Protocol, runtime_checkable
 
-from .utils.layer_utils import compute_multiscale_level_and_corners
-
-_T = TypeVar('_T')
-Shape = Tuple[int, ...]
-ListOrTuple = Union[List[_T], Tuple[_T, ...], np.ndarray]
 _OBJ_NAMES = set(dir(Protocol))
 _OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
 
 if TYPE_CHECKING:
+    from enum import Enum
+
     from ..types import DTypeLike
+
+    # https://github.com/python/typing/issues/684#issuecomment-548203158
+    class ellipsis(Enum):
+        Ellipsis = "..."
+
+    Ellipsis = ellipsis.Ellipsis
+else:
+    ellipsis = type(Ellipsis)
 
 
 def _raise_protocol_error(obj: Any, protocol: type):
@@ -41,89 +35,44 @@ def _raise_protocol_error(obj: Any, protocol: type):
     raise TypeError(message)
 
 
+Index = Union[int, slice, ellipsis]
+
+
 @runtime_checkable
 class LayerDataProtocol(Protocol):
-    """A Protocol that all layer.data needs to support.
+    """Protocol that all layer.data must support.
+
+    We don't explicitly declare the array types we support (i.e. dask, xarray,
+    etc...).  Instead, we support protocols.
+
+    This Protocol is a place to document the attributes and methods that must
+    be present for an object to be used as `layer.data`. We should aim to
+    ensure that napari never accesses a method on `layer.data` that is not in
+    this protocol.
+
+    This protocol should remain a subset of the Array API proposed by the
+    Python array API standard:
+    https://data-apis.org/array-api/latest/API_specification/array_object.html
+
 
     WIP: Shapes.data may be an execption.
     """
 
-    shape: Shape
-    dtype: DTypeLike
+    @property
+    def dtype(self) -> DTypeLike:
+        """Data type of the array elements."""
 
-    def __getitem__(self, item) -> LayerDataProtocol:
-        ...
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        """Array dimensions."""
+
+    def __getitem__(
+        self, key: Union[Index, Tuple[Index, ...], LayerDataProtocol]
+    ) -> LayerDataProtocol:
+        """Returns self[key]."""
 
 
-def assert_protocol(obj: Any, protocol: Protocol = LayerDataProtocol):
+def assert_protocol(obj: Any, protocol=LayerDataProtocol):
     """Assert `obj` is an instance of `protocol` or raise helpful error."""
     if not isinstance(obj, protocol):
         _raise_protocol_error(obj, protocol)
-
-
-class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
-    """Wrapper for multiscale data, to provide consistent API."""
-
-    def __init__(self, data, max_size: Optional[Sequence[int]] = None) -> None:
-        if isinstance(data, GeneratorType):
-            data = list(data)
-        if not (isinstance(data, (list, tuple, np.ndarray)) and len(data)):
-            raise ValueError(
-                "Multiscale data must be a (non-empty) list, tuple, or array"
-            )
-        for d in data:
-            assert_protocol(d, LayerDataProtocol)
-
-        self._data: ListOrTuple[LayerDataProtocol] = data
-        self.max_size = self._data[-1].shape if max_size is None else max_size
-        self.downsample_factors = (
-            np.array([d.shape for d in data]) / data[0].shape
-        )
-
-    @property
-    def dtype(self):
-        """Return dtype of the first scale.."""
-        return self._data[0].dtype
-
-    @property
-    def shape(self):
-        """Shape of multiscale is just the biggest shape."""
-        return self._data[0].shape
-
-    @property
-    def shapes(self) -> Tuple[Shape, ...]:
-        """Tuple shapes for all scales."""
-        return tuple(im.shape for im in self._data)
-
-    def __getitem__(  # type: ignore
-        self, index: Union[int, Tuple[slice, ...]]
-    ) -> LayerDataProtocol:
-        if not isinstance(index, tuple):
-            return self._data[index]
-
-        if not all(isinstance(idx, slice) for idx in index):
-            raise NotImplementedError("cannot handle slices and ints")
-
-        corners = np.array([(sl.start, sl.stop) for sl in index])
-        level, corners = compute_multiscale_level_and_corners(
-            corners, self.max_size, self.downsample_factors
-        )
-        return self._data[level][corners]
-
-    def __len__(self) -> int:
-        return len(self._data)
-
-    def __eq__(self, other) -> bool:
-        return self._data == other
-
-    def _add__(self, other) -> bool:
-        return self._data + other
-
-    def __mul__(self, other) -> bool:
-        return self._data * other
-
-    def __rmul__(self, other) -> bool:
-        return other * self._data
-
-    def __array__(self) -> np.ndarray:
-        return self._data[-1]
