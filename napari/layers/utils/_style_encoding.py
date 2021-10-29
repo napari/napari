@@ -1,13 +1,15 @@
 import warnings
 from abc import ABC, abstractmethod
 from enum import auto
-from typing import Collection, Dict, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as
 
 from ...utils.events import EventedModel
 from ...utils.misc import StringEnum
+
+IndicesType = Union[List[int], np.ndarray]
 
 
 class EncodingType(StringEnum):
@@ -36,7 +38,7 @@ class StyleEncoding(ABC):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional = None,
+        indices: Optional[IndicesType] = None,
     ) -> np.ndarray:
         """Get the array of values generated from this and the given properties.
 
@@ -111,7 +113,7 @@ class ConstantStyleEncoding(StrictEventedModel, StyleEncoding):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional[Collection[int]] = None,
+        indices: Optional[IndicesType] = None,
     ) -> np.ndarray:
         return _broadcast_constant(self.constant, n_rows, indices)
 
@@ -149,7 +151,7 @@ class DirectStyleEncoding(StrictEventedModel, StyleEncoding):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional[Collection[int]] = None,
+        indices: Optional[IndicesType] = None,
     ) -> np.ndarray:
         current_length = self.array.shape[0]
         if n_rows > current_length:
@@ -178,16 +180,14 @@ class DerivedStyleEncoding(StrictEventedModel, StyleEncoding, ABC):
         self._clear()
 
     @abstractmethod
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
         pass
 
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional = None,
+        indices: Optional[IndicesType] = None,
     ) -> np.ndarray:
         current_length = self._array.shape[0]
         tail_indices = range(current_length, n_rows)
@@ -258,11 +258,13 @@ def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
     return np.delete(array, safe_indices, axis=0)
 
 
-def _broadcast_constant(constant: np.ndarray, n_rows: int, indices: Optional):
+def _broadcast_constant(
+    constant: np.ndarray, n_rows: int, indices: Optional[IndicesType]
+):
     output_length = n_rows if indices is None else len(indices)
     output_shape = (output_length,) + constant.shape
     return np.broadcast_to(constant, output_shape)
 
 
-def _maybe_index_array(array: np.ndarray, indices: Optional):
+def _maybe_index_array(array: np.ndarray, indices: Optional[IndicesType]):
     return array if indices is None else array[indices]

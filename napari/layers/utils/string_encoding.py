@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from string import Formatter
-from typing import Any, Dict, Iterable, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 import numpy as np
 from pydantic import Field
@@ -13,6 +13,7 @@ from ._style_encoding import (
     DerivedStyleEncoding,
     DirectStyleEncoding,
     EncodingType,
+    IndicesType,
     parse_kwargs_as_encoding,
 )
 
@@ -31,7 +32,7 @@ class StringEncoding(ABC):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional = None,
+        indices: Optional[IndicesType] = None,
     ) -> MultiStringArray:
         pass
 
@@ -102,9 +103,7 @@ class IdentityStringEncoding(DerivedStyleEncoding, StringEncoding):
     property: str
     fallback: StringArray = DEFAULT_STRING
 
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
         return np.array(properties[self.property][indices], dtype=str)
 
 
@@ -127,9 +126,7 @@ class FormatStringEncoding(DerivedStyleEncoding, StringEncoding):
     format_string: str
     fallback: StringArray = DEFAULT_STRING
 
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
         return np.array(
             [
                 self.format_string.format(

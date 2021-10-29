@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import Dict, Iterable, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import Field, validator
@@ -13,6 +13,7 @@ from ._style_encoding import (
     DerivedStyleEncoding,
     DirectStyleEncoding,
     EncodingType,
+    IndicesType,
     parse_kwargs_as_encoding,
 )
 from .color_transformations import ColorType
@@ -50,7 +51,7 @@ class ColorEncoding(ABC):
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
-        indices: Optional = None,
+        indices: Optional[IndicesType] = None,
     ) -> MultiColorArray:
         pass
 
@@ -121,9 +122,7 @@ class IdentityColorEncoding(DerivedStyleEncoding, ColorEncoding):
     property: str
     fallback: ColorArray = DEFAULT_COLOR
 
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Iterable[int]
-    ) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
         return transform_color(properties[self.property][indices])
 
 
@@ -148,9 +147,7 @@ class NominalColorEncoding(DerivedStyleEncoding, ColorEncoding):
     colormap: CategoricalColormap
     fallback: ColorArray = DEFAULT_COLOR
 
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Iterable[int]
-    ) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
         values = properties[self.property][indices]
         return self.colormap.map(values)
 
@@ -182,9 +179,7 @@ class QuantitativeColorEncoding(DerivedStyleEncoding, ColorEncoding):
     contrast_limits: Optional[Tuple[float, float]] = None
     fallback: ColorArray = DEFAULT_COLOR
 
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: Sequence[int]
-    ) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
         all_values = properties[self.property]
         if self.contrast_limits is None:
             self.contrast_limits = _calculate_contrast_limits(all_values)
