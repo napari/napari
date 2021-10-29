@@ -227,6 +227,32 @@ def validate_color_encoding(
     color: Union[ColorEncoding, dict, ColorType, Iterable[ColorType], None],
     properties: Dict[str, np.ndarray],
 ) -> ColorEncoding:
+    """Validates and coerces an input to a ColorEncoding.
+
+    Parameters
+    ----------
+    color : Union[ColorEncoding, dict, ColorType, Iterable[ColorType], None]
+        The input or RHS of an assignment to a ColorEncoding field. If this
+        is already an ColorEncoding, it is returned as is. If this is a dict,
+        then we try to parse that as one of the built-in ColorEncodings. If
+        this is a string and a property name, then we return an identity
+        color encoding based on that property. Otherwise we try to parse the
+        input as a single constant color encoding or a direct encoding of
+        multiple colors.
+    properties : Dict[str, np.ndarray]
+        The property values, which typically come from a layer.
+
+    Returns
+    -------
+    ColorEncoding
+
+    Raises
+    ------
+    TypeError
+        If the input is not a supported type.
+    ValidationError, ValueError, AttributeError, KeyError
+        If the input cannot be parsed into a color encoding.
+    """
     if color is None:
         return ConstantColorEncoding(constant=DEFAULT_COLOR)
     if isinstance(color, _COLOR_ENCODINGS):

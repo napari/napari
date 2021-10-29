@@ -32,7 +32,6 @@ from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
-from ._style_encoding import infer_n_rows
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .string_encoding import (
@@ -49,10 +48,12 @@ class TextManager(EventedModel):
     ----------
     properties : Dict[str, np.ndarray]
         The property values, which typically come from a layer.
-    string : Union[STRING_ENCODINGS]
-        Defines the string for each text element.
-    color : Union[COLOR_ENCODINGS]
-        Defines the color for each text element.
+    string : StringEncoding
+        Defines the string for each text element. See ``validate_string_encoding``
+        for accepted inputs.
+    color : ColorEncoding
+        Defines the color for each text element. See ``validate_color_encoding``
+        for accepted inputs.
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
@@ -96,7 +97,7 @@ class TextManager(EventedModel):
     @property
     def values(self):
         _warn_about_deprecated_values_field()
-        n_text = infer_n_rows(self.string, self.properties)
+        n_text = _infer_n_text(self.string, self.properties)
         return self.string._get_array(self.properties, n_text)
 
     def __setattr__(self, key, value):
@@ -137,7 +138,7 @@ class TextManager(EventedModel):
         )
         # Assumes that the current properties passed have already been appended
         # to the properties table, then calls _get_array to append new values now.
-        n_text = infer_n_rows(self.string, self.properties)
+        n_text = _infer_n_text(self.string, self.properties)
         self.string._get_array(self.properties, n_text)
         self.color._get_array(self.properties, n_text)
 
@@ -209,7 +210,7 @@ class TextManager(EventedModel):
             ),
             DeprecationWarning,
         )
-        n_text = infer_n_rows(self.string, self.properties)
+        n_text = _infer_n_text(self.string, self.properties)
         return self.string._get_array(self.properties, n_text, indices_view)
 
     @classmethod
@@ -374,6 +375,15 @@ def _warn_about_deprecated_text_parameter():
         trans._('`text` is a deprecated parameter. Use `string` instead.'),
         DeprecationWarning,
     )
+
+
+def _infer_n_text(encoding, properties: Dict[str, np.ndarray]) -> int:
+    """Infers the number of rows in the given properties table."""
+    if len(properties) > 0:
+        return len(next(iter(properties)))
+    if hasattr(encoding, 'array'):
+        return len(encoding.array)
+    return 1
 
 
 def _properties_equal(left, right):

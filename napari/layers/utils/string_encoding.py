@@ -159,6 +159,33 @@ def validate_string_encoding(
     string: Union[StringEncoding, dict, str, Iterable[str], None],
     properties: Dict[str, np.ndarray],
 ) -> StringEncoding:
+    """Validates and coerces an input to a StringEncoding.
+
+    Parameters
+    ----------
+    string : Union[StringEncoding, dict, str, Iterable[str], None]
+        The input or RHS of an assignment to a StringEncoding field. If this
+        is already a StringEncoding, it is returned as is. If this is a dict,
+        then we try to parse that as one of the built-in StringEncodings. If
+        this is a string and a property name, then we return an identity
+        string encoding based on that property. If this is a string, but not
+        a property name, we try to parse the input as a format string.
+        Otherwise we try to parse the input as a direct encoding of multiple
+        strings.
+    properties : Dict[str, np.ndarray]
+        The property values, which typically come from a layer.
+
+    Returns
+    -------
+    ColorEncoding
+
+    Raises
+    ------
+    TypeError
+        If the input is not a supported type.
+    ValidationError
+        If the input cannot be parsed into a string encoding.
+    """
     if string is None:
         return ConstantStringEncoding(constant=DEFAULT_STRING)
     if isinstance(string, StringEncoding):
@@ -171,7 +198,7 @@ def validate_string_encoding(
         if _is_format_string(properties, string):
             return FormatStringEncoding(format_string=string)
         return ConstantStringEncoding(constant=string)
-    if isinstance(string, Sequence):
+    if isinstance(string, Iterable):
         return DirectStringEncoding(array=string, default='')
     raise TypeError(
         trans._(

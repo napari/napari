@@ -257,17 +257,6 @@ def get_type_names(types: Iterable[type]) -> Tuple[str, ...]:
     return tuple(type.__name__ for type in types)
 
 
-def infer_n_rows(
-    encoding: StyleEncoding, properties: Dict[str, np.ndarray]
-) -> int:
-    """Infers the number of rows in the given properties table."""
-    if len(properties) > 0:
-        return len(next(iter(properties)))
-    if isinstance(encoding, DirectStyleEncoding):
-        return len(encoding.array)
-    return 1
-
-
 def _empty_like_multi_array(single_array: np.ndarray):
     shape = (0,) + single_array.shape
     return np.empty_like(single_array, shape=shape)
