@@ -90,7 +90,7 @@ class StyleEncoding(ABC):
 class ConstantStyleEncoding(EventedModel, StyleEncoding):
     """Encodes a constant style value.
 
-    The _get_array method returns the constant broadcasted to the required length.
+    The _get_array method returns the constant broadcast to the required length.
 
     Attributes
     ----------

@@ -143,26 +143,26 @@ class FormatStringEncoding(DerivedStyleEncoding, StringEncoding):
 # isinstance without relying on get_args, which was only added in python 3.8.
 
 """The string encodings supported by napari in order of precedence."""
-STRING_ENCODINGS = (
+_STRING_ENCODINGS = (
     FormatStringEncoding,
     IdentityStringEncoding,
     ConstantStringEncoding,
     DirectStringEncoding,
 )
 
-STRING_ENCODING_NAMES = get_type_names(STRING_ENCODINGS)
+_STRING_ENCODING_NAMES = get_type_names(_STRING_ENCODINGS)
 
 
-def parse_string_encoding(
-    string: Union[Union[STRING_ENCODINGS], dict, str, Iterable[str], None],
+def validate_string_encoding(
+    string: Union[StringEncoding, dict, str, Iterable[str], None],
     properties: Dict[str, np.ndarray],
-) -> Union[STRING_ENCODINGS]:
+) -> StringEncoding:
     if string is None:
         return ConstantStringEncoding(constant=DEFAULT_STRING)
-    if isinstance(string, STRING_ENCODINGS):
+    if isinstance(string, StringEncoding):
         return string
     if isinstance(string, dict):
-        return parse_kwargs_as_encoding(STRING_ENCODINGS, **string)
+        return parse_kwargs_as_encoding(_STRING_ENCODINGS, **string)
     if isinstance(string, str):
         if string in properties:
             return IdentityStringEncoding(property=string)
@@ -173,7 +173,7 @@ def parse_string_encoding(
         return DirectStringEncoding(array=string, default='')
     raise TypeError(
         trans._(
-            f'string should be one of {STRING_ENCODING_NAMES}, a dict, str, iterable, or None',
+            f'string should be one of {_STRING_ENCODING_NAMES}, a dict, str, iterable, or None',
             deferred=True,
         )
     )

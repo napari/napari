@@ -36,9 +36,9 @@ from ._style_encoding import infer_n_rows
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .string_encoding import (
-    STRING_ENCODINGS,
     ConstantStringEncoding,
-    parse_string_encoding,
+    StringEncoding,
+    validate_string_encoding,
 )
 
 
@@ -74,7 +74,7 @@ class TextManager(EventedModel):
     # Declare properties as a generic dict so that a copy is not made on validation
     # and we can rely on a layer and this sharing the same instance.
     properties: dict
-    string: Union[STRING_ENCODINGS] = ConstantStringEncoding(constant='')
+    string: StringEncoding = ConstantStringEncoding(constant='')
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
     size: PositiveInt = 12
@@ -257,10 +257,10 @@ class TextManager(EventedModel):
     @validator('string', pre=True, always=True)
     def _check_string(
         cls,
-        string: Union[Union[STRING_ENCODINGS], dict, str, Iterable[str], None],
+        string: Union[StringEncoding, dict, str, Iterable[str], None],
         values,
-    ) -> Union[STRING_ENCODINGS]:
-        return parse_string_encoding(string, values['properties'])
+    ) -> StringEncoding:
+        return validate_string_encoding(string, values['properties'])
 
     @classmethod
     def _from_layer(

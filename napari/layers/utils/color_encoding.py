@@ -212,7 +212,7 @@ class QuantitativeColorEncoding(DerivedStyleEncoding, ColorEncoding):
 # isinstance without relying on get_args, which was only added in python 3.8.
 
 """The color encodings supported by napari in order of precedence."""
-COLOR_ENCODINGS = (
+_COLOR_ENCODINGS = (
     QuantitativeColorEncoding,
     NominalColorEncoding,
     ConstantColorEncoding,
@@ -227,10 +227,10 @@ def validate_color_encoding(
 ) -> ColorEncoding:
     if color is None:
         return ConstantColorEncoding(constant=DEFAULT_COLOR)
-    if isinstance(color, COLOR_ENCODINGS):
+    if isinstance(color, _COLOR_ENCODINGS):
         return color
     if isinstance(color, dict):
-        return parse_kwargs_as_encoding(COLOR_ENCODINGS, **color)
+        return parse_kwargs_as_encoding(_COLOR_ENCODINGS, **color)
     if isinstance(color, str) and color in properties:
         return IdentityColorEncoding(property=color)
     # TODO: distinguish between single color and array of length one as constant vs. direct.
