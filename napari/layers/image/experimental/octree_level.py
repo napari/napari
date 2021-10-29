@@ -1,16 +1,20 @@
 """OctreeLevelInfo and OctreeLevel classes.
 """
+from __future__ import annotations
+
 import logging
 import math
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import numpy as np
 
-from ....types import ArrayLike
-from .octree_chunk import OctreeChunk, OctreeChunkGeom, OctreeLocation
+from .octree_chunk import OctreeChunk, OctreeChunkGeom
 from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree")
+
+if TYPE_CHECKING:
+    from ....types import ArrayLike
 
 
 class OctreeLevelInfo:
@@ -151,6 +155,8 @@ class OctreeLevel:
 
         meta = self.info.meta
         layer_ref = meta.layer_ref
+
+        from ....components.experimental.chunk._request import OctreeLocation
 
         location = OctreeLocation(
             layer_ref, self.slice_id, level_index, row, col

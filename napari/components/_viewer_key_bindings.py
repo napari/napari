@@ -1,5 +1,5 @@
+from ..settings import get_settings
 from ..utils.action_manager import action_manager
-from ..utils.settings import SETTINGS
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from .viewer_model import ViewerModel
@@ -56,14 +56,15 @@ def toggle_ndisplay(viewer):
 @register_viewer_action(trans._("Toggle theme."))
 def toggle_theme(viewer):
     """Toggle theme for viewer"""
+    settings = get_settings()
     themes = available_themes()
-    current_theme = SETTINGS.appearance.theme
+    current_theme = settings.appearance.theme
     idx = themes.index(current_theme)
     idx += 1
     if idx == len(themes):
         idx = 0
 
-    SETTINGS.appearance.theme = themes[idx]
+    settings.appearance.theme = themes[idx]
 
 
 @register_viewer_action(trans._("Reset view to original state."))
@@ -105,41 +106,6 @@ def roll_axes(viewer):
 )
 def transpose_axes(viewer):
     viewer.dims._transpose()
-
-
-@register_viewer_action(trans._("Remove selected layers."))
-def remove_selected(viewer):
-    viewer.layers.remove_selected()
-
-
-@register_viewer_action(trans._("Selected all layers."))
-def select_all(viewer):
-    viewer.layers.select_all()
-
-
-@register_viewer_action(trans._("Remove all layers."))
-def remove_all_layers(viewer):
-    viewer.layers.clear()
-
-
-@register_viewer_action(trans._("Select layer above."))
-def select_layer_above(viewer):
-    viewer.layers.select_next()
-
-
-@register_viewer_action(trans._("Select layer below."))
-def select_layer_below(viewer):
-    viewer.layers.select_previous()
-
-
-@register_viewer_action(trans._("Also select layer above."))
-def also_select_layer_above(viewer):
-    viewer.layers.select_next(shift=True)
-
-
-@register_viewer_action(trans._("Also select layer below."))
-def also_select_layer_below(viewer):
-    viewer.layers.select_previous(shift=True)
 
 
 @register_viewer_action(trans._("Toggle grid mode."))

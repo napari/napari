@@ -2,6 +2,7 @@ import os
 from functools import partial
 
 import numpy as np
+import pooch
 import pytest
 
 from napari.components import LayerList
@@ -14,6 +15,9 @@ from napari.plugins._builtins import (
 )
 from napari.utils import io
 from napari.utils.config import async_loading
+
+if not hasattr(pooch.utils, 'file_hash'):
+    setattr(pooch.utils, 'file_hash', pooch.hashes.file_hash)
 
 try:
     from skimage.data import image_fetcher
@@ -323,12 +327,26 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
         raise excinfo.value
 
 
-def pytest_collection_modifyitems(session, config, items):
+@pytest.fixture(autouse=True)
+def fresh_settings(monkeypatch):
+    from napari import settings
+    from napari.settings import NapariSettings
 
-    put_at_end = ('test_trace_on_start',)
-    at_end = []
-    for i, item in enumerate(items):
-        if item.name in put_at_end:
-            at_end.append(items.pop(i))
+    # prevent the developer's config file from being used if it exists
+    cp = NapariSettings.__private_attributes__['_config_path']
+    monkeypatch.setattr(cp, 'default', None)
 
-    items.extend([x for _, x in sorted(zip(put_at_end, at_end))])
+    # calling save() with no config path is normally an error
+    # here we just have save() return if called without a valid path
+    NapariSettings.__original_save__ = NapariSettings.save
+
+    def _mock_save(self, path=None, **dict_kwargs):
+        if not (path or self.config_path):
+            return
+        NapariSettings.__original_save__(self, path, **dict_kwargs)
+
+    monkeypatch.setattr(NapariSettings, 'save', _mock_save)
+
+    # this makes sure that we start with fresh settings for every test.
+    settings._SETTINGS = None
+    yield

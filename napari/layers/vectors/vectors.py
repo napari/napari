@@ -6,13 +6,14 @@ import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import dataframe_to_properties
-from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
+from ..utils.layer_utils import get_current_properties, prepare_properties
+from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
 class Vectors(Layer):
@@ -27,9 +28,14 @@ class Vectors(Layer):
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
+    ndim : int
+        Number of dimensions for vectors. When data is not None, ndim must be D.
+        An empty vectors layer can be instantiated with arbitrary ndim.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     edge_width : float
         Width for all vectors in pixels.
     length : float
@@ -66,9 +72,9 @@ class Vectors(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -77,6 +83,9 @@ class Vectors(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
@@ -118,7 +127,6 @@ class Vectors(Layer):
         Shape is (2M, 2) for 2D and (4M, 2) for 3D.
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Vectors.properties.
-        If properties is not provided, it will be {} (empty dictionary).
     _mesh_vertices : (4N, 2) array
         The four corner points for the mesh representation of each vector as as
         rectangle in the slice that it starts in.
@@ -137,9 +145,11 @@ class Vectors(Layer):
 
     def __init__(
         self,
-        data,
+        data=None,
         *,
+        ndim=None,
         properties=None,
+        property_choices=None,
         edge_width=1,
         edge_color='red',
         edge_color_cycle=None,
@@ -156,11 +166,17 @@ class Vectors(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        cache=True,
+        experimental_clipping_planes=None,
     ):
+        if ndim is None and scale is not None:
+            ndim = len(scale)
+
+        data, ndim = fix_data_vectors(data, ndim)
 
         super().__init__(
             data,
-            2,
+            ndim,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -171,6 +187,8 @@ class Vectors(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         # events for non-napari calculations
@@ -188,7 +206,7 @@ class Vectors(Layer):
         # length attribute
         self._length = length
 
-        self._data = vectors_to_coordinates(data)
+        self._data = data
 
         vertices, triangles = generate_vector_meshes(
             self._data[:, :, list(self._dims_displayed)],
@@ -199,26 +217,9 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        # Save the properties
-        if properties is None:
-            properties = {}
-            self._properties = properties
-            self._property_choices = properties
-        elif len(data) > 0:
-            properties, _ = dataframe_to_properties(properties)
-            self._properties = self._validate_properties(properties)
-            self._property_choices = {
-                k: np.unique(v) for k, v in properties.items()
-            }
-        elif len(self.data) == 0:
-            self._property_choices = {
-                k: np.asarray(v) for k, v in properties.items()
-            }
-            empty_properties = {
-                k: np.empty(0, dtype=v.dtype)
-                for k, v in self._property_choices.items()
-            }
-            self._properties = empty_properties
+        self._properties, self._property_choices = prepare_properties(
+            properties, property_choices, num_data=len(self.data)
+        )
 
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(self.data),
@@ -226,7 +227,9 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=properties,
+            properties=self._properties
+            if self._data.size > 0
+            else self._property_choices,
         )
 
         # Data containing vectors in the currently viewed slice
@@ -249,7 +252,7 @@ class Vectors(Layer):
     def data(self, vectors: np.ndarray):
         previous_n_vectors = len(self.data)
 
-        self._data = vectors_to_coordinates(vectors)
+        self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
 
         vertices, triangles = generate_vector_meshes(
@@ -301,10 +304,10 @@ class Vectors(Layer):
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
-        if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
-        self._properties = self._validate_properties(properties)
+    def properties(self, properties: Dict[str, Array]):
+        self._properties, self._property_choices = prepare_properties(
+            properties, self._property_choices, num_data=len(self.data)
+        )
 
         if self._edge.color_properties is not None:
             if self._edge.color_properties.name not in self._properties:
@@ -326,20 +329,9 @@ class Vectors(Layer):
                 }
         self.events.properties()
 
-    def _validate_properties(
-        self, properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validates the type and size of the properties"""
-        for v in properties.values():
-            if len(v) != len(self.data):
-                raise ValueError(
-                    trans._(
-                        'the number of properties must equal the number of points',
-                        deferred=True,
-                    )
-                )
-
-        return properties
+    @property
+    def property_choices(self) -> Dict[str, np.ndarray]:
+        return self._property_choices
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -360,6 +352,8 @@ class Vectors(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
+                'property_choices': self._property_choices,
+                'ndim': self.ndim,
             }
         )
         return state
@@ -436,9 +430,9 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
-        # since Vectors doesn't have "current properties", we have to make them
-        current_properties = {k: v[-1] for k, v in self.properties.items()}
-
+        current_properties = get_current_properties(
+            self._properties, self._property_choices, len(self.data)
+        )
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
@@ -489,10 +483,11 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    # vectors doesn't have current properties, so we have to make it
-                    current_properties = {
-                        k: v[-1] for k, v in self.properties.items()
-                    }
+                    current_properties = get_current_properties(
+                        self._properties,
+                        self._property_choices,
+                        len(self.data),
+                    )
                     self._edge.color_properties = {
                         'name': color_property,
                         'values': self.properties[color_property],

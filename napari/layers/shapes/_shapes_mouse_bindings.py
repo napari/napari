@@ -29,7 +29,12 @@ def select(layer, event):
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
             else:
-                layer.selected_data.add(shape_under_cursor)
+                if len(layer.selected_data):
+                    # one or more shapes already selected
+                    layer.selected_data.add(shape_under_cursor)
+                else:
+                    # first shape being selected
+                    layer.selected_data = {shape_under_cursor}
         elif shape_under_cursor is not None:
             if shape_under_cursor not in layer.selected_data:
                 layer.selected_data = {shape_under_cursor}
@@ -57,6 +62,10 @@ def select(layer, event):
         if layer._is_moving:
             update_thumbnail = True
         yield
+
+    # only emit data once dragging has finished
+    if layer._is_moving:
+        layer.events.data(value=layer.data)
 
     # on release
     shift = 'Shift' in event.modifiers
@@ -89,6 +98,8 @@ def add_line(layer, event):
         full_size[i] = size
 
     coordinates = layer.world_to_data(event.position)
+    layer._moving_coordinates = coordinates
+
     corner = np.array(coordinates)
     data = np.array([corner, corner + full_size])
     yield from _add_line_rectangle_ellipse(
@@ -134,7 +145,7 @@ def add_rectangle(layer, event):
 
 
 def _add_line_rectangle_ellipse(layer, event, data, shape_type):
-    """Helper function for adding a a line, rectangle or ellipse."""
+    """Helper function for adding a line, rectangle or ellipse."""
 
     # on press
     # Start drawing rectangle / ellipse / line
@@ -149,10 +160,18 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     while event.type == 'mouse_move':
         # Drag any selected shapes
         coordinates = layer.world_to_data(event.position)
+        layer._moving_coordinates = coordinates
         _move(layer, coordinates)
         yield
 
     # on release
+    layer._finish_drawing()
+
+
+def finish_drawing_shape(layer, event):
+    """
+    finish drawing the current shape
+    """
     layer._finish_drawing()
 
 
@@ -360,6 +379,7 @@ def _move(layer, coordinates):
         [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
     ):
         coord = [coordinates[i] for i in layer._dims_displayed]
+        layer._moving_coordinates = coordinates
         layer._is_moving = True
         if vertex is None:
             # Check where dragging box from to move whole object
@@ -482,6 +502,7 @@ def _move(layer, coordinates):
             layer.refresh()
     elif layer._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
         if vertex is not None:
+            layer._moving_coordinates = coordinates
             layer._is_moving = True
             index = layer._moving_value[0]
             shape_type = type(layer._data_view.shapes[index])

@@ -29,7 +29,7 @@ class TextOverlay(EventedModel):
 
     # fields
     visible: bool = False
-    color: Array[float, (4,)] = (1.0, 1.0, 1.0, 1.0)
+    color: Array[float, (4,)] = (0.5, 0.5, 0.5, 1.0)
     font_size: float = 10
     position: TextOverlayPosition = TextOverlayPosition.TOP_LEFT
     text: str = ""

@@ -35,21 +35,25 @@ General rendering flow:
 """
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING
 
-from qtpy import QtCore
-from qtpy.QtCore import QSize, Qt
+from qtpy.QtCore import QPoint, QSize, Qt, QTimer
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
+from ...layers._layer_actions import _LAYER_ACTIONS
 from ..qt_resources import QColoredSVGIcon
+from ..widgets.qt_action_context_menu import QtActionContextMenu
 from ._base_item_model import ItemRole
 from .qt_layer_model import ThumbnailRole
 
 if TYPE_CHECKING:
-    from qtpy.QtCore import QModelIndex
+    from qtpy import QtCore
     from qtpy.QtGui import QPainter
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
+
+    from ...components.layerlist import LayerList
 
 
 class LayerDelegate(QStyledItemDelegate):
@@ -73,7 +77,7 @@ class LayerDelegate(QStyledItemDelegate):
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
-        index: QModelIndex,
+        index: QtCore.QModelIndex,
     ):
         """Paint the item in the model at `index`."""
         # update the icon based on layer type
@@ -120,7 +124,7 @@ class LayerDelegate(QStyledItemDelegate):
         self,
         parent: QWidget,
         option: QStyleOptionViewItem,
-        index: QModelIndex,
+        index: QtCore.QModelIndex,
     ) -> QWidget:
         """User has double clicked on layer name."""
         # necessary for geometry, otherwise editor takes up full width.
@@ -141,6 +145,14 @@ class LayerDelegate(QStyledItemDelegate):
 
         This can be used to customize how the delegate handles mouse/key events
         """
+        if (
+            event.type() == event.MouseButtonRelease
+            and event.button() == Qt.RightButton
+        ):
+            self.show_context_menu(
+                index, model, event.globalPos(), option.widget
+            )
+
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibilty
         # to simply be toggled.
@@ -159,3 +171,20 @@ class LayerDelegate(QStyledItemDelegate):
                 return model.setData(index, state, Qt.CheckStateRole)
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
+
+    def show_context_menu(self, index, model, pos: QPoint, parent):
+        """Show the layerlist context menu.
+
+        To add a new item to the menu, update the _LAYER_ACTIONS dict.
+        """
+        if not hasattr(self, '_context_menu'):
+            self._context_menu = QtActionContextMenu(_LAYER_ACTIONS)
+
+        layer_list: LayerList = model.sourceModel()._root
+        self._context_menu.update_from_context(layer_list._selection_context())
+        action = self._context_menu.exec_(pos)
+        if action is not None and isinstance(action.data(), dict):
+            # action.data will be a callable that accepts a layer_list instance
+            action = action.data().get('action')
+            if action:
+                QTimer.singleShot(0, partial(action, layer_list))

@@ -10,18 +10,26 @@ from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
     skip_local_popups,
+    skip_on_win_ci,
+    slow,
 )
 from napari.utils._tests.test_naming import eval_with_filename
+from napari.utils.action_manager import action_manager
 
 
 def _get_all_keybinding_methods(type_):
     obj_methods = set(super(type_, type_).class_keymap.values())
     obj_methods.update(type_.class_keymap.values())
+
+    # need to get methods in action_manager
+    am_methods = action_manager._get_layer_actions(type_)
+    for name, action in am_methods.items():
+        obj_methods.add(action.command)
     return obj_methods
 
 
 viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 19
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 12
 
 
 def test_len_methods_viewer(make_napari_viewer):
@@ -84,8 +92,8 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
     'Surface': 0,
     'Tracks': 0,
     'Points': 8,
-    'Labels': 14,
-    'Shapes': 17,
+    'Labels': 11,
+    'Shapes': 19,
 }
 
 
@@ -134,6 +142,8 @@ def test_add_layer_magic_name(
     assert layer.name == "a_unique_name"
 
 
+@skip_on_win_ci
+@slow(20)
 def test_screenshot(make_napari_viewer):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
@@ -168,6 +178,7 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
+@skip_on_win_ci
 def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
     viewer = make_napari_viewer(show=False)
@@ -193,7 +204,7 @@ def test_changing_theme(make_napari_viewer):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_roll_traspose_update(make_napari_viewer, layer_class, data, ndim):
+def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
 
     viewer = make_napari_viewer()
@@ -286,6 +297,7 @@ def test_deleting_points(make_napari_viewer):
     assert len(pts_layer.data) == 3
 
 
+@slow(15)
 @skip_local_popups
 def test_custom_layer(make_napari_viewer):
     """Make sure that custom layers subclasses can be added to the viewer."""
@@ -296,3 +308,35 @@ def test_custom_layer(make_napari_viewer):
     # Make a viewer and add the custom layer
     viewer = make_napari_viewer(show=True)
     viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
+
+
+def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
+    """Test emitting data with no change doesn't change the layer _value."""
+    viewer = make_napari_viewer()
+
+    data = np.array([[0, 0], [10, 10], [20, 20]])
+    layer = viewer.add_points(data, size=2)
+    viewer.layers.selection.active = layer
+
+    assert layer._value is None
+    viewer.cursor.position = tuple(layer.data[1])
+    assert layer._value == 1
+
+    layer.events.data(value=layer.data)
+    assert layer._value == 1
+
+
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_emitting_data_doesnt_change_cursor_position(
+    make_napari_viewer, layer_class, data, ndim
+):
+    """Test emitting data event from layer doesn't change cursor position"""
+    viewer = make_napari_viewer()
+    layer = layer_class(data)
+    viewer.add_layer(layer)
+
+    new_position = (5,) * ndim
+    viewer.cursor.position = new_position
+    layer.events.data(value=layer.data)
+
+    assert viewer.cursor.position == new_position

@@ -17,7 +17,28 @@ def test_builtin_reader_plugin():
         data = np.random.rand(20, 20)
         utils.io.imsave(tmp.name, data)
         tmp.seek(0)
-        layer_data, _ = io.read_data_with_plugins(tmp.name)
+        layer_data, _ = io.read_data_with_plugins(tmp.name, 'builtins')
+
+        assert layer_data is not None
+        assert isinstance(layer_data, list)
+        assert len(layer_data) == 1
+        assert isinstance(layer_data[0], tuple)
+        assert np.allclose(data, layer_data[0][0])
+
+        viewer = ViewerModel()
+        viewer.open(tmp.name, plugin='builtins')
+
+        assert np.allclose(viewer.layers[0].data, data)
+
+
+def test_builtin_reader_plugin_npy():
+    """Test the builtin reader plugin reads a temporary npy file."""
+
+    with NamedTemporaryFile(suffix='.npy', delete=False) as tmp:
+        data = np.random.rand(20, 20)
+        np.save(tmp.name, data)
+        tmp.seek(0)
+        layer_data, _ = io.read_data_with_plugins(tmp.name, 'builtins')
 
         assert layer_data is not None
         assert isinstance(layer_data, list)
@@ -39,7 +60,7 @@ def test_builtin_reader_plugin_csv(tmpdir):
     data = table[:, 1:]
     # Write csv file
     utils.io.write_csv(tmp, table, column_names=column_names)
-    layer_data, _ = io.read_data_with_plugins(tmp)
+    layer_data, _ = io.read_data_with_plugins(tmp, 'builtins')
 
     assert layer_data is not None
     assert isinstance(layer_data, list)

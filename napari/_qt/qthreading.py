@@ -15,6 +15,7 @@ from qtpy.QtCore import (
     Slot,
 )
 
+from ..utils import progress
 from ..utils.translations import trans
 
 
@@ -33,6 +34,7 @@ class WorkerBaseSignals(QObject):
 
     started = Signal()  # emitted when the work is started
     finished = Signal()  # emitted when the work is finished
+    _finished = Signal(object)  # emitted when the work is finished ro delete
     returned = Signal(object)  # emitted with return value
     errored = Signal(object)  # emitted with error object on Exception
     warned = Signal(tuple)  # emitted with showwarning args on warning
@@ -96,7 +98,9 @@ class WorkerBase(QRunnable):
             # (which is of type `SignalInstance` in PySide and
             # `pyqtBoundSignal` in PyQt)
             return getattr(self.signals, name)
-        return super().__getattr__(name)
+        raise AttributeError(
+            f"{self.__class__.__name__!r} object has no attribute {name!r}"
+        )
 
     def quit(self) -> None:
         """Send a request to abort the worker.
@@ -172,6 +176,7 @@ class WorkerBase(QRunnable):
             self.errored.emit(exc)
         self._running = False
         self.finished.emit()
+        self._finished.emit(self)
 
     def work(self) -> Union[Exception, Any]:
         """Main method to execute the worker.
@@ -221,7 +226,7 @@ class WorkerBase(QRunnable):
            V               V             V
            worker.start -> worker.run -> worker.work
         """
-        if self in WorkerBase._worker_set:
+        if self in self._worker_set:
             raise RuntimeError(
                 trans._(
                     'This worker is already started!',
@@ -232,10 +237,14 @@ class WorkerBase(QRunnable):
         # This will raise a RunTimeError if the worker is already deleted
         repr(self)
 
-        WorkerBase._worker_set.add(self)
-        self.finished.connect(lambda: WorkerBase._worker_set.discard(self))
+        self._worker_set.add(self)
+        self._finished.connect(self._set_discard)
         start_ = partial(QThreadPool.globalInstance().start, self)
         QTimer.singleShot(10, start_)
+
+    @classmethod
+    def _set_discard(cls, obj):
+        cls._worker_set.discard(obj)
 
 
 class FunctionWorker(WorkerBase):
@@ -334,6 +343,7 @@ class GeneratorWorker(WorkerBase):
         self._paused = False
         # polling interval: ONLY relevant if the user paused a running worker
         self._pause_interval = 0.01
+        self.pbar = None
 
     def work(self):
         """Core event loop that calls the original function.
@@ -498,6 +508,7 @@ def create_worker(
     *args,
     _start_thread: Optional[bool] = None,
     _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    _progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
     _worker_class: Optional[Type[WorkerBase]] = None,
     _ignore_errors: bool = False,
     **kwargs,
@@ -520,6 +531,14 @@ def create_worker(
         A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
         callback functions to connect to the various signals offered by the
         worker class. by default None
+    _progress : Union[bool, Dict[str, Union[int, bool, str]]], optional
+        Can be True, to provide indeterminate progress bar, or dictionary.
+        If dict, requires mapping of 'total' to number of expected yields.
+        If total is not provided, progress bar will be indeterminate. Will connect
+        progress bar update to yields and display this progress in the viewer.
+        Can also take a mapping of 'desc' to the progress bar description.
+        Progress bar will become indeterminate when number of yields exceeds 'total'.
+        By default None.
     _worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
@@ -544,6 +563,8 @@ def create_worker(
         If a worker_class is provided that is not a subclass of WorkerBase.
     TypeError
         If _connect is provided and is not a dict of ``{str: callable}``
+    TypeError
+        If _progress is provided and function is not a generator
 
     Examples
     --------
@@ -601,6 +622,31 @@ def create_worker(
                     )
                 getattr(worker, key).connect(v)
 
+    # either True or a non-empty dictionary
+    if _progress:
+        if isinstance(_progress, bool):
+            _progress = {}
+
+        desc = _progress.get('desc', None)
+        total = _progress.get('total', 0)
+
+        if isinstance(worker, FunctionWorker) and total != 0:
+            warnings.warn(
+                trans._(
+                    "_progress total != 0 but worker is FunctionWorker and will not yield. Returning indeterminate progress bar...",
+                    deferred=True,
+                ),
+                RuntimeWarning,
+            )
+            total = 0
+
+        pbar = progress(total=total, desc=desc)
+        worker.finished.connect(pbar.close)
+        if total != 0 and isinstance(worker, GeneratorWorker):
+            worker.yielded.connect(pbar.increment_with_overflow)
+
+        worker.pbar = pbar
+
     # if the user has not provided a default connection for the "errored"
     # signal... and they have not explicitly set ``ignore_errors=True``
     # Then rereaise any errors from the thread.
@@ -621,6 +667,7 @@ def thread_worker(
     function: Callable,
     start_thread: Optional[bool] = None,
     connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
     ignore_errors: bool = False,
 ) -> Callable:
@@ -669,6 +716,14 @@ def thread_worker(
         A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
         callback functions to connect to the various signals offered by the
         worker class. by default None
+    progress : Union[bool, Dict[str, Union[int, bool, str]]], optional
+        Can be True, to provide indeterminate progress bar, or dictionary.
+        If dict, requires mapping of 'total' to number of expected yields.
+        If total is not provided, progress bar will be indeterminate. Will connect
+        progress bar update to yields and display this progress in the viewer.
+        Can also take a mapping of 'desc' to the progress bar description.
+        Progress bar will become indeterminate when number of yields exceeds 'total'.
+        By default None. Must be used in conjunction with a generator function.
     worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
@@ -712,6 +767,7 @@ def thread_worker(
         # underscore-prefixed version of the kwarg.
         kwargs['_start_thread'] = kwargs.get('_start_thread', start_thread)
         kwargs['_connect'] = kwargs.get('_connect', connect)
+        kwargs['_progress'] = kwargs.get('_progress', progress)
         kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
         kwargs['_ignore_errors'] = kwargs.get('_ignore_errors', ignore_errors)
         return create_worker(

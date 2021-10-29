@@ -69,10 +69,13 @@ def _iter_imports(hint) -> Iterator[str]:
     # inspect.formatannotation strips "typing." from type annotations
     # so our signatures won't have it in there
     if not repr(hint).startswith("typing."):
-        if orig := get_origin(hint):
+        orig = get_origin(hint)
+        if orig:
             yield orig.__module__
+
     for arg in get_args(hint):
         yield from _iter_imports(arg)
+
     if isinstance(hint, list):
         for i in hint:
             yield from _iter_imports(i)
@@ -112,13 +115,18 @@ def _get_subclass_methods(cls: Type[Any]) -> Set[str]:
     return all_methods.difference(*base_methods)
 
 
-def generate_class_stubs(cls) -> Tuple[Set[str], str]:
+def generate_class_stubs(cls: Type) -> Tuple[Set[str], str]:
     """Generate a stub and imports for a class."""
-
     bases = ", ".join(f'{b.__module__}.{b.__name__}' for b in cls.__bases__)
 
     methods = []
+    attrs = []
     imports = set()
+
+    local_names = set(cls.__dict__).union(set(cls.__annotations__))
+    for sup in cls.mro()[1:]:
+        local_names.difference_update(set(sup.__dict__))
+
     for methname in sorted(_get_subclass_methods(cls)):
         method = getattr(cls, methname)
         if not callable(method):
@@ -126,10 +134,21 @@ def generate_class_stubs(cls) -> Tuple[Set[str], str]:
         _imports, stub = generate_function_stub(method)
         imports.update(_imports)
         methods.append(stub)
+    hints = get_type_hints(cls)
+    for name, type_ in hints.items():
+        if name not in local_names:
+            continue
+        if hasattr(type_, '__name__'):
+            hint = f'{type_.__module__}.{type_.__name__}'
+        else:
+            hint = repr(type_).replace('typing.', '')
+        attrs.append(f'{name}: {hint.replace("builtins.", "")}')
+        imports.update(set(_iter_imports(type_)))
 
     doc = f'"""{cls.__doc__.lstrip()}"""' if cls.__doc__ else '...'
     stub = f'class {cls.__name__}({bases}):\n    {doc}\n'
-    stub += textwrap.indent("\n".join(methods), '    ')
+    stub += textwrap.indent("\n".join(attrs), '    ')
+    stub += "\n" + textwrap.indent("\n".join(methods), '    ')
 
     return imports, stub
 
@@ -184,7 +203,4 @@ if __name__ == '__main__':
     default_modules = ['napari.view_layers', 'napari.components.viewer_model']
 
     for mod in sys.argv[1:] or default_modules:
-        try:
-            generate_module_stub(mod)
-        except Exception as e:
-            print(f"ERROR: {e}")
+        generate_module_stub(mod)

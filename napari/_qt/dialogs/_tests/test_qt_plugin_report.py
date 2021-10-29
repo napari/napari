@@ -21,7 +21,13 @@ def test_error_reporter(qtbot, monkeypatch):
     )
 
     error_message = 'my special error'
-    _ = PluginError(error_message, plugin_name='test_plugin', plugin="mock")
+    try:
+        # we need to raise to make sure a __traceback__ is attached to the error.
+        raise PluginError(
+            error_message, plugin_name='test_plugin', plugin="mock"
+        )
+    except PluginError:
+        pass
     report_widget = qt_plugin_report.QtPluginErrReporter()
     qtbot.addWidget(report_widget)
 

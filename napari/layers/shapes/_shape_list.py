@@ -1,10 +1,15 @@
 import numpy as np
 
+from ...utils.geometry import (
+    inside_triangles,
+    intersect_line_with_triangles,
+    line_in_triangles_3d,
+)
 from ...utils.translations import trans
 from ._mesh import Mesh
 from ._shapes_constants import ShapeType, shape_classes
 from ._shapes_models import Line, Path, Shape
-from ._shapes_utils import inside_triangles, triangles_intersect_box
+from ._shapes_utils import triangles_intersect_box
 
 
 class ShapeList:
@@ -784,6 +789,86 @@ class ShapeList:
         else:
             return None
 
+    def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
+        """Determines if any shape is intersected by a ray by looking inside triangle
+        meshes. Looks only at displayed shapes.
+
+        Parameters
+        ----------
+        ray_position : np.ndarray
+            (3,) array containing the location that was clicked. This
+            should be in the same coordinate system as the vertices.
+        ray_direction : np.ndarray
+            (3,) array describing the direction camera is pointing in
+            the scene. This should be in the same coordinate system as
+            the vertices.
+
+        Returns
+        -------
+        shape : int | None
+            Index of shape if any that is at the coordinates. Returns `None`
+            if no shape is found.
+        intersection_point : Optional[np.ndarray]
+            The point where the ray intersects the mesh face. If there was
+            no intersection, returns None.
+        """
+        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
+        inside = line_in_triangles_3d(
+            line_point=ray_position,
+            line_direction=ray_direction,
+            triangles=triangles,
+        )
+        intersected_shapes = self._mesh.displayed_triangles_index[inside, 0]
+        if len(intersected_shapes) > 0:
+            intersection_points = self._triangle_intersection(
+                triangle_indices=inside,
+                ray_position=ray_position,
+                ray_direction=ray_direction,
+            )
+            start_to_intersection = intersection_points - ray_position
+            distances = np.linalg.norm(start_to_intersection, axis=1)
+            closest_shape_index = np.argmin(distances)
+            shape = intersected_shapes[closest_shape_index]
+            intersection = intersection_points[closest_shape_index]
+            return shape, intersection
+        else:
+            return None, None
+
+    def _triangle_intersection(
+        self,
+        triangle_indices: np.ndarray,
+        ray_position: np.ndarray,
+        ray_direction: np.ndarray,
+    ):
+        """Find the intersection of a ray with specified triangles.
+
+        Parameters
+        ----------
+        triangle_indices : np.ndarray
+            (n,) array of shape indices to find the intersection with the ray. The indices should
+            correspond with self._mesh.displayed_triangles.
+        ray_position : np.ndarray
+            (3,) array with the coordinate of the starting point of the ray in layer coordinates.
+            Only provide the 3 displayed dimensions.
+        ray_direction : np.ndarray
+            (3,) array of the normal direction of the ray in layer coordinates.
+            Only provide the 3 displayed dimensions.
+
+        Returns
+        -------
+        intersection_points : np.ndarray
+            (n x 3) array of the intersection of the ray with each of the specified shapes in layer coordinates.
+            Only the 3 displayed dimensions are provided.
+        """
+        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
+        intersected_triangles = triangles[triangle_indices]
+        intersection_points = intersect_line_with_triangles(
+            line_point=ray_position,
+            line_direction=ray_direction,
+            triangles=intersected_triangles,
+        )
+        return intersection_points
+
     def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
@@ -792,7 +877,7 @@ class ShapeList:
         ----------
         mask_shape : np.ndarray | tuple | None
             2-tuple defining shape of mask to be generated. If non specified,
-            takes the max of all the vertiecs
+            takes the max of all the vertices
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -828,7 +913,7 @@ class ShapeList:
         ----------
         labels_shape : np.ndarray | tuple | None
             2-tuple defining shape of labels image to be generated. If non
-            specified, takes the max of all the vertiecs
+            specified, takes the max of all the vertices
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.

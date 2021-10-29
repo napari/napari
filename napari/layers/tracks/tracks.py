@@ -38,7 +38,9 @@ class Tracks(Layer):
     tail_width : float
         Width of the track tails in pixels.
     tail_length : float
-        Length of the track tails in units of time.
+        Length of the positive (backward in time) tails in units of time.
+    head_length : float
+        Length of the positive (forward in time) tails in units of time.
     colormap : str
         Default colormap to use to set vertex colors. Specialized colormaps,
         relating to specified properties can be passed to the layer via
@@ -67,9 +69,9 @@ class Tracks(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -78,13 +80,17 @@ class Tracks(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     """
 
     # The max number of tracks that will ever be used to render the thumbnail
     # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
+    _max_length = 300
+    _max_width = 20
 
     def __init__(
         self,
@@ -94,6 +100,7 @@ class Tracks(Layer):
         graph=None,
         tail_width=2,
         tail_length=30,
+        head_length=0,
         name=None,
         metadata=None,
         scale=None,
@@ -107,6 +114,8 @@ class Tracks(Layer):
         colormap='turbo',
         color_by='track_id',
         colormaps_dict=None,
+        cache=True,
+        experimental_clipping_planes=None,
     ):
 
         # if not provided with any data, set up an empty layer in 2D+t
@@ -136,11 +145,14 @@ class Tracks(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
             tail_width=Event,
             tail_length=Event,
+            head_length=Event,
             display_id=Event,
             display_tail=Event,
             display_graph=Event,
@@ -164,6 +176,7 @@ class Tracks(Layer):
         # track display properties
         self.tail_width = tail_width
         self.tail_length = tail_length
+        self.head_length = head_length
         self.display_id = False
         self.display_tail = True
         self.display_graph = True
@@ -220,6 +233,7 @@ class Tracks(Layer):
                 'colormaps_dict': self.colormaps_dict,
                 'tail_width': self.tail_width,
                 'tail_length': self.tail_length,
+                'head_length': self.head_length,
             }
         )
         return state
@@ -288,7 +302,9 @@ class Tracks(Layer):
             # modulate track colors as per colormap/current_time
             colors = self.track_colors[thumbnail_indices]
             times = self.track_times[thumbnail_indices]
-            alpha = (self.current_time - times) / self.tail_length
+            alpha = (self.head_length + self.current_time - times) / (
+                self.tail_length + self.head_length
+            )
             alpha[times > self.current_time] = 1.0
             colors[:, -1] = np.clip(1.0 - alpha, 0.0, 1.0)
             colormapped[coords[:, 1], coords[:, 0]] = colors
@@ -368,7 +384,7 @@ class Tracks(Layer):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Properties for each track."""
+        """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._manager.properties
 
     @property
@@ -414,7 +430,7 @@ class Tracks(Layer):
 
     @tail_width.setter
     def tail_width(self, tail_width: Union[int, float]):
-        self._tail_width = tail_width
+        self._tail_width = np.clip(tail_width, 0.5, self._max_width)
         self.events.tail_width()
 
     @property
@@ -424,8 +440,17 @@ class Tracks(Layer):
 
     @tail_length.setter
     def tail_length(self, tail_length: Union[int, float]):
-        self._tail_length = tail_length
+        self._tail_length = np.clip(tail_length, 1, self._max_length)
         self.events.tail_length()
+
+    @property
+    def head_length(self) -> Union[int, float]:
+        return self._head_length
+
+    @head_length.setter
+    def head_length(self, head_length: Union[int, float]):
+        self._head_length = np.clip(head_length, 0, self._max_length)
+        self.events.head_length()
 
     @property
     def display_id(self) -> bool:
@@ -554,7 +579,7 @@ class Tracks(Layer):
 
     @property
     def graph_times(self) -> np.ndarray:
-        """time points assocaite with each graph vertex"""
+        """time points associated with each graph vertex"""
         return self._manager.graph_times
 
     @property

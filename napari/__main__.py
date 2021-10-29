@@ -209,6 +209,11 @@ def parse_sys_argv():
         action='store_true',
         help='reset settings to default values.',
     )
+    parser.add_argument(
+        '--settings-path',
+        type=Path,
+        help='use specific path to store and load settings.',
+    )
 
     args, unknown = parser.parse_known_args()
     # this is a hack to allow using "=" as a key=value separator while also
@@ -223,7 +228,7 @@ def parse_sys_argv():
 
 def _run():
     from napari import run, view_path
-    from napari.utils.settings import SETTINGS
+    from napari.settings import get_settings
 
     """Main program."""
     args, kwargs = parse_sys_argv()
@@ -238,7 +243,12 @@ def _run():
     )
 
     if args.reset:
-        SETTINGS.reset()
+        if args.settings_path:
+            settings = get_settings(path=args.settings_path)
+        else:
+            settings = get_settings()
+        settings.reset()
+        settings.save()
         sys.exit("Resetting settings to default values.\n")
 
     if args.plugin:
@@ -411,6 +421,13 @@ def main():
                 'conda install -c conda-forge python.app'
             )
             warnings.warn(msg)
+
+    # Prevent https://github.com/napari/napari/issues/3415
+    if sys.platform == "darwin" and sys.version_info >= (3, 8):
+        import multiprocessing
+
+        multiprocessing.set_start_method('fork')
+
     _run()
 
 

@@ -1,65 +1,98 @@
+from typing import Optional
+
 from qtpy import QtCore
 from qtpy.QtWidgets import (
     QApplication,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QProgressBar,
+    QVBoxLayout,
     QWidget,
 )
 
-
-def get_pbar(**kwargs):
-    """Adds ProgressBar to viewer Activity Dock and returns it.
-
-    Parameters
-    ----------
-    viewer_instance : qtViewer
-        current napari qtViewer instance
-
-    Returns
-    -------
-    ProgressBar
-        progress bar to associate with current iterable
-    """
-    from ..qt_main_window import _QtMainWindow
-
-    current_window = _QtMainWindow.current()
-    if current_window is None:
-        return
-    viewer_instance = current_window.qt_viewer
-    pbar = ProgressBar(**kwargs)
-    viewer_instance.activityDock.widget().layout().addWidget(pbar)
-
-    return pbar
+from ...utils.progress import progress
 
 
-class ProgressBar(QWidget):
-    def __init__(self, parent=None) -> None:
+class QtLabeledProgressBar(QWidget):
+    """QProgressBar with QLabels for description and ETA."""
+
+    def __init__(
+        self, parent: Optional[QWidget] = None, prog: progress = None
+    ) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.pbar = QProgressBar()
+
+        self.progress = prog
+
+        self.qt_progress_bar = QProgressBar()
         self.description_label = QLabel()
         self.eta_label = QLabel()
+        base_layout = QVBoxLayout()
 
-        layout = QHBoxLayout()
-        layout.addWidget(self.description_label)
-        layout.addWidget(self.pbar)
-        layout.addWidget(self.eta_label)
-        self.setLayout(layout)
+        pbar_layout = QHBoxLayout()
+        pbar_layout.addWidget(self.description_label)
+        pbar_layout.addWidget(self.qt_progress_bar)
+        pbar_layout.addWidget(self.eta_label)
+        base_layout.addLayout(pbar_layout)
+
+        line = QFrame(self)
+        line.setObjectName("QtCustomTitleBarLine")
+        line.setFixedHeight(1)
+        base_layout.addWidget(line)
+
+        self.setLayout(base_layout)
 
     def setRange(self, min, max):
-        self.pbar.setRange(min, max)
+        self.qt_progress_bar.setRange(min, max)
 
-    def _set_value(self, value):
-        self.pbar.setValue(value)
+    def setValue(self, value):
+        self.qt_progress_bar.setValue(value)
         QApplication.processEvents()
+
+    def setDescription(self, value):
+        if not value.endswith(': '):
+            value = f'{value}: '
+        self.description_label.setText(value)
+        QApplication.processEvents()
+
+    def _set_value(self, event):
+        self.setValue(event.value)
 
     def _get_value(self):
-        return self.pbar.value()
+        return self.qt_progress_bar.value()
 
-    def _set_description(self, desc):
-        self.description_label.setText(desc)
-        QApplication.processEvents()
+    def _set_description(self, event):
+        self.setDescription(event.value)
 
-    def _set_eta(self, eta):
-        self.eta_label.setText(eta)
+    def _make_indeterminate(self, event):
+        self.setRange(0, 0)
+
+    def _set_eta(self, event):
+        self.eta_label.setText(event.value)
+
+    def _close(self, event):
+        super().close()
+
+
+class QtProgressBarGroup(QWidget):
+    """One or more QtLabeledProgressBars with a QFrame line separator at the bottom"""
+
+    def __init__(
+        self,
+        qt_progress_bar: QtLabeledProgressBar,
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
+        pbr_group_layout = QVBoxLayout()
+        pbr_group_layout.addWidget(qt_progress_bar)
+        pbr_group_layout.setContentsMargins(0, 0, 0, 0)
+
+        line = QFrame(self)
+        line.setObjectName("QtCustomTitleBarLine")
+        line.setFixedHeight(1)
+        pbr_group_layout.addWidget(line)
+
+        self.setLayout(pbr_group_layout)

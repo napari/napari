@@ -2,6 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
+from ..settings._application import GridHeight, GridStride, GridWidth
 from ..utils.events import EventedModel
 
 
@@ -29,9 +30,9 @@ class GridCanvas(EventedModel):
     """
 
     # fields
+    stride: GridStride = 1
+    shape: Tuple[GridHeight, GridWidth] = (-1, -1)
     enabled: bool = False
-    stride: int = 1
-    shape: Tuple[int, int] = (-1, -1)
 
     def actual_shape(self, nlayers: int = 1) -> Tuple[int, int]:
         """Return the actual shape of the grid.

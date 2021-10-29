@@ -26,6 +26,7 @@ class WidgetBuilder:
             "object": widgets.ObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
             "plugins": widgets.PluginWidget,
+            "shortcuts": widgets.ShortcutsWidget,
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
@@ -99,7 +100,11 @@ class WidgetBuilder:
         return form
 
     def create_widget(
-        self, schema: dict, ui_schema: dict, state=None, description: str = "",
+        self,
+        schema: dict,
+        ui_schema: dict,
+        state=None,
+        description: str = "",
     ) -> widgets.SchemaWidgetMixin:
         schema_type = get_schema_type(schema)
 
