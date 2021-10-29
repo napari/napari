@@ -8,6 +8,7 @@ from typing import Any, List, Optional, Sequence, Tuple, TypeVar, Union
 import numpy as np
 from typing_extensions import Protocol, runtime_checkable
 
+from ..types import DTypeLike
 from .utils.layer_utils import compute_multiscale_level_and_corners
 
 _T = TypeVar('_T')
@@ -43,7 +44,7 @@ class LayerDataProtocol(Protocol):
     """
 
     shape: Shape
-    dtype: np.dtype
+    dtype: DTypeLike
 
     def __getitem__(self, item) -> LayerDataProtocol:
         ...
