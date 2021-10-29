@@ -193,18 +193,28 @@ jobs:
         shell: bash -l {0}
         # if: github.event_name == 'schedule'
         run: |
-          if [[ ${{ runner.os }} == Windows ]]; then
-            conda_bld_path="${GITHUB_WORKSPACE//\\//}${conda_bld_suffix//\\//}"
-          else
-            conda_bld_path="${GITHUB_WORKSPACE}${conda_bld_suffix}"
-          fi
+          conda_bld_path="${GITHUB_WORKSPACE}${conda_bld_suffix}"
+          case ${{ runner.os }} in
+            Linux)
+              pkgs="${conda_bld_path}${NAPARI_PLATFORM}/*.tar.bz2"
+              pkgs+=" ${conda_bld_path}noarch/*.tar.bz2"
+              ;;
+            macOS)
+              pkgs="${conda_bld_path}${NAPARI_PLATFORM}/*.tar.bz2"
+              ;;
+            Windows)
+              conda_bld_path="${GITHUB_WORKSPACE//\\//}${conda_bld_suffix//\\//}"
+              pkgs="${conda_bld_path}${NAPARI_PLATFORM}/*.tar.bz2"
+              ;;
+            esac
+
           anaconda \
             -t ${{ secrets.ANACONDA_TOKEN }} \
             upload \
+            --skip-existing \
             -u napari \
             -l nightly \
-            ${conda_bld_path}${{ env.NAPARI_PLATFORM }}/*.tar.bz2 \
-            ${conda_bld_path}noarch/*.tar.bz2
+            $pkgs
 
   bundle:
     name: Bundle ${{ matrix.platform }}
