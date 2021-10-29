@@ -173,7 +173,7 @@ def get_system_theme():
     return name
 
 
-def get_theme(name, as_dict=True):
+def get_theme(name, as_dict=None):
     """Get a copy of theme based on it's name.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -198,26 +198,7 @@ def get_theme(name, as_dict=True):
     if name == "system":
         name = get_system_theme()
 
-    if name in _themes:
-        theme = _themes[name]
-        _theme = theme.copy()
-        if as_dict:
-            warnings.warn(
-                trans._(
-                    "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`. You can get the old color by calling `color.as_rgb()`. The `as_dict=True` option will be removed in 0.X.X",
-                    deferred=True,
-                ),
-                category=FutureWarning,
-                stacklevel=2,
-            )
-            _theme = _theme.dict()
-            _theme = {
-                k: v if not isinstance(v, Color) else v.as_rgb()
-                for (k, v) in _theme.items()
-            }
-            return _theme
-        return _theme
-    else:
+    if name not in _themes:
         raise ValueError(
             trans._(
                 "Unrecognized theme {name}. Available themes are {themes}",
@@ -226,6 +207,27 @@ def get_theme(name, as_dict=True):
                 themes=available_themes(),
             )
         )
+    theme = _themes[name]
+    _theme = theme.copy()
+    if as_dict is None:
+        warnings.warn(
+            trans._(
+                "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`."
+                "The `as_dict=True` option will be changed to `as_dict=False` in 0.4.15",
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        as_dict = True
+    if as_dict:
+        _theme = _theme.dict()
+        _theme = {
+            k: v if not isinstance(v, Color) else v.as_rgb()
+            for (k, v) in _theme.items()
+        }
+        return _theme
+    return _theme
 
 
 def register_theme(name, theme):
