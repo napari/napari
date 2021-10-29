@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from types import GeneratorType
-from typing import Any, List, Sequence, Tuple, TypeVar, Union
+from typing import Any, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
 from typing_extensions import Protocol, runtime_checkable
+
+from .utils.layer_utils import compute_multiscale_level_and_corners
 
 _T = TypeVar('_T')
 Shape = Tuple[int, ...]
@@ -50,7 +52,7 @@ class LayerDataProtocol(Protocol):
 class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
     """Wrapper for multiscale data, to provide consistent API."""
 
-    def __init__(self, data) -> None:
+    def __init__(self, data, max_size: Optional[Sequence[int]] = None) -> None:
         if isinstance(data, GeneratorType):
             data = list(data)
         if not (isinstance(data, (list, tuple, np.ndarray)) and len(data)):
@@ -61,6 +63,10 @@ class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
             assert_protocol(d, LayerDataProtocol)
 
         self._data: ListOrTuple[LayerDataProtocol] = data
+        self.max_size = self._data[-1].shape if max_size is None else max_size
+        self.downsample_factors = (
+            np.array([d.shape for d in data]) / data[0].shape
+        )
 
     @property
     def dtype(self):
@@ -77,8 +83,20 @@ class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
         """Tuple shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
-    def __getitem__(self, index):
-        return self._data[index]
+    def __getitem__(  # type: ignore
+        self, index: Union[int, Tuple[slice, ...]]
+    ) -> LayerDataProtocol:
+        if not isinstance(index, tuple):
+            return self._data[index]
+
+        if not all(isinstance(idx, slice) for idx in index):
+            raise NotImplementedError("cannot handle slices and ints")
+
+        corners = np.array([(sl.start, sl.stop) for sl in index])
+        level, corners = compute_multiscale_level_and_corners(
+            corners, self.max_size, self.downsample_factors
+        )
+        return self._data[level][corners]
 
     def __len__(self) -> int:
         return len(self._data)
