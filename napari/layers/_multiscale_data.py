@@ -86,7 +86,12 @@ class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
 
         if isinstance(key, tuple):
             if all(isinstance(idx, slice) for idx in key):
-                corners = np.array([(sl.start, sl.stop) for sl in key])
+                corners = np.array(
+                    [
+                        (sl.start or 0, sl.stop or size)
+                        for sl, size in zip(key, self._data[0].shape)
+                    ]
+                )
                 level, corners = compute_multiscale_level_and_corners(
                     corners, self.max_size, self.downsample_factors
                 )

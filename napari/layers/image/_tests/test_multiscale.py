@@ -400,3 +400,20 @@ def test_5D_multiscale():
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
+
+
+def test_multiscale_data_protocol():
+    """Test multiscale data provides basic data protocol."""
+    shapes = [(2, 5, 20, 20), (2, 5, 10, 10), (2, 5, 5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    assert '3 levels' in repr(layer.data)
+    assert layer.data == data
+    assert layer.data_raw is data
+    assert layer.data is not data
+    assert layer.multiscale is True
+
+    assert layer.data.dtype == float
+    assert layer.data.shape == shapes[0]
+    assert isinstance(layer.data[:, :2, 2:8], np.ndarray)
