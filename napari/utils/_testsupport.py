@@ -33,6 +33,7 @@ def napari_plugin_manager(monkeypatch):
     """
 
     import napari
+    import napari.plugins.io
     from napari.plugins._plugin_manager import NapariPluginManager
 
     pm = NapariPluginManager()
