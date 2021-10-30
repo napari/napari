@@ -55,11 +55,6 @@ class Viewer(ViewerModel):
         if show:
             self.show()
 
-    # Expose private window publically. This is needed to keep window off pydantic model
-    @property
-    def window(self) -> Optional['qt_main_window.Window']:
-        return self._window
-
     def update_console(self, variables):
         """Update console's namespace with desired variables.
 
@@ -104,6 +99,11 @@ class Viewer(ViewerModel):
             return self.window.qt_viewer.screenshot(path=path, flash=flash)
         else:
             return self.window.screenshot(path=path, flash=flash)
+
+    # Expose private window publically. This is needed to keep window off pydantic model
+    @property
+    def window(self) -> Optional['qt_main_window.Window']:
+        return self._window
 
     def _create_window(self):
         from .window import Window

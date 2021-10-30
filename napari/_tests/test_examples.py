@@ -69,7 +69,10 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     from napari import Viewer
 
     # hide viewer window
-    monkeypatch.setattr(Window, 'show', lambda *a: None)
+    def _mock_show(*a, **k):
+        pass
+
+    monkeypatch.setattr(Window, 'show', _mock_show)
 
     # make sure our sys.excepthook override doesn't hide errors
     def raise_errors(etype, value, tb):

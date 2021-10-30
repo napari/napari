@@ -7,7 +7,7 @@ def test_add_function_widget(make_napari_viewer):
     """Test basic add_function_widget functionality"""
     from qtpy.QtWidgets import QDockWidget
 
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(window=True)
 
     # Define a function.
     def image_sum(

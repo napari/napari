@@ -7,7 +7,7 @@ from vispy import keys
 def test_viewer_key_bindings(make_napari_viewer):
     """Test adding key bindings to the viewer"""
     np.random.seed(0)
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(window=True)
     view = viewer.window.qt_viewer
 
     mock_press = Mock()
@@ -75,7 +75,7 @@ def test_viewer_key_bindings(make_napari_viewer):
 def test_layer_key_bindings(make_napari_viewer):
     """Test adding key bindings to a layer"""
     np.random.seed(0)
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(window=True)
     view = viewer.window.qt_viewer
 
     layer = viewer.add_image(np.random.random((10, 20)))
@@ -142,7 +142,7 @@ def test_layer_key_bindings(make_napari_viewer):
 
 def test_reset_scroll_progress(make_napari_viewer):
     """Test select all key binding."""
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(window=True)
     view = viewer.window.qt_viewer
     assert viewer.dims._scroll_progress == 0
 
