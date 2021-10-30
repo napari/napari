@@ -103,7 +103,7 @@ class Selection(EventedSet[_T]):
         self._current = value
         self.events.active(value=value)
 
-    def _update_active(self, event=None):
+    def _update_active(self):
         """On a selection event, update the active item based on selection.
 
         (An active item is a single selected item).

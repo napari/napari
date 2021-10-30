@@ -219,20 +219,20 @@ class VispyAxesOverlay:
         self._viewer.dims.events.axis_labels.connect(self._on_data_change)
         self._viewer.camera.events.zoom.connect(self._on_zoom_change)
 
-        self._on_visible_change(None)
-        self._on_data_change(None)
+        self._on_visible_change()
+        self._on_data_change()
 
     def _set_canvas_none(self):
         self.node._set_canvas(None)
         self.text_node._set_canvas(None)
 
-    def _on_visible_change(self, event):
+    def _on_visible_change(self):
         """Change visibiliy of axes."""
         self.node.visible = self._viewer.axes.visible
-        self._on_zoom_change(event)
-        self._on_data_change(event)
+        self._on_zoom_change()
+        self._on_data_change()
 
-    def _on_data_change(self, event):
+    def _on_data_change(self):
         """Change style of axes."""
         if not self._viewer.axes.visible:
             return
@@ -325,7 +325,7 @@ class VispyAxesOverlay:
         self.text_node.color = axes_colors
         self.text_node.pos = text_data + self._text_offsets
 
-    def _on_zoom_change(self, event):
+    def _on_zoom_change(self):
         """Update axes length based on zoom scale."""
         if not self._viewer.axes.visible:
             return

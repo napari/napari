@@ -155,7 +155,7 @@ class FileMenu(NapariMenu):
     def _clean_pref_dialog(self):
         self._pref_dialog = None
 
-    def _rebuild_samples_menu(self, event=None):
+    def _rebuild_samples_menu(self):
         from ...plugins import menu_item_template, plugin_manager
 
         self.open_sample_menu.clear()
