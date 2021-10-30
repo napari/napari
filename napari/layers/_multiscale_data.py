@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from types import GeneratorType
-from typing import Optional, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -36,16 +35,12 @@ class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
         data: Sequence[LayerDataProtocol],
         max_size: Optional[Sequence[int]] = None,
     ) -> None:
-        if isinstance(data, GeneratorType):
-            data = list(data)
-        if not (isinstance(data, (list, tuple, np.ndarray)) and len(data)):
-            raise ValueError(
-                "Multiscale data must be a (non-empty) list, tuple, or array"
-            )
-        for d in data:
+        self._data: List[LayerDataProtocol] = list(data)
+        if not self._data:
+            raise ValueError("Multiscale data must be a (non-empty) sequence")
+        for d in self._data:
             assert_protocol(d)
 
-        self._data: Sequence[LayerDataProtocol] = data
         self.max_size = self._data[-1].shape if max_size is None else max_size
         self.downsample_factors = (
             np.array([d.shape for d in data]) / data[0].shape
