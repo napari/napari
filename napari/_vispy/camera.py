@@ -46,7 +46,7 @@ class VispyCamera:
         self._camera.events.angles.connect(self._on_angles_change)
         self._camera.events.perspective.connect(self._on_perspective_change)
 
-        self._on_ndisplay_change(None)
+        self._on_ndisplay_change()
 
     @property
     def angles(self):
@@ -139,28 +139,28 @@ class VispyCamera:
         self._3D_camera.fov = perspective
         self._view.camera.view_changed()
 
-    def _on_ndisplay_change(self, event):
+    def _on_ndisplay_change(self):
         if self._dims.ndisplay == 3:
             self._view.camera = self._3D_camera
         else:
             self._view.camera = self._2D_camera
-        self._on_center_change(None)
-        self._on_zoom_change(None)
-        self._on_angles_change(None)
+        self._on_center_change()
+        self._on_zoom_change()
+        self._on_angles_change()
 
-    def _on_center_change(self, event):
+    def _on_center_change(self):
         self.center = self._camera.center[-self._dims.ndisplay :]
 
-    def _on_zoom_change(self, event):
+    def _on_zoom_change(self):
         self.zoom = self._camera.zoom
 
-    def _on_perspective_change(self, event):
+    def _on_perspective_change(self):
         self.perspective = self._camera.perspective
 
-    def _on_angles_change(self, event):
+    def _on_angles_change(self):
         self.angles = self._camera.angles
 
-    def on_draw(self, event):
+    def on_draw(self, _event):
         """Called whenever the canvas is drawn.
 
         Update camera model angles, center, and zoom.

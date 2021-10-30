@@ -298,7 +298,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         # every frame.
         return self.node.add_chunks(drawable_chunks)
 
-    def _on_loaded(self, _event) -> None:
+    def _on_loaded(self) -> None:
         """The layer loaded new data, so update our view."""
         self._update_view()
         self.events.loaded()

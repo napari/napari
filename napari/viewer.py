@@ -1,4 +1,6 @@
+import typing
 from typing import TYPE_CHECKING, Optional
+from weakref import WeakSet
 
 import magicgui as mgui
 
@@ -31,6 +33,7 @@ class Viewer(ViewerModel):
     """
 
     _window: 'qt_main_window.Window' = None  # type: ignore
+    _instances: typing.ClassVar[WeakSet] = WeakSet()
 
     def __init__(
         self,
@@ -48,6 +51,7 @@ class Viewer(ViewerModel):
             axis_labels=axis_labels,
         )
         self._window = None
+        self._instances.add(self)
         if show:
             self.show()
 
@@ -132,6 +136,30 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
+        self._instances.discard(self)
+
+    @classmethod
+    def close_all(cls) -> int:
+        """
+        Class metod, Close all existing viewer instances.
+
+        This is mostly exposed to avoid leaking of viewers when running tests.
+        As having many non-closed viewer can adversely affect performances.
+
+        It will return the number of viewer closed.
+
+        Returns
+        -------
+        int :
+            number of viewer closed.
+
+        """
+        # copy to not iterate while changing.
+        viewers = [v for v in cls._instances]
+        ret = len(viewers)
+        for viewer in viewers:
+            viewer.close()
+        return ret
 
 
 def current_viewer() -> Viewer:

@@ -87,3 +87,13 @@ def connect_no_arg(emitter: Emitter, obj, attr: str):
     emitter.connect(_cb)
     # as in connect_setattr
     # weakref.finalize(obj, emitter.disconnect, _cb)
+
+
+def connect_setattr_value(emitter: Emitter, obj, attr: str):
+    """To get value from Event"""
+    ref = weakref.ref(obj)
+
+    def _cb(value):
+        setattr(ref(), attr, value.value)
+
+    emitter.connect(_cb)

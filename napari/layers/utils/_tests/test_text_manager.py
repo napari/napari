@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from pydantic import ValidationError
 
 from napari.layers.utils._text_constants import TextMode
 from napari.layers.utils.text_manager import TextManager
@@ -253,3 +254,102 @@ def test_remove_with_text_constant_then_ignored():
     text_manager.remove([1, 3])
 
     np.testing.assert_equal(text_manager.values, ['point'] * n_text)
+
+
+def test_from_layer():
+    text = {
+        'text': 'class',
+        'translation': [-0.5, 1],
+        'visible': False,
+    }
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+        'confidence': np.array([1, 0.5, 0]),
+    }
+
+    text_manager = TextManager._from_layer(
+        text=text,
+        n_text=3,
+        properties=properties,
+    )
+
+    np.testing.assert_array_equal(text_manager.values, ['A', 'B', 'C'])
+    np.testing.assert_array_equal(text_manager.translation, [-0.5, 1])
+    assert not text_manager.visible
+
+
+def test_update_from_layer():
+    text = {
+        'text': 'class',
+        'translation': [-0.5, 1],
+        'visible': False,
+    }
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+        'confidence': np.array([1, 0.5, 0]),
+    }
+    text_manager = TextManager._from_layer(
+        text=text,
+        n_text=3,
+        properties=properties,
+    )
+
+    text = {
+        'text': 'Conf: {confidence:.2f}',
+        'translation': [1.5, -2],
+        'size': 9000,
+    }
+    text_manager._update_from_layer(text=text, n_text=3, properties=properties)
+
+    np.testing.assert_array_equal(
+        text_manager.values, ['Conf: 1.00', 'Conf: 0.50', 'Conf: 0.00']
+    )
+    np.testing.assert_array_equal(text_manager.translation, [1.5, -2])
+    assert text_manager.visible
+    assert text_manager.size == 9000
+
+
+def test_update_from_layer_with_invalid_value_fails_safely():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+        'confidence': np.array([1, 0.5, 0]),
+    }
+    text_manager = TextManager._from_layer(
+        text='class',
+        n_text=3,
+        properties=properties,
+    )
+    before = text_manager.copy(deep=True)
+
+    text = {
+        'text': 'confidence',
+        'size': -3,
+    }
+
+    with pytest.raises(ValidationError):
+        text_manager._update_from_layer(
+            text=text, n_text=3, properties=properties
+        )
+
+    assert text_manager == before
+
+
+def test_update_from_layer_with_warning_only_one_emitted():
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    text_manager = TextManager._from_layer(
+        text='class',
+        n_text=3,
+        properties=properties,
+    )
+
+    text = {
+        'text': 'class',
+        'blending': 'opaque',
+    }
+
+    with pytest.warns(RuntimeWarning) as record:
+        text_manager._update_from_layer(
+            text=text, n_text=3, properties=properties
+        )
+
+    assert len(record) == 1

@@ -56,7 +56,7 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
-from .dialogs.activity_dialog import ActivityDialog
+from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet, register_napari_themes
@@ -110,7 +110,7 @@ class _QtMainWindow(QMainWindow):
         self._old_size = None
         self._positions = []
 
-        act_dlg = ActivityDialog(self.qt_viewer._canvas_overlay)
+        act_dlg = QtActivityDialog(self.qt_viewer._canvas_overlay)
         self.qt_viewer._canvas_overlay.resized.connect(
             act_dlg.move_to_bottom_right
         )
@@ -496,14 +496,14 @@ class Window:
     def _connect_theme(self, theme):
         # connect events to update theme. Here, we don't want to pass the event
         # since it won't have the right `value` attribute.
-        theme.events.background.connect(lambda _: self._update_theme())
-        theme.events.foreground.connect(lambda _: self._update_theme())
-        theme.events.primary.connect(lambda _: self._update_theme())
-        theme.events.secondary.connect(lambda _: self._update_theme())
-        theme.events.highlight.connect(lambda _: self._update_theme())
-        theme.events.text.connect(lambda _: self._update_theme())
-        theme.events.warning.connect(lambda _: self._update_theme())
-        theme.events.current.connect(lambda _: self._update_theme())
+        theme.events.background.connect(self._update_theme_no_event)
+        theme.events.foreground.connect(self._update_theme_no_event)
+        theme.events.primary.connect(self._update_theme_no_event)
+        theme.events.secondary.connect(self._update_theme_no_event)
+        theme.events.highlight.connect(self._update_theme_no_event)
+        theme.events.text.connect(self._update_theme_no_event)
+        theme.events.warning.connect(self._update_theme_no_event)
+        theme.events.current.connect(self._update_theme_no_event)
         theme.events.icon.connect(self._theme_icon_changed)
         theme.events.canvas.connect(
             lambda _: self.qt_viewer.canvas._set_theme_change(
@@ -520,14 +520,14 @@ class Window:
             )
 
     def _disconnect_theme(self, theme):
-        theme.events.background.disconnect(lambda _: self._update_theme())
-        theme.events.foreground.disconnect(lambda _: self._update_theme())
-        theme.events.primary.disconnect(lambda _: self._update_theme())
-        theme.events.secondary.disconnect(lambda _: self._update_theme())
-        theme.events.highlight.disconnect(lambda _: self._update_theme())
-        theme.events.text.disconnect(lambda _: self._update_theme())
-        theme.events.warning.disconnect(lambda _: self._update_theme())
-        theme.events.current.disconnect(lambda _: self._update_theme())
+        theme.events.background.disconnect(self._update_theme_no_event)
+        theme.events.foreground.disconnect(self._update_theme_no_event)
+        theme.events.primary.disconnect(self._update_theme_no_event)
+        theme.events.secondary.disconnect(self._update_theme_no_event)
+        theme.events.highlight.disconnect(self._update_theme_no_event)
+        theme.events.text.disconnect(self._update_theme_no_event)
+        theme.events.warning.disconnect(self._update_theme_no_event)
+        theme.events.current.disconnect(self._update_theme_no_event)
         theme.events.icon.disconnect(self._theme_icon_changed)
         theme.events.canvas.disconnect(
             lambda _: self.qt_viewer.canvas._set_theme_change(
@@ -554,7 +554,7 @@ class Window:
         theme = event.value
         self._disconnect_theme(theme)
 
-    def _theme_icon_changed(self, event=None):
+    def _theme_icon_changed(self):
         """Trigger rebuild of theme and all resources.
 
         This is really only required whenever there are changes to the `icon`
@@ -1079,6 +1079,9 @@ class Window:
         """Make the viewer the currently active window."""
         self._qt_window.raise_()  # for macOS
         self._qt_window.activateWindow()  # for Windows
+
+    def _update_theme_no_event(self):
+        self._update_theme()
 
     def _update_theme(self, event=None):
         """Update widget color theme."""

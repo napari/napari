@@ -153,15 +153,8 @@ class LayerList(SelectableEventedList[Layer]):
             )
 
         # 512 element default extent as documented in `_get_extent_world`
-        try:
-            min_v = np.nan_to_num(min_v, nan=-0.5)
-            max_v = np.nan_to_num(max_v, nan=511.5)
-        except TypeError:
-            # In NumPy < 1.17, nan_to_num doesn't have a nan kwarg
-            min_v = np.asarray(min_v)
-            min_v[np.isnan(min_v)] = -0.5
-            max_v = np.asarray(max_v)
-            max_v[np.isnan(max_v)] = 511.5
+        min_v = np.nan_to_num(min_v, nan=-0.5)
+        max_v = np.nan_to_num(max_v, nan=511.5)
 
         # switch back to original order
         return min_v[::-1], max_v[::-1]
@@ -298,6 +291,7 @@ class LayerList(SelectableEventedList[Layer]):
         *,
         selected: bool = False,
         plugin: Optional[str] = None,
+        _command_id: Optional[str] = None,
     ) -> List[str]:
         """Save all or only selected layers to a path using writer plugins.
 
@@ -364,7 +358,9 @@ class LayerList(SelectableEventedList[Layer]):
             warnings.warn(msg)
             return []
 
-        return save_layers(path, layers, plugin=plugin)
+        return save_layers(
+            path, layers, plugin=plugin, _command_id=_command_id
+        )
 
     def _selection_context(self) -> dict:
         """Return context dict for current layerlist.selection"""
