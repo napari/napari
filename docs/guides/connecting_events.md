@@ -1,6 +1,6 @@
 (connecting-events)=
 
-## Hooking up your own events
+# Hooking up your own events
 
 If you're coming from a background of scripting or working with python in an
 interactive console, thinking in terms of the "event loop" can feel a bit
@@ -19,7 +19,7 @@ If you would like to set up a custom event listener then you need to hook into
 the napari event loop. We offer a couple of convenience decorators to easily
 connect functions to key and mouse events.
 
-### Listening for keypress events
+## Listening for keypress events
 
 One option is to use keybindings, that will listen for keypresses and then call
 some callback whenever pressed, with the viewer instance passed as an argument
@@ -50,7 +50,7 @@ napari.run()
 See also this [custom key bindings
 example](https://github.com/napari/napari/blob/main/examples/custom_key_bindings.py).
 
-### Listening for mouse events
+## Listening for mouse events
 
 You can also listen for and react to mouse events, like a click or drag event,
 as shown here where we update the image with random data every time it is
@@ -88,7 +88,7 @@ and [mouse drag
 callback](https://github.com/napari/napari/blob/main/examples/mouse_drag_callback.py)
 examples.
 
-### Connection functions to native napari events
+## Connection functions to native napari events
 
 If you want something to happen following some event that happens *within*
 napari, the trick becomes knowing which native signals any given napari object
