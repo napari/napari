@@ -923,9 +923,11 @@ class QtViewer(QSplitter):
         """
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
-                displayed_axes = self.viewer.dims.displayed[
-                    -len(layer._displayed_axes) :
-                ]
+                nd = len(layer._displayed_axes)
+                if nd > self.viewer.dims.ndisplay:
+                    displayed_axes = layer._displayed_axes
+                else:
+                    displayed_axes = self.viewer.dims.displayed[-nd:]
                 layer._update_draw(
                     scale_factor=1 / self.viewer.camera.zoom,
                     corner_pixels_displayed=self._canvas_corners_in_world[
