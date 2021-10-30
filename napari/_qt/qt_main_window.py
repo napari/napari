@@ -40,7 +40,7 @@ from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
-from .dialogs.activity_dialog import ActivityDialog
+from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet, register_napari_themes
@@ -93,7 +93,7 @@ class _QtMainWindow(QMainWindow):
         self._old_size = None
         self._positions = []
 
-        act_dlg = ActivityDialog(self.qt_viewer._canvas_overlay)
+        act_dlg = QtActivityDialog(self.qt_viewer._canvas_overlay)
         self.qt_viewer._canvas_overlay.resized.connect(
             act_dlg.move_to_bottom_right
         )
