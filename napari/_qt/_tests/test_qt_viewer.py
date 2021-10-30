@@ -525,3 +525,34 @@ def test_remove_labels(make_napari_viewer):
     viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
     del viewer.layers[0]
     viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+
+
+@pytest.mark.parametrize('multiscale', [False, True])
+def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
+    """Test bug in setting corner_pixels from qt_viewer.on_draw"""
+    viewer = make_napari_viewer()
+
+    img = np.ones((512, 256))
+    # canvas size must be large enough that img fits in the canvas
+    canvas_size = tuple(3 * s for s in img.shape)
+    expected_corner_pixels = np.asarray([[0, 0], [img.shape[0], img.shape[1]]])
+
+    vol = np.stack([img] * 8, axis=0)
+    if multiscale:
+        img = [img[::s, ::s] for s in (1, 2, 4)]
+    viewer.add_image(img)
+    img_multi_layer = viewer.layers[0]
+    viewer.add_image(vol)
+
+    viewer.dims.order = (0, 1, 2)
+    viewer.window.qt_viewer.canvas.size = canvas_size
+    viewer.window.qt_viewer.on_draw(None)
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+
+    viewer.dims.order = (2, 0, 1)
+    viewer.window.qt_viewer.on_draw(None)
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+
+    viewer.dims.order = (1, 2, 0)
+    viewer.window.qt_viewer.on_draw(None)
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
