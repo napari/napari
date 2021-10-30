@@ -13,16 +13,10 @@ from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
-<<<<<<< HEAD
 from ...utils.translations import trans
-<<<<<<< HEAD
-=======
 from ...utils.naming import magic_name
->>>>>>> 3c28e07dc (move magic name)
-from .._data_protocols import MultiScaleData
-=======
+from .._data_protocols import LayerDataProtocol
 from .._multiscale_data import MultiScaleData
->>>>>>> 6366eb894 (rearrange)
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -231,7 +225,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 trans._('Image data must have at least 2 dimensions.'))
 
         # Determine if data is a multiscale
-        self.data_raw = data  # TODO
+        self._data_raw = data
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
         elif multiscale and not isinstance(data, MultiScaleData):
@@ -386,13 +380,20 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._data.dtype
 
     @property
-    def data(self):
-        """array: Image data."""
+    def data_raw(self):
+        """Data, exactly as provided by the user."""
+        return self._data_raw
+
+    @property
+    def data(self) -> LayerDataProtocol:
+        """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
         return self._data
 
     @data.setter
     def data(self, data):
-        self._data = data
+        self._data_raw = data
+        # note, we don't support changing multiscale in an Image instance
+        self._data = MultiScaleData(data) if self.multiscale else data
         self._update_dims()
         self.events.data(value=self.data)
         if self._keep_auto_contrast:
