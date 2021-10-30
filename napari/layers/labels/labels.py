@@ -676,7 +676,11 @@ class Labels(_image_base_class):
     @contrast_limits.setter
     def contrast_limits(self, value):
         # Setting contrast_limits of labels layers leads to wrong visualization of the layer
-        raise AttributeError("Setting contrast_limits on labels layers is not allowed.")
+        if tuple(value) != (0, 1):
+            raise AttributeError(
+                "Setting contrast_limits on labels layers is not allowed."
+            )
+        self._contrast_limits = (0, 1)
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
