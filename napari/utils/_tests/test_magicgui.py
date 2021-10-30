@@ -131,6 +131,7 @@ def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     add_data()
     assert len(viewer.layers) == 0
     QTimer.singleShot(50, _assert_stuff)
+    time.sleep(0.1)
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
