@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Sequence, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -390,10 +390,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(
+        self, data: Union[LayerDataProtocol, Sequence[LayerDataProtocol]]
+    ):
         self._data_raw = data
         # note, we don't support changing multiscale in an Image instance
-        self._data = MultiScaleData(data) if self.multiscale else data
+        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore
         self._update_dims()
         self.events.data(value=self.data)
         if self._keep_auto_contrast:

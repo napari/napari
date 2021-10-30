@@ -10,7 +10,26 @@ from .utils.layer_utils import compute_multiscale_level_and_corners
 
 
 class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
-    """Wrapper for multiscale data, to provide consistent API."""
+    """Wrapper for multiscale data, to provide consistent API.
+
+    :class:`LayerDataProtocol` is the subset of the python Array API that we
+    expect array-likes to provide.  Multiscale data is just a sequence of
+    array-likes (providing, e.g. `shape`, `dtype`, `__getitem__`).
+
+    Parameters
+    ----------
+    data : Sequence[LayerDataProtocol]
+        Levels of multiscale data, from larger to smaller.
+    max_size : Sequence[int], optional
+        Maximum size of a displayed tile in pixels, by default`data[-1].shape`
+
+    Raises
+    ------
+    ValueError
+        If `data` is empty or is not a list, tuple, or ndarray.
+    TypeError
+        If any of the items in `data` don't provide `LayerDataProtocol`.
+    """
 
     def __init__(
         self,
