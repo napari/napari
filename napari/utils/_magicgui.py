@@ -152,7 +152,7 @@ _FUTURES: Set[Future] = set()
 
 
 def add_worker_data(
-    gui, worker: FunctionWorker, return_type, _from_tuple=True
+    widget, worker: FunctionWorker, return_type, _from_tuple=True
 ):
     """Handle a thread_worker object returned from a magicgui widget.
 
@@ -164,7 +164,7 @@ def add_worker_data(
 
     Parameters
     ----------
-    gui : MagicGui
+    widget : MagicGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
     worker : WorkerBase
@@ -197,7 +197,9 @@ def add_worker_data(
         else add_layer_data_to_viewer
     )
     _return_type = get_args(return_type)[0]
-    worker.signals.returned.connect(partial(cb, gui, return_type=_return_type))
+    worker.signals.returned.connect(
+        partial(cb, widget, return_type=_return_type)
+    )
 
 
 def add_future_data(gui, future, return_type, _from_tuple=True):
