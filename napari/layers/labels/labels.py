@@ -197,8 +197,6 @@ class Labels(_ImageBase):
 
     Notes
     -----
-    _data_raw : array (N, M)
-        2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
         background label `0` is selected.

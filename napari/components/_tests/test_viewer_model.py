@@ -326,7 +326,7 @@ def test_swappable_dims():
     labels_data = np.random.randint(20, size=(7, 12, 10, 15))
     labels_name = viewer.add_labels(labels_data).name
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[0, 0, :, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[0, 0, :, :]
     )
 
     # Swap dims
@@ -336,7 +336,7 @@ def test_swappable_dims():
         viewer.layers[image_name]._data_view == image_data[0, :, 0, :]
     )
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[0, :, 0, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[0, :, 0, :]
     )
 
 

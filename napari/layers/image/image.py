@@ -366,11 +366,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
 
-    @property
-    def _data_raw(self):
-        """Raw image for the current slice. (compatibility)"""
-        return self._slice.image.raw
-
     def _calc_data_range(self, mode='data'):
         if mode == 'data':
             input_data = self.data[-1] if self.multiscale else self.data
