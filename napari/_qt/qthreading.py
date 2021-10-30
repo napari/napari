@@ -939,11 +939,19 @@ def _new_worker_qthread(
     return worker, thread
 
 
-for _type in (LayerDataTuple, List[LayerDataTuple]):
-    magicgui.register_type(
-        _type,
-        return_callback=_mgui.add_layer_data_tuples_to_viewer,
-    )
-    magicgui.register_type(
-        FunctionWorker[_type], return_callback=_mgui.add_worker_data
-    )
+def register():
+    from .. import layers, types
+
+    for _type in (LayerDataTuple, List[LayerDataTuple]):
+        magicgui.register_type(
+            FunctionWorker[_type], return_callback=_mgui.add_worker_data
+        )
+    for layer_name in layers.NAMES:
+        _type = getattr(types, f'{layer_name.title()}Data')
+        magicgui.register_type(
+            FunctionWorker[_type],
+            return_callback=partial(_mgui.add_worker_data, _from_tuple=False),
+        )
+
+
+register()
