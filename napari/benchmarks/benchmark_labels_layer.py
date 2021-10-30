@@ -39,7 +39,7 @@ class Labels2DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):
         """Time to paint circle."""
@@ -94,7 +94,7 @@ class Labels3DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):
         """Time to paint circle."""

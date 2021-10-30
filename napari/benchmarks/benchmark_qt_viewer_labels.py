@@ -52,7 +52,7 @@ class QtViewerSingleLabelsSuite:
 
     def time_raw_to_displayed(self):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint(self):
         """Time to paint."""
