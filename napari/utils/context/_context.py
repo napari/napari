@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import sys
-from typing import Any, ChainMap, Dict, Final, MutableMapping, Optional
+from typing import Any, ChainMap, Dict, MutableMapping, Optional
 from weakref import finalize
+
+from typing_extensions import Final
 
 from ..events.event import Event, EventEmitter
 
