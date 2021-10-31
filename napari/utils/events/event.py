@@ -506,7 +506,7 @@ class EventEmitter:
             self._callbacks = []
             self._callback_refs = []
             self._callback_pass_event = []
-        elif isinstance(callback, Callable):
+        elif isinstance(callback, (Callable, tuple)):
             callback, _pass_event = self._normalize_cb(callback)
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
@@ -521,7 +521,10 @@ class EventEmitter:
                     and isinstance(local_callback[0], weakref.ref)
                 ):
                     continue
-                if local_callback[0]() is callback:
+                if (
+                    local_callback[0]() is callback
+                    or local_callback[0]() is None
+                ):
                     index_list.append(idx)
             for idx in index_list[::-1]:
                 self._callbacks.pop(idx)

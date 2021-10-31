@@ -1,3 +1,5 @@
+import weakref
+
 import pytest
 
 from napari.utils.events import EventEmitter
@@ -149,3 +151,22 @@ def test_disconnect_object():
 
     assert t.call_list_1 == [1]
     assert t.call_list_2 == [1]
+
+
+def test_weakref_disconnect():
+    class TestOb:
+        call_list_1 = []
+
+        def fun1(self):
+            self.call_list_1.append(1)
+
+    t = TestOb()
+
+    e = EventEmitter(type="test")
+    e.connect(t.fun1)
+    e()
+
+    assert t.call_list_1 == [1]
+    e.disconnect((weakref.ref(t), "fun1"))
+    e()
+    assert t.call_list_1 == [1]
