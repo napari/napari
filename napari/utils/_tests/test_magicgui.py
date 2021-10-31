@@ -106,8 +106,6 @@ def test_magicgui_add_future_data(make_napari_viewer, LayerType, data, ndim):
 @pytest.mark.sync_only
 def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     """Test that annotating with FunctionWorker works."""
-    from qtpy.QtCore import QTimer
-
     from napari.qt.threading import FunctionWorker, thread_worker
 
     viewer = make_napari_viewer()
@@ -115,7 +113,7 @@ def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
 
     @magicgui
     def add_data(x: int) -> FunctionWorker[types.ImageData]:
-        @thread_worker(start_thread=True)
+        @thread_worker
         def _slow():
             return DATA
 
@@ -123,17 +121,17 @@ def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
 
     viewer.window.add_dock_widget(add_data)
 
-    def _assert_stuff():
-        assert len(viewer.layers) == 1
-        assert isinstance(viewer.layers[0], Image)
-        assert viewer.layers[0].source.widget == add_data
-        assert np.array_equal(viewer.layers[0].data, DATA)
-        print("hi")
-
-    add_data()
     assert len(viewer.layers) == 0
-    QTimer.singleShot(40, _assert_stuff)
-    qtbot.wait(150)
+    worker = add_data()
+    # normally you wouldn't start the worker outside of the mgui function
+    # this is just to make testing with threads easier
+    with qtbot.waitSignal(worker.finished):
+        worker.start()
+
+    assert len(viewer.layers) == 1
+    assert isinstance(viewer.layers[0], Image)
+    assert viewer.layers[0].source.widget == add_data
+    assert np.array_equal(viewer.layers[0].data, DATA)
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
