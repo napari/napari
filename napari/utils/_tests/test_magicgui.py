@@ -103,6 +103,7 @@ def test_magicgui_add_future_data(make_napari_viewer, LayerType, data, ndim):
     time.sleep(0.1)
 
 
+@pytest.mark.sync_only
 def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
     """Test that annotating with FunctionWorker works."""
     from qtpy.QtCore import QTimer
