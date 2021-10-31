@@ -203,7 +203,6 @@ def test_changing_theme(make_napari_viewer):
         viewer.theme = 'nonexistent_theme'
 
 
-
 # TODO: revisit the need for sync_only here.
 # An async failure was observed here on CI, but was not reproduced locally
 @pytest.mark.sync_only
