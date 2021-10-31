@@ -121,3 +121,31 @@ def test_to_many_positional():
         e.connect(t.fun)
     with pytest.raises(RuntimeError):
         e.connect(simple_fun)
+
+
+def test_disconnect_object():
+    class TestOb:
+        call_list_1 = []
+        call_list_2 = []
+
+        def fun1(self):
+            self.call_list_1.append(1)
+
+        def fun2(self):
+            self.call_list_2.append(1)
+
+    t = TestOb()
+
+    e = EventEmitter(type="test")
+    e.connect(t.fun1)
+    e.connect(t.fun2)
+    e()
+
+    assert t.call_list_1 == [1]
+    assert t.call_list_2 == [1]
+
+    e.disconnect(t)
+    e()
+
+    assert t.call_list_1 == [1]
+    assert t.call_list_2 == [1]
