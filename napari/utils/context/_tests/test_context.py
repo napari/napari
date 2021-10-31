@@ -61,7 +61,7 @@ def test_create_and_get_scoped_contexts():
     assert len(_OBJ_TO_CONTEXT) == before
 
 
-def test_service_events():
+def test_context_events():
     """Changing context keys emits an event"""
     mock = Mock()
     root = Context()
@@ -70,16 +70,16 @@ def test_service_events():
 
     root['a'] = 1
     # child re-emits parent events
-    assert mock.call_args.args[0].value == {'a'}
+    assert mock.call_args[0][0].value == {'a'}
 
     mock.reset_mock()
     scoped['b'] = 1
     # also emits own events
-    assert mock.call_args.args[0].value == {'b'}
+    assert mock.call_args[0][0].value == {'b'}
 
     mock.reset_mock()
     del scoped['b']
-    assert mock.call_args.args[0].value == {'b'}
+    assert mock.call_args[0][0].value == {'b'}
 
     # but parent does not emit child events
     mock.reset_mock()
