@@ -126,6 +126,11 @@ def test_to_many_positional():
 
 
 def test_disconnect_object():
+    count_list = []
+
+    def fun1():
+        count_list.append(1)
+
     class TestOb:
         call_list_1 = []
         call_list_2 = []
@@ -141,16 +146,19 @@ def test_disconnect_object():
     e = EventEmitter(type="test")
     e.connect(t.fun1)
     e.connect(t.fun2)
+    e.connect(fun1)
     e()
 
     assert t.call_list_1 == [1]
     assert t.call_list_2 == [1]
+    assert count_list == [1]
 
     e.disconnect(t)
     e()
 
     assert t.call_list_1 == [1]
     assert t.call_list_2 == [1]
+    assert count_list == [1, 1]
 
 
 def test_weakref_disconnect():
@@ -170,3 +178,18 @@ def test_weakref_disconnect():
     e.disconnect((weakref.ref(t), "fun1"))
     e()
     assert t.call_list_1 == [1]
+
+
+def test_none_disconnect():
+    count_list = []
+
+    def fun1():
+        count_list.append(1)
+
+    e = EventEmitter(type="test")
+    e.connect(fun1)
+    e()
+    assert count_list == [1]
+    e.disconnect(None)
+    e()
+    assert count_list == [1]
