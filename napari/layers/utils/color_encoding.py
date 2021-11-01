@@ -14,6 +14,7 @@ from .style_encoding import (
     DerivedStyleEncoding,
     DirectStyleEncoding,
     EncodingType,
+    IndicesType,
     StyleEncoding,
     parse_kwargs_as_encoding,
 )
@@ -102,7 +103,9 @@ class IdentityColorEncoding(DerivedStyleEncoding[ColorValue, ColorArray]):
     property: str
     fallback: ColorValue = DEFAULT_COLOR
 
-    def _apply(self, properties: Dict[str, np.ndarray], indices) -> ColorArray:
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices: IndicesType
+    ) -> ColorArray:
         return transform_color(properties[self.property][indices])
 
 
@@ -127,7 +130,9 @@ class NominalColorEncoding(DerivedStyleEncoding[ColorValue, ColorArray]):
     colormap: CategoricalColormap
     fallback: ColorValue = DEFAULT_COLOR
 
-    def _apply(self, properties: Dict[str, np.ndarray], indices) -> ColorArray:
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices: IndicesType
+    ) -> ColorArray:
         values = properties[self.property][indices]
         return self.colormap.map(values)
 
@@ -159,7 +164,9 @@ class QuantitativeColorEncoding(DerivedStyleEncoding[ColorValue, ColorArray]):
     contrast_limits: Optional[Tuple[float, float]] = None
     fallback: ColorValue = DEFAULT_COLOR
 
-    def _apply(self, properties: Dict[str, np.ndarray], indices) -> ColorArray:
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices: IndicesType
+    ) -> ColorArray:
         all_values = properties[self.property]
         if self.contrast_limits is None:
             self.contrast_limits = _calculate_contrast_limits(all_values)

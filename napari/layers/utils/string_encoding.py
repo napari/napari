@@ -13,6 +13,7 @@ from .style_encoding import (
     DerivedStyleEncoding,
     DirectStyleEncoding,
     EncodingType,
+    IndicesType,
     StyleEncoding,
     parse_kwargs_as_encoding,
 )
@@ -84,7 +85,9 @@ class IdentityStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
     fallback: StringValue = DEFAULT_STRING
 
     def _apply(
-        self, properties: Dict[str, np.ndarray], indices
+        self,
+        properties: Dict[str, np.ndarray],
+        indices: IndicesType,
     ) -> StringArray:
         return np.array(properties[self.property][indices], dtype=str)
 
@@ -109,7 +112,9 @@ class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
     fallback: StringValue = DEFAULT_STRING
 
     def _apply(
-        self, properties: Dict[str, np.ndarray], indices
+        self,
+        properties: Dict[str, np.ndarray],
+        indices: IndicesType,
     ) -> StringArray:
         return np.array(
             [

@@ -10,8 +10,13 @@ from typing_extensions import Protocol, runtime_checkable
 from ...utils.events import EventedModel
 from ...utils.misc import StringEnum
 
-IndicesType = Union[List[int], np.ndarray]
+IndicesType = Union[range, List[int], np.ndarray]
+
+# TODO: bound=np.ndarray is convenient but probably overly restrictive.
+"""The variable type of a single style value."""
 StyleValue = TypeVar('StyleValue', bound=np.ndarray)
+
+"""The variable type of multiple style values in an array."""
 StyleArray = TypeVar('StyleArray', bound=np.ndarray)
 
 
@@ -50,9 +55,8 @@ class StyleEncoding(Protocol[StyleArray]):
             The properties from which to derive the output values.
         n_rows : int
             The total number of rows in the properties table.
-        indices : Optional
+        indices : Optional[IndicesType]
             The row indices for which to return values. If None, return all of them.
-            If not None, must be usable as indices for np.ndarray.
 
         Returns
         -------
@@ -78,13 +82,13 @@ class StyleEncoding(Protocol[StyleArray]):
         """
         pass
 
-    def _delete(self, indices):
+    def _delete(self, indices: IndicesType):
         """Deletes style values from this by index.
 
         Parameters
         ----------
         indices
-            The indices of the style values to remove. Must be usable as indices for np.ndarray.
+            The indices of the style values to remove.
         """
         pass
 
@@ -122,7 +126,7 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     def _append(self, array: StyleArray):
         pass
 
-    def _delete(self, indices):
+    def _delete(self, indices: IndicesType):
         pass
 
     def _clear(self):
@@ -167,7 +171,7 @@ class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     def _append(self, array: StyleArray):
         self.array = np.append(self.array, array, axis=0)
 
-    def _delete(self, indices):
+    def _delete(self, indices: IndicesType):
         self.array = _delete_in_bounds(self.array, indices)
 
     def _clear(self):
@@ -220,7 +224,7 @@ class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     def _append(self, array: StyleArray):
         self._array = np.append(self._array, array, axis=0)
 
-    def _delete(self, indices):
+    def _delete(self, indices: IndicesType):
         self._array = _delete_in_bounds(self._array, indices)
 
     def _clear(self):
