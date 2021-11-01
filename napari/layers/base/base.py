@@ -1329,42 +1329,57 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return None, None
 
         # create the bounding box in data coordinates
-        bbox = self._display_bounding_box(dims_displayed)
+        bounding_box = self._display_bounding_box(dims_displayed)
 
-        # get the view direction in data coords (only displayed dims)
+        return self._get_ray_intersections(
+            position=position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+            bounding_box=bounding_box,
+        )
+
+    def _get_ray_intersections(
+        self,
+        position: List[float],
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+        world: bool = True,
+        bounding_box: Optional[np.ndarray] = None,
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+        """A more flexible version of Base.get_ray_intersections in which the
+        bounding box is parametrized."""
+        # get the view direction and click position in data coords
+        # for the displayed dimensions only
         if world is True:
             view_dir = self._world_to_displayed_data_ray(
                 view_direction, dims_displayed
             )
-        else:
-            view_dir = np.asarray(view_direction)[dims_displayed]
-
-        # Get the clicked point in data coords (only displayed dims)
-        if world is True:
             click_pos_data = self._world_to_displayed_data(
                 position, dims_displayed
             )
         else:
+            view_dir = np.asarray(view_direction)[dims_displayed]
             click_pos_data = np.asarray(position)[dims_displayed]
 
         # Determine the front and back faces
         front_face_normal, back_face_normal = find_front_back_face(
-            click_pos_data, bbox, view_dir
+            click_pos_data, bounding_box, view_dir
         )
 
         if front_face_normal is None and back_face_normal is None:
             # click does not intersect the data bounding box
             return None, None
 
-        # Get the locations in the plane where the ray intersects
+        # Calculate ray-bounding box face intersections
         start_point_displayed_dimensions = (
             intersect_line_with_axis_aligned_bounding_box_3d(
-                click_pos_data, view_dir, bbox, front_face_normal
+                click_pos_data, view_dir, bounding_box, front_face_normal
             )
         )
         end_point_displayed_dimensions = (
             intersect_line_with_axis_aligned_bounding_box_3d(
-                click_pos_data, view_dir, bbox, back_face_normal
+                click_pos_data, view_dir, bounding_box, back_face_normal
             )
         )
 

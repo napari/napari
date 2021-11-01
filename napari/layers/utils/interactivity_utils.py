@@ -2,7 +2,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
-from napari.utils.geometry import project_point_onto_plane
+from napari.utils.geometry import project_points_onto_plane
 
 
 def drag_data_to_projected_distance(
@@ -44,7 +44,7 @@ def drag_data_to_projected_distance(
 
     # Project the start and end positions onto a pseudo-canvas, a plane
     # parallel to the rendered canvas in data coordinates.
-    end_position_canvas = project_point_onto_plane(
+    end_position_canvas = project_points_onto_plane(
         end_position, start_position, view_direction
     )
     # Calculate the drag vector on the pseudo-canvas.
@@ -86,17 +86,3 @@ def click_plane_from_intersection_points(
     ray_direction = end_position_view - plane_point
     plane_normal = ray_direction / np.linalg.norm(ray_direction)
     return plane_point, plane_normal
-
-
-# get click plane from mouse event - tick
-
-# project points on to click plane - tick
-
-# rotate points and plane to be axis aligned - tick
-
-# 2D intersection of click with points
-
-# calculate signed distancdistancee between points and plane
-
-# probably need to override get_value on the points layer to use a
-# larger bounding box which fully encompasses all points
