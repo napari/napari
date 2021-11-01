@@ -1333,6 +1333,7 @@ class Points(Layer):
             selection = None
         return selection
 
+
     def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
         """An augmented, axis-aligned (self._ndisplay, 2) bounding box.
 
