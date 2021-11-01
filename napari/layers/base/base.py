@@ -1330,14 +1330,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
-
-        return self._get_ray_intersections(
+        start_point, end_point = self._get_ray_intersections(
             position=position,
             view_direction=view_direction,
             dims_displayed=dims_displayed,
             world=world,
             bounding_box=bounding_box,
         )
+        return start_point, end_point
 
     def _get_ray_intersections(
         self,

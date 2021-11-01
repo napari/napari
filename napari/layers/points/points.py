@@ -1390,19 +1390,19 @@ class Points(Layer):
             If the click does not intersect the axis-aligned data bounding box,
             None is returned.
         """
-        original_bounding_box_method = self._display_bounding_box
-        augmented_bounding_box = self._display_bounding_box_augmented(
-            dims_displayed=dims_displayed
-        )
-        self._display_bounding_box = lambda x: augmented_bounding_box
-        start_point, end_point = Layer.get_ray_intersections(
-            self,
+        if len(dims_displayed) != 3:
+            return None, None
+
+        # create the bounding box in data coordinates
+        bounding_box = self._display_bounding_box_augmented(dims_displayed)
+
+        start_point, end_point = self._get_ray_intersections(
             position=position,
             view_direction=view_direction,
             dims_displayed=dims_displayed,
             world=world,
+            bounding_box=bounding_box,
         )
-        self._display_bounding_box = original_bounding_box_method
         return start_point, end_point
 
     def _set_view_slice(self):
