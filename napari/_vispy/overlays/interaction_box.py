@@ -2,6 +2,8 @@ import numpy as np
 from skimage.transform import AffineTransform, SimilarityTransform
 from vispy.scene.visuals import Compound, Line, Markers
 
+from napari.utils.transforms.transforms import ScaleTranslate
+
 from ._interaction_box_constants import Box
 
 
@@ -43,7 +45,7 @@ class VispyInteractionBox:
     def __init__(self, viewer, parent=None, order=0):
 
         self._viewer = viewer
-        self._interaction_box = viewer.interaction_box
+        self._interaction_box = viewer.overlays.interaction_box
         self.node = Compound([Line(), Markers()], parent=parent)
         self.node.order = order
         self._on_interaction_box_change()
@@ -51,6 +53,25 @@ class VispyInteractionBox:
         self._interaction_box.events.points.connect(
             self._on_interaction_box_change
         )
+        self._interaction_box.events.show.connect(
+            self._on_interaction_box_change
+        )
+        self._interaction_box.events.show_handle.connect(
+            self._on_interaction_box_change
+        )
+        self._interaction_box.events.show_vertices.connect(
+            self._on_interaction_box_change
+        )
+        self._interaction_box.events.transform.connect(
+            self._on_interaction_box_change
+        )
+        self._highlight_width = 1.5
+        self._selected_vertex: int = None
+        self._fixed_vertex: int = None
+        self._fixed_aspect: float = None
+        self._vertex_size = 10
+
+        self._highlight_color = (0, 0.6, 1)
 
     @property
     def marker_node(self):
@@ -73,7 +94,7 @@ class VispyInteractionBox:
             edge_color,
             pos,
             width,
-        ) = self._viewer.interaction_box._compute_vertices_and_box()
+        ) = self._compute_vertices_and_box()
 
         if vertices is None or len(vertices) == 0:
             vertices = np.zeros((1, self._viewer.dims.ndisplay))
@@ -115,17 +136,17 @@ class VispyInteractionBox:
             distances = abs(box - coord)
 
             # Get the vertex sizes
-            sizes = self._interaction_box._vertex_size / 2
+            sizes = self._vertex_size / 2
 
             # Check if any matching vertices
             matches = np.all(distances <= sizes, axis=1).nonzero()
             if len(matches[0]) > 0:
-                self._interaction_box._selected_vertex = matches[0][-1]
+                self._selected_vertex = matches[0][-1]
                 # Exclde center vertex
-                if self._interaction_box._selected_vertex == Box.CENTER:
-                    self._interaction_box._selected_vertex = None
+                if self._selected_vertex == Box.CENTER:
+                    self._selected_vertex = None
             else:
-                self._interaction_box._selected_vertex = None
+                self._selected_vertex = None
             # self.events.points_changed()
 
         @layer.mouse_drag_callbacks.append
@@ -137,24 +158,27 @@ class VispyInteractionBox:
             self._set_drag_start_values(layer, event.position)
             drag_callback = None
             final_callback = None
-            if self._interaction_box._selected_vertex is not None:
-                if self._interaction_box._selected_vertex == Box.HANDLE:
+            if self._selected_vertex is not None:
+                if self._selected_vertex == Box.HANDLE:
                     drag_callback = self._on_drag_rotation
                     final_callback = self._on_final_tranform
                     yield
                 else:
-                    self._interaction_box._fixed_vertex = (
-                        self._interaction_box._selected_vertex + 4
-                    ) % Box.LEN
+                    self._fixed_vertex = (self._selected_vertex + 4) % Box.LEN
                     drag_callback = self._on_drag_scale
                     final_callback = self._on_final_tranform
                     yield
             else:
                 if (
                     self._interaction_box._box is not None
-                    and self.show
+                    and self._interaction_box.show
                     and inside_boxes(
-                        np.array([self._box - self._drag_start_coordinates])
+                        np.array(
+                            [
+                                self._interaction_box._box
+                                - self._drag_start_coordinates
+                            ]
+                        )
                     )[0]
                 ):
                     drag_callback = self._on_drag_translate
@@ -261,15 +285,11 @@ class VispyInteractionBox:
     def _on_drag_translate(self, layer, event):
         """Gets called upon mouse_move in the case of a translation operation"""
 
-        offset = (
-            np.array(layer.world_to_data(event.position))
-            - self._drag_start_coordinates
-        )
+        offset = np.array(event.position) - self._drag_start_coordinates
 
-        transform = SimilarityTransform(translation=offset)
-        self._box = transform(self._drag_start_box)
-        self.events.points_changed()
-        self.events.transform_changed_drag(transform=transform)
+        transform = ScaleTranslate(translate=offset)
+        self._interaction_box.transform = transform
+        # self.interaction_box.transform_drag = transform
 
     def _on_final_tranform(self, layer, event):
         """Gets called upon mouse_move in the case of a translation operation"""
@@ -285,20 +305,72 @@ class VispyInteractionBox:
                 np.array(event.position),
             ]
         )
-        self.show = True
-        self.show_handle = False
-        self.show_vertices = False
+        self._interaction_box.show = True
+        self._interaction_box.show_handle = False
+        self._interaction_box.show_vertices = False
         self._interaction_box.selection_box_drag = self._interaction_box._box[
             Box.WITHOUT_HANDLE
         ]
 
     def _on_end_newbox(self, layer, event):
-        """Gets called upon mouse_move in the case of a drawing a new box"""
-        self.show = False
-        self.show_handle = True
-        self.show_vertices = True
-        # self.points = None
+        """Gets called when dragging ends in the case of a drawing a new box"""
+        self._interaction_box.show = False
         if self._interaction_box._box is not None:
             self._interaction_box.selection_box_final = (
                 self._interaction_box._box[Box.WITHOUT_HANDLE]
             )
+
+    def _compute_vertices_and_box(self):
+        """Compute location of the box for rendering.
+
+        Returns
+        ----------
+        vertices : np.ndarray
+            Nx2 array of any vertices to be rendered as Markers
+        face_color : str
+            String of the face color of the Markers
+        edge_color : str
+            String of the edge color of the Markers and Line for the box
+        pos : np.ndarray
+            Nx2 array of vertices of the box that will be rendered using a
+            Vispy Line
+        width : float
+            Width of the box edge
+        """
+        if (
+            self._interaction_box._box is not None
+            and self._interaction_box.show
+        ):
+            if self._interaction_box.show_handle:
+                box = self._interaction_box._box[Box.WITH_HANDLE]
+            else:
+                box = self._interaction_box._box[Box.WITHOUT_HANDLE]
+
+            if self._selected_vertex is None:
+                face_color = 'white'
+            else:
+                face_color = self._highlight_color
+
+            edge_color = self._highlight_color
+            vertices = box[:, ::-1]
+            if self._interaction_box.show_vertices:
+                vertices = box[:, ::-1]
+            else:
+                vertices = np.empty((0, 2))
+
+            # Use a subset of the vertices of the interaction_box to plot
+            # the line around the edge
+            if self._interaction_box.show_handle:
+                pos = self._interaction_box._box[Box.LINE_HANDLE][:, ::-1]
+            else:
+                pos = self._interaction_box._box[Box.LINE][:, ::-1]
+            width = self._highlight_width
+        else:
+            # Otherwise show nothing
+            vertices = np.empty((0, 2))
+            face_color = 'white'
+            edge_color = 'white'
+            pos = None
+            width = 0
+
+        return vertices, face_color, edge_color, pos, width
