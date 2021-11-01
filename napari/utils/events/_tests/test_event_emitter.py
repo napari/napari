@@ -168,6 +168,9 @@ def test_weakref_disconnect():
         def fun1(self):
             self.call_list_1.append(1)
 
+        def fun2(self, event):
+            self.call_list_1.append(2)
+
     t = TestOb()
 
     e = EventEmitter(type="test")
@@ -178,6 +181,9 @@ def test_weakref_disconnect():
     e.disconnect((weakref.ref(t), "fun1"))
     e()
     assert t.call_list_1 == [1]
+    e.connect(t.fun2)
+    e()
+    assert t.call_list_1 == [1, 2]
 
 
 def test_none_disconnect():
@@ -186,6 +192,9 @@ def test_none_disconnect():
     def fun1():
         count_list.append(1)
 
+    def fun2(event):
+        count_list.append(2)
+
     e = EventEmitter(type="test")
     e.connect(fun1)
     e()
@@ -193,3 +202,6 @@ def test_none_disconnect():
     e.disconnect(None)
     e()
     assert count_list == [1]
+    e.connect(fun2)
+    e()
+    assert count_list == [1, 2]
