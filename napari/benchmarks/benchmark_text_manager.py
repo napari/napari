@@ -28,12 +28,12 @@ class TextManagerSuite:
             'string_property': np.random.choice(('cat', 'car'), n + 512),
             'float_property': np.random.rand(n + 512),
         }
-        self.manager = TextManager(text=text, properties=self.properties)
+        self.manager = TextManager(string=text, properties=self.properties)
         self.manager.string._get_array(self.properties, n)
         self.indices_to_remove = list(range(0, n, 2))
 
     def time_create(self, n, text):
-        manager = TextManager(text=text, properties=self.properties)
+        manager = TextManager(string=text, properties=self.properties)
         manager.string._get_array(self.properties, n)
 
     def time_refresh(self, n, text):

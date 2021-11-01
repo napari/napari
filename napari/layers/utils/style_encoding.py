@@ -252,6 +252,7 @@ def _empty_like_multi_array(single_array: np.ndarray):
 
 
 def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
+    # TODO: do we really need bounds checking here?
     safe_indices = [i for i in indices if i < array.shape[0]]
     return np.delete(array, safe_indices, axis=0)
 

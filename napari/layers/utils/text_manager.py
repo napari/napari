@@ -156,8 +156,10 @@ class TextManager(EventedModel):
         indices_to_remove : set, list, np.ndarray
             The indices to remove.
         """
-        self.string._delete(list(indices_to_remove))
-        self.color._delete(list(indices_to_remove))
+        if isinstance(indices_to_remove, set):
+            indices_to_remove = list(indices_to_remove)
+        self.string._delete(indices_to_remove)
+        self.color._delete(indices_to_remove)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
