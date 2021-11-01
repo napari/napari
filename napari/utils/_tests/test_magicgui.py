@@ -113,8 +113,9 @@ def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
 
     @magicgui
     def add_data(x: int) -> FunctionWorker[types.ImageData]:
-        @thread_worker
+        @thread_worker(start_thread=False)
         def _slow():
+            time.sleep(0.1)
             return DATA
 
         return _slow()
