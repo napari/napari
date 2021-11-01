@@ -1328,10 +1328,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if len(dims_displayed) != 3:
             return None, None
 
-        # create a mask to select the in view dimensions
-        dims_displayed_mask = np.zeros_like(position, dtype=bool)
-        dims_displayed_mask[dims_displayed] = True
-
         # create the bounding box in data coordinates
         bbox = self._display_bounding_box(dims_displayed)
 
