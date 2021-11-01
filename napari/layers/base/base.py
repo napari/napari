@@ -1347,8 +1347,39 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         world: bool = True,
         bounding_box: Optional[np.ndarray] = None,
     ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
-        """A more flexible version of Base.get_ray_intersections in which the
-        bounding box is parametrized."""
+        """Get the start and end point for the ray extending
+        from a point through the data bounding box.
+
+        Parameters
+        ----------
+        position
+            the position of the point in nD coordinates. World vs. data
+            is set by the world keyword argument.
+        view_direction : np.ndarray
+            a unit vector giving the direction of the ray in nD coordinates.
+            World vs. data is set by the world keyword argument.
+        dims_displayed
+            a list of the dimensions currently being displayed in the viewer.
+        world : bool
+            True if the provided coordinates are in world coordinates.
+            Default value is True.
+        bounding_box: np.ndarray
+            A (2, 3) bounding box around the data currently in view
+
+        Returns
+        -------
+        start_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point closest to the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned.
+        end_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point farthest from the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned."""
         # get the view direction and click position in data coords
         # for the displayed dimensions only
         if world is True:
