@@ -1,9 +1,9 @@
-from abc import ABC, abstractmethod
 from string import Formatter
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any, Dict, Iterable, Union
 
 import numpy as np
 from pydantic import Field
+from typing_extensions import Protocol, runtime_checkable
 
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
@@ -13,86 +13,66 @@ from ._style_encoding import (
     DerivedStyleEncoding,
     DirectStyleEncoding,
     EncodingType,
-    IndicesType,
+    StyleEncoding,
     parse_kwargs_as_encoding,
 )
 
 """A scalar array that represents one string value."""
-StringArray = Array[str, ()]
+StringValue = Array[str, ()]
 
 """An Nx1 array where each element represents one string value."""
-MultiStringArray = Array[str, (-1,)]
+StringArray = Array[str, (-1,)]
 
 
-class StringEncoding(ABC):
+@runtime_checkable
+class StringEncoding(StyleEncoding[StringArray], Protocol):
     """Encodes strings from properties."""
-
-    @abstractmethod
-    def _get_array(
-        self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
-        indices: Optional[IndicesType] = None,
-    ) -> MultiStringArray:
-        pass
-
-    @abstractmethod
-    def _clear(self):
-        pass
-
-    @abstractmethod
-    def _append(self, array: MultiStringArray):
-        pass
-
-    @abstractmethod
-    def _delete(self, indices):
-        pass
 
 
 """The default string to use, which may also be used a safe fallback string."""
 DEFAULT_STRING = ''
 
 
-class ConstantStringEncoding(ConstantStyleEncoding, StringEncoding):
+class ConstantStringEncoding(ConstantStyleEncoding[StringValue, StringArray]):
     """Encodes color values from a single constant color.
 
     Attributes
     ----------
-    constant : StringArray
+    constant : StringValue
         The constant string value.
     """
 
     type: EncodingType = Field(
         EncodingType.CONSTANT, const=EncodingType.CONSTANT
     )
-    constant: StringArray
+    constant: StringValue
 
 
-class DirectStringEncoding(DirectStyleEncoding, StringEncoding):
+class DirectStringEncoding(DirectStyleEncoding[StringValue, StringArray]):
     """Encodes string values directly in an array.
 
     Attributes
     ----------
-    array : MultiStringArray
+    array : StringArray
         The array of string values.
-    default : StringArray
+    default : StringValue
         The default string value that is used when requesting a value that
         is out of bounds in the array attribute.
     """
 
     type: EncodingType = Field(EncodingType.DIRECT, const=EncodingType.DIRECT)
-    array: MultiStringArray = []
-    default: StringArray = DEFAULT_STRING
+    array: StringArray = []
+    default: StringValue = DEFAULT_STRING
 
 
-class IdentityStringEncoding(DerivedStyleEncoding, StringEncoding):
+class IdentityStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
     """Encodes strings directly from a property column.
 
     Attributes
     ----------
     property : str
         The name of the property that contains the desired strings.
-    fallback : StringArray
+    fallback : StringValue
         The safe constant fallback string to use if the property column
         does not contain valid string values.
     """
@@ -101,13 +81,15 @@ class IdentityStringEncoding(DerivedStyleEncoding, StringEncoding):
         EncodingType.IDENTITY, const=EncodingType.IDENTITY
     )
     property: str
-    fallback: StringArray = DEFAULT_STRING
+    fallback: StringValue = DEFAULT_STRING
 
-    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices
+    ) -> StringArray:
         return np.array(properties[self.property][indices], dtype=str)
 
 
-class FormatStringEncoding(DerivedStyleEncoding, StringEncoding):
+class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
     """Encodes string values by formatting property values.
 
     Attributes
@@ -115,7 +97,7 @@ class FormatStringEncoding(DerivedStyleEncoding, StringEncoding):
     format_string : str
         A format string with the syntax supported by :func:`str.format`,
         where all format fields should be property names.
-    fallback : StringArray
+    fallback : StringValue
         The safe constant fallback string to use if the format string
         is not valid or contains fields other than property names.
     """
@@ -124,9 +106,11 @@ class FormatStringEncoding(DerivedStyleEncoding, StringEncoding):
         EncodingType.FORMAT_STRING, const=EncodingType.FORMAT_STRING
     )
     format_string: str
-    fallback: StringArray = DEFAULT_STRING
+    fallback: StringValue = DEFAULT_STRING
 
-    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
+    def _apply(
+        self, properties: Dict[str, np.ndarray], indices
+    ) -> StringArray:
         return np.array(
             [
                 self.format_string.format(

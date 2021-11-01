@@ -19,9 +19,9 @@ from ...utils.events.evented_model import (
     get_repr_args_without,
 )
 from .color_encoding import (
+    ColorArray,
     ColorEncoding,
     ConstantColorEncoding,
-    MultiColorArray,
     validate_color_encoding,
 )
 from .color_transformations import ColorType
@@ -37,7 +37,7 @@ from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .string_encoding import (
     ConstantStringEncoding,
-    MultiStringArray,
+    StringArray,
     StringEncoding,
     validate_string_encoding,
 )
@@ -144,7 +144,7 @@ class TextManager(EventedModel):
         self.string._get_array(self.properties, n_text)
         self.color._get_array(self.properties, n_text)
 
-    def _paste(self, strings: MultiStringArray, colors: MultiColorArray):
+    def _paste(self, strings: StringArray, colors: ColorArray):
         self.string._append(strings)
         self.color._append(colors)
 

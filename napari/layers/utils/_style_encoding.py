@@ -1,15 +1,18 @@
 import warnings
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from enum import auto
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Generic, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as
+from typing_extensions import Protocol, runtime_checkable
 
 from ...utils.events import EventedModel
 from ...utils.misc import StringEnum
 
 IndicesType = Union[List[int], np.ndarray]
+StyleValue = TypeVar('StyleValue', bound=np.ndarray)
+StyleArray = TypeVar('StyleArray', bound=np.ndarray)
 
 
 class EncodingType(StringEnum):
@@ -23,23 +26,16 @@ class EncodingType(StringEnum):
     FORMAT_STRING = auto()
 
 
-class StrictEventedModel(EventedModel):
-    """An EventedModel that forbids extra attributes."""
-
-    class Config:
-        extra = 'forbid'
-
-
-class StyleEncoding(ABC):
+@runtime_checkable
+class StyleEncoding(Protocol[StyleArray]):
     """Defines a way to encode style values, like colors and strings."""
 
-    @abstractmethod
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
         indices: Optional[IndicesType] = None,
-    ) -> np.ndarray:
+    ) -> StyleArray:
         """Get the array of values generated from this and the given properties.
 
         If generating values from the given properties fails, this will fall back
@@ -60,31 +56,28 @@ class StyleEncoding(ABC):
 
         Returns
         -------
-        np.ndarray
+        StyleArray
             The numpy array of derived values. This has same length as the given indices
             and in general is read-only.
         """
         pass
 
-    @abstractmethod
     def _clear(self):
         """Clears all previously generated values. Call this before _get_array to refresh values."""
         pass
 
-    @abstractmethod
-    def _append(self, array: np.ndarray):
+    def _append(self, array: StyleArray):
         """Appends raw style values to this.
 
         This is useful for supporting the paste operation in layers.
 
         Parameters
         ----------
-        array : np.ndarray
+        array : StyleArray
             The values to append. The dimensionality of these should match that of the existing style values.
         """
         pass
 
-    @abstractmethod
     def _delete(self, indices):
         """Deletes style values from this by index.
 
@@ -96,28 +89,33 @@ class StyleEncoding(ABC):
         pass
 
 
-class ConstantStyleEncoding(StrictEventedModel, StyleEncoding):
+class StyleEncodingModel(EventedModel, Generic[StyleValue, StyleArray]):
+    class Config:
+        extra = 'forbid'
+
+
+class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     """Encodes a constant style value.
 
     The _get_array method returns the constant broadcast to the required length.
 
     Attributes
     ----------
-    constant : np.ndarray
+    constant : StyleValue
         The constant style value.
     """
 
-    constant: np.ndarray
+    constant: StyleValue
 
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
         indices: Optional[IndicesType] = None,
-    ) -> np.ndarray:
+    ) -> StyleArray:
         return _broadcast_constant(self.constant, n_rows, indices)
 
-    def _append(self, array: np.ndarray):
+    def _append(self, array: StyleArray):
         pass
 
     def _delete(self, indices):
@@ -127,7 +125,7 @@ class ConstantStyleEncoding(StrictEventedModel, StyleEncoding):
         pass
 
 
-class DirectStyleEncoding(StrictEventedModel, StyleEncoding):
+class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     """Encodes style values directly.
 
     The style values are encoded directly in the array attribute, so that
@@ -144,22 +142,22 @@ class DirectStyleEncoding(StrictEventedModel, StyleEncoding):
         be a 0D numpy array (i.e. a scalar).
     """
 
-    array: np.ndarray
-    default: np.ndarray
+    array: StyleArray
+    default: StyleValue
 
     def _get_array(
         self,
         properties: Dict[str, np.ndarray],
         n_rows: int,
         indices: Optional[IndicesType] = None,
-    ) -> np.ndarray:
+    ) -> StyleArray:
         current_length = self.array.shape[0]
         if n_rows > current_length:
             tail_array = np.array([self.default] * (n_rows - current_length))
             self._append(tail_array)
         return _maybe_index_array(self.array, indices)
 
-    def _append(self, array: np.ndarray):
+    def _append(self, array: StyleArray):
         self.array = np.append(self.array, array, axis=0)
 
     def _delete(self, indices):
@@ -169,18 +167,18 @@ class DirectStyleEncoding(StrictEventedModel, StyleEncoding):
         self.array = _empty_like_multi_array(self.default)
 
 
-class DerivedStyleEncoding(StrictEventedModel, StyleEncoding, ABC):
+class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     """Encodes style values by deriving them from property values."""
 
-    fallback: np.ndarray
-    _array: np.ndarray
+    fallback: StyleValue
+    _array: StyleArray
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._clear()
 
     @abstractmethod
-    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> StyleArray:
         pass
 
     def _get_array(
@@ -188,7 +186,7 @@ class DerivedStyleEncoding(StrictEventedModel, StyleEncoding, ABC):
         properties: Dict[str, np.ndarray],
         n_rows: int,
         indices: Optional[IndicesType] = None,
-    ) -> np.ndarray:
+    ) -> StyleArray:
         current_length = self._array.shape[0]
         tail_indices = range(current_length, n_rows)
         try:
@@ -209,7 +207,7 @@ class DerivedStyleEncoding(StrictEventedModel, StyleEncoding, ABC):
             )
         return _broadcast_constant(self.fallback, n_rows, indices)
 
-    def _append(self, array: np.ndarray):
+    def _append(self, array: StyleArray):
         self._array = np.append(self._array, array, axis=0)
 
     def _delete(self, indices):

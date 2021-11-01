@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
 from typing import Dict, Iterable, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import Field, validator
+from typing_extensions import Protocol, runtime_checkable
 
 from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
@@ -13,13 +13,13 @@ from ._style_encoding import (
     DerivedStyleEncoding,
     DirectStyleEncoding,
     EncodingType,
-    IndicesType,
+    StyleEncoding,
     parse_kwargs_as_encoding,
 )
 from .color_transformations import ColorType
 
 
-class ColorArray(np.ndarray):
+class ColorValue(np.ndarray):
     """A 4x1 array that represents one RGBA color value."""
 
     @classmethod
@@ -31,7 +31,7 @@ class ColorArray(np.ndarray):
         return transform_color(val)[0]
 
 
-class MultiColorArray(np.ndarray):
+class ColorArray(np.ndarray):
     """An Nx4 array where each row of N represents one RGBA color value."""
 
     @classmethod
@@ -43,68 +43,48 @@ class MultiColorArray(np.ndarray):
         return np.empty((0, 4)) if len(val) == 0 else transform_color(val)
 
 
-class ColorEncoding(ABC):
+@runtime_checkable
+class ColorEncoding(StyleEncoding[ColorArray], Protocol):
     """Encodes colors from properties."""
-
-    @abstractmethod
-    def _get_array(
-        self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
-        indices: Optional[IndicesType] = None,
-    ) -> MultiColorArray:
-        pass
-
-    @abstractmethod
-    def _clear(self):
-        pass
-
-    @abstractmethod
-    def _append(self, array: MultiColorArray):
-        pass
-
-    @abstractmethod
-    def _delete(self, indices):
-        pass
 
 
 """The default color to use, which may also be used a safe fallback color."""
 DEFAULT_COLOR = 'cyan'
 
 
-class ConstantColorEncoding(ConstantStyleEncoding, ColorEncoding):
+class ConstantColorEncoding(ConstantStyleEncoding[ColorValue, ColorArray]):
     """Encodes color values from a single constant color.
 
     Attributes
     ----------
-    constant : ColorArray
+    constant : ColorValue
         The constant color RGBA value.
     """
 
     type: EncodingType = Field(
         EncodingType.CONSTANT, const=EncodingType.CONSTANT
     )
-    constant: ColorArray
+    constant: ColorValue
 
 
-class DirectColorEncoding(DirectStyleEncoding, ColorEncoding):
+class DirectColorEncoding(DirectStyleEncoding[ColorValue, ColorArray]):
     """Encodes color values directly in an array attribute.
 
     Attributes
     ----------
-    array : MultiColorArray
+    array : ColorArray
         The array of color values. Can be written to directly to make
         persistent updates.
-    default : ColorArray
+    default : ColorValue
         The default color value.
     """
 
     type: EncodingType = Field(EncodingType.DIRECT, const=EncodingType.DIRECT)
-    array: MultiColorArray
-    default: ColorArray = DEFAULT_COLOR
+    array: ColorArray
+    default: ColorValue = DEFAULT_COLOR
 
 
-class IdentityColorEncoding(DerivedStyleEncoding, ColorEncoding):
+class IdentityColorEncoding(DerivedStyleEncoding[ColorValue, ColorArray]):
     """Encodes color values directly from a property column.
 
     Attributes
@@ -120,13 +100,13 @@ class IdentityColorEncoding(DerivedStyleEncoding, ColorEncoding):
         EncodingType.IDENTITY, const=EncodingType.IDENTITY
     )
     property: str
-    fallback: ColorArray = DEFAULT_COLOR
+    fallback: ColorValue = DEFAULT_COLOR
 
-    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> ColorArray:
         return transform_color(properties[self.property][indices])
 
 
-class NominalColorEncoding(DerivedStyleEncoding, ColorEncoding):
+class NominalColorEncoding(DerivedStyleEncoding[ColorValue, ColorArray]):
     """Encodes color values from a nominal property whose values are mapped to colors.
 
     Attributes
@@ -135,7 +115,7 @@ class NominalColorEncoding(DerivedStyleEncoding, ColorEncoding):
         The name of the property that contains the nominal values to be mapped to colors.
     colormap : CategoricalColormap
         Maps the property values to colors.
-    fallback : ColorArray
+    fallback : ColorValue
         The safe constant fallback color to use if mapping the property values to
         colors fails.
     """
@@ -145,14 +125,14 @@ class NominalColorEncoding(DerivedStyleEncoding, ColorEncoding):
     )
     property: str
     colormap: CategoricalColormap
-    fallback: ColorArray = DEFAULT_COLOR
+    fallback: ColorValue = DEFAULT_COLOR
 
-    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> ColorArray:
         values = properties[self.property][indices]
         return self.colormap.map(values)
 
 
-class QuantitativeColorEncoding(DerivedStyleEncoding, ColorEncoding):
+class QuantitativeColorEncoding(DerivedStyleEncoding[ColorValue, ColorArray]):
     """Encodes color values from a quantitative property whose values are mapped to colors.
 
     Attributes
@@ -166,7 +146,7 @@ class QuantitativeColorEncoding(DerivedStyleEncoding, ColorEncoding):
         colors in the colormap. If None, then this will attempt to calculate these values
         from the property values the first time this generate color values. If that attempt
         fails, these are effectively (0, 1).
-    fallback : ColorArray
+    fallback : ColorValue
         The safe constant fallback color to use if mapping the property values to
         colors fails.
     """
@@ -177,9 +157,9 @@ class QuantitativeColorEncoding(DerivedStyleEncoding, ColorEncoding):
     property: str
     colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
-    fallback: ColorArray = DEFAULT_COLOR
+    fallback: ColorValue = DEFAULT_COLOR
 
-    def _apply(self, properties: Dict[str, np.ndarray], indices) -> np.ndarray:
+    def _apply(self, properties: Dict[str, np.ndarray], indices) -> ColorArray:
         all_values = properties[self.property]
         if self.contrast_limits is None:
             self.contrast_limits = _calculate_contrast_limits(all_values)
