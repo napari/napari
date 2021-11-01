@@ -88,6 +88,10 @@ class StyleEncoding(Protocol[StyleArray]):
         """
         pass
 
+    def _json_encode(self) -> dict:
+        """Converts the encoding to a dict that should be convertible to JSON."""
+        pass
+
 
 class StyleEncodingModel(EventedModel, Generic[StyleValue, StyleArray]):
     class Config:
@@ -123,6 +127,9 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
 
     def _clear(self):
         pass
+
+    def _json_encode(self) -> dict:
+        return self.dict()
 
 
 class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
@@ -165,6 +172,9 @@ class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
 
     def _clear(self):
         self.array = _empty_like_multi_array(self.default)
+
+    def _json_encode(self) -> dict:
+        return self.dict()
 
 
 class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
@@ -215,6 +225,9 @@ class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
 
     def _clear(self):
         self._array = _empty_like_multi_array(self.fallback)
+
+    def _json_encode(self) -> dict:
+        return self.dict()
 
 
 def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
