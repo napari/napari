@@ -105,8 +105,8 @@ def test_track_layer_properties_flipped(properties):
 
 
 @pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
-def test_track_layer_colorby_nonexistant():
-    """Test error handling for non-existant properties with color_by"""
+def test_track_layer_colorby_nonexistent():
+    """Test error handling for non-existent properties with color_by"""
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     non_existant_property = 'not_a_valid_key'

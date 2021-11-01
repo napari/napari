@@ -2,13 +2,7 @@ from collections.abc import Iterable
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QButtonGroup,
-    QCheckBox,
-    QGridLayout,
-    QLabel,
-    QSlider,
-)
+from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QLabel
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.action_manager import action_manager
@@ -16,6 +10,7 @@ from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
+from ..widgets._slider_compat import QSlider
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -169,7 +164,7 @@ class QtShapesControls(QtLayerControls):
             layer,
             'zoom',
             Mode.PAN_ZOOM,
-            "napari:activate_shape_pan_zoom_mode",
+            "activate_shape_pan_zoom_mode",
             extra_tooltip_text=trans._('(or hold Space)'),
             checked=True,
         )
@@ -390,20 +385,8 @@ class QtShapesControls(QtLayerControls):
         """
         self.layer.current_edge_width = float(value) / 2
 
-    def changeOpacity(self, value):
-        """Change opacity value of shapes on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Opacity value for shapes.
-            Input range 0 - 100 (transparent to fully opaque).
-        """
-        with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value / 100
-
     def change_text_visibility(self, state):
-        """Toggle the visibiltiy of the text.
+        """Toggle the visibility of the text.
 
         Parameters
         ----------
@@ -415,60 +398,30 @@ class QtShapesControls(QtLayerControls):
         else:
             self.layer.text.visible = False
 
-    def _on_text_visibility_change(self, event):
-        """Receive layer model text visibiltiy change change event and update checkbox.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
+    def _on_text_visibility_change(self):
+        """Receive layer model text visibiltiy change change event and update checkbox."""
         with self.layer.text.events.visible.blocker():
             self.textDispCheckBox.setChecked(self.layer.text.visible)
 
-    def _on_edge_width_change(self, event=None):
-        """Receive layer model edge line width change event and update slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_edge_width_change(self):
+        """Receive layer model edge line width change event and update slider."""
         with self.layer.events.edge_width.blocker():
             value = self.layer.current_edge_width
             value = np.clip(int(2 * value), 0, 40)
             self.widthSlider.setValue(value)
 
-    def _on_current_edge_color_change(self, event=None):
-        """Receive layer model edge color change event and update color swatch.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_current_edge_color_change(self):
+        """Receive layer model edge color change event and update color swatch."""
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
-    def _on_current_face_color_change(self, event=None):
-        """Receive layer model face color change event and update color swatch.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_current_face_color_change(self):
+        """Receive layer model face color change event and update color swatch."""
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_editable_change(self, event=None):
-        """Receive layer model editable change event & enable/disable buttons.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_editable_change(self):
+        """Receive layer model editable change event & enable/disable buttons."""
         disable_with_opacity(
             self,
             [

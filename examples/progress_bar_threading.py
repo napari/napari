@@ -75,6 +75,10 @@ button_layout.addWidget(start_btn3)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
+pbar_widget.setObjectName("Threading Examples")
 viewer.window.add_dock_widget(pbar_widget, allowed_areas=["right"])
+
+# showing the activity dock so we can see the progress bars
+viewer.window._status_bar._toggle_activity_dock(True)
 
 napari.run()

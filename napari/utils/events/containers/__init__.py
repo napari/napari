@@ -1,3 +1,5 @@
+from ._dict import TypedMutableMapping
+from ._evented_dict import EventedDict
 from ._evented_list import EventedList
 from ._nested_list import NestableEventedList
 from ._selectable_list import (
@@ -12,9 +14,11 @@ __all__ = [
     'EventedList',
     'EventedSet',
     'NestableEventedList',
+    'EventedDict',
     'Selectable',
     'SelectableEventedList',
     'SelectableNestableEventedList',
     'Selection',
     'TypedMutableSequence',
+    'TypedMutableMapping',
 ]

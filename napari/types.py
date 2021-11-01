@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import partial, wraps
 from pathlib import Path
 from types import TracebackType
 from typing import (
@@ -17,8 +17,6 @@ from typing import (
 
 import numpy as np
 from typing_extensions import TypedDict
-
-from .utils._magicgui import register_types_with_magicgui
 
 if TYPE_CHECKING:
     import dask.array
@@ -124,4 +122,39 @@ def image_reader_to_layerdata_reader(
     return reader_function
 
 
-register_types_with_magicgui()
+def _register_types_with_magicgui():
+    """Register napari.types objects with magicgui."""
+    import sys
+    from concurrent.futures import Future
+
+    from magicgui import register_type
+
+    from . import layers
+    from .utils import _magicgui as _mgui
+
+    for _type in (LayerDataTuple, List[LayerDataTuple]):
+        register_type(
+            _type,
+            return_callback=_mgui.add_layer_data_tuples_to_viewer,
+        )
+        if sys.version_info >= (3, 9):
+            register_type(Future[_type], return_callback=_mgui.add_future_data)
+
+    for layer_name in layers.NAMES:
+        data_type = globals().get(f'{layer_name.title()}Data')
+        register_type(
+            data_type,
+            choices=_mgui.get_layers_data,
+            return_callback=_mgui.add_layer_data_to_viewer,
+        )
+        if sys.version_info >= (3, 9):
+            register_type(
+                Future[data_type],  # type: ignore
+                choices=_mgui.get_layers_data,
+                return_callback=partial(
+                    _mgui.add_future_data, _from_tuple=False
+                ),
+            )
+
+
+_register_types_with_magicgui()

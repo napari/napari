@@ -33,9 +33,11 @@ from contextlib import contextmanager
 from itertools import product
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, Iterator, Optional, Tuple, Union
 
 import qtpy
+
+from ...utils.translations import trans
 
 __all__ = [
     '_register_napari_resources',
@@ -53,6 +55,10 @@ QRC_TEMPLATE = """
 """
 ALIAS_T = '{color}/{svg_stem}{opacity}.svg'
 FILE_T = "<file alias='{alias}'>{path}</file>"
+
+# This variable is updated by either `_register_napari_resources`
+# and turned into a function which removes existing resources from the app.
+_clear_resources: Optional[Callable] = None
 
 
 @contextmanager
@@ -156,7 +162,7 @@ def generate_colorized_svgs(
 
             clrkey, theme_key = color
             theme_key = theme_override.get(svg_stem, theme_key)
-            color = get_theme(clrkey)[theme_key]
+            color = getattr(get_theme(clrkey, False), theme_key)
 
         op_key = "" if op == 1 else f"_{op * 100:.0f}"
         alias = ALIAS_T.format(color=clrkey, svg_stem=svg_stem, opacity=op_key)
@@ -318,8 +324,30 @@ def _compile_napari_resources(
     with _temporary_qrc_file(svgs, prefix='themes') as qrc:
         output = compile_qrc(qrc)
         if save_path:
-            Path(save_path).write_bytes(output)
+            try:
+                Path(save_path).write_bytes(output)
+            except OSError as e:
+                import warnings
+
+                msg = trans._(
+                    "Unable to save qt-resources: {err}",
+                    err=str(e),
+                    deferred=True,
+                )
+                warnings.warn(msg)
+
         return output.decode()
+
+
+def _get_resources_path() -> Tuple[str, Path]:
+    from ...resources._icons import ICONS
+    from ...utils.misc import paths_hash
+
+    icon_hash = paths_hash(ICONS.values())
+    key = f'_qt_resources_{qtpy.API_NAME}_{qtpy.QT_VERSION}_{icon_hash}'
+    key = key.replace(".", "_")
+    save_path = Path(__file__).parent / f"{key}.py"
+    return key, save_path
 
 
 def _register_napari_resources(persist=True, force_rebuild=False):
@@ -340,21 +368,55 @@ def _register_napari_resources(persist=True, force_rebuild=False):
         exist.  Rebuild may also be forced using the environment variable
         "NAPARI_REBUILD_RESOURCES".
     """
-    from ...resources._icons import ICON_PATH
-    from ...utils.misc import dir_hash
+    # I hate to do this, but if we want to be able to dynamically change color
+    # of e.g. icons, we must unregister old resources using the `qCleanupResources`
+    # method which can be found in the `_qt_resources*.py` module.
+    # If the resources are not cleared, it's 100% going to segfault which
+    # is not desired. See: https://github.com/napari/napari/pull/2900
+    global _clear_resources
 
-    icon_hash = dir_hash(ICON_PATH)  # get hash of icons folder contents
-    key = f'_qt_resources_{qtpy.API_NAME}_{qtpy.QT_VERSION}_{icon_hash}'
-    key = key.replace(".", "_")
-    save_path = Path(__file__).parent / f"{key}.py"
-
+    key, save_path = _get_resources_path()
     force = force_rebuild or os.environ.get('NAPARI_REBUILD_RESOURCES')
 
     if not force and save_path.exists():
         from importlib import import_module
 
         modname = f'napari._qt.qt_resources.{key}'
-        import_module(modname)
+        mod = import_module(modname)
+        _clear_resources = getattr(mod, "qCleanupResources")
     else:
         resources = _compile_napari_resources(save_path=persist and save_path)
         exec(resources, globals())
+        _clear_resources = globals()["qCleanupResources"]
+
+
+def _unregister_napari_resources():
+    """Unregister resources."""
+    global _clear_resources
+    if _clear_resources is not None:
+        _clear_resources()
+        # since we've just unregistered resources, reference to this method should be
+        # removed
+        _clear_resources = None
+    else:
+        from importlib import import_module
+
+        key, save_path = _get_resources_path()
+        if save_path.exists():
+            modname = f'napari._qt.qt_resources.{key}'
+            mod = import_module(modname)
+            qCleanupResources = getattr(mod, "qCleanupResources")
+            qCleanupResources()  # try cleaning up resources
+
+
+def register_napari_themes(event=None):
+    """Register theme.
+
+    This function takes care of unregistering existing resources and
+    registering new or updated resources. This is necessary in order to
+    add new icon(s) or update icon color.
+
+    Not unregistering resources can lead to segfaults which is not desirable...
+    """
+    _unregister_napari_resources()
+    _register_napari_resources(False, force_rebuild=True)

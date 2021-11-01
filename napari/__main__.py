@@ -228,7 +228,7 @@ def parse_sys_argv():
 
 def _run():
     from napari import run, view_path
-    from napari.utils.settings import get_settings
+    from napari.settings import get_settings
 
     """Main program."""
     args, kwargs = parse_sys_argv()
@@ -242,9 +242,13 @@ def _run():
         datefmt='%H:%M:%S',
     )
 
-    settings = get_settings(path=args.settings_path)
     if args.reset:
+        if args.settings_path:
+            settings = get_settings(path=args.settings_path)
+        else:
+            settings = get_settings()
         settings.reset()
+        settings.save()
         sys.exit("Resetting settings to default values.\n")
 
     if args.plugin:
@@ -417,6 +421,13 @@ def main():
                 'conda install -c conda-forge python.app'
             )
             warnings.warn(msg)
+
+    # Prevent https://github.com/napari/napari/issues/3415
+    if sys.platform == "darwin" and sys.version_info >= (3, 8):
+        import multiprocessing
+
+        multiprocessing.set_start_method('fork')
+
     _run()
 
 

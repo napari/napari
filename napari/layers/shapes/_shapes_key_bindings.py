@@ -39,6 +39,7 @@ def hold_to_lock_aspect_ratio(layer):
     else:
         layer._aspect_ratio = 1
     if layer._is_moving:
+        assert layer._moving_coordinates is not None, layer
         _move(layer, layer._moving_coordinates)
 
     yield
@@ -138,7 +139,9 @@ def select_all_shapes(layer):
 @register_shapes_action(trans._('Delete any selected shapes'))
 def delete_selected_shapes(layer):
     """."""
-    layer.remove_selected()
+
+    if not layer._is_creating:
+        layer.remove_selected()
 
 
 @register_shapes_action(trans._('Move to front'))

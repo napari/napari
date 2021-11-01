@@ -1,10 +1,20 @@
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSlider
+from qtpy.QtCore import QPoint, Qt
+from qtpy.QtWidgets import (
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QVBoxLayout,
+)
 
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
+from .qt_spinbox import QtSpinBox
+from .qt_tooltip import QtToolTipLabel
 
 
 class QtLayerButtons(QFrame):
@@ -143,6 +153,12 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
+
+        self.gridViewButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.gridViewButton.customContextMenuRequested.connect(
+            self._open_grid_popup
+        )
+
         action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
@@ -194,6 +210,138 @@ class QtViewerButtons(QFrame):
         pop = QtPopup(self)
         pop.frame.setLayout(layout)
         pop.show_above_mouse()
+
+    def _open_grid_popup(self):
+        """Open grid options pop up widget."""
+
+        # widgets
+        popup = QtPopup(self)
+        grid_stride = QtSpinBox(popup)
+        grid_width = QtSpinBox(popup)
+        grid_height = QtSpinBox(popup)
+        shape_help_symbol = QtToolTipLabel(self)
+        stride_help_symbol = QtToolTipLabel(self)
+        blank = QLabel(self)  # helps with placing help symbols.
+
+        shape_help_msg = trans._(
+            'Number of rows and columns in the grid. A value of -1 for either or '
+            + 'both of width and height will trigger an auto calculation of the '
+            + 'necessary grid shape to appropriately fill all the layers at the '
+            + 'appropriate stride. 0 is not a valid entry.'
+        )
+
+        stride_help_msg = trans._(
+            'Number of layers to place in each grid square before moving on to '
+            + 'the next square. The default ordering is to place the most visible '
+            + 'layer in the top left corner of the grid. A negative stride will '
+            + 'cause the order in which the layers are placed in the grid to be '
+            + 'reversed. '
+            + '0 is not a valid entry.'
+        )
+
+        # set up
+        stride_min = self.viewer.grid.__fields__['stride'].type_.ge
+        stride_max = self.viewer.grid.__fields__['stride'].type_.le
+        stride_not = self.viewer.grid.__fields__['stride'].type_.ne
+        grid_stride.setObjectName("gridStrideBox")
+        grid_stride.setAlignment(Qt.AlignCenter)
+        grid_stride.setRange(stride_min, stride_max)
+        grid_stride.setProhibitValue(stride_not)
+        grid_stride.setValue(self.viewer.grid.stride)
+        grid_stride.valueChanged.connect(self._update_grid_stride)
+        self.grid_stride_box = grid_stride
+
+        width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
+        width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
+        grid_width.setObjectName("gridWidthBox")
+        grid_width.setAlignment(Qt.AlignCenter)
+        grid_width.setMinimum(width_min)
+        grid_width.setProhibitValue(width_not)
+        grid_width.setValue(self.viewer.grid.shape[1])
+        grid_width.valueChanged.connect(self._update_grid_width)
+        self.grid_width_box = grid_width
+
+        height_min = (
+            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ge
+        )
+        height_not = (
+            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
+        )
+        grid_height.setObjectName("gridStrideBox")
+        grid_height.setAlignment(Qt.AlignCenter)
+        grid_height.setMinimum(height_min)
+        grid_height.setProhibitValue(height_not)
+        grid_height.setValue(self.viewer.grid.shape[0])
+        grid_height.valueChanged.connect(self._update_grid_height)
+        self.grid_height_box = grid_height
+
+        shape_help_symbol.setObjectName("help_label")
+        shape_help_symbol.setToolTip(shape_help_msg)
+
+        stride_help_symbol.setObjectName("help_label")
+        stride_help_symbol.setToolTip(stride_help_msg)
+
+        # layout
+        form_layout = QFormLayout()
+        form_layout.insertRow(0, QLabel(trans._('Grid stride:')), grid_stride)
+        form_layout.insertRow(1, QLabel(trans._('Grid width:')), grid_width)
+        form_layout.insertRow(2, QLabel(trans._('Grid height:')), grid_height)
+
+        help_layout = QVBoxLayout()
+        help_layout.addWidget(stride_help_symbol)
+        help_layout.addWidget(blank)
+        help_layout.addWidget(shape_help_symbol)
+
+        layout = QHBoxLayout()
+        layout.addLayout(form_layout)
+        layout.addLayout(help_layout)
+
+        popup.frame.setLayout(layout)
+
+        popup.show_above_mouse()
+
+        # adjust placement of shape help symbol.  Must be done last
+        # in order for this movement to happen.
+        delta_x = 0
+        delta_y = -15
+        shape_pos = (
+            shape_help_symbol.x() + delta_x,
+            shape_help_symbol.y() + delta_y,
+        )
+        shape_help_symbol.move(QPoint(*shape_pos))
+
+    def _update_grid_width(self, value):
+        """Update the width value in grid shape.
+
+        Parameters
+        ----------
+        value : int
+            New grid width value.
+        """
+
+        self.viewer.grid.shape = (self.viewer.grid.shape[0], value)
+
+    def _update_grid_stride(self, value):
+        """Update stride in grid settings.
+
+        Parameters
+        ----------
+        value : int
+            New grid stride value.
+        """
+
+        self.viewer.grid.stride = value
+
+    def _update_grid_height(self, value):
+        """Update height value in grid shape.
+
+        Parameters
+        ----------
+        value : int
+            New grid height value.
+        """
+
+        self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
 
 
 class QtDeleteButton(QPushButton):
@@ -345,14 +493,8 @@ class QtStateButton(QtViewerPushButton):
             newstate = self._offstate
         setattr(self._target, self._attribute, newstate)
 
-    def _on_change(self, event=None):
-        """Called wen mirrored value changes
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
+    def _on_change(self):
+        """Called wen mirrored value changes"""
         with self._events.blocker():
             if self.isChecked() != (
                 getattr(self._target, self._attribute) == self._onstate

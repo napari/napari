@@ -247,6 +247,7 @@ def test_labels_undo_redo(make_napari_viewer):
 
     # history limit
     labels._history_limit = 1
+    labels._reset_history()
     labels.fill((0, 0), 3)
 
     l3 = labels.data.copy()

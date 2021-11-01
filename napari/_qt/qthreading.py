@@ -15,8 +15,8 @@ from qtpy.QtCore import (
     Slot,
 )
 
+from ..utils import progress
 from ..utils.translations import trans
-from .qprogress import progress
 
 
 def as_generator_function(func: Callable) -> Callable:
@@ -34,6 +34,7 @@ class WorkerBaseSignals(QObject):
 
     started = Signal()  # emitted when the work is started
     finished = Signal()  # emitted when the work is finished
+    _finished = Signal(object)  # emitted when the work is finished ro delete
     returned = Signal(object)  # emitted with return value
     errored = Signal(object)  # emitted with error object on Exception
     warned = Signal(tuple)  # emitted with showwarning args on warning
@@ -97,7 +98,9 @@ class WorkerBase(QRunnable):
             # (which is of type `SignalInstance` in PySide and
             # `pyqtBoundSignal` in PyQt)
             return getattr(self.signals, name)
-        return super().__getattr__(name)
+        raise AttributeError(
+            f"{self.__class__.__name__!r} object has no attribute {name!r}"
+        )
 
     def quit(self) -> None:
         """Send a request to abort the worker.
@@ -173,6 +176,7 @@ class WorkerBase(QRunnable):
             self.errored.emit(exc)
         self._running = False
         self.finished.emit()
+        self._finished.emit(self)
 
     def work(self) -> Union[Exception, Any]:
         """Main method to execute the worker.
@@ -222,7 +226,7 @@ class WorkerBase(QRunnable):
            V               V             V
            worker.start -> worker.run -> worker.work
         """
-        if self in WorkerBase._worker_set:
+        if self in self._worker_set:
             raise RuntimeError(
                 trans._(
                     'This worker is already started!',
@@ -233,10 +237,14 @@ class WorkerBase(QRunnable):
         # This will raise a RunTimeError if the worker is already deleted
         repr(self)
 
-        WorkerBase._worker_set.add(self)
-        self.finished.connect(lambda: WorkerBase._worker_set.discard(self))
+        self._worker_set.add(self)
+        self._finished.connect(self._set_discard)
         start_ = partial(QThreadPool.globalInstance().start, self)
         QTimer.singleShot(10, start_)
+
+    @classmethod
+    def _set_discard(cls, obj):
+        cls._worker_set.discard(obj)
 
 
 class FunctionWorker(WorkerBase):

@@ -1,13 +1,20 @@
 from functools import partial
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 
 from qtpy import QtCore, QtGui, QtWidgets
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
+from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
 from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
+
+from ...._qt.widgets.qt_spinbox import QtSpinBox
+
+
+if TYPE_CHECKING:
+    from .form import WidgetBuilder
 
 
 class SchemaWidgetMixin:
@@ -20,8 +27,7 @@ class SchemaWidgetMixin:
         self,
         schema: dict,
         ui_schema: dict,
-        # note: need to figure out how the following works
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -126,7 +132,6 @@ class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
-        
 
     def setDescription(self, description: str):
         self.description = description
@@ -163,12 +168,12 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
 
     def configure(self):
         self.hook_list.order_changed.connect(self.on_changed.emit)
-        
+
     def setDescription(self, description: str):
         self.description = description
 
 
-class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
+class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
     @state_property
     def state(self) -> int:
         return self.value()
@@ -183,6 +188,23 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
+        minimum = -2147483648
+        if "minimum" in self.schema:
+            minimum = self.schema["minimum"]
+            if self.schema.get("exclusiveMinimum"):
+                minimum += 1
+
+        maximum = 2147483647
+        if "maximum" in self.schema:
+            maximum = self.schema["maximum"]
+            if self.schema.get("exclusiveMaximum"):
+                maximum -= 1
+
+        self.setRange(minimum, maximum)
+
+        if "not" in self.schema and 'const' in self.schema["not"]:
+            self.setProhibitValue(self.schema["not"]['const'])
+
     def setDescription(self, description: str):
         self.description = description
 
@@ -192,7 +214,7 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(
             schema, ui_schema, widget_builder, orientation=QtCore.Qt.Horizontal
@@ -309,7 +331,7 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
@@ -555,7 +577,9 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.on_changed.emit(self.state)
 
 
-class HighlightSizePreviewWidget(SchemaWidgetMixin, QtHighlightSizePreviewWidget):
+class HighlightSizePreviewWidget(
+    SchemaWidgetMixin, QtHighlightSizePreviewWidget
+):
     @state_property
     def state(self) -> int:
         return self.value()
@@ -574,12 +598,32 @@ class HighlightSizePreviewWidget(SchemaWidgetMixin, QtHighlightSizePreviewWidget
         self.opacity.setOpacity(1)
 
 
+class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
+    @state_property
+    def state(self) -> dict:
+        return self.value()
+
+    def setDescription(self, description: str):
+        self.description = description
+
+    @state.setter
+    def state(self, state: dict):
+        # self.setValue(state)
+        return None
+
+    def configure(self):
+        self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
+
+
 class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
     def __init__(
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
@@ -604,14 +648,14 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         self.state[name] = value
         self.on_changed.emit(self.state)
 
-    def setDescription(self, description: ""):
+    def setDescription(self, description: str):
         self.description = description
 
     def populate_from_schema(
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: 'WidgetBuilder',  # noqa: F821
+        widget_builder: 'WidgetBuilder',
     ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)
@@ -635,7 +679,7 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
 
             sub_ui_schema = ui_schema.get(name, {})
             widget = widget_builder.create_widget(
-                sub_schema, sub_ui_schema, description = description
+                sub_schema, sub_ui_schema, description=description
             )  # TODO onchanged
             widget._name = name
             widget.on_changed.connect(partial(self.widget_on_changed, name))
@@ -677,7 +721,6 @@ class EnumSchemaWidget(SchemaWidgetMixin, QtWidgets.QComboBox):
 
     def setDescription(self, description: str):
         self.description = description
-
 
 
 class FormWidget(QtWidgets.QWidget):

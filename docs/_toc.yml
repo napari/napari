@@ -5,6 +5,7 @@
 
 - file: guides/index
   sections:
+    - file: guides/3D_interactivity
     - file: guides/event_loop
     - file: guides/connecting_events
     - file: guides/events_reference
@@ -17,6 +18,7 @@
 
 - file: plugins/index
   sections:
+    - file: plugins/find-and-install-plugin
     - file: plugins/for_napari_developers
     - file: plugins/for_plugin_developers
     - file: plugins/hook_specifications
@@ -46,6 +48,7 @@
 
 - file: release/index
   sections:
+    - file: release/release_0_4_11
     - file: release/release_0_4_10
     - file: release/release_0_4_9
     - file: release/release_0_4_8
@@ -85,4 +88,3 @@
 - file: api/index
   sections:
     - file: api/napari
-

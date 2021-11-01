@@ -1,4 +1,5 @@
 from .event import EmitterGroup, Event, EventEmitter  # isort:skip
+from .containers._evented_dict import EventedDict
 from .containers._evented_list import EventedList
 from .containers._nested_list import NestableEventedList
 from .containers._selectable_list import SelectableEventedList

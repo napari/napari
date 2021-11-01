@@ -29,8 +29,10 @@ void main() {
 
 fragment_template = """
 varying vec4 v_base_color;
+
 void main() {
     gl_FragColor = v_base_color;
+    gl_FragDepth = gl_FragCoord.z;
 }
 """
 

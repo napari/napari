@@ -1,3 +1,4 @@
+import collections
 import os
 import sys
 import warnings
@@ -40,6 +41,7 @@ def napari_plugin_manager(monkeypatch):
     # make it so that internal requests for the plugin_manager
     # get this test version for the duration of the test.
     monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
+    monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
     try:
         monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
     except AttributeError:  # headless tests
@@ -100,7 +102,7 @@ def make_napari_viewer(
     from qtpy.QtWidgets import QApplication
 
     from napari import Viewer
-    from napari.utils.settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
     settings.reset()
@@ -165,3 +167,26 @@ def make_napari_viewer(
                 raise AssertionError(f'Widgets leaked!: {leak}')
             else:
                 warnings.warn(f'Widgets leaked!: {leak}')
+
+
+@pytest.fixture
+def MouseEvent():
+    """Create a subclass for simulating vispy mouse events.
+
+    Returns
+    -------
+    Event : Type
+        A new tuple subclass named Event that can be used to create a
+        NamedTuple object with fields "type" and "is_dragging".
+    """
+    return collections.namedtuple(
+        'Event',
+        field_names=[
+            'type',
+            'is_dragging',
+            'position',
+            'view_direction',
+            'dims_displayed',
+            'dims_point',
+        ],
+    )

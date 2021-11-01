@@ -16,6 +16,8 @@ ITERABLE = (0, 1, 2)
 NESTED_ITERABLE = [ITERABLE, ITERABLE, ITERABLE]
 DICT = {'a': 1, 'b': 3, 'c': 5}
 LIST_OF_DICTS = [DICT, DICT, DICT]
+PARTLY_NESTED_ITERABLE = [ITERABLE, None, None]
+REPEATED_PARTLY_NESTED_ITERABLE = [PARTLY_NESTED_ITERABLE] * 3
 
 
 @pytest.mark.parametrize(
@@ -28,15 +30,25 @@ LIST_OF_DICTS = [DICT, DICT, DICT]
         [LIST_OF_DICTS, LIST_OF_DICTS],
         [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
         [None, (None, None, None)],
-        # BEWARE: only the first element of a nested sequence is checked.
-        [((0, 1), None, None), ((0, 1), None, None)],
+        [PARTLY_NESTED_ITERABLE, REPEATED_PARTLY_NESTED_ITERABLE],
+        [[], ([], [], [])],
     ],
 )
 def test_sequence_of_iterables(input, expected):
     """Test ensure_sequence_of_iterables returns a sequence of iterables."""
-    zipped = zip(range(3), ensure_sequence_of_iterables(input), expected)
+    zipped = zip(
+        range(3),
+        ensure_sequence_of_iterables(input, repeat_empty=True),
+        expected,
+    )
     for i, result, expectation in zipped:
         assert result == expectation
+
+
+def test_sequence_of_iterables_no_repeat_empty():
+    assert ensure_sequence_of_iterables([], repeat_empty=False) == []
+    with pytest.raises(ValueError):
+        ensure_sequence_of_iterables([], repeat_empty=False, length=3)
 
 
 def test_sequence_of_iterables_raises():
@@ -110,6 +122,31 @@ def test_string_enum():
     #  test setting by instance of a different StringEnum is an error
     with pytest.raises(ValueError):
         TestEnum(OtherEnum.SOMETHING)
+
+    # test string conversion
+    assert str(TestEnum.THING) == 'thing'
+
+    # test direct comparison with a string
+    assert TestEnum.THING == 'thing'
+    assert 'thing' == TestEnum.THING
+    assert TestEnum.THING != 'notathing'
+    assert 'notathing' != TestEnum.THING
+
+    # test comparison with another enum with same value names
+    class AnotherTestEnum(StringEnum):
+        THING = auto()
+        ANOTHERTHING = auto()
+
+    assert TestEnum.THING != AnotherTestEnum.THING
+
+    # test lookup in a set
+    assert TestEnum.THING in {TestEnum.THING, TestEnum.OTHERTHING}
+    assert TestEnum.THING not in {TestEnum.OTHERTHING}
+    assert TestEnum.THING in {'thing', TestEnum.OTHERTHING}
+    assert TestEnum.THING not in {
+        AnotherTestEnum.THING,
+        AnotherTestEnum.ANOTHERTHING,
+    }
 
 
 def test_abspath_or_url():

@@ -1,7 +1,10 @@
 ---
-name: "\U0001F680Feature Request"
+name: "\U0001F680 Feature Request"
 about: Submit a proposal/request for a new napari feature
+title: ''
 labels: feature
+assignees: ''
+
 ---
 
 ## 🚀 Feature

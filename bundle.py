@@ -1,5 +1,6 @@
 import configparser
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -19,15 +20,8 @@ APP = 'napari'
 # PySide2:
 # python bundle.py --add 'PySide2==5.15.0' 'ome-zarr'
 
-EXTRA_REQS = [
-    "imagecodecs",
-    "pip",
-    "PySide2==5.15.2",
-    "scikit-image",
-    "zarr",
-    "pims",
-    "numpy==1.19.3",
-]
+# This is now defined in setup.cfg "options.extras_require.bundle_run"
+# EXTRA_REQS = []
 
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
@@ -35,6 +29,7 @@ LINUX = sys.platform.startswith("linux")
 HERE = os.path.abspath(os.path.dirname(__file__))
 PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
+
 
 if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
@@ -63,6 +58,14 @@ def patched_toml():
 
     toml = tomlkit.parse(original_toml)
 
+    # Initialize EXTRA_REQS from setup.cfg 'options.extras_require.bundle_run'
+    bundle_run = parser.get("options.extras_require", "bundle_run")
+    EXTRA_REQS = [
+        requirement.split('#')[0].strip()
+        for requirement in bundle_run.splitlines()
+        if requirement
+    ]
+
     # parse command line arguments
     if '--add' in sys.argv:
         for item in sys.argv[sys.argv.index('--add') + 1 :]:
@@ -90,9 +93,28 @@ def patched_toml():
 
     print("patching pyproject.toml to version: ", VERSION)
     print(
-        "patching pyproject.toml requirements to : \n",
-        "\n".join(toml['tool']['briefcase']['app'][APP]['requires']),
+        "patching pyproject.toml requirements to:",
+        *toml['tool']['briefcase']['app'][APP]['requires'],
+        sep="\n ",
     )
+
+    if MACOS:
+        # Workaround https://github.com/napari/napari/issues/2965
+        # Pin revisions to releases _before_ they switched to static libs
+        revision = {
+            (3, 6): 'b11',
+            (3, 7): 'b5',
+            (3, 8): 'b4',
+            (3, 9): 'b1',
+        }[sys.version_info[:2]]
+        app_table = toml['tool']['briefcase']['app'][APP]
+        app_table.add('macOS', tomlkit.table())
+        app_table['macOS']['support_revision'] = revision
+        print(
+            "patching pyproject.toml to pin support package to revision:",
+            revision,
+        )
+
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(tomlkit.dumps(toml))
 
@@ -169,6 +191,33 @@ def patch_wxs():
             print("patched pythonw.exe -> python.exe")
 
 
+def patch_python_lib_location():
+    # must run after briefcase create
+    support = os.path.join(
+        BUILD_DIR, APP, APP + ".app", "Contents", "Resources", "Support"
+    )
+    python_resources = os.path.join(support, "Python", "Resources")
+    os.makedirs(python_resources, exist_ok=True)
+    for subdir in ("bin", "lib"):
+        orig = os.path.join(support, subdir)
+        dest = os.path.join(python_resources, subdir)
+        os.symlink("../../" + subdir, dest)
+        print("symlinking", orig, "to", dest)
+
+
+def patch_environment_variables():
+    os.environ["ARCH"] = architecture()
+
+
+def architecture():
+    arch = platform.machine() or "generic"
+    # Try to canonicalize across OS
+    replacements = {
+        "amd64": "x86_64",
+    }
+    return replacements.get(arch.lower(), arch)
+
+
 def make_zip():
     import glob
     import zipfile
@@ -180,7 +229,7 @@ def make_zip():
     elif MACOS:
         ext, OS = '*.dmg', 'macOS'
     artifact = glob.glob(os.path.join(BUILD_DIR, ext))[0]
-    dest = f'napari-{VERSION}-{OS}.zip'
+    dest = f'napari-{VERSION}-{OS}-{architecture()}.zip'
 
     with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(artifact, arcname=os.path.basename(artifact))
@@ -198,6 +247,9 @@ def bundle():
     if MACOS:
         patch_dmgbuild()
 
+    if LINUX:
+        patch_environment_variables()
+
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
 
@@ -213,6 +265,8 @@ def bundle():
 
         if WINDOWS:
             patch_wxs()
+        elif MACOS:
+            patch_python_lib_location()
 
         # build
         cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
@@ -236,5 +290,8 @@ if __name__ == "__main__":
         sys.exit()
     if '--version' in sys.argv:
         print(VERSION)
+        sys.exit()
+    if '--arch' in sys.argv:
+        print(architecture())
         sys.exit()
     print('created', bundle())

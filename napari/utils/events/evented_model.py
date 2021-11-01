@@ -114,10 +114,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # whether to treat any underscore non-class var attrs as private
         # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
         underscore_attrs_are_private = True
-        # whether to populate models with the value property of enums, rather
-        # than the raw enum. This may be useful if you want to serialise
-        # model.dict() later
-        use_enum_values = True
         # whether to validate field defaults (default: False)
         validate_all = True
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
@@ -159,6 +155,21 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def events(self):
         return self._events
 
+    @property
+    def _defaults(self):
+        return get_defaults(self)
+
+    def reset(self):
+        """Reset the state of the model to default values."""
+        for name, value in self._defaults.items():
+            if isinstance(value, EventedModel):
+                getattr(self, name).reset()
+            elif (
+                self.__config__.allow_mutation
+                and self.__fields__[name].field_info.allow_mutation
+            ):
+                setattr(self, name, value)
+
     def asdict(self):
         """Convert a model to a dictionary."""
         warnings.warn(
@@ -194,7 +205,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         with self.events.blocker() as block:
             for key, value in values.items():
-                setattr(self, key, value)
+                field = getattr(self, key)
+                if isinstance(field, EventedModel):
+                    field.update(value)
+                else:
+                    setattr(self, key, value)
 
         if block.count:
             self.events(Event(self))
@@ -216,3 +231,35 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return True
         else:
             return self.dict() == other
+
+    @contextmanager
+    def enums_as_values(self, as_values: bool = True):
+        """Temporarily override how enums are retrieved.
+
+        Parameters
+        ----------
+        as_values : bool, optional
+            Whether enums should be shown as values (or as enum objects),
+            by default `True`
+        """
+        null = object()
+        before = getattr(self.Config, 'use_enum_values', null)
+        self.Config.use_enum_values = as_values
+        try:
+            yield
+        finally:
+            if before is not null:
+                self.Config.use_enum_values = before
+            else:
+                delattr(self.Config, 'use_enum_values')
+
+
+def get_defaults(obj: BaseModel):
+    """Get possibly nested default values for a Model object."""
+    dflt = {}
+    for k, v in obj.__fields__.items():
+        d = v.get_default()
+        if d is None and isinstance(v.type_, main.ModelMetaclass):
+            d = get_defaults(v.type_)
+        dflt[k] = d
+    return dflt

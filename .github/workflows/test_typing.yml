@@ -11,15 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.7
+      - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.9
       - name: Install napari
         run: |
           pip install -e .[all]
-          pip install -e .[testing]
-          pip install mypy
+          pip install mypy types-PyYAML
       - name: Run mypy on typed modules
         run: |
-          mypy napari/utils/settings
+          mypy napari/settings

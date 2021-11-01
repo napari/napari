@@ -45,28 +45,24 @@ def activate_points_pan_zoom_mode(layer):
 @Points.bind_key('Control-C')
 def copy(layer):
     """Copy any selected points."""
-    if layer._mode == Mode.SELECT:
-        layer._copy_data()
+    layer._copy_data()
 
 
 @Points.bind_key('Control-V')
 def paste(layer):
     """Paste any copied points."""
-    if layer._mode == Mode.SELECT:
-        layer._paste_data()
+    layer._paste_data()
 
 
 @register_points_action(
     trans._("Select all points in the current view slice."),
 )
 def select_all(layer):
-    if layer._mode == Mode.SELECT:
-        layer.selected_data = set(layer._indices_view[: len(layer._view_data)])
-        layer._set_highlight()
+    layer.selected_data = set(layer._indices_view[: len(layer._view_data)])
+    layer._set_highlight()
 
 
 @register_points_action(trans._('Delete selected points'))
 def delete_selected_points(layer):
     """Delete all selected points."""
-    if layer._mode in (Mode.SELECT, Mode.ADD):
-        layer.remove_selected()
+    layer.remove_selected()

@@ -1,4 +1,8 @@
+import gc
 import os
+import weakref
+from dataclasses import dataclass
+from typing import List
 from unittest import mock
 
 import numpy as np
@@ -10,8 +14,14 @@ from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
     layer_test_data,
+    skip_local_popups,
+    skip_on_win_ci,
+    slow,
 )
+from napari.settings import get_settings
+from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
+from napari.utils.theme import available_themes
 
 
 def test_qt_viewer(make_napari_viewer):
@@ -21,8 +31,6 @@ def test_qt_viewer(make_napari_viewer):
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
-    # Check no console is present before it is requested
-    assert view._console is None
 
     assert len(viewer.layers) == 0
     assert view.layers.model().rowCount() == 0
@@ -36,8 +44,6 @@ def test_qt_viewer_with_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
-    # Check no console is present before it is requested
-    assert view._console is None
     # Check console is created when requested
     assert view.console is not None
     assert view.dockConsole.widget() is view.console
@@ -47,8 +53,6 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
-    # Check no console is present before it is requested
-    assert view._console is None
     # Check console has been created when it is supposed to be shown
     view.toggle_console_visibility(None)
     assert view._console is not None
@@ -57,6 +61,7 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
+
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window.qt_viewer
 
@@ -193,6 +198,8 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
 
+@skip_on_win_ci
+@slow(15)
 def test_screenshot(make_napari_viewer):
     "Test taking a screenshot"
     viewer = make_napari_viewer()
@@ -403,3 +410,149 @@ def test_active_keybindings(make_napari_viewer):
     assert viewer.layers.selection.active == layer_image
     assert len(view._key_map_handler.keymap_providers) == 2
     assert view._key_map_handler.keymap_providers[0] == layer_image
+
+
+@dataclass
+class MouseEvent:
+    # mock mouse event class
+    pos: List[int]
+
+
+def test_process_mouse_event(make_napari_viewer):
+    """Test that the correct properties are added to the
+    MouseEvent by _process_mouse_events.
+    """
+    # make a mock mouse event
+    new_pos = [25, 25]
+    mouse_event = MouseEvent(
+        pos=new_pos,
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+
+    viewer = make_napari_viewer()
+    view = viewer.window.qt_viewer
+    labels = viewer.add_labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
+
+    @labels.mouse_drag_callbacks.append
+    def on_click(layer, event):
+        np.testing.assert_almost_equal(event.view_direction, [0, 1, 0, 0])
+        np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
+        assert event.dims_point[0] == 0
+
+        expected_position = view._map_canvas2world(new_pos)
+        np.testing.assert_almost_equal(expected_position, list(event.position))
+
+    viewer.dims.ndisplay = 3
+    view._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+@skip_local_popups
+def test_memory_leaking(qtbot, make_napari_viewer):
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    viewer = make_napari_viewer()
+    image = weakref.ref(viewer.add_image(data))
+    labels = weakref.ref(viewer.add_labels(data))
+    del viewer.layers[0]
+    del viewer.layers[0]
+    qtbot.wait(100)
+    gc.collect()
+    gc.collect()
+    assert image() is None
+    assert labels() is None
+
+
+@skip_local_popups
+def test_leaks_image(qtbot, make_napari_viewer):
+
+    viewer = make_napari_viewer(show=True)
+    lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
+    dr = weakref.ref(lr().data)
+
+    viewer.layers.clear()
+    qtbot.wait(100)
+    gc.collect()
+    assert not gc.collect()
+    assert not lr()
+    assert not dr()
+
+
+@skip_local_popups
+def test_leaks_labels(qtbot, make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    lr = weakref.ref(
+        viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+    )
+    dr = weakref.ref(lr().data)
+    viewer.layers.clear()
+    qtbot.wait(100)
+    gc.collect()
+    assert not gc.collect()
+    assert not lr()
+    assert not dr()
+
+
+@pytest.mark.parametrize("theme", available_themes())
+def test_canvas_color(make_napari_viewer, theme):
+    """Test instantiating viewer with different themes.
+
+    See: https://github.com/napari/napari/issues/3278
+    """
+    # This test is to make sure the application starts with
+    # with different themes
+    get_settings().appearance.theme = theme
+    viewer = make_napari_viewer()
+    assert viewer.theme == theme
+
+
+def test_remove_points(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_points([(1, 2), (2, 3)])
+    del viewer.layers[0]
+    viewer.add_points([(1, 2), (2, 3)])
+
+
+def test_remove_image(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_image(np.random.rand(10, 10))
+    del viewer.layers[0]
+    viewer.add_image(np.random.rand(10, 10))
+
+
+def test_remove_labels(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+    del viewer.layers[0]
+    viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+
+
+@pytest.mark.parametrize('multiscale', [False, True])
+def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
+    """Test bug in setting corner_pixels from qt_viewer.on_draw"""
+    viewer = make_napari_viewer()
+
+    img = np.ones((512, 256))
+    # canvas size must be large enough that img fits in the canvas
+    canvas_size = tuple(3 * s for s in img.shape)
+    expected_corner_pixels = np.asarray([[0, 0], [img.shape[0], img.shape[1]]])
+
+    vol = np.stack([img] * 8, axis=0)
+    if multiscale:
+        img = [img[::s, ::s] for s in (1, 2, 4)]
+    viewer.add_image(img)
+    img_multi_layer = viewer.layers[0]
+    viewer.add_image(vol)
+
+    viewer.dims.order = (0, 1, 2)
+    viewer.window.qt_viewer.canvas.size = canvas_size
+    viewer.window.qt_viewer.on_draw(None)
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+
+    viewer.dims.order = (2, 0, 1)
+    viewer.window.qt_viewer.on_draw(None)
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+
+    viewer.dims.order = (1, 2, 0)
+    viewer.window.qt_viewer.on_draw(None)
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)

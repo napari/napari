@@ -35,6 +35,25 @@ def test_random_vectors_image():
     assert layer._view_data.shape[2] == 2
 
 
+def test_no_args_vectors():
+    """Test instantiating Vectors layer with no arguments"""
+    layer = Vectors()
+    assert layer.data.shape == (0, 2, 2)
+
+
+def test_no_data_vectors_with_ndim():
+    """Test instantiating Vectors layers with no data but specifying ndim"""
+    layer = Vectors(ndim=2)
+    assert layer.data.shape[-1] == 2
+
+
+def test_incompatible_ndim_vectors():
+    """Test instantiating Vectors layer with ndim argument incompatible with data"""
+    data = np.empty((0, 2, 2))
+    with pytest.raises(ValueError):
+        Vectors(data, ndim=3)
+
+
 def test_empty_vectors():
     """Test instantiating Vectors layer with empty coordinate-like 2D data."""
     shape = (0, 2, 2)
@@ -46,17 +65,17 @@ def test_empty_vectors():
     assert layer._view_data.shape[2] == 2
 
 
-def test_empty_vectors_with_properties():
+def test_empty_vectors_with_property_choices():
     """Test instantiating Vectors layer with empty coordinate-like 2D data."""
     shape = (0, 2, 2)
     data = np.empty(shape)
-    properties = {'angle': np.array([0.5], dtype=float)}
-    layer = Vectors(data, properties=properties)
+    property_choices = {'angle': np.array([0.5], dtype=float)}
+    layer = Vectors(data, property_choices=property_choices)
     assert np.all(layer.data == data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
-    np.testing.assert_equal(layer._property_choices, properties)
+    np.testing.assert_equal(layer._property_choices, property_choices)
 
 
 def test_empty_layer_with_edge_colormap():
@@ -66,7 +85,7 @@ def test_empty_layer_with_edge_colormap():
     default_properties = {'angle': np.array([1.5], dtype=float)}
     layer = Vectors(
         data=data,
-        properties=default_properties,
+        property_choices=default_properties,
         edge_color='angle',
         edge_colormap='grays',
     )
@@ -85,7 +104,7 @@ def test_empty_layer_with_edge_color_cycle():
     default_properties = {'vector_type': np.array(['A'])}
     layer = Vectors(
         data=data,
-        properties=default_properties,
+        property_choices=default_properties,
         edge_color='vector_type',
     )
 
@@ -118,6 +137,12 @@ def test_random_3D_vectors_image():
     assert layer.data.shape == (12 * 20 * 10, 2, 3)
     assert layer.ndim == 3
     assert layer._view_data.shape[2] == 2
+
+
+def test_no_data_3D_vectors_with_ndim():
+    """Test instantiating Vectors layers with no data but specifying ndim"""
+    layer = Vectors(ndim=3)
+    assert layer.data.shape[-1] == 3
 
 
 @pytest.mark.filterwarnings("ignore:Passing `np.nan`:DeprecationWarning:numpy")
@@ -569,6 +594,30 @@ def test_value():
     assert value is None
 
 
+@pytest.mark.parametrize(
+    'position,view_direction,dims_displayed,world',
+    [
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
+        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
+        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+    ],
+)
+def test_value_3d(position, view_direction, dims_displayed, world):
+    """Currently get_value should return None in 3D"""
+    np.random.seed(0)
+    data = np.random.random((10, 2, 3))
+    data[:, 0, :] = 20 * data[:, 0, :]
+    layer = Vectors(data)
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    value = layer.get_value(
+        position,
+        view_direction=view_direction,
+        dims_displayed=dims_displayed,
+        world=world,
+    )
+    assert value is None
+
+
 def test_message():
     """Test converting value and coords to message."""
     np.random.seed(0)
@@ -587,4 +636,4 @@ def test_world_data_extent():
     max_val = (8, 30, 12)
     layer = Vectors(np.array(data))
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)

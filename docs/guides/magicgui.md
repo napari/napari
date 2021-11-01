@@ -60,7 +60,7 @@ when using `magicgui` with napari-specific type annotations.
 `magicgui` uses [type hints](https://www.python.org/dev/peps/pep-0484/) to infer
 the appropriate widget type for a given function parameter, and to indicate a
 context-dependent action for the object returned from the function (in the
-absense of a type hint, the type of the default value will be used).  Third
+absence of a type hint, the type of the default value will be used).  Third
 party packages (like `napari` in this case) may provide support for their types
 using
 [`magicgui.register_type`](https://napari.org/magicgui/usage/types_widgets.html#register-type).

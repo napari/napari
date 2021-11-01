@@ -2,11 +2,12 @@ import sys
 import threading
 import time
 import warnings
+from concurrent.futures import Future
 from unittest.mock import patch
 
 import dask.array as da
 import pytest
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QThread
 from qtpy.QtWidgets import QPushButton
 
 from napari._qt.dialogs.qt_notification import NapariQtNotification
@@ -88,9 +89,38 @@ def test_notification_manager_via_gui(
             notification_manager.records = []
 
 
+@patch('napari._qt.dialogs.qt_notification.QDialog.show')
+def test_show_notification_from_thread(mock_show, monkeypatch, qtbot):
+    from napari.settings import get_settings
+
+    settings = get_settings()
+
+    monkeypatch.setattr(
+        settings.application,
+        'gui_notification_level',
+        NotificationSeverity.INFO,
+    )
+
+    class CustomThread(QThread):
+        def run(self):
+            notif = Notification(
+                'hi',
+                NotificationSeverity.INFO,
+                actions=[('click', lambda x: None)],
+            )
+            res = NapariQtNotification.show_notification(notif)
+            assert isinstance(res, Future)
+            assert res.result() is None
+            mock_show.assert_called_once()
+
+    thread = CustomThread()
+    with qtbot.waitSignal(thread.finished):
+        thread.start()
+
+
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
-def test_notification_display(mock_show, severity, monkeypatch):
+def test_notification_display(mock_show, severity, monkeypatch, qtbot):
     """Test that NapariQtNotification can present a Notification event.
 
     NOTE: in napari.utils._tests.test_notification_manager, we already test
@@ -103,12 +133,16 @@ def test_notification_display(mock_show, severity, monkeypatch):
     that show_notification is capable of receiving various event types.
     (we don't need to test that )
     """
-    from napari.utils.settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
 
     monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
-    monkeypatch.setattr(settings.application, 'gui_notification_level', 'info')
+    monkeypatch.setattr(
+        settings.application,
+        'gui_notification_level',
+        NotificationSeverity.INFO,
+    )
     notif = Notification('hi', severity, actions=[('click', lambda x: None)])
     NapariQtNotification.show_notification(notif)
     if NotificationSeverity(severity) >= NotificationSeverity.INFO:
@@ -123,16 +157,21 @@ def test_notification_display(mock_show, severity, monkeypatch):
     dialog.toggle_expansion()
     assert not dialog.property('expanded')
     dialog.close()
+    dialog.deleteLater()
 
 
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
 def test_notification_error(mock_show, monkeypatch, clean_current):
-    from napari.utils.settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
 
     monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
-    monkeypatch.setattr(settings.application, 'gui_notification_level', 'info')
+    monkeypatch.setattr(
+        settings.application,
+        'gui_notification_level',
+        NotificationSeverity.INFO,
+    )
     try:
         raise ValueError('error!')
     except ValueError as e:
@@ -146,6 +185,7 @@ def test_notification_error(mock_show, monkeypatch, clean_current):
     mock_show.assert_called_once()
 
 
+@pytest.mark.sync_only
 @pytest.mark.skipif(PY37_OR_LOWER, reason="Fails on py37")
 def test_notifications_error_with_threading(make_napari_viewer):
     """Test notifications of `threading` threads, using a dask example."""

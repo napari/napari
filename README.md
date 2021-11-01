@@ -2,10 +2,11 @@
 
 ### multi-dimensional image viewer for python
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/napari/napari/main?urlpath=%2Fdesktop)
 [![image.sc forum](https://img.shields.io/badge/dynamic/json.svg?label=forum&url=https%3A%2F%2Fforum.image.sc%2Ftags%2Fnapari.json&query=%24.topic_list.tags.0.topic_count&colorB=brightgreen&suffix=%20topics&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAABPklEQVR42m3SyyqFURTA8Y2BER0TDyExZ+aSPIKUlPIITFzKeQWXwhBlQrmFgUzMMFLKZeguBu5y+//17dP3nc5vuPdee6299gohUYYaDGOyyACq4JmQVoFujOMR77hNfOAGM+hBOQqB9TjHD36xhAa04RCuuXeKOvwHVWIKL9jCK2bRiV284QgL8MwEjAneeo9VNOEaBhzALGtoRy02cIcWhE34jj5YxgW+E5Z4iTPkMYpPLCNY3hdOYEfNbKYdmNngZ1jyEzw7h7AIb3fRTQ95OAZ6yQpGYHMMtOTgouktYwxuXsHgWLLl+4x++Kx1FJrjLTagA77bTPvYgw1rRqY56e+w7GNYsqX6JfPwi7aR+Y5SA+BXtKIRfkfJAYgj14tpOF6+I46c4/cAM3UhM3JxyKsxiOIhH0IO6SH/A1Kb1WBeUjbkAAAAAElFTkSuQmCC)](https://forum.image.sc/tag/napari)
-[![License](https://img.shields.io/pypi/l/napari.svg)](https://github.com/napari/napari/raw/master/LICENSE)
+[![License](https://img.shields.io/pypi/l/napari.svg)](https://github.com/napari/napari/raw/main/LICENSE)
 [![Build Status](https://api.cirrus-ci.com/github/Napari/napari.svg)](https://cirrus-ci.com/napari/napari)
-[![codecov](https://codecov.io/gh/napari/napari/branch/master/graph/badge.svg)](https://codecov.io/gh/napari/napari)
+[![codecov](https://codecov.io/gh/napari/napari/branch/main/graph/badge.svg)](https://codecov.io/gh/napari/napari)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/napari.svg)](https://pypi.org/project/napari)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/napari.svg)](https://pypistats.org/packages/napari)
@@ -13,9 +14,9 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 [![DOI](https://zenodo.org/badge/144513571.svg)](https://zenodo.org/badge/latestdoi/144513571)
 
-**napari** is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of `Qt` (for the GUI), `vispy` (for performant GPU-based rendering), and the scientific Python stack (`numpy`, `scipy`).
+**napari** is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy).
 
-We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still likely be **breaking changes** with each release. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
+We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still likely be **breaking changes** with each release. You can follow progress on [this repository](https://github.com/napari/napari), test out new versions as we release them, and contribute ideas and code.
 
 We're working on [tutorials](https://napari.org/tutorials/), but you can also quickly get started by looking below.
 
@@ -40,7 +41,7 @@ in order to install VisPy (one of the packages we depend on) on Windows machines
 The simplest command to install with pip is:
 
 ```sh
-pip install 'napari[all]'
+pip install "napari[all]"
 ```
 
 (See `Specifying a GUI Backend` below for an explanation of the `[all]` notation.)
@@ -52,7 +53,7 @@ napari into a clean virtual environment using an environment manager like
 ```sh
 conda create -y -n napari-env python=3.8
 conda activate napari-env
-pip install 'napari[all]'
+pip install "napari[all]"
 ```
 
 ### from source
@@ -62,7 +63,7 @@ To clone the repository locally and install in editable mode use
 ```sh
 git clone https://github.com/napari/napari.git
 cd napari
-pip install -e '.[all]'
+pip install -e ".[all]"
 
 # or, to install in editable mode AND grab all of the developer tools
 # (this is required if you want to contribute code back to napari)
@@ -83,16 +84,16 @@ For more information or troubleshooting see our [installation tutorial](https://
 > running napari will result in an error message asking you to install one of
 > them.
 >
-> Running `pip install 'napari[all]'` will install the default framework – currently
+> Running `pip install "napari[all]"` will install the default framework – currently
 > PyQt5, but this could change in the future.
 >
 > To install napari with a specific framework, you can use:
 >
 > ```sh
-> pip install 'napari[pyqt5]'    # for PyQt5
+> pip install "napari[pyqt5]"    # for PyQt5
 >
 > # OR
-> pip install 'napari[pyside2]'  # for PySide2
+> pip install "napari[pyside2]"  # for PySide2
 > ```
 
 ## simple example
@@ -155,7 +156,7 @@ You can learn more about how the `napari` project is organized and managed from 
 
 ## citing napari
 
-If you find `napari` useful please cite this repository using its DOI as follows:
+If you find `napari` useful please cite [this repository](https://github.com/napari/napari) using its DOI as follows:
 
 > napari contributors (2019). napari: a multi-dimensional image viewer for python. [doi:10.5281/zenodo.3555620](https://zenodo.org/record/3555620)
 

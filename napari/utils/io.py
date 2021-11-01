@@ -6,6 +6,7 @@ from glob import glob
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
+import imageio
 import numpy as np
 from dask import array as da
 from dask import delayed
@@ -13,6 +14,9 @@ from dask import delayed
 from ..types import FullLayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
+
+IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
+READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm'})
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -44,7 +48,9 @@ def imsave(filename: str, data: np.ndarray):
             )
 
         if compression_instead_of_compress:
-            tifffile.imsave(filename, data, compression=1)
+            # 'compression' scheme is more complex. See:
+            # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
+            tifffile.imsave(filename, data, compression=('zlib', 1))
         else:  # older version of tifffile since 2021.6.6  this is deprecated
             tifffile.imsave(filename, data, compress=1)
     else:

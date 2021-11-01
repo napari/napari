@@ -26,14 +26,14 @@ from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
-from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
-from ..utils.settings import SETTINGS
+from ..utils.progress import progress
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -60,10 +60,16 @@ EXCLUDE_DICT = {
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
-    from ..types import FullLayerData, LayerData, PathOrPaths
+    from ..types import FullLayerData, LayerData
 
+PathLike = Union[str, Path]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
+
+
+def _current_theme() -> str:
+    return get_settings().appearance.theme
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -112,7 +118,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     help: str = ''
     status: str = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
-    theme: str = DEFAULT_THEME
+    theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
 
     # 2-tuple indicating height and width
@@ -130,9 +136,22 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
-        self.tooltip.visible = SETTINGS.appearance.layer_tooltip_visibility
-        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
+
+        settings = get_settings()
+        self.tooltip.visible = settings.appearance.layer_tooltip_visibility
+        settings.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visible_update
+        )
+
+        self._update_viewer_grid()
+        settings.application.events.grid_stride.connect(
+            self._update_viewer_grid
+        )
+        settings.application.events.grid_width.connect(
+            self._update_viewer_grid
+        )
+        settings.application.events.grid_height.connect(
+            self._update_viewer_grid
         )
 
         # Add extra events - ideally these will be removed too!
@@ -156,19 +175,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
 
-        self.events.add(
-            # FIXME: Deferred translation?
-            active_layer=WarningEmitter(
-                trans._(
-                    "'viewer.events.active_layer' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.active' instead",
-                    deferred=True,
-                ),
-                type='active_layer',
-            )
-        )
-
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
+
+    def _update_viewer_grid(self):
+        """Keep viewer grid settings up to date with settings values."""
+
+        settings = get_settings()
+
+        self.grid.stride = settings.application.grid_stride
+        self.grid.shape = (
+            settings.application.grid_height,
+            settings.application.grid_width,
+        )
 
     @validator('theme')
     def _valid_theme(cls, v):
@@ -196,7 +215,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return super().json(exclude=exclude, **kwargs)
 
     def dict(self, **kwargs):
-        """Convert to a dictionaty."""
+        """Convert to a dictionary."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
         # https://github.com/samuelcolvin/pydantic/pull/2231
@@ -232,7 +251,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             return self.layers.extent.world[:, self.dims.displayed]
 
-    def reset_view(self, event=None):
+    def reset_view(self):
         """Reset the camera view."""
 
         extent = self._sliced_extent_world
@@ -251,8 +270,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if np.max(size) == 0:
             self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
+            scale = np.array(size[-2:])
+            scale[np.isclose(scale, 0)] = 1
             self.camera.zoom = 0.95 * np.min(
-                np.array(self._canvas_size) / np.array(size[-2:])
+                np.array(self._canvas_size) / scale
             )
         self.camera.angles = (0, 0, 90)
 
@@ -269,15 +290,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent = self.layers.extent.world
         scale = self.layers.extent.step
         scene_size = extent[1] - extent[0]
-        corner = extent[0]
+        corner = extent[0] + 0.5 * self.layers.extent.step
         shape = [
-            np.round(s / sc).astype('int') + 1 if s > 0 else 1
+            np.round(s / sc).astype('int') if s > 0 else 1
             for s, sc in zip(scene_size, scale)
         ]
         empty_labels = np.zeros(shape, dtype=int)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
-    def _update_layers(self, event=None, layers=None):
+    def _update_layers(self, *, layers=None):
         """Updates the contained layers.
 
         Parameters
@@ -304,47 +325,25 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
 
-    @property
-    def active_layer(self):
-        warnings.warn(
-            trans._(
-                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.layers.selection.active
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        # this method is only for the deprecation warning, because pydantic
-        # prevents using @active_layer.setter
-        if name != 'active_layer':
-            return super().__setattr__(name, value)
-
-        warnings.warn(
-            trans._(
-                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        self.layers.selection.active = value
-
-    def _on_layers_change(self, event):
+    def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            extent = self.layers.extent
-            world = extent.world
-            ss = extent.step
-            ndim = world.shape[1]
+            ranges = self.layers._ranges
+            ndim = len(ranges)
             self.dims.ndim = ndim
-            for i in range(ndim):
-                self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
-        self.cursor.position = (0,) * self.dims.ndim
+            for i, _range in enumerate(ranges):
+                self.dims.set_range(i, _range)
+
+        new_dim = self.dims.ndim
+        dim_diff = new_dim - len(self.cursor.position)
+        if dim_diff < 0:
+            self.cursor.position = self.cursor.position[:new_dim]
+        elif dim_diff > 0:
+            self.cursor.position = tuple(
+                list(self.cursor.position) + [0] * dim_diff
+            )
         self.events.layers_change()
 
     def _update_interactive(self, event):
@@ -359,7 +358,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
 
-    def _on_cursor_position_change(self, event):
+    def _on_cursor_position_change(self):
         """Set the layer cursor position."""
         with warnings.catch_warnings():
             # Catch the deprecation warning on layer.position
@@ -375,14 +374,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # Update status and help bar based on active layer
         active = self.layers.selection.active
         if active is not None:
-            self.status = active.get_status(self.cursor.position, world=True)
+            self.status = active.get_status(
+                self.cursor.position,
+                view_direction=self.cursor._view_direction,
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
                     self.cursor.position, world=True
                 )
 
-    def _on_grid_change(self, event):
+    def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
         extent = self._sliced_extent_world
         n_layers = len(self.layers)
@@ -402,7 +406,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent : array, shape (2, D)
             Extent of the world.
         """
-        scene_shift = extent[1] - extent[0] + 1
+        scene_shift = extent[1] - extent[0]
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
@@ -443,8 +447,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.name.connect(self.layers._update_name)
 
         # Update dims and grid model
-        self._on_layers_change(None)
-        self._on_grid_change(None)
+        self._on_layers_change()
+        self._on_grid_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
@@ -470,8 +474,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
-        self._on_layers_change(None)
-        self._on_grid_change(None)
+        self._on_layers_change()
+        self._on_grid_change()
 
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
@@ -517,6 +521,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         blending=None,
         visible=True,
         multiscale=None,
+        cache=True,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
@@ -603,9 +610,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         affine : n-D array or napari.utils.transforms.Affine
             (N+1, N+1) affine transformation matrix in homogeneous coordinates.
             The first (N, N) entries correspond to a linear transform and
-            the final column is a lenght N translation vector and a 1 or a napari
-            AffineTransform object. If provided then translate, scale, rotate, and
-            shear values are ignored.
+            the final column is a length N translation vector and a 1 or a
+            napari `Affine` transform object. Applied as an extra transform on
+            top of the provided scale, rotate, and shear values.
         opacity : float or list
             Opacity of the layer visual, between 0.0 and 1.0.  If a list then
             must be same length as the axis that is being expanded as channels.
@@ -626,6 +633,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             should be the largest. Please note multiscale rendering is only
             supported in 2D. In 3D, only the lowest resolution scale is
             displayed.
+        cache : bool
+            Whether slices of out-of-core datasets should be cached upon
+            retrieval. Currently, this only applies to dask arrays.
+        experimental_slicing_plane : dict or SlicingPlane
+            Properties defining plane rendering in 3D. Properties are defined in
+            data coordinates. Valid dictionary keys are
+            {'position', 'normal', 'thickness', and 'enabled'}.
+        experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+            Each dict defines a clipping plane in 3D in data coordinates.
+            Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+            Values on the negative side of the normal are discarded if the plane is enabled.
 
         Returns
         -------
@@ -664,6 +682,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'blending': blending,
             'visible': visible,
             'multiscale': multiscale,
+            'cache': cache,
+            'experimental_slicing_plane': experimental_slicing_plane,
+            'experimental_clipping_planes': experimental_clipping_planes,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -675,6 +696,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'affine',
             'contrast_limits',
             'metadata',
+            'experimental_clipping_planes',
         }
 
         if channel_axis is None:
@@ -851,12 +873,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         added: List[Layer] = []  # for layers that get added
-        for _path in paths:
-            added.extend(
-                self._add_layers_with_plugins(
-                    _path, kwargs, plugin=plugin, layer_type=layer_type
+        with progress(
+            paths,
+            desc='Opening Files',
+            total=0
+            if len(paths) == 1
+            else None,  # indeterminate bar for 1 file
+        ) as pbr:
+            for _path in pbr:
+                added.extend(
+                    self._add_layers_with_plugins(
+                        _path, kwargs, plugin=plugin, layer_type=layer_type
+                    )
                 )
-            )
         return added
 
     def _add_layers_with_plugins(

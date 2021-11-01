@@ -1,6 +1,6 @@
 import warnings
 from collections import deque
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -13,15 +13,39 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
-from ...utils.events.event import WarningEmitter
+from ...utils.events.custom_types import Array
+from ...utils.geometry import clamp_point_to_bounding_box
+from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
+from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import dataframe_to_properties
-from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
+from ..utils.layer_utils import validate_properties
+from ._labels_constants import LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
+
+_REV_SHAPE_HELP = {
+    trans._('enter paint or fill mode to edit labels'): {Mode.PAN_ZOOM},
+    trans._('hold <space> to pan/zoom, click to pick a label'): {
+        Mode.PICK,
+        Mode.FILL,
+    },
+    trans._(
+        'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
+    ): {Mode.PAINT},
+    trans._('hold <space> to pan/zoom, drag to erase a label'): {Mode.ERASE},
+}
+
+# This avoid duplicating the trans._ help messages above
+# as some modes have the same help.
+# while most tooling will recognise identical messages,
+# this can lead to human error.
+_FWD_SHAPE_HELP = {}
+for t, modes in _REV_SHAPE_HELP.items():
+    for m in modes:
+        _FWD_SHAPE_HELP[m] = t
 
 
 class Labels(_ImageBase):
@@ -67,15 +91,20 @@ class Labels(_ImageBase):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
+    rendering : str
+        3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
+        'translucent' renders without lighting. 'iso_categorical' uses isosurface
+        rendering to calculate lighting effects on labeled surfaces.
+        The default value is 'iso_categorical'.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -86,6 +115,17 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
+    experimental_slicing_plane : dict or SlicingPlane
+        Properties defining plane rendering in 3D. Properties are defined in
+        data coordinates. Valid dictionary keys are
+        {'position', 'normal', 'thickness', and 'enabled'}.
+    experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
+        Each dict defines a clipping plane in 3D in data coordinates.
+        Valid dictionary keys are {'position', 'normal', and 'enabled'}.
+        Values on the negative side of the normal are discarded if the plane is enabled.
 
     Attributes
     ----------
@@ -118,8 +158,8 @@ class Labels(_ImageBase):
         Opacity of the labels, must be between 0 and 1.
     contiguous : bool
         If `True`, the fill bucket changes only connected pixels of same label.
-    n_dimensional : bool
-        If `True`, paint and fill edit labels across all dimensions.
+    n_edit_dimensions : int
+        The number of dimensions across which labels will be edited.
     contour : int
         If greater than 0, displays contours of labels instead of shaded regions
         with a thickness equal to its value.
@@ -150,6 +190,10 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
+    experimental_slicing_plane : SlicingPlane
+        Properties defining plane rendering in 3D.
+    experimental_clipping_planes : ClippingPlaneList
+        Clipping planes defined in data coordinates, used to clip the volume.
 
     Notes
     -----
@@ -179,8 +223,12 @@ class Labels(_ImageBase):
         affine=None,
         opacity=0.7,
         blending='translucent',
+        rendering='iso_categorical',
         visible=True,
         multiscale=None,
+        cache=True,
+        experimental_slicing_plane=None,
+        experimental_clipping_planes=None,
     ):
 
         self._seed = seed
@@ -192,7 +240,6 @@ class Labels(_ImageBase):
         )
         self._all_vals[0] = 0
         self._color_mode = LabelColorMode.AUTO
-        self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
         self._contour = 0
 
@@ -209,7 +256,8 @@ class Labels(_ImageBase):
             colormap=self._random_colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
-            rendering='translucent',
+            rendering=rendering,
+            iso_threshold=0,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -221,19 +269,15 @@ class Labels(_ImageBase):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            cache=cache,
+            experimental_slicing_plane=experimental_slicing_plane,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
             mode=Event,
             preserve_labels=Event,
             properties=Event,
-            n_dimensional=WarningEmitter(
-                trans._(
-                    "'Labels.events.n_dimensional' is deprecated and will be removed in napari v0.4.9. Use 'Labels.event.n_edit_dimensions' instead.",
-                    deferred=True,
-                ),
-                type='n_dimensional',
-            ),
             n_edit_dimensions=Event,
             contiguous=Event,
             brush_size=Event,
@@ -252,7 +296,6 @@ class Labels(_ImageBase):
         self.color = color
 
         self._mode = Mode.PAN_ZOOM
-        self._mode_history = self._mode
         self._status = self.mode
         self._preserve_labels = False
         self._help = trans._('enter paint or fill mode to edit labels')
@@ -273,35 +316,6 @@ class Labels(_ImageBase):
     def contiguous(self, contiguous):
         self._contiguous = contiguous
         self.events.contiguous()
-
-    @property
-    def n_dimensional(self):
-        """bool: paint and fill edits labels across all dimensions."""
-        warnings.warn(
-            trans._(
-                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self._n_edit_dimensions == self.ndim and self.ndim > 2
-
-    @n_dimensional.setter
-    def n_dimensional(self, n_dimensional):
-        warnings.warn(
-            trans._(
-                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        if n_dimensional:
-            self.n_edit_dimensions = self.ndim
-        else:
-            self.n_edit_dimensions = 2
-        self.events.n_dimensional()
 
     @property
     def n_edit_dimensions(self):
@@ -338,8 +352,8 @@ class Labels(_ImageBase):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
-        average_scale = np.mean([scale[d] for d in self._dims_displayed])
-        return abs(self.brush_size * average_scale)
+        min_scale = np.min([abs(scale[d]) for d in self._dims_displayed])
+        return abs(self.brush_size * min_scale)
 
     @property
     def seed(self):
@@ -349,10 +363,10 @@ class Labels(_ImageBase):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self._selected_color = self.get_color(self.selected_label)
         # invalidate _all_vals to trigger re-generation
         # in _raw_to_displayed
         self._all_vals = np.array([])
+        self._selected_color = self.get_color(self.selected_label)
         self.refresh()
         self.events.selected_label()
 
@@ -388,46 +402,23 @@ class Labels(_ImageBase):
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: Dict[str, Array]):
         self._properties, self._label_index = self._prepare_properties(
             properties
         )
         self.events.properties()
 
     @classmethod
-    def _prepare_properties(cls, properties) -> Tuple[dict, dict]:
-        """Convert an input properties value to a standard dict-of-columns format.
-
-        Parameters
-        ----------
-        properties : dict or DataFrame
-            properties to be transformed
-
-        Returns
-        -------
-        properties : dict
-            properties dictionary
-        index: dict
-            index mapping dictionary
-        """
-        if properties is None or (
-            isinstance(properties, dict) and not len(properties)
-        ):
-            # None or empty dict properties
-            return {}, {}
-        if isinstance(properties, dict):
-            properties = cls._validate_properties(properties)
-            label_index = properties.get("index", None)
-            if label_index is not None:
-                # got array of indexes
-                label_index = {v: i for i, v in enumerate(label_index)}
-        else:
-            # assume that properties is a DataFrame.
-            properties, label_index = dataframe_to_properties(properties)
-            properties = cls._validate_properties(properties)
-        if label_index is None:
-            label_index = cls._map_index(properties)
-
+    def _prepare_properties(
+        cls, properties: Optional[Dict[str, Array]]
+    ) -> Tuple[Dict[str, np.ndarray], Dict[int, int]]:
+        properties = validate_properties(properties)
+        label_index = {}
+        if 'index' in properties:
+            label_index = {i: k for k, i in enumerate(properties['index'])}
+        elif len(properties) > 0:
+            max_len = max(len(x) for x in properties.values())
+            label_index = {i: i for i in range(max_len)}
         return properties, label_index
 
     @property
@@ -437,16 +428,11 @@ class Labels(_ImageBase):
 
     @color.setter
     def color(self, color):
-
         if not color:
             color = {}
-            color_mode = LabelColorMode.AUTO
-        else:
-            color_mode = LabelColorMode.DIRECT
 
         if self._background_label not in color:
             color[self._background_label] = 'transparent'
-
         if None not in color:
             color[None] = 'black'
 
@@ -454,9 +440,54 @@ class Labels(_ImageBase):
             label: transform_color(color_str)[0]
             for label, color_str in color.items()
         }
-
         self._color = colors
+
+        # `colors` may contain just the default None and background label
+        # colors, in which case we need to be in AUTO color mode. Otherwise,
+        # `colors` contains colors for all labels, and we should be in DIRECT
+        # mode.
+
+        # For more information
+        # - https://github.com/napari/napari/issues/2479
+        # - https://github.com/napari/napari/issues/2953
+        if self._is_default_colors(colors):
+            color_mode = LabelColorMode.AUTO
+        else:
+            color_mode = LabelColorMode.DIRECT
+
         self.color_mode = color_mode
+
+    def _is_default_colors(self, color):
+        """Returns True if color contains only default colors, otherwise False.
+
+        Default colors are black for `None` and transparent for
+        `self._background_label`.
+
+        Parameters
+        ----------
+        color : Dict
+            Dictionary of label value to color array
+
+        Returns
+        -------
+        bool
+            True if color contains only default colors, otherwise False.
+        """
+        if len(color) != 2:
+            return False
+
+        if not hasattr(self, '_color'):
+            return False
+
+        default_keys = [None, self._background_label]
+        if set(default_keys) != set(color.keys()):
+            return False
+
+        for key in default_keys:
+            if not np.allclose(self._color[key], color[key]):
+                return False
+
+        return True
 
     def _ensure_int_labels(self, data):
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""
@@ -483,34 +514,6 @@ class Labels(_ImageBase):
             data = data[0]
         return data
 
-    @staticmethod
-    def _validate_properties(
-        properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validate the type and size of properties."""
-        lens = []
-        for k, v in properties.items():
-            lens.append(len(v))
-            if not isinstance(v, np.ndarray):
-                properties[k] = np.asarray(v)
-
-        if any(v != lens[0] for v in lens):
-            raise ValueError(
-                trans._(
-                    "the number of items must be equal for all properties",
-                    deferred=True,
-                )
-            )
-        return properties
-
-    @staticmethod
-    def _map_index(properties: Dict[str, np.ndarray]) -> Dict[int, int]:
-        """Map rows in given properties to label indices"""
-        if not properties:
-            return {}
-        max_len = max(len(x) for x in properties.values())
-        return {i: i for i in range(max_len)}
-
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -525,6 +528,11 @@ class Labels(_ImageBase):
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
                 'properties': self._properties,
+                'rendering': self.rendering,
+                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
+                ],
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,
@@ -598,41 +606,6 @@ class Labels(_ImageBase):
         self.refresh()
 
     @property
-    def brush_shape(self):
-        """str: Paintbrush shape"""
-
-        warnings.warn(
-            (
-                trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
-                    deferred=True,
-                )
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        return str(self._brush_shape)
-
-    @brush_shape.setter
-    def brush_shape(self, brush_shape):
-        """Set current brush shape."""
-
-        warnings.warn(
-            (
-                trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
-                    deferred=True,
-                )
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        self._brush_shape = LabelBrushShape(brush_shape)
-        self.cursor = self.brush_shape
-
-    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -659,59 +632,39 @@ class Labels(_ImageBase):
         """
         return str(self._mode)
 
+    _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.PICK: pick,
+        Mode.PAINT: draw,
+        Mode.FILL: draw,
+        Mode.ERASE: draw,
+    }
+
+    _move_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.PICK: no_op,
+        Mode.PAINT: no_op,
+        Mode.FILL: no_op,
+        Mode.ERASE: no_op,
+    }
+    _cursor_modes = {
+        Mode.PAN_ZOOM: 'standard',
+        Mode.PICK: 'cross',
+        Mode.PAINT: 'circle',
+        Mode.FILL: 'cross',
+        Mode.ERASE: 'circle',
+    }
+
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-        mode = Mode(mode)
-
-        if not self.editable:
-            mode = Mode.PAN_ZOOM
-
-        if mode == self._mode:
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
             return
 
-        if self._mode == Mode.PICK:
-            self.mouse_drag_callbacks.remove(pick)
-        elif self._mode in [Mode.PAINT, Mode.FILL, Mode.ERASE]:
-            self.mouse_drag_callbacks.remove(draw)
+        self.help = _FWD_SHAPE_HELP[mode]
 
-        if mode == Mode.PAN_ZOOM:
-            self.cursor = 'standard'
-            self.interactive = True
-            self.help = trans._('enter paint or fill mode to edit labels')
-        elif mode == Mode.PICK:
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, click to pick a label'
-            )
-            self.mouse_drag_callbacks.append(pick)
-        elif mode == Mode.PAINT:
-            self.cursor = str(self._brush_shape)
+        if mode in (Mode.PAINT, Mode.ERASE):
             self.cursor_size = self._calculate_cursor_size()
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
-            )
-            self.mouse_drag_callbacks.append(draw)
-        elif mode == Mode.FILL:
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, click to fill a label'
-            )
-            self.mouse_drag_callbacks.append(draw)
-        elif mode == Mode.ERASE:
-            self.cursor = str(self._brush_shape)
-            self.cursor_size = self._calculate_cursor_size()
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, drag to erase a label'
-            )
-            self.mouse_drag_callbacks.append(draw)
-        else:
-            raise ValueError(trans._("Mode not recognized"))
-
-        self._mode = mode
 
         self.events.mode(mode=mode)
         self.refresh()
@@ -730,10 +683,23 @@ class Labels(_ImageBase):
         self._preserve_labels = preserve_labels
         self.events.preserve_labels(preserve_labels=preserve_labels)
 
+    @property
+    def contrast_limits(self):
+        return self._contrast_limits
+
+    @contrast_limits.setter
+    def contrast_limits(self, value):
+        # Setting contrast_limits of labels layers leads to wrong visualization of the layer
+        if tuple(value) != (0, 1):
+            raise AttributeError(
+                "Setting contrast_limits on labels layers is not allowed."
+            )
+        self._contrast_limits = (0, 1)
+
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.multiscale or self._ndisplay == 3:
+            if self.multiscale:
                 self.editable = False
             else:
                 self.editable = True
@@ -824,7 +790,7 @@ class Labels(_ImageBase):
             maximum label value in data
 
         Returns
-        ----------
+        -------
         lookup_func : function
             function to use for mapping label values to colors
         """
@@ -944,16 +910,91 @@ class Labels(_ImageBase):
             col = self.colormap.map(val)[0]
         return col
 
-    def _reset_history(self, event=None):
-        self._undo_history = deque()
-        self._redo_history = deque()
+    def _get_value_ray(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
 
-    def _trim_history(self):
-        while (
-            len(self._undo_history) + len(self._redo_history)
-            > self._history_limit
-        ):
-            self._undo_history.popleft()
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
+
+        Returns
+        -------
+        value : Optional[int]
+            The first non-zero value encountered along the ray. If none
+            was encountered or the viewer is in 2D mode, None is returned.
+        """
+        if start_point is None or end_point is None:
+            return None
+        if len(dims_displayed) == 3:
+            # only use get_value_ray on 3D for now
+            # we use dims_displayed because the image slice
+            # has its dimensions  in th same order as the vispy
+            # Volume
+            start_point = start_point[dims_displayed]
+            end_point = end_point[dims_displayed]
+            sample_ray = end_point - start_point
+            length_sample_vector = np.linalg.norm(sample_ray)
+            n_points = int(2 * length_sample_vector)
+            sample_points = np.linspace(
+                start_point, end_point, n_points, endpoint=True
+            )
+            im_slice = self._slice.image.raw
+            clamped = clamp_point_to_bounding_box(
+                sample_points, self._display_bounding_box(dims_displayed)
+            ).astype(int)
+            values = im_slice[tuple(clamped.T)]
+            nonzero_indices = np.flatnonzero(values)
+            if len(nonzero_indices > 0):
+                # if a nonzer0 value was found, return the first one
+                return values[nonzero_indices[0]]
+
+        return None
+
+    def _get_value_3d(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Optional[int]:
+        """Get the first non-background value encountered along a ray.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the viewer.
+
+        Returns
+        -------
+        value : int
+            The first non-zero value encountered along the ray. If a
+            non-zero value is not encountered, returns 0 (the background value).
+        """
+        return (
+            self._get_value_ray(
+                start_point=start_point,
+                end_point=end_point,
+                dims_displayed=dims_displayed,
+            )
+            or 0
+        )
+
+    def _reset_history(self, event=None):
+        self._undo_history = deque(maxlen=self._history_limit)
+        self._redo_history = deque(maxlen=self._history_limit)
 
     def _save_history(self, value):
         """Save a history "atom" to the undo history.
@@ -978,7 +1019,6 @@ class Labels(_ImageBase):
         self._redo_history = deque()
         if not self._block_saving:
             self._undo_history.append([value])
-            self._trim_history()
         else:
             self._undo_history[-1].append(value)
 
@@ -1025,9 +1065,8 @@ class Labels(_ImageBase):
     def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
-        if it is `False`, working either just in the current slice if
-        the `n_dimensional` flag is `False` or on the entire data if it is
-        `True`.
+        if it is `False`, working in the number of dimensions specified by
+        the `n_edit_dimensions` flag.
 
         Parameters
         ----------
@@ -1053,7 +1092,7 @@ class Labels(_ImageBase):
         ):
             return
 
-        dims_to_fill = self._dims_order[-self.n_edit_dimensions :]
+        dims_to_fill = sorted(self._dims_order[-self.n_edit_dimensions :])
         data_slice_list = list(int_coord)
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
@@ -1087,7 +1126,11 @@ class Labels(_ImageBase):
             match_indices = match_indices_local
 
         self._save_history(
-            (match_indices, self.data[match_indices], new_label)
+            (
+                match_indices,
+                np.array(self.data[match_indices], copy=True),
+                new_label,
+            )
         )
 
         # Replace target pixels with new_label
@@ -1112,66 +1155,45 @@ class Labels(_ImageBase):
             calls.
         """
         shape = self.data.shape
-        dims_to_paint = self._dims_order[-self.n_edit_dimensions :]
-        dims_not_painted = self._dims_order[: -self.n_edit_dimensions]
-        if str(self._brush_shape) == "square":
-            brush_size_dims = [self.brush_size] * self.ndim
-            if self.n_edit_dimensions < self.ndim:
-                for i in range(self.ndim):
-                    if i not in dims_to_paint:
-                        brush_size_dims[i] = 1
+        dims_to_paint = sorted(self._dims_order[-self.n_edit_dimensions :])
+        dims_not_painted = sorted(self._dims_order[: -self.n_edit_dimensions])
+        paint_scale = np.array(
+            [self.scale[i] for i in dims_to_paint], dtype=float
+        )
 
-            slice_coord = tuple(
-                slice(
-                    np.round(np.clip(c - brush_size / 2 + 0.5, 0, s)).astype(
-                        int
-                    ),
-                    np.round(np.clip(c + brush_size / 2 + 0.5, 0, s)).astype(
-                        int
-                    ),
-                    1,
+        slice_coord = [int(np.round(c)) for c in coord]
+        if self.n_edit_dimensions < self.ndim:
+            coord_paint = [coord[i] for i in dims_to_paint]
+            shape = [shape[i] for i in dims_to_paint]
+        else:
+            coord_paint = coord
+
+        # Ensure circle doesn't have spurious point
+        # on edge by keeping radius as ##.5
+        radius = np.floor(self.brush_size / 2) + 0.5
+        mask_indices = sphere_indices(radius, tuple(paint_scale))
+
+        mask_indices = mask_indices + np.round(np.array(coord_paint)).astype(
+            int
+        )
+
+        # discard candidate coordinates that are out of bounds
+        mask_indices = indices_in_shape(mask_indices, shape)
+
+        # Transfer valid coordinates to slice_coord,
+        # or expand coordinate if 3rd dim in 2D image
+        slice_coord_temp = [m for m in mask_indices.T]
+        if self.n_edit_dimensions < self.ndim:
+            for j, i in enumerate(dims_to_paint):
+                slice_coord[i] = slice_coord_temp[j]
+            for i in dims_not_painted:
+                slice_coord[i] = slice_coord[i] * np.ones(
+                    mask_indices.shape[0], dtype=int
                 )
-                for c, s, brush_size in zip(
-                    coord, self.data.shape, brush_size_dims
-                )
-            )
-            slice_coord = tuple(map(np.ravel, np.mgrid[slice_coord]))
-            slice_coord = indices_in_shape(slice_coord, shape)
-        elif str(self._brush_shape) == "circle":
-            slice_coord = [int(np.round(c)) for c in coord]
-            if self.n_edit_dimensions < self.ndim:
-                coord_paint = [coord[i] for i in dims_to_paint]
-                shape = [shape[i] for i in dims_to_paint]
-            else:
-                coord_paint = coord
+        else:
+            slice_coord = slice_coord_temp
 
-            sphere_dims = len(coord_paint)
-            # Ensure circle doesn't have spurious point
-            # on edge by keeping radius as ##.5
-            radius = np.floor(self.brush_size / 2) + 0.5
-            mask_indices = sphere_indices(radius, sphere_dims)
-
-            mask_indices = mask_indices + np.round(
-                np.array(coord_paint)
-            ).astype(int)
-
-            # discard candidate coordinates that are out of bounds
-            mask_indices = indices_in_shape(mask_indices, shape)
-
-            # Transfer valid coordinates to slice_coord,
-            # or expand coordinate if 3rd dim in 2D image
-            slice_coord_temp = [m for m in mask_indices.T]
-            if self.n_edit_dimensions < self.ndim:
-                for j, i in enumerate(dims_to_paint):
-                    slice_coord[i] = slice_coord_temp[j]
-                for i in dims_not_painted:
-                    slice_coord[i] = slice_coord[i] * np.ones(
-                        mask_indices.shape[0], dtype=int
-                    )
-            else:
-                slice_coord = slice_coord_temp
-
-            slice_coord = tuple(slice_coord)
+        slice_coord = tuple(slice_coord)
 
         # Fix indexing for xarray if necessary
         # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
@@ -1195,7 +1217,13 @@ class Labels(_ImageBase):
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         # save the existing values to the history
-        self._save_history((slice_coord, self.data[slice_coord], new_label))
+        self._save_history(
+            (
+                slice_coord,
+                np.array(self.data[slice_coord], copy=True),
+                new_label,
+            )
+        )
 
         # update the labels image
         self.data[slice_coord] = new_label
@@ -1203,13 +1231,26 @@ class Labels(_ImageBase):
         if refresh is True:
             self.refresh()
 
-    def get_status(self, position=None, *, world=False):
+    def get_status(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ) -> str:
         """Status message of the data at a coordinate position.
 
         Parameters
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.
@@ -1219,7 +1260,13 @@ class Labels(_ImageBase):
         msg : string
             String containing a message that can be used as a status update.
         """
-        msg = super().get_status(position, world=world)
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+        msg = generate_layer_status(self.name, position, value)
 
         # if this labels layer has properties
         properties = self._get_properties(position, world)

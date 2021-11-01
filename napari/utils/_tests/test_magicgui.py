@@ -1,13 +1,14 @@
 import os
 import sys
+import time
 from typing import List
 
 import numpy as np
 import pytest
 from magicgui import magicgui
 
-from napari import Viewer, types
-from napari._tests.utils import layer_test_data
+from napari import Viewer, layers, types
+from napari._tests.utils import layer_test_data, slow
 from napari.layers import Image, Labels, Layer
 from napari.utils.misc import all_subclasses
 
@@ -55,7 +56,7 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
 
     @magicgui
     # where `dtype` is something like napari.types.ImageData
-    def add_data() -> dtype:
+    def add_data() -> dtype:  # type: ignore
         # and data is just the bare numpy-array or similar
         return data
 
@@ -64,6 +65,46 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     assert len(viewer.layers) == 1
     assert isinstance(viewer.layers[0], LayerType)
     assert viewer.layers[0].source.widget == add_data
+
+
+@slow(10)
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason='Futures not subscriptable before py3.9'
+)
+@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+def test_magicgui_add_future_data(make_napari_viewer, LayerType, data, ndim):
+    """Test that annotating with napari.types.<layer_type>Data works.
+
+    It expects a raw data format (like a numpy array) and will add a layer
+    of the corresponding type to the viewer.
+    """
+    from concurrent.futures import Future
+    from functools import partial
+
+    from qtpy.QtCore import QTimer
+
+    viewer = make_napari_viewer()
+    dtype = getattr(types, f'{LayerType.__name__}Data')
+
+    @magicgui
+    # where `dtype` is something like napari.types.ImageData
+    def add_data() -> Future[dtype]:  # type: ignore
+        future = Future()
+        # simulate something that isn't immediately ready when function returns
+        QTimer.singleShot(10, partial(future.set_result, data))
+        return future
+
+    viewer.window.add_dock_widget(add_data)
+
+    def _assert_stuff():
+        assert len(viewer.layers) == 1
+        assert isinstance(viewer.layers[0], LayerType)
+        assert viewer.layers[0].source.widget == add_data
+
+    add_data()
+    assert len(viewer.layers) == 0
+    QTimer.singleShot(50, _assert_stuff)
+    time.sleep(0.1)
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
@@ -88,6 +129,7 @@ def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     viewer.add_layer(layer)
 
 
+@slow(10)
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
 def test_magicgui_add_layer(make_napari_viewer, LayerType, data, ndim):
     viewer = make_napari_viewer()
@@ -184,22 +226,32 @@ def test_magicgui_get_viewer(make_napari_viewer):
     assert not func.v.visible
 
 
-def test_magicgui_imports(tmp_path):
-    """Test that magicgui is registered in time"""
+MGUI_EXPORTS = ['napari.layers.Layer', 'napari.Viewer']
+MGUI_EXPORTS += [f'napari.types.{nm.title()}Data' for nm in layers.NAMES]
+
+
+@pytest.mark.parametrize('name', MGUI_EXPORTS)
+def test_mgui_forward_refs(tmp_path, name):
+    """Test magicgui forward ref annotations
+
+    In a 'fresh' process, make sure that calling
+    `magicgui.type_map.pick_widget_type` with the string version of a napari
+    object triggers the appropriate imports to resolve the class in time.
+    """
     import subprocess
-    import sys
-    from textwrap import dedent
+    import textwrap
 
     script = """
-    from napari.types import ImageData
-    from magicgui import magicgui
-
-    @magicgui()
-    def filter_widget(image: ImageData) -> ImageData:
-        return None
-
-    filter_widget()
+    import magicgui
+    assert magicgui.type_map._TYPE_DEFS == {{}}
+    name = {0!r}
+    wdg, options = magicgui.type_map.pick_widget_type(annotation=name)
+    if name == 'napari.Viewer':
+        assert wdg == magicgui.widgets.EmptyWidget and 'bind' in options
+    else:
+        assert wdg == magicgui.widgets.Combobox
     """
+
     script_path = tmp_path / 'script.py'
-    script_path.write_text(dedent(script))
+    script_path.write_text(textwrap.dedent(script.format(name)))
     subprocess.run([sys.executable, str(script_path)], check=True)

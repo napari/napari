@@ -2,13 +2,13 @@
 
 With offline analysis tools performance dictates how long the user has to wait
 for a result, however with an interactive tool like napari performance is even
-more critical. Therefore performance is a core feature of napari. 
+more critical. Therefore performance is a core feature of napari.
 
 Inadequate performance will leave the user frustrated and discouraged and they
 will migrate to other tools or simply give up on interactive exploration of
-their data all together. In contrast excellent performance will create a joyful
-experience that encourages longer and more intensive exploration yielding better
-scientific results.
+their data altogether. In contrast, excellent performance will create a joyful
+experience that encourages longer and more intensive exploration, yielding
+better scientific results.
 
 There are two main types of performance:
 
@@ -116,7 +116,7 @@ Performance is never "done" for several reasons:
 ### New Features
 
 * The objective and subjective performance of new features should be scrutinized
-  before merging to master.
+  before merging to main.
 * New features should be tested on a variety of data types and sizes, including the largest data sets that are supported.
 * The new feature should scale to large datasets, or the performance limitations of the feature should be well documented.
 * It can be hard to impossible to "add performance in later". The best time to

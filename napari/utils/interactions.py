@@ -76,6 +76,40 @@ def mouse_wheel_callbacks(obj, event):
                 pass
 
 
+def mouse_double_click_callbacks(obj, event) -> None:
+    """Run mouse double_click callbacks on either layer or viewer object.
+
+    Note that unlike other press and release callback those can't be generators:
+
+    .. code-block:: python
+
+        def double_click_callback(layer, event):
+            layer._finish_drawing()
+
+    Parameters
+    ----------
+    obj : ViewerModel or Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+
+    Returns
+    -------
+    None
+
+    """
+    # iterate through drag callback functions
+    for mouse_click_func in obj.mouse_double_click_callbacks:
+        # execute function to run press event code
+        if inspect.isgeneratorfunction(mouse_click_func):
+            raise ValueError(
+                trans._(
+                    "Double-click actions can't be generators.", deferred=True
+                )
+            )
+        mouse_click_func(obj, event)
+
+
 def mouse_press_callbacks(obj, event):
     """Run mouse press callbacks on either layer or viewer object.
 
@@ -106,7 +140,7 @@ def mouse_press_callbacks(obj, event):
     """
     # iterate through drag callback functions
     for mouse_drag_func in obj.mouse_drag_callbacks:
-        # exectute function to run press event code
+        # execute function to run press event code
         gen = mouse_drag_func(obj, event)
         # if function returns a generator then try to iterate it
         if inspect.isgenerator(gen):
@@ -262,6 +296,7 @@ class Shortcut:
                 len(shortcut_key) > 1
                 and shortcut_key not in KEY_SYMBOLS.keys()
             ):
+
                 warnings.warn(
                     trans._(
                         "{shortcut_key} does not seem to be a valid shortcut Key.",

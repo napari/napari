@@ -20,12 +20,13 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt import QElidingLabel
 
 from ...plugins import plugin_manager as napari_plugin_manager
-from ...utils.settings import get_settings
+from ...settings import get_settings
 from ...utils.translations import trans
 from ..utils import drag_with_pixmap
-from ..widgets.qt_eliding_label import ElidingLabel
+from .qt_tooltip import QtToolTipLabel
 
 if TYPE_CHECKING:
     from napari_plugin_engine import PluginManager
@@ -87,7 +88,7 @@ class ImplementationListItem(QFrame):
         self.update_position_label()
 
         self.setToolTip(trans._("Click and drag to change call order"))
-        self.plugin_name_label = ElidingLabel(parent=self)
+        self.plugin_name_label = QElidingLabel()
         self.plugin_name_label.setObjectName('small_text')
         self.plugin_name_label.setText(item.hook_implementation.plugin_name)
         plugin_name_size_policy = QSizePolicy(
@@ -338,7 +339,7 @@ class QtPluginSorter(QWidget):
         instructions.setWordWrap(True)
 
         self.docstring = QLabel(self)
-        self.info = QLabel(self)
+        self.info = QtToolTipLabel(self)
         self.info.setObjectName("info_icon")
         doc_lay = QHBoxLayout()
         doc_lay.addWidget(self.docstring)
@@ -394,7 +395,7 @@ class QtPluginSorter(QWidget):
             self.info.hide()
             self.docstring.setToolTip('')
 
-    def refresh(self, event=None):
+    def refresh(self):
         self._on_hook_change(self.hook_combo_box.currentIndex())
 
     def _on_disabled(self, event):

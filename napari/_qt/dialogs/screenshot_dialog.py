@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 from qtpy.QtWidgets import QFileDialog, QMessageBox
 
+from ...utils.misc import in_ipython
 from ...utils.translations import trans
 
 
@@ -37,6 +38,9 @@ class ScreenshotDialog(QFileDialog):
         )
         self.setDirectory(directory)
         self.setHistory(history)
+
+        if in_ipython():
+            self.setOptions(QFileDialog.DontUseNativeDialog)
 
         self.save_function = save_function
 

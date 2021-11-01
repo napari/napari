@@ -27,8 +27,17 @@ def test_get_default_shape_type():
     shape_type = ['polygon', 'polygon']
     assert get_default_shape_type(shape_type) == 'polygon'
 
+    shape_type = []
+    assert get_default_shape_type(shape_type) == 'polygon'
+
     shape_type = ['ellipse', 'rectangle']
+    assert get_default_shape_type(shape_type) == 'polygon'
+
+    shape_type = ['rectangle', 'rectangle']
     assert get_default_shape_type(shape_type) == 'rectangle'
+
+    shape_type = ['ellipse', 'ellipse']
+    assert get_default_shape_type(shape_type) == 'ellipse'
 
     shape_type = ['polygon']
     assert get_default_shape_type(shape_type) == 'polygon'

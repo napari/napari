@@ -9,8 +9,13 @@ from .transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
+    infer_ndim,
     is_matrix_triangular,
     is_matrix_upper_triangular,
+    rotate_to_matrix,
+    scale_to_vector,
+    shear_to_matrix,
+    translate_to_vector,
 )
 
 
@@ -50,9 +55,7 @@ class Transform:
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
-        raise ValueError(
-            trans._('Transform composition rule not provided', deferred=True)
-        )
+        return TransformChain([self, transform])
 
     def set_slice(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform subset to the visible dimensions.
@@ -92,7 +95,9 @@ class Transform:
 
 
 class TransformChain(EventedList, Transform):
-    def __init__(self, transforms=[]):
+    def __init__(self, transforms=None):
+        if transforms is None:
+            transforms = []
         super().__init__(
             data=transforms,
             basetype=Transform,
@@ -206,8 +211,10 @@ class ScaleTranslate(Transform):
         """Return the inverse transform."""
         return ScaleTranslate(1 / self.scale, -1 / self.scale * self.translate)
 
-    def compose(self, transform: 'ScaleTranslate') -> 'ScaleTranslate':
+    def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
+        if not isinstance(transform, ScaleTranslate):
+            super().compose(transform)
         scale = self.scale * transform.scale
         translate = self.translate + self.scale * transform.translate
         return ScaleTranslate(scale, translate)
@@ -298,6 +305,9 @@ class Affine(Transform):
         the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
+    ndim : int
+        The dimensionality of the transform. If None, this is inferred from the
+        other parameters.
     name : string
         A string name for the transform.
 
@@ -318,10 +328,15 @@ class Affine(Transform):
         shear=None,
         linear_matrix=None,
         affine_matrix=None,
+        ndim=None,
         name=None,
     ):
         super().__init__(name=name)
         self._upper_triangular = True
+        if ndim is None:
+            ndim = infer_ndim(
+                scale=scale, translate=translate, rotate=rotate, shear=shear
+            )
 
         if affine_matrix is not None:
             linear_matrix = affine_matrix[:-1, :-1]
@@ -330,9 +345,9 @@ class Affine(Transform):
             linear_matrix = np.array(linear_matrix)
         else:
             if rotate is None:
-                rotate = np.eye(len(scale))
+                rotate = np.eye(ndim)
             if shear is None:
-                shear = np.eye(len(scale))
+                shear = np.eye(ndim)
             else:
                 if np.array(shear).ndim == 2:
                     if is_matrix_triangular(shear):
@@ -349,36 +364,31 @@ class Affine(Transform):
                         )
             linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
-        ndim = max(linear_matrix.shape[0], len(translate))
-        self.linear_matrix = embed_in_identity_matrix(linear_matrix, ndim)
-        self.translate = np.array(
-            [0] * (ndim - len(translate)) + list(translate)
-        )
+        ndim = max(ndim, linear_matrix.shape[0])
+        self._linear_matrix = embed_in_identity_matrix(linear_matrix, ndim)
+        self._translate = translate_to_vector(translate, ndim=ndim)
 
     def __call__(self, coords):
         coords = np.atleast_2d(coords)
-        if coords.shape[1] != self.linear_matrix.shape[0]:
-            linear_matrix = np.eye(coords.shape[1])
-            linear_matrix[
-                -self.linear_matrix.shape[0] :, -self.linear_matrix.shape[1] :
-            ] = self.linear_matrix
-        else:
-            linear_matrix = self.linear_matrix
-        translate = np.concatenate(
-            ([0.0] * (coords.shape[1] - len(self.translate)), self.translate)
+        coords_ndim = coords.shape[1]
+        padded_linear_matrix = embed_in_identity_matrix(
+            self._linear_matrix, coords_ndim
         )
-        return np.atleast_1d(np.squeeze(coords @ linear_matrix.T + translate))
+        translate = translate_to_vector(self._translate, ndim=coords_ndim)
+        return np.atleast_1d(
+            np.squeeze(coords @ padded_linear_matrix.T + translate)
+        )
 
     @property
     def ndim(self) -> int:
         """Dimensionality of the transform."""
-        return self.linear_matrix.shape[0]
+        return self._linear_matrix.shape[0]
 
     @property
     def scale(self) -> np.array:
         """Return the scale of the transform."""
         return decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
+            self._linear_matrix, upper_triangular=self._upper_triangular
         )[1]
 
     @scale.setter
@@ -387,7 +397,17 @@ class Affine(Transform):
         rotate, _, shear = decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
-        self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+
+    @property
+    def translate(self) -> np.array:
+        """Return the translation of the transform."""
+        return self._translate
+
+    @translate.setter
+    def translate(self, translate):
+        """Set the translation of the transform."""
+        self._translate = translate_to_vector(translate, ndim=self.ndim)
 
     @property
     def rotate(self) -> np.array:
@@ -402,7 +422,7 @@ class Affine(Transform):
         _, scale, shear = decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
-        self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
     def shear(self) -> np.array:
@@ -430,21 +450,33 @@ class Affine(Transform):
         rotate, scale, _ = decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
-        self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+
+    @property
+    def linear_matrix(self) -> np.array:
+        """Return the linear matrix of the transform."""
+        return self._linear_matrix
+
+    @linear_matrix.setter
+    def linear_matrix(self, linear_matrix):
+        """Set the linear matrix of the transform."""
+        self._linear_matrix = embed_in_identity_matrix(
+            linear_matrix, ndim=self.ndim
+        )
 
     @property
     def affine_matrix(self) -> np.array:
         """Return the affine matrix for the transform."""
         matrix = np.eye(self.ndim + 1, self.ndim + 1)
-        matrix[:-1, :-1] = self.linear_matrix
-        matrix[:-1, -1] = self.translate
+        matrix[:-1, :-1] = self._linear_matrix
+        matrix[:-1, -1] = self._translate
         return matrix
 
     @affine_matrix.setter
     def affine_matrix(self, affine_matrix):
         """Set the affine matrix for the transform."""
-        self.linear_matrix = affine_matrix[:-1, :-1]
-        self.translate = affine_matrix[:-1, -1]
+        self._linear_matrix = affine_matrix[:-1, :-1]
+        self._translate = affine_matrix[:-1, -1]
 
     def __array__(self, *args, **kwargs):
         """NumPy __array__ protocol to get the affine transform matrix."""
@@ -455,8 +487,10 @@ class Affine(Transform):
         """Return the inverse transform."""
         return Affine(affine_matrix=np.linalg.inv(self.affine_matrix))
 
-    def compose(self, transform: 'Affine') -> 'Affine':
+    def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
+        if not isinstance(transform, Affine):
+            return super().compose(transform)
         affine_matrix = self.affine_matrix @ transform.affine_matrix
         return Affine(affine_matrix=affine_matrix)
 
@@ -476,6 +510,7 @@ class Affine(Transform):
         return Affine(
             linear_matrix=self.linear_matrix[np.ix_(axes, axes)],
             translate=self.translate[axes],
+            ndim=len(axes),
             name=self.name,
         )
 
@@ -501,5 +536,158 @@ class Affine(Transform):
         translate = np.zeros(n)
         translate[not_axes] = self.translate
         return Affine(
-            linear_matrix=linear_matrix, translate=translate, name=self.name
+            linear_matrix=linear_matrix,
+            translate=translate,
+            ndim=n,
+            name=self.name,
         )
+
+
+class CompositeAffine(Affine):
+    """n-dimensional affine transformation composed from more basic components.
+
+    Composition is in the following order
+
+    rotate * shear * scale + translate
+
+    Parameters
+    ----------
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    scale : 1-D array
+        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
+        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
+        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
+        An empty translation vector implies no scaling.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    translate : 1-D array
+        A 1-D array of factors to shift each axis by. Translation is broadcast
+        to 0 in leading dimensions, so that, for example, a translation of
+        [4, 18, 34] in 3D can be used as a translation of [0, 4, 18, 34] in 4D
+        without modification. An empty translation vector implies no
+        translation.
+    ndim : int
+        The dimensionality of the transform. If None, this is inferred from the
+        other parameters.
+    name : string
+        A string name for the transform.
+    """
+
+    def __init__(
+        self,
+        scale=(1, 1),
+        translate=(0, 0),
+        *,
+        rotate=None,
+        shear=None,
+        ndim=None,
+        name=None,
+    ):
+        super().__init__(
+            scale, translate, rotate=rotate, shear=shear, ndim=ndim, name=name
+        )
+        if ndim is None:
+            ndim = infer_ndim(
+                scale=scale, translate=translate, rotate=rotate, shear=shear
+            )
+        self._translate = translate_to_vector(translate, ndim=ndim)
+        self._scale = scale_to_vector(scale, ndim=ndim)
+        self._rotate = rotate_to_matrix(rotate, ndim=ndim)
+        self._shear = shear_to_matrix(shear, ndim=ndim)
+        self._linear_matrix = self._make_linear_matrix()
+
+    @property
+    def scale(self) -> np.array:
+        """Return the scale of the transform."""
+        return self._scale
+
+    @scale.setter
+    def scale(self, scale):
+        """Set the scale of the transform."""
+        self._scale = scale_to_vector(scale, ndim=self.ndim)
+        self._linear_matrix = self._make_linear_matrix()
+
+    @property
+    def rotate(self) -> np.array:
+        """Return the rotation of the transform."""
+        return self._rotate
+
+    @rotate.setter
+    def rotate(self, rotate):
+        """Set the rotation of the transform."""
+        self._rotate = rotate_to_matrix(rotate, ndim=self.ndim)
+        self._linear_matrix = self._make_linear_matrix()
+
+    @property
+    def shear(self) -> np.array:
+        """Return the shear of the transform."""
+        return (
+            self._shear[np.triu_indices(n=self.ndim, k=1)]
+            if is_matrix_upper_triangular(self._shear)
+            else self._shear
+        )
+
+    @shear.setter
+    def shear(self, shear):
+        """Set the shear of the transform."""
+        self._shear = shear_to_matrix(shear, ndim=self.ndim)
+        self._linear_matrix = self._make_linear_matrix()
+
+    @Affine.linear_matrix.setter
+    def linear_matrix(self, linear_matrix):
+        """Setting the linear matrix of a CompositeAffine transform is not supported."""
+        raise NotImplementedError(
+            trans._(
+                'linear_matrix cannot be set directly for a CompositeAffine transform',
+                deferred=True,
+            )
+        )
+
+    @Affine.affine_matrix.setter
+    def affine_matrix(self, affine_matrix):
+        """Setting the affine matrix of a CompositeAffine transform is not supported."""
+        raise NotImplementedError(
+            trans._(
+                'affine_matrix cannot be set directly for a CompositeAffine transform',
+                deferred=True,
+            )
+        )
+
+    def set_slice(self, axes: Sequence[int]) -> 'CompositeAffine':
+        return CompositeAffine(
+            scale=self._scale[axes],
+            translate=self._translate[axes],
+            rotate=self._rotate[np.ix_(axes, axes)],
+            shear=self._shear[np.ix_(axes, axes)],
+            ndim=len(axes),
+            name=self.name,
+        )
+
+    def expand_dims(self, axes: Sequence[int]) -> 'CompositeAffine':
+        n = len(axes) + len(self.scale)
+        not_axes = [i for i in range(n) if i not in axes]
+        rotate = np.eye(n)
+        rotate[np.ix_(not_axes, not_axes)] = self._rotate
+        shear = np.eye(n)
+        shear[np.ix_(not_axes, not_axes)] = self._shear
+        translate = np.zeros(n)
+        translate[not_axes] = self._translate
+        scale = np.ones(n)
+        scale[not_axes] = self._scale
+        return CompositeAffine(
+            translate=translate,
+            scale=scale,
+            rotate=rotate,
+            shear=shear,
+            ndim=n,
+            name=self.name,
+        )
+
+    def _make_linear_matrix(self):
+        return self._rotate @ self._shear @ np.diag(self._scale)

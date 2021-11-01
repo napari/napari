@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from ..utils.settings import get_settings
+from ..settings import get_settings
 from ..utils.translations import trans
 
 LOGGER = logging.getLogger("napari.loader")

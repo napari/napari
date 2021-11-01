@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-import os
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 from qtpy.QtCore import (
     QEasingCurve,
-    QObject,
     QPoint,
     QPropertyAnimation,
     QRect,
     QSize,
     Qt,
-    QThread,
     QTimer,
-    Signal,
 )
 from qtpy.QtWidgets import (
     QApplication,
@@ -27,21 +23,12 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt import QElidingLabel, ensure_main_thread
 
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans
-from ..widgets.qt_eliding_label import MultilineElidedLabel
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
-
-
-class NotificationDispatcher(QObject):
-    """
-    This is a helper class to allow the propagation of notifications
-    generated from exceptions or warnings inside threads.
-    """
-
-    sig_notified = Signal(Notification)
 
 
 class NapariQtNotification(QDialog):
@@ -76,8 +63,9 @@ class NapariQtNotification(QDialog):
     FADE_OUT_RATE = 120
     DISMISS_AFTER = 4000
     MIN_WIDTH = 400
+    MIN_EXPANSION = 18
 
-    message: MultilineElidedLabel
+    message: QElidingLabel
     source_label: QLabel
     severity_icon: QLabel
 
@@ -149,7 +137,7 @@ class NapariQtNotification(QDialog):
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(self.close)
-        self.timer.start()
+            self.timer.start()
 
     def mouseMoveEvent(self, event):
         """On hover, stop the self-destruct timer"""
@@ -178,6 +166,9 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setDuration(100)
         self.geom_anim.setStartValue(curr)
         new_height = self.sizeHint().height()
+        if new_height < curr.height():
+            # new height would shift notification down, ensure some expansion
+            new_height = curr.height() + self.MIN_EXPANSION
         delta = new_height - curr.height()
         self.geom_anim.setEndValue(
             QRect(curr.x(), curr.y() - delta, curr.width(), new_height)
@@ -224,7 +215,9 @@ class NapariQtNotification(QDialog):
         self.severity_icon.setMinimumWidth(30)
         self.severity_icon.setMaximumWidth(30)
         self.row1.addWidget(self.severity_icon, alignment=Qt.AlignTop)
-        self.message = MultilineElidedLabel(self.row1_widget)
+        self.message = QElidingLabel()
+        self.message.setWordWrap(True)
+        self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.message.setMinimumWidth(self.MIN_WIDTH - 200)
         self.message.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding
@@ -360,30 +353,18 @@ class NapariQtNotification(QDialog):
         )
 
     @classmethod
+    @ensure_main_thread
     def show_notification(cls, notification: Notification):
-        from ...utils.settings import get_settings
+        from ...settings import get_settings
 
         settings = get_settings()
 
         # after https://github.com/napari/napari/issues/2370,
         # the os.getenv can be removed (and NAPARI_CATCH_ERRORS retired)
         if (
-            os.getenv("NAPARI_CATCH_ERRORS") not in ('0', 'False')
-            and notification.severity
+            notification.severity
             >= settings.application.gui_notification_level
         ):
-            application_instance = QApplication.instance()
-            if application_instance:
-                # Check if this is running from a thread
-                if application_instance.thread() != QThread.currentThread():
-                    dispatcher = getattr(
-                        application_instance, "_dispatcher", None
-                    )
-                    if dispatcher:
-                        dispatcher.sig_notified.emit(notification)
-
-                    return
-
             cls.from_notification(notification).show()
 
 

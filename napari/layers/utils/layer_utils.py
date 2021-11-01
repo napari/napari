@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
+import warnings
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import dask
 import numpy as np
 
 from ...utils.action_manager import action_manager
+from ...utils.events.custom_types import Array
 from ...utils.transforms import Affine
 from ...utils.translations import trans
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 
 def register_layer_action(keymapprovider, description: str, shortcuts=None):
@@ -20,7 +25,6 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
 
     Parameters
     ----------
-
     keymapprovider : KeymapProvider
         class on which to register the keybindings – this will typically be
         the instance in focus that will handle the keyboard shortcut.
@@ -208,10 +212,170 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
+def prepare_properties(
+    properties: Optional[Union[Dict[str, Array], DataFrame]],
+    choices: Optional[Dict[str, Array]] = None,
+    num_data: int = 0,
+    save_choices: bool = False,
+) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    """Prepare properties and choices into standard forms.
+
+    Parameters
+    ----------
+    properties : dict[str, Array] or DataFrame
+        The property values.
+    choices : dict[str, Array]
+        The property value choices.
+    num_data : int
+        The length of data that the properties represent (e.g. number of points).
+    save_choices : bool
+        If true, always return all of the properties in choices.
+
+    Returns
+    -------
+    properties: dict[str, np.ndarray]
+        A dictionary where the key is the property name and the value
+        is an ndarray of property values.
+    choices: dict[str, np.ndarray]
+        A dictionary where the key is the property name and the value
+        is an ndarray of unique property value choices.
+    """
+    # If there is no data, non-empty properties represent choices as a deprecated behavior.
+    if num_data == 0 and properties:
+        warnings.warn(
+            trans._(
+                "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        choices = properties
+        properties = {}
+
+    properties = validate_properties(properties, expected_len=num_data)
+    choices = _validate_property_choices(choices)
+
+    # Populate the new choices by using the property keys and merging the
+    # corresponding unique property and choices values.
+    new_choices = {
+        k: np.unique(np.concatenate((v, choices.get(k, []))))
+        for k, v in properties.items()
+    }
+
+    # If there are no properties, and thus no new choices, populate new choices
+    # from the input choices, and initialize property values as missing or empty.
+    if len(new_choices) == 0:
+        new_choices = {k: np.unique(v) for k, v in choices.items()}
+        if len(new_choices) > 0:
+            if num_data > 0:
+                properties = {
+                    k: np.array([None] * num_data) for k in new_choices
+                }
+            else:
+                properties = {
+                    k: np.empty(0, v.dtype) for k, v in new_choices.items()
+                }
+
+    # For keys that are in the input choices, but not in the new choices,
+    # sometimes add appropriate array values to new choices and properties.
+    if save_choices:
+        for k, v in choices.items():
+            if k not in new_choices:
+                new_choices[k] = np.unique(v)
+                properties[k] = np.array([None] * num_data)
+
+    return properties, new_choices
+
+
+def get_current_properties(
+    properties: Dict[str, np.ndarray],
+    choices: Dict[str, np.ndarray],
+    num_data: int = 0,
+) -> Dict[str, Any]:
+    """Get the current property values from the properties or choices.
+
+    Parameters
+    ----------
+    properties : dict[str, np.ndarray]
+        The property values.
+    choices : dict[str, np.ndarray]
+        The property value choices.
+    num_data : int
+        The length of data that the properties represent (e.g. number of points).
+
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary where the key is the property name and the value is the current
+        value of that property.
+    """
+    current_properties = {}
+    if num_data > 0:
+        current_properties = {
+            k: np.asarray([v[-1]]) for k, v in properties.items()
+        }
+    elif num_data == 0 and len(choices) > 0:
+        current_properties = {
+            k: np.asarray([v[0]]) for k, v in choices.items()
+        }
+    return current_properties
+
+
+def _coerce_current_properties_value(
+    value: Union[float, str, int, bool, list, tuple, np.ndarray]
+) -> np.ndarray:
+    """Coerce a value in a current_properties dictionary into the correct type.
+
+    Parameters
+    ----------
+    value : Union[float, str, int, bool, list, tuple, np.ndarray]
+        The value to be coerced.
+
+    Returns
+    -------
+    coerced_value : np.ndarray
+        The value in a 1D numpy array with length 1.
+    """
+    if isinstance(value, (np.ndarray, list, tuple)):
+        if len(value) != 1:
+            raise ValueError('current_properties values should have length 1.')
+        coerced_value = np.asarray(value)
+    else:
+        coerced_value = np.array([value])
+
+    return coerced_value
+
+
+def coerce_current_properties(
+    current_properties: Dict[
+        str, Union[float, str, int, bool, list, tuple, np.ndarray]
+    ]
+) -> Dict[str, np.ndarray]:
+    """Coerce a current_properties dictionary into the correct type.
+
+
+    Parameters
+    ----------
+    current_properties : Dict[str, Union[float, str, int, bool, list, tuple, np.ndarray]]
+        The current_properties dictionary to be coerced.
+
+    Returns
+    -------
+    coerced_current_properties : Dict[str, np.ndarray]
+        The current_properties dictionary with string keys and 1D numpy array with length 1 values.
+    """
+    coerced_current_properties = {
+        k: _coerce_current_properties_value(v)
+        for k, v in current_properties.items()
+    }
+
+    return coerced_current_properties
+
+
 def dataframe_to_properties(
-    dataframe,
-) -> Tuple[Dict[str, np.ndarray], Optional[Dict[int, int]]]:
-    """Convert a dataframe to Points.properties formatted dictionary.
+    dataframe: DataFrame,
+) -> Dict[str, np.ndarray]:
+    """Convert a dataframe to a properties dictionary.
 
     Parameters
     ----------
@@ -223,15 +387,52 @@ def dataframe_to_properties(
     dict[str, np.ndarray]
         A properties dictionary where the key is the property name and the value
         is an ndarray with the property value for each point.
-    Optional[dict[int, int]]
-        mapping from label number to position (row) in properties
     """
+    return {col: np.asarray(dataframe[col]) for col in dataframe}
 
-    properties = {col: np.asarray(dataframe[col]) for col in dataframe}
-    index = None
-    if 'index' in properties:
-        index = {i: k for k, i in enumerate(properties['index'])}
-    return properties, index
+
+def validate_properties(
+    properties: Optional[Union[Dict[str, Array], DataFrame]],
+    expected_len: Optional[int] = None,
+) -> Dict[str, np.ndarray]:
+    """Validate the type and size of properties and coerce values to numpy arrays.
+
+    Parameters
+    ----------
+    properties : dict[str, Array] or DataFrame
+        The property values.
+    expected_len : int
+        The expected length of each property value array.
+
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        The property values.
+    """
+    if properties is None or len(properties) == 0:
+        return {}
+
+    if not isinstance(properties, dict):
+        properties = dataframe_to_properties(properties)
+
+    lens = [len(v) for v in properties.values()]
+    if expected_len is None:
+        expected_len = lens[0]
+    if any(v != expected_len for v in lens):
+        raise ValueError(
+            trans._(
+                "the number of items must be equal for all properties",
+                deferred=True,
+            )
+        )
+
+    return {k: np.asarray(v) for k, v in properties.items()}
+
+
+def _validate_property_choices(property_choices):
+    if property_choices is None:
+        property_choices = {}
+    return {k: np.unique(v) for k, v in property_choices.items()}
 
 
 def compute_multiscale_level(
@@ -311,19 +512,19 @@ def compute_multiscale_level_and_corners(
     return level, corners
 
 
-def coerce_affine(affine, ndim, name=None):
+def coerce_affine(affine, *, ndim, name=None):
     """Coerce a user input into an affine transform object.
 
     If the input is already an affine transform object, that same object is returned
     with a name change if the given name is not None. If the input is None, an identity
     affine transform object of the given dimensionality is returned.
 
-     Parameters
+    Parameters
     ----------
     affine : array-like or napari.utils.transforms.Affine
         An existing affine transform object or an array-like that is its transform matrix.
     ndim : int
-        The desired dimensionality of the transform. Ignored if implied by affine.
+        The desired dimensionality of the transform. Ignored is affine is an Affine transform object.
     name : str
         The desired name of the transform.
 
@@ -333,11 +534,11 @@ def coerce_affine(affine, ndim, name=None):
         The input coerced into an affine transform object.
     """
     if affine is None:
-        affine = Affine(affine_matrix=np.eye(ndim + 1))
+        affine = Affine(affine_matrix=np.eye(ndim + 1), ndim=ndim)
     elif isinstance(affine, np.ndarray):
-        affine = Affine(affine_matrix=affine)
+        affine = Affine(affine_matrix=affine, ndim=ndim)
     elif isinstance(affine, list):
-        affine = Affine(affine_matrix=np.array(affine))
+        affine = Affine(affine_matrix=np.array(affine), ndim=ndim)
     elif not isinstance(affine, Affine):
         raise TypeError(
             trans._(
@@ -349,3 +550,46 @@ def coerce_affine(affine, ndim, name=None):
     if name is not None:
         affine.name = name
     return affine
+
+
+def dims_displayed_world_to_layer(
+    dims_displayed_world: List[int],
+    ndim_world: int,
+    ndim_layer: int,
+) -> List[int]:
+    """Convert the dims_displayed from world dims to the layer dims.
+
+    This accounts differences in the number of dimensions in the world
+    dims versus the layer and for transpose and rolls.
+
+    Parameters
+    ----------
+    dims_displayed_world : List[int]
+        The dims_displayed in world coordinates (i.e., from viewer.dims.displayed).
+    ndim_world : int
+        The number of dimensions in the world coordinates (i.e., viewer.dims.ndim)
+    ndim_layer : int
+        The number of dimensions in layer the layer (i.e., layer.ndim).
+    """
+    if ndim_world > len(dims_displayed_world):
+        all_dims = list(range(ndim_world))
+        not_in_dims_displayed = [
+            d for d in all_dims if d not in dims_displayed_world
+        ]
+        order = not_in_dims_displayed + dims_displayed_world
+    else:
+        order = dims_displayed_world
+    offset = ndim_world - ndim_layer
+    order = np.array(order)
+    if offset <= 0:
+        order = list(range(-offset)) + list(order - offset)
+    else:
+        order = list(order[order >= offset] - offset)
+    n_display_world = len(dims_displayed_world)
+    if n_display_world > ndim_layer:
+        n_display_layer = ndim_layer
+    else:
+        n_display_layer = n_display_world
+    dims_displayed = order[-n_display_layer:]
+
+    return dims_displayed
