@@ -1,3 +1,5 @@
+from typing import List, Tuple, Union
+
 import numpy as np
 
 from napari.utils.geometry import project_point_onto_plane
@@ -50,9 +52,6 @@ def drag_data_to_projected_distance(
 
     # Project the drag vector onto the specified vector(s), return the distance
     return np.einsum('j, ij -> i', drag_vector_canvas, vector).squeeze()
-from typing import List, Tuple, Union
-
-import numpy as np
 
 
 def click_plane_from_intersection_points(
