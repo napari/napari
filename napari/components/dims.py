@@ -1,7 +1,7 @@
 from typing import Sequence, Tuple, Union
 
 import numpy as np
-from pydantic import Field, root_validator, validator
+from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
 from ..utils.events import EventedModel
@@ -67,33 +67,13 @@ class Dims(EventedModel):
     """
 
     # fields
-    ndim: int = Field(default=2, title=trans._("Number of dimensions"))
-    ndisplay: Literal[2, 3] = Field(
-        default=2, title=trans._("Number of displayed dimensions")
-    )
-    last_used: int = Field(default=0, title=trans._("Last-used dimension"))
-    range: Tuple[Tuple[float, float, float], ...] = Field(
-        default_factory=tuple,
-        title=trans._("Range in each dimension"),
-        description=trans._(
-            "(min_val, max_val, step_size) for each dimension."
-        ),
-    )
-    current_step: Tuple[int, ...] = Field(
-        default_factory=tuple,
-        title=trans._("Current position"),
-        description=trans._("Current position of each dimension."),
-    )
-    order: Tuple[int, ...] = Field(
-        default_factory=tuple,
-        title=trans._("Dimension order"),
-        description=trans._("For display, the last dimensions are rendered."),
-    )
-    axis_labels: Tuple[str, ...] = Field(
-        default_factory=tuple,
-        title=trans._("Dimension labels"),
-        description=trans._("Label for each dimension."),
-    )
+    ndim: int = 2
+    ndisplay: Literal[2, 3] = 2
+    last_used: int = 0
+    range: Tuple[Tuple[float, float, float], ...] = ()
+    current_step: Tuple[int, ...] = ()
+    order: Tuple[int, ...] = ()
+    axis_labels: Tuple[str, ...] = ()
 
     # private vars
     _scroll_progress: int = 0

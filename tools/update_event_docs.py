@@ -9,7 +9,6 @@ import napari
 from napari import layers
 from napari.components.viewer_model import ViewerModel
 from napari.utils.events import EventedModel
-from napari.utils.settings._defaults import BaseNapariSettings
 from tools._table_maker import table_repr
 
 
@@ -73,9 +72,7 @@ ROW = '| {:13.13} | {:16.16} | {:37.37} | {:40.40} | {:37.37} |'
 def iter_evented_model_events(module=napari):
     for mod in walk_modules(module):
         for kls in iter_classes(mod):
-            if not issubclass(kls, EventedModel) or issubclass(
-                kls, BaseNapariSettings
-            ):
+            if not issubclass(kls, EventedModel):
                 continue
             for name, field_ in kls.__fields__.items():
                 finfo = field_.field_info
