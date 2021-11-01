@@ -8,7 +8,7 @@ from typing_extensions import Protocol, runtime_checkable
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
-from ._style_encoding import (
+from .style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
     DirectStyleEncoding,

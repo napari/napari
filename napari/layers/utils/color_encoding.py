@@ -8,7 +8,8 @@ from ...utils import Colormap
 from ...utils.colormaps import ValidColormapArg, ensure_colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.standardize_color import transform_color
-from ._style_encoding import (
+from .color_transformations import ColorType
+from .style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
     DirectStyleEncoding,
@@ -16,7 +17,6 @@ from ._style_encoding import (
     StyleEncoding,
     parse_kwargs_as_encoding,
 )
-from .color_transformations import ColorType
 
 
 class ColorValue(np.ndarray):
