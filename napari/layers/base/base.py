@@ -1325,63 +1325,102 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             If the click does not intersect the axis-aligned data bounding box,
             None is returned.
         """
-        if len(dims_displayed) == 3:
-            # create a mask to select the in view dimensions
-            dims_displayed_mask = np.zeros_like(position, dtype=bool)
-            dims_displayed_mask[dims_displayed] = True
-
-            # create the bounding box in data coordinates
-            bbox = self._display_bounding_box(dims_displayed)
-
-            # get the view direction in data coords (only displayed dims)
-            if world is True:
-                view_dir = self._world_to_displayed_data_ray(
-                    view_direction, dims_displayed
-                )
-            else:
-                view_dir = np.asarray(view_direction)[dims_displayed]
-
-            # Get the clicked point in data coords (only displayed dims)
-            if world is True:
-                click_pos_data = self._world_to_displayed_data(
-                    position, dims_displayed
-                )
-            else:
-                click_pos_data = np.asarray(position)[dims_displayed]
-
-            # Determine the front and back faces
-            front_face_normal, back_face_normal = find_front_back_face(
-                click_pos_data, bbox, view_dir
-            )
-
-            # Get the locations in the plane where the ray intersects
-            if front_face_normal is not None and back_face_normal is not None:
-                start_point_disp_dims = (
-                    intersect_line_with_axis_aligned_bounding_box_3d(
-                        click_pos_data, view_dir, bbox, front_face_normal
-                    )
-                )
-                end_point_disp_dims = (
-                    intersect_line_with_axis_aligned_bounding_box_3d(
-                        click_pos_data, view_dir, bbox, back_face_normal
-                    )
-                )
-
-                # add the coordinates for the axes not displayed
-                start_point = np.asarray(position)
-                start_point[dims_displayed] = start_point_disp_dims
-                end_point = np.asarray(position)
-                end_point[dims_displayed] = end_point_disp_dims
-
-            else:
-                # if the click doesn't intersect the data bounding box,
-                # return None
-                start_point = None
-                end_point = None
-
-            return start_point, end_point
-        else:
+        if len(dims_displayed) != 3:
             return None, None
+
+        # create the bounding box in data coordinates
+        bounding_box = self._display_bounding_box(dims_displayed)
+        start_point, end_point = self._get_ray_intersections(
+            position=position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+            bounding_box=bounding_box,
+        )
+        return start_point, end_point
+
+    def _get_ray_intersections(
+        self,
+        position: List[float],
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+        world: bool = True,
+        bounding_box: Optional[np.ndarray] = None,
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+        """Get the start and end point for the ray extending
+        from a point through the data bounding box.
+
+        Parameters
+        ----------
+        position
+            the position of the point in nD coordinates. World vs. data
+            is set by the world keyword argument.
+        view_direction : np.ndarray
+            a unit vector giving the direction of the ray in nD coordinates.
+            World vs. data is set by the world keyword argument.
+        dims_displayed
+            a list of the dimensions currently being displayed in the viewer.
+        world : bool
+            True if the provided coordinates are in world coordinates.
+            Default value is True.
+        bounding_box: np.ndarray
+            A (2, 3) bounding box around the data currently in view
+
+        Returns
+        -------
+        start_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point closest to the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned.
+        end_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point farthest from the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned."""
+        # get the view direction and click position in data coords
+        # for the displayed dimensions only
+        if world is True:
+            view_dir = self._world_to_displayed_data_ray(
+                view_direction, dims_displayed
+            )
+            click_pos_data = self._world_to_displayed_data(
+                position, dims_displayed
+            )
+        else:
+            view_dir = np.asarray(view_direction)[dims_displayed]
+            click_pos_data = np.asarray(position)[dims_displayed]
+
+        # Determine the front and back faces
+        front_face_normal, back_face_normal = find_front_back_face(
+            click_pos_data, bounding_box, view_dir
+        )
+
+        if front_face_normal is None and back_face_normal is None:
+            # click does not intersect the data bounding box
+            return None, None
+
+        # Calculate ray-bounding box face intersections
+        start_point_displayed_dimensions = (
+            intersect_line_with_axis_aligned_bounding_box_3d(
+                click_pos_data, view_dir, bounding_box, front_face_normal
+            )
+        )
+        end_point_displayed_dimensions = (
+            intersect_line_with_axis_aligned_bounding_box_3d(
+                click_pos_data, view_dir, bounding_box, back_face_normal
+            )
+        )
+
+        # add the coordinates for the axes not displayed
+        start_point = np.asarray(position)
+        start_point[dims_displayed] = start_point_displayed_dimensions
+        end_point = np.asarray(position)
+        end_point[dims_displayed] = end_point_displayed_dimensions
+
+        return start_point, end_point
 
     @property
     def _displayed_axes(self):
