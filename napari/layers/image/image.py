@@ -394,7 +394,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)
-        if self._keep_autoscale:
+        if self._keep_auto_contrast:
             self.reset_contrast_limits()
         self._set_editable()
 
@@ -698,7 +698,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self, image_indices, image, thumbnail_source
         )
         self._load_slice(data)
-        if self._keep_autoscale or self._should_calc_clims:
+        if self._keep_auto_contrast or self._should_calc_clims:
             self.reset_contrast_limits()
             self._should_calc_clims = False
 

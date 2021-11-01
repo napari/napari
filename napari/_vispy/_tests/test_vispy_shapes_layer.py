@@ -4,6 +4,21 @@ from napari._vispy.layers.shapes import VispyShapesLayer
 from napari.layers import Shapes
 
 
+def test_remove_selected_with_derived_text():
+    """See https://github.com/napari/napari/issues/3504"""
+    shapes = np.random.rand(3, 4, 2)
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    layer = Shapes(shapes, properties=properties, text='class')
+    vispy_layer = VispyShapesLayer(layer)
+    text_node = vispy_layer._get_text_node()
+    np.testing.assert_array_equal(text_node.text, ['A', 'B', 'C'])
+
+    layer.selected_data = {1}
+    layer.remove_selected()
+
+    np.testing.assert_array_equal(text_node.text, ['A', 'C'])
+
+
 def test_change_text_updates_node_string():
     shapes = np.random.rand(3, 4, 2)
     properties = {
