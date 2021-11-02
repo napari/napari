@@ -232,18 +232,3 @@ Out[8]: 0
 In [9]: ctx['layers_selection_count']
 Out[9]: 0
 ```
-
-Finally, the `follow` method can be used to trigger an update of all of the `ContextKeys` in a given `ContextNamespace` whenever a specific event occurs, (the value is updated by passing the `event.source` to the `getter` function that was declared in the [`ContextKey` constructor](#contextkey-objects))
-
-```python
-In [9]: llck.follow(viewer.layers.selection.events.changed)
-
-In [10]: viewer.add_points()
-Out[10]: <Points layer 'Points' at 0x13c62b1f0>
-
-In [11]: llck.layers_selection_count
-Out[11]: 1
-
-In [12]: ctx['layers_selection_count']
-Out[12]: 1
-```
