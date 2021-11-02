@@ -1,8 +1,7 @@
 import numpy as np
-from skimage.transform import AffineTransform, SimilarityTransform
 from vispy.scene.visuals import Compound, Line, Markers
 
-from napari.utils.transforms.transforms import ScaleTranslate
+from napari.utils.transforms.transforms import Affine
 
 from ._interaction_box_constants import Box
 
@@ -186,9 +185,10 @@ class VispyInteractionBox:
 
                     yield
                 else:
-                    self._interaction_box.points = None
-                    drag_callback = self._on_drag_newbox
-                    final_callback = self._on_end_newbox
+                    if self._interaction_box.allow_new_selection:
+                        self._interaction_box.points = None
+                        drag_callback = self._on_drag_newbox
+                        final_callback = self._on_end_newbox
                     yield
             # Handle events during dragging
             while event.type == 'mouse_move':
@@ -210,6 +210,7 @@ class VispyInteractionBox:
             self._drag_start_angle = self._interaction_box.angle
         self._drag_angle = 0
         self._drag_scale = [1.0, 1.0]
+        self._interaction_box.transform_start = Affine()
 
     def _clear_drag_start_values(self):
         """Gets called at the end of a drag to reset remembered values"""
@@ -223,7 +224,7 @@ class VispyInteractionBox:
     def _on_drag_rotation(self, layer, event):
         """Gets called upon mouse_move in the case of a rotation"""
         center = self._drag_start_box[Box.CENTER]
-        new_offset = np.array(layer.world_to_data(event.position)) - center
+        new_offset = np.array(event.position) - center
         new_angle = -np.degrees(np.arctan2(new_offset[0], -new_offset[1])) - 90
 
         if np.linalg.norm(new_offset) < 1:
@@ -235,25 +236,22 @@ class VispyInteractionBox:
         else:
             self._drag_angle = new_angle - self._drag_start_angle
 
-        tform1 = SimilarityTransform(translation=-center)
-        tform2 = SimilarityTransform(rotation=-np.radians(self._drag_angle))
-        tform3 = SimilarityTransform(translation=center)
-        transform = tform1 + tform2 + tform3
-        self._box = transform(self._drag_start_box)
-        self.events.points_changed()
-        self.events.transform_changed_drag(transform=transform)
+        tform1 = Affine(translate=-center)
+        tform2 = Affine(rotate=-self._drag_angle)
+        tform3 = Affine(translate=center)
+        transform = tform3.compose(tform2.compose(tform1))
+        self._interaction_box.transform = transform
+        self._interaction_box.transform_drag = transform
 
     def _on_drag_scale(self, layer, event):
         """Gets called upon mouse_move in the case of a scaling operation"""
 
         # Transform everything in axis-aligned space with fixed point at origin
         center = self._drag_start_box[self._fixed_vertex]
-        transform = SimilarityTransform(translation=-center)
-        transform += SimilarityTransform(
-            rotation=np.radians(self._drag_start_angle)
-        )
-        coord = transform(np.array(layer.world_to_data(event.position)))[0]
-        drag_start = transform(self._drag_start_box[self._selected_vertex])[0]
+        transform = Affine(translate=-center)
+        transform = Affine(rotate=self._drag_start_angle).compose(transform)
+        coord = transform(np.array(event.position))
+        drag_start = transform(self._drag_start_box[self._selected_vertex])
         # If sidepoint of fixed aspect ratio project offset onto vector along which to scale
         # Since the fixed verted is now at the origin this vector is drag_start
         if self._fixed_aspect or self._selected_vertex % 2 == 1:
@@ -271,30 +269,34 @@ class VispyInteractionBox:
             scale = coord / drag_start
 
         # Apply scaling
-        transform += AffineTransform(scale=scale)
+        transform = Affine(scale=scale).compose(transform)
 
         # Rotate and translate back
-        transform += SimilarityTransform(
-            rotation=-np.radians(self._drag_start_angle)
+        transform = Affine(rotate=-np.radians(self._drag_start_angle)).compose(
+            transform
         )
-        transform += SimilarityTransform(translation=center)
-        self._box = transform(self._drag_start_box)
-        self.events.points_changed()
-        self.events.transform_changed_drag(transform=transform)
+        transform = Affine(translate=center).compose(transform)
+        self._interaction_box.transform = transform
+        self._interaction_box.transform_drag = transform
 
     def _on_drag_translate(self, layer, event):
         """Gets called upon mouse_move in the case of a translation operation"""
 
         offset = np.array(event.position) - self._drag_start_coordinates
 
-        transform = ScaleTranslate(translate=offset)
+        transform = Affine(translate=offset)
         self._interaction_box.transform = transform
+        self._interaction_box.transform_drag = transform
         # self.interaction_box.transform_drag = transform
 
     def _on_final_tranform(self, layer, event):
         """Gets called upon mouse_move in the case of a translation operation"""
-
-        self.events.transform_changed_final()
+        self._interaction_box.transform_final = self._interaction_box.transform
+        if self._interaction_box.transform:
+            self._interaction_box.points = self._interaction_box.transform(
+                self._interaction_box.points
+            )
+        self._interaction_box.transform = None
 
     def _on_drag_newbox(self, layer, event):
         """Gets called upon mouse_move in the case of a drawing a new box"""
@@ -314,7 +316,7 @@ class VispyInteractionBox:
 
     def _on_end_newbox(self, layer, event):
         """Gets called when dragging ends in the case of a drawing a new box"""
-        self._interaction_box.show = False
+        # self._interaction_box.show = False
         if self._interaction_box._box is not None:
             self._interaction_box.selection_box_final = (
                 self._interaction_box._box[Box.WITHOUT_HANDLE]

@@ -24,14 +24,16 @@ class InteractionBox(EventedModel):
     points: Array[float, (-1, 2)] = None
     show: bool = False
     show_handle: bool = False
+    show_vertices: bool = False
     selection_box_drag: Array[float, (4, 2)] = None
     selection_box_final: Array[float, (4, 2)] = None
+    transform_start: Transform = None
     transform_drag: Transform = None
     transform_final: Transform = None
     transform: Transform = None
-    angle: float = None
-    show_vertices: bool = False
+    angle: float = 0
     rotation_handle_length = 20
+    allow_new_selection: bool = True
 
     def __init__(self, points=None, show=False, show_handle=False):
 
@@ -71,6 +73,27 @@ class InteractionBox(EventedModel):
         """Creates the axis aligned interaction box from the list of points"""
         if self.points is None or len(self.points) < 1:
             return None
+
+        if len(self.points) == 1:
+            point = self.points[0]
+            tl = point + np.array([-0.5, -0.5])
+            tr = point + np.array([0.5, -0.5])
+            bl = point + np.array([0.5, 0.5])
+            br = point + np.array([-0.5, 0.5])
+            box = np.array(
+                [
+                    tl,
+                    (tl + tr) / 2,
+                    tr,
+                    (tr + br) / 2,
+                    br,
+                    (br + bl) / 2,
+                    bl,
+                    (bl + tl) / 2,
+                    (tl + tr + br + bl) / 4,
+                ]
+            )
+            return self._add_rotation_handle(box)
 
         data = self.points
 
