@@ -314,7 +314,7 @@ def test_swappable_dims():
     image_data = np.random.random((7, 12, 10, 15))
     image_name = viewer.add_image(image_data).name
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[0, 0, :, :]
+        viewer.layers[image_name]._data_view == image_data[3, 6, :, :]
     )
 
     points_data = np.random.randint(6, size=(10, 4))
@@ -329,20 +329,18 @@ def test_swappable_dims():
     # thus after adding the points data, the dims point is (-5.0, -5.0, -5.0, -4.0)
     # Therefore, we need to reset position to see data from slice `[0, 0, ...]`
     # as required by the tests below
-    for i in range(labels_data.ndim):
-        viewer.dims.set_point(i, 0)
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[0, 0, :, :]
+        viewer.layers[labels_name]._data_raw == labels_data[3, 3, :, :]
     )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == (0, 2, 1, 3)
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[0, :, 0, :]
+        viewer.layers[image_name]._data_view == image_data[3, :, 3, :]
     )
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[0, :, 0, :]
+        viewer.layers[labels_name]._data_raw == labels_data[3, :, 3, :]
     )
 
 

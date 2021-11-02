@@ -325,6 +325,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
 
+    @staticmethod
+    def rounded_division(min_val, max_val, precision):
+        return int(((min_val + max_val) / 2) / precision) * precision
+
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
@@ -334,7 +338,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ndim = len(ranges)
             self.dims.ndim = ndim
             for i, _range in enumerate(ranges):
+                old_range = self.dims.range[i]
                 self.dims.set_range(i, _range)
+                if old_range != _range:
+                    self.dims.set_point(i, self.rounded_division(*_range))
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
