@@ -42,7 +42,9 @@ viewer.layers.selection.active.data.ndim >= 3
 
 ... however, if you don't have access to the future `viewer` instance, that doesn't work.  So napari has the concept of `Expr` objects that represent an expression "without a context", to be evaluated later.
 
-> *napari's `Expr` class subclasses from [`ast.AST`](https://docs.python.org/3/library/ast.html#ast.AST) and shares many similarities with the `body` of [`ast.Expr`](https://docs.python.org/3/library/ast.html#ast.Expr). However, for the sake of evaluation safety, they only support a subset of operations, omitting things like function calls, generators, comprehensions, and collections. It's not important to fully understand ASTs to use napari expressions, but for a good introduction to python's abstract syntax tree (AST) module, see https://greentreesnakes.readthedocs.io.*
+```{tip}
+napari's `Expr` class subclasses from [`ast.AST`](https://docs.python.org/3/library/ast.html#ast.AST) and shares many similarities with the `body` of [`ast.Expr`](https://docs.python.org/3/library/ast.html#ast.Expr). However, for the sake of evaluation safety, they only support a subset of operations, omitting things like function calls, generators, comprehensions, and collections. It's not important to fully understand ASTs to use napari expressions, but for a good introduction to python's abstract syntax tree (AST) module, see https://greentreesnakes.readthedocs.io.
+```
 
 A string expression can be converted to a napari expression with `parse_expression`:
 
@@ -111,7 +113,7 @@ Some example context key names (currently) include:
 
 ### `ContextKey` objects
 
-To track the special **name** strings that can be used in expressions, napari has the `ContextKey` class.  Instances of `ContextKey` subclass from [`ast.Name`](https://docs.python.org/3/library/ast.html#ast.Name) and represent a variable name in an expression. Additionally, they have a `description` that can be used in documentation, a `default_value`, and a `getter` function that can be called to retrieve the current value (the parameters passed to the `getter` will depend on the context key... see [Updating Contexts](#Updating-Contexts) below for more).
+To track the special **name** strings that can be used in expressions, napari has the `ContextKey` class.  Instances of `ContextKey` subclass from [`ast.Name`](https://docs.python.org/3/library/ast.html#ast.Name) and represent a variable name in an expression. Additionally, they have a `description` that can be used in documentation, a `default_value`, and a `getter` function that can be called to retrieve the current value (the parameters passed to the `getter` will depend on the context key... see [Updating Contexts](#updating-contexts) below for more).
 
 In order to keep related keys together, `ContextKey` instances will usually be declared as class attributes on a `ContextNamespace` class:
 
@@ -165,7 +167,7 @@ Now that we've seen how expression names are declared, let's discuss the "contex
 
 As mentioned, a context is ultimately just a mapping between variable names and their values. (When evaluating a napari expression with `Expr.eval`, you can indeed just pass a `dict`. )
 
-Important objects in napari, such as the `Viewer` and the `LayerList` will be associated with a `Context` object that tracks the value of various context keys.  It is the job of these various objects (i.e. the `Viewer` and the `LayerList`) to update the values in their Contexts when they change.  Continuing with the example above, if the user clicks on a 4-dimensional layer, the layerlist would set the context key `active_layer_ndim` to `5`.  (napari would then be able to enable/disable various commands & menus that required on a specific number of dimensions in the active layer)
+Important objects in napari, such as the `Viewer` and the `LayerList` will be associated with a `Context` object that tracks the value of various context keys.  It is the job of these various objects (i.e. the `Viewer` and the `LayerList`) to update the values in their Contexts when they change.  Continuing with the example above, if the user clicks on a 4-dimensional layer, the layerlist would set the context key `active_layer_ndim` to `4`.  (napari would then be able to enable/disable various commands & menus that required on a specific number of dimensions in the active layer)
 
 ### The `Context` class
 
@@ -213,7 +215,7 @@ Out[6]: False
 
 ### Updating Contexts
 
-You may be wondering exactly how objects such as `Viewer` and `LayerList` update the keys in their contexts. The aforementioned [`ContextNamespace`](#ContextKey-objects) comes in to play here again.  A `ContextNamespace` can be instantiated, and bound to a specific `Context` instance.
+You may be wondering exactly how objects such as `Viewer` and `LayerList` update the keys in their contexts. The aforementioned [`ContextNamespace`](#contextkey-objects) comes in to play here again.  A `ContextNamespace` can be instantiated, and bound to a specific `Context` instance.
 
 ```python
 In [6]: ctx = get_context(viewer.layers)
@@ -231,7 +233,7 @@ In [9]: ctx['layers_selection_count']
 Out[9]: 0
 ```
 
-Finally, the `follow` method can be used to trigger an update of all of the `ContextKeys` in a given `ContextNamespace` whenever a specific event occurs, (the value is updated by passing the `event.source` to the `getter` function that was declared in the [`ContextKey` constructor](#ContextKey-objects))
+Finally, the `follow` method can be used to trigger an update of all of the `ContextKeys` in a given `ContextNamespace` whenever a specific event occurs, (the value is updated by passing the `event.source` to the `getter` function that was declared in the [`ContextKey` constructor](#contextkey-objects))
 
 ```python
 In [9]: llck.follow(viewer.layers.selection.events.changed)
