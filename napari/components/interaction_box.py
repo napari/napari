@@ -35,10 +35,6 @@ class InteractionBox(EventedModel):
     rotation_handle_length = 20
     allow_new_selection: bool = True
 
-    def __init__(self, points=None, show=False, show_handle=False):
-
-        super().__init__(points=points, show=show, show_handle=show_handle)
-
     @property
     def _box(self):
         box = self._create_box_from_points()
