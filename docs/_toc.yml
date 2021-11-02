@@ -14,6 +14,7 @@
     - file: guides/rendering
     - file: guides/preferences
     - file: guides/translations
+    - file: guides/contexts_expressions
 
 - file: plugins/index
   sections:
