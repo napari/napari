@@ -187,6 +187,7 @@ class VispyInteractionBox:
                 else:
                     if self._interaction_box.allow_new_selection:
                         self._interaction_box.points = None
+                        self._interaction_box.transform = Affine()
                         drag_callback = self._on_drag_newbox
                         final_callback = self._on_end_newbox
                     yield
@@ -206,26 +207,27 @@ class VispyInteractionBox:
 
         self._drag_start_coordinates = np.array(position)
         self._drag_start_box = np.copy(self._interaction_box._box)
-        if self._interaction_box._box is not None:
-            self._drag_start_angle = self._interaction_box.angle
+        rot_matrix = self._interaction_box.transform.rotate
+        self._drag_start_angle = (
+            -np.degrees(np.arctan2(rot_matrix[0][0], -rot_matrix[1][0])) + 90
+        )
+        print(self._drag_start_angle)
         self._drag_angle = 0
         self._drag_scale = [1.0, 1.0]
-        self._interaction_box.transform_start = Affine()
+        self._interaction_box.transform_start = self._interaction_box.transform
 
     def _clear_drag_start_values(self):
         """Gets called at the end of a drag to reset remembered values"""
 
         self._drag_start_coordinates = None
         self._drag_start_box = None
-        self._drag_start_angle = None
-        self._drag_angle = 0
-        self._drag_scale = [1.0, 1.0]
 
     def _on_drag_rotation(self, layer, event):
         """Gets called upon mouse_move in the case of a rotation"""
         center = self._drag_start_box[Box.CENTER]
         new_offset = np.array(event.position) - center
         new_angle = -np.degrees(np.arctan2(new_offset[0], -new_offset[1])) - 90
+        print(new_angle)
 
         if np.linalg.norm(new_offset) < 1:
             self._drag_angle = 0
@@ -239,7 +241,9 @@ class VispyInteractionBox:
         tform1 = Affine(translate=-center)
         tform2 = Affine(rotate=-self._drag_angle)
         tform3 = Affine(translate=center)
-        transform = tform3.compose(tform2.compose(tform1))
+        transform = tform3.compose(tform2.compose(tform1)).compose(
+            self._interaction_box.transform_start
+        )
         self._interaction_box.transform = transform
         self._interaction_box.transform_drag = transform
 
@@ -272,10 +276,12 @@ class VispyInteractionBox:
         transform = Affine(scale=scale).compose(transform)
 
         # Rotate and translate back
-        transform = Affine(rotate=-np.radians(self._drag_start_angle)).compose(
-            transform
+        transform = Affine(rotate=-self._drag_start_angle).compose(transform)
+        transform = (
+            Affine(translate=center)
+            .compose(transform)
+            .compose(self._interaction_box.transform_start)
         )
-        transform = Affine(translate=center).compose(transform)
         self._interaction_box.transform = transform
         self._interaction_box.transform_drag = transform
 
@@ -284,7 +290,9 @@ class VispyInteractionBox:
 
         offset = np.array(event.position) - self._drag_start_coordinates
 
-        transform = Affine(translate=offset)
+        transform = Affine(translate=offset).compose(
+            self._interaction_box.transform_start
+        )
         self._interaction_box.transform = transform
         self._interaction_box.transform_drag = transform
         # self.interaction_box.transform_drag = transform
@@ -292,11 +300,6 @@ class VispyInteractionBox:
     def _on_final_tranform(self, layer, event):
         """Gets called upon mouse_move in the case of a translation operation"""
         self._interaction_box.transform_final = self._interaction_box.transform
-        if self._interaction_box.transform:
-            self._interaction_box.points = self._interaction_box.transform(
-                self._interaction_box.points
-            )
-        self._interaction_box.transform = None
 
     def _on_drag_newbox(self, layer, event):
         """Gets called upon mouse_move in the case of a drawing a new box"""

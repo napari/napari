@@ -2,7 +2,7 @@ import numpy as np
 
 from ..utils.events import EventedModel
 from ..utils.events.custom_types import Array
-from ..utils.transforms import Transform
+from ..utils.transforms import Affine
 from ._interaction_box_constants import Box
 
 
@@ -27,10 +27,10 @@ class InteractionBox(EventedModel):
     show_vertices: bool = False
     selection_box_drag: Array[float, (4, 2)] = None
     selection_box_final: Array[float, (4, 2)] = None
-    transform_start: Transform = None
-    transform_drag: Transform = None
-    transform_final: Transform = None
-    transform: Transform = None
+    transform_start: Affine = Affine()
+    transform_drag: Affine = Affine()
+    transform_final: Affine = Affine()
+    transform: Affine = Affine()
     angle: float = 0
     rotation_handle_length = 20
     allow_new_selection: bool = True
