@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import logging
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+
+from napari.layers.base.base import Layer
 
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
@@ -57,6 +60,121 @@ if TYPE_CHECKING:
 
 from ..settings import get_settings
 from ..utils.io import imsave_extensions
+
+
+def _npe2_decode_selected_filter(
+    ext_str: str, selected_filter: str, writers: List[Any]
+) -> Optional[str]:
+    """Determine the writer command that should be invoked to save data.
+
+    When npe2 can be imported, resolves a selected file extension
+    string into a specific writer. Otherwise, returns None.
+    """
+    # When npe2 is not present, `writers` is expected to be an empty list,
+    # `[]`. This function will return None.
+
+    for entry, writer in zip(
+        ext_str.split(";;"),
+        writers,
+    ):
+        if entry.startswith(selected_filter):
+            return writer.command
+    return None
+
+
+def _npe2_file_extensions_string_for_layers(
+    layers: List[Layer] | LayerList,
+) -> Tuple[Optional[str], List[Any]]:
+    """Create extensions string using npe2.
+
+    When npe2 can be imported, returns an extension string and the list
+    of corresponding writers. Otherwise returns (None,[]).
+
+    The extension string is a ";;" delimeted string of entries. Each entry
+    has a brief description of the file type and a list of extensions. For
+    example:
+
+        "Images (*.png *.jpg *.tif);;All Files (*.*)"
+
+    The writers, when provided, are the
+    `npe2.manifest.io.WriterContribution` objects. There is one writer per
+    entry in the extension string.
+    """
+    try:
+        import npe2
+    except ImportError:
+        return None, []
+
+    layer_types = [layer._type_string for layer in layers]
+    writers = list(npe2.plugin_manager.iter_compatible_writers(layer_types))
+
+    def _items():
+        """Lookup the command name and its supported extensions."""
+        for writer in writers:
+            name = npe2.plugin_manager.get_manifest(
+                writer.command
+            ).display_name
+            title = f"{name} {writer.name}" if writer.name else name
+            yield title, writer.filename_extensions
+
+    # extension strings are in the format:
+    #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
+
+    def _fmt_exts(es):
+        return " ".join(["*" + e for e in es if e]) if es else "*.*"
+
+    return (
+        ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
+        writers,
+    )
+
+
+def _extension_string_for_layers(
+    layers: Union[List[Layer], LayerList],
+) -> Tuple[str, List[Any]]:
+    """Return an extension string and the list of corresponding writers.
+
+    The extension string is a ";;" delimeted string of entries. Each entry
+    has a brief description of the file type and a list of extensions.
+
+    The writers, when provided, are the npe2.manifest.io.WriterContribution
+    objects. There is one writer per entry in the extension string. If npe2
+    is not importable, the list of writers will be empty.
+    """
+    # try to use npe2
+    ext_str, writers = _npe2_file_extensions_string_for_layers(layers)
+    if ext_str:
+        return ext_str, writers
+
+    # fallback to old behavior
+
+    if len(layers) == 1:
+        selected_layer = layers[0]
+        # single selected layer.
+        if selected_layer._type_string == 'image':
+
+            ext = imsave_extensions()
+
+            ext_list = [f"*{val}" for val in ext]
+            ext_str = ';;'.join(ext_list)
+
+            ext_str = trans._(
+                "All Files (*);; Image file types:;;{ext_str}",
+                ext_str=ext_str,
+            )
+
+        elif selected_layer._type_string == 'points':
+
+            ext_str = trans._("All Files (*);; *.csv;;")
+
+        else:
+            # layer other than image or points
+            ext_str = trans._("All Files (*);;")
+
+    else:
+        # multiple layers.
+        ext_str = trans._("All Files (*);;")
+    return ext_str, []
 
 
 class QtViewer(QSplitter):
@@ -470,39 +588,18 @@ class QtViewer(QSplitter):
             raise OSError(trans._("Nothing to save"))
 
         # prepare list of extensions for drop down menu.
-        if selected and len(self.viewer.layers.selection) == 1:
-            selected_layer = list(self.viewer.layers.selection)[0]
-            # single selected layer.
-            if selected_layer._type_string == 'image':
-
-                ext = imsave_extensions()
-
-                ext_list = ["*" + val for val in ext]
-                ext_str = ';;'.join(ext_list)
-
-                ext_str = trans._(
-                    "All Files (*);; Image file types:;;{ext_str}",
-                    ext_str=ext_str,
-                )
-
-            elif selected_layer._type_string == 'points':
-
-                ext_str = trans._("All Files (*);; *.csv;;")
-
-            else:
-                # layer other than image or points
-                ext_str = trans._("All Files (*);;")
-
-        else:
-            # multiple layers.
-            ext_str = trans._("All Files (*);;")
+        ext_str, writers = _extension_string_for_layers(
+            list(self.viewer.layers.selection)
+            if selected
+            else self.viewer.layers
+        )
 
         msg = trans._("selected") if selected else trans._("all")
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
 
-        filename, _ = dlg.getSaveFileName(
+        filename, selected_filter = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
             directory=hist[0],  # home dir by default,
@@ -513,11 +610,24 @@ class QtViewer(QSplitter):
                 else QFileDialog.Options()
             ),
         )
+        logging.debug(
+            f'QFileDialog - filename: {filename if filename else None} '
+            f'selected_filter: {selected_filter if selected_filter else None}'
+        )
+
+        command_id = _npe2_decode_selected_filter(
+            ext_str, selected_filter, writers
+        )
 
         if filename:
             with warnings.catch_warnings(record=True) as wa:
-                saved = self.viewer.layers.save(filename, selected=selected)
-                error_messages = "\n".join(str(x.message.args[0]) for x in wa)
+                saved = self.viewer.layers.save(
+                    filename, selected=selected, _command_id=command_id
+                )
+                logging.debug(f'Saved {saved}')
+                error_messages = "\n".join(
+                    [str(x.message.args[0]) for x in wa]
+                )
 
             if not saved:
                 raise OSError(
@@ -892,10 +1002,15 @@ class QtViewer(QSplitter):
         """
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
+                nd = len(layer._displayed_axes)
+                if nd > self.viewer.dims.ndisplay:
+                    displayed_axes = layer._displayed_axes
+                else:
+                    displayed_axes = self.viewer.dims.displayed[-nd:]
                 layer._update_draw(
                     scale_factor=1 / self.viewer.camera.zoom,
                     corner_pixels_displayed=self._canvas_corners_in_world[
-                        :, layer._displayed_axes
+                        :, displayed_axes
                     ],
                     shape_threshold=self.canvas.size,
                 )
