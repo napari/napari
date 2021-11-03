@@ -20,7 +20,7 @@ We believe working groups are helpful ways of moving forward work on particular 
 _Click on a group to view members, minutes, etc._
 
 Bundled Application (Lead: ____)
-Plugins (Lead: ____)
+Plugins (Co-Leads: [Talley Lambert](https://github.com/tlambert03) and [Nathan Clack](https://github.com/nclack))
 Architecture (Co-Leads: [Juan Nunez-Iglesias](https://github.com/jni) and [Andy Sweet](https://github.com/andy-sweet))
 Documentation (Lead: Justin Kiggins)
 
