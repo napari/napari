@@ -207,13 +207,6 @@ class VispyInteractionBox:
 
         self._drag_start_coordinates = np.array(position)
         self._drag_start_box = np.copy(self._interaction_box._box)
-        rot_matrix = self._interaction_box.transform.rotate
-        self._drag_start_angle = (
-            -np.degrees(np.arctan2(rot_matrix[0][0], -rot_matrix[1][0])) + 90
-        )
-        print(self._drag_start_angle)
-        self._drag_angle = 0
-        self._drag_scale = [1.0, 1.0]
         self._interaction_box.transform_start = self._interaction_box.transform
 
     def _clear_drag_start_values(self):
@@ -225,24 +218,26 @@ class VispyInteractionBox:
     def _on_drag_rotation(self, layer, event):
         """Gets called upon mouse_move in the case of a rotation"""
         center = self._drag_start_box[Box.CENTER]
-        new_offset = np.array(event.position) - center
-        new_angle = -np.degrees(np.arctan2(new_offset[0], -new_offset[1])) - 90
-        print(new_angle)
+        handle = self._drag_start_box[Box.HANDLE]
+        mouse_offset = np.array(event.position) - center
+        handle_offset = handle - center
+        angle = np.degrees(
+            np.arctan2(mouse_offset[0], mouse_offset[1])
+            - np.arctan2(handle_offset[0], handle_offset[1])
+        )
 
-        if np.linalg.norm(new_offset) < 1:
-            self._drag_angle = 0
+        if np.linalg.norm(mouse_offset) < 1:
+            angle = 0
         elif self._fixed_aspect:
-            self._drag_angle = (
-                np.round(new_angle / 45) * 45 - self._drag_start_angle
-            )
-        else:
-            self._drag_angle = new_angle - self._drag_start_angle
+            angle = np.round(angle / 45) * 45
 
         tform1 = Affine(translate=-center)
-        tform2 = Affine(rotate=-self._drag_angle)
+        tform2 = Affine(rotate=-angle)
         tform3 = Affine(translate=center)
-        transform = tform3.compose(tform2.compose(tform1)).compose(
-            self._interaction_box.transform_start
+        transform = (
+            tform3.compose(tform2)
+            .compose(tform1)
+            .compose(self._interaction_box.transform_start)
         )
         self._interaction_box.transform = transform
         self._interaction_box.transform_drag = transform
@@ -250,10 +245,10 @@ class VispyInteractionBox:
     def _on_drag_scale(self, layer, event):
         """Gets called upon mouse_move in the case of a scaling operation"""
 
-        # Transform everything in axis-aligned space with fixed point at origin
-        center = self._drag_start_box[self._fixed_vertex]
-        transform = Affine(translate=-center)
-        transform = Affine(rotate=self._drag_start_angle).compose(transform)
+        # Transform everything back into axis-aligned space with fixed point at origin
+        transform = self._interaction_box.transform_start.inverse
+        center = transform(self._drag_start_box[self._fixed_vertex])
+        transform = Affine(translate=-center).compose(transform)
         coord = transform(np.array(event.position))
         drag_start = transform(self._drag_start_box[self._selected_vertex])
         # If sidepoint of fixed aspect ratio project offset onto vector along which to scale
@@ -275,13 +270,12 @@ class VispyInteractionBox:
         # Apply scaling
         transform = Affine(scale=scale).compose(transform)
 
-        # Rotate and translate back
-        transform = Affine(rotate=-self._drag_start_angle).compose(transform)
-        transform = (
-            Affine(translate=center)
-            .compose(transform)
-            .compose(self._interaction_box.transform_start)
-        )
+        # translate back and apply intial rotation again
+        transform = Affine(translate=center).compose(transform)
+        transform = self._interaction_box.transform_start.compose(transform)
+        # Chain with original transform
+        transform = transform.compose(self._interaction_box.transform_start)
+
         self._interaction_box.transform = transform
         self._interaction_box.transform_drag = transform
 
