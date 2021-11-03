@@ -235,8 +235,8 @@ class Dims(EventedModel):
         value : int or float
             Value of the point.
         """
-        axis = assert_axis_in_bounds(axis, self.ndim)
-        step = np.round(np.clip(value, 0, self.nsteps[axis] - 1)).astype(int)
+        max_step = max(0, self.nsteps[axis] - 1)
+        step = np.round(np.clip(value, 0, max_step)).astype(int)
 
         if self.current_step[axis] != step:
             full_current_step = list(self.current_step)
