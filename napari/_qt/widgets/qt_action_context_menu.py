@@ -1,11 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from qtpy.QtWidgets import QAction, QMenu
 
-if TYPE_CHECKING:
+from ...utils.context._expressions import Expr
 
+if TYPE_CHECKING:
     from ...layers._layer_actions import MenuItem, SubMenu
 
 
@@ -89,7 +98,7 @@ class QtActionContextMenu(QMenu):
     def data(self):
         return self._data
 
-    def update_from_context(self, ctx: dict) -> None:
+    def update_from_context(self, ctx: Mapping) -> None:
         """Update the enabled/visible state of each menu item with `ctx`.
 
         `ctx` is a namepsace dict that will be used to `eval()` the
@@ -103,16 +112,20 @@ class QtActionContextMenu(QMenu):
             d = item.data()
             if not d:
                 continue
-            enabled = eval(d['enable_when'], {}, ctx)
-            item.setEnabled(enabled)
+            enable = d['enable_when']
+            if isinstance(enable, Expr):
+                enable = enable.eval(ctx)
+            item.setEnabled(bool(enable))
             # if it's a menu, iterate (but don't toggle visibility)
             if isinstance(item, QtActionContextMenu):
-                if enabled:
+                if enable:
                     item.update_from_context(ctx)
             else:
-                visible = d.get("show_when")
-                if visible:
-                    item.setVisible(eval(visible, {}, ctx))
+                vis = d.get("show_when")
+                if vis is not None:
+                    item.setVisible(
+                        bool(vis.eval(ctx) if isinstance(vis, Expr) else vis)
+                    )
 
     def _build_menu(self, actions: Sequence[MenuItem]):
         """recursively build menu with submenus and sections.
