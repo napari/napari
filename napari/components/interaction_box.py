@@ -18,7 +18,22 @@ class InteractionBox(EventedModel):
     show_handle : bool
         Bool indicating whether the full box with midpoints and rotation handle should be drawn.
         If False only the corners are drawn.
-
+    show_vertices : bool
+        Bool indicating whether vertices that enable interaction with the box should be drawn
+    transform : napari.util.transforms.Affine
+        Holds an affine transform that is modified by interaction with the vertices of the box
+    selection_box_drag : list
+        4x2 list of a box that is being drawn to select items. Gets updated during the mouse-drag
+    selection_box_final : list
+        4x2 list of a box that has been drawn to select item. Gets updated once the mouse drag is finished
+    transform_start : napari.util.transforms.Affine
+        The affine transformation of the box before a new mouse drag was started. Gets updated when a new drag begins.
+    transform_drag : napari.util.transforms.Affine
+        The affine transformation of the box during a mouse drag. Gets updated when mouse moves during drag.
+    transform_final : napari.util.transforms.Affine
+        The affine transformation of the box after a mouse drag. Gets updated when a mouse drag is finished.
+    allow_new_selection: bool
+        Bool indicating whether the interaction box allows creating a new selection by dragging outside an existing interaction_box.
     """
 
     points: Array[float, (-1, 2)] = None
@@ -31,7 +46,6 @@ class InteractionBox(EventedModel):
     transform_drag: Affine = Affine()
     transform_final: Affine = Affine()
     transform: Affine = Affine()
-    angle: float = 0
     rotation_handle_length = 20
     allow_new_selection: bool = True
 
