@@ -10,7 +10,7 @@ We believe working groups are helpful ways of moving forward work on particular 
 - Create a “charter” that describes working group’s core focus and goals, holds meeting minutes, lists membership/zulip channel/meeting schedule. 
 - Identify achievable goals and deliverables that map thoughtfully to napari’s larger strategies and [roadmap](https://napari.org/roadmaps/index.html).
 - Hold regular public meetings that are listed on the [napari community calendar](https://napari.org/community/team.html#meeting-schedule). Cadence is up to the team, but monthly minimum is recommended.
-- Maintain and publicly store the working group’s meeting minutes.
+- Maintain and publicly store the working group’s meeting minutes in [napari/meeting-notes](https://github.com/napari/meeting-notes).
 - Present updates at least once per month at a napari community meeting (done by at least one working group member).
 - Have members actively working towards goals set forth in the charter.
 - Reach out to and collaborate with other open source communities to bring new expertise to the project (when relevant).
