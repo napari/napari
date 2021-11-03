@@ -21,7 +21,7 @@ _Click on a group to view members, minutes, etc._
 
 Bundled Application (Lead: ____)
 Plugins (Lead: ____)
-Architecture (Lead: ____)
+Architecture (Co-Leads: [Juan Nunez-Iglesias](https://github.com/jni) and [Andy Sweet](https://github.com/andy-sweet))
 Documentation (Lead: Justin Kiggins)
 
 ## How to join an existing working group
