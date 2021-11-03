@@ -33,6 +33,6 @@ Membership is optional and opt-in, and you can join by attending group meetings 
 1. Check the existing working groups list (above) to make sure the problem space is unique.
 2. Propose working group on [napari’s main zulip](https://napari.zulipchat.com) and schedule meeting to begin charter creation (live or asynchronously).
 3. Complete charter with associated items (lead identification, summary focus, meeting time, etc) and share with group.
-4. Set up zulip channel, add group and associated items to this site, and add meeting to napari community calendar. 
+4. Set up zulip stream named working-group-[name], add group and associated items to this site, and add meeting to napari community calendar. 
 5. Collaborate with others and get working. After each meeting, store the working group’s meeting minutes in [napari/meeting-notes](https://github.com/napari/meeting-notes).
 6. Share out at the next community meeting. Boom, you’ve done it!
