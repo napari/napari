@@ -6,9 +6,9 @@ Working groups are subteams of the napari community formed by members interested
 
 We believe working groups are helpful ways of moving forward work on particular topics, and the following guidelines serve to help team members form and/or maintain healthy working groups. Working groups should:
 
-- Identify at least one “lead”, responsible for the creation and continuation of the group, and one [core developer](https://napari.org/community/team.html#current-core-developers) “sponsor” who is kept aware of work and can help shepherd through PRs as needed. All other membership is opt-in.
+- Identify at least two co-leads responsible for the creation and continuation of the group. It may be helpful to have one [core developer](https://napari.org/community/team.html#current-core-developers) “sponsor” who is kept aware of work and can help shepherd through PRs as needed. All other membership is opt-in.
 - Create a “charter” that describes working group’s core focus and goals, holds meeting minutes, lists membership/zulip channel/meeting schedule. 
-- Identify achievable goals and deliverables that map thoughtfully to napari’s larger strategies and [roadmap](https://napari.org/roadmaps/index.html).
+- Identify achievable goals and deliverables that map thoughtfully to napari’s larger strategies and [roadmap](https://napari.org/roadmaps/index.html). These goals may focus on specific short-term goals or longer term efforts that still require exploration. 
 - Hold regular public meetings that are listed on the [napari community calendar](https://napari.org/community/team.html#meeting-schedule). Cadence is up to the team, but monthly minimum is recommended.
 - Maintain and publicly store the working group’s meeting minutes in [napari/meeting-notes](https://github.com/napari/meeting-notes).
 - Present updates at least once per month at a napari community meeting (done by at least one working group member).
