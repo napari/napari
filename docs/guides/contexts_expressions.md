@@ -297,3 +297,94 @@ Out[8]: 0
 In [9]: ctx['layers_selection_count']
 Out[9]: 0
 ```
+
+Finally, the `update` method can be used to trigger an update of all of the
+`ContextKeys` in a given `ContextNamespace` whenever a specific event occurs,
+(the value is updated by passing the `event.source` to the `getter` function
+that was declared in the [`ContextKey` constructor](#contextkey-objects))
+
+The following example works because *all* of the `getter` methods declared
+in `LayerListContextKeys` take an instance of `layers.selection`:
+
+```python
+In [9]: viewer.layers.selection.events.changed.connect(llck.update)
+
+In [10]: viewer.add_points()
+Out[10]: <Points layer 'Points' at 0x13c62b1f0>
+
+In [11]: llck.layers_selection_count
+Out[11]: 1
+
+In [12]: ctx['layers_selection_count']
+Out[12]: 1
+```
+
+## Summary: A (rough) full picture
+
+1. napari creates special context "names" using `ContextKey` and `ContextNamespace`
+
+    ```python
+    class LayerListContextKeys(ContextNamespace):
+        active_layer_type = ContextKey(
+            None,
+            "Lowercase name of active layer type, or None of none active.",
+            lambda s: s.active and s.active._type_string
+        )
+        active_layer_is_rgb = ContextKey(
+            False,
+            "True when the active layer is RGB",
+            lambda s: getattr(s.active, "rgb", False)
+        )
+    ```
+
+2. _Internally_ (in napari code), we can use those objects directly to declare
+   expressions in an IDE-friendly way.  For example, here we are declaratively
+   populating the layer-list context menu; this is a function that will split
+   the current stack into multiple layers, but it is only enabled when the
+   selected image is a (non-RGB) `Image` layer.
+
+    ```python
+    'napari:split_stack': {
+        'description': trans._('Split Stack'),
+        'action': _split_stack,
+        'enable_when': LLCK.active_layer_type == "image",
+        'show_when': ~LLCK.active_layer_is_rgb,
+    }
+    ```
+
+3. _Externally_ (in plugin manifests), plugin developers use the string form to
+   express conditions.  For example, this plugin manifest offers up a command
+   (just a callable) that is only enabled when the the active layer is an RGB
+   image.
+
+    ```yaml
+    name: my_plugin
+    commands:
+      id: my_plugin.some_command
+      when: active_layer_is_rgb
+    ```
+
+    When this manifest is parsed, those expressions will be converted into 
+    napari `Expr` objects internally.
+
+4. During runtime, napari maintains and [updates contexts](#updating-contexts)
+
+5. As these contexts are updated, they emit events that allow menus, keybindings,
+   and other things to update themselves accordingly.  For example, the layer-list
+   context menu might update the items in the menu that are visible and/or enabled:
+
+   ```python
+   context_menu.update_from_context(get_context(layer_list))
+   ```
+
+   where `update_from_context` is a function that takes in a `Context` and
+   updates all of the "action" items in the menu according to their `when`
+   clauses (declared internally or externally in steps 3 and 4)
+
+    ```python
+    # pseudocode
+    def update_from_context(self, context):
+        for item in self.actions():
+            expression = item.when  # or however you get the expression
+            item.setEnabled(expression.eval(ctx))
+    ```
