@@ -1387,6 +1387,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.scale_factor = scale_factor
 
         displayed_axes = self._displayed_axes
+        # must adjust displayed_axes according to _dims_order
+        displayed_axes = np.asarray(
+            [self._dims_order[d] for d in displayed_axes]
+        )
         # we need to compute all four corners to compute a complete,
         # data-aligned bounding box, because top-left/bottom-right may not
         # remain top-left and bottom-right after transformations.
@@ -1429,7 +1433,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.refresh()
 
         else:
-            self.corner_pixels = data_bbox_clipped
+            corners = np.zeros((2, self.ndim), dtype=int)
+            corners[:, displayed_axes] = data_bbox_clipped
+            self.corner_pixels = corners
 
     def get_status(
         self,
