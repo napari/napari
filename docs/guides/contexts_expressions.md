@@ -165,7 +165,7 @@ A record of all registered context keys can be retrieved with the class method `
 
 Now that we've seen how expression names are declared, let's discuss the "context" in which these expressions are evaluated.
 
-As mentioned, a context is ultimately just a mapping between variable names and their values. (When evaluating a napari expression with `Expr.eval`, you can indeed just pass a `dict`. )
+As mentioned, a context is ultimately just a mapping between variable names and their values. (When evaluating a napari expression with `Expr.eval`, you can indeed just pass a `dict` as that mapping.)
 
 Important objects in napari, such as the `Viewer` and the `LayerList` will be associated with a `Context` object that tracks the value of various context keys.  It is the job of these various objects (i.e. the `Viewer` and the `LayerList`) to update the values in their Contexts when they change.  Continuing with the example above, if the user clicks on a 4-dimensional layer, the layerlist would set the context key `active_layer_ndim` to `4`.  (napari would then be able to enable/disable various commands & menus that required on a specific number of dimensions in the active layer)
 
