@@ -8,11 +8,20 @@ necessary for plugin devs or end-users to understand the implementation details
 described on this page.
 ```
 
-*Contexts* and *Expressions* are two concepts being introduced along with the second-generation napari plugin engine (npe2) that capture the abstract idea of "some condition" (an `Expression`) that can be evaluated at some later time, with a concrete set of keys and values (the `Context`).
+*Contexts* and *Expressions* are two concepts being introduced along with the
+second-generation napari plugin engine (npe2) that capture the abstract idea of
+"some condition" (an `Expression`) that can be evaluated at some later time,
+with a concrete set of keys and values (the `Context`).
 
 ## Python expressions
 
-In Python, **expressions** are simple combinations of **values** and **operations** that can be reduced to a single value. For example, `1 > 5` is an expression that always reduces to the value `False` when evaluated.  `x > 5 and y == 'hello'` is also an expression that reduces to a boolean value; however, in order to evaluate that expression, we need to be able to fill in the values for the variable **names** "`x`" and "`y`". Those values are provided by some **context** (or "namespace"), which maps the variable names to their values.
+In Python, **expressions** are simple combinations of **values** and
+**operations** that can be reduced to a single value. For example, `1 > 5` is an
+expression that always reduces to the value `False` when evaluated.  `x > 5 and
+y == 'hello'` is also an expression that reduces to a boolean value; however, in
+order to evaluate that expression, we need to be able to fill in the values for
+the variable **names** "`x`" and "`y`". Those values are provided by some
+**context** (or "namespace"), which maps the variable names to their values.
 
 The value of an `expression` depends on the context in which it is evaluated.
 
@@ -32,7 +41,11 @@ Out[5]: False
 
 ## Napari expressions
 
-In napari, we'd like to be able to capture the concept of some condition being `True` or `False`, *prior* to actually having the context required to evaluate it.  For example, a plugin (or napari itself) might want to stipulate that a given function should only be enabled when "the active layer has at least 3 dimensions".
+In napari, we'd like to be able to capture the concept of some condition being
+`True` or `False`, *prior* to actually having the context required to evaluate
+it.  For example, a plugin (or napari itself) might want to stipulate that a
+given function should only be enabled when "the active layer has at least 3
+dimensions".
 
 At runtime, in Python code, this might be captured by the expression:
 
@@ -40,13 +53,24 @@ At runtime, in Python code, this might be captured by the expression:
 viewer.layers.selection.active.data.ndim >= 3
 ```
 
-... however, if you don't have access to the future `viewer` instance, that doesn't work.  So napari has the concept of `Expr` objects that represent an expression "without a context", to be evaluated later.
+... however, if you don't have access to the future `viewer` instance, that
+doesn't work.  So napari has the concept of `Expr` objects that represent an
+expression "without a context", to be evaluated later.
 
 ```{tip}
-napari's `Expr` class subclasses from [`ast.AST`](https://docs.python.org/3/library/ast.html#ast.AST) and shares many similarities with the `body` of [`ast.Expr`](https://docs.python.org/3/library/ast.html#ast.Expr). However, for the sake of evaluation safety, napari's `Expr` only supports a subset of operations, omitting things like function calls, generators, comprehensions, and collections. It's not important to fully understand ASTs to use napari expressions, but for a good introduction to Python's abstract syntax tree (AST) module, see https://greentreesnakes.readthedocs.io.
+napari's `Expr` class subclasses from
+[`ast.AST`](https://docs.python.org/3/library/ast.html#ast.AST) and shares many
+similarities with the `body` of
+[`ast.Expr`](https://docs.python.org/3/library/ast.html#ast.Expr). However, for
+the sake of evaluation safety, napari's `Expr` only supports a subset of
+operations, omitting things like function calls, generators, comprehensions, and
+collections. It's not important to fully understand ASTs to use napari
+expressions, but for a good introduction to Python's abstract syntax tree (AST)
+module, see https://greentreesnakes.readthedocs.io.
 ```
 
-A string expression can be converted to a napari expression with `parse_expression`:
+A string expression can be converted to a napari expression with
+`parse_expression`:
 
 ```python
 In [6]: from napari.utils.context import parse_expression
@@ -79,7 +103,8 @@ In [9]: expr.eval({'x': 7, 'y': 'hello'})
 Out[9]: True
 ```
 
-and it can also be combined with other expressions & constants using **operators**:
+and it can also be combined with other expressions & constants using
+**operators**:
 
 ```python
 In [10]: new_expr = expr & (7 > 10)  # always False
@@ -90,7 +115,12 @@ Out[12]: False
 
 ### napari context keys
 
-To capture napari-specific conditions, napari will declare special string **names** that can be used in a napari expression.  Taking the example above, a plugin might only want to provide a function if “the active layer has at least 3 dimensions”. For this, napari recognizes the variable `active_layer_ndim` used in an expression. In a plugin manifest, the plugin can provide a *when clause* to enable/disable a given command:
+To capture napari-specific conditions, napari will declare special string
+**names** that can be used in a napari expression.  Taking the example above, a
+plugin might only want to provide a function if “the active layer has at least 3
+dimensions”. For this, napari recognizes the variable `active_layer_ndim` used
+in an expression. In a plugin manifest, the plugin can provide a *when clause*
+to enable/disable a given command:
 
 ```yaml
 command:
@@ -113,9 +143,17 @@ Some example context key names (currently) include:
 
 ### `ContextKey` objects
 
-To track the special **name** strings that can be used in expressions, napari has the `ContextKey` class.  Instances of `ContextKey` subclass from [`ast.Name`](https://docs.python.org/3/library/ast.html#ast.Name) and represent a variable name in an expression. Additionally, they have a `description` that can be used in documentation, a `default_value`, and a `getter` function that can be called to retrieve the current value (the parameters passed to the `getter` will depend on the context key... see [Updating Contexts](#updating-contexts) below for more).
+To track the special **name** strings that can be used in expressions, napari
+has the `ContextKey` class.  Instances of `ContextKey` subclass from
+[`ast.Name`](https://docs.python.org/3/library/ast.html#ast.Name) and represent
+a variable name in an expression. Additionally, they have a `description` that
+can be used in documentation, a `default_value`, and a `getter` function that
+can be called to retrieve the current value (the parameters passed to the
+`getter` will depend on the context key... see [Updating
+Contexts](#updating-contexts) below for more).
 
-In order to keep related keys together, `ContextKey` instances will usually be declared as class attributes on a `ContextNamespace` class:
+In order to keep related keys together, `ContextKey` instances will usually be
+declared as class attributes on a `ContextNamespace` class:
 
 ```python
 # all of the getters here receive an instance of viewer.layers.selection
@@ -138,7 +176,8 @@ class LayerListContextKeys(ContextNamespace):
     )
 ```
 
-You can think of a `ContextNamespace` kind of like an `Enum` class.  And just like an `Enum`, you can see all of its members:
+You can think of a `ContextNamespace` kind of like an `Enum` class.  And just
+like an `Enum`, you can see all of its members:
 
 ```python
 In [13]: LayerListContextKeys.__members__
@@ -150,7 +189,9 @@ mappingproxy({
 })
 ```
 
-A nice aspect of `ContextKeys` is that they can be used in expressions.  But unlike a simple string, they can also provide type hinting, linting capabilities, and IDE autocompletion.
+A nice aspect of `ContextKeys` is that they can be used in expressions.  But
+unlike a simple string, they can also provide type hinting, linting
+capabilities, and IDE autocompletion.
 
 ```python
 In [14]: expr = LayerListContextKeys.active_layer_ndim >= 3 
@@ -159,19 +200,36 @@ In [15]: expr.eval({'active_layer_ndim': 2})
 Out[15]: False
 ```
 
-A record of all registered context keys can be retrieved with the class method `ContextKey.info()`
+A record of all registered context keys can be retrieved with the class method
+`ContextKey.info()`
 
 ## Contexts
 
-Now that we've seen how expression names are declared, let's discuss the "context" in which these expressions are evaluated.
+Now that we've seen how expression names are declared, let's discuss the
+"context" in which these expressions are evaluated.
 
-As mentioned, a context is ultimately just a mapping between variable names and their values. (When evaluating a napari expression with `Expr.eval`, you can indeed just pass a `dict` as that mapping.)
+As mentioned, a context is ultimately just a mapping between variable names and
+their values. (When evaluating a napari expression with `Expr.eval`, you can
+indeed just pass a `dict` as that mapping.)
 
-Important objects in napari, such as the `Viewer` and the `LayerList` will be associated with a `Context` object that tracks the value of various context keys.  It is the job of these various objects (i.e. the `Viewer` and the `LayerList`) to update the values in their `Contexts` when they change.  Continuing with the example above, if the user clicks on a 4-dimensional layer, the `LayerList` would set the context key `active_layer_ndim` to `4`.  (napari would then be able to enable/disable various commands & menus that required a specific number of dimensions in the active layer)
+Important objects in napari, such as the `Viewer` and the `LayerList` will be
+associated with a `Context` object that tracks the value of various context
+keys.  It is the job of these various objects (i.e. the `Viewer` and the
+`LayerList`) to update the values in their `Contexts` when they change.
+Continuing with the example above, if the user clicks on a 4-dimensional layer,
+the `LayerList` would set the context key `active_layer_ndim` to `4`.  (napari
+would then be able to enable/disable various commands & menus that required a
+specific number of dimensions in the active layer)
 
 ### The `Context` class
 
-The napari `Context` class is a subclass of [`collections.ChainMap`](https://docs.python.org/3/library/collections.html#collections.ChainMap) that also emits events when a key has been modified. `ChainMap` is useful here as it allows us to have "sub-contexts" that are children of some parent context.  Child contexts can access all of the keys of the parent (but not vice-versa).  For example because a `Viewer` has a `LayerList`, all of the keys in the `Viewer` context are available to the `LayerList` context. 
+The napari `Context` class is a subclass of
+[`collections.ChainMap`](https://docs.python.org/3/library/collections.html#collections.ChainMap)
+that also emits events when a key has been modified. `ChainMap` is useful here
+as it allows us to have "sub-contexts" that are children of some parent context.
+Child contexts can access all of the keys of the parent (but not vice-versa).
+For example because a `Viewer` has a `LayerList`, all of the keys in the
+`Viewer` context are available to the `LayerList` context. 
 
 ```python
 In [1]: from napari.utils.context import get_context
@@ -197,7 +255,9 @@ Out[3]: Context(
     SettingsAwareContext({})
 )
 ```
-The "root" context is a special `SettingsAwareContext` that can access keys in the global `settings`.  Because contexts are `ChainMaps`, they can all access the settings:
+The "root" context is a special `SettingsAwareContext` that can access keys in
+the global `settings`.  Because contexts are `ChainMaps`, they can all access
+the settings:
 
 ```python
 In [4]: ctx['settings.appearance.theme']
@@ -215,7 +275,11 @@ Out[6]: False
 
 ### Updating Contexts
 
-You may be wondering exactly how objects such as `Viewer` and `LayerList` update the keys in their contexts. The aforementioned [`ContextNamespace`](#contextkey-objects) comes into play here again.  A `ContextNamespace` can be instantiated, and bound to a specific `Context` instance.
+You may be wondering exactly how objects such as `Viewer` and `LayerList` update
+the keys in their contexts. The aforementioned
+[`ContextNamespace`](#contextkey-objects) comes into play here again.  A
+`ContextNamespace` can be instantiated, and bound to a specific `Context`
+instance.
 
 ```python
 In [6]: ctx = get_context(viewer.layers)
@@ -223,7 +287,8 @@ In [6]: ctx = get_context(viewer.layers)
 In [7]: llck = LayerListContextKeys(ctx)
 ```
 
-Attributes of an instantiated `ContextNamespace` now act as getters (and setters!) of their respective `ContextKey` in the associated `Context`.
+Attributes of an instantiated `ContextNamespace` now act as getters (and
+setters!) of their respective `ContextKey` in the associated `Context`.
 
 ```python
 In [8]: llck.layers_selection_count
