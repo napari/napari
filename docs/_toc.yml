@@ -8,6 +8,7 @@
     - file: guides/3D_interactivity
     - file: guides/event_loop
     - file: guides/connecting_events
+    - file: guides/events_reference
     - file: guides/threading
     - file: guides/magicgui
     - file: guides/perfmon
