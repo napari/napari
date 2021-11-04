@@ -34,11 +34,6 @@ def on_transform_changed_drag(event):
     viewer.layers.selection.active._update_dims()
     viewer.layers.selection.active.events.data(value=viewer.layers.selection.active.data)
 
-
-
-    
- 
-
 X, Y = np.mgrid[-500:500:50, -500:500:50]
 positions = np.dstack([X.ravel(), Y.ravel()])
 viewer = napari.view_points(positions[0,:,:])

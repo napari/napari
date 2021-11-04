@@ -3,7 +3,6 @@ import numpy as np
 from ..utils.events import EventedModel
 from ..utils.events.custom_types import Array
 from ..utils.transforms import Affine
-from ._interaction_box_constants import Box
 
 
 class InteractionBox(EventedModel):
@@ -46,7 +45,6 @@ class InteractionBox(EventedModel):
     transform_drag: Affine = Affine()
     transform_final: Affine = Affine()
     transform: Affine = Affine()
-    rotation_handle_length = 20
     allow_new_selection: bool = True
 
     @property
@@ -58,26 +56,6 @@ class InteractionBox(EventedModel):
             return self.transform(box)
         else:
             return box
-
-    def _add_rotation_handle(self, box):
-        """Adds the rotation handle to the box"""
-
-        if box is not None:
-            rot = box[Box.TOP_CENTER]
-            length_box = np.linalg.norm(
-                box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT]
-            )
-            if length_box > 0:
-                r = self.rotation_handle_length
-                rot = (
-                    rot
-                    - r
-                    * (box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT])
-                    / length_box
-                )
-            box = np.append(box, [rot], axis=0)
-
-        return box
 
     def _create_box_from_points(self):
         """Creates the axis aligned interaction box from the list of points"""
@@ -126,4 +104,4 @@ class InteractionBox(EventedModel):
                 (tl + tr + br + bl) / 4,
             ]
         )
-        return self._add_rotation_handle(box)
+        return box

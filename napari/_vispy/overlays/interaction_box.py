@@ -69,8 +69,9 @@ class VispyInteractionBox:
         self._fixed_vertex: int = None
         self._fixed_aspect: float = None
         self._vertex_size = 10
-
+        self._rotation_handle_length = 20
         self._highlight_color = (0, 0.6, 1)
+        self._box = None
 
     @property
     def marker_node(self):
@@ -130,7 +131,7 @@ class VispyInteractionBox:
             ):
                 return
 
-            box = self._interaction_box._box
+            box = self._box
             coord = event.position
             distances = abs(box - coord)
 
@@ -206,7 +207,7 @@ class VispyInteractionBox:
         """Gets called whenever a drag is started to remember starting values"""
 
         self._drag_start_coordinates = np.array(position)
-        self._drag_start_box = np.copy(self._interaction_box._box)
+        self._drag_start_box = np.copy(self._box)
         self._interaction_box.transform_start = self._interaction_box.transform
 
     def _clear_drag_start_values(self):
@@ -340,10 +341,9 @@ class VispyInteractionBox:
             self._interaction_box._box is not None
             and self._interaction_box.show
         ):
+            box = self._interaction_box._box
             if self._interaction_box.show_handle:
-                box = self._interaction_box._box[Box.WITH_HANDLE]
-            else:
-                box = self._interaction_box._box[Box.WITHOUT_HANDLE]
+                box = self._add_rotation_handle(box)
 
             if self._selected_vertex is None:
                 face_color = 'white'
@@ -351,19 +351,22 @@ class VispyInteractionBox:
                 face_color = self._highlight_color
 
             edge_color = self._highlight_color
-            vertices = box[:, ::-1]
             if self._interaction_box.show_vertices:
-                vertices = box[:, ::-1]
+                if self._interaction_box.show_handle:
+                    vertices = box[Box.WITH_HANDLE][:, ::-1]
+                else:
+                    vertices = box[Box.WITHOUT_HANDLE][:, ::-1]
             else:
                 vertices = np.empty((0, 2))
 
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge
             if self._interaction_box.show_handle:
-                pos = self._interaction_box._box[Box.LINE_HANDLE][:, ::-1]
+                pos = box[Box.LINE_HANDLE][:, ::-1]
             else:
-                pos = self._interaction_box._box[Box.LINE][:, ::-1]
+                pos = box[Box.LINE][:, ::-1]
             width = self._highlight_width
+            self._box = box
         else:
             # Otherwise show nothing
             vertices = np.empty((0, 2))
@@ -371,5 +374,26 @@ class VispyInteractionBox:
             edge_color = 'white'
             pos = None
             width = 0
+            self._box = None
 
         return vertices, face_color, edge_color, pos, width
+
+    def _add_rotation_handle(self, box):
+        """Adds the rotation handle to the box"""
+
+        if box is not None:
+            rot = box[Box.TOP_CENTER]
+            length_box = np.linalg.norm(
+                box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT]
+            )
+            if length_box > 0:
+                r = self._rotation_handle_length
+                rot = (
+                    rot
+                    - r
+                    * (box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT])
+                    / length_box
+                )
+            box = np.append(box, [rot], axis=0)
+
+        return box
