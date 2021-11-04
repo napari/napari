@@ -43,7 +43,7 @@ viewer.layers.selection.active.data.ndim >= 3
 ... however, if you don't have access to the future `viewer` instance, that doesn't work.  So napari has the concept of `Expr` objects that represent an expression "without a context", to be evaluated later.
 
 ```{tip}
-napari's `Expr` class subclasses from [`ast.AST`](https://docs.python.org/3/library/ast.html#ast.AST) and shares many similarities with the `body` of [`ast.Expr`](https://docs.python.org/3/library/ast.html#ast.Expr). However, for the sake of evaluation safety, they only support a subset of operations, omitting things like function calls, generators, comprehensions, and collections. It's not important to fully understand ASTs to use napari expressions, but for a good introduction to python's abstract syntax tree (AST) module, see https://greentreesnakes.readthedocs.io.
+napari's `Expr` class subclasses from [`ast.AST`](https://docs.python.org/3/library/ast.html#ast.AST) and shares many similarities with the `body` of [`ast.Expr`](https://docs.python.org/3/library/ast.html#ast.Expr). However, for the sake of evaluation safety, napari's `Expr` only supports a subset of operations, omitting things like function calls, generators, comprehensions, and collections. It's not important to fully understand ASTs to use napari expressions, but for a good introduction to Python's abstract syntax tree (AST) module, see https://greentreesnakes.readthedocs.io.
 ```
 
 A string expression can be converted to a napari expression with `parse_expression`:
