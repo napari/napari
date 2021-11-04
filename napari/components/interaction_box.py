@@ -54,43 +54,28 @@ class InteractionBox(EventedModel):
             return None
         if self.transform:
             return self.transform(box)
-        else:
-            return box
+        return box
 
     def _create_box_from_points(self):
         """Creates the axis aligned interaction box from the list of points"""
         if self.points is None or len(self.points) < 1:
             return None
 
-        if len(self.points) == 1:
-            point = self.points[0]
-            tl = point + np.array([-0.5, -0.5])
-            tr = point + np.array([0.5, -0.5])
-            bl = point + np.array([0.5, 0.5])
-            br = point + np.array([-0.5, 0.5])
-            box = np.array(
-                [
-                    tl,
-                    (tl + tr) / 2,
-                    tr,
-                    (tr + br) / 2,
-                    br,
-                    (br + bl) / 2,
-                    bl,
-                    (bl + tl) / 2,
-                    (tl + tr + br + bl) / 4,
-                ]
-            )
-            return self._add_rotation_handle(box)
-
         data = self.points
 
         min_val = np.array([data[:, 0].min(axis=0), data[:, 1].min(axis=0)])
         max_val = np.array([data[:, 0].max(axis=0), data[:, 1].max(axis=0)])
+
         tl = np.array([min_val[0], min_val[1]])
         tr = np.array([max_val[0], min_val[1]])
         br = np.array([max_val[0], max_val[1]])
         bl = np.array([min_val[0], max_val[1]])
+        # If there is only one point avoid the corners overlapping in the singularity
+        if len(self.points) == 1:
+            tl += np.array([-0.5, -0.5])
+            tr += np.array([0.5, -0.5])
+            bl += np.array([0.5, 0.5])
+            br += np.array([-0.5, 0.5])
         box = np.array(
             [
                 tl,

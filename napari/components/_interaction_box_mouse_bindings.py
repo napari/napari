@@ -78,7 +78,6 @@ class InteractionBoxMouseBindings:
                     self._selected_vertex = None
             else:
                 self._selected_vertex = None
-            # self.events.points_changed()
 
         @viewer.mouse_drag_callbacks.append
         def mouse_drag(viewer, event):
@@ -229,7 +228,6 @@ class InteractionBoxMouseBindings:
         )
         self._interaction_box_model.transform = transform
         self._interaction_box_model.transform_drag = transform
-        # self.interaction_box.transform_drag = transform
 
     def _on_final_transform(self, viewer, event):
         """Gets called upon mouse_move in the case of a translation operation"""
@@ -255,7 +253,7 @@ class InteractionBoxMouseBindings:
 
     def _on_end_newbox(self, viewer, event):
         """Gets called when dragging ends in the case of a drawing a new box"""
-        # self._interaction_box_model.show = False
+
         if self._interaction_box_model._box is not None:
             self._interaction_box_model.selection_box_final = (
                 self._interaction_box_model._box[Box.WITHOUT_HANDLE]
