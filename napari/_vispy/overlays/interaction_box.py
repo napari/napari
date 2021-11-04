@@ -2,9 +2,6 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers
 
 from ...components._interaction_box_constants import Box
-from ...components._interaction_box_mouse_bindings import (
-    InteractionBoxMouseBindings,
-)
 
 
 class VispyInteractionBox:
@@ -15,7 +12,6 @@ class VispyInteractionBox:
         self.node = Compound([Line(), Markers()], parent=parent)
         self.node.order = order
         self._on_interaction_box_change()
-        self._mouse_bindings = InteractionBoxMouseBindings(viewer, self)
         self._interaction_box.events.points.connect(
             self._on_interaction_box_change
         )
