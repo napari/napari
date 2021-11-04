@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
 
 from ...translations import trans
+from ..event import EmitterGroup
 from ._set import EventedSet
 
 if TYPE_CHECKING:
@@ -56,10 +57,13 @@ class Selection(EventedSet[_T]):
     def __init__(self, data: Iterable[_T] = ()):
         self._active: Optional[_T] = None
         self._current_ = None
+        self.events = EmitterGroup(source=self, _current=None, active=None)
         super().__init__(data=data)
-        self.events.add(_current=None, active=None)
-        self.events.changed.connect(self._update_active)
         self._update_active()
+
+    def _emit_change(self, added=set(), removed=set()):
+        self._update_active()
+        return super()._emit_change(added=added, removed=removed)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._set)})"
