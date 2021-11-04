@@ -120,11 +120,11 @@ class VispyInteractionBox:
             pos = pos + 0.5
         self.line_node.set_data(pos=pos, color=edge_color, width=width)
 
-    def initialize_mouse_events(self, layer):
+    def initialize_mouse_events(self, viewer):
         """Adds event handling functions to the layer"""
 
-        @layer.mouse_move_callbacks.append
-        def mouse_move(layer, event):
+        @viewer.mouse_move_callbacks.append
+        def mouse_move(viewer, event):
             if (
                 not self._interaction_box.show
                 or self._interaction_box._box is None
@@ -149,13 +149,13 @@ class VispyInteractionBox:
                 self._selected_vertex = None
             # self.events.points_changed()
 
-        @layer.mouse_drag_callbacks.append
-        def mouse_drag(layer, event):
+        @viewer.mouse_drag_callbacks.append
+        def mouse_drag(viewer, event):
             if not self._interaction_box.show:
                 return
 
             # Handling drag start, decide what action to take
-            self._set_drag_start_values(layer, event.position)
+            self._set_drag_start_values(viewer, event.position)
             drag_callback = None
             final_callback = None
             if self._selected_vertex is not None:
@@ -195,15 +195,15 @@ class VispyInteractionBox:
             # Handle events during dragging
             while event.type == 'mouse_move':
                 if drag_callback is not None:
-                    drag_callback(layer, event)
+                    drag_callback(viewer, event)
                 yield
 
             if final_callback is not None:
-                final_callback(layer, event)
+                final_callback(viewer, event)
 
             self._clear_drag_start_values()
 
-    def _set_drag_start_values(self, layer, position):
+    def _set_drag_start_values(self, viewer, position):
         """Gets called whenever a drag is started to remember starting values"""
 
         self._drag_start_coordinates = np.array(position)
@@ -216,7 +216,7 @@ class VispyInteractionBox:
         self._drag_start_coordinates = None
         self._drag_start_box = None
 
-    def _on_drag_rotation(self, layer, event):
+    def _on_drag_rotation(self, viewer, event):
         """Gets called upon mouse_move in the case of a rotation"""
         center = self._drag_start_box[Box.CENTER]
         handle = self._drag_start_box[Box.HANDLE]
@@ -243,7 +243,7 @@ class VispyInteractionBox:
         self._interaction_box.transform = transform
         self._interaction_box.transform_drag = transform
 
-    def _on_drag_scale(self, layer, event):
+    def _on_drag_scale(self, viewer, event):
         """Gets called upon mouse_move in the case of a scaling operation"""
 
         # Transform everything back into axis-aligned space with fixed point at origin
@@ -280,7 +280,7 @@ class VispyInteractionBox:
         self._interaction_box.transform = transform
         self._interaction_box.transform_drag = transform
 
-    def _on_drag_translate(self, layer, event):
+    def _on_drag_translate(self, viewer, event):
         """Gets called upon mouse_move in the case of a translation operation"""
 
         offset = np.array(event.position) - self._drag_start_coordinates
@@ -292,11 +292,11 @@ class VispyInteractionBox:
         self._interaction_box.transform_drag = transform
         # self.interaction_box.transform_drag = transform
 
-    def _on_final_tranform(self, layer, event):
+    def _on_final_tranform(self, viewer, event):
         """Gets called upon mouse_move in the case of a translation operation"""
         self._interaction_box.transform_final = self._interaction_box.transform
 
-    def _on_drag_newbox(self, layer, event):
+    def _on_drag_newbox(self, viewer, event):
         """Gets called upon mouse_move in the case of a drawing a new box"""
 
         self._interaction_box.points = np.array(
@@ -312,7 +312,7 @@ class VispyInteractionBox:
             Box.WITHOUT_HANDLE
         ]
 
-    def _on_end_newbox(self, layer, event):
+    def _on_end_newbox(self, viewer, event):
         """Gets called when dragging ends in the case of a drawing a new box"""
         # self._interaction_box.show = False
         if self._interaction_box._box is not None:
