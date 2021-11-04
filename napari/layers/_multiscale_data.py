@@ -62,6 +62,8 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         """Tuple shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
+    # for now, we're not fully implementing LayerDataProtocol here since
+    # we don't know what to do for fancy indexing, or mixed slice/int tuples
     def __getitem__(  # type: ignore [override]
         self, key: Union[int, Tuple[slice, ...]]
     ) -> LayerDataProtocol:
