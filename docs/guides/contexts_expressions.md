@@ -105,7 +105,7 @@ Some example context key names (currently) include:
 | `layers_selection_count`  | Number of layers currently selected  | 
 | `all_layers_linked`  | True when all selected layers are linked  | 
 | `active_layer_is_rgb`  | True when the active layer is RGB  | 
-| `active_layer_type`  | Lowercase name of active layer type, or None of none active.  | 
+| `active_layer_type`  | Lowercase name of active layer type, or None if no layer is active.  | 
 | `only_images_selected`  | True when there is at least one selected layer and all selected layers are images  | 
 | `active_layer_ndim` | Number of dimensions in the active layer, or `None` if nothing is active |
 ...  many more
