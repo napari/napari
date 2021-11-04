@@ -14,7 +14,7 @@ described on this page.
 
 In Python, **expressions** are simple combinations of **values** and **operations** that can be reduced to a single value. For example, `1 > 5` is an expression that always reduces to the value `False` when evaluated.  `x > 5 and y == 'hello'` is also an expression that reduces to a boolean value; however, in order to evaluate that expression, we need to be able to fill in the values for the variable **names** "`x`" and "`y`". Those values are provided by some **context** (or "namespace"), which maps the variable names to their values.
 
-The value of `expression` depends on the context in which it is evaluated.
+The value of an `expression` depends on the context in which it is evaluated.
 
 ```python
 In [1]: expression = "x > 5 and y == 'hello'"
