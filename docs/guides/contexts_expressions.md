@@ -2,7 +2,7 @@
 
 ```{note}
 This page is mostly aimed at developers who are interested in contributing to
-or understanding the inner workings of napari.  While the concept expressions
+or understanding the inner workings of napari.  While the concept of expressions
 *will* be relevant for plugin developers writing plugin manifests, it won't be
 necessary for plugin devs or end-users to understand the implementation details
 described on this page.
