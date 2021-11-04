@@ -34,7 +34,7 @@ Out[5]: False
 
 In napari, we'd like to be able to capture the concept of some condition being `True` or `False`, *prior* to actually having the context required to evaluate it.  For example, a plugin (or napari itself) might want to stipulate that a given function should only be enabled when "the active layer has at least 3 dimensions".
 
-At runtime, in python code, this might be captured by the expression:
+At runtime, in Python code, this might be captured by the expression:
 
 ```python
 viewer.layers.selection.active.data.ndim >= 3
