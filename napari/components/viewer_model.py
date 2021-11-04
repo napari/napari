@@ -29,6 +29,7 @@ from ..layers.utils.stack_utils import split_channels
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
+from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
@@ -123,8 +124,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
+    _ctx: Context
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
+        # max_depth=0 means don't look for parent contexts.
+        self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.__config__.extra = Extra.allow
         super().__init__(
