@@ -65,7 +65,9 @@ class InteractionBoxMouseBindings:
             distances = abs(box - coord)
 
             # Get the vertex sizes
-            sizes = self._interaction_box_visual._vertex_size / 2
+            sizes = (
+                self._interaction_box_visual._vertex_size / 2
+            ) / self._viewer.camera.zoom
 
             # Check if any matching vertices
             matches = np.all(distances <= sizes, axis=1).nonzero()

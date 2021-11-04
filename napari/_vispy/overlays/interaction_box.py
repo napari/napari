@@ -60,7 +60,6 @@ class VispyInteractionBox:
             vertices = np.zeros((1, self._viewer.dims.ndisplay))
             size = 0
         else:
-            vertices = vertices + 0.5
             size = 10
 
         self.marker_node.set_data(
@@ -76,8 +75,7 @@ class VispyInteractionBox:
         if pos is None or len(pos) == 0:
             pos = np.zeros((1, self._viewer.dims.ndisplay))
             width = 0
-        else:
-            pos = pos + 0.5
+
         self.line_node.set_data(pos=pos, color=edge_color, width=width)
 
     def _compute_vertices_and_box(self):
@@ -144,7 +142,7 @@ class VispyInteractionBox:
                 box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT]
             )
             if length_box > 0:
-                r = self._rotation_handle_length
+                r = self._rotation_handle_length / self._viewer.camera.zoom
                 rot = (
                     rot
                     - r
