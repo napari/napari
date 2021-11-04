@@ -215,7 +215,7 @@ Out[6]: False
 
 ### Updating Contexts
 
-You may be wondering exactly how objects such as `Viewer` and `LayerList` update the keys in their contexts. The aforementioned [`ContextNamespace`](#contextkey-objects) comes in to play here again.  A `ContextNamespace` can be instantiated, and bound to a specific `Context` instance.
+You may be wondering exactly how objects such as `Viewer` and `LayerList` update the keys in their contexts. The aforementioned [`ContextNamespace`](#contextkey-objects) comes into play here again.  A `ContextNamespace` can be instantiated, and bound to a specific `Context` instance.
 
 ```python
 In [6]: ctx = get_context(viewer.layers)
