@@ -8,7 +8,8 @@ from ._data_protocols import LayerDataProtocol, assert_protocol
 from .utils.layer_utils import compute_multiscale_level_and_corners
 
 
-class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
+# note: this also implements `LayerDataProtocol`, but we don't need to inherit.
+class MultiScaleData(Sequence[LayerDataProtocol]):
     """Wrapper for multiscale data, to provide consistent API.
 
     :class:`LayerDataProtocol` is the subset of the python Array API that we
