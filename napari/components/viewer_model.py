@@ -358,6 +358,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
+        print(event.cursor)
         self.cursor.style = event.cursor
 
     def _update_cursor_size(self, event):
