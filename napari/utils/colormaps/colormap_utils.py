@@ -1,6 +1,7 @@
+import warnings
 from collections import OrderedDict
 from threading import Lock
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from vispy.color import BaseColormap as VispyColormap
@@ -9,6 +10,7 @@ from vispy.color import get_colormap, get_colormaps
 from ..translations import trans
 from .bop_colors import bopd
 from .colormap import Colormap
+from .standardize_color import transform_color
 from .vendored import cm, colorconv
 
 ValidColormapArg = Union[
@@ -539,27 +541,31 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             AVAILABLE_COLORMAPS[name] = cmap
 
         elif isinstance(colormap, tuple):
-            if not (
+            if (
                 len(colormap) == 2
-                and (
-                    isinstance(colormap[1], VispyColormap)
-                    or isinstance(colormap[1], Colormap)
-                )
                 and isinstance(colormap[0], str)
+                and isinstance(colormap[1], (VispyColormap, Colormap))
             ):
+                name, cmap = colormap
+                # Convert from vispy colormap
+                if isinstance(cmap, VispyColormap):
+                    cmap = convert_vispy_colormap(cmap, name=name)
+                else:
+                    cmap.name = name
+                AVAILABLE_COLORMAPS[name] = cmap
+            else:
+                colormap = _colormap_from_colors(colormap)
+                if colormap is not None:
+                    # Return early because we don't have a name for this colormap.
+                    return colormap
                 raise TypeError(
                     trans._(
-                        "When providing a tuple as a colormap argument, the first element must be a string and the second a Colormap instance",
+                        "When providing a tuple as a colormap argument, either"
+                        "1) the first element must be a string and the second a Colormap instance"
+                        "2) or the tuple should be convertible to one or more colors",
                         deferred=True,
                     )
                 )
-            name, cmap = colormap
-            # Convert from vispy colormap
-            if isinstance(cmap, VispyColormap):
-                cmap = convert_vispy_colormap(cmap, name=name)
-            else:
-                cmap.name = name
-            AVAILABLE_COLORMAPS[name] = cmap
 
         elif isinstance(colormap, dict):
             if 'colors' in colormap and not (
@@ -594,7 +600,6 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     name = list(colormap)[0]  # first key in dict
                 elif len(colormap) > 1:
                     name = list(colormap.keys())[0]
-                    import warnings
 
                     warnings.warn(
                         trans._(
@@ -610,7 +615,10 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                         )
                     )
         else:
-            import warnings
+            colormap = _colormap_from_colors(colormap)
+            if colormap is not None:
+                # Return early because we don't have a name for this colormap.
+                return colormap
 
             warnings.warn(
                 trans._(
@@ -619,11 +627,20 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     cm_type=type(colormap),
                 )
             )
-
             # Use default colormap
             name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
+
+
+def _colormap_from_colors(colors) -> Optional[Colormap]:
+    try:
+        color_array = transform_color(colors)
+    except (ValueError, AttributeError, KeyError):
+        return None
+    if color_array.shape[0] == 1:
+        color_array = np.array([[0, 0, 0, 1], color_array[0]])
+    return Colormap(color_array)
 
 
 def make_default_color_array():
