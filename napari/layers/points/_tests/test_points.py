@@ -1483,26 +1483,35 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    'position,view_direction,dims_displayed,world,scale,expected',
     [
-        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
-        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
-        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+        ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 2),
+        ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 0),
+        ((0, 5, 0, 0), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), None),
+        ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
+        ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
+        ((0, 5, 30, 15), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), 2),
+        ((0, 5, 30, 15), [0, -1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), 0),
+        ((0, 5, 0, 0), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
     ],
 )
-def test_value_3d(position, view_direction, dims_displayed, world):
-    """Currently get_value should return None in 3D"""
-    np.random.seed(0)
-    data = np.random.random((10, 3))
-    layer = Points(data)
-    layer._slice_dims([0, 0, 0], ndisplay=3)
+def test_value_3d(
+    position, view_direction, dims_displayed, world, scale, expected
+):
+    """Test get_value in 3D with and without scale"""
+    data = np.array([[0, 10, 15, 15], [0, 10, 5, 5], [0, 5, 15, 15]])
+    layer = Points(data, size=5, scale=scale)
+    layer._slice_dims([0, 0, 0, 0], ndisplay=3)
     value = layer.get_value(
         position,
         view_direction=view_direction,
         dims_displayed=dims_displayed,
         world=world,
     )
-    assert value is None
+    if expected is None:
+        assert value is None
+    else:
+        assert value == expected
 
 
 def test_message():
