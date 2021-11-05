@@ -26,7 +26,12 @@ def select(layer, event):
 
     # Get value under the cursor, for points, this is the index of the highlighted
     # if any, or None.
-    value = layer.get_value(event.position, world=True)
+    value = layer.get_value(
+        position=event.position,
+        view_direction=event.view_direction,
+        dims_displayed=event.dims_displayed,
+        world=True,
+    )
     # if modifying selection add / remove any from existing selection
     if modify_selection:
         if value is not None:
@@ -53,7 +58,8 @@ def select(layer, event):
             is_moving = True
             with layer.events.data.blocker():
                 layer._move(layer.selected_data, coordinates)
-        else:
+        elif len(event.dims_displayed) == 2:
+            # only allow click+drag bounding box in 2D21
             coord = [coordinates[i] for i in layer._dims_displayed]
             layer._is_selecting = True
             if layer._drag_start is None:

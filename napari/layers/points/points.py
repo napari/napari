@@ -1195,7 +1195,7 @@ class Points(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            self.editable = self._ndisplay < 3
+            self.editable = True
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
@@ -1333,13 +1333,14 @@ class Points(Layer):
             selection = None
         return selection
 
-
     def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
         """An augmented, axis-aligned (self._ndisplay, 2) bounding box.
 
         This bounding box for includes the full size of displayed points
         and enables calculation of intersections in `Layer._get_value_3d()`.
         """
+        if len(self._view_size) == 0:
+            return None
         max_point_size = np.max(self._view_size)
         bounding_box = np.copy(
             self._display_bounding_box(dims_displayed)
@@ -1396,6 +1397,9 @@ class Points(Layer):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box_augmented(dims_displayed)
+
+        if bounding_box is None:
+            return None, None
 
         start_point, end_point = self._get_ray_intersections(
             position=position,
