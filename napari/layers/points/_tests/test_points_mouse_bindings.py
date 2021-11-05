@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pytest
@@ -22,6 +22,8 @@ class Event:
     modifiers: List[str] = field(default_factory=list)
     position: Tuple[int, int] = (0, 0)  # world coords
     pos: np.ndarray = np.zeros(2)  # canvas coords
+    view_direction: Optional[List[float]] = None
+    dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
 
 
 @pytest.fixture
