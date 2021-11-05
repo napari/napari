@@ -78,7 +78,7 @@ def drag_data_to_projected_distance(
 
     # Project the start and end positions onto a pseudo-canvas, a plane
     # parallel to the rendered canvas in data coordinates.
-    end_position_canvas = project_points_onto_plane(
+    end_position_canvas, _ = project_points_onto_plane(
         end_position, start_position, view_direction
     )
     # Calculate the drag vector on the pseudo-canvas.
