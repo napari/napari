@@ -72,6 +72,9 @@ def create_known_points_layer_3d():
     n_points = len(data)
 
     layer = Points(data, size=1)
+    # extra variables usually set when layer is added to viewer must be declared
+    # for certain 3D related methods.
+    # e.g. Points._display_bounding_box_augmented, Points.get_ray_intersections
     layer._indices_view = [0, 1, 2, 3]
     layer._ndisplay = 3
 
