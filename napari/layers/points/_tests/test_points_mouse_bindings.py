@@ -27,7 +27,7 @@ class Event:
 
 
 @pytest.fixture
-def create_known_points_layer():
+def create_known_points_layer_2d():
     """Create points layer with known coordinates
 
     Returns
@@ -53,9 +53,41 @@ def create_known_points_layer():
     return layer, n_points, known_non_point
 
 
-def test_not_adding_or_selecting_point(create_known_points_layer):
+@pytest.fixture
+def create_known_points_layer_3d():
+    """Create points layer with known coordinates
+
+    Returns
+    -------
+    layer : napari.layers.Points
+        Points layer.
+    n_points : int
+        Number of points in the points layer
+    known_non_point : list
+        Data coordinates that are known to contain no points. Useful during
+        testing when needing to guarantee no point is clicked on.
+    """
+    data = [[1, 2, 3], [8, 6, 4], [10, 5, 10], [15, 8, 4]]
+    known_non_point = [4, 5, 6]
+    n_points = len(data)
+
+    layer = Points(data, size=1)
+    layer._indices_view = [0, 1, 2, 3]
+    layer._ndisplay = 3
+
+    assert np.all(layer.data == data)
+    assert layer.ndim == 3
+    assert len(layer._dims_displayed) == 3
+    assert len(layer.data) == n_points
+    assert len(layer._view_size) == n_points
+    assert len(layer.selected_data) == 0
+
+    return layer, n_points, known_non_point
+
+
+def test_not_adding_or_selecting_point(create_known_points_layer_2d):
     """Don't add or select a point by clicking on one in pan_zoom mode."""
-    layer, n_points, _ = create_known_points_layer
+    layer, n_points, _ = create_known_points_layer_2d
     layer.mode = 'pan_zoom'
 
     # Simulate click
@@ -71,9 +103,9 @@ def test_not_adding_or_selecting_point(create_known_points_layer):
     assert len(layer.selected_data) == 0
 
 
-def test_add_point(create_known_points_layer):
+def test_add_point(create_known_points_layer_2d):
     """Add point by clicking in add mode."""
-    layer, n_points, known_non_point = create_known_points_layer
+    layer, n_points, known_non_point = create_known_points_layer_2d
 
     # Add point at location where non exists
     layer.mode = 'add'
@@ -95,9 +127,9 @@ def test_add_point(create_known_points_layer):
     np.testing.assert_allclose(layer.data[-1], known_non_point)
 
 
-def test_drag_in_add_mode(create_known_points_layer):
+def test_drag_in_add_mode(create_known_points_layer_2d):
     """Drag in add mode and make sure no point is added."""
-    layer, n_points, known_non_point = create_known_points_layer
+    layer, n_points, known_non_point = create_known_points_layer_2d
 
     # Add point at location where non exists
     layer.mode = 'add'
@@ -133,9 +165,9 @@ def test_drag_in_add_mode(create_known_points_layer):
     assert len(layer.data) == n_points
 
 
-def test_select_point(create_known_points_layer):
+def test_select_point(create_known_points_layer_2d):
     """Select a point by clicking on one in select mode."""
-    layer, n_points, _ = create_known_points_layer
+    layer, n_points, _ = create_known_points_layer_2d
 
     layer.mode = 'select'
     position = tuple(layer.data[0])
@@ -153,9 +185,36 @@ def test_select_point(create_known_points_layer):
     assert 0 in layer.selected_data
 
 
-def test_after_in_add_mode_point(create_known_points_layer):
+def test_select_point_3d(create_known_points_layer_3d):
+    """Select a point by clicking on one in select mode."""
+    layer, n_points, _ = create_known_points_layer_3d
+
+    layer.mode = 'select'
+    position = tuple(layer.data[1])
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            position=position,
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(Event(type='mouse_release', position=position))
+    mouse_release_callbacks(layer, event)
+
+    # Check clicked point selected
+    assert len(layer.selected_data) == 1
+    assert 1 in layer.selected_data
+
+
+def test_after_in_add_mode_point(create_known_points_layer_2d):
     """Don't add or select a point by clicking on one in pan_zoom mode."""
-    layer, n_points, _ = create_known_points_layer
+    layer, n_points, _ = create_known_points_layer_2d
 
     layer.mode = 'add'
     layer.mode = 'pan_zoom'
@@ -174,9 +233,9 @@ def test_after_in_add_mode_point(create_known_points_layer):
     assert len(layer.selected_data) == 0
 
 
-def test_after_in_select_mode_point(create_known_points_layer):
+def test_after_in_select_mode_point(create_known_points_layer_2d):
     """Don't add or select a point by clicking on one in pan_zoom mode."""
-    layer, n_points, _ = create_known_points_layer
+    layer, n_points, _ = create_known_points_layer_2d
 
     layer.mode = 'select'
     layer.mode = 'pan_zoom'
@@ -195,9 +254,9 @@ def test_after_in_select_mode_point(create_known_points_layer):
     assert len(layer.selected_data) == 0
 
 
-def test_unselect_select_point(create_known_points_layer):
+def test_unselect_select_point(create_known_points_layer_2d):
     """Select a point by clicking on one in select mode."""
-    layer, n_points, _ = create_known_points_layer
+    layer, n_points, _ = create_known_points_layer_2d
 
     layer.mode = 'select'
     position = tuple(layer.data[0])
@@ -216,9 +275,9 @@ def test_unselect_select_point(create_known_points_layer):
     assert 0 in layer.selected_data
 
 
-def test_add_select_point(create_known_points_layer):
+def test_add_select_point(create_known_points_layer_2d):
     """Add to a selection of points point by shift-clicking on one."""
-    layer, n_points, _ = create_known_points_layer
+    layer, n_points, _ = create_known_points_layer_2d
 
     layer.mode = 'select'
     position = tuple(layer.data[0])
@@ -241,9 +300,9 @@ def test_add_select_point(create_known_points_layer):
     assert layer.selected_data == {2, 3, 0}
 
 
-def test_remove_select_point(create_known_points_layer):
+def test_remove_select_point(create_known_points_layer_2d):
     """Remove from a selection of points point by shift-clicking on one."""
-    layer, n_points, _ = create_known_points_layer
+    layer, n_points, _ = create_known_points_layer_2d
 
     layer.mode = 'select'
     position = tuple(layer.data[0])
@@ -266,9 +325,9 @@ def test_remove_select_point(create_known_points_layer):
     assert layer.selected_data == {2, 3}
 
 
-def test_not_selecting_point(create_known_points_layer):
+def test_not_selecting_point(create_known_points_layer_2d):
     """Don't select a point by not clicking on one in select mode."""
-    layer, n_points, known_non_point = create_known_points_layer
+    layer, n_points, known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
 
@@ -288,9 +347,9 @@ def test_not_selecting_point(create_known_points_layer):
     assert len(layer.selected_data) == 0
 
 
-def test_unselecting_points(create_known_points_layer):
+def test_unselecting_points(create_known_points_layer_2d):
     """Unselect points by not clicking on one in select mode."""
-    layer, n_points, known_non_point = create_known_points_layer
+    layer, n_points, known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
     layer.selected_data = {2, 3}
@@ -312,9 +371,9 @@ def test_unselecting_points(create_known_points_layer):
     assert len(layer.selected_data) == 0
 
 
-def test_selecting_all_points_with_drag(create_known_points_layer):
+def test_selecting_all_points_with_drag(create_known_points_layer_2d):
     """Select all points when drag box includes all of them."""
-    layer, n_points, known_non_point = create_known_points_layer
+    layer, n_points, known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
 
@@ -342,9 +401,9 @@ def test_selecting_all_points_with_drag(create_known_points_layer):
     assert len(layer.selected_data) == n_points
 
 
-def test_selecting_no_points_with_drag(create_known_points_layer):
+def test_selecting_no_points_with_drag(create_known_points_layer_2d):
     """Select all points when drag box includes all of them."""
-    layer, n_points, known_non_point = create_known_points_layer
+    layer, n_points, known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
 
