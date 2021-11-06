@@ -484,19 +484,19 @@ def _increment_unnamed_colormap(
 
 
 def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
-    """Accept any valid colormap arg, and return (name, Colormap), or raise.
+    """Accept any valid colormap argument, and return Colormap, or raise.
 
-    Adds any new colormaps to AVAILABLE_COLORMAPS in the process.
+    Adds any new colormaps to AVAILABLE_COLORMAPS in the process, except
+    for custom unnamed colormaps created from color values.
 
     Parameters
     ----------
     colormap : ValidColormapArg
-        colormap as str, napari.utils.Colormap.
+        See ValidColormapArg for support input types.
 
     Returns
     -------
-    Tuple[str, Colormap]
-        Normalized name and napari.utils.Colormap.
+    Colormap
 
     Raises
     ------
@@ -509,7 +509,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         If a dict is provided and any of the values are not Colormap instances
         or valid inputs to the Colormap constructor.
     TypeError
-        If ``colormap`` is not a ``str``, ``dict``, ``tuple``, or ``Colormap``
+        If ``colormap`` is not a valid colormap argument type.
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
