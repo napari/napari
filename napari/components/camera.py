@@ -1,5 +1,4 @@
-import inspect
-from typing import Tuple, no_type_check
+from typing import Tuple
 
 import numpy as np
 from pydantic import validator
@@ -43,11 +42,12 @@ class Camera(EventedModel):
         return ensure_n_tuple(v, n=3)
 
     @property
-    def view_direction(self) -> np.ndarray:
+    def view_direction(self) -> Tuple[float, float, float]:
         """3D view direction vector of the camera.
 
         View direction is calculated from the Euler angles and returned as a
-        (3,) array.
+        3-tuple. This direction is in 3D scene coordinates, the world coordinate
+        system for three currently displayed dimensions.
         """
         ang = np.deg2rad(self.angles)
         view_direction = (
@@ -57,21 +57,57 @@ class Camera(EventedModel):
         )
         return view_direction
 
-    @view_direction.setter
-    def view_direction(self, view_direction: Tuple[float, float, float]):
-        if (view_direction[0], view_direction[2]) == (0, 0):
-            up_direction = (-1, 0, 0)
-        else:
-            up_direction = (0, -1, 0)
-        self.set_view_direction(
-            view_direction=view_direction, up_direction=up_direction
-        )
+    @property
+    def up_direction(self) -> Tuple[float, float, float]:
+        """3D direction vector pointing up on the canvas.
+
+        Up direction is calculated from the Euler angles and returned as a
+        3-tuple. This direction is in 3D scene coordinates, the world coordinate
+        system for three currently displayed dimensions.
+        """
+        rotation_matrix = R.from_euler(
+            seq='yzx', angles=self.angles, degrees=True
+        ).as_matrix()
+        return tuple(rotation_matrix[:, 2][::-1])
 
     def set_view_direction(
         self,
         view_direction: Tuple[float, float, float],
         up_direction: Tuple[float, float, float] = (0, -1, 0),
     ):
+        """Set camera angles from direction vectors.
+
+        Both the view direction and the up direction are specified in 3D scene
+        coordinates, the world coordinate system for three currently displayed
+        dimensions.
+
+        The provided up direction must not be parallel to the provided
+        view direction. The provided up direction does not need to be orthogonal
+        to the view direction. The final up direction will be a vector orthogonal
+        to the view direction, aligned with the provided up direction.
+
+        Parameters
+        ----------
+        view_direction : 3-tuple of float
+            The desired view direction vector in 3D scene coordinates, the world
+            coordinate system for three currently displayed dimensions.
+        up_direction : 3-tuple of float
+            A direction vector which will point upwards on the canvas. Defaults
+            to (0, -1, 0) unless the view direction is parallel to the y-axis,
+            in which case will default to (-1, 0, 0).
+        """
+        # default behaviour of up direction
+        view_direction_along_y_axis = (
+            view_direction[0],
+            view_direction[2],
+        ) == (0, 0)
+        up_direction_along_y_axis = (up_direction[0], up_direction[2]) == (
+            0,
+            0,
+        )
+        if view_direction_along_y_axis and up_direction_along_y_axis:
+            up_direction = (-1, 0, 0)  # align up direction along z axis
+
         # xyz ordering for vispy, normalise vectors for rotation matrix
         view_direction = np.asarray(view_direction, dtype=float)[::-1]
         view_direction /= np.linalg.norm(view_direction)
@@ -120,21 +156,3 @@ class Camera(EventedModel):
         view_direction_nd = np.zeros(ndim)
         view_direction_nd[list(dims_displayed)] = self.view_direction
         return view_direction_nd
-
-    @no_type_check
-    def __setattr__(self, name, value):
-        """Enable use of properties with setters in pydantic models."""
-        try:
-            super().__setattr__(name, value)
-        except ValueError as e:
-            setters = inspect.getmembers(
-                self.__class__,
-                predicate=lambda x: isinstance(x, property)
-                and x.fset is not None,
-            )
-            for setter_name, func in setters:
-                if setter_name == name:
-                    object.__setattr__(self, name, value)
-                    break
-            else:
-                raise e
