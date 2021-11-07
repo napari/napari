@@ -1,7 +1,9 @@
-from typing import Tuple
+import inspect
+from typing import Tuple, no_type_check
 
 import numpy as np
 from pydantic import validator
+from scipy.spatial.transform import Rotation as R
 
 from ..utils.events import EventedModel
 from ..utils.misc import ensure_n_tuple
@@ -13,7 +15,8 @@ class Camera(EventedModel):
     Attributes
     ----------
     center : 3-tuple
-        Center of the camera. In 2D viewing the last two values are used.
+        Center of rotation for the camera.
+        In 2D viewing the last two values are used.
     zoom : float
         Scale from canvas pixels to world pixels.
     angles : 3-tuple
@@ -54,6 +57,45 @@ class Camera(EventedModel):
         )
         return view_direction
 
+    @view_direction.setter
+    def view_direction(self, view_direction: Tuple[float, float, float]):
+        if (view_direction[0], view_direction[2]) == (0, 0):
+            up_direction = (-1, 0, 0)
+        else:
+            up_direction = (0, -1, 0)
+        self.set_view_direction(
+            view_direction=view_direction, up_direction=up_direction
+        )
+
+    def set_view_direction(
+        self,
+        view_direction: Tuple[float, float, float],
+        up_direction: Tuple[float, float, float] = (0, -1, 0),
+    ):
+        # xyz ordering for vispy, normalise vectors for rotation matrix
+        view_direction = np.asarray(view_direction, dtype=float)[::-1]
+        view_direction /= np.linalg.norm(view_direction)
+
+        up_direction = np.asarray(up_direction, dtype=float)[::-1]
+        up_direction = np.cross(view_direction, up_direction)
+        up_direction /= np.linalg.norm(up_direction)
+
+        # explicit check for parallel view direction and up direction
+        if np.allclose(np.cross(view_direction, up_direction), 0):
+            raise ValueError("view direction and up direction are parallel")
+
+        x_direction = np.cross(up_direction, view_direction)
+        x_direction /= np.linalg.norm(x_direction)
+
+        # construct rotation matrix, convert to euler angles
+        rotation_matrix = np.column_stack(
+            (up_direction, view_direction, x_direction)
+        )
+        euler_angles = R.from_matrix(rotation_matrix).as_euler(
+            seq='yzx', degrees=True
+        )
+        self.angles = euler_angles
+
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: Tuple[int]
     ) -> np.ndarray:
@@ -78,3 +120,21 @@ class Camera(EventedModel):
         view_direction_nd = np.zeros(ndim)
         view_direction_nd[list(dims_displayed)] = self.view_direction
         return view_direction_nd
+
+    @no_type_check
+    def __setattr__(self, name, value):
+        """Enable use of properties with setters in pydantic models."""
+        try:
+            super().__setattr__(name, value)
+        except ValueError as e:
+            setters = inspect.getmembers(
+                self.__class__,
+                predicate=lambda x: isinstance(x, property)
+                and x.fset is not None,
+            )
+            for setter_name, func in setters:
+                if setter_name == name:
+                    object.__setattr__(self, name, value)
+                    break
+            else:
+                raise e
