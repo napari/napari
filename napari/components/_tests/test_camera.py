@@ -62,14 +62,14 @@ def test_set_view_direction_3d():
     """Check that view direction can be set properly."""
     # simple case
     camera = Camera(center=(0, 0, 0), angles=(0, 0, 0), zoom=1)
-    camera.view_direction = (1, 0, 0)
+    camera.set_view_direction(view_direction=(1, 0, 0))
     assert np.allclose(camera.view_direction, (1, 0, 0))
     assert np.allclose(camera.angles, (0, 0, 90))
 
     # case with ordering and up direction setting
     view_direction = np.array([1, 2, 3], dtype=float)
     view_direction /= np.linalg.norm(view_direction)
-    camera.view_direction = view_direction
+    camera.set_view_direction(view_direction=view_direction)
     assert np.allclose(camera.view_direction, view_direction)
     assert np.allclose(camera.angles, (58.1, -53.3, 26.6), atol=0.1)
 
