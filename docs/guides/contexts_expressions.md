@@ -53,7 +53,7 @@ At runtime, in Python code, this might be captured by the expression:
 viewer.layers.selection.active.data.ndim >= 3
 ```
 
-... however, if you don't have access to the future `viewer` instance, that
+However, if you don't have access to the future `viewer` instance, that
 doesn't work.  So napari has the concept of `Expr` objects that represent an
 expression "without a context", to be evaluated later.
 
