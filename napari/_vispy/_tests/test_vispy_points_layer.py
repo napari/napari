@@ -58,7 +58,7 @@ def test_change_text_color_updates_node_color():
     np.testing.assert_array_equal(text_node.color.rgb, [[0, 0, 1]])
 
 
-def test_change_properties_updates_node_strings(make_napari_viewer):
+def test_change_properties_updates_node_strings():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(points, properties=properties, text='class')

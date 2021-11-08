@@ -5,16 +5,13 @@ a numpy array with N rows, N being the number of data points, and a dtype of np.
 """
 import warnings
 from itertools import cycle
-from typing import AnyStr, List, Tuple, Union
+from typing import Union
 
 import numpy as np
-from vispy.color import Color, ColorArray
 
+from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.translations import trans
-
-# All parsable input datatypes that a user can provide
-ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
 
 
 def transform_color_with_defaults(

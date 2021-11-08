@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from vispy.color import BaseColormap as VispyColormap
-from vispy.color import get_colormap, get_colormaps
+from vispy.color import Color, ColorArray, get_colormap, get_colormaps
 
 from ..translations import trans
 from .bop_colors import bopd
@@ -13,8 +13,13 @@ from .colormap import Colormap
 from .standardize_color import transform_color
 from .vendored import cm, colorconv
 
+# All parsable input color types that a user can provide
+ColorType = Union[List, Tuple, np.ndarray, str, Color, ColorArray]
+
+
 ValidColormapArg = Union[
     str,
+    ColorType,
     VispyColormap,
     Colormap,
     Tuple[str, VispyColormap],
@@ -498,6 +503,11 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     -------
     Colormap
 
+    Warns
+    -----
+    UserWarning
+        If ``colormap`` is not a valid colormap argument type.
+
     Raises
     ------
     KeyError
@@ -508,8 +518,6 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     TypeError
         If a dict is provided and any of the values are not Colormap instances
         or valid inputs to the Colormap constructor.
-    TypeError
-        If ``colormap`` is not a valid colormap argument type.
     """
     with AVAILABLE_COLORMAPS_LOCK:
         if isinstance(colormap, str):
