@@ -635,6 +635,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     cm_type=type(colormap),
                 )
             )
+
             # Use default colormap
             name = 'gray'
 
