@@ -497,7 +497,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     Parameters
     ----------
     colormap : ValidColormapArg
-        See ValidColormapArg for support input types.
+        See ValidColormapArg for supported input types.
 
     Returns
     -------
@@ -642,7 +642,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     return AVAILABLE_COLORMAPS[name]
 
 
-def _colormap_from_colors(colors) -> Optional[Colormap]:
+def _colormap_from_colors(colors: ColorType) -> Optional[Colormap]:
     try:
         color_array = transform_color(colors)
     except (ValueError, AttributeError, KeyError):

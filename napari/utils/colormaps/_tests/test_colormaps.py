@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import pytest
 from vispy.color import Colormap as VispyColormap
@@ -181,21 +179,20 @@ def test_colormap_error_suggestion():
     assert name in str(excinfo.value)
 
 
-def _single_color_variants() -> Tuple:
-    np.random.seed(0)
-    rgba_color = np.random.rand(4)
-    rgb_color = rgba_color[:3]
-    return (
-        rgb_color,
-        rgba_color,
-        tuple(rgb_color),
-        tuple(rgba_color),
-        list(rgb_color),
-        list(rgba_color),
-    )
+np.random.seed(0)
+_SINGLE_RGBA_COLOR = np.random.rand(4)
+_SINGLE_RGB_COLOR = _SINGLE_RGBA_COLOR[:3]
+_SINGLE_COLOR_VARIANTS = (
+    _SINGLE_RGB_COLOR,
+    _SINGLE_RGBA_COLOR,
+    tuple(_SINGLE_RGB_COLOR),
+    tuple(_SINGLE_RGBA_COLOR),
+    list(_SINGLE_RGB_COLOR),
+    list(_SINGLE_RGBA_COLOR),
+)
 
 
-@pytest.mark.parametrize('color', _single_color_variants())
+@pytest.mark.parametrize('color', _SINGLE_COLOR_VARIANTS)
 def test_ensure_colormap_with_single_color(color):
     """See https://github.com/napari/napari/issues/3141"""
     colormap = ensure_colormap(color)
@@ -204,21 +201,20 @@ def test_ensure_colormap_with_single_color(color):
     np.testing.assert_array_equal(colormap.colors[-1], expected_color)
 
 
-def _multi_color_variants() -> Tuple:
-    np.random.seed(0)
-    rgba_colors = np.random.rand(5, 4)
-    rgb_colors = rgba_colors[:, :3]
-    return (
-        rgb_colors,
-        rgba_colors,
-        tuple(tuple(color) for color in rgb_colors),
-        tuple(tuple(color) for color in rgba_colors),
-        list(list(color) for color in rgb_colors),
-        list(list(color) for color in rgba_colors),
-    )
+np.random.seed(0)
+_MULTI_RGBA_COLORS = np.random.rand(5, 4)
+_MULTI_RGB_COLORS = _MULTI_RGBA_COLORS[:, :3]
+_MULTI_COLORS_VARIANTS = (
+    _MULTI_RGB_COLORS,
+    _MULTI_RGBA_COLORS,
+    tuple(tuple(color) for color in _MULTI_RGB_COLORS),
+    tuple(tuple(color) for color in _MULTI_RGBA_COLORS),
+    list(list(color) for color in _MULTI_RGB_COLORS),
+    list(list(color) for color in _MULTI_RGBA_COLORS),
+)
 
 
-@pytest.mark.parametrize('colors', _multi_color_variants())
+@pytest.mark.parametrize('colors', _MULTI_COLORS_VARIANTS)
 def test_ensure_colormap_with_multi_colors(colors):
     """See https://github.com/napari/napari/issues/3141"""
     colormap = ensure_colormap(colors)
