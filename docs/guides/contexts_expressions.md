@@ -217,9 +217,9 @@ associated with a `Context` object that tracks the value of various context
 keys.  It is the job of these various objects (i.e. the `Viewer` and the
 `LayerList`) to update the values in their `Contexts` when they change.
 Continuing with the example above, if the user clicks on a 4-dimensional layer,
-the `LayerList` would set the context key `active_layer_ndim` to `4`.  (napari
-would then be able to enable/disable various commands & menus that required a
-specific number of dimensions in the active layer)
+the `LayerList` would set the context key `active_layer_ndim` to `4`. napari
+would then be able to enable/disable various commands and menus that required a
+specific number of dimensions in the active layer.
 
 ### The `Context` class
 
