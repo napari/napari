@@ -209,8 +209,8 @@ Now that we've seen how expression names are declared, let's discuss the
 "context" in which these expressions are evaluated.
 
 As mentioned, a context is ultimately just a mapping between variable names and
-their values. (When evaluating a napari expression with `Expr.eval`, you can
-indeed just pass a `dict` as that mapping.)
+their values. When evaluating a napari expression with `Expr.eval`, you can
+indeed just pass a `dict` as that mapping.
 
 Important objects in napari, such as the `Viewer` and the `LayerList` will be
 associated with a `Context` object that tracks the value of various context
