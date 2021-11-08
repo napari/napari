@@ -44,6 +44,7 @@ from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
+from .overlays import Overlays
 from .scale_bar import ScaleBar
 from .text_overlay import TextOverlay
 from .tooltip import Tooltip
@@ -115,6 +116,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     text_overlay: TextOverlay = Field(
         default_factory=TextOverlay, allow_mutation=False
     )
+    overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
     status: str = 'Ready'
