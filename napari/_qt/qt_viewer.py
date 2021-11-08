@@ -11,6 +11,9 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from napari.layers.base.base import Layer
 
+from ..components._interaction_box_mouse_bindings import (
+    InteractionBoxMouseBindings,
+)
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
@@ -49,6 +52,7 @@ from .._vispy import (  # isort:skip
     VispyCamera,
     VispyCanvas,
     VispyScaleBarOverlay,
+    VispyInteractionBox,
     VispyTextOverlay,
     create_vispy_visual,
 )
@@ -437,6 +441,12 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.resize.connect(
             self.text_overlay._on_position_change
+        )
+        self.interaction_box_visual = VispyInteractionBox(
+            self.viewer, parent=self.view.scene, order=1e6 + 3
+        )
+        self.interaction_box_mousebindings = InteractionBoxMouseBindings(
+            self.viewer, self.interaction_box_visual
         )
 
     def _create_performance_dock_widget(self):
