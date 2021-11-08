@@ -7,7 +7,7 @@ Working groups are subteams of the napari community formed by members interested
 We believe working groups are helpful ways of moving forward work on particular topics, and the following guidelines serve to help team members form and/or maintain healthy working groups. Working groups should:
 
 - Identify at least two co-leads responsible for the creation and continuation of the group. It may be helpful to have one [core developer](https://napari.org/community/team.html#current-core-developers) “sponsor” who is kept aware of work and can help shepherd through PRs as needed. All other membership is opt-in.
-- Create a “charter” that describes working group’s core focus and goals, holds meeting minutes, lists membership/zulip channel/meeting schedule. 
+- Create a readme for your [working groups folder](https://github.com/napari/meeting-notes/tree/main/2021/working-groups) that names leads/sponsor, describes working group’s core goals/priorities, lists zulip channel, and links to meeting schedule (see template below). 
 - Identify achievable goals and deliverables that map thoughtfully to napari’s larger strategies and [roadmap](https://napari.org/roadmaps/index.html). These goals may focus on specific short-term goals or longer term efforts that still require exploration. 
 - Hold regular public meetings that are listed on the [napari community calendar](https://napari.org/community/team.html#meeting-schedule). Cadence is up to the team, but monthly minimum is recommended.
 - Maintain and publicly store the working group’s meeting minutes in [napari/meeting-notes](https://github.com/napari/meeting-notes).
@@ -31,8 +31,28 @@ Membership is optional and opt-in, and you can join by attending group meetings 
 ## How to start a new working group
 
 1. Check the existing working groups list (above) to make sure the problem space is unique.
-2. Propose working group on [napari’s main zulip](https://napari.zulipchat.com) and schedule meeting to begin charter creation (live or asynchronously).
-3. Complete charter with associated items (lead identification, summary focus, meeting time, etc) and share with group.
+2. Propose working group on [napari’s main zulip](https://napari.zulipchat.com) and schedule meeting to begin readme creation (live or asynchronously).
+3. Start a working groups folder in [napari/meeting-notes](https://github.com/napari/meeting-notes) and complete readme with associated items (see below) and share with group.
 4. Set up zulip stream named working-group-[name], add group and associated items to this site, and add meeting to napari community calendar. 
 5. Collaborate with others and get working. After each meeting, store the working group’s meeting minutes in [napari/meeting-notes](https://github.com/napari/meeting-notes).
 6. Share out at the next community meeting. Boom, you’ve done it!
+
+## Template for working group one pager readme
+
+This folder contains meeting notes for the **working group name**
+
+**(co)leads:**
+
+**core dev sponsor:**
+
+**link to zulip channel**
+
+**meeting schedule and zoom link**
+
+**Working group goals:** _(example: ensure that all napari users have a place to easily find the information necessary to meet their goals with napari. We want to ensure that the napari community has the infrastructure needed to contribute reproducible documentation.)_
+
+**Team priorities:**
+_example_
+- Content & organisation or napari.org
+- Users must have a clear path through the documentation (currently lacking)
+- Easy for people to contribute to and keep updated
