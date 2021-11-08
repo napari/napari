@@ -115,7 +115,7 @@ Out[12]: False
 
 ### napari context keys
 
-To capture napari-specific conditions, napari will declare special string
+To capture napari-specific conditions, napari will declare special
 **names** that can be used in a napari expression.  Taking the example above, a
 plugin might only want to provide a function if “the active layer has at least 3
 dimensions”. For this, napari recognizes the variable `active_layer_ndim` used
