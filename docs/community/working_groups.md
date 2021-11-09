@@ -37,7 +37,7 @@ Membership is optional and opt-in, and you can join by attending group meetings 
 5. Collaborate with others and get working. After each meeting, store the working group’s meeting minutes in [napari/meeting-notes](https://github.com/napari/meeting-notes).
 6. Share out at the next community meeting. Boom, you’ve done it!
 
-## Template for working group one pager readme
+## Template for working group readme
 
 This folder contains meeting notes for the **working group name**
 
