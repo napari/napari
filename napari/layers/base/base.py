@@ -184,7 +184,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
-
+    source : Source
+        source of the layer (such as a plugin or widget)
 
     Notes
     -----
