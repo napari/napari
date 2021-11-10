@@ -71,9 +71,10 @@ def test_adding_removing_layer(make_napari_viewer):
     layer = Image(data)
 
     # Check that no internal callbacks have been registered
-    assert len(layer.events.callbacks) == 0
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
 
     # Add layer
     viewer.layers.append(layer)
@@ -90,9 +91,10 @@ def test_adding_removing_layer(make_napari_viewer):
     assert viewer.dims.ndim == 2
 
     # Check that no other internal callbacks have been registered
-    assert len(layer.events.callbacks) == 0
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
 
     # re-add layer
     viewer.layers.append(layer)
@@ -118,7 +120,7 @@ def test_add_remove_layer_external_callbacks(
     layer.events.connect(my_custom_callback)
 
     # Check that no internal callbacks have been registered
-    assert len(layer.events.callbacks) == 1
+    assert len(layer.events.callbacks) == 2
     for em in layer.events.emitters.values():
         # warningEmitters are not connected when connecting to the emitterGroup
         if not isinstance(em, WarningEmitter):
@@ -135,7 +137,7 @@ def test_add_remove_layer_external_callbacks(
     assert len(viewer.layers) == 0
 
     # Check that all internal callbacks have been removed
-    assert len(layer.events.callbacks) == 1
+    assert len(layer.events.callbacks) == 2
     for em in layer.events.emitters.values():
         # warningEmitters are not connected when connecting to the emitterGroup
         if not isinstance(em, WarningEmitter):
