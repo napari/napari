@@ -329,9 +329,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ),
         )
         self.name = name
-        self.events.connect(self.clean_cache)
+        self.events.connect(self._clean_cache)
 
-    def clean_cache(self, event):
+    def _clean_cache(self, event):
         if event is not None and event.type == "status":
             return
         self._extent_cache = None

@@ -639,5 +639,5 @@ def test_world_data_extent():
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
     extent2 = layer.extent
     assert layer.extent is extent2
-    layer.clean_cache(None)
+    layer._clean_cache(None)
     assert layer.extent is not extent2
