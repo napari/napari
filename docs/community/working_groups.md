@@ -4,7 +4,7 @@ Working groups are subteams of the napari community formed by members interested
 
 ## Working group guidelines
 
-We believe working groups are helpful ways of moving forward work on particular topics, and the following guidelines serve to help team members form and/or maintain healthy working groups. Working groups should:
+We believe working groups are a helpful way to move forward work on particular topics. The following guidelines serve to help community members form and/or maintain healthy working groups. Working groups should:
 
 - Identify at least two co-leads responsible for the creation and continuation of the group. It may be helpful to have one [core developer](https://napari.org/community/team.html#current-core-developers) “sponsor” who is kept aware of work and can help shepherd through PRs as needed. All other membership is opt-in.
 - Create a readme for your [working groups folder](https://github.com/napari/meeting-notes/tree/main/2021/working-groups) that names leads/sponsor, describes working group’s core goals/priorities, lists zulip channel, and links to meeting schedule (see template below). 
@@ -26,7 +26,7 @@ _Click on a group to view members, minutes, etc._
 
 ## How to join an existing working group
 
-Membership is optional and opt-in, and you can join by attending group meetings (which can be found on the [napari community calendar](https://napari.org/community/team.html#meeting-schedule)) and/or reaching out to the working group lead.
+Membership is optional and opt-in, and you can join by attending group meetings (which can be found on the [napari community calendar](https://napari.org/community/team.html#meeting-schedule)) and/or reaching out to the working group leads.
 
 ## How to start a new working group
 
@@ -53,6 +53,6 @@ This folder contains meeting notes for the **working group name**
 
 **Team priorities:**
 _example_
-- Content & organisation or napari.org
+- Content & organisation of napari.org
 - Users must have a clear path through the documentation (currently lacking)
 - Easy for people to contribute to and keep updated
