@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from napari._tests.utils import layer_test_data
+from napari.utils.events.event import WarningEmitter
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -54,12 +55,13 @@ def test_attrs_arrays(Layer, data, ndim):
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
 def test_no_callbacks(Layer, data, ndim):
-    """Test no internal callbacks for layer emmitters."""
+    """Test only one internal callbacks for layer emmitters."""
     layer = Layer(data)
     # Check layer has been correctly created
     assert layer.ndim == ndim
 
     # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 0
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
