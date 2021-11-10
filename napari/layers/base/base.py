@@ -292,7 +292,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events = EmitterGroup(
             source=self,
             auto_connect=False,
-            event_added=self._connect_event,
             refresh=Event,
             set_data=Event,
             blending=Event,
@@ -330,15 +329,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ),
         )
         self.name = name
-
-    def _connect_event(self, name, emitter):
-        if name in {"status", "select", "deselect"}:
-            return
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            emitter.connect(self.clean_cache)
+        self.events.connect(self.clean_cache)
 
     def clean_cache(self, event):
+        if event.type == "status":
+            return
         self._extent_cache = None
 
     def __str__(self):
