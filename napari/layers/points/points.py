@@ -31,8 +31,8 @@ from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
 from ._points_utils import (
+    _create_box_3d,
     create_box,
-    create_box_from_corners_3d,
     fix_data_points,
     points_to_squares,
 )
@@ -360,6 +360,7 @@ class Points(Layer):
 
         self._drag_start = None
         self._drag_normal = None
+        self._drag_up = None
 
         # initialize view data
         self._indices_view = np.empty(0)
@@ -1488,9 +1489,10 @@ class Points(Layer):
             if self._drag_normal is None:
                 pos = create_box(self._drag_box)
             else:
-                pos = create_box_from_corners_3d(
-                    self._drag_box, self._drag_normal[0]
+                pos = _create_box_3d(
+                    self._drag_box, self._drag_normal[0], self._drag_up[0]
                 )
+                print(pos)
             pos = pos[list(range(4)) + [0]]
         else:
             pos = None

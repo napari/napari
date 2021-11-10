@@ -1,8 +1,32 @@
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 
+from ...utils.geometry import (
+    project_points_onto_plane,
+    rotate_points_on_plane,
+    rotation_matrix_from_vectors_2d,
+)
 from ...utils.translations import trans
+
+
+def _create_box_3d(
+    corners: np.ndarray, normal_vector: np.ndarray, up_vector: np.ndarray
+) -> np.ndarray:
+    horizontal_vector = np.cross(normal_vector, up_vector)
+
+    diagonal_vector = corners[1] - corners[0]
+
+    up_displacement = np.dot(diagonal_vector, up_vector) * up_vector
+    horizontal_displacement = (
+        np.dot(diagonal_vector, horizontal_vector) * horizontal_vector
+    )
+
+    corner_1 = corners[0] + horizontal_displacement
+    corner_3 = corners[0] + up_displacement
+
+    box = np.array([corners[0], corner_1, corners[1], corner_3])
+    return box
 
 
 def create_box(data):
@@ -67,17 +91,74 @@ def points_to_squares(points, sizes):
     """
     rect = np.concatenate(
         [
-            points + np.sqrt(2) / 2 * np.array([sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([sizes, -sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, -sizes]).T,
+            points + 0.5 * np.array([sizes, sizes]).T,
+            points + 0.5 * np.array([sizes, -sizes]).T,
+            points + 0.5 * np.array([-sizes, sizes]).T,
+            points + 0.5 * np.array([-sizes, -sizes]).T,
         ],
         axis=0,
     )
     return rect
 
 
-def points_in_box(corners, points, sizes):
+def _points_in_box_3d(
+    corners: np.ndarray,
+    points: np.ndarray,
+    sizes: np.ndarray,
+    view_direction: np.ndarray,
+    up_direction: np.ndarray,
+) -> List[int]:
+    bbox_corners = _create_box_3d(corners, view_direction, up_direction)
+
+    # project points onto the same plane as the box
+    projected_points, projection_distances = project_points_onto_plane(
+        points=points,
+        plane_point=bbox_corners[0],
+        plane_normal=view_direction,
+    )
+
+    # rotate to axis aligned and make 2D
+    if np.allclose(up_direction, [0, 0, 1]):
+        rotated_points, rotation_matrix = rotate_points_on_plane(
+            points=projected_points,
+            current_plane_normal=view_direction,
+            new_plane_normal=[1, 0, 0],
+        )
+        rotated_bbox_corners = bbox_corners @ rotation_matrix.T
+        rotated_up_vector = np.dot(rotation_matrix, up_direction)
+
+        points_2d = rotated_points[:, 1:]
+        bbox_corners_2d = rotated_bbox_corners[:, 1:]
+        up_vector_2d = rotated_up_vector[1:]
+    else:
+        rotated_points, rotation_matrix = rotate_points_on_plane(
+            points=projected_points,
+            current_plane_normal=view_direction,
+            new_plane_normal=[0, 0, 1],
+        )
+        rotated_bbox_corners = bbox_corners @ rotation_matrix.T
+        rotated_up_vector = np.dot(rotation_matrix, up_direction)
+
+        points_2d = rotated_points[:, :2]
+        bbox_corners_2d = rotated_bbox_corners[:, :2]
+        up_vector_2d = rotated_up_vector[:2]
+
+    rotation_mat_axis_aligned = rotation_matrix_from_vectors_2d(
+        up_vector_2d, [1, 0]
+    )
+    points_axis_aligned = points_2d @ rotation_mat_axis_aligned.T
+    bbox_corners_axis_aligned = bbox_corners_2d @ rotation_mat_axis_aligned.T
+
+    inside = points_in_box(
+        bbox_corners_axis_aligned, points_axis_aligned, sizes
+    )
+
+    return inside
+
+
+def points_in_box(
+    corners: np.ndarray, points: np.ndarray, sizes: np.ndarray
+) -> List[int]:
     """Determine which points are in an axis aligned box defined by the corners
 
     Parameters

@@ -156,3 +156,28 @@ class Camera(EventedModel):
         view_direction_nd = np.zeros(ndim)
         view_direction_nd[list(dims_displayed)] = self.view_direction
         return view_direction_nd
+
+    def calculate_nd_up_direction(
+        self, ndim: int, dims_displayed: Tuple[int]
+    ) -> np.ndarray:
+        """Calculate the nD up direction vector of the camera.
+
+        Parameters
+        ----------
+        ndim : int
+            Number of dimensions in which to embed the 3D view vector.
+        dims_displayed : Tuple[int]
+            Dimensions in which to embed the 3D view vector.
+
+
+        Returns
+        -------
+        up_direction_nd : np.ndarray
+            nD view direction vector as an (ndim, ) ndarray
+
+        """
+        if len(dims_displayed) != 3:
+            return None
+        up_direction_nd = np.zeros(ndim)
+        up_direction_nd[list(dims_displayed)] = self.up_direction
+        return up_direction_nd
