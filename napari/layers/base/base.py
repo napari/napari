@@ -332,9 +332,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.name = name
 
     def _connect_event(self, name, emitter):
-        if name in {"status"}:
+        if name in {"status", "select", "deselect"}:
             return
-        emitter.connect(self.clean_cache)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            emitter.connect(self.clean_cache)
 
     def clean_cache(self, event):
         self._extent_cache = None
