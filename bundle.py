@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
 import tomlkit
 
@@ -205,6 +206,17 @@ def patch_python_lib_location():
         print("symlinking", orig, "to", dest)
 
 
+def add_sentinel_file():
+    if MACOS:
+        (Path(APP_DIR) / "Contents" / "MacOS" / ".napari_is_bundled").touch()
+    elif LINUX:
+        (Path(APP_DIR) / "usr" / "bin" / ".napari_is_bundled").touch()
+    elif WINDOWS:
+        (Path(APP_DIR) / "python" / ".napari_is_bundled").touch()
+    else:
+        print("!!! Sentinel files not yet implemented in", sys.platform)
+
+
 def patch_environment_variables():
     os.environ["ARCH"] = architecture()
 
@@ -262,6 +274,7 @@ def bundle():
         time.sleep(0.5)
 
         add_site_packages_to_path()
+        add_sentinel_file()
 
         if WINDOWS:
             patch_wxs()
