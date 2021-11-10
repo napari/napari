@@ -1,4 +1,4 @@
-# Community Resources
+# Community resources
 
 ```{tableofcontents}
 ```
