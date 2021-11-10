@@ -171,61 +171,50 @@ def crosshair_pixmap(size):
     """Create a cross cursor with white/black hollow square pixmap in the middle.
     For use as points cursor."""
 
-    # size = max(int(size), 1)
-    # pixmap = QPixmap(QSize(size, size))
-    # pixmap.fill(Qt.transparent)
-    # painter = QPainter(pixmap)
-    # painter.setPen(Qt.white)
-    # painter.drawRect(0, 0, size - 1, size - 1)
-    # painter.setPen(Qt.black)
-    # painter.drawRect(1, 1, size - 3, size - 3)
-    # painter.end()
-    # return pixmap
-
-    # painter.drawLine(QPointF(0, size/2), QPointF(size/2-gap,size/2))
-    # painter.drawLine(QPointF(size/2+gap, size/2), QPointF(size, size/2))
-    # painter.drawLine(QPointF(size/2, 0), QPointF(size/2,size/2-gap))
-    # painter.drawLine(QPointF(size/2, size/2+gap), QPointF(size/2, size))
     size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
-    # painter.setPen(Qt.black)
-    # painter.drawRect(0, 0, size-1, size-1)
 
-    # p.setPen(QPen(Qt::white, 3));
-    pen = QPen(Qt.white, 3)
+    pval = (3 / 27) * size
+    pen = QPen(Qt.white, pval)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
     painter.setPen(pen)
-    # painter.setPen(Qt.white)
-    val = 0.12
-    loc = (size / 2) - (val * size)
-    # painter.drawRect(0, 0, size-1, size-1)
-    painter.drawRect(
-        loc, loc, val * 2 * size, val * 2 * size
-    )  # white rectangle
-    pen = QPen(Qt.white, 4)
-    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
-    painter.setPen(pen)
-    painter.drawLine(QPoint(size / 2, loc), QPoint(size / 2, 0))
-    painter.drawLine(QPoint(size / 2, size - loc), QPoint(size / 2, size))
-    painter.drawLine(QPoint(loc, size / 2), QPoint(0, size / 2))
-    painter.drawLine(QPoint(size - loc, size / 2), QPoint(size, size / 2))
 
-    val = 0.1
-    loc = (size / 2) - (val * size)
-    pen = QPen(Qt.black, 2)
+    loc = (9 / 27) * size
+    hw = (10 / 27) * size
+    painter.drawRect(loc - 1, loc - 1, hw, hw)
+    loc = (11 / 27) * size
+    pval = (2 / 27) * size
+    hw = (7 / 27) * size
+    pen = QPen(Qt.black, pval)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
     painter.setPen(pen)
-    painter.drawRect(loc, loc, val * 2 * size, val * 2 * size)
-    painter.drawLine(QPoint(size / 2, loc - 2), QPoint(size / 2, 2))
-    painter.drawLine(
-        QPoint(size / 2, size - loc + 2), QPoint(size / 2, size - 2)
-    )
-    painter.drawLine(QPoint(loc - 2, size / 2), QPoint(2, size / 2))
-    painter.drawLine(
-        QPoint(size - loc + 2, size / 2), QPoint(size - 2, size / 2)
-    )
+    painter.drawRect(loc - 1, loc - 1, hw, hw)
+
+    pval = (4 / 27) * size
+    pen = QPen(Qt.white, pval)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.setPen(pen)
+    mid = size / 2
+    val1 = (7 / 27) * size
+    val2 = (20 / 27) * size
+    painter.drawLine(QPoint(mid, 7), QPoint(mid, 0))
+    painter.drawLine(QPoint(7, mid), QPoint(0, mid))
+    painter.drawLine(QPoint(mid, val2), QPoint(mid, size))
+    painter.drawLine(QPoint(val2, mid), QPoint(size, mid))
+
+    pen = QPen(Qt.black, pval / 2)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.setPen(pen)
+    val1 = (8 / 27) * size
+    val2 = (2 / 27) * size
+    val3 = (19 / 27) * size
+    val4 = size - 2
+    painter.drawLine(QPoint(mid, val1), QPoint(mid, val2))
+    painter.drawLine(QPoint(val1, mid), QPoint(val2, mid))
+    painter.drawLine(QPoint(mid, val3), QPoint(mid, val4))
+    painter.drawLine(QPoint(val3, mid), QPoint(val4, mid))
 
     painter.end()
     return pixmap
