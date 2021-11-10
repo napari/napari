@@ -1,6 +1,6 @@
 import numpy as np
 
-from ._points_utils import points_in_box
+from ._points_utils import _points_in_box_3d, points_in_box
 
 
 def select(layer, event):
@@ -69,17 +69,23 @@ def select(layer, event):
                 view_dir_data = np.asarray(
                     layer._world_to_data_ray(event.view_direction)
                 )[event.dims_displayed]
+                up_dir_data = np.asarray(
+                    layer._world_to_data_ray(event.up_direction)
+                )[event.dims_displayed]
                 if layer._drag_normal is None:
                     layer._drag_normal = np.array([view_dir_data])
+                    layer._drag_up = np.array([up_dir_data])
                 elif layer._drag_normal.shape[0] == 1:
                     layer._drag_normal = np.vstack(
                         [layer._drag_normal, view_dir_data]
                     )
+                    layer._drag_up = np.vstack([layer._drag_up, up_dir_data])
                 else:
                     layer._drag_normal[-1] = np.asarray(view_dir_data)
+                    layer._drag_up[-1] = np.asarray(up_dir_data)
             else:
                 layer._drag_normal = None
-            print(layer._drag_normal)
+                layer._drag_up = None
 
             layer._set_highlight()
         yield
@@ -94,9 +100,19 @@ def select(layer, event):
     if layer._is_selecting:
         layer._is_selecting = False
         if len(layer._view_data) > 0:
-            selection = points_in_box(
-                layer._drag_box, layer._view_data, layer._view_size
-            )
+            if layer._drag_box.shape[1] == 2:
+                selection = points_in_box(
+                    layer._drag_box, layer._view_data, layer._view_size
+                )
+            else:
+                selection = _points_in_box_3d(
+                    layer._drag_box,
+                    layer._view_data,
+                    layer._view_size,
+                    layer._drag_normal[0],
+                    layer._drag_up[0],
+                )
+
             # If shift combine drag selection with existing selected ones
             if modify_selection:
                 new_selected = layer._indices_view[selection]
@@ -108,6 +124,8 @@ def select(layer, event):
                 layer.selected_data = layer._indices_view[selection]
         else:
             layer.selected_data = set()
+    layer._drag_normal = None
+    layer._drag_up = None
     layer._set_highlight(force=True)
 
 

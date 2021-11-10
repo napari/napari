@@ -1492,7 +1492,6 @@ class Points(Layer):
                 pos = _create_box_3d(
                     self._drag_box, self._drag_normal[0], self._drag_up[0]
                 )
-                print(pos)
             pos = pos[list(range(4)) + [0]]
         else:
             pos = None

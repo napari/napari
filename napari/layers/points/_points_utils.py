@@ -2,11 +2,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 
-from ...utils.geometry import (
-    project_points_onto_plane,
-    rotate_points_on_plane,
-    rotation_matrix_from_vectors_2d,
-)
+from ...utils.geometry import project_points_onto_plane
 from ...utils.translations import trans
 
 
@@ -111,43 +107,21 @@ def _points_in_box_3d(
     bbox_corners = _create_box_3d(corners, view_direction, up_direction)
 
     # project points onto the same plane as the box
-    projected_points, projection_distances = project_points_onto_plane(
+    projected_points, _ = project_points_onto_plane(
         points=points,
         plane_point=bbox_corners[0],
         plane_normal=view_direction,
     )
 
-    # rotate to axis aligned and make 2D
-    if np.allclose(up_direction, [0, 0, 1]):
-        rotated_points, rotation_matrix = rotate_points_on_plane(
-            points=projected_points,
-            current_plane_normal=view_direction,
-            new_plane_normal=[1, 0, 0],
-        )
-        rotated_bbox_corners = bbox_corners @ rotation_matrix.T
-        rotated_up_vector = np.dot(rotation_matrix, up_direction)
-
-        points_2d = rotated_points[:, 1:]
-        bbox_corners_2d = rotated_bbox_corners[:, 1:]
-        up_vector_2d = rotated_up_vector[1:]
-    else:
-        rotated_points, rotation_matrix = rotate_points_on_plane(
-            points=projected_points,
-            current_plane_normal=view_direction,
-            new_plane_normal=[0, 0, 1],
-        )
-        rotated_bbox_corners = bbox_corners @ rotation_matrix.T
-        rotated_up_vector = np.dot(rotation_matrix, up_direction)
-
-        points_2d = rotated_points[:, :2]
-        bbox_corners_2d = rotated_bbox_corners[:, :2]
-        up_vector_2d = rotated_up_vector[:2]
-
-    rotation_mat_axis_aligned = rotation_matrix_from_vectors_2d(
-        up_vector_2d, [1, 0]
+    horz_direction = np.cross(view_direction, up_direction)
+    plane_basis = np.column_stack(
+        [up_direction, horz_direction, view_direction]
     )
-    points_axis_aligned = points_2d @ rotation_mat_axis_aligned.T
-    bbox_corners_axis_aligned = bbox_corners_2d @ rotation_mat_axis_aligned.T
+
+    bbox_corners_axis_aligned = bbox_corners @ plane_basis
+    bbox_corners_axis_aligned = bbox_corners_axis_aligned[:, :2]
+    points_axis_aligned = projected_points @ plane_basis
+    points_axis_aligned = points_axis_aligned[:, :2]
 
     inside = points_in_box(
         bbox_corners_axis_aligned, points_axis_aligned, sizes
