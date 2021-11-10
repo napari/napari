@@ -69,15 +69,15 @@ def test_double_linking_noop():
     l2 = layers.Points(None)
     l3 = layers.Points(None)
     # no callbacks to begin with
-    assert len(l1.events.opacity.callbacks) == 0
+    assert len(l1.events.opacity.callbacks) == 1
 
     # should have two after linking layers
     link_layers([l1, l2, l3])
-    assert len(l1.events.opacity.callbacks) == 2
+    assert len(l1.events.opacity.callbacks) == 3
 
     # should STILL have two after linking layers again
     link_layers([l1, l2, l3])
-    assert len(l1.events.opacity.callbacks) == 2
+    assert len(l1.events.opacity.callbacks) == 3
 
 
 def test_removed_linked_target():
@@ -101,12 +101,12 @@ def test_context_manager():
     l1 = layers.Points(None)
     l2 = layers.Points(None)
     l3 = layers.Points(None)
-    assert len(l1.events.opacity.callbacks) == 0
+    assert len(l1.events.opacity.callbacks) == 1
     with layers_linked([l1, l2, l3], ('opacity',)):
-        assert len(l1.events.opacity.callbacks) == 2
-        assert len(l1.events.blending.callbacks) == 0  # it's just opacity
+        assert len(l1.events.opacity.callbacks) == 3
+        assert len(l1.events.blending.callbacks) == 1  # it's just opacity
         del l2  # if we lose a layer in the meantime it should be ok
-    assert len(l1.events.opacity.callbacks) == 0
+    assert len(l1.events.opacity.callbacks) == 1
 
 
 def test_unlink_layers():
@@ -116,22 +116,22 @@ def test_unlink_layers():
     l3 = layers.Points(None)
 
     link_layers([l1, l2, l3])
-    assert len(l1.events.opacity.callbacks) == 2
+    assert len(l1.events.opacity.callbacks) == 3
     unlink_layers([l1, l2], ('opacity',))  # just unlink opacity on l1/l2
 
-    assert len(l1.events.opacity.callbacks) == 1
-    assert len(l2.events.opacity.callbacks) == 1
+    assert len(l1.events.opacity.callbacks) == 2
+    assert len(l2.events.opacity.callbacks) == 2
     # l3 is still connected to them both
-    assert len(l3.events.opacity.callbacks) == 2
+    assert len(l3.events.opacity.callbacks) == 3
     # blending was untouched
-    assert len(l1.events.blending.callbacks) == 2
-    assert len(l2.events.blending.callbacks) == 2
-    assert len(l3.events.blending.callbacks) == 2
+    assert len(l1.events.blending.callbacks) == 3
+    assert len(l2.events.blending.callbacks) == 3
+    assert len(l3.events.blending.callbacks) == 3
 
     unlink_layers([l1, l2, l3])  # unlink everything
-    assert len(l1.events.blending.callbacks) == 0
-    assert len(l2.events.blending.callbacks) == 0
-    assert len(l3.events.blending.callbacks) == 0
+    assert len(l1.events.blending.callbacks) == 1
+    assert len(l2.events.blending.callbacks) == 1
+    assert len(l3.events.blending.callbacks) == 1
 
 
 def test_unlink_single_layer():
@@ -141,16 +141,16 @@ def test_unlink_single_layer():
     l3 = layers.Points(None)
 
     link_layers([l1, l2, l3])
-    assert len(l1.events.opacity.callbacks) == 2
+    assert len(l1.events.opacity.callbacks) == 3
     unlink_layers([l1], ('opacity',))  # just unlink L1 opacicity from others
-    assert len(l1.events.opacity.callbacks) == 0
-    assert len(l2.events.opacity.callbacks) == 1
-    assert len(l3.events.opacity.callbacks) == 1
+    assert len(l1.events.opacity.callbacks) == 1
+    assert len(l2.events.opacity.callbacks) == 2
+    assert len(l3.events.opacity.callbacks) == 2
 
     # blending was untouched
-    assert len(l1.events.blending.callbacks) == 2
-    assert len(l2.events.blending.callbacks) == 2
-    assert len(l3.events.blending.callbacks) == 2
+    assert len(l1.events.blending.callbacks) == 3
+    assert len(l2.events.blending.callbacks) == 3
+    assert len(l3.events.blending.callbacks) == 3
 
     unlink_layers([l1])  # completely unlink L1 from everything
-    assert not l1.events.blending.callbacks
+    assert len(l1.events.blending.callbacks) == 1
