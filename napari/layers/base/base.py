@@ -1263,8 +1263,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         view_direction: np.ndarray,
         dims_displayed: List,
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """Calculate a (point, normal) plane parallel to the canvas in data
-        coordinates.
+       """Calculate a (point, normal) plane parallel to the canvas in data
+        coordinates, centered on the centre of rotation of the camera.
 
         Parameters
         ----------
