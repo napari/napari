@@ -130,6 +130,34 @@ def test_add_point(create_known_points_layer_2d):
     np.testing.assert_allclose(layer.data[-1], known_non_point)
 
 
+def test_add_point_3d(create_known_points_layer_3d):
+    """Add a point by clicking in 3D mode."""
+    layer, n_points, known_not_point = create_known_points_layer_3d
+
+    layer.mode = 'add'
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            position=known_not_point,
+            view_direction=[1, 0, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', position=known_not_point)
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check clicked point selected
+    assert len(layer.data) == (n_points + 1)
+    np.testing.assert_array_equal(layer.data[-1], known_not_point)
+
+
 def test_drag_in_add_mode(create_known_points_layer_2d):
     """Drag in add mode and make sure no point is added."""
     layer, n_points, known_non_point = create_known_points_layer_2d
@@ -189,7 +217,7 @@ def test_select_point(create_known_points_layer_2d):
 
 
 def test_select_point_3d(create_known_points_layer_3d):
-    """Select a point by clicking on one in select mode."""
+    """Select a point by clicking on one in select mode in 3D mode."""
     layer, n_points, _ = create_known_points_layer_3d
 
     layer.mode = 'select'
@@ -200,8 +228,8 @@ def test_select_point_3d(create_known_points_layer_3d):
         Event(
             type='mouse_press',
             position=position,
-            view_direction=(1, 0, 0),
-            dims_displayed=(0, 1, 2),
+            view_direction=[1, 0, 0],
+            dims_displayed=[0, 1, 2],
         )
     )
     mouse_press_callbacks(layer, event)
@@ -213,6 +241,97 @@ def test_select_point_3d(create_known_points_layer_3d):
     # Check clicked point selected
     assert len(layer.selected_data) == 1
     assert 1 in layer.selected_data
+
+
+def test_unselect_by_click_point_3d(create_known_points_layer_3d):
+    """Select unselecting point by shift clicking on it again in 3D mode."""
+    layer, n_points, _ = create_known_points_layer_3d
+
+    layer.mode = 'select'
+    position = tuple(layer.data[1])
+
+    layer.selected_data = {0, 1}
+
+    # Simulate shift+click on point 1
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            position=position,
+            modifiers=['Shift'],
+            view_direction=[1, 0, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', modifiers=['Shift'], position=position)
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check clicked point selected
+    assert layer.selected_data == {0}
+
+
+def test_selct_by_shift_click_3d(create_known_points_layer_3d):
+    """Select selecting point by shift clicking on an additional point in 3D"""
+    layer, n_points, _ = create_known_points_layer_3d
+
+    layer.mode = 'select'
+    position = tuple(layer.data[1])
+
+    layer.selected_data = {0}
+
+    # Simulate shift+click on point 1
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            position=position,
+            modifiers=['Shift'],
+            view_direction=[1, 0, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', modifiers=['Shift'], position=position)
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check clicked point selected
+    assert layer.selected_data == {0, 1}
+
+
+def test_unselect_by_click_empty_3d(create_known_points_layer_3d):
+    """Select unselecting point by clicking in empty space"""
+    layer, n_points, known_not_point = create_known_points_layer_3d
+
+    layer.mode = 'select'
+
+    layer.selected_data = {0, 1}
+
+    # Simulate click on point
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            position=known_not_point,
+            view_direction=[1, 0, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', position=known_not_point)
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check clicked point selected
+    assert len(layer.selected_data) == 0
 
 
 def test_after_in_add_mode_point(create_known_points_layer_2d):
