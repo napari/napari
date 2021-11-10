@@ -19,10 +19,10 @@ We believe working groups are helpful ways of moving forward work on particular 
 
 _Click on a group to view members, minutes, etc._
 
-Bundled Application (Co-Leads: [Gonzalo Peña-Castellanos](https://github.com/goanpeca) and [Ziyang Liu](https://github.com/potating-potato))
-Plugins (Co-Leads: [Talley Lambert](https://github.com/tlambert03) and [Nathan Clack](https://github.com/nclack))
-Architecture (Co-Leads: [Juan Nunez-Iglesias](https://github.com/jni) and [Andy Sweet](https://github.com/andy-sweet))
-Documentation (Co-Leads: [Genevieve Buckley](https://github.com/GenevieveBuckley) and [Justin Kiggins](https://github.com/neuromusic))
+- Bundled Application (Co-Leads: [Gonzalo Peña-Castellanos](https://github.com/goanpeca) and [Ziyang Liu](https://github.com/potating-potato))
+- Plugins (Co-Leads: [Talley Lambert](https://github.com/tlambert03) and [Nathan Clack](https://github.com/nclack))
+- Architecture (Co-Leads: [Juan Nunez-Iglesias](https://github.com/jni) and [Andy Sweet](https://github.com/andy-sweet))
+- Documentation (Co-Leads: [Genevieve Buckley](https://github.com/GenevieveBuckley) and [Justin Kiggins](https://github.com/neuromusic))
 
 ## How to join an existing working group
 
