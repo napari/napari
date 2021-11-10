@@ -59,7 +59,7 @@ def select(layer, event):
             with layer.events.data.blocker():
                 layer._move(layer.selected_data, coordinates)
         elif len(event.dims_displayed) == 2:
-            # only allow click+drag bounding box in 2D21
+            # only allow click+drag bounding box in 2D
             coord = [coordinates[i] for i in layer._dims_displayed]
             layer._is_selecting = True
             if layer._drag_start is None:
