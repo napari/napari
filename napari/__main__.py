@@ -321,6 +321,14 @@ def _run():
             else:
                 viewer.window.add_plugin_dock_widget(pname)
 
+        from napari.utils.misc import (
+            install_certifi_opener,
+            running_as_bundled_app,
+        )
+
+        if running_as_bundled_app():
+            install_certifi_opener()
+
         run(gui_exceptions=True)
 
 
