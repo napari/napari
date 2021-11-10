@@ -58,13 +58,29 @@ def select(layer, event):
             is_moving = True
             with layer.events.data.blocker():
                 layer._move(layer.selected_data, coordinates)
-        elif len(event.dims_displayed) == 2:
-            # only allow click+drag bounding box in 2D21
+        else:
             coord = [coordinates[i] for i in layer._dims_displayed]
             layer._is_selecting = True
             if layer._drag_start is None:
                 layer._drag_start = coord
             layer._drag_box = np.array([layer._drag_start, coord])
+
+            if event.view_direction is not None:
+                view_dir_data = np.asarray(
+                    layer._world_to_data_ray(event.view_direction)
+                )[event.dims_displayed]
+                if layer._drag_normal is None:
+                    layer._drag_normal = np.array([view_dir_data])
+                elif layer._drag_normal.shape[0] == 1:
+                    layer._drag_normal = np.vstack(
+                        [layer._drag_normal, view_dir_data]
+                    )
+                else:
+                    layer._drag_normal[-1] = np.asarray(view_dir_data)
+            else:
+                layer._drag_normal = None
+            print(layer._drag_normal)
+
             layer._set_highlight()
         yield
 

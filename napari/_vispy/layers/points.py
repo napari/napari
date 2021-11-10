@@ -87,27 +87,27 @@ class VispyPointsLayer(VispyBaseLayer):
         )
 
         # only draw a box in 2D
-        if self.layer._ndisplay == 2:
-            if (
-                self.layer._highlight_box is None
-                or 0 in self.layer._highlight_box.shape
-            ):
-                pos = np.zeros((1, self.layer._ndisplay))
-                width = 0
-            else:
-                pos = self.layer._highlight_box
-                width = settings.appearance.highlight_thickness
-
-            self.node._subvisuals[2].set_data(
-                pos=pos[:, ::-1],
-                color=self._highlight_color,
-                width=width,
-            )
+        # if self.layer._ndisplay == 2:
+        if (
+            self.layer._highlight_box is None
+            or 0 in self.layer._highlight_box.shape
+        ):
+            pos = np.zeros((1, self.layer._ndisplay))
+            width = 0
         else:
-            self.node._subvisuals[2].set_data(
-                pos=np.zeros((1, self.layer._ndisplay)),
-                width=0,
-            )
+            pos = self.layer._highlight_box
+            width = settings.appearance.highlight_thickness
+
+        self.node._subvisuals[2].set_data(
+            pos=pos[:, ::-1],
+            color=self._highlight_color,
+            width=width,
+        )
+        # else:
+        #     self.node._subvisuals[2].set_data(
+        #         pos=np.zeros((1, self.layer._ndisplay)),
+        #         width=0,
+        #     )
 
         self.node.update()
 

@@ -28,6 +28,28 @@ def create_box(data):
     return box
 
 
+def create_box_from_corners_3d(
+    corners: np.ndarray, normal: np.ndarray
+) -> np.ndarray:
+    """Create a box from two opposing corners and the normal."""
+    centroid = np.mean(corners, axis=0)
+    half_diagonal_vector = corners[0] - centroid
+    half_diagonal_half_distance = np.linalg.norm(half_diagonal_vector)
+    diagonal_unit_vector = half_diagonal_vector / half_diagonal_half_distance
+
+    orthogonal_diagonal_vector = np.cross(diagonal_unit_vector, normal)
+    corner_1 = (
+        centroid + half_diagonal_half_distance * orthogonal_diagonal_vector
+    )
+    corner_3 = (
+        centroid - half_diagonal_half_distance * orthogonal_diagonal_vector
+    )
+
+    box = np.vstack([corners[0], corner_1, corners[1], corner_3])
+
+    return box
+
+
 def points_to_squares(points, sizes):
     """Expand points to squares defined by their size
 

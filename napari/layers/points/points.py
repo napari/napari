@@ -30,7 +30,12 @@ from ..utils.layer_utils import (
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
-from ._points_utils import create_box, fix_data_points, points_to_squares
+from ._points_utils import (
+    create_box,
+    create_box_from_corners_3d,
+    fix_data_points,
+    points_to_squares,
+)
 
 if TYPE_CHECKING:
     from pandas import DataFrame
@@ -354,6 +359,7 @@ class Points(Layer):
         self._highlight_box = None
 
         self._drag_start = None
+        self._drag_normal = None
 
         # initialize view data
         self._indices_view = np.empty(0)
@@ -1478,8 +1484,13 @@ class Points(Layer):
             self._highlight_index = []
 
         # only display dragging selection box in 2D
-        if self._ndisplay == 2 and self._is_selecting:
-            pos = create_box(self._drag_box)
+        if self._is_selecting:
+            if self._drag_normal is None:
+                pos = create_box(self._drag_box)
+            else:
+                pos = create_box_from_corners_3d(
+                    self._drag_box, self._drag_normal[0]
+                )
             pos = pos[list(range(4)) + [0]]
         else:
             pos = None
