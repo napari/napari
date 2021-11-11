@@ -6,7 +6,7 @@ them using magicgui.
 """
 
 import napari
-from dask import array as da
+import dask.array as da
 from dask.array.lib.stride_tricks import sliding_window_view
 from skimage import data
 
@@ -29,8 +29,6 @@ napari.run()
 # Part 2: using magicgui to vary the slice thickness.
 
 from magicgui import magicgui
-import toolz as tz
-import functools
 
 def sliding_window_mean(
     arr: napari.types.ImageData, size: int = 1
