@@ -54,7 +54,7 @@ def test_attrs_arrays(Layer, data, ndim):
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
-def test_no_callbacks(Layer, data, ndim):
+def test_one_callbacks(Layer, data, ndim):
     """Test only one internal callbacks for layer emmitters."""
     layer = Layer(data)
     # Check layer has been correctly created
