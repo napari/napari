@@ -56,6 +56,7 @@ class PluginsMenu(NapariMenu):
 
         from ...plugins import plugin_manager
 
+        # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
         _iterable: Iterator[Tuple[str, Tuple[str, Sequence[str]]]]
         try:
             import npe2
@@ -79,7 +80,6 @@ class PluginsMenu(NapariMenu):
     ):
         from ...plugins import menu_item_template
 
-        print(plugin_name, widgets)
         multiprovider = len(widgets) > 1
         if multiprovider:
             menu = NapariMenu(plugin_name, self)
