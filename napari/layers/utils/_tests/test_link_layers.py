@@ -68,14 +68,14 @@ def test_double_linking_noop():
     l1 = layers.Points(None)
     l2 = layers.Points(None)
     l3 = layers.Points(None)
-    # no callbacks to begin with
+    # one callback to begin with
     assert len(l1.events.opacity.callbacks) == 1
 
-    # should have two after linking layers
+    # should have three after linking layers
     link_layers([l1, l2, l3])
     assert len(l1.events.opacity.callbacks) == 3
 
-    # should STILL have two after linking layers again
+    # should STILL have three after linking layers again
     link_layers([l1, l2, l3])
     assert len(l1.events.opacity.callbacks) == 3
 
@@ -121,7 +121,7 @@ def test_unlink_layers():
 
     assert len(l1.events.opacity.callbacks) == 2
     assert len(l2.events.opacity.callbacks) == 2
-    # l3 is still connected to them both
+    # l3 is still connected to them both (and clean_cache)
     assert len(l3.events.opacity.callbacks) == 3
     # blending was untouched
     assert len(l1.events.blending.callbacks) == 3

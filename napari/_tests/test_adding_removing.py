@@ -70,7 +70,7 @@ def test_adding_removing_layer(make_napari_viewer):
     data = np.random.random((2, 6, 30, 40))
     layer = Image(data)
 
-    # Check that no internal callbacks have been registered
+    # Check that only extent cache internal callbacks have been registered
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
@@ -90,7 +90,7 @@ def test_adding_removing_layer(make_napari_viewer):
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
 
-    # Check that no other internal callbacks have been registered
+    # Check that only extent cache callbacks have been registered
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
@@ -119,7 +119,7 @@ def test_add_remove_layer_external_callbacks(
 
     layer.events.connect(my_custom_callback)
 
-    # Check that no internal callbacks have been registered
+    # Check that only extent cache internal callbacks have been registered
     assert len(layer.events.callbacks) == 2
     for em in layer.events.emitters.values():
         # warningEmitters are not connected when connecting to the emitterGroup
@@ -130,13 +130,17 @@ def test_add_remove_layer_external_callbacks(
     # Check layer added correctly
     assert len(viewer.layers) == 1
     # check that adding a layer created new callbacks
-    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+    assert any(
+        len(em.callbacks) > 1
+        for em in layer.events.emitters.values()
+        if not isinstance(em, WarningEmitter)
+    )
 
     viewer.layers.remove(layer)
     # Check layer removed correctly
     assert len(viewer.layers) == 0
 
-    # Check that all internal callbacks have been removed
+    # Check that all internal callbacks other to clean_cache have been removed
     assert len(layer.events.callbacks) == 2
     for em in layer.events.emitters.values():
         # warningEmitters are not connected when connecting to the emitterGroup

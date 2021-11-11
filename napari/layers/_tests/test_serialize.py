@@ -60,7 +60,7 @@ def test_no_callbacks(Layer, data, ndim):
     # Check layer has been correctly created
     assert layer.ndim == ndim
 
-    # Check that no internal callbacks have been registered
+    # Check that only one internal callbacks have been registered
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
