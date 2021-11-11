@@ -16,10 +16,12 @@ from skimage import data
 blobs = data.binary_blobs(length=64, n_dim=3)
 blobs_dask = da.from_array(blobs, chunks=(1, 64, 64))
 
-# original shape [60, 1, 1, 5, 64, 64], slice out singleton axes
-blobs_dask_windows = sliding_window_view(
-    blobs_dask, window_shape=(5, 64, 64)
-)[:, 0, 0, ...]  
+# original shape [60, 1, 1, 5, 64, 64],
+# use squeeze to remove singleton axes
+blobs_dask_windows = np.squeeze(
+    sliding_window_view(blobs_dask, window_shape=(5, 64, 64)),
+    axis=(1, 2),
+)
 blobs_sum = da.sum(blobs_dask_windows, axis=1)
 viewer = napari.view_image(blobs_sum)
 
@@ -35,9 +37,10 @@ def sliding_window_mean(
 ) -> napari.types.LayerDataTuple:
     window_shape = (size,) + (arr.shape[1:])
     arr_windows = sliding_window_view(arr, window_shape=window_shape)
-    arr_windows_1d = arr_windows[
-        (slice(None),) + (0,) * (arr.ndim - 1) + (Ellipsis,)
-    ]
+    # as before, use np.squeeze to remove singleton axes
+    arr_windows_1d = np.squeeze(
+        arr_windows, axis=tuple(range(1, arr.ndim))
+    )
     arr_summed = da.sum(arr_windows_1d, axis=1) / size
     return (
         arr_summed,
