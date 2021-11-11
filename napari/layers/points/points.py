@@ -7,6 +7,7 @@ import numpy as np
 from scipy.stats import gmean
 
 from ...utils.colormaps import Colormap, ValidColormapArg
+from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.colormaps.standardize_color import (
     get_color_namelist,
     hex_to_name,
@@ -20,8 +21,6 @@ from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
-from ..utils.color_transformations import ColorType
-from ..utils.interactivity_utils import click_plane_from_intersection_points
 from ..utils.layer_utils import (
     coerce_current_properties,
     get_current_properties,

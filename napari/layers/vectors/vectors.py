@@ -5,13 +5,13 @@ from typing import Dict, Tuple, Union
 import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg
+from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
-from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import get_current_properties, prepare_properties
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
