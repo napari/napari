@@ -700,10 +700,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
+        extent_data = self._extent_data
         if self._extent_cache is None:
             self._extent_cache = Extent(
-                data=self._extent_data,
-                world=self._extent_world,
+                data=extent_data,
+                world=self._get_extent_world(extent_data),
                 step=abs(self.scale),
             )
         return self._extent_cache
