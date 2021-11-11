@@ -56,8 +56,7 @@ def _active_shape(s: LayerSel) -> Optional[Tuple[int, ...]]:
 
 
 def _same_shape(s: LayerSel) -> bool:
-    return len({tuple(getattr(x.data, "shape", ())) for x in s}) == 1
-    # tensorstore.TensorStore has shape type np.ndarray
+    return len({getattr(x.data, "shape", ()) for x in s}) == 1
 
 
 def _active_dtype(s: LayerSel) -> DTypeLike:
