@@ -332,7 +332,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.connect(self._clean_cache)
 
     def _clean_cache(self, event):
-        if event is not None and event.type == "status":
+        if event is not None and event.type not in {
+            "status",
+            "blending",
+            "opacity",
+            "visible",
+            "name",
+            "thumbnail",
+            "help",
+            "cursor",
+            "cursor_size",
+            "editable",
+        }:
             return
         self._extent_cache = None
 
