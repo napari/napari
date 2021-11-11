@@ -808,7 +808,7 @@ class QtViewer(QSplitter):
         elif cursor == 'circle':
             q_cursor = QCursor(circle_pixmap(size))
         elif cursor == 'crosshair':
-            q_cursor = QCursor(crosshair_pixmap(81))
+            q_cursor = QCursor(crosshair_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
 
