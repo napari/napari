@@ -201,11 +201,6 @@ def crosshair_pixmap(size):
         (size - square) // 2, (size - square) // 2, square - 1, square - 1
     )
 
-    pen = QPen(Qt.blue, 1)
-    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
-    painter.setPen(pen)
-    painter.drawPoint(size // 2, size // 2)
-
     pen = QPen(Qt.black, 2)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
     painter.setPen(pen)

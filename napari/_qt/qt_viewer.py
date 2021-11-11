@@ -796,7 +796,6 @@ class QtViewer(QSplitter):
         else:
             size = self.viewer.cursor.size
 
-        print(cursor)
         if cursor == 'square':
             # make sure the square fits within the current canvas
             if size < 8 or size > (
