@@ -1,4 +1,4 @@
-# Governance Model
+# Governance model
 
 ## Abstract
 
@@ -12,9 +12,9 @@ participate in the decision making process. This document describes how that
 participation takes place, how to find consensus, and how deadlocks are
 resolved.
 
-## Roles And Responsibilities
+## Roles and responsibilities
 
-### The Community
+### The community
 
 The napari community consists of anyone using or working with the project
 in any way.
@@ -96,7 +96,7 @@ be postponed until the new member has joined and another vote can be held.
 The napari steering council may be contacted at `napari-steering-council@googlegroups.com`.
 Or via the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) GitHub team.
 
-## Decision Making Process
+## Decision making process
 
 Decisions about the future of the project are made through discussion with all
 members of the community. All non-sensitive project management discussion takes
