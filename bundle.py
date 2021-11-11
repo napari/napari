@@ -34,8 +34,10 @@ SETUP_CFG = os.path.join(HERE, 'setup.cfg')
 
 if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
+    APP_DIR = os.path.join(BUILD_DIR, APP, 'src')
 elif LINUX:
     BUILD_DIR = os.path.join(HERE, 'linux')
+    APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.AppDir')
 elif MACOS:
     BUILD_DIR = os.path.join(HERE, 'macOS')
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
