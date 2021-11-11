@@ -191,10 +191,6 @@ def test_world_data_extent():
     layer = Surface((np.array(data), np.array((0, 1, 2)), np.array((0, 0, 0))))
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1), (20, 5), False)
-    extent2 = layer.extent
-    assert layer.extent is extent2
-    layer._clean_cache(None)
-    assert layer.extent is not extent2
 
 
 def test_shading():
