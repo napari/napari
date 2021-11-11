@@ -280,7 +280,7 @@ def rebuild_theme_settings():
     settings.appearance.refresh_themes()
 
 
-_themes = EventedDict(
+_themes: EventedDict[str, Theme] = EventedDict(
     {
         'dark': Theme(
             **{
@@ -321,9 +321,9 @@ _themes = EventedDict(
 )
 
 with contextlib.suppress(ImportError):
-    from npe2 import plugin_manager
+    from npe2 import PluginManager
 
-    for theme in plugin_manager._themes.values():
+    for theme in PluginManager.instance().iter_themes():
         # `theme.type` is dark/light and supplies defaults for keys that
         # are not provided by the plugin
         d = _themes[theme.type].dict()

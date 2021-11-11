@@ -1,7 +1,7 @@
 import itertools
 import warnings
 from collections import namedtuple
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -14,6 +14,9 @@ from ..utils.naming import inc_name_count
 from ..utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
+
+if TYPE_CHECKING:
+    from npe2.manifest.io import WriterContribution
 
 
 class LayerList(SelectableEventedList[Layer]):
@@ -328,7 +331,7 @@ class LayerList(SelectableEventedList[Layer]):
         *,
         selected: bool = False,
         plugin: Optional[str] = None,
-        _command_id: Optional[str] = None,
+        _writer: Optional['WriterContribution'] = None,
     ) -> List[str]:
         """Save all or only selected layers to a path using writer plugins.
 
@@ -376,6 +379,8 @@ class LayerList(SelectableEventedList[Layer]):
             Name of the plugin to use for saving. If None then all plugins
             corresponding to appropriate hook specification will be looped
             through to find the first one that can save the data.
+        _writer : WriterContribution, optional
+            private: npe2 specific writer override.
 
         Returns
         -------
@@ -395,6 +400,4 @@ class LayerList(SelectableEventedList[Layer]):
             warnings.warn(msg)
             return []
 
-        return save_layers(
-            path, layers, plugin=plugin, _command_id=_command_id
-        )
+        return save_layers(path, layers, plugin=plugin, _writer=_writer)
