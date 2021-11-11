@@ -667,10 +667,6 @@ def test_world_data_extent():
     layer = Image(data)
     extent = np.array(((0,) * 3, shape))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
-    extent2 = layer.extent
-    assert layer.extent is extent2
-    layer.scale = (2, 2, 2)
-    assert layer.extent is not extent2
 
 
 def test_data_to_world_2d_scale_translate_affine_composed():

@@ -799,10 +799,6 @@ def test_world_data_extent():
     layer = Labels(data)
     extent = np.array(((0,) * 3, shape))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), True)
-    extent2 = layer.extent
-    assert layer.extent is extent2
-    layer._clean_cache(None)
-    assert layer.extent is not extent2
 
 
 @pytest.mark.parametrize(
