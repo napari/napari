@@ -21,6 +21,7 @@ from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
+from ..utils.interactivity_utils import click_plane_from_intersection_points
 from ..utils.layer_utils import (
     coerce_current_properties,
     get_current_properties,
