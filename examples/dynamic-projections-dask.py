@@ -5,6 +5,7 @@ When the computation takes one or more parameters, one can tie a UI to
 them using magicgui.
 """
 
+import numpy as np
 import napari
 import dask.array as da
 from dask.array.lib.stride_tricks import sliding_window_view
@@ -22,7 +23,7 @@ blobs_dask_windows = np.squeeze(
     sliding_window_view(blobs_dask, window_shape=(5, 64, 64)),
     axis=(1, 2),
 )
-blobs_sum = da.sum(blobs_dask_windows, axis=1)
+blobs_sum = np.sum(blobs_dask_windows, axis=1)
 viewer = napari.view_image(blobs_sum)
 
 napari.run()
@@ -37,11 +38,11 @@ def sliding_window_mean(
 ) -> napari.types.LayerDataTuple:
     window_shape = (size,) + (arr.shape[1:])
     arr_windows = sliding_window_view(arr, window_shape=window_shape)
-    # as before, use np.squeeze to remove singleton axes
+    # as before, use squeeze to remove singleton axes
     arr_windows_1d = np.squeeze(
         arr_windows, axis=tuple(range(1, arr.ndim))
     )
-    arr_summed = da.sum(arr_windows_1d, axis=1) / size
+    arr_summed = np.sum(arr_windows_1d, axis=1) / size
     return (
         arr_summed,
         {
