@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple, Union
 import magicgui as mgui
 import numpy as np
 
+from ..._vendor.cpython.functools import cached_property
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -242,7 +243,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._ndim = ndim
         self._ndisplay = 2
         self._dims_order = list(range(ndim))
-        self._extent_cache = None
 
         # Create a transform chain consisting of four transforms:
         # 1. `tile2data`: An initial transform only needed to display tiles
@@ -640,7 +640,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._position = (0,) * (ndim - old_ndim) + self._position
 
         self._ndim = ndim
-        self._extent_cache = None
+        if 'extent' in self.__dict__:
+            del self.__dict__['extent']
 
         self.refresh()
 
@@ -697,17 +698,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         return world_extent
 
-    @property
+    @cached_property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
         extent_data = self._extent_data
-        if self._extent_cache is None:
-            self._extent_cache = Extent(
-                data=extent_data,
-                world=self._get_extent_world(extent_data),
-                step=abs(self.scale),
-            )
-        return self._extent_cache
+        return Extent(
+            data=extent_data,
+            world=self._get_extent_world(extent_data),
+            step=abs(self.scale),
+        )
 
     @property
     def _slice_indices(self):
