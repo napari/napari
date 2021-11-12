@@ -21,7 +21,7 @@ from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
-from ..utils.interactivity_utils import click_plane_from_intersection_points
+from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import (
     coerce_current_properties,
     get_current_properties,
@@ -1297,7 +1297,7 @@ class Points(Layer):
         if (start_point is None) or (end_point is None):
             # if the ray doesn't intersect the data volume, no points could have been intersected
             return None
-        plane_point, plane_normal = click_plane_from_intersection_points(
+        plane_point, plane_normal = displayed_plane_from_nd_line_segment(
             start_point, end_point, dims_displayed
         )
 

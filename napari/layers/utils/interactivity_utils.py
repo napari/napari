@@ -5,21 +5,23 @@ import numpy as np
 from ...utils.geometry import project_points_onto_plane
 
 
-def click_plane_from_intersection_points(
+def displayed_plane_from_nd_line_segment(
     start_point: np.ndarray,
     end_point: np.ndarray,
     dims_displayed: Union[List[int], np.ndarray],
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Get the plane that is at the near side of the data bounding box and is
-    normal to the click direction from the start_point and end_point of the
-    click ray that intersects the data bounding box.
+    """Get the plane defined by start_point and the normal vector that goes
+    from start_point to end_point.
+
+    Note the start_point and end_point are nD and
+    the returned plane is in the displayed dimensions (i.e., 3D).
 
     Parameters
     ----------
     start_point : np.ndarray
-        The first intersection of the click ray with the data bounding box.
+        The start point of the line segment in nD coordinates.
     end_point : np.ndarray
-        The second intersection of the click ray with the data bounding box.
+        The end point of the line segment in nD coordinates..
     dims_displayed : Union[List[int], np.ndarray]
         The dimensions of the data array currently in view.
 
