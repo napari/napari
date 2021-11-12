@@ -167,14 +167,11 @@ def square_pixmap(size):
 
 
 @lru_cache(maxsize=64)
-def crosshair_pixmap(size):
+def crosshair_pixmap():
     """Create a cross cursor with white/black hollow square pixmap in the middle.
     For use as points cursor."""
 
-    size = max(int(size), 1)
-    size = 25 * size
-    if size % 2 == 0:
-        size += 1
+    size = 25
 
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.transparent)
