@@ -109,12 +109,13 @@ def rotation_matrix_from_vectors(vec_1, vec_2):
     return rotation_matrix
 
 
-def rotate_points_on_plane(
+def rotate_points(
     points: np.ndarray,
     current_plane_normal: np.ndarray,
     new_plane_normal: np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Rotate points that all lie on the same plane to a plane with a new normal vector.
+    """Rotate points using a rotation matrix defined by the rotation from
+    current_plane to new_plane.
 
     Parameters
     ----------
@@ -552,7 +553,7 @@ def line_in_quadrilateral_3d(
     )
 
     # rotate the plane to make the triangles 2D
-    rotated_vertices, rotation_matrix = rotate_points_on_plane(
+    rotated_vertices, rotation_matrix = rotate_points(
         points=vertices_plane,
         current_plane_normal=line_direction,
         new_plane_normal=[0, 0, 1],

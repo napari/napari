@@ -15,7 +15,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
-from ...utils.geometry import project_points_onto_plane, rotate_points_on_plane
+from ...utils.geometry import project_points_onto_plane, rotate_points
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
@@ -1309,7 +1309,7 @@ class Points(Layer):
         )
 
         # rotate points and plane to be axis aligned with normal [0, 0, 1]
-        rotated_points, rotation_matrix = rotate_points_on_plane(
+        rotated_points, rotation_matrix = rotate_points(
             points=projected_points,
             current_plane_normal=plane_normal,
             new_plane_normal=[0, 0, 1],
