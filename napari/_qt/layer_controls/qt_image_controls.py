@@ -1,12 +1,21 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QSlider,
+)
 
 from ...layers.image._image_constants import (
     Interpolation,
     Interpolation3D,
+    Mode,
     Rendering,
 )
+from ...utils.action_manager import action_manager
 from ...utils.translations import trans
+from ..widgets.qt_mode_buttons import QtModeRadioButton
 from .qt_image_controls_base import QtBaseImageControls
 
 
@@ -40,11 +49,16 @@ class QtImageControls(QtBaseImageControls):
         Dropdown menu to select the rendering mode for image display.
     renderLabel : qtpy.QtWidgets.QLabel
         Label for the rendering mode dropdown menu.
+    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+        Button for pan/zoom mode.
+    transform_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to transform layer.
     """
 
     def __init__(self, layer):
         super().__init__(layer)
 
+        self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.interpolation.connect(self._on_interpolation_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
@@ -97,31 +111,86 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
+        self.transform_button = QtModeRadioButton(
+            layer,
+            'transform',
+            Mode.TRANSFORM,
+        )
+        action_manager.bind_button(
+            'napari:activate_image_transform_mode', self.transform_button
+        )
+        self.panzoom_button = QtModeRadioButton(
+            layer,
+            'pan_zoom',
+            Mode.PAN_ZOOM,
+            checked=True,
+        )
+        action_manager.bind_button(
+            'napari:activate_image_pan_zoom_mode', self.panzoom_button
+        )
+
+        self.button_group = QButtonGroup(self)
+        self.button_group.addButton(self.transform_button)
+        self.button_group.addButton(self.panzoom_button)
+
+        button_row = QHBoxLayout()
+        button_row.addStretch(1)
+        button_row.addWidget(self.transform_button)
+        button_row.addWidget(self.panzoom_button)
+        button_row.setContentsMargins(0, 0, 0, 5)
+        button_row.setSpacing(4)
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 0, 1)
-        self.grid_layout.addWidget(QLabel(trans._('contrast limits:')), 1, 0)
-        self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('auto-contrast:')), 2, 0)
-        self.grid_layout.addWidget(self.autoScaleBar, 2, 1)
-        self.grid_layout.addWidget(QLabel(trans._('gamma:')), 3, 0)
-        self.grid_layout.addWidget(self.gammaSlider, 3, 1)
-        self.grid_layout.addWidget(QLabel(trans._('colormap:')), 4, 0)
-        self.grid_layout.addLayout(colormap_layout, 4, 1)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 5, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 5, 1)
-        self.grid_layout.addWidget(self.interpLabel, 6, 0)
-        self.grid_layout.addWidget(self.interpComboBox, 6, 1)
-        self.grid_layout.addWidget(self.renderLabel, 7, 0)
-        self.grid_layout.addWidget(self.renderComboBox, 7, 1)
-        self.grid_layout.addWidget(self.isoThresholdLabel, 8, 0)
-        self.grid_layout.addWidget(self.isoThresholdSlider, 8, 1)
-        self.grid_layout.addWidget(self.attenuationLabel, 9, 0)
-        self.grid_layout.addWidget(self.attenuationSlider, 9, 1)
-        self.grid_layout.setRowStretch(9, 1)
+        self.grid_layout.addLayout(button_row, 0, 1)
+        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 1, 0)
+        self.grid_layout.addWidget(self.opacitySlider, 1, 1)
+        self.grid_layout.addWidget(QLabel(trans._('contrast limits:')), 2, 0)
+        self.grid_layout.addWidget(self.contrastLimitsSlider, 2, 1)
+        self.grid_layout.addWidget(QLabel(trans._('auto-contrast:')), 3, 0)
+        self.grid_layout.addWidget(self.autoScaleBar, 3, 1)
+        self.grid_layout.addWidget(QLabel(trans._('gamma:')), 4, 0)
+        self.grid_layout.addWidget(self.gammaSlider, 4, 1)
+        self.grid_layout.addWidget(QLabel(trans._('colormap:')), 5, 0)
+        self.grid_layout.addLayout(colormap_layout, 5, 1)
+        self.grid_layout.addWidget(QLabel(trans._('blending:')), 6, 0)
+        self.grid_layout.addWidget(self.blendComboBox, 6, 1)
+        self.grid_layout.addWidget(self.interpLabel, 7, 0)
+        self.grid_layout.addWidget(self.interpComboBox, 7, 1)
+        self.grid_layout.addWidget(self.renderLabel, 8, 0)
+        self.grid_layout.addWidget(self.renderComboBox, 8, 1)
+        self.grid_layout.addWidget(self.isoThresholdLabel, 9, 0)
+        self.grid_layout.addWidget(self.isoThresholdSlider, 9, 1)
+        self.grid_layout.addWidget(self.attenuationLabel, 10, 0)
+        self.grid_layout.addWidget(self.attenuationSlider, 10, 1)
+        self.grid_layout.setRowStretch(10, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
+
+    def _on_mode_change(self, event):
+        """Update ticks in checkbox widgets when image layer mode is changed.
+
+        Available modes for image layer are:
+        * TRANSFORM
+        * PAN_ZOOM
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+
+        Raises
+        ------
+        ValueError
+            Raise error if event.mode is not PAN_ZOOM or TRANSFORM.
+        """
+        mode = event.mode
+        if mode == Mode.PAN_ZOOM:
+            self.panzoom_button.setChecked(True)
+        elif mode == Mode.TRANSFORM:
+            self.transform_button.setChecked(True)
+        else:
+            raise ValueError(trans._("Mode not recognized {mode}", mode=mode))
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.

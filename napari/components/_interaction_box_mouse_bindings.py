@@ -46,7 +46,39 @@ class InteractionBoxMouseBindings:
         self._viewer = viewer
         self._interaction_box_model = viewer.overlays.interaction_box
         self._interaction_box_visual = interaction_box_visual
+        viewer.layers.events.inserted.connect(self._on_add_layer)
         self.initialize_mouse_events(viewer)
+
+    def _on_add_layer(self, event):
+        """Gets called when layer is added and adds event listener to mdoe change"""
+        layer = event.value
+        layer.events.mode.connect(self._on_mode_change)
+
+    def _on_mode_change(self, event):
+
+        viewer = self._viewer
+        if event.mode == 'transform':
+            viewer.layers.selection.active = event.source
+            viewer.overlays.interaction_box.points = (
+                viewer.layers.selection.active.extent.data
+            )
+            viewer.overlays.interaction_box.transform = event.source.affine
+
+            viewer.overlays.interaction_box.show = True
+            viewer.overlays.interaction_box.show_vertices = True
+            viewer.overlays.interaction_box.show_handle = True
+            viewer.overlays.interaction_box.allow_new_selection = False
+
+            viewer.overlays.interaction_box.events.transform_drag.connect(
+                self._on_tranform_change
+            )
+        else:
+            viewer.overlays.interaction_box.show = False
+            viewer.overlays.interaction_box.points = None
+            viewer.overlays.interaction_box.transform = Affine()
+
+    def _on_tranform_change(self, event):
+        self._viewer.layers.selection.active.affine = event.value
 
     def initialize_mouse_events(self, viewer):
         """Adds event handling functions to the layer"""
