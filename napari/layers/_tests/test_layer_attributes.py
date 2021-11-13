@@ -22,21 +22,35 @@ def test_layer_bounding_box_order(image_shape, dims_displayed, expected):
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
-def test_layer_extent_cache(Layer, data, ndim):
+def test_update_scale_updates_layer_extent_cache(Layer, data, ndim):
+    np.random.seed(0)
+    layer = Layer(data)
+    # Check layer has been correctly created
+    assert layer.ndim == ndim
+    np.testing.assert_almost_equal(layer.extent.step, (1,) * layer.ndim)
+
+    # Check layer extent change when scale changes
+    old_extent = layer.extent
+    layer.scale = (2,) * layer.ndim
+    new_extent = layer.extent
+    assert old_extent is not layer.extent
+    assert new_extent is layer.extent
+    np.testing.assert_almost_equal(layer.extent.step, (2,) * layer.ndim)
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_update_data_updates_layer_extent_cache(Layer, data, ndim):
     np.random.seed(0)
     layer = Layer(data)
     # Check layer has been correctly created
     assert layer.ndim == ndim
 
-    # Check layer extent doesn't change when unrelated attribute changes
-    layer.opacity = 1
+    # Check layer extent change when data changes
     old_extent = layer.extent
-    assert old_extent is layer.extent
-    layer.opacity = 0.5
-    assert old_extent is layer.extent
-
-    # Check layer extent change when scale changes
-    layer.scale = (2,) + layer.scale[1:]
-    old_extent2 = layer.extent
+    try:
+        layer.data = data + 1
+    except TypeError:
+        return
+    new_extent = layer.extent
     assert old_extent is not layer.extent
-    assert old_extent2 is layer.extent
+    assert new_extent is layer.extent
