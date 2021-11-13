@@ -275,7 +275,6 @@ class Labels(_ImageBase):
         )
 
         self.events.add(
-            mode=Event,
             preserve_labels=Event,
             properties=Event,
             n_edit_dimensions=Event,

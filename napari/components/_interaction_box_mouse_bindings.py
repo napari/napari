@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 
+from ..utils.events import disconnect_events
 from ..utils.transforms import Affine
 from ..utils.translations import trans
 from ._interaction_box_constants import Box
@@ -50,20 +51,29 @@ class InteractionBoxMouseBindings:
         self._interaction_box_model = viewer.overlays.interaction_box
         self._interaction_box_visual = interaction_box_visual
         viewer.layers.events.inserted.connect(self._on_add_layer)
+        viewer.layers.events.removed.connect(self._on_remove_layer)
         viewer.dims.events.order.connect(self._on_dim_change)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
         self.initialize_mouse_events(viewer)
         self.initialize_key_events(viewer)
 
+    def _on_remove_layer(self, event):
+        """Gets called when layer is added and adds event listener to mdoe change"""
+        layer = event.value
+        if hasattr(layer, 'mode'):
+            disconnect_events(layer.events, self)
+
     def _on_add_layer(self, event):
         """Gets called when layer is added and adds event listener to mdoe change"""
         layer = event.value
-        layer.events.mode.connect(self._on_mode_change)
+        if hasattr(layer, 'mode'):
+            layer.events.mode.connect(self._on_mode_change)
 
     def _on_ndisplay_change(self):
         """Gets called on ndisplay change to disable interaction box in 3D"""
         if (
-            self._viewer.layers.selection.active.mode == 'transform'
+            hasattr(self._viewer.layers.selection.active, 'mode')
+            and self._viewer.layers.selection.active.mode == 'transform'
             and self._viewer.dims.ndisplay > 2
         ):
             self._viewer.layers.selection.active.mode = 'pan_zoom'
@@ -71,7 +81,10 @@ class InteractionBoxMouseBindings:
     def _on_dim_change(self, event):
         """Gets called when changing order of dims to make sure interaction box is using right extent and transform"""
         viewer = self._viewer
-        if viewer.layers.selection.active.mode == 'transform':
+        if (
+            hasattr(viewer.layers.selection.active, 'mode')
+            and viewer.layers.selection.active.mode == 'transform'
+        ):
             viewer.overlays.interaction_box.points = (
                 viewer.layers.selection.active.extent.data[
                     :, list(viewer.dims.displayed)
