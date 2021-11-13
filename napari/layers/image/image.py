@@ -620,7 +620,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if mode == Mode.PAN_ZOOM:
             self.help = ''
         else:
-            self.help = trans._('hold <space> to pan/zoom')
+            self.help = trans._(
+                'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
+            )
 
         self.events.mode(mode=mode)
 

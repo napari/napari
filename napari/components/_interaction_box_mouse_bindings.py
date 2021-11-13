@@ -48,6 +48,7 @@ class InteractionBoxMouseBindings:
         self._interaction_box_visual = interaction_box_visual
         viewer.layers.events.inserted.connect(self._on_add_layer)
         self.initialize_mouse_events(viewer)
+        self.initialize_key_events(viewer)
 
     def _on_add_layer(self, event):
         """Gets called when layer is added and adds event listener to mdoe change"""
@@ -79,6 +80,16 @@ class InteractionBoxMouseBindings:
 
     def _on_tranform_change(self, event):
         self._viewer.layers.selection.active.affine = event.value
+
+    def initialize_key_events(self, viewer):
+        @viewer.bind_key('Shift')
+        def hold_to_lock_aspect_ratio(viewer):
+            """Hold to lock aspect ratio when resizing a shape."""
+            # on key press
+            self._fixed_aspect = True
+            yield
+            # on key release
+            self._fixed_aspect = False
 
     def initialize_mouse_events(self, viewer):
         """Adds event handling functions to the layer"""
