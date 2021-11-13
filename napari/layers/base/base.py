@@ -641,7 +641,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._ndim = ndim
         if 'extent' in self.__dict__:
-            del self.__dict__['extent']
+            del self.extent
 
         self.refresh()
 
@@ -676,10 +676,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
-        return self._get_extent_world(self._extent_data)
+        return self._get_extent_world(self._extent_data, self._data_to_world)
 
-    def _get_extent_world(self, data_extent):
+    @staticmethod
+    def _get_extent_world(data_extent, data_to_world):
         """Range of layer in world coordinates base on provided data_extent
+
+        Parameters
+        ----------
+        data_extent : array, shape (2, D)
+            Extent of layer in data coordinates.
+        data_to_world : napari.utils.transforms.Affine
+            The transform from data to world coordinates.
 
         Returns
         -------
@@ -689,7 +697,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
             -1, D
         )
-        full_world_extent = self._data_to_world(full_data_extent)
+        full_world_extent = data_to_world(full_data_extent)
         world_extent = np.array(
             [
                 np.min(full_world_extent, axis=0),
@@ -702,10 +710,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
         extent_data = self._extent_data
+        data_to_world = self._data_to_world
         return Extent(
             data=extent_data,
-            world=self._get_extent_world(extent_data),
-            step=abs(self.scale),
+            world=Layer._get_extent_world(extent_data, data_to_world),
+            step=abs(data_to_world.scale),
         )
 
     @property

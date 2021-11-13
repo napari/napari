@@ -1,4 +1,4 @@
-from _thread import RLock
+from threading import RLock
 
 ################################################################################
 ### cached_property() - computed once per instance, cached as attribute
