@@ -676,7 +676,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
-        return self._get_extent_world(self._extent_data, self._data_to_world)
+        return Layer._get_extent_world(self._extent_data, self._data_to_world)
 
     @staticmethod
     def _get_extent_world(data_extent, data_to_world):
