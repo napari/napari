@@ -33,6 +33,7 @@ from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
     convert_to_uint8,
     dims_displayed_world_to_layer,
+    get_extent_world,
 )
 from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ._base_constants import Blending
@@ -676,44 +677,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
-        return Layer._get_extent_world(self._extent_data, self._data_to_world)
-
-    @staticmethod
-    def _get_extent_world(data_extent, data_to_world):
-        """Range of layer in world coordinates base on provided data_extent
-
-        Parameters
-        ----------
-        data_extent : array, shape (2, D)
-            Extent of layer in data coordinates.
-        data_to_world : napari.utils.transforms.Affine
-            The transform from data to world coordinates.
-
-        Returns
-        -------
-        extent_world : array, shape (2, D)
-        """
-        D = data_extent.shape[1]
-        full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
-            -1, D
-        )
-        full_world_extent = data_to_world(full_data_extent)
-        world_extent = np.array(
-            [
-                np.min(full_world_extent, axis=0),
-                np.max(full_world_extent, axis=0),
-            ]
-        )
-        return world_extent
+        return get_extent_world(self._extent_data, self._data_to_world)
 
     @cached_property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
         extent_data = self._extent_data
         data_to_world = self._data_to_world
+        extent_world = get_extent_world(extent_data, data_to_world)
         return Extent(
             data=extent_data,
-            world=Layer._get_extent_world(extent_data, data_to_world),
+            world=extent_world,
             step=abs(data_to_world.scale),
         )
 

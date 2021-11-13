@@ -593,3 +593,29 @@ def dims_displayed_world_to_layer(
     dims_displayed = order[-n_display_layer:]
 
     return dims_displayed
+
+
+def get_extent_world(data_extent, data_to_world):
+    """Range of layer in world coordinates base on provided data_extent
+
+    Parameters
+    ----------
+    data_extent : array, shape (2, D)
+        Extent of layer in data coordinates.
+    data_to_world : napari.utils.transforms.Affine
+        The transform from data to world coordinates.
+
+    Returns
+    -------
+    extent_world : array, shape (2, D)
+    """
+    D = data_extent.shape[1]
+    full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(-1, D)
+    full_world_extent = data_to_world(full_data_extent)
+    world_extent = np.array(
+        [
+            np.min(full_world_extent, axis=0),
+            np.max(full_world_extent, axis=0),
+        ]
+    )
+    return world_extent
