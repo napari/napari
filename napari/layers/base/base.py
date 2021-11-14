@@ -620,7 +620,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return tuple(order)
 
     def _update_dims(self, event=None):
-        """Updates dims model, which is useful after data has been changed."""
+        """Update the dims model and clear the extent cache.
+
+        This function needs to be called whenever data or transform information
+        changes, and should be called before events get emitted.
+        """
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
