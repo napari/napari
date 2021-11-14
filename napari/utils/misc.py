@@ -623,6 +623,11 @@ def deep_update(dct: dict, merge_dct: dict, copy=True) -> dict:
 
 
 def install_certifi_opener():
+    """Install urlopener that uses certifi context.
+
+    This is useful in the bundle, where otherwise users might get SSL errors
+    when using `urllib.request.urlopen`.
+    """
     import ssl
     from urllib import request
 
