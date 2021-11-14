@@ -284,6 +284,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
+        self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -677,14 +678,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
-        return get_extent_world(self._extent_data, self._data_to_world)
+        return get_extent_world(
+            self._extent_data, self._data_to_world, self._array_like
+        )
 
     @cached_property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
         extent_data = self._extent_data
         data_to_world = self._data_to_world
-        extent_world = get_extent_world(extent_data, data_to_world)
+        extent_world = get_extent_world(
+            extent_data, data_to_world, self._array_like
+        )
         return Extent(
             data=extent_data,
             world=extent_world,
