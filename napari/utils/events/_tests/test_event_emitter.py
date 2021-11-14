@@ -1,3 +1,5 @@
+import weakref
+
 import pytest
 
 from napari.utils.events import EventEmitter
@@ -121,3 +123,85 @@ def test_to_many_positional():
         e.connect(t.fun)
     with pytest.raises(RuntimeError):
         e.connect(simple_fun)
+
+
+def test_disconnect_object():
+    count_list = []
+
+    def fun1():
+        count_list.append(1)
+
+    class TestOb:
+        call_list_1 = []
+        call_list_2 = []
+
+        def fun1(self):
+            self.call_list_1.append(1)
+
+        def fun2(self):
+            self.call_list_2.append(1)
+
+    t = TestOb()
+
+    e = EventEmitter(type="test")
+    e.connect(t.fun1)
+    e.connect(t.fun2)
+    e.connect(fun1)
+    e()
+
+    assert t.call_list_1 == [1]
+    assert t.call_list_2 == [1]
+    assert count_list == [1]
+
+    e.disconnect(t)
+    e()
+
+    assert t.call_list_1 == [1]
+    assert t.call_list_2 == [1]
+    assert count_list == [1, 1]
+
+
+def test_weakref_disconnect():
+    class TestOb:
+        call_list_1 = []
+
+        def fun1(self):
+            self.call_list_1.append(1)
+
+        def fun2(self, event):
+            self.call_list_1.append(2)
+
+    t = TestOb()
+
+    e = EventEmitter(type="test")
+    e.connect(t.fun1)
+    e()
+
+    assert t.call_list_1 == [1]
+    e.disconnect((weakref.ref(t), "fun1"))
+    e()
+    assert t.call_list_1 == [1]
+    e.connect(t.fun2)
+    e()
+    assert t.call_list_1 == [1, 2]
+
+
+def test_none_disconnect():
+    count_list = []
+
+    def fun1():
+        count_list.append(1)
+
+    def fun2(event):
+        count_list.append(2)
+
+    e = EventEmitter(type="test")
+    e.connect(fun1)
+    e()
+    assert count_list == [1]
+    e.disconnect(None)
+    e()
+    assert count_list == [1]
+    e.connect(fun2)
+    e()
+    assert count_list == [1, 2]

@@ -641,9 +641,25 @@ class Window:
         """
         from ..viewer import Viewer
 
-        Widget, dock_kwargs = plugin_manager.get_widget(
-            plugin_name, widget_name
-        )
+        Widget = None
+        try:
+            import npe2
+        except ImportError:
+            pass
+        else:
+            pm = npe2.PluginManager.instance()
+            for contrib in pm.iter_widgets():
+                if (
+                    contrib.plugin_name == plugin_name
+                    and contrib.name == widget_name
+                ):
+                    Widget = contrib.exec()
+                    dock_kwargs = {}
+
+        if Widget is None:
+            Widget, dock_kwargs = plugin_manager.get_widget(
+                plugin_name, widget_name
+            )
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
