@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from warnings import warn
 
+from qtpy import PYQT5
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
@@ -134,7 +135,8 @@ def get_app(
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        if PYQT5:
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import QApplicationWithTracing

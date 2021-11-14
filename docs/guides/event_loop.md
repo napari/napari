@@ -1,6 +1,6 @@
 (intro-to-event-loop)=
 
-# An Introduction to the Event Loop in napari
+# An introduction to the event loop in napari
 
 ## Brief summary
 
@@ -84,7 +84,7 @@ while True:  # infinite loop!
 Actions taken by the user add events to the queue (e.g. "button pressed",
 "slider moved", etc...), and the event loop handles them one at a time.
 
-## Qt Applications and Event Loops
+## Qt applications and event loops
 
 Currently, napari uses Qt as its GUI backend, and the main loop handling events
 in napari is the [Qt

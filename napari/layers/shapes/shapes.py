@@ -8,6 +8,7 @@ import numpy as np
 from vispy.color import get_color_names
 
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.colormaps.standardize_color import (
     hex_to_name,
     rgb_to_hex,
@@ -20,7 +21,6 @@ from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
-    ColorType,
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,
