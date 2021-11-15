@@ -78,7 +78,7 @@ class Colormap(EventedModel):
         if not (v[0] == 0 and v[-1] == 1):
             raise ValueError(
                 trans._(
-                    'Control points must start with 0.0 and end with 1.0',
+                    f'Control points must start with 0.0 and end with 1.0. Got {v[0]} and {v[-1]}',
                     deferred=True,
                 )
             )
@@ -99,7 +99,7 @@ class Colormap(EventedModel):
         if not len(v) == n_controls_target:
             raise ValueError(
                 trans._(
-                    'Wrong number of control points provided',
+                    f'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}',
                     deferred=True,
                 )
             )
