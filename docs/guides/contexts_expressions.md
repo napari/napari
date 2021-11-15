@@ -8,6 +8,21 @@ necessary for plugin devs or end-users to understand the implementation details
 described on this page.
 ```
 
+In napari, we'd like to be able to capture the *concept* of some condition being
+`True` or `False`, *prior* to actually having the context required to evaluate
+it.  For example, a plugin (or napari itself) might want to stipulate that a
+given function should only be enabled when "the active layer has at least 3
+dimensions".
+
+At runtime, in Python code, this might be captured by the expression:
+
+```python
+viewer.layers.selection.active.data.ndim >= 3
+```
+
+However, if you don't have access to an actual `viewer` instance, that
+doesn't work.  
+
 *Contexts* and *Expressions* are two concepts being introduced along with the
 second-generation napari plugin engine (npe2) that capture the abstract idea of
 "some condition" (an `Expression`) that can be evaluated at some later time,
@@ -41,20 +56,7 @@ Out[5]: False
 
 ## Napari expressions
 
-In napari, we'd like to be able to capture the concept of some condition being
-`True` or `False`, *prior* to actually having the context required to evaluate
-it.  For example, a plugin (or napari itself) might want to stipulate that a
-given function should only be enabled when "the active layer has at least 3
-dimensions".
-
-At runtime, in Python code, this might be captured by the expression:
-
-```python
-viewer.layers.selection.active.data.ndim >= 3
-```
-
-However, if you don't have access to the future `viewer` instance, that
-doesn't work.  So napari has the concept of `Expr` objects that represent an
+Napari introduces `Expr` objects that represent an
 expression "without a context", to be evaluated later.
 
 ```{tip}
@@ -69,8 +71,8 @@ expressions, but for a good introduction to Python's abstract syntax tree (AST)
 module, see https://greentreesnakes.readthedocs.io.
 ```
 
-A string expression can be converted to a napari expression with
-`parse_expression`:
+A string expression can be converted to a napari `Expr` object with the
+`parse_expression` function:
 
 ```python
 In [6]: from napari.utils.context import parse_expression
@@ -96,29 +98,43 @@ BoolOp(
 )
 ```
 
-The expression object can be evaluated using `eval`
+The expression object can be evaluated by passing a context (a Mapping) to
+its `eval` method:
 
 ```python        
 In [9]: expr.eval({'x': 7, 'y': 'hello'})
 Out[9]: True
 ```
 
-and it can also be combined with other expressions & constants using
+and it can also be combined with other expressions and/or constants using
 **operators**:
 
 ```python
 In [10]: new_expr = expr & (7 > 10)  # always False
 
 In [11]: new_expr.eval({'x': 7, 'y': 'hello'})
-Out[12]: False
+Out[11]: False
+
+The following operators are supported:
+
 ```
+| Operator     | Symbol  | Example                                             |
+|--------------|---------|-----------------------------------------------------|
+| Equality     | ==      | "active_layer_type == image"                        |
+| Inequality   | !=      | "active_layer_type != labels"                       |
+| Or           | \|      | "active_layer_is_rgb \| all_layers_same_shape"      |
+| And          | &       | "active_layer_is_rgb & all_layers_same_shape"       |
+| Not          | ~       | ~active_layer_is_rgb                                |
+| Greater than | > >=    | "unselected_linked_layers >= 1"                     |
+| Less than    | < <=    | "layers_selection_count < 2"                        |
+| Math         | + - * / | "layers_selection_count + unselected_linked_layers" |
 
 ### napari context keys
 
 To capture napari-specific conditions, napari will declare special
 **names** that can be used in a napari expression.  Taking the example above, a
 plugin might only want to provide a function if “the active layer has at least 3
-dimensions”. For this, napari recognizes the variable `active_layer_ndim` used
+dimensions”. For this, napari recognizes the name `"active_layer_ndim"` used
 in an expression. In a plugin manifest, the plugin can provide a *when clause*
 to enable/disable a given command:
 
@@ -176,8 +192,9 @@ class LayerListContextKeys(ContextNamespace):
     )
 ```
 
-You can think of a `ContextNamespace` kind of like an `Enum` class.  And just
-like an `Enum`, you can see all of its members:
+The members of a `ContextNamespace` are static `Expr` objects. 
+Similar to a python `Enum`, you can see all of its members using the 
+`__members__` attribute on the class:
 
 ```python
 In [13]: LayerListContextKeys.__members__
@@ -189,9 +206,7 @@ mappingproxy({
 })
 ```
 
-A nice aspect of `ContextKeys` is that they can be used in expressions.  But
-unlike a simple string, they can also provide type hinting, linting
-capabilities, and IDE autocompletion.
+A nice aspect of `ContextKeys` is that they can be used in expressions:
 
 ```python
 In [14]: expr = LayerListContextKeys.active_layer_ndim >= 3 
@@ -199,6 +214,11 @@ In [14]: expr = LayerListContextKeys.active_layer_ndim >= 3
 In [15]: expr.eval({'active_layer_ndim': 2})
 Out[15]: False
 ```
+
+But unlike a simple string, they can also provide type hinting, linting
+capabilities, and IDE autocompletion (for napari developers).
+
+![context_types](images/context_type_hint.png)
 
 A record of all registered context keys can be retrieved with the class method
 `ContextKey.info()`
