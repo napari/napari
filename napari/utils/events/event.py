@@ -850,12 +850,12 @@ class EmitterGroup(EventEmitter):
     source : object
         The object that the generated events apply to.
     auto_connect : bool
-        If *auto_connect* is True (default), then one connection will
+        If *auto_connect* is True, then one connection will
         be made for each emitter that looks like
         :func:`emitter.connect((source, 'on_' + event_name))
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
-        group of emitters to default callbacks.
+        group of emitters to default callbacks.  By default, false.
     emitters : keyword arguments
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
@@ -863,7 +863,7 @@ class EmitterGroup(EventEmitter):
     def __init__(
         self,
         source: Any = None,
-        auto_connect: bool = True,
+        auto_connect: bool = False,
         **emitters: Union[Type[Event], EventEmitter, None],
     ):
         EventEmitter.__init__(self, source)
