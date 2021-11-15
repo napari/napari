@@ -54,7 +54,7 @@ def test_wrong_start_control_point():
 
 
 def test_wrong_end_control_point():
-    """Test wrong start of control points raises an error."""
+    """Test wrong end of control points raises an error."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     with pytest.raises(ValueError):
         Colormap(colors, name='testing', controls=[0, 0.75, 0.9])
