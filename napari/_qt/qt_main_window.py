@@ -654,6 +654,8 @@ class Window:
                     and contrib.name == widget_name
                 ):
                     Widget = contrib.exec()
+                    if type(Widget) is tuple:
+                        Widget, _ = Widget
                     dock_kwargs = {}
 
         if Widget is None:
