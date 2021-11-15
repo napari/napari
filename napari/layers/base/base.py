@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple, Union
 import magicgui as mgui
 import numpy as np
 
+from ..._vendor.cpython.functools import cached_property
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -32,6 +33,7 @@ from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
     convert_to_uint8,
     dims_displayed_world_to_layer,
+    get_extent_world,
 )
 from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ._base_constants import Blending
@@ -282,6 +284,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
+        self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -617,7 +620,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return tuple(order)
 
     def _update_dims(self, event=None):
-        """Updates dims model, which is useful after data has been changed."""
+        """Update the dims model and clear the extent cache.
+
+        This function needs to be called whenever data or transform information
+        changes, and should be called before events get emitted.
+        """
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
@@ -639,6 +646,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._position = (0,) * (ndim - old_ndim) + self._position
 
         self._ndim = ndim
+        if 'extent' in self.__dict__:
+            del self.extent
 
         self.refresh()
 
@@ -673,36 +682,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
-        return self._get_extent_world(self._extent_data)
-
-    def _get_extent_world(self, data_extent):
-        """Range of layer in world coordinates base on provided data_extent
-
-        Returns
-        -------
-        extent_world : array, shape (2, D)
-        """
-        D = data_extent.shape[1]
-        full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
-            -1, D
+        return get_extent_world(
+            self._extent_data, self._data_to_world, self._array_like
         )
-        full_world_extent = self._data_to_world(full_data_extent)
-        world_extent = np.array(
-            [
-                np.min(full_world_extent, axis=0),
-                np.max(full_world_extent, axis=0),
-            ]
-        )
-        return world_extent
 
-    @property
+    @cached_property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
-        data = self._extent_data
+        extent_data = self._extent_data
+        data_to_world = self._data_to_world
+        extent_world = get_extent_world(
+            extent_data, data_to_world, self._array_like
+        )
         return Extent(
-            data=data,
-            world=self._get_extent_world(data),
-            step=abs(self._data_to_world.scale),
+            data=extent_data,
+            world=extent_world,
+            step=abs(data_to_world.scale),
         )
 
     @property
