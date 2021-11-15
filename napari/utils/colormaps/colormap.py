@@ -96,7 +96,8 @@ class Colormap(EventedModel):
         n_controls_target = len(values['colors']) + int(
             values['interpolation'] == ColormapInterpolationMode.ZERO
         )
-        if not len(v) == n_controls_target:
+        n_controls = len(v)
+        if not n_controls == n_controls_target:
             raise ValueError(
                 trans._(
                     f'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}',
