@@ -376,11 +376,11 @@ class Tracks(Layer):
         self._manager.build_graph()
 
         # fire events to update shaders
+        self._update_dims()
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data(value=self.data)
         self._set_editable()
-        self._update_dims()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

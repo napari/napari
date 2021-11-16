@@ -1,4 +1,4 @@
-# Core Developer Guide
+# Core Developer guide
 
 Welcome, new core developer!  The core team appreciate the quality of
 your work, and enjoy working with you; we have therefore invited you
@@ -18,7 +18,7 @@ As a core team member, you gain the responsibility of shepherding
 other contributors through the review process; here are some
 guidelines for how to do that.
 
-## All Contributors Are Treated The Same
+## All contributors are treated the same
 
 As a core developer, you gain the ability to merge or approve
 other contributors' pull requests.  Much like nuclear launch keys, it
@@ -49,7 +49,7 @@ require the approval of another core developer before they can be merged.
 
 ## Reviewing
 
-### How to Conduct A Good Review
+### How to conduct a good review
 
 *Always* be kind to contributors. Contributors are often doing
 volunteer work, for which we are tremendously grateful. Provide
@@ -96,7 +96,7 @@ strings following [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
 [NumPy documentation guide](https://docs.scipy.org/doc/numpy/docs/howto_document.html).
 For any major new features, accompanying changes should be made to our
 [tutorials repository](https://github.com/napari/napari-tutorials), that not only
-illustrates the new feature, but explains it.
+illustrates the new feature, but explains it. Titles for all documents in napari should follow [sentence case capitalization](https://apastyle.apa.org/style-grammar-guidelines/capitalization/sentence-case), but the name `napari` should always be written in lowercase.
 
 5. **Implementations and algorithms:** You should understand the code being modified
 or added before approving it.  (See [Merge Only Changes You Understand](#merge-only-changes-you-understand)
@@ -123,7 +123,7 @@ request and closing the original, including a reference to the original pull
 request. In doing so, ensure you communicate that you are not throwing the
 contributor's work away!
 
-### Merge Only Changes You Understand
+### Merge only changes you understand
 
 *Long-term maintainability* is an important concern.  Code doesn't
 merely have to *work*, but should be *understood* by multiple core
@@ -169,7 +169,7 @@ We also have a private mailing list for core developers
 `napari-core-devs@googlegroups.com` which is sparingly used for discussions
 that are required to be private, such as voting on new core members.
 
-## Inviting New Core Members
+## Inviting new core members
 
 Any core member may nominate other contributors to join the core team.
 While there is no hard-and-fast rule about who can be nominated, ideally,
@@ -183,7 +183,7 @@ the cast votes is enough.
 Core developers can choose to become emeritus core developers and suspend
 their approval and voting rights until they become active again.
 
-## Contribute To This Guide (!)
+## Contribute to this guide (!)
 
 This guide reflects the experience of the current core developers.  We
 may well have missed things that, by now, have become second

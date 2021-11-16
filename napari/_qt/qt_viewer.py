@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import warnings
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -12,6 +12,9 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from napari.layers.base.base import Layer
 
+from ..components._interaction_box_mouse_bindings import (
+    InteractionBoxMouseBindings,
+)
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
@@ -39,7 +42,7 @@ from ..utils.translations import trans
 from .containers import QtLayerList
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
-from .utils import QImg2array, circle_pixmap, square_pixmap
+from .utils import QImg2array, circle_pixmap, crosshair_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
@@ -50,6 +53,7 @@ from .._vispy import (  # isort:skip
     VispyCamera,
     VispyCanvas,
     VispyScaleBarOverlay,
+    VispyInteractionBox,
     VispyTextOverlay,
     create_vispy_visual,
 )
@@ -57,6 +61,7 @@ from .._vispy import (  # isort:skip
 
 if TYPE_CHECKING:
     from ..viewer import Viewer
+    from npe2.manifest.contributions import WriterContribution
 
 from ..settings import get_settings
 from ..utils.io import imsave_extensions
@@ -106,9 +111,9 @@ def disconnect(viewer: Viewer, self: QtViewer):
 
 
 def _npe2_decode_selected_filter(
-    ext_str: str, selected_filter: str, writers: List[Any]
-) -> Optional[str]:
-    """Determine the writer command that should be invoked to save data.
+    ext_str: str, selected_filter: str, writers: Sequence[WriterContribution]
+) -> Optional[WriterContribution]:
+    """Determine the writer that should be invoked to save data.
 
     When npe2 can be imported, resolves a selected file extension
     string into a specific writer. Otherwise, returns None.
@@ -121,13 +126,13 @@ def _npe2_decode_selected_filter(
         writers,
     ):
         if entry.startswith(selected_filter):
-            return writer.command
+            return writer
     return None
 
 
 def _npe2_file_extensions_string_for_layers(
-    layers: List[Layer] | LayerList,
-) -> Tuple[Optional[str], List[Any]]:
+    layers: Sequence[Layer],
+) -> Tuple[Optional[str], List[WriterContribution]]:
     """Create extensions string using npe2.
 
     When npe2 can be imported, returns an extension string and the list
@@ -144,19 +149,19 @@ def _npe2_file_extensions_string_for_layers(
     entry in the extension string.
     """
     try:
-        import npe2
+        from npe2 import PluginManager
     except ImportError:
         return None, []
 
+    pm = PluginManager.instance()
+
     layer_types = [layer._type_string for layer in layers]
-    writers = list(npe2.plugin_manager.iter_compatible_writers(layer_types))
+    writers = list(pm.iter_compatible_writers(layer_types))
 
     def _items():
         """Lookup the command name and its supported extensions."""
         for writer in writers:
-            name = npe2.plugin_manager.get_manifest(
-                writer.command
-            ).display_name
+            name = pm.get_manifest(writer.command).display_name
             title = f"{name} {writer.name}" if writer.name else name
             yield title, writer.filename_extensions
 
@@ -164,7 +169,7 @@ def _npe2_file_extensions_string_for_layers(
     #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
 
     def _fmt_exts(es):
-        return " ".join(["*" + e for e in es if e]) if es else "*.*"
+        return " ".join("*" + e for e in es if e) if es else "*.*"
 
     return (
         ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
@@ -173,8 +178,8 @@ def _npe2_file_extensions_string_for_layers(
 
 
 def _extension_string_for_layers(
-    layers: Union[List[Layer], LayerList],
-) -> Tuple[str, List[Any]]:
+    layers: Sequence[Layer],
+) -> Tuple[str, List[WriterContribution]]:
     """Return an extension string and the list of corresponding writers.
 
     The extension string is a ";;" delimeted string of entries. Each entry
@@ -483,6 +488,12 @@ class QtViewer(QSplitter):
         self.canvas.events.resize.connect(
             self.text_overlay._on_position_change
         )
+        self.interaction_box_visual = VispyInteractionBox(
+            self.viewer, parent=self.view.scene, order=1e6 + 3
+        )
+        self.interaction_box_mousebindings = InteractionBoxMouseBindings(
+            self.viewer, self.interaction_box_visual
+        )
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
@@ -652,23 +663,20 @@ class QtViewer(QSplitter):
             ),
         )
         logging.debug(
-            f'QFileDialog - filename: {filename if filename else None} '
-            f'selected_filter: {selected_filter if selected_filter else None}'
-        )
-
-        command_id = _npe2_decode_selected_filter(
-            ext_str, selected_filter, writers
+            f'QFileDialog - filename: {filename or None} '
+            f'selected_filter: {selected_filter or None}'
         )
 
         if filename:
+            writer = _npe2_decode_selected_filter(
+                ext_str, selected_filter, writers
+            )
             with warnings.catch_warnings(record=True) as wa:
                 saved = self.viewer.layers.save(
-                    filename, selected=selected, _command_id=command_id
+                    filename, selected=selected, _writer=writer
                 )
                 logging.debug(f'Saved {saved}')
-                error_messages = "\n".join(
-                    [str(x.message.args[0]) for x in wa]
-                )
+                error_messages = "\n".join(str(x.message.args[0]) for x in wa)
 
             if not saved:
                 raise OSError(
@@ -843,6 +851,8 @@ class QtViewer(QSplitter):
                 q_cursor = QCursor(square_pixmap(size))
         elif cursor == 'circle':
             q_cursor = QCursor(circle_pixmap(size))
+        elif cursor == 'crosshair':
+            q_cursor = QCursor(crosshair_pixmap())
         else:
             q_cursor = self._cursors[cursor]
 
@@ -1043,10 +1053,15 @@ class QtViewer(QSplitter):
         """
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
+                nd = len(layer._displayed_axes)
+                if nd > self.viewer.dims.ndisplay:
+                    displayed_axes = layer._displayed_axes
+                else:
+                    displayed_axes = self.viewer.dims.displayed[-nd:]
                 layer._update_draw(
                     scale_factor=1 / self.viewer.camera.zoom,
                     corner_pixels_displayed=self._canvas_corners_in_world[
-                        :, layer._displayed_axes
+                        :, displayed_axes
                     ],
                     shape_threshold=self.canvas.size,
                 )

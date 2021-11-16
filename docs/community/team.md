@@ -1,8 +1,8 @@
-# About the Project and Team
+# About the project and team
 
 napari is a consensus-based community project. Anyone with an interest in the project can join the community, contribute to the project design, and participate in the decision making process. You can learn more about how the project is run by reading our [governance model](https://napari.org/community/governance.html). This page lists our current and emeritus [core developers](https://napari.org/community/governance.html#core-developers). Core developers are community members that have demonstrated a sustained commitment to the project through ongoing contributions and that they can maintain napari with care.
 
-## Meeting Schedule
+## Meeting schedule
 
 We hold regular meetings, the timings of which are available on our [public calendar](https://calendar.google.com/calendar/embed?src=c_35r93ec6vtp8smhm7dv5uot0v4%40group.calendar.google.com). 
 
@@ -31,7 +31,7 @@ If you are using napari or interested in how napari could be used in your work, 
 - [Shannon Axelrod](https://github.com/napari/napari/commits?author=shanaxel42) - [@shanaxel42](https://github.com/shanaxel42)
 
 
-## Project History
+## Project history
 
 The napari project began in the spring of 2018. It was born out of the shared need for fast n-dimensional image viewing in Python by project co-founders Loïc Royer, from the Chan Zuckerberg Biohub (CZ Biohub), and Juan Nunez-Iglesias, from Monash University. Since then it has grown rapidly to now also provide a graphical user interface to a plugin ecosystem of image analysis tools for scientists to use in their daily work.
 
@@ -45,7 +45,7 @@ Over time, napari has grown to over 80 direct contributors. Talley Lambert, from
 
 Read more about napari’s [mission and values](https://napari.org/community/mission_and_values.html), how to get started as a [contributor](https://napari.org/developers/contributing.html) or join us in our [zulip chat](https://napari.zulipchat.com/login/) for a more synchronous conversation. You can also follow us on [twitter](https://twitter.com/napari_imaging).
 
-## Funding and Support
+## Funding and support
 
 The napari project and community have been generously supported by the [CZI Science Imaging Program](https://chanzuckerberg.com/science/programs-resources/imaging/). 
 

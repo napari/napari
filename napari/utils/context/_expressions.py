@@ -23,8 +23,6 @@ Things that are *NOT* supported:
 - comprehensions (list, set, dict, generator)
 - statements & assignments (e.g. 'a = b')
 """
-
-
 from __future__ import annotations
 
 import ast
@@ -35,6 +33,7 @@ from typing import (
     Generic,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Type,
@@ -50,7 +49,6 @@ PassedType = TypeVar(
         ast.cmpop, ast.operator, ast.boolop, ast.unaryop, ast.expr_context
     ],
 )
-Context = Dict[str, Any]
 T = TypeVar('T')
 T2 = TypeVar('T2', bound=Union[ConstType, 'Expr'])
 V = TypeVar('V', bound=ConstType)
@@ -89,7 +87,7 @@ def parse_expression(expr: str) -> Expr:
         ) from None
 
 
-def safe_eval(expr: str, context: Context = {}) -> Any:
+def safe_eval(expr: str, context: Mapping = {}) -> Any:
     """Safely evaluate `expr` string given `context` dict.
 
     This lets you evaluate a string expression with broader expression
@@ -170,11 +168,11 @@ class Expr(ast.AST, Generic[T]):
         super().__init__(*args, **kwargs)
         ast.fix_missing_locations(self)
 
-    def eval(self, context: Context = {}) -> T:
+    def eval(self, context: Mapping = {}) -> T:
         """Evaluate this expression with names in `context`"""
         code = compile(ast.Expression(body=self), '<Expr>', 'eval')
         try:
-            return eval(code, context)
+            return eval(code, {}, context)
         except NameError:
             miss = {k for k in _iter_names(self) if k not in context}
             raise NameError(
@@ -313,7 +311,7 @@ class Name(Expr[T], ast.Name):
         kwargs['ctx'] = ast.Load()
         super().__init__(id, **kwargs)
 
-    def eval(self, context: Context = {}) -> T:
+    def eval(self, context: Mapping = {}) -> T:
         return super().eval(context=context)
 
 
