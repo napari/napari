@@ -224,7 +224,7 @@ class Points(Layer):
     _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
     _indices_view : array (M, )
-        Integer indices of the points in the currently viewed slice.
+        Integer indices of the points in the currently viewed slice and are not hidden.
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
         the `_view_data` array.
@@ -362,7 +362,8 @@ class Points(Layer):
         self._drag_start = None
 
         # initialize view data
-        self._indices_view = np.empty(0)
+        self._hidden = np.empty(0, bool)
+        self.__indices_view = np.empty(0, int)
         self._view_size_scale = []
 
         self._drag_box = None
@@ -708,7 +709,7 @@ class Points(Layer):
 
     @hidden.setter
     def hidden(self, hidden):
-        self._hidden = np.broadcast_to(hidden, self.data.shape[0]).copy()
+        self._hidden = np.broadcast_to(hidden, self.data.shape[0]).astype(bool)
         self.events.hidden()
         self.refresh()
 
@@ -1143,6 +1144,14 @@ class Points(Layer):
         self.events.mode(mode=mode)
 
     @property
+    def _indices_view(self):
+        return self.__indices_view[~self.hidden[self.__indices_view]]
+
+    @_indices_view.setter
+    def _indices_view(self, value):
+        self.__indices_view = value
+
+    @property
     def _view_data(self) -> np.ndarray:
         """Get the coords of the points in view
 
@@ -1207,13 +1216,6 @@ class Points(Layer):
             # if no points, return an empty list
             sizes = np.array([])
         return sizes
-
-    @property
-    def _view_hidden(self):
-        """
-        Get hidden if in view
-        """
-        return self.hidden[self._indices_view]
 
     @property
     def _view_face_color(self) -> np.ndarray:
