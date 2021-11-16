@@ -76,11 +76,28 @@ class PropertyTable:
         if property_choices is not None:
             properties = pd.DataFrame(data=properties)
             for name, choices in property_choices.items():
-                if name in properties:
-                    properties[name] = pd.Series(
-                        properties[name],
-                        dtype=pd.CategoricalDtype(categories=choices),
-                    )
+                dtype = pd.CategoricalDtype(categories=choices)
+                num_values = (
+                    properties.shape[0] if num_data is None else num_data
+                )
+                values = (
+                    properties[name]
+                    if name in properties
+                    else [None] * num_values
+                )
+                properties[name] = pd.Series(values, dtype=dtype)
+        # Provide an explicit when num_data is provided to error check the properties data length.
         index = None if num_data is None else range(num_data)
         data = pd.DataFrame(data=properties, index=index)
         return cls(data)
+
+
+def _infer_num_data(
+    properties: Optional[Union[Dict[str, Array], pd.DataFrame]],
+    num_data: Optional[int],
+) -> int:
+    if num_data is not None:
+        return num_data
+    if len(properties) > 0:
+        return len(next(iter(properties)))
+    return 0
