@@ -515,6 +515,7 @@ SKIP_WORDS = {
     'napari/_qt/widgets/qt_viewer_dock_widget.py': [
         'QTitleBarCloseButton',
         'QTitleBarFloatButton',
+        'QTitleBarHideButton',
         'QtCustomTitleBar',
         'QtCustomTitleBarLine',
         'bottom',
@@ -949,7 +950,6 @@ SKIP_WORDS = {
         '<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>',
         'Extent',
         'Ready',
-        '_deprecated_layerlist',
         '_round_index',
         'blending',
         'constant',
@@ -1763,11 +1763,6 @@ SKIP_WORDS = {
         'NAPARI_MON',
         'enabled',
         'octree',
-    ],
-    'napari/utils/dask_utils.py': [
-        '2.15.0',
-        'dask_cache',
-        'optimization.fuse.active',
     ],
     'napari/utils/events/__init__.py': [],
     'napari/utils/events/containers/__init__.py': [],

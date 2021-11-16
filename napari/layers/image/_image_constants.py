@@ -10,7 +10,7 @@ class Interpolation(StringEnum):
     The spatial filters used for interpolation are from vispy's
     spatial filters. The filters are built in the file below:
 
-    https://github.com/vispy/vispy/blob/master/vispy/glsl/build-spatial-filters.py
+    https://github.com/vispy/vispy/blob/main/vispy/glsl/build-spatial-filters.py
     """
 
     BESSEL = auto()

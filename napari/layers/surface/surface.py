@@ -58,9 +58,9 @@ class Surface(IntensityVisualizationMixin, Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -78,6 +78,9 @@ class Surface(IntensityVisualizationMixin, Layer):
                 Corresponds to shading='smooth'.
     visible : bool
         Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
@@ -144,6 +147,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         blending='translucent',
         shading='flat',
         visible=True,
+        cache=True,
+        experimental_clipping_planes=None,
     ):
 
         ndim = data[0].shape[1]
@@ -161,6 +166,8 @@ class Surface(IntensityVisualizationMixin, Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(interpolation=Event, rendering=Event, shading=Event)
@@ -232,7 +239,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        if self._keep_autoscale:
+        if self._keep_auto_contrast:
             self.reset_contrast_limits()
 
     @property
@@ -396,7 +403,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         else:
             self._view_faces = self.faces
 
-        if self._keep_autoscale:
+        if self._keep_auto_contrast:
             self.reset_contrast_limits()
 
     def _update_thumbnail(self):

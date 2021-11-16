@@ -1,11 +1,26 @@
+from __future__ import annotations
+
+import re
+import signal
+import socket
+import weakref
 from contextlib import contextmanager
 from functools import lru_cache, partial
 from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtCore import QByteArray, QPropertyAnimation, QSize, Qt
-from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
+from qtpy.QtCore import (
+    QByteArray,
+    QObject,
+    QPoint,
+    QPropertyAnimation,
+    QSize,
+    QSocketNotifier,
+    Qt,
+    Signal,
+)
+from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPen, QPixmap
 from qtpy.QtWidgets import (
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
@@ -21,6 +36,7 @@ from ..utils.misc import is_sequence
 from ..utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
+RICH_TEXT_PATTERN = re.compile("<[^\n]+>")
 
 
 def is_qbyte(string: str) -> bool:
@@ -146,6 +162,78 @@ def square_pixmap(size):
     painter.drawRect(0, 0, size - 1, size - 1)
     painter.setPen(Qt.black)
     painter.drawRect(1, 1, size - 3, size - 3)
+    painter.end()
+    return pixmap
+
+
+@lru_cache(maxsize=64)
+def crosshair_pixmap():
+    """Create a cross cursor with white/black hollow square pixmap in the middle.
+    For use as points cursor."""
+
+    size = 25
+
+    pixmap = QPixmap(QSize(size, size))
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+
+    # Base measures
+    width = 1
+    center = 3  # Must be odd!
+    rect_size = center + 2 * width
+    square = rect_size + width * 4
+
+    pen = QPen(Qt.white, 1)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.setPen(pen)
+
+    # # Horizontal rectangle
+    painter.drawRect(0, (size - rect_size) // 2, size - 1, rect_size - 1)
+
+    # Vertical rectangle
+    painter.drawRect((size - rect_size) // 2, 0, rect_size - 1, size - 1)
+
+    # Square
+    painter.drawRect(
+        (size - square) // 2, (size - square) // 2, square - 1, square - 1
+    )
+
+    pen = QPen(Qt.black, 2)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.setPen(pen)
+
+    # # Square
+    painter.drawRect(
+        (size - square) // 2 + 2,
+        (size - square) // 2 + 2,
+        square - 4,
+        square - 4,
+    )
+
+    pen = QPen(Qt.black, 3)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.setPen(pen)
+
+    # # # Horizontal lines
+    mid_vpoint = QPoint(2, size // 2)
+    painter.drawLine(
+        mid_vpoint, QPoint(((size - center) // 2) - center + 1, size // 2)
+    )
+    mid_vpoint = QPoint(size - 3, size // 2)
+    painter.drawLine(
+        mid_vpoint, QPoint(((size - center) // 2) + center + 1, size // 2)
+    )
+
+    # # # Vertical lines
+    mid_hpoint = QPoint(size // 2, 2)
+    painter.drawLine(
+        QPoint(size // 2, ((size - center) // 2) - center + 1), mid_hpoint
+    )
+    mid_hpoint = QPoint(size // 2, size - 3)
+    painter.drawLine(
+        QPoint(size // 2, ((size - center) // 2) + center + 1), mid_hpoint
+    )
+
     painter.end()
     return pixmap
 
@@ -282,7 +370,7 @@ def add_flash_animation(
     # let's make sure to remove the animation from the widget because
     # if we don't, the widget will actually be black and white.
     widget._flash_animation.finished.connect(
-        partial(remove_flash_animation, widget)
+        partial(remove_flash_animation, weakref.ref(widget))
     )
 
     widget._flash_animation.start()
@@ -292,7 +380,7 @@ def add_flash_animation(
     widget._flash_animation.setKeyValueAt(0.1, QColor(*color))
 
 
-def remove_flash_animation(widget: QWidget):
+def remove_flash_animation(widget_ref: weakref.ref[QWidget]):
     """Remove flash animation from widget.
 
     Parameters
@@ -300,5 +388,94 @@ def remove_flash_animation(widget: QWidget):
     widget : QWidget
         Any Qt widget.
     """
-    widget.setGraphicsEffect(None)
-    del widget._flash_animation
+    if widget_ref() is None:
+        return
+    widget = widget_ref()
+    try:
+        widget.setGraphicsEffect(None)
+        del widget._flash_animation
+    except RuntimeError:
+        # RuntimeError: wrapped C/C++ object of type QtWidgetOverlay has been deleted
+        pass
+
+
+@contextmanager
+def _maybe_allow_interrupt(qapp):
+    """
+    This manager allows to terminate a plot by sending a SIGINT. It is
+    necessary because the running Qt backend prevents Python interpreter to
+    run and process signals (i.e., to raise KeyboardInterrupt exception). To
+    solve this one needs to somehow wake up the interpreter and make it close
+    the plot window. We do this by using the signal.set_wakeup_fd() function
+    which organizes a write of the signal number into a socketpair connected
+    to the QSocketNotifier (since it is part of the Qt backend, it can react
+    to that write event). Afterwards, the Qt handler empties the socketpair
+    by a recv() command to re-arm it (we need this if a signal different from
+    SIGINT was caught by set_wakeup_fd() and we shall continue waiting). If
+    the SIGINT was caught indeed, after exiting the on_signal() function the
+    interpreter reacts to the SIGINT according to the handle() function which
+    had been set up by a signal.signal() call: it causes the qt_object to
+    exit by calling its quit() method. Finally, we call the old SIGINT
+    handler with the same arguments that were given to our custom handle()
+    handler.
+    We do this only if the old handler for SIGINT was not None, which means
+    that a non-python handler was installed, i.e. in Julia, and not SIG_IGN
+    which means we should ignore the interrupts.
+
+    code from https://github.com/matplotlib/matplotlib/pull/13306
+    """
+    old_sigint_handler = signal.getsignal(signal.SIGINT)
+    handler_args = None
+    skip = False
+    if old_sigint_handler in (None, signal.SIG_IGN, signal.SIG_DFL):
+        skip = True
+    else:
+        wsock, rsock = socket.socketpair()
+        wsock.setblocking(False)
+        old_wakeup_fd = signal.set_wakeup_fd(wsock.fileno())
+        sn = QSocketNotifier(rsock.fileno(), QSocketNotifier.Type.Read)
+
+        # Clear the socket to re-arm the notifier.
+        sn.activated.connect(lambda *args: rsock.recv(1))
+
+        def handle(*args):
+            nonlocal handler_args
+            handler_args = args
+            qapp.exit()
+
+        signal.signal(signal.SIGINT, handle)
+    try:
+        yield
+    finally:
+        if not skip:
+            wsock.close()
+            rsock.close()
+            sn.setEnabled(False)
+            signal.set_wakeup_fd(old_wakeup_fd)
+            signal.signal(signal.SIGINT, old_sigint_handler)
+            if handler_args is not None:
+                old_sigint_handler(*handler_args)
+
+
+class Sentry(QObject):
+    """Small object to trigger events across threads."""
+
+    alerted = Signal()
+
+    def alert(self, *_):
+        self.alerted.emit()
+
+
+def qt_might_be_rich_text(text) -> bool:
+    """
+    Check if a text might be rich text in a cross-binding compatible way.
+    """
+    if qtpy.PYSIDE2:
+        from qtpy.QtGui import Qt as _Qt
+    else:
+        from qtpy.QtCore import Qt as _Qt
+
+    try:
+        return _Qt.mightBeRichText(text)
+    except Exception:
+        return bool(RICH_TEXT_PATTERN.search(text))

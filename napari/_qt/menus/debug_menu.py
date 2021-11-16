@@ -7,22 +7,22 @@ easy-to-use and discoverable, but which is not for the average user.
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QTimer
-from qtpy.QtWidgets import QFileDialog, QMenu
+from qtpy.QtWidgets import QFileDialog
 
 from ...utils import perf
 from ...utils.history import get_save_history, update_save_history
 from ...utils.translations import trans
-from ._util import populate_menu
+from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
 
-class DebugMenu(QMenu):
+class DebugMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&Debug'), window._qt_window)
-        self._perf_menu = QMenu("Performance Trace", self)
+        self._perf_menu = NapariMenu("Performance Trace", self)
 
         ACTIONS = [
             {

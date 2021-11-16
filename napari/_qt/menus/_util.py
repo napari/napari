@@ -101,3 +101,59 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
                 @emitter.connect
                 def _setchecked(e, action=action):
                     action.setChecked(e.value if hasattr(e, 'value') else e)
+
+        action.setData(ax)
+
+
+def populate_qmenu_from_manifest(menu: QMenu, menu_key: str):
+    """Populate `menu` from a `menu_key` offering in the manifest."""
+    # TODO: declare somewhere what menu_keys are valid.
+    try:
+        from npe2 import PluginManager
+    except ImportError:
+        return
+
+    pm = PluginManager.instance()
+    for item in pm.iter_menu(menu_key):
+        if hasattr(item, 'submenu'):
+            subm_contrib = pm.get_submenu(item.submenu)
+            subm = menu.addMenu(subm_contrib.label)
+            populate_qmenu_from_manifest(subm, subm_contrib.id)
+        else:
+            cmd = pm.get_command(item.command)
+            action = menu.addAction(cmd.title)
+            action.triggered.connect(lambda *args: cmd.exec(args=args))
+
+
+class NapariMenu(QMenu):
+    """
+    Base napari menu class that provides action handling and clean up on
+    close.
+    """
+
+    _INSTANCES: List['NapariMenu'] = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._INSTANCES.append(self)
+
+    def _destroy(self):
+        """Clean up action data to avoid widget leaks."""
+        for ax in self.actions():
+            ax.setData(None)
+
+            try:
+                ax._destroy()
+            except AttributeError:
+                pass
+
+        if self in self._INSTANCES:
+            self._INSTANCES.remove(self)
+
+    def update(self, event=None):
+        """Update action enabled/disabled state based on action data."""
+        for ax in self.actions():
+            data = ax.data()
+            if data:
+                enabled_func = data.get('enabled', lambda event: True)
+                ax.setEnabled(bool(enabled_func(event)))

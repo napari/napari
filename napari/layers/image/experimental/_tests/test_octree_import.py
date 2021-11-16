@@ -2,6 +2,8 @@ import os
 import subprocess
 import sys
 
+from napari._tests.utils import slow
+
 CREATE_VIEWER_SCRIPT = """
 import numpy as np
 import napari
@@ -9,6 +11,7 @@ v = napari.view_image(np.random.rand(512, 512))
 """
 
 
+@slow(15)
 def test_octree_import():
     """Test we can create a viewer with NAPARI_OCTREE."""
 

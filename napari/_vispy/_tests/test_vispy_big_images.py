@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 
+from napari._tests.utils import slow
+
 
 def test_big_2D_image(make_napari_viewer):
     """Test big 2D image with axis exceeding max texture size."""
@@ -30,6 +32,7 @@ def test_big_3D_image(make_napari_viewer):
         assert np.all(layer._transforms['tile2data'].scale == s)
 
 
+@slow(10)
 @pytest.mark.parametrize(
     "shape",
     [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],

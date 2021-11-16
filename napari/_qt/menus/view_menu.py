@@ -1,18 +1,16 @@
 from functools import partial
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QMenu
-
 from ...settings import get_settings
 from ...utils import config as async_config
 from ...utils.translations import trans
-from ._util import populate_menu
+from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
 
-class ViewMenu(QMenu):
+class ViewMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&View'), window._qt_window)

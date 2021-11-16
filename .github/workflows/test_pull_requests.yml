@@ -4,7 +4,7 @@ name: PR Test
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   code:
@@ -25,7 +25,7 @@ jobs:
           pip install --upgrade pip
           pip install tox
       - name: Run task
-        run: tox -e ${{ matrix.task }}
+        run: tox -e ${{ matrix.task }} -- --timeout=8
 
   manifest:
     # make sure all necessary files will be bundled in the release
@@ -76,9 +76,17 @@ jobs:
           # Windows py37
           - python: 3.7
             platform: windows-latest
+            backend: pyqt
+          - python: 3.7
+            platform: windows-latest
+            backend: pyside
           # Windows py38
           - python: 3.8
             platform: windows-latest
+            backend: pyqt
+          - python: 3.8
+            platform: windows-latest
+            backend: pyside
           # macOS py38
           - python: 3.8
             platform: macos-latest
@@ -133,6 +141,23 @@ jobs:
           # it is a no-op if MIN_REQ is not set
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
+      # The two following steps try to cache and speedup tox env creation on linux.
+      # in the first one we produce the date as value we can refer to,
+      # in order to change cache key every ~24h.
+      # in the second we restore cache from previous run.
+      # a step later on cull the files in the directory we cache to avoid
+      # going over the GitHub 5G limit.
+      - name: Get current date to flush cache every day
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Cache tox Virtualenv
+        uses: actions/cache@v2
+        if: runner.os == 'Linux'
+        env:
+          cache-name: cache-tox-${{ matrix.platform }}-${{ matrix.python }}-${{ matrix.toxenv || matrix.backend }}-${{ steps.date.outputs.date }}
+        with:
+          path: /tmp/.tox/
+          key: ${{ matrix.platform }}-${{ matrix.python }}-${{ matrix.toxenv || matrix.backend }}-${{ hashFiles('setup.cfg') }}-${{ hashFiles('tox.ini') }}-${{ steps.date.outputs.date }}
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
@@ -150,7 +175,22 @@ jobs:
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
-
+      # this steps display the cached folder size for debug and
+      # remove the biggest contenders.
+      - name: Display Cache size, and remove largest files from cache.
+        if: runner.os == 'Linux'
+        run: |
+          echo "Biggest files in site-packages"
+          du -s /tmp/.tox/*py*/lib/py*/site-packages/* | sort -n | tail -n 5
+          echo "Biggest files in tox cache"
+          du -hs /tmp/.tox/*
+          echo "Cleaning a few of the biggest cache"
+          rm -rf /tmp/.tox/*py*/lib/py*/site-packages/semgrep
+          rm -rf /tmp/.tox/*py*/lib/py*/site-packages/torch
+          find /tmp/.tox/*py*/lib/* -name '*.pyc' -delete
+          echo "List of biggest folder after clearing"
+          du -s /tmp/.tox/*py*/lib/py*/site-packages/* | sort -n | tail -n 5
+          du -hs /tmp/.tox/*
       - name: Coverage
         if: runner.os == 'Linux' && matrix.python == '3.9'
         uses: codecov/codecov-action@v1

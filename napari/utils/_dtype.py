@@ -17,6 +17,7 @@ _np_ints = {
 }
 
 _np_floats = {
+    16: np.float16,
     32: np.float32,
     64: np.float64,
 }
@@ -79,6 +80,11 @@ def normalize_dtype(dtype_spec):
         return _normalize_str_by_bit_depth(dtype_str, 'complex')
     if 'bool' in dtype_str:
         return np.bool_
+    # If we don't find one of the named dtypes, return the dtype_spec
+    # unchanged. This allows NumPy big endian types to work. See
+    # https://github.com/napari/napari/issues/3421
+    else:
+        return dtype_spec
 
 
 def get_dtype_limits(dtype_spec) -> Tuple[float, float]:

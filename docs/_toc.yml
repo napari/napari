@@ -8,12 +8,14 @@
     - file: guides/3D_interactivity
     - file: guides/event_loop
     - file: guides/connecting_events
+    - file: guides/events_reference
     - file: guides/threading
     - file: guides/magicgui
     - file: guides/perfmon
     - file: guides/rendering
     - file: guides/preferences
     - file: guides/translations
+    - file: guides/contexts_expressions
 
 - file: plugins/index
   sections:
@@ -33,6 +35,7 @@
     - file: developers/docs
     - file: developers/governance
     - file: developers/mission_and_values
+    - file: developers/working_groups
     - file: developers/release
     - file: developers/roadmap_0_3
     - file: developers/roadmap_0_3_retrospective
@@ -47,6 +50,7 @@
 
 - file: release/index
   sections:
+    - file: release/release_0_4_11
     - file: release/release_0_4_10
     - file: release/release_0_4_9
     - file: release/release_0_4_8

@@ -101,24 +101,24 @@ of time since building napari can be a time consuming task:
 asv run -E existing -b ViewImageSuite
 ```
 
-## Comparing results to master
+## Comparing results to main
 
 Often, the goal of a PR is to compare the results of the modifications in terms
-of speed to a snapshot of the code that is in the master branch of the
+of speed to a snapshot of the code that is in the main branch of the
 ``napari`` repository. The command ``asv continuous`` is of help here:
 
 ```bash
-asv continuous master your-current-branch -b ViewImageSuite
+asv continuous main your-current-branch -b ViewImageSuite
 ```
 
 This call will build out the environments specified in the ``asv.conf.json``
 file and compare the performance of the benchmark between your current commit
-and the code in the master branch.
+and the code in the main branch.
 
 The output may look something like:
 
 ```bash
-$ asv continuous master your-current-branch -b ViewImageSuite
+$ asv continuous main your-current-branch -b ViewImageSuite
 · Creating environments
 · Discovering benchmarks
 ·· Uninstalling from conda-py3.7-cython-numpy1.15-scipy
@@ -131,10 +131,10 @@ $ asv continuous master your-current-branch -b ViewImageSuite
 BENCHMARKS NOT SIGNIFICANTLY CHANGED.
 ```
 
-In this case, the differences between HEAD on your-current-branch and master are not significant
+In this case, the differences between HEAD on your-current-branch and main are not significant
 enough for airspeed velocity to report.
 
-## profiling
+## Profiling
 
 The airspeed velocity tool also supports code profiling using [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile). For detailed instructions on how to use the profiling functionality see the
 [asv profiling documentation](https://asv.readthedocs.io/en/stable/using.html#running-a-benchmark-in-the-profiler).

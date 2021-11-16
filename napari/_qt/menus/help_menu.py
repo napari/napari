@@ -1,16 +1,14 @@
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QMenu
-
 from ...utils.translations import trans
 from ..dialogs.qt_about import QtAbout
-from ._util import populate_menu
+from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
 
-class HelpMenu(QMenu):
+class HelpMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         super().__init__(trans._('&Help'), window._qt_window)
         ACTIONS = [

@@ -4,15 +4,12 @@ from typing import Callable, Optional, Sequence, Tuple, Union
 
 from qtpy.QtCore import (
     QEasingCurve,
-    QObject,
     QPoint,
     QPropertyAnimation,
     QRect,
     QSize,
     Qt,
-    QThread,
     QTimer,
-    Signal,
 )
 from qtpy.QtWidgets import (
     QApplication,
@@ -26,21 +23,12 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QElidingLabel
+from superqt import QElidingLabel, ensure_main_thread
 
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
-
-
-class NotificationDispatcher(QObject):
-    """
-    This is a helper class to allow the propagation of notifications
-    generated from exceptions or warnings inside threads.
-    """
-
-    sig_notified = Signal(Notification)
 
 
 class NapariQtNotification(QDialog):
@@ -229,6 +217,7 @@ class NapariQtNotification(QDialog):
         self.row1.addWidget(self.severity_icon, alignment=Qt.AlignTop)
         self.message = QElidingLabel()
         self.message.setWordWrap(True)
+        self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.message.setMinimumWidth(self.MIN_WIDTH - 200)
         self.message.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding
@@ -364,6 +353,7 @@ class NapariQtNotification(QDialog):
         )
 
     @classmethod
+    @ensure_main_thread
     def show_notification(cls, notification: Notification):
         from ...settings import get_settings
 
@@ -375,17 +365,6 @@ class NapariQtNotification(QDialog):
             notification.severity
             >= settings.application.gui_notification_level
         ):
-            application_instance = QApplication.instance()
-            if (
-                application_instance
-                and application_instance.thread() != QThread.currentThread()
-            ):
-                dispatcher = getattr(application_instance, "_dispatcher", None)
-                if dispatcher:
-                    dispatcher.sig_notified.emit(notification)
-
-                return
-
             cls.from_notification(notification).show()
 
 

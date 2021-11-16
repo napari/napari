@@ -7,7 +7,7 @@ from pydantic import root_validator, validator
 
 from ...utils.colormaps import Colormap
 from ...utils.colormaps.categorical_colormap import CategoricalColormap
-from ...utils.colormaps.colormap_utils import ensure_colormap
+from ...utils.colormaps.colormap_utils import ColorType, ensure_colormap
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
@@ -19,7 +19,6 @@ from .color_manager_utils import (
     is_color_mapped,
 )
 from .color_transformations import (
-    ColorType,
     normalize_and_broadcast_colors,
     transform_color,
     transform_color_with_defaults,

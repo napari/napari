@@ -1,7 +1,7 @@
 # 3D interactivity
 
 ## Coordinate systems in napari
-In napari, there are three main coordinate systems: (1) canvas, (2) world, and (3) layer. The canvas coordinates system is the 2D coordinate system of the canvas on which the scene is rendered. World coordinates are the nD coordinates of the entire scene. As the name suggests, layer coordinates are the nD coordinate system of the data in a given layer. Layer coordinates are specific the each layer's data and are related to the world coordinate system via the layer transforms.
+In napari, there are three main coordinate systems: (1) canvas, (2) world, and (3) layer. The canvas coordinates system is the 2D coordinate system of the canvas on which the scene is rendered. World coordinates are the nD coordinates of the entire scene. As the name suggests, layer coordinates are the nD coordinate system of the data in a given layer. Layer coordinates are specific to each layer's data and are related to the world coordinate system via the layer transforms.
 
 ![coordinate-systems](images/3d_interaction_coordianates.png)
 
@@ -12,7 +12,6 @@ Since the 3D scene is rendered on a 2D surface (your screen), your mouse click d
 
 When a user clicks or moves the mouse in the canvas, napari emits a mouse event with the following properties:
 
-
 - **pos**: the position of the click in canvas coordinates.
 - **position**: the position of the click in world coordinates. The point is located at the intersection of the click line (`view_direction`) and a plane parallel to the camera plane (i.e,. a plane normal to `view_direction`).
 - **view_direction**: a unit vector giving the direction of the camera in
@@ -20,8 +19,6 @@ When a user clicks or moves the mouse in the canvas, napari emits a mouse event 
 - **dims_displayed**: a list of the dimensions currently being displayed
     in the viewer. This comes from `viewer.dims.displayed`.
 - **dims_point**: the indices for the data in view in world coordinates. This comes from `viewer.dims.point`.
-
-
 
 ## Determining where the click intersects the data
 Each napari layer has a method called `get_ray_intersections()` that will return the points on the data bounding box that a given line will intersect (`start_point ` and `end_point `). When the click line (`view_direction`) and position (`position`) are used as inputs, `start_point` and `end_point` are the end points of the segment click line that intersects the layer's axis-alinged data bounding box. `start_point` is the end point that is closest to the camera (i.e, the "first" intersection) and `end_point` is the end point that is farthest from the camera (i.e., the "last" intersection). You can use the line segment between `start_point` and `end_point` to interrogate the layer data that is "under" your cursor.
@@ -73,12 +70,12 @@ def get_ray_intersections(
 ```
 
 ## Adding 3D interactivity via mouse events
-Custom 3D interactivity can be added via mouse callbacks. The `layer.get_ray_intersections()` function has been designed to work seamlessly with the napari mouse callback event. You can pass the mouse callback event properties to `layer.get_ray_intersections()` get the `start_point` and `end_point` of where the click line intersects the layer data. 
+Custom 3D interactivity can be added via mouse callbacks. The `layer.get_ray_intersections()` function has been designed to work seamlessly with the napari mouse callback event. You can pass the mouse callback event properties to `layer.get_ray_intersections()` get the `start_point` and `end_point` of where the click line intersects the layer data.
 
 ```
 @layer.mouse_drag_callbacks.append
 def on_click(layer, event):
-	# get the points where the click intersects the 
+	# get the points where the click intersects the
     start_point, end_point = layer.get_ray_intersections(
         position=event.position,
         view_direction=event.view_direction,
@@ -89,7 +86,7 @@ def on_click(layer, event):
     	# use start_point and end_point to interrogate layer data
 ```
 
-For an example implementation, see [`cursor_ray.py`](https://github.com/napari/napari/blob/master/examples/cursor_ray.py).
+For an example implementation, see [`cursor_ray.py`](https://github.com/napari/napari/blob/main/examples/cursor_ray.py).
 
 ## Getting the layer data under the cursor
 There are convenience methods in the layer objects (`layer.get_value()`) to get the layer data value underneath the cursor that is "on top" (i.e., closest to `start_point`). Like `layer.get_ray_intersections()`, `layer.get_value()` takes the click position, view direction, dims_displayed in either world or layer coordinates (see `world` argument) as input. Thus, it can be easily integrated into a mouse event callback. Note that `layer.get_value()` returns `None` if the layer is not currently visible. See the docstring below for details.

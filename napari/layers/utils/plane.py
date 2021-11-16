@@ -170,7 +170,7 @@ class ClippingPlaneList(SelectableEventedList):
                 )
             )
         planes = [
-            SlicingPlane.from_array(sub_arr, enabled=enabled)
+            ClippingPlane.from_array(sub_arr, enabled=enabled)
             for sub_arr in array
         ]
         return cls(planes)
@@ -202,7 +202,7 @@ class ClippingPlaneList(SelectableEventedList):
                 normal[axis] = -direction
 
                 planes.append(
-                    SlicingPlane(
+                    ClippingPlane(
                         position=position, normal=normal, enabled=enabled
                     )
                 )

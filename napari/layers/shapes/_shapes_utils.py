@@ -762,7 +762,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     """Generates list of mesh vertices and triangles from a path
 
     Adapted from vispy.visuals.TubeVisual
-    https://github.com/vispy/vispy/blob/master/vispy/visuals/tube.py
+    https://github.com/vispy/vispy/blob/main/vispy/visuals/tube.py
 
     Parameters
     ----------

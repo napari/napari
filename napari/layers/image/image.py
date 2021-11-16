@@ -4,19 +4,20 @@ from __future__ import annotations
 
 import types
 import warnings
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils import config
+from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ..utils.plane import ClippingPlaneList, SlicingPlane
+from ..utils.plane import SlicingPlane
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
@@ -89,8 +90,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -107,6 +108,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     experimental_slicing_plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
@@ -203,6 +207,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
+        cache=True,
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
     ):
@@ -248,6 +253,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            cache=cache,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -256,6 +263,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             iso_threshold=Event,
             attenuation=Event,
         )
+
+        self._array_like = True
 
         # Set data
         self.rgb = rgb
@@ -290,9 +299,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._experimental_slicing_plane = SlicingPlane(
             thickness=1, enabled=False
         )
-        self._experimental_clipping_planes = ClippingPlaneList()
+        # Whether to calculate clims on the next set_view_slice
+        self._should_calc_clims = False
         if contrast_limits is None:
-            self.contrast_limits_range = self._calc_data_range()
+            if not isinstance(data, np.ndarray):
+                dtype = normalize_dtype(getattr(data, 'dtype', None))
+                if np.issubdtype(dtype, np.integer):
+                    self.contrast_limits_range = get_dtype_limits(dtype)
+                else:
+                    self.contrast_limits_range = (0, 1)
+                self._should_calc_clims = dtype != np.uint8
+            else:
+                self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
@@ -311,15 +329,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if experimental_slicing_plane is not None:
             self.experimental_slicing_plane = experimental_slicing_plane
             self.experimental_slicing_plane.update(experimental_slicing_plane)
-        self.experimental_clipping_planes = experimental_clipping_planes
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image."""
+        wrapper = _weakref_hide(self)
         self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed, self.rgb
+            self._get_empty_image(), wrapper._raw_to_displayed, self.rgb
         )
         self._empty = True
 
@@ -378,7 +396,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)
-        if self._keep_autoscale:
+        if self._keep_auto_contrast:
             self.reset_contrast_limits()
         self._set_editable()
 
@@ -394,7 +412,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         -------
         extent_data : array, shape (2, D)
         """
-        shape = np.subtract(self.level_shapes[0], 1)
+        shape = self.level_shapes[0]
         return np.vstack([np.zeros(len(shape)), shape])
 
     @property
@@ -491,18 +509,22 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         volume is displayed.  Options include:
 
         * ``translucent``: voxel colors are blended along the view ray until
-          the result is opaque.
+            the result is opaque.
         * ``mip``: maximum intensity projection. Cast a ray and display the
-          maximum value that was encountered.
-        * ``additive``: voxel colors are added along the view ray until the
-          result is saturated.
-        * ``iso``: isosurface. Cast a ray until a certain threshold is
-          encountered. At that location, lighning calculations are performed to
-          give the visual appearance of a surface.
+            maximum value that was encountered.
+        * ``minip``: minimum intensity projection. Cast a ray and display the
+            minimum value that was encountered.
         * ``attenuated_mip``: attenuated maximum intensity projection. Cast a
-          ray and attenuate values based on integral of encountered values,
-          display the maximum value that was encountered after attenuation.
-          This will make nearer objects appear more prominent.
+            ray and attenuate values based on integral of encountered values,
+            display the maximum value that was encountered after attenuation.
+            This will make nearer objects appear more prominent.
+        * ``additive``: voxel colors are added along the view ray until
+            the result is saturated.
+        * ``iso``: isosurface. Cast a ray until a certain threshold is
+            encountered. At that location, lighning calculations are
+            performed to give the visual appearance of a surface.
+        * ``average``: average intensity projection. Cast a ray and display the
+            average of values that were encountered.
 
         Returns
         -------
@@ -524,21 +546,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @experimental_slicing_plane.setter
     def experimental_slicing_plane(self, value: Union[dict, SlicingPlane]):
         self._experimental_slicing_plane.update(value)
-
-    @property
-    def experimental_clipping_planes(self):
-        return self._experimental_clipping_planes
-
-    @experimental_clipping_planes.setter
-    def experimental_clipping_planes(
-        self, value: Union[List[Union[SlicingPlane, dict]], ClippingPlaneList]
-    ):
-        self._experimental_clipping_planes.clear()
-        if value is not None:
-            for new_plane in value:
-                plane = SlicingPlane()
-                plane.update(new_plane)
-                self._experimental_clipping_planes.append(plane)
 
     @property
     def loaded(self):
@@ -581,7 +588,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 [extent[0, ax] for ax in not_disp],
             )
         ) or np.any(
-            np.greater(
+            np.greater_equal(
                 [indices[ax] for ax in not_disp],
                 [extent[1, ax] for ax in not_disp],
             )
@@ -624,7 +631,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 for d in self._displayed_axes:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
-                        self.corner_pixels[1, d] + 1,
+                        self.corner_pixels[1, d],
                         1,
                     )
                 self._transforms['tile2data'].translate = (
@@ -666,8 +673,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self, image_indices, image, thumbnail_source
         )
         self._load_slice(data)
-        if self._keep_autoscale:
+        if self._keep_auto_contrast or self._should_calc_clims:
             self.reset_contrast_limits()
+            self._should_calc_clims = False
 
     @property
     def _SliceDataClass(self):
@@ -871,9 +879,6 @@ class Image(_ImageBase):
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
                 'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
-                'experimental_clipping_planes': [
-                    plane.dict() for plane in self.experimental_clipping_planes
-                ],
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
@@ -888,3 +893,13 @@ if config.async_octree:
 
     class Image(Image, _OctreeImageBase):
         pass
+
+
+class _weakref_hide:
+    def __init__(self, obj):
+        import weakref
+
+        self.obj = weakref.ref(obj)
+
+    def _raw_to_displayed(self, *args, **kwarg):
+        return self.obj()._raw_to_displayed(*args, **kwarg)

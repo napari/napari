@@ -39,6 +39,11 @@ def csv_reader_function(path: Union[str, List[str]]) -> List[LayerData]:
         return [layer_data] if layer_data else []
 
 
+def npy_to_layer_data(path: str) -> List[LayerData]:
+    data = np.load(path)
+    return [(data,)]
+
+
 @napari_hook_implementation(trylast=True)
 def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Our internal fallback file reader at the end of the reader plugin chain.
@@ -61,6 +66,8 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
             return csv_reader_function
         if os.path.isdir(path):
             return image_reader_to_layerdata_reader(magic_imread)
+        if path.endswith('.npy'):
+            return npy_to_layer_data
         path = [path]
 
     if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in path):

@@ -368,11 +368,15 @@ void main() {
     // Keep track of whether texture has been sampled
     int texture_sampled = 0;
     
+    // Keep track of wheter a surface was found (used for depth)
+    vec3 surface_point;
+    bool surface_found = false;
+
     while (iter < nsteps) {
         for (iter=iter; iter<nsteps; iter++)
         {
             // Only sample volume if loc is not clipped by clipping planes
-            float is_shown = $clip_by_planes(loc, u_shape);
+            float is_shown = $clip_with_planes(loc, u_shape);
             if (is_shown >= 0)
             {
                 // Get sample color
@@ -394,16 +398,16 @@ void main() {
     
     $after_loop
 
-    /* Set depth value - from visvis TODO
-    int iter_depth = int(maxi);
-    // Calculate end position in world coordinates
-    vec4 position2 = vertexPosition;
-    position2.xyz += ray*shape*float(iter_depth);
-    // Project to device coordinates and set fragment depth
-    vec4 iproj = gl_ModelViewProjectionMatrix * position2;
-    iproj.z /= iproj.w;
-    gl_FragDepth = (iproj.z+1.0)/2.0;
-    */
+    if (surface_found == true) {
+        // if a surface was found, use it to set the depth buffer
+        vec4 position2 = vec4(surface_point, 1);
+        vec4 iproj = $viewtransformf(position2);
+        iproj.z /= iproj.w;
+        gl_FragDepth = (iproj.z+1.0)/2.0;
+    }
+    else {
+        gl_FragDepth = gl_FragCoord.z;
+    }
 }
 
 
@@ -596,6 +600,11 @@ ISO_SNIPPETS = dict(
                 if (color.r > u_threshold) {
                     color = calculateColor(color, iloc, dstep);
                     gl_FragColor = applyColormap(color.r);
+
+                    // set the variables for the depth buffer                            
+                    surface_point = iloc * u_shape;
+                    surface_found = true;
+
                     iter = nsteps;
                     break;
                 }
@@ -604,6 +613,9 @@ ISO_SNIPPETS = dict(
         }
         """,
     after_loop="""
+        if (surface_found == false) {
+            discard;
+        }
         """,
 )
 
@@ -645,6 +657,11 @@ ISO_CATEGORICAL_SNIPPETS = dict(
                     color = applyColormap(color.g);
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
+
+                    // set the variables for the depth buffer                            
+                    surface_point = iloc * u_shape;
+                    surface_found = true;
+
                     iter = nsteps;
                     break;
                 }
@@ -653,6 +670,9 @@ ISO_CATEGORICAL_SNIPPETS = dict(
         }
         """,
     after_loop="""
+        if (surface_found == false) {
+            discard;
+        }
         """,
 )
 
@@ -712,7 +732,7 @@ class VolumeVisual(Visual):
         by default: 1.
     interpolation : {'linear', 'nearest'}
         Selects method of image interpolation.
-    texture_format: numpy.dtype | str | None
+    texture_format : numpy.dtype | str | None
         How to store data on the GPU. OpenGL allows for many different storage
         formats and schemes for the low-level texture data stored in the GPU.
         Most common is unsigned integers or floating point numbers.
@@ -736,6 +756,22 @@ class VolumeVisual(Visual):
         transferred to the GPU. Note this visual is limited to "luminance"
         formatted data (single band). This is equivalent to `GL_RED` format
         in OpenGL 4.0.
+    raycasting_mode : {'volume', 'plane'}
+        Whether to cast a ray through the whole volume or perpendicular to a
+        plane through the volume defined.
+    plane_position : ArrayLike
+        A (3,) array containing a position on a plane of interest in the volume.
+        The position is defined in data coordinates. Only relevant in
+        raycasting_mode = 'plane'.
+    plane_normal : ArrayLike
+        A (3,) array containing a vector normal to the plane of interest in the
+        volume. The normal vector is defined in data coordinates. Only relevant
+        in raycasting_mode = 'plane'.
+    plane_thickness : float
+        A value defining the total length of the ray perpendicular to the
+        plane interrogated during rendering. Defined in data coordinates.
+        Only relevant in raycasting_mode = 'plane'.
+
 
     .. versionchanged: 0.7
 
@@ -749,8 +785,7 @@ class VolumeVisual(Visual):
                  attenuation=1.0, relative_step_size=0.8, cmap='grays',
                  gamma=1.0, interpolation='linear', texture_format=None,
                  raycasting_mode='volume', plane_position=None,
-                 plane_normal=None, plane_thickness=1.0,
-                 clipping_planes=None):
+                 plane_normal=None, plane_thickness=1.0, clipping_planes=None):
         # Storage of information of volume
         self._vol_shape = ()
         self._gamma = gamma
@@ -803,7 +838,6 @@ class VolumeVisual(Visual):
         self.relative_step_size = relative_step_size
         self.threshold = threshold if threshold is not None else vol.mean()
         self.attenuation = attenuation
-        self.clipping_planes = clipping_planes
 
         # Set plane params
         if plane_position is None:
@@ -815,6 +849,8 @@ class VolumeVisual(Visual):
         else:
             self.plane_normal = plane_normal
         self.plane_thickness = plane_thickness
+
+        self.clipping_planes = clipping_planes
 
         self.freeze()
 
@@ -980,27 +1016,24 @@ class VolumeVisual(Visual):
     @lru_cache(maxsize=10)
     def _build_clipping_planes_func(n_planes):
         """Build the code snippet used to clip the volume based on self.clipping_planes."""
-        func = Function(
-            '$vars\nfloat clip_planes(vec3 loc, vec3 vol_shape) { float is_shown = 1.0; $clips; return is_shown; }')
-        # each plane is defined by a position and a normal vector
-        # the fragment is considered clipped if on the "negative" side of the plane
-        vars_template = '''
-            uniform vec3 u_clipping_plane_pos{idx};
-            uniform vec3 u_clipping_plane_norm{idx};
-            '''
+        func_template = '''
+            float clip_planes(vec3 loc, vec3 vol_shape) {{
+                float is_shown = 1.0;
+                {clips};
+                return is_shown;
+            }}
+        '''
+        # the vertex is considered clipped if on the "negative" side of the plane
         clip_template = '''
-            vec3 relative_vec{idx} = loc - ( u_clipping_plane_pos{idx} / vol_shape );
-            float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
+            vec3 relative_vec{idx} = loc - ( $clipping_plane_pos{idx} / vol_shape );
+            float is_shown{idx} = dot(relative_vec{idx}, ($clipping_plane_norm{idx} * vol_shape));
             is_shown = min(is_shown{idx}, is_shown);
             '''
-        all_vars = []
         all_clips = []
         for idx in range(n_planes):
-            all_vars.append(vars_template.format(idx=idx))
             all_clips.append(clip_template.format(idx=idx))
-        func['vars'] = ''.join(all_vars)
-        func['clips'] = ''.join(all_clips)
-        return func
+        formatted_code = func_template.format(clips=''.join(all_clips))
+        return Function(formatted_code)
 
     @property
     def clipping_planes(self):
@@ -1024,11 +1057,11 @@ class VolumeVisual(Visual):
         value = value[:, :, ::-1]
         self._clipping_planes = value
 
-        self.shared_program.frag['clip_by_planes'] = self._build_clipping_planes_func(len(value))
-
+        clip_func = self._build_clipping_planes_func(len(value))
+        self.shared_program.frag['clip_with_planes'] = clip_func
         for idx, plane in enumerate(value):
-            self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
-            self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
+            clip_func[f'clipping_plane_pos{idx}'] = tuple(plane[0])
+            clip_func[f'clipping_plane_norm{idx}'] = tuple(plane[1])
         self.update()
 
     @property
@@ -1092,6 +1125,12 @@ class VolumeVisual(Visual):
 
     @property
     def raycasting_mode(self):
+        """The raycasting mode to use.
+
+        This defines whether to cast a ray through the whole volume or
+        perpendicular to a plane through the volume.
+        must be in {'volume', 'plane'}
+        """
         return self._raycasting_mode
 
     @raycasting_mode.setter
@@ -1147,12 +1186,18 @@ class VolumeVisual(Visual):
 
     @property
     def plane_position(self):
+        """Position on a plane through the volume.
+
+        A (3,) array containing a position on a plane of interest in the volume.
+        The position is defined in data coordinates. Only relevant in
+        raycasting_mode = 'plane'.
+        """
         return self._plane_position
 
     @plane_position.setter
     def plane_position(self, value):
         value = np.array(value, dtype=np.float32).ravel()
-        if value.shape != (3,):
+        if value.shape != (3, ):
             raise ValueError('plane_position must be a 3 element array-like object')
         self._plane_position = value
         self.shared_program['u_plane_position'] = value[::-1]
@@ -1160,12 +1205,18 @@ class VolumeVisual(Visual):
 
     @property
     def plane_normal(self):
+        """Direction normal to a plane through the volume.
+
+        A (3,) array containing a vector normal to the plane of interest in the
+        volume. The normal vector is defined in data coordinates. Only relevant
+        in raycasting_mode = 'plane'.
+        """
         return self._plane_normal
 
     @plane_normal.setter
     def plane_normal(self, value):
         value = np.array(value, dtype=np.float32).ravel()
-        if value.shape != (3,):
+        if value.shape != (3, ):
             raise ValueError('plane_normal must be a 3 element array-like object')
         self._plane_normal = value
         self.shared_program['u_plane_normal'] = value[::-1]
@@ -1173,6 +1224,12 @@ class VolumeVisual(Visual):
 
     @property
     def plane_thickness(self):
+        """Thickness of a plane through the volume.
+
+        A value defining the total length of the ray perpendicular to the
+        plane interrogated during rendering. Defined in data coordinates.
+        Only relevant in raycasting_mode = 'plane'.
+        """
         return self._plane_thickness
 
     @plane_thickness.setter
@@ -1240,11 +1297,12 @@ class VolumeVisual(Visual):
     def _prepare_transforms(self, view):
         trs = view.transforms
         view.view_program.vert['transform'] = trs.get_transform()
-
         view_tr_f = trs.get_transform('visual', 'document')
         view_tr_i = view_tr_f.inverse
         view.view_program.vert['viewtransformf'] = view_tr_f
         view.view_program.vert['viewtransformi'] = view_tr_i
+
+        view.view_program.frag['viewtransformf'] = view_tr_f
 
     def _prepare_draw(self, view):
         if self._need_vertex_update:

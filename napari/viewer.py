@@ -1,4 +1,8 @@
+import typing
 from typing import TYPE_CHECKING
+from weakref import WeakSet
+
+import magicgui as mgui
 
 from .components.viewer_model import ViewerModel
 from .utils import _magicgui, config
@@ -8,7 +12,7 @@ if TYPE_CHECKING:
     from ._qt.qt_main_window import Window
 
 
-@_magicgui.register_type(bind=_magicgui.find_viewer_ancestor)
+@mgui.register_type(bind=_magicgui.find_viewer_ancestor)
 class Viewer(ViewerModel):
     """Napari ndarray viewer.
 
@@ -29,6 +33,7 @@ class Viewer(ViewerModel):
     """
 
     _window: 'Window' = None  # type: ignore
+    _instances: typing.ClassVar[WeakSet] = WeakSet()
 
     def __init__(
         self,
@@ -50,6 +55,7 @@ class Viewer(ViewerModel):
         from .window import Window
 
         self._window = Window(self, show=show)
+        self._instances.add(self)
 
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
@@ -69,7 +75,7 @@ class Viewer(ViewerModel):
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
-        if self.window.qt_viewer.console is None:
+        if self.window.qt_viewer._console is None:
             return
         else:
             self.window.qt_viewer.console.push(variables)
@@ -122,6 +128,30 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
+        self._instances.discard(self)
+
+    @classmethod
+    def close_all(cls) -> int:
+        """
+        Class metod, Close all existing viewer instances.
+
+        This is mostly exposed to avoid leaking of viewers when running tests.
+        As having many non-closed viewer can adversely affect performances.
+
+        It will return the number of viewer closed.
+
+        Returns
+        -------
+        int :
+            number of viewer closed.
+
+        """
+        # copy to not iterate while changing.
+        viewers = [v for v in cls._instances]
+        ret = len(viewers)
+        for viewer in viewers:
+            viewer.close()
+        return ret
 
 
 def current_viewer() -> Viewer:

@@ -14,6 +14,7 @@ repos:
     rev: 3.9.2
     hooks:
     - id: flake8
+      additional_dependencies: [flake8-typing-imports==1.11.0]
       pass_filenames: true
       # this seems to need to be here in addition to setup.cfg
       exclude: _vendor|vendored|__init__.py|examples

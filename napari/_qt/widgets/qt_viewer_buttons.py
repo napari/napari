@@ -14,6 +14,7 @@ from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from .qt_spinbox import QtSpinBox
+from .qt_tooltip import QtToolTipLabel
 
 
 class QtLayerButtons(QFrame):
@@ -218,8 +219,8 @@ class QtViewerButtons(QFrame):
         grid_stride = QtSpinBox(popup)
         grid_width = QtSpinBox(popup)
         grid_height = QtSpinBox(popup)
-        shape_help_symbol = QLabel(self)
-        stride_help_symbol = QLabel(self)
+        shape_help_symbol = QtToolTipLabel(self)
+        stride_help_symbol = QtToolTipLabel(self)
         blank = QLabel(self)  # helps with placing help symbols.
 
         shape_help_msg = trans._(
@@ -274,15 +275,11 @@ class QtViewerButtons(QFrame):
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height
 
-        # The following is needed in order to make the tooltip wrap the text.
-        shape_help_txt = f"<FONT> {shape_help_msg}</FONT>"
-        stride_help_txt = f"<FONT> {stride_help_msg}</FONT>"
-
         shape_help_symbol.setObjectName("help_label")
-        shape_help_symbol.setToolTip(shape_help_txt)
+        shape_help_symbol.setToolTip(shape_help_msg)
 
         stride_help_symbol.setObjectName("help_label")
-        stride_help_symbol.setToolTip(stride_help_txt)
+        stride_help_symbol.setToolTip(stride_help_msg)
 
         # layout
         form_layout = QFormLayout()
@@ -496,14 +493,8 @@ class QtStateButton(QtViewerPushButton):
             newstate = self._offstate
         setattr(self._target, self._attribute, newstate)
 
-    def _on_change(self, event=None):
-        """Called wen mirrored value changes
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
+    def _on_change(self):
+        """Called wen mirrored value changes"""
         with self._events.blocker():
             if self.isChecked() != (
                 getattr(self._target, self._attribute) == self._onstate

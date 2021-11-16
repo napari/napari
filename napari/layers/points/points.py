@@ -14,12 +14,14 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
+from ...utils.geometry import project_points_onto_plane, rotate_points
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
+from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.property_table import PropertyTable
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
@@ -112,8 +114,8 @@ class Points(Layer):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -122,6 +124,9 @@ class Points(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
@@ -261,7 +266,9 @@ class Points(Layer):
         opacity=1,
         blending='translucent',
         visible=True,
+        cache=True,
         property_choices=None,
+        experimental_clipping_planes=None,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -281,6 +288,8 @@ class Points(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -308,21 +317,11 @@ class Points(Layer):
             num_data=len(data),
         )
 
-        # make the text
-        if text is None or isinstance(text, (list, np.ndarray, str)):
-            self._text = TextManager(text, len(data), self.properties)
-        elif isinstance(text, dict):
-            copied_text = deepcopy(text)
-            copied_text['properties'] = self.properties
-            copied_text['n_text'] = len(data)
-            self._text = TextManager(**copied_text)
-        else:
-            raise TypeError(
-                trans._(
-                    'text should be a string, array, or dict',
-                    deferred=True,
-                )
-            )
+        self._text = TextManager._from_layer(
+            text=text,
+            n_text=len(self.data),
+            properties=self.properties,
+        )
 
         # Save the point style params
         self.symbol = symbol
@@ -393,7 +392,7 @@ class Points(Layer):
         cur_npoints = len(self._data)
         self._data = data
 
-        # Adjust the size array when the number of points has changed
+        # Add/remove property and style values based on the number of new points.
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
@@ -522,8 +521,10 @@ class Points(Layer):
 
     @text.setter
     def text(self, text):
-        self._text._set_text(
-            text, n_text=len(self.data), properties=self.properties
+        self._text._update_from_layer(
+            text=text,
+            n_text=len(self.data),
+            properties=self.properties,
         )
 
     def refresh_text(self):
@@ -555,7 +556,7 @@ class Points(Layer):
 
     @property
     def n_dimensional(self) -> bool:
-        """bool: renders points as n-dimensionsal."""
+        """bool: renders points as n-dimensional."""
         return self._n_dimensional
 
     @n_dimensional.setter
@@ -1016,7 +1017,7 @@ class Points(Layer):
         Mode.PAN_ZOOM: no_op,
     }
     _cursor_modes = {
-        Mode.ADD: 'pointing',
+        Mode.ADD: 'crosshair',
         Mode.SELECT: 'standard',
         Mode.PAN_ZOOM: 'standard',
     }
@@ -1081,8 +1082,11 @@ class Points(Layer):
         -------
         text_coords : (N x D) np.ndarray
             Array of coordinates for the N text elements in view
+        anchor_x : str
+            The vispy text anchor for the x axis
+        anchor_y : str
+            The vispy text anchor for the y axis
         """
-        # TODO check if it is used, as it has wrong signature and this not cause errors.
         return self.text.compute_text_coords(self._view_data, self._ndisplay)
 
     @property
@@ -1135,7 +1139,7 @@ class Points(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            self.editable = self._ndisplay < 3
+            self.editable = True
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
@@ -1183,7 +1187,7 @@ class Points(Layer):
             return [], np.empty(0)
 
     def _get_value(self, position) -> Union[None, int]:
-        """Value of the data at a position in data coordinates.
+        """Index of the point at a given 2D position in data coordinates.
 
         Parameters
         ----------
@@ -1211,6 +1215,144 @@ class Points(Layer):
                 selection = self._indices_view[indices[-1]]
 
         return selection
+
+    def _get_value_3d(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Union[int, None]:
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value : Union[int, None]
+            The data value along the supplied ray.
+        """
+        if (start_point is None) or (end_point is None):
+            # if the ray doesn't intersect the data volume, no points could have been intersected
+            return None
+        plane_point, plane_normal = displayed_plane_from_nd_line_segment(
+            start_point, end_point, dims_displayed
+        )
+
+        # project the in view points onto the plane
+        projected_points, projection_distances = project_points_onto_plane(
+            points=self._view_data,
+            plane_point=plane_point,
+            plane_normal=plane_normal,
+        )
+
+        # rotate points and plane to be axis aligned with normal [0, 0, 1]
+        rotated_points, rotation_matrix = rotate_points(
+            points=projected_points,
+            current_plane_normal=plane_normal,
+            new_plane_normal=[0, 0, 1],
+        )
+        rotated_click_point = np.dot(rotation_matrix, plane_point)
+
+        # find the points the click intersects
+        distances = abs(rotated_points[:, :2] - rotated_click_point[:2])
+        in_slice_matches = np.all(
+            distances <= np.expand_dims(self._view_size, axis=1) / 2,
+            axis=1,
+        )
+        indices = np.where(in_slice_matches)[0]
+
+        if len(indices) > 0:
+            # find the point that is most in the foreground
+            candidate_point_distances = projection_distances[indices]
+            closest_index = indices[np.argmin(candidate_point_distances)]
+            selection = self._indices_view[closest_index]
+        else:
+            selection = None
+        return selection
+
+    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
+        """An augmented, axis-aligned (self._ndisplay, 2) bounding box.
+
+        This bounding box for includes the full size of displayed points
+        and enables calculation of intersections in `Layer._get_value_3d()`.
+        """
+        if len(self._view_size) == 0:
+            return None
+        max_point_size = np.max(self._view_size)
+        bounding_box = np.copy(
+            self._display_bounding_box(dims_displayed)
+        ).astype(float)
+        bounding_box[:, 0] -= max_point_size / 2
+        bounding_box[:, 1] += max_point_size / 2
+        return bounding_box
+
+    def get_ray_intersections(
+        self,
+        position: List[float],
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+        world: bool = True,
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+        """Get the start and end point for the ray extending
+        from a point through the displayed bounding box.
+
+        This method overrides the base layer, replacing the bounding box used
+        to calculate intersections with a larger one which includes the size
+        of points in view.
+
+        Parameters
+        ----------
+        position
+            the position of the point in nD coordinates. World vs. data
+            is set by the world keyword argument.
+        view_direction : np.ndarray
+            a unit vector giving the direction of the ray in nD coordinates.
+            World vs. data is set by the world keyword argument.
+        dims_displayed
+            a list of the dimensions currently being displayed in the viewer.
+        world : bool
+            True if the provided coordinates are in world coordinates.
+            Default value is True.
+
+        Returns
+        -------
+        start_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point closest to the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned.
+        end_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point farthest from the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned.
+        """
+        if len(dims_displayed) != 3:
+            return None, None
+
+        # create the bounding box in data coordinates
+        bounding_box = self._display_bounding_box_augmented(dims_displayed)
+
+        if bounding_box is None:
+            return None, None
+
+        start_point, end_point = self._get_ray_intersections(
+            position=position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+            bounding_box=bounding_box,
+        )
+        return start_point, end_point
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -1295,6 +1437,7 @@ class Points(Layer):
         colormapped[..., 3] = 1
         view_data = self._view_data
         if len(view_data) > 0:
+            # Get the zoom factor required to fit all data in the thumbnail.
             de = self._extent_data
             min_vals = [de[0, i] for i in self._dims_displayed]
             shape = np.ceil(
@@ -1303,6 +1446,8 @@ class Points(Layer):
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
+
+            # Maybe subsample the points.
             if len(view_data) > self._max_points_thumbnail:
                 thumbnail_indices = np.random.randint(
                     0, len(view_data), self._max_points_thumbnail
@@ -1311,12 +1456,21 @@ class Points(Layer):
             else:
                 points = view_data
                 thumbnail_indices = self._indices_view
+
+            # Calculate the point coordinates in the thumbnail data space.
+            thumbnail_shape = np.clip(
+                np.ceil(zoom_factor * np.array(shape[:2])).astype(int),
+                1,  # smallest side should be 1 pixel wide
+                self._thumbnail_shape[:2],
+            )
             coords = np.floor(
                 (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
             ).astype(int)
-            coords = np.clip(
-                coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
-            )
+            coords = np.clip(coords, 0, thumbnail_shape - 1)
+
+            # Draw single pixel points in the colormapped thumbnail.
+            colormapped = np.zeros(tuple(thumbnail_shape) + (4,))
+            colormapped[..., 3] = 1
             colors = self._face.colors[thumbnail_indices]
             colormapped[coords[:, 0], coords[:, 1]] = colors
 
@@ -1343,7 +1497,8 @@ class Points(Layer):
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
             self._property_table.remove(index)
-            self.text.remove(index)
+            with self.text.events.blocker_all():
+                self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = set()

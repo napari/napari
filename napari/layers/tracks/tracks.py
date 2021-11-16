@@ -69,9 +69,9 @@ class Tracks(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -80,7 +80,9 @@ class Tracks(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     """
 
@@ -112,6 +114,8 @@ class Tracks(Layer):
         colormap='turbo',
         color_by='track_id',
         colormaps_dict=None,
+        cache=True,
+        experimental_clipping_planes=None,
     ):
 
         # if not provided with any data, set up an empty layer in 2D+t
@@ -141,6 +145,8 @@ class Tracks(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -370,11 +376,11 @@ class Tracks(Layer):
         self._manager.build_graph()
 
         # fire events to update shaders
+        self._update_dims()
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data(value=self.data)
         self._set_editable()
-        self._update_dims()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

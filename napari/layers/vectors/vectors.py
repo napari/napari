@@ -13,7 +13,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.property_table import PropertyTable
-from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
+from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
 class Vectors(Layer):
@@ -28,6 +28,9 @@ class Vectors(Layer):
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
+    ndim : int
+        Number of dimensions for vectors. When data is not None, ndim must be D.
+        An empty vectors layer can be instantiated with arbitrary ndim.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
@@ -69,9 +72,9 @@ class Vectors(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -80,6 +83,9 @@ class Vectors(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
@@ -139,8 +145,9 @@ class Vectors(Layer):
 
     def __init__(
         self,
-        data,
+        data=None,
         *,
+        ndim=None,
         properties=None,
         property_choices=None,
         edge_width=1,
@@ -159,11 +166,17 @@ class Vectors(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        cache=True,
+        experimental_clipping_planes=None,
     ):
+        if ndim is None and scale is not None:
+            ndim = len(scale)
+
+        data, ndim = fix_data_vectors(data, ndim)
 
         super().__init__(
             data,
-            2,
+            ndim,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -174,6 +187,8 @@ class Vectors(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         # events for non-napari calculations
@@ -191,7 +206,7 @@ class Vectors(Layer):
         # length attribute
         self._length = length
 
-        self._data = vectors_to_coordinates(data)
+        self._data = data
 
         vertices, triangles = generate_vector_meshes(
             self._data[:, :, list(self._dims_displayed)],
@@ -237,7 +252,7 @@ class Vectors(Layer):
     def data(self, vectors: np.ndarray):
         previous_n_vectors = len(self.data)
 
-        self._data = vectors_to_coordinates(vectors)
+        self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
 
         vertices, triangles = generate_vector_meshes(
@@ -327,6 +342,7 @@ class Vectors(Layer):
                 'data': self.data,
                 'properties': self.properties,
                 'property_choices': self.property_choices,
+                'ndim': self.ndim,
             }
         )
         return state

@@ -7,13 +7,13 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
 )
-from superqt import QLabeledSlider as QSlider
 
 from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
 from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
+from ..widgets._slider_compat import QSlider
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -255,67 +255,37 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if label layer is n-dimensional.
         """
-        if state == Qt.Checked:
-            self.layer.n_dimensional = True
-        else:
-            self.layer.n_dimensional = False
+        self.layer.n_dimensional = state == Qt.Checked
 
     def change_text_visibility(self, state):
-        """Toggle the visibiltiy of the text.
+        """Toggle the visibility of the text.
 
         Parameters
         ----------
         state : QCheckBox
             Checkbox indicating if text is visible.
         """
-        if state == Qt.Checked:
-            self.layer.text.visible = True
-        else:
-            self.layer.text.visible = False
+        self.layer.text.visible = state == Qt.Checked
 
-    def _on_text_visibility_change(self, event):
-        """Receive layer model text visibiltiy change change event and update checkbox.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
+    def _on_text_visibility_change(self):
+        """Receive layer model text visibiltiy change change event and update checkbox."""
         with self.layer.text.events.visible.blocker():
             self.textDispCheckBox.setChecked(self.layer.text.visible)
 
-    def _on_n_dimensional_change(self, event):
-        """Receive layer model n-dimensional change event and update checkbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_n_dimensional_change(self):
+        """Receive layer model n-dimensional change event and update checkbox."""
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
-    def _on_symbol_change(self, event):
-        """Receive marker symbol change event and update the dropdown menu.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_symbol_change(self):
+        """Receive marker symbol change event and update the dropdown menu."""
         with self.layer.events.symbol.blocker():
             self.symbolComboBox.setCurrentIndex(
                 self.symbolComboBox.findData(self.layer.symbol)
             )
 
-    def _on_size_change(self, event=None):
-        """Receive layer model size change event and update point size slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_size_change(self):
+        """Receive layer model size change event and update point size slider."""
         with self.layer.events.size.blocker():
             value = self.layer.current_size
             self.sizeSlider.setValue(int(value))
@@ -332,24 +302,18 @@ class QtPointsControls(QtLayerControls):
         with self.layer.events.current_edge_color.blocker():
             self.layer.current_edge_color = color
 
-    def _on_current_face_color_change(self, event=None):
+    def _on_current_face_color_change(self):
         """Receive layer.current_face_color() change event and update view."""
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_current_edge_color_change(self, event=None):
+    def _on_current_edge_color_change(self):
         """Receive layer.current_edge_color() change event and update view."""
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
-    def _on_editable_change(self, event=None):
-        """Receive layer model editable change event & enable/disable buttons.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_editable_change(self):
+        """Receive layer model editable change event & enable/disable buttons."""
         disable_with_opacity(
             self,
             ['select_button', 'addition_button', 'delete_button'],

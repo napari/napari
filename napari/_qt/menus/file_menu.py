@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QAction, QMenu
+from qtpy.QtWidgets import QAction
 
 from ...settings import get_settings
 from ...utils.history import get_save_history, update_save_history
@@ -9,17 +9,17 @@ from ...utils.misc import running_as_bundled_app
 from ...utils.translations import trans
 from ..dialogs.preferences_dialog import PreferencesDialog
 from ..dialogs.screenshot_dialog import ScreenshotDialog
-from ._util import populate_menu
+from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
     from ..qt_main_window import Window
 
 
-class FileMenu(QMenu):
+class FileMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
-        self.open_sample_menu = QMenu('Open Sample', self)
+        self.open_sample_menu = NapariMenu('Open Sample', self)
         ACTIONS = [
             {
                 'text': trans._('Open File(s)...'),
@@ -52,6 +52,7 @@ class FileMenu(QMenu):
                     selected=True
                 ),
                 'shortcut': 'Ctrl+S',
+                'enabled': self._layer_count,
             },
             {
                 'text': trans._('Save All Layers...'),
@@ -59,6 +60,7 @@ class FileMenu(QMenu):
                     selected=False
                 ),
                 'shortcut': 'Ctrl+Shift+S',
+                'enabled': self._layer_count,
             },
             {
                 'text': trans._('Save Screenshot...'),
@@ -117,6 +119,10 @@ class FileMenu(QMenu):
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
         self._rebuild_samples_menu()
+        self.update()
+
+    def _layer_count(self, event=None):
+        return len(self._win.qt_viewer.viewer.layers)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
@@ -141,12 +147,15 @@ class FileMenu(QMenu):
             def _save_size(sz: QSize):
                 app_pref.preferences_size = (sz.width(), sz.height())
 
-            win.finished.connect(lambda e: setattr(self, '_pref_dialog', None))
+            win.finished.connect(self._clean_pref_dialog)
             win.show()
         else:
             self._pref_dialog.raise_()
 
-    def _rebuild_samples_menu(self, event=None):
+    def _clean_pref_dialog(self):
+        self._pref_dialog = None
+
+    def _rebuild_samples_menu(self):
         from ...plugins import menu_item_template, plugin_manager
 
         self.open_sample_menu.clear()

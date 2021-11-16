@@ -321,6 +321,14 @@ def _run():
             else:
                 viewer.window.add_plugin_dock_widget(pname)
 
+        # only necessary in bundled app, but see #3596
+        from napari.utils.misc import (
+            install_certifi_opener,
+            running_as_bundled_app,
+        )
+
+        if running_as_bundled_app:
+            install_certifi_opener()
         run(gui_exceptions=True)
 
 
@@ -421,6 +429,13 @@ def main():
                 'conda install -c conda-forge python.app'
             )
             warnings.warn(msg)
+
+    # Prevent https://github.com/napari/napari/issues/3415
+    if sys.platform == "darwin" and sys.version_info >= (3, 8):
+        import multiprocessing
+
+        multiprocessing.set_start_method('fork')
+
     _run()
 
 

@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from vispy.util.quaternion import Quaternion
 
-from napari._vispy.quaternion import quaternion2euler
-from napari._vispy.utils import get_view_direction_in_scene_coordinates
+from napari._vispy.utils.quaternion import quaternion2euler
+from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
 
 # Euler angles to be tested, in degrees
 angles = [[12, 53, 92], [180, -90, 0], [16, 90, 0]]
