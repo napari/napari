@@ -67,11 +67,44 @@ class Colormap(EventedModel):
     # controls validator must be called even if None for correct initialization
     @validator('controls', pre=True, always=True)
     def _check_controls(cls, v, values):
+        # If no control points provided generate defaults
         if v is None or len(v) == 0:
             n_controls = len(values['colors']) + int(
                 values['interpolation'] == ColormapInterpolationMode.ZERO
             )
             return np.linspace(0, 1, n_controls)
+
+        # Check control end points are correct
+        if not (v[0] == 0 and v[-1] == 1):
+            raise ValueError(
+                trans._(
+                    f'Control points must start with 0.0 and end with 1.0. Got {v[0]} and {v[-1]}',
+                    deferred=True,
+                )
+            )
+
+        # Check control points are sorted correctly
+        if not np.array_equal(v, sorted(v)):
+            raise ValueError(
+                trans._(
+                    'Control points need to be sorted in ascending order',
+                    deferred=True,
+                )
+            )
+
+        # Check number of control points is correct
+        n_controls_target = len(values['colors']) + int(
+            values['interpolation'] == ColormapInterpolationMode.ZERO
+        )
+        n_controls = len(v)
+        if not n_controls == n_controls_target:
+            raise ValueError(
+                trans._(
+                    f'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}',
+                    deferred=True,
+                )
+            )
+
         return v
 
     def __iter__(self):
