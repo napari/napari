@@ -17,6 +17,8 @@ from ...utils.progress import progress
 class QtLabeledProgressBar(QWidget):
     """QProgressBar with QLabels for description and ETA."""
 
+    finished = QtCore.Signal()
+
     def __init__(
         self, parent: Optional[QWidget] = None, prog: progress = None
     ) -> None:
@@ -48,6 +50,8 @@ class QtLabeledProgressBar(QWidget):
 
     def setValue(self, value):
         self.qt_progress_bar.setValue(value)
+        if value == self.qt_progress_bar.maximum():
+            self.finished.emit()
         QApplication.processEvents()
 
     def setDescription(self, value):
@@ -72,6 +76,7 @@ class QtLabeledProgressBar(QWidget):
         self.eta_label.setText(event.value)
 
     def _close(self, event):
+        self.finished.emit()
         super().close()
 
 

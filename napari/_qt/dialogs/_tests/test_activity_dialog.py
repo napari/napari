@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 import pytest
 
+from napari import Viewer
 from napari._qt.widgets.qt_progress_bar import (
     QtLabeledProgressBar,
     QtProgressBarGroup,
@@ -74,9 +75,11 @@ def test_progress_with_context(make_napari_viewer):
             assert pbar.qt_progress_bar.maximum() == prog.total == 100
 
 
-def test_closing_viewer_no_error(make_napari_viewer):
+def test_closing_viewer_no_error(qtbot):
     """Closing viewer with active progress doesn't cause RuntimeError"""
-    viewer = make_napari_viewer(show=SHOW)
+    # instead of make_napari_viewer, because we want to close it ourselves
+    viewer = Viewer(show=SHOW)
+    viewer._create_window()
 
     assert not qt_viewer_has_pbar(viewer)
     with progress(range(100)):

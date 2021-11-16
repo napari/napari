@@ -166,7 +166,7 @@ class QtActivityDialog(QDialog):
             prog.total = 0
         pbar.setDescription(prog.desc)
 
-    def add_progress_bar(self, pbar, nest_under=None):
+    def add_progress_bar(self, pbar: QtLabeledProgressBar, nest_under=None):
         """Add progress bar to activity_dialog,in QtProgressBarGroup if needed.
 
         Check if pbar needs nesting and create QtProgressBarGroup, removing
@@ -206,7 +206,7 @@ class QtActivityDialog(QDialog):
         # show progress indicator and start gif
         self._toggleButton._inProgressIndicator.movie().start()
         self._toggleButton._inProgressIndicator.show()
-        pbar.destroyed.connect(self.maybe_hide_progress_indicator)
+        pbar.finished.connect(self.maybe_hide_progress_indicator)
         QApplication.processEvents()
 
     def get_pbar_from_prog(self, prog):
@@ -262,10 +262,11 @@ class QtActivityDialog(QDialog):
         pbars = self._baseWidget.findChildren(QtLabeledProgressBar)
         pbar_groups = self._baseWidget.findChildren(QtProgressBarGroup)
 
-        progress_visible = any([pbar.isVisible() for pbar in pbars])
+        progress_visible = any(pbar.isVisible() for pbar in pbars)
         progress_group_visible = any(
-            [pbar_group.isVisible() for pbar_group in pbar_groups]
+            pbar_group.isVisible() for pbar_group in pbar_groups
         )
+
         if not progress_visible and not progress_group_visible:
             self._toggleButton._inProgressIndicator.movie().stop()
             self._toggleButton._inProgressIndicator.hide()
