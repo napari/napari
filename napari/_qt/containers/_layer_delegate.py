@@ -43,6 +43,7 @@ from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
 from ...layers._layer_actions import _LAYER_ACTIONS
+from ...utils.context import get_context
 from ..qt_resources import QColoredSVGIcon
 from ..widgets.qt_action_context_menu import QtActionContextMenu
 from ._base_item_model import ItemRole
@@ -181,7 +182,7 @@ class LayerDelegate(QStyledItemDelegate):
             self._context_menu = QtActionContextMenu(_LAYER_ACTIONS)
 
         layer_list: LayerList = model.sourceModel()._root
-        self._context_menu.update_from_context(layer_list._selection_context())
+        self._context_menu.update_from_context(get_context(layer_list))
         action = self._context_menu.exec_(pos)
         if action is not None and isinstance(action.data(), dict):
             # action.data will be a callable that accepts a layer_list instance

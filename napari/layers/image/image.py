@@ -264,6 +264,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             attenuation=Event,
         )
 
+        self._array_like = True
+
         # Set data
         self.rgb = rgb
         self._data = data
@@ -412,33 +414,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         shape = self.level_shapes[0]
         return np.vstack([np.zeros(len(shape)), shape])
-
-    def _get_extent_world(self, data_extent):
-        """Range of layer in world coordinates base on provided data_extent
-
-        This differs from the parent Layer class by shifting the coordinate
-        range by 1/2 pixel thickness.
-
-        Returns
-        -------
-        extent_world : array, shape (2, D)
-        """
-        D = data_extent.shape[1]
-
-        # subtract 0.5 to get from pixel center to pixel edge
-        pixel_extents = tuple(d - 0.5 for d in data_extent.T)
-
-        full_data_extent = np.array(np.meshgrid(*pixel_extents)).T.reshape(
-            -1, D
-        )
-        full_world_extent = self._data_to_world(full_data_extent)
-        world_extent = np.array(
-            [
-                np.min(full_world_extent, axis=0),
-                np.max(full_world_extent, axis=0),
-            ]
-        )
-        return world_extent
 
     @property
     def data_level(self):
