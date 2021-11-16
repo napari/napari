@@ -294,7 +294,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self.events = EmitterGroup(
             source=self,
-            auto_connect=False,
             refresh=Event,
             set_data=Event,
             blending=Event,
