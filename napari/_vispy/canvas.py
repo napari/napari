@@ -1,5 +1,7 @@
 """VispyCanvas class.
 """
+from weakref import WeakSet
+
 from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas, Widget
 
@@ -20,10 +22,14 @@ class VispyCanvas(SceneCanvas):
 
     """
 
+    # mostly for debugging dangling instances on macos.
+    _instances: WeakSet = WeakSet()
+
     def __init__(self, *args, **kwargs):
 
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
+        self._instances.add(self)
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._background_color_override = None

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import warnings
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
+from weakref import WeakSet
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -177,11 +178,14 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
+    _instances: WeakSet = WeakSet()
+
     def __init__(self, viewer: Viewer, show_welcome_screen: bool = False):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
+        QtViewer._instances.add(self)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         self._show_welcome_screen = show_welcome_screen
@@ -246,9 +250,19 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
+
+        from weakref import ref
+
+        s = ref(self)
+
+        def _toggle():
+            _viewer = s()
+            if _viewer is not None:
+                _viewer.toggle_console_visibility()
+
         action_manager.register_action(
             "napari:toggle_console_visibility",
-            self.toggle_console_visibility,
+            _toggle,
             trans._("Show/Hide IPython console"),
             self.viewer,
         )

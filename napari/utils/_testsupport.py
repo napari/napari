@@ -100,10 +100,20 @@ def make_napari_viewer(
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
     """
+    import gc
+
     from qtpy.QtWidgets import QApplication
 
     from napari import Viewer
+    from napari._qt.qt_viewer import QtViewer
+    from napari._vispy.canvas import VispyCanvas
     from napari.settings import get_settings
+
+    # it seem on macos Canvas may stick around and get stuck during call/teardown
+    # of subsequent test. Gc collect to make sure we are clean before and
+    # after making viewers.
+    gc.collect()
+    # assert len(VispyCanvas._instances) == 0
 
     settings = get_settings()
     settings.reset()
@@ -153,6 +163,30 @@ def make_napari_viewer(
                 viewer.close()
         else:
             viewer.close()
+
+    assert len(Viewer._instances) == 0, Viewer._instances
+    # same reason as above gc.collect() but post viewer teardown.
+    gc.collect()
+
+    if len(QtViewer._instances) != 0:
+        import objgraph
+
+        objgraph.show_backrefs(
+            list(QtViewer._instances),
+            max_depth=5,
+            filename='QtViewer-sample-backref-graph.png',
+        )
+    if len(VispyCanvas._instances) != 0:
+        import objgraph
+
+        objgraph.show_backrefs(
+            list(VispyCanvas._instances),
+            filter=lambda x: type(x) == dict,
+            max_depth=5,
+            filename='xxx-sample-backref-graph.png',
+        )
+    assert len(QtViewer._instances) == 0, QtViewer._instances
+    # assert len(VispyCanvas._instances) == 0
 
     # only check for leaked widgets if an exception was raised during the test,
     # or "strict" mode was used.

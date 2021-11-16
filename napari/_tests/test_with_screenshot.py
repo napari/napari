@@ -82,6 +82,7 @@ def test_z_order_images(make_napari_viewer):
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that red is now visible
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
+    viewer.close()
 
 
 @slow(30)

@@ -112,6 +112,12 @@ class Viewer(ViewerModel):
         """Resize, show, and raise the viewer window."""
         self.window.show(block=block)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
     def close(self):
         """Close the viewer window."""
         # Remove all the layers from the viewer
