@@ -21,6 +21,7 @@ skip = [
     'embed_ipython.py',  # fails without monkeypatch
     'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
     'new_theme.py',  # testing theme is extremely slow on CI
+    'dynamic-projections-dask.py',  # extremely slow / does not finish
 ]
 
 
