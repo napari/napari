@@ -27,7 +27,11 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer._face.events.colors.connect(self._on_data_change)
         self.layer._face.events.color_properties.connect(self._on_data_change)
+        self.layer.events.hidden.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
+        self.layer.text._connect_update_events(
+            self._on_text_change, self._on_blending_change
+        )
         self.layer.text.events.connect(self._on_text_change)
 
         self._on_data_change()
@@ -46,9 +50,11 @@ class VispyPointsLayer(VispyBaseLayer):
         if len(self.layer._indices_view) == 0:
             data = np.zeros((1, self.layer._ndisplay))
             size = [0]
+            hidden = [False]
         else:
             data = self.layer._view_data
             size = self.layer._view_size
+            hidden = self.layer._view_hidden
 
         set_data = self.node._subvisuals[0].set_data
 
@@ -60,6 +66,7 @@ class VispyPointsLayer(VispyBaseLayer):
             edge_color=edge_color,
             face_color=face_color,
             scaling=True,
+            hidden=hidden,
         )
 
         self.reset()
@@ -72,9 +79,11 @@ class VispyPointsLayer(VispyBaseLayer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self.layer._view_size[self.layer._highlight_index]
+            hidden = self.layer._view_hidden[self.layer._highlight_index]
         else:
             data = np.zeros((1, self.layer._ndisplay))
             size = 0
+            hidden = False
 
         self.node._subvisuals[1].set_data(
             data[:, ::-1],
@@ -84,6 +93,7 @@ class VispyPointsLayer(VispyBaseLayer):
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
             scaling=True,
+            hidden=hidden,
         )
 
         # only draw a box in 2D

@@ -275,6 +275,9 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
+        antialias=1,
+        spherical=False,
+        hidden=False,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -311,6 +314,9 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
+            antialias=Event,
+            spherical=Event,
+            hidden=Event,
         )
 
         self._colors = get_color_namelist()
@@ -387,6 +393,9 @@ class Points(Layer):
         )
 
         self.size = size
+        self.antialias = antialias
+        self.spherical = spherical
+        self.hidden = hidden
 
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(self.data)
@@ -671,6 +680,37 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
+
+    @property
+    def antialias(self):
+        return self._antialias
+
+    @antialias.setter
+    def antialias(self, value) -> Union[int, float]:
+        self._antialias = value
+        self.events.antialias()
+
+    @property
+    def spherical(self):
+        return self._spherical
+
+    @spherical.setter
+    def spherical(self, value) -> Union[int, float]:
+        self._spherical = value
+        self.events.spherical()
+
+    @property
+    def hidden(self):
+        """
+        Boolean array determining which points to hide
+        """
+        return self._hidden
+
+    @hidden.setter
+    def hidden(self, hidden):
+        self._hidden = np.broadcast_to(hidden, self.data.shape[0]).copy()
+        self.events.hidden()
+        self.refresh()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -1167,6 +1207,13 @@ class Points(Layer):
             # if no points, return an empty list
             sizes = np.array([])
         return sizes
+
+    @property
+    def _view_hidden(self):
+        """
+        Get hidden if in view
+        """
+        return self.hidden[self._indices_view]
 
     @property
     def _view_face_color(self) -> np.ndarray:
