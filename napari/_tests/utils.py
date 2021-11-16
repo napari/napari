@@ -28,7 +28,7 @@ skip_on_mac_ci = pytest.mark.skipif(
 
 skip_local_popups = pytest.mark.skipif(
     not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
-    reason='Tests requiring GUI windows are skipped locally by default.',
+    reason='Tests requiring GUI windows are skipped locally by default. Set run with NAPARI_POPUP_TESTS=1 to enable',
 )
 
 
@@ -215,7 +215,7 @@ def slow(timeout):
     Both mark a function as slow, and with a timeout which is easily scalable
     via an env variable.
     """
-    factor = int(os.getenv('NAPARI_TESTING_TIMEOUT_SCALING', '1'))
+    factor = float(os.getenv('NAPARI_TESTING_TIMEOUT_SCALING', '1.0'))
 
     def _slow(func):
 

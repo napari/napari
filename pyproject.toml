@@ -82,7 +82,7 @@ skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = "--maxfail=5 --durations=10"
+addopts = "--maxfail=5 --durations=10 -rXxs"
 
 # NOTE: only put things that will never change in here.
 # napari deprecation and future warnings should NOT go in here.
