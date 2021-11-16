@@ -689,7 +689,7 @@ class Shapes(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return self._property_table.all_values
+        return self._property_table.values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -805,7 +805,7 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return self._property_table.all_default_values
+        return self._property_table.default_values
 
     @current_properties.setter
     def current_properties(self, current_properties):

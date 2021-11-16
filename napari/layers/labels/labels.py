@@ -414,7 +414,7 @@ class Labels(_ImageBase):
     ) -> Tuple[PropertyTable, Dict[int, int]]:
         property_table = PropertyTable.from_layer_kwargs(properties=properties)
         label_index = {}
-        if 'index' in property_table:
+        if 'index' in property_table.data:
             label_index = {
                 i: k for k, i in enumerate(property_table.data['index'])
             }

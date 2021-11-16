@@ -1,31 +1,20 @@
 from typing import Dict, Optional, Union
 
+import numpy as np
 import pandas as pd
 
 from napari.utils.events.custom_types import Array
 
 
 class PropertyTable:
-    """Manages a collection of properties."""
-
     def __init__(self, data=None):
         self.data = pd.DataFrame(data)
         self._default_values = {
-            name: PropertyTable._get_default_value_from_series(series)
+            name: _get_default_value_from_series(series)
             for name, series in self.data.items()
         }
 
-    @staticmethod
-    def _get_default_value_from_series(series):
-        if series.size > 0:
-            return series.iloc[-1]
-        if isinstance(series.dtype, pd.CategoricalDtype):
-            choices = series.dtype.categories
-            if choices.size > 0:
-                return choices[0]
-        return None
-
-    def resize(self, size):
+    def resize(self, size: int):
         if size < self.num_values:
             self.remove(range(size, self.num_values))
         elif size > self.num_values:
@@ -50,11 +39,12 @@ class PropertyTable:
         return self.data.shape[1]
 
     @property
-    def default_values(self):
+    def default_values(self) -> Dict[str, np.ndarray]:
         return self._default_values
 
     @property
-    def choices(self):
+    def choices(self) -> Dict[str, np.ndarray]:
+        # TODO: should we copy categories?
         return {
             name: series.dtype.categories
             for name, series in self.data.items()
@@ -62,7 +52,9 @@ class PropertyTable:
         }
 
     @property
-    def values(self):
+    def values(self) -> Dict[str, np.ndarray]:
+        # TODO: Should we always pass copy=True to ensure the return value does
+        # not have an effect when modified in-place?
         return {name: series.to_numpy() for name, series in self.data.items()}
 
     @classmethod
@@ -92,12 +84,11 @@ class PropertyTable:
         return cls(data)
 
 
-def _infer_num_data(
-    properties: Optional[Union[Dict[str, Array], pd.DataFrame]],
-    num_data: Optional[int],
-) -> int:
-    if num_data is not None:
-        return num_data
-    if len(properties) > 0:
-        return len(next(iter(properties)))
-    return 0
+def _get_default_value_from_series(series):
+    if series.size > 0:
+        return series.iloc[-1]
+    if isinstance(series.dtype, pd.CategoricalDtype):
+        choices = series.dtype.categories
+        if choices.size > 0:
+            return choices[0]
+    return None

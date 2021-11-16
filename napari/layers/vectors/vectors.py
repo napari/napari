@@ -289,7 +289,7 @@ class Vectors(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return self._property_table.all_values
+        return self._property_table.values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -320,7 +320,7 @@ class Vectors(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_table.all_choices
+        return self._property_table.choices
 
     def _get_state(self):
         """Get dictionary of layer state.
