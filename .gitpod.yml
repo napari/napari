@@ -4,4 +4,4 @@ ports:
   - port: 6080
     protocol: "http"
 tasks:
-  - command: "python3 -m napari"
+  - command: "/usr/bin/python3 -m napari"
