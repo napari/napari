@@ -1,0 +1,7 @@
+image:
+  file: .gitpod.dockerfile
+ports:
+  - port: 6080
+    protocol: "http"
+tasks:
+  - command: "python3 -m napari"
