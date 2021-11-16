@@ -237,6 +237,8 @@ class QtActivityDialog(QDialog):
             progress object whose QtLabeledProgressBar to close
         """
         current_pbar = self.get_pbar_from_prog(prog)
+        if current_pbar is None:
+            return
         parent_widget = current_pbar.parent()
         current_pbar.close()
         current_pbar.deleteLater()
