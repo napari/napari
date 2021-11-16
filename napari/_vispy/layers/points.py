@@ -29,7 +29,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer._face.events.color_properties.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
-        self.layer.events.hidden.connect(self._on_data_change)
+        self.layer.events.shown.connect(self._on_data_change)
 
         self._on_data_change()
 
