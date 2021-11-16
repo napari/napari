@@ -224,7 +224,7 @@ class Points(Layer):
     _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
     _indices_view : array (M, )
-        Integer indices of the points in the currently viewed slice and are not hidden.
+        Integer indices of the points in the currently viewed slice and are shown.
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
         the `_view_data` array.
@@ -277,7 +277,7 @@ class Points(Layer):
         experimental_clipping_planes=None,
         antialias=1,
         spherical=False,
-        hidden=False,
+        shown=True,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -316,7 +316,7 @@ class Points(Layer):
             highlight=Event,
             antialias=Event,
             spherical=Event,
-            hidden=Event,
+            shown=Event,
         )
 
         self._colors = get_color_namelist()
@@ -362,7 +362,7 @@ class Points(Layer):
         self._drag_start = None
 
         # initialize view data
-        self._hidden = np.empty(0, bool)
+        self._shown = np.empty(0, bool)
         self.__indices_view = np.empty(0, int)
         self._view_size_scale = []
 
@@ -396,7 +396,7 @@ class Points(Layer):
         self.size = size
         self.antialias = antialias
         self.spherical = spherical
-        self.hidden = hidden
+        self.shown = shown
 
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(self.data)
@@ -701,16 +701,16 @@ class Points(Layer):
         self.events.spherical()
 
     @property
-    def hidden(self):
+    def shown(self):
         """
-        Boolean array determining which points to hide
+        Boolean array determining which points to show
         """
-        return self._hidden
+        return self._shown
 
-    @hidden.setter
-    def hidden(self, hidden):
-        self._hidden = np.broadcast_to(hidden, self.data.shape[0]).astype(bool)
-        self.events.hidden()
+    @shown.setter
+    def shown(self, shown):
+        self._shown = np.broadcast_to(shown, self.data.shape[0]).astype(bool)
+        self.events.shown()
         self.refresh()
 
     @property
@@ -1145,7 +1145,7 @@ class Points(Layer):
 
     @property
     def _indices_view(self):
-        return self.__indices_view[~self.hidden[self.__indices_view]]
+        return self.__indices_view[self.shown[self.__indices_view]]
 
     @_indices_view.setter
     def _indices_view(self, value):
