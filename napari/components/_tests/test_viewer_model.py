@@ -700,6 +700,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     layer.events.connect(my_custom_callback)
 
     # Check that no internal callbacks have been registered
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
             assert len(em.callbacks) == 1
@@ -716,10 +717,10 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(viewer.layers) == 0
 
     # Check that all internal callbacks have been removed
-    assert len(layer.events.callbacks) == 0
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 0
+            assert len(em.callbacks) == 1
 
 
 @pytest.mark.parametrize(
