@@ -1,7 +1,5 @@
 from functools import partial
 
-from napari_plugin_engine import napari_hook_implementation
-
 from ..utils.translations import trans
 
 SKIMAGE_DATA = [
@@ -91,14 +89,13 @@ _DATA = {
 }
 
 
-@napari_hook_implementation
-def napari_provide_sample_data():
-    return _DATA
-
-
 try:
-    import npe2
+    import npe2  # noqa: F401
 
     globals().update({k: v['data'] for k, v in _DATA.items()})
 except ImportError:
-    pass
+    from napari_plugin_engine import napari_hook_implementation
+
+    @napari_hook_implementation
+    def napari_provide_sample_data():
+        return _DATA
