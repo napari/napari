@@ -275,8 +275,6 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
-        antialias=1,
-        spherical=False,
         shown=True,
     ):
         if ndim is None and scale is not None:
@@ -314,8 +312,6 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
-            antialias=Event,
-            spherical=Event,
             shown=Event,
         )
 
@@ -394,8 +390,6 @@ class Points(Layer):
         )
 
         self.size = size
-        self.antialias = antialias
-        self.spherical = spherical
         self.shown = shown
 
         self.current_properties = get_current_properties(
@@ -681,24 +675,6 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
-
-    @property
-    def antialias(self):
-        return self._antialias
-
-    @antialias.setter
-    def antialias(self, value) -> Union[int, float]:
-        self._antialias = value
-        self.events.antialias()
-
-    @property
-    def spherical(self):
-        return self._spherical
-
-    @spherical.setter
-    def spherical(self, value) -> Union[int, float]:
-        self._spherical = value
-        self.events.spherical()
 
     @property
     def shown(self):
