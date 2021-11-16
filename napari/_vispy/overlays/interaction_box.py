@@ -82,7 +82,7 @@ class VispyInteractionBox:
         """Compute location of the box for rendering.
 
         Returns
-        ----------
+        -------
         vertices : np.ndarray
             Nx2 array of any vertices to be rendered as Markers
         face_color : str

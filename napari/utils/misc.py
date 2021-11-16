@@ -563,12 +563,12 @@ def _file_hash(_hash, file: Path, path: Path, include_paths: bool = True):
 
     Parameters
     ----------
-    _hash: :
-    file: Path
+    _hash
+    file : Path
         Path to the source file which will be used to compute the hash.
     path : Path
         Path to the base directory of the `file`. This can be usually obtained by using `file.parent`.
-    include_paths: bool
+    include_paths : bool
         If ``True``, the hash will also include the ``file`` parts.
     """
     _hash.update(file.read_bytes())
