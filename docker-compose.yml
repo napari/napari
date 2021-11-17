@@ -1,0 +1,9 @@
+version: "3.9"
+services:
+  napari:
+    build:
+      context: .
+      dockerfile: .gitpod.dockerfile
+    ports:
+      - "5900:5900"
+      - "6080:6080"
