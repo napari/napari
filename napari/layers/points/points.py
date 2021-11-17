@@ -994,6 +994,7 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
+                'shown': self.shown,
             }
         )
         return state
@@ -1630,6 +1631,9 @@ class Points(Layer):
             ]
             data[:, not_disp] = data[:, not_disp] + np.array(offset)
             self._data = np.append(self.data, data, axis=0)
+            self._shown = np.append(
+                self.shown, deepcopy(self._clipboard['shown']), axis=0
+            )
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
@@ -1669,6 +1673,7 @@ class Points(Layer):
                 'data': deepcopy(self.data[index]),
                 'edge_color': deepcopy(self.edge_color[index]),
                 'face_color': deepcopy(self.face_color[index]),
+                'shown': deepcopy(self.shown[index]),
                 'size': deepcopy(self.size[index]),
                 'properties': {
                     k: deepcopy(v[index]) for k, v in self.properties.items()
