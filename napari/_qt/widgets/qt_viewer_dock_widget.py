@@ -62,13 +62,13 @@ class QtViewerDockWidget(QDockWidget):
 
     @property
     def _parent(self):
-        return self._ref_parent
+        return self._ref_parent()
 
     @_parent.setter
     def _parent(self, obj):
         from weakref import ref
 
-        self._ref_parent = obj
+        self._ref_parent = ref(obj)
 
     def __init__(
         self,
