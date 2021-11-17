@@ -930,12 +930,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # or -> [1, 0, 2] for a layer with three as that corresponds to
         # the relative order of the last two and three dimensions
         # respectively
-        offset = ndim - self.ndim
-        order = np.array(order)
-        if offset <= 0:
-            order = list(range(-offset)) + list(order - offset)
-        else:
-            order = list(order[order >= offset] - offset)
+        order = self._world_to_data_dims_displayed(order, ndim_world=ndim)
 
         if point is None:
             point = [0] * ndim
@@ -946,6 +941,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             point = list(point)
 
         # If no slide data has changed, then do nothing
+        offset = ndim - self.ndim
         if (
             np.all(order == self._dims_order)
             and ndisplay == self._ndisplay
@@ -1248,6 +1244,38 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         vector_data_ndisplay = vector_data_nd[dims_displayed]
         vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
         return vector_data_ndisplay
+
+    def _world_to_data_dims_displayed(
+        self, dims_displayed: List[int], ndim_world: int
+    ) -> np.ndarray:
+        """Convert the displayed dims in world coordinates to the data coordinates.
+
+        This accounts for differences in dimensionality of the world and the data.
+        for example a global order of [2, 1, 0, 3] -> [0, 1] for a layer that
+        only has two dimensions or -> [1, 0, 2] for a layer with three as that
+        corresponds to the relative order of the last two and three dimensions
+        respectively
+
+        Parameters
+        ----------
+        dims_displayed : List[int]
+            The world displayed dimensions.
+        ndim_world : int
+            The number of dimensions in the world coordinate system.
+
+        Returns
+        -------
+        dims_displayed_data : np.ndarray
+            The displayed dimensions in data coordinates.
+        """
+        offset = ndim_world - self.ndim
+        order = np.array(dims_displayed)
+        if offset <= 0:
+            dims_displayed_data = list(range(-offset)) + list(order - offset)
+        else:
+            dims_displayed_data = list(order[order >= offset] - offset)
+
+        return dims_displayed_data
 
     def _display_bounding_box(self, dims_displayed: np.ndarray):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
