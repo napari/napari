@@ -68,10 +68,10 @@ def select(layer, event):
             if event.view_direction is not None:
                 view_dir_data = np.asarray(
                     layer._world_to_data_ray(event.view_direction)
-                )[event.dims_displayed]
+                )
                 up_dir_data = np.asarray(
                     layer._world_to_data_ray(event.up_direction)
-                )[event.dims_displayed]
+                )
                 if layer._drag_normal is None:
                     layer._drag_normal = np.array([view_dir_data])
                     layer._drag_up = np.array([up_dir_data])
