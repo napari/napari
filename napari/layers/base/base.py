@@ -1107,8 +1107,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             (3,) unit vector or (n, 3) array thereof on which to project the drag
             vector from start_event to end_event. This argument is defined in data
             coordinates.
-        dims_displayed: Union[List, np.ndarray]
+        dims_displayed : Union[List, np.ndarray]
             (3,) list of currently displayed dimensions
+
         Returns
         -------
         projected_distance : (1, ) or (n, ) np.ndarray of float
@@ -1358,7 +1359,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         world : bool
             True if the provided coordinates are in world coordinates.
             Default value is True.
-        bounding_box: np.ndarray
+        bounding_box : np.ndarray
             A (2, 3) bounding box around the data currently in view
 
         Returns
