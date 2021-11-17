@@ -60,6 +60,16 @@ class QtViewerDockWidget(QDockWidget):
         them distribute across the vertical space).  By default, True.
     """
 
+    @property
+    def _parent(self):
+        return self._ref_parent
+
+    @_parent.setter
+    def _parent(self, obj):
+        from weakref import ref
+
+        self._ref_parent = obj
+
     def __init__(
         self,
         qt_viewer,
@@ -72,6 +82,7 @@ class QtViewerDockWidget(QDockWidget):
         object_name: str = '',
         add_vertical_stretch=True,
     ):
+
         self.ref_qt_viewer = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer

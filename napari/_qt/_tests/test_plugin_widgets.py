@@ -77,6 +77,14 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     function_widgets = {'TestP3': {'magic': magicfunc}}
     monkeypatch.setattr(tnpm, "_function_widgets", function_widgets)
     yield
+    # del dock_widgets['TestP2']
+    # del dock_widgets['TestP1']
+
+    #   window._dock_widget['TestP3 : magic']  <- destroy that...
+
+    # del function_widgets['TestP3']
+    # assert not function_widgets.keys()
+    # assert not dock_widgets.keys(), dock_widgets.keys()
 
 
 def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):

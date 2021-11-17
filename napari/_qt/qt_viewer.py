@@ -1077,6 +1077,12 @@ class QtViewer(QSplitter):
         self.dockConsole.deleteLater()
         event.accept()
 
+    def __repr__(self):
+        return '<QTV temp repr>'
+
+    def __str__(self):
+        return '<QTV temp repr>'
+
 
 if TYPE_CHECKING:
     from ..components.experimental.remote import RemoteManager

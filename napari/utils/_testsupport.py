@@ -173,9 +173,10 @@ def make_napari_viewer(
 
         objgraph.show_backrefs(
             list(QtViewer._instances),
-            max_depth=5,
+            max_depth=12,
             filename='QtViewer-sample-backref-graph.png',
         )
+        assert len(QtViewer._instances) == 0, QtViewer._instances
     # if len(VispyCanvas._instances) != 0:
     #    import objgraph
 
@@ -185,7 +186,6 @@ def make_napari_viewer(
     #        max_depth=5,
     #        filename='xxx-sample-backref-graph.png',
     #    )
-    assert len(QtViewer._instances) == 0, QtViewer._instances
     # assert len(VispyCanvas._instances) == 0
 
     # only check for leaked widgets if an exception was raised during the test,
