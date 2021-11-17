@@ -312,7 +312,6 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
-            shown=Event,
         )
 
         self._colors = get_color_namelist()
@@ -358,7 +357,6 @@ class Points(Layer):
         self._drag_start = None
 
         # initialize view data
-        self._shown = np.empty(0, bool)
         self.__indices_view = np.empty(0, int)
         self._view_size_scale = []
 
@@ -389,8 +387,9 @@ class Points(Layer):
             else self._property_choices,
         )
 
-        self.size = size
+        # always set shown before size to avoid inconsistent state
         self.shown = shown
+        self.size = size
 
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(self.data)
@@ -425,6 +424,7 @@ class Points(Layer):
                             self._face._remove(
                                 np.arange(len(data), len(self._face.colors))
                             )
+                        self._shown = self._shown[: len(data)]
                         self._size = self._size[: len(data)]
 
                         for k in self.properties:
@@ -458,6 +458,11 @@ class Points(Layer):
                         # add new colors
                         self._edge._add(n_colors=adding)
                         self._face._add(n_colors=adding)
+
+                        shown = np.repeat([True], adding, axis=0)
+                        self._shown = np.concatenate(
+                            (self._shown, shown), axis=0
+                        )
 
                         self.size = np.concatenate((self._size, size), axis=0)
                         self.selected_data = set(
@@ -686,7 +691,6 @@ class Points(Layer):
     @shown.setter
     def shown(self, shown):
         self._shown = np.broadcast_to(shown, self.data.shape[0]).astype(bool)
-        self.events.shown()
         self.refresh()
 
     @property
@@ -1121,11 +1125,11 @@ class Points(Layer):
 
     @property
     def _indices_view(self):
-        return self.__indices_view[self.shown[self.__indices_view]]
+        return self.__indices_view
 
     @_indices_view.setter
     def _indices_view(self, value):
-        self.__indices_view = value
+        self.__indices_view = value[self.shown[value]]
 
     @property
     def _view_data(self) -> np.ndarray:
