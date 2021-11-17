@@ -176,15 +176,15 @@ def make_napari_viewer(
             max_depth=5,
             filename='QtViewer-sample-backref-graph.png',
         )
-    if len(VispyCanvas._instances) != 0:
-        import objgraph
+    # if len(VispyCanvas._instances) != 0:
+    #    import objgraph
 
-        objgraph.show_backrefs(
-            list(VispyCanvas._instances),
-            filter=lambda x: type(x) == dict,
-            max_depth=5,
-            filename='xxx-sample-backref-graph.png',
-        )
+    #    objgraph.show_backrefs(
+    #        list(VispyCanvas._instances),
+    #        filter=lambda x: type(x) == dict,
+    #        max_depth=5,
+    #        filename='xxx-sample-backref-graph.png',
+    #    )
     assert len(QtViewer._instances) == 0, QtViewer._instances
     # assert len(VispyCanvas._instances) == 0
 
