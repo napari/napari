@@ -1444,7 +1444,7 @@ class Points(Layer):
         # get the indices of points in view
         indices, scale = self._slice_data(self._slice_indices)
         self._view_size_scale = scale
-        self._indices_view = np.array(indices)
+        self._indices_view = np.array(indices, dtype=int)
         # get the selected points that are in view
         self._selected_view = list(
             np.intersect1d(
