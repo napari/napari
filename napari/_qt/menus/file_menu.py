@@ -174,7 +174,7 @@ class FileMenu(NapariMenu):
                 (
                     plugin_name,
                     {
-                        c.display_name: {
+                        c.key: {
                             'data': c.open,
                             'display_name': c.display_name,
                         }

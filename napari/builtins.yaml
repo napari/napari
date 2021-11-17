@@ -213,66 +213,130 @@ contributions:
 
   sample_data:
     - display_name: Astronaut (RGB)
+      key: astronaut
       command: napari_builtins.data.astronaut
     - display_name: Binary Blobs
+      key: binary_blobs
       command: napari_builtins.data.binary_blobs
     - display_name: Binary Blobs (3D)
+      key: binary_blobs_3D
       command: napari_builtins.data.binary_blobs_3D
     - display_name: Brain (3D)
+      key: brain
       command: napari_builtins.data.brain
     - display_name: Brick
+      key: brick
       command: napari_builtins.data.brick
     - display_name: Camera
+      key: camera
       command: napari_builtins.data.camera
     - display_name: Cat (RGB)
+      key: cat
       command: napari_builtins.data.cat
     - display_name: Cell
+      key: cell
       command: napari_builtins.data.cell
     - display_name: Cells (3D+2Ch)
+      key: cells3d
       command: napari_builtins.data.cells3d
     - display_name: Checkerboard
+      key: checkerboard
       command: napari_builtins.data.checkerboard
     - display_name: Clock
+      key: clock
       command: napari_builtins.data.clock
     - display_name: Coffee (RGB)
+      key: coffee
       command: napari_builtins.data.coffee
     - display_name: Coins
+      key: coins
       command: napari_builtins.data.coins
     - display_name: Colorwheel (RGB)
+      key: colorwheel
       command: napari_builtins.data.colorwheel
     - display_name: Eagle
+      key: eagle
       command: napari_builtins.data.eagle
     - display_name: Grass
+      key: grass
       command: napari_builtins.data.grass
     - display_name: Gravel
+      key: gravel
       command: napari_builtins.data.gravel
     - display_name: Horse
+      key: horse
       command: napari_builtins.data.horse
     - display_name: Hubble Deep Field (RGB)
+      key: hubble_deep_field
       command: napari_builtins.data.hubble_deep_field
     - display_name: Human Mitosis
+      key: human_mitosis
       command: napari_builtins.data.human_mitosis
     - display_name: Immunohistochemistry (RGB)
+      key: immunohistochemistry
       command: napari_builtins.data.immunohistochemistry
     - display_name: Kidney (3D+3Ch)
+      key: kidney
       command: napari_builtins.data.kidney
     - display_name: Labeled Faces in the Wild
+      key: lfw_subset
       command: napari_builtins.data.lfw_subset
     - display_name: Lily (4Ch)
+      key: lily
       command: napari_builtins.data.lily
     - display_name: Microaneurysms
+      key: microaneurysms
       command: napari_builtins.data.microaneurysms
     - display_name: Moon
+      key: moon
       command: napari_builtins.data.moon
     - display_name: Page
+      key: page
       command: napari_builtins.data.page
     - display_name: Retina (RGB)
+      key: retina
       command: napari_builtins.data.retina
     - display_name: Rocket (RGB)
+      key: rocket
       command: napari_builtins.data.rocket
     - display_name: Shepp Logan Phantom
+      key: shepp_logan_phantom
       command: napari_builtins.data.shepp_logan_phantom
     - display_name: Skin (RGB)
+      key: skin
       command: napari_builtins.data.skin
     - display_name: Text
+      key: text
       command: napari_builtins.data.text
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
