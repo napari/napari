@@ -9,7 +9,7 @@ scientific Python stack ([numpy](https://numpy.org/),
 
 ![add-image](images/screenshot-add-image.png)
 
-## installation
+## Installation
 
 napari can be installed on most macOS, Linux, and Windows systems with
 Python 3.7 and 3.8 using pip:
@@ -41,13 +41,13 @@ pip install 'napari[all]'
 This last option (`pip install napari[all]`) will choose a framework for
 you — currently PyQt5, but this could change in the future.
 
-## tutorials & getting started
+## Tutorials & getting started
 
 If you are just getting started with napari, we suggest you check out the
 tutorials at [napari.org](http://napari.org).  The documentation presented
 here is more technical and focuses on understanding how napari works.
 
-# developer introduction
+# Developer introduction
 
 Information on specific functions, classes, and methods is available in the
 [API Reference](api/index.rst).

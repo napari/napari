@@ -49,7 +49,7 @@ class QtPoll(QObject):
     def __init__(self, parent: QObject):
         super().__init__(parent)
 
-        self.events = EmitterGroup(source=self, auto_connect=True, poll=None)
+        self.events = EmitterGroup(source=self, poll=None)
 
         self.timer = QTimer()
         self.timer.setInterval(POLL_INTERVAL_MS)

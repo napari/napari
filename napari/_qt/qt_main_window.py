@@ -641,9 +641,25 @@ class Window:
         """
         from ..viewer import Viewer
 
-        Widget, dock_kwargs = plugin_manager.get_widget(
-            plugin_name, widget_name
-        )
+        Widget = None
+        try:
+            import npe2
+        except ImportError:
+            pass
+        else:
+            pm = npe2.PluginManager.instance()
+            for contrib in pm.iter_widgets():
+                if (
+                    contrib.plugin_name == plugin_name
+                    and contrib.name == widget_name
+                ):
+                    Widget = contrib.exec()
+                    dock_kwargs = {}
+
+        if Widget is None:
+            Widget, dock_kwargs = plugin_manager.get_widget(
+                plugin_name, widget_name
+            )
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
@@ -659,15 +675,20 @@ class Window:
 
         # if the signature is looking a for a napari viewer, pass it.
         kwargs = {}
-        for param in inspect.signature(Widget.__init__).parameters.values():
-            if param.name == 'napari_viewer':
-                kwargs['napari_viewer'] = self.qt_viewer.viewer
-                break
-            if param.annotation in ('napari.viewer.Viewer', Viewer):
-                kwargs[param.name] = self.qt_viewer.viewer
-                break
-            # cannot look for param.kind == param.VAR_KEYWORD because
-            # QWidget allows **kwargs but errs on unknown keyword arguments
+        try:
+            sig = inspect.signature(Widget.__init__)
+        except ValueError:
+            pass
+        else:
+            for param in sig.parameters.values():
+                if param.name == 'napari_viewer':
+                    kwargs['napari_viewer'] = self.qt_viewer.viewer
+                    break
+                if param.annotation in ('napari.viewer.Viewer', Viewer):
+                    kwargs[param.name] = self.qt_viewer.viewer
+                    break
+                # cannot look for param.kind == param.VAR_KEYWORD because
+                # QWidget allows **kwargs but errs on unknown keyword arguments
 
         # instantiate the widget
         wdg = Widget(**kwargs)

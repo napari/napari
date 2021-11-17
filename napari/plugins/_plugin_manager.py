@@ -396,7 +396,7 @@ class NapariPluginManager(PluginManager):
 
     # FUNCTION & DOCK WIDGETS -----------------------
 
-    def iter_widgets(self) -> Iterator[Tuple[str, Tuple[str, Dict]]]:
+    def iter_widgets(self) -> Iterator[Tuple[str, Tuple[str, Dict[str, Any]]]]:
         from itertools import chain, repeat
 
         dock_widgets = zip(repeat("dock"), self._dock_widgets.items())

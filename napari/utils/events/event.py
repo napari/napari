@@ -52,6 +52,7 @@ import inspect
 import warnings
 import weakref
 from collections import Counter
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
@@ -400,6 +401,8 @@ class EventEmitter:
         callbacks = self.callbacks
         callback_refs = self.callback_refs
 
+        old_callback = callback
+
         callback, pass_event = self._normalize_cb(callback)
 
         if callback in callbacks:
@@ -489,9 +492,11 @@ class EventEmitter:
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
         self._callback_pass_event.insert(idx, pass_event)
-        return callback  # allows connect to be used as a decorator
+        return old_callback  # allows connect to be used as a decorator
 
-    def disconnect(self, callback: Union[Callback, CallbackRef, None] = None):
+    def disconnect(
+        self, callback: Union[Callback, CallbackRef, None, object] = None
+    ):
         """Disconnect a callback from this emitter.
 
         If no callback is specified, then *all* callbacks are removed.
@@ -500,10 +505,28 @@ class EventEmitter:
         if callback is None:
             self._callbacks = []
             self._callback_refs = []
-        else:
+            self._callback_pass_event = []
+        elif isinstance(callback, (Callable, tuple)):
             callback, _pass_event = self._normalize_cb(callback)
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
+                self._callbacks.pop(idx)
+                self._callback_refs.pop(idx)
+                self._callback_pass_event.pop(idx)
+        else:
+            index_list = []
+            for idx, local_callback in enumerate(self._callbacks):
+                if not (
+                    isinstance(local_callback, Sequence)
+                    and isinstance(local_callback[0], weakref.ref)
+                ):
+                    continue
+                if (
+                    local_callback[0]() is callback
+                    or local_callback[0]() is None
+                ):
+                    index_list.append(idx)
+            for idx in index_list[::-1]:
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
                 self._callback_pass_event.pop(idx)
@@ -827,12 +850,12 @@ class EmitterGroup(EventEmitter):
     source : object
         The object that the generated events apply to.
     auto_connect : bool
-        If *auto_connect* is True (default), then one connection will
+        If *auto_connect* is True, then one connection will
         be made for each emitter that looks like
         :func:`emitter.connect((source, 'on_' + event_name))
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
-        group of emitters to default callbacks.
+        group of emitters to default callbacks.  By default, false.
     emitters : keyword arguments
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
@@ -840,7 +863,7 @@ class EmitterGroup(EventEmitter):
     def __init__(
         self,
         source: Any = None,
-        auto_connect: bool = True,
+        auto_connect: bool = False,
         **emitters: Union[Type[Event], EventEmitter, None],
     ):
         EventEmitter.__init__(self, source)

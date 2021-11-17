@@ -27,18 +27,6 @@ jobs:
       - name: Run task
         run: tox -e ${{ matrix.task }} -- --timeout=8
 
-  vendor:
-    name: Vendored
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Run check
-        run: python tools/check_vendored_modules.py
-
   manifest:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
