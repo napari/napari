@@ -255,10 +255,10 @@ class QtViewer(QSplitter):
 
         s = ref(self)
 
-        def _toggle():
+        def _toggle(event=None):
             _viewer = s()
             if _viewer is not None:
-                _viewer.toggle_console_visibility()
+                _viewer.toggle_console_visibility(event)
 
         action_manager.register_action(
             "napari:toggle_console_visibility",
