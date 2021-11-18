@@ -1292,3 +1292,16 @@ def test_is_default_color():
     # setting the color with non-default colors updates color mode
     layer.color = new_color
     assert layer.color_mode == 'direct'
+
+
+def test_negative_label():
+    """Test negative label values are supported."""
+    data = np.random.randint(low=-1, high=20, size=(10, 10))
+    original_data = np.copy(data)
+    layer = Labels(data)
+    layer.selected_label = -1
+    layer.brush_size = 3
+    layer.paint((5, 5), -1)
+    assert np.count_nonzero(layer.data == -1) > np.count_nonzero(
+        original_data == -1
+    )

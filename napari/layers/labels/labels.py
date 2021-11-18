@@ -547,8 +547,6 @@ class Labels(_ImageBase):
 
     @selected_label.setter
     def selected_label(self, selected_label):
-        if selected_label < 0:
-            raise ValueError(trans._('cannot reduce selected label below 0'))
         if selected_label == self.selected_label:
             return
 
@@ -728,7 +726,7 @@ class Labels(_ImageBase):
                 0,
             )
         else:
-            image = np.where(im > 0, low_discrepancy_image(im, self._seed), 0)
+            image = np.where(im != 0, low_discrepancy_image(im, self._seed), 0)
         return image
 
     def _lookup_with_index(self, im, selected_label=None):
