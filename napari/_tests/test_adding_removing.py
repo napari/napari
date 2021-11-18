@@ -19,6 +19,7 @@ def test_add_all_layers(make_napari_viewer, Layer, data, _):
     """Make sure that all layers can show in the viewer."""
     viewer = make_napari_viewer(show=True)
     viewer.layers.append(Layer(data))
+    viewer.close()
 
 
 def test_layers_removed_on_close(make_napari_viewer):

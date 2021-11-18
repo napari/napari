@@ -1,3 +1,5 @@
+from weakref import ref
+
 import numpy as np
 from vispy.scene import ArcballCamera, PanZoomCamera
 
@@ -17,9 +19,15 @@ class VispyCamera:
         napari dims model.
     """
 
+    @property
+    def _camera(self):
+        return self._ref_camera()
+
     def __init__(self, view, camera, dims):
-        self._view = view
-        self._camera = camera
+        self._ref_view = ref(view)
+        # self._camera = camera
+
+        self._ref_camera = ref(camera)
         self._dims = dims
 
         # Create 2D camera
@@ -42,6 +50,10 @@ class VispyCamera:
         self._camera.events.perspective.connect(self._on_perspective_change)
 
         self._on_ndisplay_change()
+
+    @property
+    def _view(self):
+        return self._ref_view()
 
     @property
     def angles(self):
@@ -147,7 +159,7 @@ class VispyCamera:
         self.center = self._camera.center[-self._dims.ndisplay :]
 
     def _on_zoom_change(self):
-        self.zoom = self._camera.zoom
+        self.zoom = self._ref_camera().zoom
 
     def _on_perspective_change(self):
         self.perspective = self._camera.perspective
@@ -165,7 +177,8 @@ class VispyCamera:
         with self._camera.events.center.blocker(self._on_center_change):
             self._camera.center = self.center
         with self._camera.events.zoom.blocker(self._on_zoom_change):
-            self._camera.zoom = self.zoom
+            # this one is the problem.
+            self._ref_camera().zoom = self.zoom
         with self._camera.events.perspective.blocker(
             self._on_perspective_change
         ):

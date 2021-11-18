@@ -1,3 +1,5 @@
+from weakref import ref
+
 import numpy as np
 
 from ..utils.transforms import Affine
@@ -45,7 +47,7 @@ class InteractionBoxMouseBindings:
         self._fixed_aspect: float = None
         self._viewer = viewer
         self._interaction_box_model = viewer.overlays.interaction_box
-        self._interaction_box_visual = interaction_box_visual
+        self._ref_interaction_box_visual = ref(interaction_box_visual)
         self.initialize_mouse_events(viewer)
 
     def initialize_mouse_events(self, viewer):
@@ -60,13 +62,13 @@ class InteractionBoxMouseBindings:
                 return
 
             # The _box of the visual model has the handle
-            box = self._interaction_box_visual._box
+            box = self._ref_interaction_box_visual()._box
             coord = event.position
             distances = abs(box - coord)
 
             # Get the vertex sizes
             sizes = (
-                self._interaction_box_visual._vertex_size / 2
+                self._ref_interaction_box_visual()._vertex_size / 2
             ) / self._viewer.camera.zoom
 
             # Check if any matching vertices
@@ -139,7 +141,9 @@ class InteractionBoxMouseBindings:
         """Gets called whenever a drag is started to remember starting values"""
 
         self._drag_start_coordinates = np.array(position)
-        self._drag_start_box = np.copy(self._interaction_box_visual._box)
+        self._drag_start_box = np.copy(
+            self._ref__interaction_box_visual()._box
+        )
         self._interaction_box_model.transform_start = (
             self._interaction_box_model.transform
         )

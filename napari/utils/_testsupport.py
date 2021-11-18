@@ -147,6 +147,10 @@ def make_napari_viewer(
 
         return viewer
 
+    assert len(Viewer._instances) == 0, Viewer._instances
+    assert len(QtViewer._instances) == 0, Viewer._instances
+    assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
+
     yield actual_factory
 
     # Some tests might have the viewer closed, so this call will not be able
@@ -164,9 +168,9 @@ def make_napari_viewer(
         else:
             viewer.close()
 
-    assert len(Viewer._instances) == 0, Viewer._instances
     # same reason as above gc.collect() but post viewer teardown.
     gc.collect()
+    assert len(Viewer._instances) == 0, Viewer._instances
 
     if len(QtViewer._instances) != 0:
         import objgraph
@@ -177,15 +181,15 @@ def make_napari_viewer(
             filename='QtViewer-sample-backref-graph.png',
         )
         assert len(QtViewer._instances) == 0, QtViewer._instances
-    # if len(VispyCanvas._instances) != 0:
-    #    import objgraph
+    if len(VispyCanvas._instances) != 0:
+        import objgraph
 
-    #    objgraph.show_backrefs(
-    #        list(VispyCanvas._instances),
-    #        filter=lambda x: type(x) == dict,
-    #        max_depth=5,
-    #        filename='xxx-sample-backref-graph.png',
-    #    )
+        objgraph.show_backrefs(
+            list(VispyCanvas._instances),
+            max_depth=21,
+            filename='xxx-sample-backref-graph.png',
+        )
+    assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
     # assert len(VispyCanvas._instances) == 0
 
     # only check for leaked widgets if an exception was raised during the test,
