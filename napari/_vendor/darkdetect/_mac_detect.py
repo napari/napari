@@ -6,17 +6,15 @@
 
 import ctypes
 import ctypes.util
-import platform
 
-from distutils.version import LooseVersion as V
-
-if V(platform.mac_ver()[0]) < V("10.16") or platform.python_version_tuple()[0] == '2':
-    appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library('AppKit'))
-    objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
-else:
+try:
+    # macOS Big Sur+ use "a built-in dynamic linker cache of all system-provided libraries"
     appkit = ctypes.cdll.LoadLibrary('AppKit.framework/AppKit')
     objc = ctypes.cdll.LoadLibrary('libobjc.dylib')
-del V
+except OSError:
+    # revert to full path for older OS versions and hardened programs
+    appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library('AppKit'))
+    objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
 
 void_p = ctypes.c_void_p
 ull = ctypes.c_uint64
