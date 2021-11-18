@@ -105,7 +105,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # Using allow_mutation=False means these attributes aren't settable and don't
     # have an event emitter associated with them
     axes: Axes = Field(default_factory=Axes, allow_mutation=False)
-    camera: Camera = Field(default_factory=Camera, allow_mutation=True)
+    camera: Camera = Field(default_factory=Camera, allow_mutation=False)
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)
     grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
