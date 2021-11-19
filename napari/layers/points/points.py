@@ -15,11 +15,13 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
+from ...utils.geometry import project_points_onto_plane, rotate_points
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
+from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import (
     coerce_current_properties,
     get_current_properties,
@@ -1193,7 +1195,7 @@ class Points(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            self.editable = self._ndisplay < 3
+            self.editable = True
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
@@ -1241,7 +1243,7 @@ class Points(Layer):
             return [], np.empty(0)
 
     def _get_value(self, position) -> Union[None, int]:
-        """Value of the data at a position in data coordinates.
+        """Index of the point at a given 2D position in data coordinates.
 
         Parameters
         ----------
@@ -1269,6 +1271,144 @@ class Points(Layer):
                 selection = self._indices_view[indices[-1]]
 
         return selection
+
+    def _get_value_3d(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Union[int, None]:
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value : Union[int, None]
+            The data value along the supplied ray.
+        """
+        if (start_point is None) or (end_point is None):
+            # if the ray doesn't intersect the data volume, no points could have been intersected
+            return None
+        plane_point, plane_normal = displayed_plane_from_nd_line_segment(
+            start_point, end_point, dims_displayed
+        )
+
+        # project the in view points onto the plane
+        projected_points, projection_distances = project_points_onto_plane(
+            points=self._view_data,
+            plane_point=plane_point,
+            plane_normal=plane_normal,
+        )
+
+        # rotate points and plane to be axis aligned with normal [0, 0, 1]
+        rotated_points, rotation_matrix = rotate_points(
+            points=projected_points,
+            current_plane_normal=plane_normal,
+            new_plane_normal=[0, 0, 1],
+        )
+        rotated_click_point = np.dot(rotation_matrix, plane_point)
+
+        # find the points the click intersects
+        distances = abs(rotated_points[:, :2] - rotated_click_point[:2])
+        in_slice_matches = np.all(
+            distances <= np.expand_dims(self._view_size, axis=1) / 2,
+            axis=1,
+        )
+        indices = np.where(in_slice_matches)[0]
+
+        if len(indices) > 0:
+            # find the point that is most in the foreground
+            candidate_point_distances = projection_distances[indices]
+            closest_index = indices[np.argmin(candidate_point_distances)]
+            selection = self._indices_view[closest_index]
+        else:
+            selection = None
+        return selection
+
+    def _display_bounding_box_augmented(self, dims_displayed: np.ndarray):
+        """An augmented, axis-aligned (self._ndisplay, 2) bounding box.
+
+        This bounding box for includes the full size of displayed points
+        and enables calculation of intersections in `Layer._get_value_3d()`.
+        """
+        if len(self._view_size) == 0:
+            return None
+        max_point_size = np.max(self._view_size)
+        bounding_box = np.copy(
+            self._display_bounding_box(dims_displayed)
+        ).astype(float)
+        bounding_box[:, 0] -= max_point_size / 2
+        bounding_box[:, 1] += max_point_size / 2
+        return bounding_box
+
+    def get_ray_intersections(
+        self,
+        position: List[float],
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+        world: bool = True,
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+        """Get the start and end point for the ray extending
+        from a point through the displayed bounding box.
+
+        This method overrides the base layer, replacing the bounding box used
+        to calculate intersections with a larger one which includes the size
+        of points in view.
+
+        Parameters
+        ----------
+        position
+            the position of the point in nD coordinates. World vs. data
+            is set by the world keyword argument.
+        view_direction : np.ndarray
+            a unit vector giving the direction of the ray in nD coordinates.
+            World vs. data is set by the world keyword argument.
+        dims_displayed
+            a list of the dimensions currently being displayed in the viewer.
+        world : bool
+            True if the provided coordinates are in world coordinates.
+            Default value is True.
+
+        Returns
+        -------
+        start_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point closest to the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned.
+        end_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point farthest from the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned.
+        """
+        if len(dims_displayed) != 3:
+            return None, None
+
+        # create the bounding box in data coordinates
+        bounding_box = self._display_bounding_box_augmented(dims_displayed)
+
+        if bounding_box is None:
+            return None, None
+
+        start_point, end_point = self._get_ray_intersections(
+            position=position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+            bounding_box=bounding_box,
+        )
+        return start_point, end_point
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""

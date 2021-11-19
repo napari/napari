@@ -347,11 +347,11 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
-        self.view = self.canvas.central_widget.add_view()
+        self.view = self.canvas.central_widget.add_view(border_width=0)
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
-        self.canvas.connect(self.camera.on_draw)
+        self.canvas.events.draw.connect(self.camera.on_draw)
 
         # Add axes, scale bar
         self._add_visuals()
@@ -399,15 +399,21 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.draw.connect(self.dims.enable_play)
 
-        self.canvas.connect(self.on_mouse_double_click)
-        self.canvas.connect(self.on_mouse_move)
-        self.canvas.connect(self.on_mouse_press)
-        self.canvas.connect(self.on_mouse_release)
-        self.canvas.connect(self._key_map_handler.on_key_press)
-        self.canvas.connect(self._key_map_handler.on_key_release)
-        self.canvas.connect(self.on_mouse_wheel)
-        self.canvas.connect(self.on_draw)
-        self.canvas.connect(self.on_resize)
+        self.canvas.events.mouse_double_click.connect(
+            self.on_mouse_double_click
+        )
+        self.canvas.events.mouse_move.connect(self.on_mouse_move)
+        self.canvas.events.mouse_press.connect(self.on_mouse_press)
+        self.canvas.events.mouse_release.connect(self.on_mouse_release)
+        self.canvas.events.key_press.connect(
+            self._key_map_handler.on_key_press
+        )
+        self.canvas.events.key_release.connect(
+            self._key_map_handler.on_key_release
+        )
+        self.canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
+        self.canvas.events.draw.connect(self.on_draw)
+        self.canvas.events.resize.connect(self.on_resize)
         self.canvas.bgcolor = transform_color(
             get_theme(self.viewer.theme, False).canvas.as_hex()
         )[0]

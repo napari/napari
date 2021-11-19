@@ -12,7 +12,7 @@ of those custom classes, magicgui will know what to do with it.
 from __future__ import annotations
 
 import weakref
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Type
 
 from typing_extensions import get_args
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
     from magicgui.widgets._bases import CategoricalWidget
 
+    from .._qt.qthreading import FunctionWorker
     from ..layers import Layer
     from ..viewer import Viewer
 
@@ -150,6 +151,57 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
 _FUTURES: Set[Future] = set()
 
 
+def add_worker_data(
+    widget, worker: FunctionWorker, return_type, _from_tuple=True
+):
+    """Handle a thread_worker object returned from a magicgui widget.
+
+    This allows someone annotate their magicgui with a return type of
+    `FunctionWorker[...]`, create a napari thread worker (e.g. with the
+    @thread_worker decorator), then simply return the worker.  We will hook up
+    the `returned` signal to the machinery to add the result of the
+    long-running function to the viewer.
+
+    Parameters
+    ----------
+    widget : MagicGui
+        The instantiated MagicGui widget.  May or may not be docked in a
+        dock widget.
+    worker : WorkerBase
+        An instance of `napari._qt.qthreading.WorkerBase`, on worker.returned,
+        the result will be added to the viewer.
+    return_type : type
+        The return annotation that was used in the decorated function.
+    _from_tuple : bool, optional
+        (only for internal use). True if the worker returns `LayerDataTuple`,
+        False if it returns one of the `LayerData` types.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        @magicgui
+        def my_widget(...) -> FunctionWorker[ImageData]:
+
+            @thread_worker
+            def do_something_slowly(...) -> ImageData:
+                ...
+
+            return do_something_slowly(...)
+    """
+
+    cb = (
+        add_layer_data_tuples_to_viewer
+        if _from_tuple
+        else add_layer_data_to_viewer
+    )
+    _return_type = get_args(return_type)[0]
+    worker.signals.returned.connect(
+        partial(cb, widget, return_type=_return_type)
+    )
+
+
 def add_future_data(gui, future, return_type, _from_tuple=True):
     """Process a Future object from a magicgui widget.
 
@@ -185,13 +237,13 @@ def add_future_data(gui, future, return_type, _from_tuple=True):
 
         def _on_future_ready():
             add_layer_data_tuples_to_viewer(gui, future.result(), return_type)
-            _FUTURES.remove(future)
+            _FUTURES.discard(future)
 
     else:
 
         def _on_future_ready():
             add_layer_data_to_viewer(gui, future.result(), _return_type)
-            _FUTURES.remove(future)
+            _FUTURES.discard(future)
 
     # some future types (such as a dask Future) will call the callback in
     # another thread, which wont always work here.  So we create a very small

@@ -51,7 +51,6 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 import inspect
 import warnings
 import weakref
-from collections import Counter
 from collections.abc import Sequence
 from typing import (
     Any,
@@ -209,6 +208,30 @@ CallbackStr = Tuple[
 ]  # dereferenced method
 
 
+class _WeakCounter:
+    """
+    Similar to collection counter but has weak keys.
+
+    It will only implement the methods we use here.
+    """
+
+    def __init__(self):
+        self._counter = weakref.WeakKeyDictionary()
+        self._nonecount = 0
+
+    def update(self, iterable):
+        for it in iterable:
+            if it is None:
+                self._nonecount += 1
+            else:
+                self._counter[it] = self.get(it, 0) + 1
+
+    def get(self, key, default):
+        if key is None:
+            return self._nonecount
+        return self._counter.get(key, default)
+
+
 class EventEmitter:
 
     """Encapsulates a list of event callbacks.
@@ -261,7 +284,7 @@ class EventEmitter:
 
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
-        self._block_counter: Counter[Optional[Callback]] = Counter()
+        self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
 
         # used to detect emitter loops
         self._emitting = False
@@ -850,12 +873,12 @@ class EmitterGroup(EventEmitter):
     source : object
         The object that the generated events apply to.
     auto_connect : bool
-        If *auto_connect* is True (default), then one connection will
+        If *auto_connect* is True, then one connection will
         be made for each emitter that looks like
         :func:`emitter.connect((source, 'on_' + event_name))
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
-        group of emitters to default callbacks.
+        group of emitters to default callbacks.  By default, false.
     emitters : keyword arguments
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
@@ -863,7 +886,7 @@ class EmitterGroup(EventEmitter):
     def __init__(
         self,
         source: Any = None,
-        auto_connect: bool = True,
+        auto_connect: bool = False,
         **emitters: Union[Type[Event], EventEmitter, None],
     ):
         EventEmitter.__init__(self, source)
