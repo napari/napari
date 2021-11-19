@@ -78,7 +78,7 @@ when developing a plugin.  This page
 
       Detailed background: [What Are Python Wheels and Why Should You Care?](https://realpython.com/python-wheels/)
 
-    - *How do I know if my dependecy offers a wheel*
+    - *How do I know if my dependency offers a wheel*
 
       There are many ways, but a sure-fire way to know is to go to the respective
       package on PyPI, and click on the "Download Files" link.  If the package offers wheels, you'll see one or more files ending in `.whl`.  For example, [napari offers a wheel](https://pypi.org/project/napari/#files).  If a package *doesn't* offer a wheel, it may still be ok if it's just a pure python package that doesn't have any C extensions...
