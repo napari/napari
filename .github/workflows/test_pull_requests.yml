@@ -26,6 +26,10 @@ jobs:
           pip install tox
       - name: Run task
         run: tox -e ${{ matrix.task }} -- --timeout=8
+      - uses: actions/upload-artifact@v2
+        with:
+          name: leak-graphs
+          path: ./*.png
 
   manifest:
     # make sure all necessary files will be bundled in the release
