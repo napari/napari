@@ -201,15 +201,12 @@ def make_napari_viewer(
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
         leak = set(QApplication.topLevelWidgets()).difference(initial)
-        # still not sure how to clean up some of the remaining vispy
-        # vispy.app.backends._qt.CanvasBackendDesktop widgets...
-        if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak]):
-            # just a warning... but this can be converted to test errors
-            # in pytest with `-W error`
-            if _strict == 'raise':
-                raise AssertionError(f'Widgets leaked!: {leak}')
-            else:
-                warnings.warn(f'Widgets leaked!: {leak}')
+        # just a warning... but this can be converted to test errors
+        # in pytest with `-W error`
+        if _strict == 'raise':
+            raise AssertionError(f'Widgets leaked!: {leak}')
+        else:
+            warnings.warn(f'Widgets leaked!: {leak}')
 
 
 @pytest.fixture
