@@ -17,7 +17,7 @@ from typing import (
     Sequence,
     Tuple,
 )
-from weakref import WeakValueDictionary
+from weakref import WeakSet, WeakValueDictionary
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
@@ -57,6 +57,17 @@ _sentinel = object()
 
 if TYPE_CHECKING:
     from ..viewer import Viewer
+
+
+class SingletonLoop(QEventLoop):
+
+    _instances = WeakSet()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        assert len(self._instances) == 0
+        self._instances.add(self)
 
 
 class _QtMainWindow(QMainWindow):
@@ -286,7 +297,8 @@ class _QtMainWindow(QMainWindow):
     def show(self, block=False):
         super().show()
         if block:
-            self._ev = QEventLoop()
+            assert self._ev is None
+            self._ev = SingletonLoop()
             self._ev.exec()
 
     def changeEvent(self, event):

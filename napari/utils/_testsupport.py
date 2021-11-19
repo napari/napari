@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, List
 from unittest.mock import patch
 
 import pytest
+from qtpy.QtWidgets import QApplication
 
 if TYPE_CHECKING:
     from pytest import FixtureRequest
@@ -102,8 +103,6 @@ def make_napari_viewer(
     """
     import gc
 
-    from qtpy.QtWidgets import QApplication
-
     from napari import Viewer
     from napari._qt.qt_viewer import QtViewer
     from napari._vispy.canvas import VispyCanvas
@@ -150,6 +149,9 @@ def make_napari_viewer(
     assert len(Viewer._instances) == 0, Viewer._instances
     assert len(QtViewer._instances) == 0, Viewer._instances
     assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
+    assert (
+        len(QApplication.instance().children()) < 10
+    ), QApplication.instance().children()
 
     yield actual_factory
 
@@ -190,7 +192,9 @@ def make_napari_viewer(
             filename='xxx-sample-backref-graph.png',
         )
     assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
-    # assert len(VispyCanvas._instances) == 0
+    assert (
+        len(QApplication.instance().children()) < 10
+    ), QApplication.instance().children()
 
     # only check for leaked widgets if an exception was raised during the test,
     # or "strict" mode was used.

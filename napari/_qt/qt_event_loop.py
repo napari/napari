@@ -307,8 +307,12 @@ def _pycharm_has_eventloop(app: QApplication) -> bool:
     return in_pycharm and in_event_loop
 
 
+CALLED = False
+
+
 def _try_enable_ipython_gui(gui='qt'):
     """Start %gui qt the eventloop."""
+    global CALLED
     ipy_module = sys.modules.get("IPython")
     if not ipy_module:
         return
@@ -317,6 +321,8 @@ def _try_enable_ipython_gui(gui='qt'):
     if not shell:
         return
     if shell.active_eventloop != gui:
+        assert not CALLED
+        CALLED = True
         shell.enable_gui(gui)
 
 
