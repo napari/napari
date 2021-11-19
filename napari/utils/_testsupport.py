@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, List
 from unittest.mock import patch
 
 import pytest
-from qtpy.QtWidgets import QApplication
 
 if TYPE_CHECKING:
     from pytest import FixtureRequest
@@ -58,6 +57,16 @@ def napari_plugin_manager(monkeypatch):
     pm.discovery_blocker.stop()
 
 
+def save_obj_graph(leaks, name):
+    import objgraph
+
+    objgraph.show_backrefs(
+        leaks,
+        max_depth=12,
+        filename=f'{name}-leak-backref-graph.png',
+    )
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot, request: 'FixtureRequest', napari_plugin_manager
@@ -102,6 +111,8 @@ def make_napari_viewer(
     ...     viewer = make_napari_viewer(strict_qt=True)
     """
     import gc
+
+    from qtpy.QtWidgets import QApplication
 
     from napari import Viewer
     from napari._qt.qt_viewer import QtViewer
@@ -153,6 +164,9 @@ def make_napari_viewer(
         len(QApplication.instance().children()) < 10
     ), QApplication.instance().children()
 
+    loops = [e for e in QApplication.instance().children() if 'Loop' in str(e)]
+    assert len(loops) <= 1
+
     yield actual_factory
 
     # Some tests might have the viewer closed, so this call will not be able
@@ -175,26 +189,16 @@ def make_napari_viewer(
     assert len(Viewer._instances) == 0, Viewer._instances
 
     if len(QtViewer._instances) != 0:
-        import objgraph
-
-        objgraph.show_backrefs(
-            list(QtViewer._instances),
-            max_depth=12,
-            filename='QtViewer-leak-backref-graph.png',
-        )
-        assert len(QtViewer._instances) == 0, QtViewer._instances
+        save_obj_graph(QtViewer._instances, 'QtViewer')
+        assert len(QtViewer._instances) == 0
     if len(VispyCanvas._instances) != 0:
-        import objgraph
-
-        objgraph.show_backrefs(
-            list(VispyCanvas._instances),
-            max_depth=21,
-            filename='xxx-sample-backref-graph.png',
-        )
-    assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
+        save_obj_graph(VispyCanvas._instances, 'VispyCanvas')
+        assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
     assert (
         len(QApplication.instance().children()) < 10
     ), QApplication.instance().children()
+    loops = [e for e in QApplication.instance().children() if 'Loop' in str(e)]
+    assert len(loops) <= 1
 
     # only check for leaked widgets if an exception was raised during the test,
     # or "strict" mode was used.
@@ -203,10 +207,12 @@ def make_napari_viewer(
         leak = set(QApplication.topLevelWidgets()).difference(initial)
         # just a warning... but this can be converted to test errors
         # in pytest with `-W error`
-        if _strict == 'raise':
-            raise AssertionError(f'Widgets leaked!: {leak}')
-        else:
-            warnings.warn(f'Widgets leaked!: {leak}')
+        if leak:
+            save_obj_graph(leak, 'MiscWidgets')
+            if _strict == 'raise':
+                raise AssertionError(f'Widgets leaked!: {leak}')
+            else:
+                warnings.warn(f'Widgets leaked!: {leak}')
 
 
 @pytest.fixture
