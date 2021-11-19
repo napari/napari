@@ -62,7 +62,7 @@ def save_obj_graph(leaks, name):
 
     objgraph.show_backrefs(
         leaks,
-        max_depth=12,
+        max_depth=7,
         filename=f'{name}-leak-backref-graph.png',
     )
 
