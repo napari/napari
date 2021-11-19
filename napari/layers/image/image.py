@@ -378,7 +378,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             input_data = data[-1] if self.multiscale else data
         else:
             raise ValueError(
-                f"mode must be either 'data' or 'slice', got {mode!r}"
+                trans._(
+                    "mode must be either 'data' or 'slice', got {mode!r}",
+                    deferred=True,
+                    mode=mode,
+                )
             )
         return calc_data_range(input_data, rgb=self.rgb)
 

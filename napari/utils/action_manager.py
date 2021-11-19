@@ -271,7 +271,7 @@ class ActionManager:
             shortcuts = self._shortcuts[name]
             joinstr = (
                 ' '
-                + trans._('or', msgctxt='<keysequence> or <keysequence>')
+                + trans._p('or', msgctxt='<keysequence> or <keysequence>')
                 + ' '
             )
             shortcut_str = (
@@ -388,10 +388,7 @@ class ActionManager:
         if action is None:
             warnings.warn(
                 trans._(
-                    "Attempting to unbind an action which does not exists ({name}), "
-                    "this may have no effects. This can happen if your settings are out of "
-                    "date, if you upgraded napari, upgraded or deactivated a plugin, or made "
-                    "a typo in in your custom keybinding.",
+                    "Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.",
                     name=name,
                 ),
                 UserWarning,

@@ -18,7 +18,7 @@ class HelpMenu(NapariMenu):
                     window.qt_viewer, window._qt_window
                 ),
                 'shortcut': 'Ctrl+/',
-                'statusTip': 'About napari',
+                'statusTip': trans._('About napari'),
             }
         ]
         populate_menu(self, ACTIONS)

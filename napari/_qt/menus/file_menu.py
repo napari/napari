@@ -21,7 +21,7 @@ class FileMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
-        self.open_sample_menu = NapariMenu('Open Sample', self)
+        self.open_sample_menu = NapariMenu(trans._('Open Sample'), self)
         ACTIONS = [
             {
                 'text': trans._('Open File(s)...'),
@@ -68,19 +68,25 @@ class FileMenu(NapariMenu):
                 'text': trans._('Save Screenshot...'),
                 'slot': window.qt_viewer._screenshot_dialog,
                 'shortcut': 'Alt+S',
-                'statusTip': 'Save screenshot of current display, default .png',
+                'statusTip': trans._(
+                    'Save screenshot of current display, default .png'
+                ),
             },
             {
                 'text': trans._('Save Screenshot with Viewer...'),
                 'slot': self._screenshot_dialog,
                 'shortcut': 'Alt+Shift+S',
-                'statusTip': 'Save screenshot of current display with the viewer, default .png',
+                'statusTip': trans._(
+                    'Save screenshot of current display with the viewer, default .png'
+                ),
             },
             {
                 'text': trans._('Copy Screenshot to Clipboard'),
                 'slot': window.qt_viewer.clipboard,
                 'shortcut': 'Alt+Shift+S',
-                'statusTip': 'Copy screenshot of current display to the clipboard',
+                'statusTip': trans._(
+                    'Copy screenshot of current display to the clipboard'
+                ),
             },
             {
                 'text': trans._('Copy Screenshot with Viewer to Clipboard'),

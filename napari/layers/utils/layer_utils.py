@@ -338,7 +338,12 @@ def _coerce_current_properties_value(
     """
     if isinstance(value, (np.ndarray, list, tuple)):
         if len(value) != 1:
-            raise ValueError('current_properties values should have length 1.')
+            raise ValueError(
+                trans._(
+                    'current_properties values should have length 1.',
+                    deferred=True,
+                )
+            )
         coerced_value = np.asarray(value)
     else:
         coerced_value = np.array([value])

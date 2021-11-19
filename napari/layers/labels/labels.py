@@ -692,7 +692,10 @@ class Labels(_ImageBase):
         # Setting contrast_limits of labels layers leads to wrong visualization of the layer
         if tuple(value) != (0, 1):
             raise AttributeError(
-                "Setting contrast_limits on labels layers is not allowed."
+                trans._(
+                    "Setting contrast_limits on labels layers is not allowed.",
+                    deferred=True,
+                )
             )
         self._contrast_limits = (0, 1)
 

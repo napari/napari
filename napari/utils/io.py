@@ -44,7 +44,11 @@ def imsave(filename: str, data: np.ndarray):
             # like repackaging on linux or anything else we fallback to
             # using compress
             warnings.warn(
-                f'Error parsing tiffile version number {tifffile.__version__:!r}'
+                trans._(
+                    'Error parsing tiffile version number {version_number}',
+                    deferred=True,
+                    version_number=f"{tifffile.__version__:!r}",
+                )
             )
 
         if compression_instead_of_compress:
