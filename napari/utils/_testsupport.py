@@ -167,6 +167,10 @@ def make_napari_viewer(
     loops = [e for e in QApplication.instance().children() if 'Loop' in str(e)]
     assert len(loops) <= 1
 
+    if len(VispyCanvas._instances) != 0:
+        save_obj_graph(VispyCanvas._instances, 'VispyCanvas-before')
+        assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
+
     yield actual_factory
 
     # Some tests might have the viewer closed, so this call will not be able
