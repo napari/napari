@@ -58,6 +58,9 @@ def napari_plugin_manager(monkeypatch):
 
 
 def save_obj_graph(leaks, name):
+    import gc
+
+    gc.collect()
     import objgraph
 
     objgraph.show_backrefs(
