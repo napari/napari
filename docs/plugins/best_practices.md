@@ -18,7 +18,7 @@ when developing a plugin.  This page
   plugin. Both github and napari hub make it easy to embed videos in your
   readme. For example, if you have a dock widget plugin that plots something as
   the user interacts with the current layer, capture a screengrab and put it in
-  your readme.
+  your readme. Keep the `.gif` file small, as .gif files larger than 8 MB will not be played on your page on pypi.org.
 
   TODO: screengrab tips and code examples. 
 
