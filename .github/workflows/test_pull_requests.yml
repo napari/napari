@@ -26,10 +26,6 @@ jobs:
           pip install tox
       - name: Run task
         run: tox -e ${{ matrix.task }} -- --timeout=8
-      - uses: actions/upload-artifact@v2
-        with:
-          name: leak-graphs
-          path: ./*.png
 
   manifest:
     # make sure all necessary files will be bundled in the release
@@ -181,6 +177,11 @@ jobs:
           MIN_REQ: ${{ matrix.MIN_REQ }}
       # this steps display the cached folder size for debug and
       # remove the biggest contenders.
+      - name: Upload graphs
+        uses: actions/upload-artifact@v2
+        with:
+          name: leak-graphs
+          path: ./*.png
       - name: Display Cache size, and remove largest files from cache.
         if: runner.os == 'Linux'
         run: |
