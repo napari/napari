@@ -51,7 +51,6 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 import inspect
 import warnings
 import weakref
-from collections import Counter
 from collections.abc import Sequence
 from typing import (
     Any,
@@ -209,6 +208,30 @@ CallbackStr = Tuple[
 ]  # dereferenced method
 
 
+class _WeakCounter:
+    """
+    Similar to collection counter but has weak keys.
+
+    It will only implement the methods we use here.
+    """
+
+    def __init__(self):
+        self._counter = weakref.WeakKeyDictionary()
+        self._nonecount = 0
+
+    def update(self, iterable):
+        for it in iterable:
+            if it is None:
+                self._nonecount += 1
+            else:
+                self._counter[it] = self.get(it, 0) + 1
+
+    def get(self, key, default):
+        if key is None:
+            return self._nonecount
+        return self._counter.get(key, default)
+
+
 class EventEmitter:
 
     """Encapsulates a list of event callbacks.
@@ -261,7 +284,7 @@ class EventEmitter:
 
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
-        self._block_counter: Counter[Optional[Callback]] = Counter()
+        self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
 
         # used to detect emitter loops
         self._emitting = False
