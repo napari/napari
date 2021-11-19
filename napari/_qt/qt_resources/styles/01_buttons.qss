@@ -162,10 +162,6 @@ QtModeRadioButton[mode="select_points"]::indicator {
     image: url(":/themes/{{ name }}/select.svg");
 }
 
-QtModeRadioButton[mode="transform"]::indicator {
-    image: url(":/themes/{{ name }}/rectangle.svg");
-}
-
 QtModeRadioButton[mode="add_points"]::indicator {
     image: url(":/themes/{{ name }}/add.svg");
 }
