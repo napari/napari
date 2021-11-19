@@ -675,15 +675,20 @@ class Window:
 
         # if the signature is looking a for a napari viewer, pass it.
         kwargs = {}
-        for param in inspect.signature(Widget.__init__).parameters.values():
-            if param.name == 'napari_viewer':
-                kwargs['napari_viewer'] = self.qt_viewer.viewer
-                break
-            if param.annotation in ('napari.viewer.Viewer', Viewer):
-                kwargs[param.name] = self.qt_viewer.viewer
-                break
-            # cannot look for param.kind == param.VAR_KEYWORD because
-            # QWidget allows **kwargs but errs on unknown keyword arguments
+        try:
+            sig = inspect.signature(Widget.__init__)
+        except ValueError:
+            pass
+        else:
+            for param in sig.parameters.values():
+                if param.name == 'napari_viewer':
+                    kwargs['napari_viewer'] = self.qt_viewer.viewer
+                    break
+                if param.annotation in ('napari.viewer.Viewer', Viewer):
+                    kwargs[param.name] = self.qt_viewer.viewer
+                    break
+                # cannot look for param.kind == param.VAR_KEYWORD because
+                # QWidget allows **kwargs but errs on unknown keyword arguments
 
         # instantiate the widget
         wdg = Widget(**kwargs)

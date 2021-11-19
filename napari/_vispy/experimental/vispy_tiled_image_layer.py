@@ -93,7 +93,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         # QtPoll listens to. Because a chunk might be loaded when QtPoll is
         # totally quiet, no mouse movement, no in-progress loading. We need
         # to get the polling going so we can load the chunks over time.
-        self.events = EmitterGroup(source=self, auto_connect=True, loaded=None)
+        self.events = EmitterGroup(source=self, loaded=None)
 
         # An optional grid that shows tile borders.
         self.grid = TileGrid(self.node)

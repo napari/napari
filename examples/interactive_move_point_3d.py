@@ -6,7 +6,7 @@ from copy import copy
 import numpy as np
 
 import napari
-from napari.utils.geometry import project_point_onto_plane
+from napari.utils.geometry import project_points_onto_plane
 
 # Create viewer, point to move and bounding box
 viewer = napari.Viewer(ndisplay=3)
