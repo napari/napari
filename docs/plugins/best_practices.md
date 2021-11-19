@@ -14,14 +14,17 @@ when developing a plugin.  This page
 
 - **Use images, gifs, or movies to *show* what your plugin does**. 
 
-  Images and movies are *extremely* useful for conveying the usefulness of your
-  plugin. Both github and napari hub make it easy to embed videos in your
-  readme. For example, if you have a dock widget plugin that plots something as
-  the user interacts with the current layer, capture a screengrab and put it in
-  your readme.
+    Images and movies are *extremely* useful for conveying the usefulness of your
+    plugin. Both github and napari hub make it easy to embed videos in your
+    readme. For example, if you have a dock widget plugin that plots something as
+    the user interacts with the current layer, capture a screengrab and put it in
+    your readme.
 
-  TODO: screengrab tips and code examples. 
+    TODO: screengrab tips and code examples. 
 
+- **Write extensive tests for your plugin!**
+
+    Seriously, aim for 100% test coverage.
 
 ## Don't
 
