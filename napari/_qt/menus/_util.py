@@ -109,19 +109,20 @@ def populate_qmenu_from_manifest(menu: QMenu, menu_key: str):
     """Populate `menu` from a `menu_key` offering in the manifest."""
     # TODO: declare somewhere what menu_keys are valid.
     try:
-        from npe2 import execute_command, plugin_manager
+        from npe2 import PluginManager
     except ImportError:
         return
 
-    for item in plugin_manager.iter_menu(menu_key):
+    pm = PluginManager.instance()
+    for item in pm.iter_menu(menu_key):
         if hasattr(item, 'submenu'):
-            subm_contrib = plugin_manager.get_submenu(item.submenu)
+            subm_contrib = pm.get_submenu(item.submenu)
             subm = menu.addMenu(subm_contrib.label)
             populate_qmenu_from_manifest(subm, subm_contrib.id)
         else:
-            cmd = plugin_manager.get_command(item.command)
+            cmd = pm.get_command(item.command)
             action = menu.addAction(cmd.title)
-            action.triggered.connect(lambda *_: execute_command(cmd.command))
+            action.triggered.connect(lambda *args: cmd.exec(args=args))
 
 
 class NapariMenu(QMenu):
@@ -136,6 +137,19 @@ class NapariMenu(QMenu):
         super().__init__(*args, **kwargs)
         self._INSTANCES.append(self)
 
+    def _destroy(self):
+        """Clean up action data to avoid widget leaks."""
+        for ax in self.actions():
+            ax.setData(None)
+
+            try:
+                ax._destroy()
+            except AttributeError:
+                pass
+
+        if self in self._INSTANCES:
+            self._INSTANCES.remove(self)
+
     def update(self, event=None):
         """Update action enabled/disabled state based on action data."""
         for ax in self.actions():
@@ -143,11 +157,3 @@ class NapariMenu(QMenu):
             if data:
                 enabled_func = data.get('enabled', lambda event: True)
                 ax.setEnabled(bool(enabled_func(event)))
-
-    def closeEvent(self, event):
-        """Override qt method to clean up action data."""
-        for ax in self.actions():
-            ax.setData(None)
-
-        self._INSTANCES.remove(self)
-        super().closeEvent(event)

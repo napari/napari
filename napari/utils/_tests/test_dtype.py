@@ -74,7 +74,10 @@ def test_pure_python_types(dtype_str):
         float,
         'float32',
         'float64',
-    ],
+        '>f4',
+        '>f8',
+    ]
+    + [''.join(t) for t in itertools.product('<>', 'iu', '1248')],
 )
 def test_dtype_lims(dtype):
     lims = get_dtype_limits(dtype)

@@ -239,7 +239,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._update_dims()
         self.events.data(value=self.data)
-        if self._keep_autoscale:
+        if self._keep_auto_contrast:
             self.reset_contrast_limits()
 
     @property
@@ -403,7 +403,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         else:
             self._view_faces = self.faces
 
-        if self._keep_autoscale:
+        if self._keep_auto_contrast:
             self.reset_contrast_limits()
 
     def _update_thumbnail(self):

@@ -1,6 +1,6 @@
 (perfmon)=
 
-# Performance Monitoring
+# Performance monitoring
 
 If napari is not performing well, you can use
 {mod}`napari.utils.perf<napari.utils.perf>` to help
@@ -16,7 +16,7 @@ The module can do several things:
 
 4. Time any function that you specify in the config file.
 
-## Monitoring vs. Profiling
+## Monitoring vs. profiling
 
 Profiling is similar to performance monitoring. However profiling usually
 involves running an external tool to acquire timing data on every function
@@ -49,8 +49,7 @@ Setting `NAPARI_PERFMON=1` does three things:
 2. Shows the dockable **performance** widget.
 3. Reveals the **Debug** menu which you can use to create a trace file.
 
-
-## Configuration File Format
+## Configuration file format
 
 Example configuration file:
 
@@ -70,8 +69,7 @@ Example configuration file:
 }
 ```
 
-
-## Configuration Options
+## Configuration options
 
 ### `trace_qt_events`
 
@@ -96,7 +94,7 @@ Specify which `callable_lists` you want to trace. You can have many
 These lists can be referenced by the `callable_lists` option. You might
 want multiple lists so they can be enabled separately.
 
-## Trace File
+## Trace file
 
 The trace file that napari produces is viewable in Chrome. Go to the
 special URL `chrome://tracing`. Use the **Load** button inside the Chrome
@@ -111,12 +109,12 @@ Google Doc. The format is well-documented, but there are no pictures so
 it's not always clear how a given feature actually looks in the Chrome
 Tracing GUI.
 
-## Example Investigation
+## Example investigation
 
 This is an example showing how you might use the
 {mod}`napari.utils.perf<napari.utils.perf>` module.
 
-### Add a Sleep
+### Add a sleep
 
 To simulate a performance problem in napari, add a `sleep()` call to the
 {meth}`Labels.paint<napari.layer.labels.Label.paint>` method, this
@@ -134,8 +132,7 @@ def paint(self, coord, new_label, refresh=True):
         self._save_history()
 ```
 
-
-### Create a Perfmon Config File
+### Create a perfmon config file
 
 Create a minimal perfmon config file `/tmp/perfmon.json` that looks like this:
 
@@ -151,7 +148,6 @@ This will write `/tmp/latest.json` every time we run napari. This file is
 only written on exit, and you must exit with the **Quit** commmand. Using
 `trace_file_on_start` is often easier than manually starting a trace using
 the **Debug** menu.
-
 
 ### Run napari
 
@@ -172,7 +168,7 @@ The trace file will give you much more information than the **performance**
 widget. Exit napari using the **Quit** command so that it writes the trace
 file on exit.
 
-### View Trace in Chrome
+### View trace in Chrome
 
 Run Chrome and go to the URL `chrome://tracing`. Drag and drop
 `/tmp/latest.json` into the Chrome window, or use the **Load** button to
@@ -192,7 +188,7 @@ question we can add more timers. In this case we know the answer, but often
 you will have to guess or experiment. You might add some timers and then
 find out they actually run fast, so you can remove them.
 
-### Add Paint Method
+### Add paint method
 
 To add the {meth}`Labels.paint<napari.layers.Labels.paint>` method to
 the trace, create a new list of callables named `labels` and put the
@@ -214,12 +210,12 @@ that list.
 }
 ```
 
-### Create the new Trace File
+### Create the new trace File
 
 Run `add_labels` as before, click with the paint tool, exit with the **Quit**
 command.
 
-### View the new Trace File
+### View the new trace File
 
 Drop `/tmp/latest.json` into Chrome again. Now we can see that
 `MouseButtonPress` calls

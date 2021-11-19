@@ -3,7 +3,12 @@ import collections
 import numpy as np
 import pytest
 
-from napari._tests.utils import skip_local_popups, skip_on_win_ci
+from napari._tests.utils import (
+    skip_local_popups,
+    skip_on_mac_ci,
+    skip_on_win_ci,
+    slow,
+)
 from napari.utils.interactions import (
     ReadOnlyWrapper,
     mouse_move_callbacks,
@@ -13,10 +18,11 @@ from napari.utils.interactions import (
 
 
 @skip_on_win_ci
+@skip_on_mac_ci
 @skip_local_popups
 def test_z_order_adding_removing_images(make_napari_viewer):
     """Test z order is correct after adding/ removing images."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red', name='red')
@@ -56,11 +62,12 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 0, 255])
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images(make_napari_viewer):
     """Test changing order of images changes z order in display."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
@@ -77,11 +84,12 @@ def test_z_order_images(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points(make_napari_viewer):
     """Test changing order of image and points changes z order in display."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
@@ -98,11 +106,12 @@ def test_z_order_image_points(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images_after_ndisplay(make_napari_viewer):
     """Test z order of images remanins constant after chaning ndisplay."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
@@ -127,15 +136,16 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_napari_viewer):
     """Test z order of image and points remanins constant after chaning ndisplay."""
-    data = np.ones((10, 10))
+    data = np.ones((11, 11))
 
     viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
-    viewer.add_points([5, 5], face_color='blue', size=10)
+    viewer.add_points([5, 5], face_color='blue', size=5)
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that blue is visible
@@ -156,6 +166,7 @@ def test_z_order_image_points_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_colormap(make_napari_viewer):
@@ -186,6 +197,7 @@ def test_changing_image_colormap(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_gamma(make_napari_viewer):
@@ -216,6 +228,7 @@ def test_changing_image_gamma(make_napari_viewer):
     assert screenshot[center + (0,)] < 80
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_grid_mode(make_napari_viewer):
@@ -316,6 +329,7 @@ def test_grid_mode(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_attenuation(make_napari_viewer):
@@ -341,6 +355,7 @@ def test_changing_image_attenuation(make_napari_viewer):
     assert screenshot[center + (0,)] < 60
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_labels_painting(make_napari_viewer):
@@ -414,6 +429,7 @@ def test_labels_painting(make_napari_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
+@slow(30)
 @pytest.mark.skip("Welcome visual temporarily disabled")
 @skip_on_win_ci
 @skip_local_popups
@@ -439,6 +455,7 @@ def test_welcome(make_napari_viewer):
     assert screenshot[..., :-1].max() > 0
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_axes_visible(make_napari_viewer):
@@ -463,6 +480,7 @@ def test_axes_visible(make_napari_viewer):
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
+@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_scale_bar_visible(make_napari_viewer):
@@ -485,3 +503,20 @@ def test_scale_bar_visible(make_napari_viewer):
     off_screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert not viewer.scale_bar.visible
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
+
+
+@slow(30)
+@skip_on_win_ci
+@skip_local_popups
+def test_screenshot_has_no_border(make_napari_viewer):
+    """See https://github.com/napari/napari/issues/3357"""
+    viewer = make_napari_viewer(show=True)
+    image_data = np.ones((60, 80))
+    viewer.add_image(image_data, colormap='red')
+    # Zoom in dramatically to make the screenshot all red.
+    viewer.camera.zoom = 1000
+
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+
+    expected = np.broadcast_to([255, 0, 0, 255], screenshot.shape)
+    np.testing.assert_array_equal(screenshot, expected)

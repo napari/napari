@@ -36,6 +36,9 @@ def create_qt_layer_controls(layer):
     """
     Create a qt controls widget for a layer based on its layer type.
 
+    In case of a subclass, the type higher in the layer's method resolution
+    order will be used.
+
     Parameters
     ----------
     layer : napari.layers._base_layer.Layer
@@ -46,18 +49,26 @@ def create_qt_layer_controls(layer):
     controls : napari.layers.base.QtLayerControls
         Qt controls widget
     """
+    candidates = [
+        layer_type
+        for layer_type in layer_to_controls
+        if isinstance(layer, layer_type)
+    ]
 
-    for layer_type, controls in layer_to_controls.items():
-        if isinstance(layer, layer_type):
-            return controls(layer)
-    return
-    raise TypeError(
-        trans._(
-            'Could not find QtControls for layer of type {type_}',
-            deferred=True,
-            type_=type(layer),
+    if not candidates:
+        raise TypeError(
+            trans._(
+                'Could not find QtControls for layer of type {type_}',
+                deferred=True,
+                type_=type(layer),
+            )
         )
-    )
+
+    layer_cls = layer.__class__
+    # Sort the list of candidates by 'lineage'
+    candidates.sort(key=lambda layer_type: layer_cls.mro().index(layer_type))
+    controls = layer_to_controls[candidates[0]]
+    return controls(layer)
 
 
 class QtLayerControlsContainer(QStackedWidget):

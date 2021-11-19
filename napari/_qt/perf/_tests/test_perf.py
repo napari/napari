@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from napari._tests.utils import skip_local_popups
+from napari._tests.utils import skip_local_popups, skip_on_win_ci, slow
 
 # NOTE:
 # for some reason, running this test fails in a subprocess with a segfault
@@ -31,6 +31,8 @@ CONFIG = {
 }
 
 
+@skip_on_win_ci
+@slow(20)
 @skip_local_popups
 def test_trace_on_start(tmp_path: Path):
     """Make sure napari can write a perfmon trace file."""

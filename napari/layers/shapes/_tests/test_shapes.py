@@ -1891,7 +1891,7 @@ def test_copy_and_paste():
     layer.selected_data = {0, 1}
     layer._copy_data()
     layer._paste_data()
-    assert len(layer._clipboard) == 6
+    assert len(layer._clipboard) > 0
     assert len(layer.data) == shape[0] + 2
     assert np.all(
         [np.all(a == b) for a, b in zip(layer.data[:2], layer.data[-2:])]
@@ -2023,6 +2023,21 @@ def test_to_masks():
     assert masks.shape == (shape[0], 20, 20)
 
 
+def test_to_masks_default_shape():
+    """Test that labels data generation preserves origin at (0, 0).
+
+    See https://github.com/napari/napari/issues/3401
+    """
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape) + [50, 100]
+    layer = Shapes(data)
+    masks = layer.to_masks()
+    assert len(masks) == 10
+    assert 50 <= masks[0].shape[0] <= 71
+    assert 100 <= masks[0].shape[1] <= 121
+
+
 def test_to_labels():
     """Test the labels generation."""
     shape = (10, 4, 2)
@@ -2036,6 +2051,22 @@ def test_to_labels():
     labels = layer.to_labels(labels_shape=[20, 20])
     assert labels.shape == (20, 20)
     assert len(np.unique(labels)) <= 11
+
+
+def test_to_labels_default_shape():
+    """Test that labels data generation preserves origin at (0, 0).
+
+    See https://github.com/napari/napari/issues/3401
+    """
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape) + [50, 100]
+    layer = Shapes(data)
+    labels = layer.to_labels()
+    assert labels.ndim == 2
+    assert 1 < len(np.unique(labels)) <= 11
+    assert 50 <= labels.shape[0] <= 71
+    assert 100 <= labels.shape[1] <= 121
 
 
 def test_to_labels_3D():
@@ -2097,4 +2128,4 @@ def test_world_data_extent():
     min_val = (-2, -8, 0)
     max_val = (9, 30, 15)
     extent = np.array((min_val, max_val))
-    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)

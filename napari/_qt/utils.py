@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import signal
 import socket
 import weakref
@@ -12,13 +13,14 @@ import qtpy
 from qtpy.QtCore import (
     QByteArray,
     QObject,
+    QPoint,
     QPropertyAnimation,
     QSize,
     QSocketNotifier,
     Qt,
     Signal,
 )
-from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
+from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPen, QPixmap
 from qtpy.QtWidgets import (
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
@@ -34,6 +36,7 @@ from ..utils.misc import is_sequence
 from ..utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
+RICH_TEXT_PATTERN = re.compile("<[^\n]+>")
 
 
 def is_qbyte(string: str) -> bool:
@@ -159,6 +162,78 @@ def square_pixmap(size):
     painter.drawRect(0, 0, size - 1, size - 1)
     painter.setPen(Qt.black)
     painter.drawRect(1, 1, size - 3, size - 3)
+    painter.end()
+    return pixmap
+
+
+@lru_cache(maxsize=64)
+def crosshair_pixmap():
+    """Create a cross cursor with white/black hollow square pixmap in the middle.
+    For use as points cursor."""
+
+    size = 25
+
+    pixmap = QPixmap(QSize(size, size))
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+
+    # Base measures
+    width = 1
+    center = 3  # Must be odd!
+    rect_size = center + 2 * width
+    square = rect_size + width * 4
+
+    pen = QPen(Qt.white, 1)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.setPen(pen)
+
+    # # Horizontal rectangle
+    painter.drawRect(0, (size - rect_size) // 2, size - 1, rect_size - 1)
+
+    # Vertical rectangle
+    painter.drawRect((size - rect_size) // 2, 0, rect_size - 1, size - 1)
+
+    # Square
+    painter.drawRect(
+        (size - square) // 2, (size - square) // 2, square - 1, square - 1
+    )
+
+    pen = QPen(Qt.black, 2)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.setPen(pen)
+
+    # # Square
+    painter.drawRect(
+        (size - square) // 2 + 2,
+        (size - square) // 2 + 2,
+        square - 4,
+        square - 4,
+    )
+
+    pen = QPen(Qt.black, 3)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.setPen(pen)
+
+    # # # Horizontal lines
+    mid_vpoint = QPoint(2, size // 2)
+    painter.drawLine(
+        mid_vpoint, QPoint(((size - center) // 2) - center + 1, size // 2)
+    )
+    mid_vpoint = QPoint(size - 3, size // 2)
+    painter.drawLine(
+        mid_vpoint, QPoint(((size - center) // 2) + center + 1, size // 2)
+    )
+
+    # # # Vertical lines
+    mid_hpoint = QPoint(size // 2, 2)
+    painter.drawLine(
+        QPoint(size // 2, ((size - center) // 2) - center + 1), mid_hpoint
+    )
+    mid_hpoint = QPoint(size // 2, size - 3)
+    painter.drawLine(
+        QPoint(size // 2, ((size - center) // 2) + center + 1), mid_hpoint
+    )
+
     painter.end()
     return pixmap
 
@@ -310,14 +385,18 @@ def remove_flash_animation(widget_ref: weakref.ref[QWidget]):
 
     Parameters
     ----------
-    widget : QWidget
+    widget_ref : QWidget
         Any Qt widget.
     """
     if widget_ref() is None:
         return
     widget = widget_ref()
-    widget.setGraphicsEffect(None)
-    del widget._flash_animation
+    try:
+        widget.setGraphicsEffect(None)
+        del widget._flash_animation
+    except RuntimeError:
+        # RuntimeError: wrapped C/C++ object of type QtWidgetOverlay has been deleted
+        pass
 
 
 @contextmanager
@@ -385,3 +464,18 @@ class Sentry(QObject):
 
     def alert(self, *_):
         self.alerted.emit()
+
+
+def qt_might_be_rich_text(text) -> bool:
+    """
+    Check if a text might be rich text in a cross-binding compatible way.
+    """
+    if qtpy.PYSIDE2:
+        from qtpy.QtGui import Qt as _Qt
+    else:
+        from qtpy.QtCore import Qt as _Qt
+
+    try:
+        return _Qt.mightBeRichText(text)
+    except Exception:
+        return bool(RICH_TEXT_PATTERN.search(text))

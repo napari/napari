@@ -15,6 +15,8 @@ from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
     skip_local_popups,
+    skip_on_win_ci,
+    slow,
 )
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
@@ -59,6 +61,7 @@ def test_qt_viewer_toggle_console(make_napari_viewer):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
+
     viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window.qt_viewer
 
@@ -195,6 +198,8 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
 
+@skip_on_win_ci
+@slow(15)
 def test_screenshot(make_napari_viewer):
     "Test taking a screenshot"
     viewer = make_napari_viewer()
@@ -520,3 +525,34 @@ def test_remove_labels(make_napari_viewer):
     viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
     del viewer.layers[0]
     viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
+
+
+@pytest.mark.parametrize('multiscale', [False, True])
+def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
+    """Test bug in setting corner_pixels from qt_viewer.on_draw"""
+    viewer = make_napari_viewer()
+
+    img = np.ones((512, 256))
+    # canvas size must be large enough that img fits in the canvas
+    canvas_size = tuple(3 * s for s in img.shape)
+    expected_corner_pixels = np.asarray([[0, 0], [img.shape[0], img.shape[1]]])
+
+    vol = np.stack([img] * 8, axis=0)
+    if multiscale:
+        img = [img[::s, ::s] for s in (1, 2, 4)]
+    viewer.add_image(img)
+    img_multi_layer = viewer.layers[0]
+    viewer.add_image(vol)
+
+    viewer.dims.order = (0, 1, 2)
+    viewer.window.qt_viewer.canvas.size = canvas_size
+    viewer.window.qt_viewer.on_draw(None)
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+
+    viewer.dims.order = (2, 0, 1)
+    viewer.window.qt_viewer.on_draw(None)
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+
+    viewer.dims.order = (1, 2, 0)
+    viewer.window.qt_viewer.on_draw(None)
+    assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)

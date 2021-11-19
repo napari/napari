@@ -5,15 +5,15 @@ from typing import Dict, Tuple, Union
 import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg
+from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
-from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import get_current_properties, prepare_properties
-from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
+from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
 class Vectors(Layer):
@@ -28,6 +28,9 @@ class Vectors(Layer):
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
+    ndim : int
+        Number of dimensions for vectors. When data is not None, ndim must be D.
+        An empty vectors layer can be instantiated with arbitrary ndim.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
@@ -142,8 +145,9 @@ class Vectors(Layer):
 
     def __init__(
         self,
-        data,
+        data=None,
         *,
+        ndim=None,
         properties=None,
         property_choices=None,
         edge_width=1,
@@ -165,10 +169,14 @@ class Vectors(Layer):
         cache=True,
         experimental_clipping_planes=None,
     ):
+        if ndim is None and scale is not None:
+            ndim = len(scale)
+
+        data, ndim = fix_data_vectors(data, ndim)
 
         super().__init__(
             data,
-            2,
+            ndim,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -198,7 +206,7 @@ class Vectors(Layer):
         # length attribute
         self._length = length
 
-        self._data = vectors_to_coordinates(data)
+        self._data = data
 
         vertices, triangles = generate_vector_meshes(
             self._data[:, :, list(self._dims_displayed)],
@@ -244,7 +252,7 @@ class Vectors(Layer):
     def data(self, vectors: np.ndarray):
         previous_n_vectors = len(self.data)
 
-        self._data = vectors_to_coordinates(vectors)
+        self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
 
         vertices, triangles = generate_vector_meshes(
@@ -345,6 +353,7 @@ class Vectors(Layer):
                 'data': self.data,
                 'properties': self.properties,
                 'property_choices': self._property_choices,
+                'ndim': self.ndim,
             }
         )
         return state

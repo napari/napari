@@ -515,6 +515,7 @@ SKIP_WORDS = {
     'napari/_qt/widgets/qt_viewer_dock_widget.py': [
         'QTitleBarCloseButton',
         'QTitleBarFloatButton',
+        'QTitleBarHideButton',
         'QtCustomTitleBar',
         'QtCustomTitleBarLine',
         'bottom',

@@ -44,7 +44,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def __init__(self, *args, **kwargs) -> None:
         self._activate_on_insert = True
         super().__init__(*args, **kwargs)
-        self.events.removed.connect(lambda e: self.selection.discard(e.value))
+        self.events.removed.connect(
+            lambda e: self.selection.discard(e.value)
+        )  # FIXME remove lambda
         self.selection._pre_add_hook = self._preselect_hook
 
     def _preselect_hook(self, value):
