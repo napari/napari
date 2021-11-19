@@ -80,7 +80,7 @@ class VispyInteractionBox:
             symbol='square',
             scaling=False,
         )
-        if self._selected_vertex == Box.HANDLE:
+        if self._interaction_box.selected_vertex == Box.HANDLE:
             face_color = self._highlight_color
         else:
             face_color = 'white'
@@ -129,9 +129,11 @@ class VispyInteractionBox:
 
             edge_color = self._highlight_color
             if self._interaction_box.show_vertices:
-                colors = np.array([(1, 1, 1) for point in box])
-                if self._selected_vertex is not None:
-                    colors[self._selected_vertex] = self._highlight_color
+                colors = np.array([(1.0, 1.0, 1.0) for point in box])
+                if self._interaction_box.selected_vertex is not None:
+                    colors[
+                        self._interaction_box.selected_vertex
+                    ] = self._highlight_color
                 if self._interaction_box.show_handle:
                     vertices = box[Box.WITH_HANDLE][:, ::-1]
                     face_color = ColorArray(

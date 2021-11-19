@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 
+from ..layers.utils.layer_utils import dims_displayed_world_to_layer
 from ..utils.events import disconnect_events
 from ..utils.transforms import Affine
 from ..utils.translations import trans
@@ -52,22 +53,32 @@ class InteractionBoxMouseBindings:
         self._interaction_box_visual = interaction_box_visual
         viewer.layers.events.inserted.connect(self._on_add_layer)
         viewer.layers.events.removed.connect(self._on_remove_layer)
+        viewer.layers.selection.events.active.connect(self._on_active)
         viewer.dims.events.order.connect(self._on_dim_change)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
         self.initialize_mouse_events(viewer)
         self.initialize_key_events(viewer)
 
     def _on_remove_layer(self, event):
-        """Gets called when layer is added and adds event listener to mdoe change"""
+        """Gets called when layer is added and removes event listener"""
         layer = event.value
         if hasattr(layer, 'mode'):
             disconnect_events(layer.events, self)
 
     def _on_add_layer(self, event):
-        """Gets called when layer is added and adds event listener to mdoe change"""
+        """Gets called when layer is added and adds event listener to mode change"""
         layer = event.value
         if hasattr(layer, 'mode'):
             layer.events.mode.connect(self._on_mode_change)
+
+    def _on_active(self, event):
+        """Gets called when active layer is changed"""
+        active_layer = event.value
+        if hasattr(active_layer, 'mode') and active_layer.mode == 'transform':
+            self._couple_interaction_box_to_active()
+            self._interaction_box_model.show = True
+        else:
+            self._interaction_box_model.show = False
 
     def _on_ndisplay_change(self):
         """Gets called on ndisplay change to disable interaction box in 3D"""
@@ -78,6 +89,23 @@ class InteractionBoxMouseBindings:
         ):
             self._viewer.layers.selection.active.mode = 'pan_zoom'
 
+    def _couple_interaction_box_to_active(self):
+        viewer = self._viewer
+        active_layer = viewer.layers.selection.active
+        # This is nescessary in case the current layer has fewer dims than the viewer
+        layer_dims = dims_displayed_world_to_layer(
+            list(viewer.dims.displayed),
+            viewer.dims.ndim,
+            active_layer.ndim,
+        )
+        # The -0.5 is nescessary because the pixel at (0,0) actually extends to (-0.5,0.5) (in case of the image layer)
+        viewer.overlays.interaction_box.points = (
+            active_layer.extent.data[:, layer_dims] - 0.5
+        )
+        viewer.overlays.interaction_box.transform = (
+            active_layer.affine.set_slice(layer_dims)
+        )
+
     def _on_dim_change(self, event):
         """Gets called when changing order of dims to make sure interaction box is using right extent and transform"""
         viewer = self._viewer
@@ -85,17 +113,7 @@ class InteractionBoxMouseBindings:
             hasattr(viewer.layers.selection.active, 'mode')
             and viewer.layers.selection.active.mode == 'transform'
         ):
-            viewer.overlays.interaction_box.points = (
-                viewer.layers.selection.active.extent.data[
-                    :, list(viewer.dims.displayed)
-                ]
-                - 0.5
-            )
-            viewer.overlays.interaction_box.transform = (
-                viewer.layers.selection.active.affine.set_slice(
-                    list(viewer.dims.displayed)
-                )
-            )
+            self._couple_interaction_box_to_active()
 
     def _on_mode_change(self, event):
         """Gets called on mode change to enable interaction box in transform mode"""
@@ -112,18 +130,11 @@ class InteractionBoxMouseBindings:
                 viewer.layers.selection.active.mode = 'pan_zoom'
                 return
             viewer.layers.selection.active = event.source
-            # The -0.5 is nescessary because the pixel at (0,0) actually extends to (-0.5,0.5) (in case of the image layer)
-            viewer.overlays.interaction_box.points = (
-                event.source.extent.data[:, list(viewer.dims.displayed)] - 0.5
-            )
-            viewer.overlays.interaction_box.transform = (
-                event.source.affine.set_slice(list(viewer.dims.displayed))
-            )
-
-            viewer.overlays.interaction_box.show = True
+            self._couple_interaction_box_to_active()
             viewer.overlays.interaction_box.show_vertices = True
             viewer.overlays.interaction_box.show_handle = True
             viewer.overlays.interaction_box.allow_new_selection = False
+            viewer.overlays.interaction_box.show = True
 
             viewer.overlays.interaction_box.events.transform_drag.connect(
                 self._on_transform_change
@@ -137,10 +148,19 @@ class InteractionBoxMouseBindings:
         """Gets called when the interaction box is transformed to update transform of the layer"""
 
         # TODO: right now the transform in the not displayed dimension is reset, probably would be better to preserve it
-        dimension_order = np.argsort(self._viewer.dims.displayed)
+        layer_dims_displayed = dims_displayed_world_to_layer(
+            list(self._viewer.dims.displayed),
+            self._viewer.dims.ndim,
+            self._viewer.layers.selection.active.ndim,
+        )
+        layer_dims_all = list(range(self._viewer.layers.selection.active.ndim))
+        layer_dims_nodisplayed = [
+            d for d in layer_dims_all if d not in layer_dims_displayed
+        ]
+        dimension_order = np.argsort(layer_dims_displayed)
         self._viewer.layers.selection.active.affine = event.value.set_slice(
             dimension_order
-        ).expand_dims(list(self._viewer.dims.not_displayed))
+        ).expand_dims(layer_dims_nodisplayed)
 
     def initialize_key_events(self, viewer):
         @viewer.bind_key('Shift')
@@ -182,6 +202,7 @@ class InteractionBoxMouseBindings:
                     self._selected_vertex = None
             else:
                 self._selected_vertex = None
+            self._interaction_box_model.selected_vertex = self._selected_vertex
 
         @viewer.mouse_drag_callbacks.append
         def mouse_drag(viewer, event):
