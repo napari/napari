@@ -178,6 +178,7 @@ jobs:
       # this steps display the cached folder size for debug and
       # remove the biggest contenders.
       - name: Upload graphs
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v2
         with:
           name: leak-graphs
