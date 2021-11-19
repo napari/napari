@@ -158,6 +158,8 @@ jobs:
         with:
           path: /tmp/.tox/
           key: ${{ matrix.platform }}-${{ matrix.python }}-${{ matrix.toxenv || matrix.backend }}-${{ hashFiles('setup.cfg') }}-${{ hashFiles('tox.ini') }}-${{ steps.date.outputs.date }}
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v1
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
       # tox "factors" ... limiting the scope of what gets tested on each platform
