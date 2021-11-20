@@ -7,6 +7,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, List
 from unittest.mock import patch
 
+import dask.threaded
 import pytest
 
 if TYPE_CHECKING:
@@ -178,6 +179,10 @@ def make_napari_viewer(
         assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
     th = threading.active_count()
     yield actual_factory
+
+    if dask.threaded.default_pool is not None:
+        dask.threaded.default_pool.shutdown()
+        dask.threaded.default_pool = None
 
     # Some tests might have the viewer closed, so this call will not be able
     # to access the window.
