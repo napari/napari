@@ -84,8 +84,13 @@ class VispyInteractionBox:
             face_color = self._highlight_color
         else:
             face_color = 'white'
+        # Have to make sure vertex list is not empty to pass tests
+        round_vertices = vertices[Box.LEN_WITHOUT_HANDLE :]
+        if len(round_vertices) == 0:
+            round_vertices = np.zeros((1, self._viewer.dims.ndisplay))
+            size = 0
         self.round_marker_node.set_data(
-            vertices[Box.LEN_WITHOUT_HANDLE :],
+            round_vertices,
             size=size,
             face_color=face_color,
             edge_color=edge_color,
