@@ -401,7 +401,7 @@ def test_add_colors():
     """Test adding new colors"""
     data = np.random.randint(20, size=(40, 40))
     layer = Labels(data)
-    assert len(layer._all_vals) == layer.num_colors
+    assert len(layer._all_vals) == np.max(data) + 1
 
     layer.selected_label = 51
     assert len(layer._all_vals) == 52
@@ -1309,7 +1309,7 @@ def test_negative_label():
 
 def test_negative_label_slicing():
     """Test negative label color doesn't change during slicing."""
-    data = np.array([[[0, 1], [-1, -1]], [[100, 100, -1, -2]]])
+    data = np.array([[[0, 1], [-1, -1]], [[100, 100], [-1, -2]]])
     layer = Labels(data)
     assert tuple(layer.get_color(1)) != tuple(layer.get_color(-1))
     layer._dims_point = (1, 0, 0)
