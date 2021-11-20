@@ -355,9 +355,6 @@ def fresh_settings(monkeypatch):
     yield
 
 
-HistoryAccessor.hist_file = ':memory:'
-
-
 @pytest.fixture(autouse=True)
 def dt_shutdown_no_new_thread(request):
     assert dask.threaded.default_pool is None
@@ -371,3 +368,11 @@ def dt_shutdown_no_new_thread(request):
             dask.threaded.default_pool.shutdown()
             dask.threaded.default_pool = None
         assert threading.active_count() == old_count + delta
+
+
+# this is not the proper way to configure IPython, but it's an easy one.
+# This will prevent IPython to try to write history on its sql file and do
+# everything in memory.
+# 1) it saves a thread and
+# 2) it can prevent issues with slow or read-only file systems in CI.
+HistoryAccessor.hist_file = ':memory:'
