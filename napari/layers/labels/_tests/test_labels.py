@@ -923,7 +923,7 @@ def test_add_large_colors():
     label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
     label_array[0, :, :] = [[0, 1], [2, 3]]
     layer = Labels(label_array)
-    assert len(layer._all_vals) == layer.num_colors
+    assert len(layer._all_vals) == 4
 
     layer.show_selected_label = True
     layer.selected_label = int(5e6)
