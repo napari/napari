@@ -164,10 +164,22 @@ def make_napari_viewer(
         if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak]):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
+            msg = f"""The following Widgets leaked!: {leak}.
+
+            Note: If other tests are failing it is likely that widgets will leak
+            as they will be (indirectly) attached to the tracebacks of previous failures.
+            Please only consider this an error if all other tests are passing.
+            """
+            # Explanation notes on the above: While we are indeed looking at the
+            # difference in sets of widgets between before and after, new object can
+            # still not be garbage collected because of it.
+            # in particular with VisPyCanvas, it looks like if a traceback keeps
+            # contains the type, then instances are still attached to the type.
+            # I'm not too sure why this is the case though.
             if _strict == 'raise':
-                raise AssertionError(f'Widgets leaked!: {leak}')
+                raise AssertionError(msg)
             else:
-                warnings.warn(f'Widgets leaked!: {leak}')
+                warnings.warn(msg)
 
 
 @pytest.fixture
