@@ -4,6 +4,7 @@ from functools import partial
 import numpy as np
 import pooch
 import pytest
+from IPython.core.history import HistoryAccessor
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -350,3 +351,6 @@ def fresh_settings(monkeypatch):
     # this makes sure that we start with fresh settings for every test.
     settings._SETTINGS = None
     yield
+
+
+HistoryAccessor.hist_file = ':memory:'
