@@ -9,3 +9,11 @@ specifications_ that developers can implement, see the
 {ref}`hook-specifications-reference`.
 
 napari users can install plugins directly from their instance of napari to enhance their workflows; to learn more see {ref}`find-and-install-plugins`.
+
+## npe2
+
+Manifest
+: Hey! It's the [Manifest spec](npe2-manifest-spec)
+
+Migration guide
+: Hey! It's a [Migration guide](npe2-migration-guide).

@@ -23,6 +23,10 @@ html:
   use_issues_button: true
   use_repository_button: true
 
+parse:
+  myst_enabled_extensions:
+    - deflist
+
 sphinx:
   extra_extensions:
     - sphinx.ext.viewcode

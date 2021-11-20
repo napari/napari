@@ -3,3 +3,4 @@ jupytext==1.10.3
 sphinx_autodoc_typehints==1.11.0
 furo==2021.6.18b36
 Jinja2
+myst
