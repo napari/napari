@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        task: [flake8, black, isort, import-lint]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
@@ -22,6 +24,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install tox
+      - name: Run task
+        run: tox -e ${{ matrix.task }} -- --timeout=8
 
   manifest:
     # make sure all necessary files will be bundled in the release
