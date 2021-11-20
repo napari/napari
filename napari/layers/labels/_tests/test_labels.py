@@ -1305,3 +1305,41 @@ def test_negative_label():
     assert np.count_nonzero(layer.data == -1) > np.count_nonzero(
         original_data == -1
     )
+
+
+def test_negative_label_slicing():
+    """Test negative label color doesn't change during slicing."""
+    data = np.array([[[0, 1], [-1, -1]], [[100, 100, -1, -2]]])
+    layer = Labels(data)
+    assert tuple(layer.get_color(1)) != tuple(layer.get_color(-1))
+    layer._dims_point = (1, 0, 0)
+    layer._set_view_slice()
+    assert tuple(layer.get_color(-1)) != tuple(layer.get_color(100))
+    assert tuple(layer.get_color(-2)) != tuple(layer.get_color(100))
+
+
+@pytest.mark.xfail(
+    reason='This is a known bug with the current label color implementation'
+)
+def test_negative_label_doesnt_flicker():
+    data = np.array(
+        [
+            [[0, 5], [0, 5]],
+            [[-1, 5], [-1, 5]],
+            [[-1, 6], [-1, 6]],
+        ]
+    )
+    layer = Labels(data)
+    layer._dims_point = (1, 0, 0)
+    layer._set_view_slice()
+    # this is expected to fail: -1 doesn't trigger an index error in
+    # layer._all_vals, it instead just wraps to 5, the previous max label.
+    assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
+    minus_one_color_original = tuple(layer.get_color(-1))
+    layer.dims_point = (2, 0, 0)
+    layer._set_view_slice()
+    # this is also expected to fail: when we switch layers, we see the 6
+    # label, which causes an index error, which triggers a recalculation of
+    # the label colors. Now -1 is seen so it is taken into account in the
+    # indexing calculation, and changes color
+    assert tuple(layer.get_color(-1)) == minus_one_color_original
