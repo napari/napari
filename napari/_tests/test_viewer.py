@@ -143,7 +143,7 @@ def test_add_layer_magic_name(
 
 
 @skip_on_win_ci
-@slow(20)
+@slow(10)
 def test_screenshot(make_napari_viewer):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
@@ -300,7 +300,7 @@ def test_deleting_points(make_napari_viewer):
     assert len(pts_layer.data) == 3
 
 
-@slow(15)
+@slow(10)
 @skip_local_popups
 def test_custom_layer(make_napari_viewer):
     """Make sure that custom layers subclasses can be added to the viewer."""
