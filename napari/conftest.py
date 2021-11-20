@@ -1,6 +1,8 @@
 import os
+import threading
 from functools import partial
 
+import dask.threaded
 import numpy as np
 import pooch
 import pytest
@@ -354,3 +356,18 @@ def fresh_settings(monkeypatch):
 
 
 HistoryAccessor.hist_file = ':memory:'
+
+
+@pytest.fixture(autouse=True)
+def dt_shutdown_no_new_thread(request):
+    assert dask.threaded.default_pool is None
+    delta = getattr(request, 'param', 0)
+
+    old_count = threading.active_count()
+    try:
+        yield
+    finally:
+        if dask.threaded.default_pool is not None:
+            dask.threaded.default_pool.shutdown()
+            dask.threaded.default_pool = None
+        assert threading.active_count() == old_count + delta
