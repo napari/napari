@@ -74,6 +74,27 @@ class Transform:
             trans._('Cannot subset arbitrary transforms.', deferred=True)
         )
 
+    def replace_slice(
+        self, axes: Sequence[int], transform: 'Transform'
+    ) -> 'Transform':
+        """Returns a transform where the transform at the indicated n dimensions is replaced with another n-dimensional transform
+
+        Parameters
+        ----------
+        axes: Sequence[int]
+            Axes where the transform will be replaces
+        transform: Transform
+            The transfor that will be inserted. Must have as many dimension as len(axes)
+
+        Returns
+        -------
+        Transform
+            Resulting transform.
+        """
+        raise NotImplementedError(
+            trans._('Cannot subset arbitrary transforms.', deferred=True)
+        )
+
     def expand_dims(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform with added axes for non-visible dimensions.
 
@@ -510,6 +531,43 @@ class Affine(Transform):
         return Affine(
             linear_matrix=self.linear_matrix[np.ix_(axes, axes)],
             translate=self.translate[axes],
+            ndim=len(axes),
+            name=self.name,
+        )
+
+    def replace_slice(
+        self, axes: Sequence[int], transform: 'Affine'
+    ) -> 'Affine':
+        """Returns a transform where the transform at the indicated n dimensions is replaced with another n-dimensional transform
+
+        Parameters
+        ----------
+        axes: Sequence[int]
+            Axes where the transform will be replaces
+        transform: Affine
+            The transfor that will be inserted. Must have as many dimension as len(axes)
+
+        Returns
+        -------
+        Affine
+            Resulting transform.
+        """
+
+        if len(axes) != transform.ndim:
+            raise ValueError(
+                trans._(
+                    'Dimensionality of provided axes list and transform differ.',
+                    deferred=True,
+                )
+            )
+
+        linear_matrix = np.copy(self.linear_matrix)
+        linear_matrix[np.ix_(axes, axes)] = transform.linear_matrix
+        translate = np.copy(self.translate)
+        translate[axes] = transform.translate
+        return Affine(
+            linear_matrix=linear_matrix,
+            translate=translate,
             ndim=len(axes),
             name=self.name,
         )
