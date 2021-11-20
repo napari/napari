@@ -235,10 +235,7 @@ class Labels(_ImageBase):
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors)
-        self._all_vals = low_discrepancy_image(
-            np.arange(self.num_colors), self._seed
-        )
-        self._all_vals[0] = 0
+        self._all_vals = np.array([], dtype=float)
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
