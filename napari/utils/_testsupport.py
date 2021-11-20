@@ -1,6 +1,7 @@
 import collections
 import os
 import sys
+import threading
 import warnings
 from contextlib import suppress
 from typing import TYPE_CHECKING, List
@@ -175,7 +176,7 @@ def make_napari_viewer(
     if len(VispyCanvas._instances) != 0:
         save_obj_graph(VispyCanvas._instances, 'VispyCanvas-before')
         assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
-
+    th = threading.active_count()
     yield actual_factory
 
     # Some tests might have the viewer closed, so this call will not be able
@@ -209,6 +210,7 @@ def make_napari_viewer(
     loops = [e for e in QApplication.instance().children() if 'Loop' in str(e)]
     assert len(loops) <= 1
     assert len(_QtMainWindow._instances) == 0, _QtMainWindow._instances
+    assert threading.active_count() == th, threading.active_count()
 
     # only check for leaked widgets if an exception was raised during the test,
     # or "strict" mode was used.
