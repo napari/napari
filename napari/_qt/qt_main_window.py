@@ -81,6 +81,7 @@ class _QtMainWindow(QMainWindow):
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
+    stop_processing_events = False
 
     def __init__(self, viewer: 'Viewer', parent=None) -> None:
         super().__init__(parent)
@@ -159,13 +160,17 @@ class _QtMainWindow(QMainWindow):
                 _QtMainWindow._instances.remove(self)
             except ValueError:
                 pass
-        if e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
+        elif e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
             try:
                 inst = _QtMainWindow._instances
                 inst.append(inst.pop(inst.index(self)))
             except ValueError:
                 pass
+        else:
+            if self.stop_processing_events:
+                assert False, e
+            pass
         return super().event(e)
 
     def _load_window_settings(self):

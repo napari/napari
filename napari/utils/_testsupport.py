@@ -118,6 +118,7 @@ def make_napari_viewer(
     from qtpy.QtWidgets import QApplication
 
     from napari import Viewer
+    from napari._qt.qt_main_window import _QtMainWindow
     from napari._qt.qt_viewer import QtViewer
     from napari._vispy.canvas import VispyCanvas
     from napari.settings import get_settings
@@ -160,6 +161,7 @@ def make_napari_viewer(
 
         return viewer
 
+    assert len(_QtMainWindow._instances) == 0, _QtMainWindow._instances
     assert len(Viewer._instances) == 0, Viewer._instances
     assert len(QtViewer._instances) == 0, Viewer._instances
     assert len(VispyCanvas._instances) == 0, VispyCanvas._instances
@@ -206,6 +208,7 @@ def make_napari_viewer(
     ), QApplication.instance().children()
     loops = [e for e in QApplication.instance().children() if 'Loop' in str(e)]
     assert len(loops) <= 1
+    assert len(_QtMainWindow._instances) == 0, _QtMainWindow._instances
 
     # only check for leaked widgets if an exception was raised during the test,
     # or "strict" mode was used.
