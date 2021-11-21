@@ -1,4 +1,5 @@
 import os
+import sys
 import threading
 from functools import partial
 
@@ -364,7 +365,11 @@ def dt_shutdown_no_new_thread(request):
     try:
         yield
     finally:
-        if dask.threaded.default_pool is not None:
+        # There seem to be on issue on 3.7 where ThreadPool has not shutdown method.
+        if dask.threaded.default_pool is not None and sys.version_info > (
+            3,
+            8,
+        ):
             dask.threaded.default_pool.shutdown()
             dask.threaded.default_pool = None
         assert (
