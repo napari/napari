@@ -367,7 +367,9 @@ def dt_shutdown_no_new_thread(request):
         if dask.threaded.default_pool is not None:
             dask.threaded.default_pool.shutdown()
             dask.threaded.default_pool = None
-        assert threading.active_count() == old_count + delta
+        assert (
+            threading.active_count() == old_count + delta
+        ), threading.enumerate()
 
 
 # this is not the proper way to configure IPython, but it's an easy one.
