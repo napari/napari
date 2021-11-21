@@ -68,7 +68,9 @@ def in_ipython() -> bool:
 
 def str_to_rgb(arg):
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
-    return list(map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups()))
+    return list(
+        map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
+    )
 
 
 def ensure_iterable(arg, color=False):
@@ -119,7 +121,9 @@ def is_sequence(arg):
     return False
 
 
-def ensure_sequence_of_iterables(obj, length: Optional[int] = None, repeat_empty: bool = False):
+def ensure_sequence_of_iterables(
+    obj, length: Optional[int] = None, repeat_empty: bool = False
+):
     """Ensure that ``obj`` behaves like a (nested) sequence of iterables.
 
     If length is provided and the object is already a sequence of iterables,
@@ -160,7 +164,11 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None, repeat_empty
     Out[6]: []
     """
 
-    if obj is not None and is_sequence(obj) and all(is_iterable(el) for el in obj):
+    if (
+        obj is not None
+        and is_sequence(obj)
+        and all(is_iterable(el) for el in obj)
+    ):
         if length is not None and len(obj) != length:
             if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
                 # sequence of iterables of wrong length
@@ -183,7 +191,9 @@ def formatdoc(obj):
     """Substitute globals and locals into an object's docstring."""
     frame = inspect.currentframe().f_back
     try:
-        obj.__doc__ = obj.__doc__.format(**{**frame.f_globals, **frame.f_locals})
+        obj.__doc__ = obj.__doc__.format(
+            **{**frame.f_globals, **frame.f_locals}
+        )
         return obj
     finally:
         del frame
@@ -261,7 +271,9 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
-camel_to_spaces_pattern = re.compile(r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))")
+camel_to_spaces_pattern = re.compile(
+    r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))"
+)
 
 
 def camel_to_snake(name):
@@ -320,7 +332,10 @@ class CallDefault(inspect.Parameter):
         formatted = self._name
 
         # Fill in defaults
-        if self._default is not inspect._empty or kind == inspect._KEYWORD_ONLY:
+        if (
+            self._default is not inspect._empty
+            or kind == inspect._KEYWORD_ONLY
+        ):
             formatted = f'{formatted}={formatted}'
 
         if kind == inspect._VAR_POSITIONAL:
@@ -387,7 +402,9 @@ def ensure_list_of_layer_data_tuple(val):
             return [ensure_layer_data_tuple(v) for v in val]
         except TypeError:
             pass
-    raise TypeError(trans._('Not a valid list of layer data tuples!', deferred=True))
+    raise TypeError(
+        trans._('Not a valid list of layer data tuples!', deferred=True)
+    )
 
 
 def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
@@ -433,7 +450,9 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     return operator.eq
 
 
-def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True) -> str:
+def dir_hash(
+    path: Union[str, Path], include_paths=True, ignore_hidden=True
+) -> str:
     """Compute the hash of a directory, based on structure and contents.
 
     Parameters
@@ -550,7 +569,9 @@ def _combine_signatures(
         Signature object with the combined signature. Reminder, str(signature)
         provides a very nice repr for code generation.
     """
-    params = itertools.chain(*(inspect.signature(o).parameters.values() for o in objects))
+    params = itertools.chain(
+        *(inspect.signature(o).parameters.values() for o in objects)
+    )
     new_params = sorted(
         (p for p in params if p.name not in exclude),
         key=lambda p: p.kind,
