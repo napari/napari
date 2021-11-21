@@ -393,6 +393,22 @@ else:
         yield
 
 
+def fail__obj_graph(Klass):
+    import gc
+
+    gc.collect()
+    import objgraph
+
+    if not len(Klass._instances) == 0:
+
+        objgraph.show_backrefs(
+            Klass._instances,
+            max_depth=7,
+            filename=f'{Klass.__name__}-leak-backref-graph.png',
+        )
+        assert False, len(Klass._instances)
+
+
 @pytest.fixture(autouse=True)
 def ensure_shutdown_pools():
     from napari.components.experimental.chunk._loader import ChunkLoader
@@ -401,23 +417,15 @@ def ensure_shutdown_pools():
         LoaderPoolGroup,
     )
 
-    assert len(LoaderPool._instances) == 0
-    assert len(LoaderPoolGroup._instances) == 0
-    assert len(LoaderPoolGroup._instances) == 0
+    fail__obj_graph(LoaderPool)
+    fail__obj_graph(LoaderPoolGroup)
+    fail__obj_graph(ChunkLoader)
 
     yield
-    for instance in LoaderPool._instances:
-        assert instance._shutdown == 1
 
-    for instance in LoaderPoolGroup._instances:
-        assert instance._shutdown == 1
-
-    for instance in ChunkLoader._instances:
-        assert instance._shutdown == 1
-
-    assert len(LoaderPool._instances) == 0
-    assert len(LoaderPoolGroup._instances) == 0
-    assert len(ChunkLoader._instances) == 0
+    fail__obj_graph(LoaderPool)
+    fail__obj_graph(LoaderPoolGroup)
+    fail__obj_graph(ChunkLoader)
 
 
 # this is not the proper way to configure IPython, but it's an easy one.
