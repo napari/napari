@@ -6,7 +6,6 @@ import inspect
 import itertools
 import os
 import re
-import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath
 from os import path as os_path
@@ -43,33 +42,6 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
         return packaging.version.LegacyVersion(v)
-
-
-def running_as_bundled_app() -> bool:
-    """Infer whether we are running as a briefcase bundle"""
-    # https://github.com/beeware/briefcase/issues/412
-    # https://github.com/beeware/briefcase/pull/425
-    # note that a module may not have a __package__ attribute
-    # From 0.4.12 we add a sentinel file next to the bundled sys.executable
-    if (Path(sys.executable).parent / ".napari_is_bundled").exists():
-        return True
-    try:
-        app_module = sys.modules['__main__'].__package__
-    except AttributeError:
-        return False
-    try:
-        metadata = importlib_metadata.metadata(app_module)
-    except importlib_metadata.PackageNotFoundError:
-        return False
-
-    return 'Briefcase-Version' in metadata
-
-
-def bundle_bin_dir() -> Optional[str]:
-    """Return path to briefcase app_packages/bin if it exists."""
-    bin = os_path.join(os_path.dirname(sys.exec_prefix), 'app_packages', 'bin')
-    if os_path.isdir(bin):
-        return bin
 
 
 def in_jupyter() -> bool:
