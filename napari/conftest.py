@@ -358,7 +358,11 @@ def fresh_settings(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def dt_shutdown_no_new_thread(request):
-    assert dask.threaded.default_pool is None
+    if sys.version_info > (
+        3,
+        8,
+    ):
+        assert dask.threaded.default_pool is None
     delta = getattr(request, 'param', 0)
     import tracemalloc
 
