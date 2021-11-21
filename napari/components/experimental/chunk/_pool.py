@@ -60,6 +60,7 @@ class LoaderPool:
     def __init__(self, config: dict, on_done_loader: DoneCallback = None):
         from ._delay_queue import DelayQueue
 
+        self._shutdown = 0
         self._instances.add(self)
         self.config = config
         self._on_done_loader = on_done_loader
@@ -170,6 +171,7 @@ class LoaderPool:
         # Avoid crashes or hangs on exit.
         self._delay_queue.shutdown()
         self._executor.shutdown(wait=True)
+        self._shutdown += 1
 
     @staticmethod
     def _get_request(future: Future) -> Optional[ChunkRequest]:

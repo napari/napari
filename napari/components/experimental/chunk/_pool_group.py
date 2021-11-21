@@ -5,6 +5,7 @@ from __future__ import annotations
 import bisect
 from functools import lru_cache
 from typing import TYPE_CHECKING, Callable, Dict, List
+from weakref import WeakSet
 
 from ....utils.translations import trans
 
@@ -27,7 +28,11 @@ class LoaderPoolGroup:
         The mapping from priority to loader pool.
     """
 
+    _instances: WeakSet = WeakSet()
+
     def __init__(self, octree_config: dict, on_done: DoneCallback = None):
+        self._instances.add(self)
+        self._shutdown = 0
         self._pools = self._create_pools(octree_config, on_done)
 
     def _create_pools(
@@ -112,6 +117,7 @@ class LoaderPoolGroup:
 
     def shutdown(self) -> None:
         """Shutdown the pools."""
+        self._shutdown += 1
         for pool in self._pools.values():
             pool.shutdown()
 

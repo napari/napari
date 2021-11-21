@@ -77,3 +77,5 @@ def test_loader_pool_group():
     assert group._get_loader_priority(3) == 3
     assert group._get_loader_priority(4) == 3
     assert group._get_loader_priority(5) == 3
+
+    group.shutdown()

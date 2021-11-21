@@ -8,6 +8,7 @@ import logging
 from concurrent.futures import Future
 from contextlib import contextmanager
 from typing import Callable, Dict, List, Optional, Tuple
+from weakref import WeakSet
 
 from ....utils.config import octree_config
 from ....utils.events import EmitterGroup
@@ -35,7 +36,11 @@ class ChunkLoader:
         We only signal one event: chunk_loaded.
     """
 
+    _instances: WeakSet = WeakSet()
+
     def __init__(self):
+        self._instances.add(self)
+        self._shutdown = 0
         _setup_logging(octree_config)
 
         loader_config = octree_config['loader_defaults']
@@ -303,6 +308,7 @@ class ChunkLoader:
 
     def shutdown(self) -> None:
         """When napari is shutting down."""
+        self._shutdown += 1
         self._loaders.shutdown()
 
 

@@ -393,6 +393,33 @@ else:
         yield
 
 
+@pytest.fixture(autouse=True)
+def ensure_shutdown_pools():
+    from napari.components.experimental.chunk._loader import ChunkLoader
+    from napari.components.experimental.chunk._pool import LoaderPool
+    from napari.components.experimental.chunk._pool_group import (
+        LoaderPoolGroup,
+    )
+
+    assert len(LoaderPool._instances) == 0
+    assert len(LoaderPoolGroup._instances) == 0
+    assert len(LoaderPoolGroup._instances) == 0
+
+    yield
+    for instance in LoaderPool._instances:
+        assert instance._shutdown == 1
+
+    for instance in LoaderPoolGroup._instances:
+        assert instance._shutdown == 1
+
+    for instance in ChunkLoader._instances:
+        assert instance._shutdown == 1
+
+    assert len(LoaderPool._instances) == 0
+    assert len(LoaderPoolGroup._instances) == 0
+    assert len(ChunkLoader._instances) == 0
+
+
 # this is not the proper way to configure IPython, but it's an easy one.
 # This will prevent IPython to try to write history on its sql file and do
 # everything in memory.
