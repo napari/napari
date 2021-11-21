@@ -230,17 +230,6 @@ def patch_environment_variables():
     os.environ["ARCH"] = ARCH
 
 
-def add_sentinel_file():
-    if MACOS:
-        (Path(APP_DIR) / "Contents" / "MacOS" / ".napari_is_bundled").touch()
-    elif LINUX:
-        (Path(APP_DIR) / "usr" / "bin" / ".napari_is_bundled").touch()
-    elif WINDOWS:
-        (Path(APP_DIR) / "python" / ".napari_is_bundled").touch()
-    else:
-        print("!!! Sentinel files not yet implemented in", sys.platform)
-
-
 def make_zip():
     import glob
     import zipfile
