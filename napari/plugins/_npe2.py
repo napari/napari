@@ -176,13 +176,3 @@ def npe2_widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     for wdg_contrib in npe2.PluginManager.instance().iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.name)
     return (('dock', x) for x in wdgs.items())
-
-
-@npe2_or_return_none
-def install_npe2_themes(_themes, Theme):
-    for theme in npe2.PluginManager.instance().iter_themes():
-        # `theme.type` is dark/light and supplies defaults for keys that
-        # are not provided by the plugin
-        d = _themes[theme.type].dict()
-        d.update(theme.colors.dict(exclude_unset=True))
-        _themes[theme.id] = Theme(**d)
