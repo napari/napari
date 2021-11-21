@@ -12,6 +12,7 @@ from concurrent.futures import (
     ThreadPoolExecutor,
 )
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
+from weakref import WeakSet
 
 # Executor for either a thread pool or a process pool.
 PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
@@ -54,9 +55,12 @@ class LoaderPool:
         Requests sit in here for a bit before submission.
     """
 
+    _instances: WeakSet = WeakSet()
+
     def __init__(self, config: dict, on_done_loader: DoneCallback = None):
         from ._delay_queue import DelayQueue
 
+        self._instances.add(self)
         self.config = config
         self._on_done_loader = on_done_loader
 

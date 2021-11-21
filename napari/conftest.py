@@ -360,6 +360,9 @@ def fresh_settings(monkeypatch):
 def dt_shutdown_no_new_thread(request):
     assert dask.threaded.default_pool is None
     delta = getattr(request, 'param', 0)
+    import tracemalloc
+
+    tracemalloc.start()
 
     old_count = threading.active_count()
     try:
@@ -372,9 +375,14 @@ def dt_shutdown_no_new_thread(request):
         ):
             dask.threaded.default_pool.shutdown()
             dask.threaded.default_pool = None
-        assert (
-            threading.active_count() == old_count + delta
-        ), threading.enumerate()
+
+        tup = [
+            (o, tracemalloc.get_object_traceback(o))
+            for o in threading.enumerate()
+        ]
+        ms = [f"   {x} from {y}" for (x, y) in tup]
+        tracemalloc.stop()
+        assert threading.active_count() == old_count + delta, '\n'.join(ms)
 
 
 # this is not the proper way to configure IPython, but it's an easy one.
