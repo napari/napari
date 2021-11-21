@@ -356,37 +356,41 @@ def fresh_settings(monkeypatch):
     yield
 
 
-@pytest.fixture(autouse=True)
-def dt_shutdown_no_new_thread(request):
-    if sys.version_info > (
-        3,
-        8,
-    ):
+if sys.version_info > (
+    3,
+    8,
+):
+
+    @pytest.fixture(autouse=True)
+    def dt_shutdown_no_new_thread(request):
         assert dask.threaded.default_pool is None
-    delta = getattr(request, 'param', 0)
-    import tracemalloc
+        delta = getattr(request, 'param', 0)
+        import tracemalloc
 
-    tracemalloc.start()
+        tracemalloc.start()
 
-    old_count = threading.active_count()
-    try:
+        old_count = threading.active_count()
+        try:
+            yield
+        finally:
+            # There seem to be on issue on 3.7 where ThreadPool has not shutdown method.
+            if dask.threaded.default_pool is not None:
+                dask.threaded.default_pool.shutdown()
+                dask.threaded.default_pool = None
+
+            tup = [
+                (o, tracemalloc.get_object_traceback(o))
+                for o in threading.enumerate()
+            ]
+            ms = [f"   {x} from {y}" for (x, y) in tup]
+            tracemalloc.stop()
+            assert threading.active_count() == old_count + delta, '\n'.join(ms)
+
+
+else:
+
+    def dt_shutdown_no_new_thread(request):
         yield
-    finally:
-        # There seem to be on issue on 3.7 where ThreadPool has not shutdown method.
-        if dask.threaded.default_pool is not None and sys.version_info > (
-            3,
-            8,
-        ):
-            dask.threaded.default_pool.shutdown()
-            dask.threaded.default_pool = None
-
-        tup = [
-            (o, tracemalloc.get_object_traceback(o))
-            for o in threading.enumerate()
-        ]
-        ms = [f"   {x} from {y}" for (x, y) in tup]
-        tracemalloc.stop()
-        assert threading.active_count() == old_count + delta, '\n'.join(ms)
 
 
 # this is not the proper way to configure IPython, but it's an easy one.
