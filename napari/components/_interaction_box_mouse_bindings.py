@@ -163,14 +163,11 @@ class InteractionBoxMouseBindings:
             self._viewer.dims.ndim,
             self._viewer.layers.selection.active.ndim,
         )
-        layer_dims_all = list(range(self._viewer.layers.selection.active.ndim))
-        layer_dims_nodisplayed = [
-            d for d in layer_dims_all if d not in layer_dims_displayed
-        ]
-        dimension_order = np.argsort(layer_dims_displayed)
-        self._viewer.layers.selection.active.affine = event.value.set_slice(
-            dimension_order
-        ).expand_dims(layer_dims_nodisplayed)
+        self._viewer.layers.selection.active.affine = (
+            self._viewer.layers.selection.active.affine.replace_slice(
+                layer_dims_displayed, event.value
+            )
+        )
 
     def initialize_key_events(self, viewer):
 
