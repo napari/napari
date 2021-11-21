@@ -325,3 +325,8 @@ def test_replace_slice_independence():
     np.testing.assert_almost_equal(
         c.affine_matrix, affine.set_slice([0, 5]).affine_matrix
     )
+
+
+def test_replace_slice_num_dimensions():
+    with pytest.raises(ValueError):
+        Affine().replace_slice([0], Affine())

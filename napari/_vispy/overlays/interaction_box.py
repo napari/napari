@@ -36,6 +36,10 @@ class VispyInteractionBox:
         self._vertex_size = 10
         self._rotation_handle_length = 20
         self._highlight_color = (0, 0.6, 1)
+        self.square_marker_node.symbol = 'square'
+        self.square_marker_node.scaling = False
+        self.round_marker_node.symbol = 'disc'
+        self.round_marker_node.scaling = False
 
     @property
     def square_marker_node(self):
@@ -77,8 +81,6 @@ class VispyInteractionBox:
             face_color=face_color[: Box.LEN_WITHOUT_HANDLE],
             edge_color=edge_color,
             edge_width=1.5,
-            symbol='square',
-            scaling=False,
         )
         if self._interaction_box.selected_vertex == Box.HANDLE:
             face_color = self._highlight_color
@@ -95,8 +97,6 @@ class VispyInteractionBox:
             face_color=face_color,
             edge_color=edge_color,
             edge_width=1.5,
-            symbol='disc',
-            scaling=False,
         )
 
         if pos is None or len(pos) == 0:
