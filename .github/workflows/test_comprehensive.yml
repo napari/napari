@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos]
+        platform: [ubuntu-latest, windows-latest]
         python: [3.7, 3.8, 3.9]
         include:
           # test big sur on 3.9.0
