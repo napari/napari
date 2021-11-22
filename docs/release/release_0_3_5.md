@@ -15,7 +15,7 @@ This release contains a number of bug fixes on various platforms. For those
 interested in napari performance, we have added a new performance monitoring
 mode, that can be activated by the `NAPARI_PERFMON` environment variable, see
 (#1262) for details. We have also added a page in the explanations section of
-our docs on napari's [rendering](https://napari.org/docs/explanations/rendering.html)
+our docs on napari's [rendering](https://napari.org/guides/stable/rendering.html)
 including plans for the future.
 
 

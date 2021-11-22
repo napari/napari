@@ -34,18 +34,14 @@ txtB = (
 )
 
 
-@mock.patch(
-    'napari.plugins.pypi.urlopen', return_value=FakeResponse(data=txtA)
-)
+@mock.patch('urllib.request.urlopen', return_value=FakeResponse(data=txtA))
 def test_get_packages_by_prefix(mock_get):
     urls = pypi.get_packages_by_prefix('package')
     assert 'package1' in urls
     assert urls['package1'] == 'https://pypi.org/simple/package1/'
 
 
-@mock.patch(
-    'napari.plugins.pypi.urlopen', return_value=FakeResponse(data=txtB)
-)
+@mock.patch('urllib.request.urlopen', return_value=FakeResponse(data=txtB))
 def test_get_package_versions(mock_get):
     versions = pypi.get_package_versions('package')
     assert '0.1.0' in versions

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
 import tomlkit
 
@@ -29,13 +30,14 @@ LINUX = sys.platform.startswith("linux")
 HERE = os.path.abspath(os.path.dirname(__file__))
 PYPROJECT_TOML = os.path.join(HERE, 'pyproject.toml')
 SETUP_CFG = os.path.join(HERE, 'setup.cfg')
-ARCH = platform.machine() or "generic"
 
 
 if WINDOWS:
     BUILD_DIR = os.path.join(HERE, 'windows')
+    APP_DIR = os.path.join(BUILD_DIR, APP, 'src')
 elif LINUX:
     BUILD_DIR = os.path.join(HERE, 'linux')
+    APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.AppDir')
 elif MACOS:
     BUILD_DIR = os.path.join(HERE, 'macOS')
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
@@ -206,6 +208,17 @@ def patch_python_lib_location():
         print("symlinking", orig, "to", dest)
 
 
+def add_sentinel_file():
+    if MACOS:
+        (Path(APP_DIR) / "Contents" / "MacOS" / ".napari_is_bundled").touch()
+    elif LINUX:
+        (Path(APP_DIR) / "usr" / "bin" / ".napari_is_bundled").touch()
+    elif WINDOWS:
+        (Path(APP_DIR) / "python" / ".napari_is_bundled").touch()
+    else:
+        print("!!! Sentinel files not yet implemented in", sys.platform)
+
+
 def patch_environment_variables():
     os.environ["ARCH"] = architecture()
 
@@ -230,7 +243,7 @@ def make_zip():
     elif MACOS:
         ext, OS = '*.dmg', 'macOS'
     artifact = glob.glob(os.path.join(BUILD_DIR, ext))[0]
-    dest = f'napari-{VERSION}-{OS}-{ARCH}.zip'
+    dest = f'napari-{VERSION}-{OS}-{architecture()}.zip'
 
     with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(artifact, arcname=os.path.basename(artifact))
@@ -263,6 +276,7 @@ def bundle():
         time.sleep(0.5)
 
         add_site_packages_to_path()
+        add_sentinel_file()
 
         if WINDOWS:
             patch_wxs()

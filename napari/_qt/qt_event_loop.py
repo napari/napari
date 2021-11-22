@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from warnings import warn
 
+from qtpy import PYQT5
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
@@ -19,10 +20,7 @@ from ..utils.notifications import (
 )
 from ..utils.perf import perf_config
 from ..utils.translations import trans
-from .dialogs.qt_notification import (
-    NapariQtNotification,
-    NotificationDispatcher,
-)
+from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_filters import QtToolTipEventFilter
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
@@ -137,7 +135,8 @@ def get_app(
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        if PYQT5:
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import QApplicationWithTracing
@@ -191,9 +190,6 @@ def get_app(
 
     # Add the dispatcher attribute to the application to be able to dispatch
     # notifications coming from threads
-    dispatcher = getattr(app, "_dispatcher", None)
-    if dispatcher is None:
-        app._dispatcher = NotificationDispatcher()
 
     return app
 

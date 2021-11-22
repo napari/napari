@@ -1,6 +1,7 @@
-# Napari in Docker (WIP)
+# Napari in Docker
 
 ## Build
+
 Builds are avilable through [dockerhub](https://hub.docker.com/repository/docker/napari/napari)
 
 A dockerfile is added to napari root to allow build of a docker image using official napari release. 
@@ -13,6 +14,7 @@ docker build -t napari/napari:<version> .
 which would build a docker image tagged with napari version
 
 ## Usage
+
 Enable XServer on the host machine, these can be useful if you are looking for options:
 * Windows: [vcxsrc](https://sourceforge.net/projects/vcxsrv/)
 * MacOS: [xquartz](https://www.xquartz.org/) (may not work due to graphical driver issue with opengl)

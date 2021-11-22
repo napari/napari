@@ -51,7 +51,7 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 import inspect
 import warnings
 import weakref
-from collections import Counter
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
@@ -201,8 +201,35 @@ class Event:
 _event_repr_depth = 0
 
 
-Callback = Callable[[Event], None]
+Callback = Union[Callable[[Event], None], Callable[[], None]]
 CallbackRef = Tuple['weakref.ReferenceType[Any]', str]  # dereferenced method
+CallbackStr = Tuple[
+    Union['weakref.ReferenceType[Any]', object], str
+]  # dereferenced method
+
+
+class _WeakCounter:
+    """
+    Similar to collection counter but has weak keys.
+
+    It will only implement the methods we use here.
+    """
+
+    def __init__(self):
+        self._counter = weakref.WeakKeyDictionary()
+        self._nonecount = 0
+
+    def update(self, iterable):
+        for it in iterable:
+            if it is None:
+                self._nonecount += 1
+            else:
+                self._counter[it] = self.get(it, 0) + 1
+
+    def get(self, key, default):
+        if key is None:
+            return self._nonecount
+        return self._counter.get(key, default)
 
 
 class EventEmitter:
@@ -253,10 +280,11 @@ class EventEmitter:
         self._callbacks: List[Union[Callback, CallbackRef]] = []
         # used when connecting new callbacks at specific positions
         self._callback_refs: List[Optional[str]] = []
+        self._callback_pass_event: List[bool] = []
 
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
-        self._block_counter: Counter[Optional[Callback]] = Counter()
+        self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
 
         # used to detect emitter loops
         self._emitting = False
@@ -336,14 +364,11 @@ class EventEmitter:
 
     @source.setter
     def source(self, s):
-        if s is None:
-            self._source = None
-        else:
-            self._source = weakref.ref(s)
+        self._source = None if s is None else weakref.ref(s)
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, 'EmitterGroup'],
+        callback: Union[Callback, CallbackRef, CallbackStr, 'EmitterGroup'],
         ref: Union[bool, str] = False,
         position: Union[Literal['first'], Literal['last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
@@ -399,7 +424,9 @@ class EventEmitter:
         callbacks = self.callbacks
         callback_refs = self.callback_refs
 
-        callback = self._normalize_cb(callback)
+        old_callback = callback
+
+        callback, pass_event = self._normalize_cb(callback)
 
         if callback in callbacks:
             return
@@ -450,10 +477,8 @@ class EventEmitter:
                     criteria = [criteria]
                 for c in criteria:
                     count = sum(
-                        [
-                            (c == cn or c == cc)
-                            for cn, cc in zip(callback_refs, callbacks)
-                        ]
+                        c in [cn, cc]
+                        for cn, cc in zip(callback_refs, callbacks)
                     )
                     if count != 1:
                         raise ValueError(
@@ -489,9 +514,12 @@ class EventEmitter:
         # actually add the callback
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
-        return callback  # allows connect to be used as a decorator
+        self._callback_pass_event.insert(idx, pass_event)
+        return old_callback  # allows connect to be used as a decorator
 
-    def disconnect(self, callback: Union[Callback, CallbackRef, None] = None):
+    def disconnect(
+        self, callback: Union[Callback, CallbackRef, None, object] = None
+    ):
         """Disconnect a callback from this emitter.
 
         If no callback is specified, then *all* callbacks are removed.
@@ -500,42 +528,101 @@ class EventEmitter:
         if callback is None:
             self._callbacks = []
             self._callback_refs = []
-        else:
-            callback = self._normalize_cb(callback)
+            self._callback_pass_event = []
+        elif isinstance(callback, (Callable, tuple)):
+            callback, _pass_event = self._normalize_cb(callback)
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
+                self._callback_pass_event.pop(idx)
+        else:
+            index_list = []
+            for idx, local_callback in enumerate(self._callbacks):
+                if not (
+                    isinstance(local_callback, Sequence)
+                    and isinstance(local_callback[0], weakref.ref)
+                ):
+                    continue
+                if (
+                    local_callback[0]() is callback
+                    or local_callback[0]() is None
+                ):
+                    index_list.append(idx)
+            for idx in index_list[::-1]:
+                self._callbacks.pop(idx)
+                self._callback_refs.pop(idx)
+                self._callback_pass_event.pop(idx)
 
-    def _normalize_cb(self, callback) -> Union[CallbackRef, Callback]:
+    @staticmethod
+    def _get_proper_name(callback):
+        assert inspect.ismethod(callback)
+        obj = callback.__self__
+        if (
+            not hasattr(obj, callback.__name__)
+            or getattr(obj, callback.__name__) != callback
+        ):
+            # some decorators will alter method.__name__, so that obj.method
+            # will not be equal to getattr(obj, obj.method.__name__). We check
+            # for that case here and traverse to find the right method here.
+            for name in dir(obj):
+                meth = getattr(obj, name)
+                if inspect.ismethod(meth) and meth == callback:
+                    return obj, name
+            raise RuntimeError(
+                f"During bind method {callback} of object {obj} an error happen"
+            )
+        return obj, callback.__name__
+
+    @staticmethod
+    def _check_signature(fun: Callable) -> bool:
+        """
+        Check if function will accept event parameter
+        """
+        signature = inspect.signature(fun)
+        parameters_list = list(signature.parameters.values())
+
+        if sum(map(_is_pos_arg, parameters_list)) > 1:
+            raise RuntimeError(
+                "Binning function cannot have more than one positional argument"
+            )
+
+        return any(
+            map(
+                lambda x: x.kind
+                in [
+                    inspect.Parameter.POSITIONAL_ONLY,
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    inspect.Parameter.VAR_POSITIONAL,
+                ],
+                signature.parameters.values(),
+            )
+        )
+
+    def _normalize_cb(
+        self, callback
+    ) -> Tuple[Union[CallbackRef, Callback], bool]:
         # dereference methods into a (self, method_name) pair so that we can
         # make the connection without making a strong reference to the
         # instance.
+        start_callback = callback
         if inspect.ismethod(callback):
-            old_callback = callback
-            callback = (callback.__self__, callback.__name__)
-            if (
-                not hasattr(callback[0], callback[1])
-                or getattr(callback[0], callback[1]) != old_callback
-            ):
-                # some decorators will alter method.__name__, so that obj.method
-                # will not be equal to getattr(obj, obj.method.__name__). We check
-                # for that case here and traverse to find the right method here.
-                for name in dir(callback[0]):
-                    meth = getattr(callback[0], name)
-                    if inspect.ismethod(meth) and meth == old_callback:
-                        callback = callback[0], name
-                        break
-                else:
-                    raise RuntimeError(
-                        f"During bind method {callback[1]} of object {callback[0]} an error happen"
-                    )
-
+            callback = self._get_proper_name(callback)
         # always use a weak ref
         if isinstance(callback, tuple) and not isinstance(
             callback[0], weakref.ref
         ):
-            callback = (weakref.ref(callback[0]),) + callback[1:]
+            callback = (weakref.ref(callback[0]), *callback[1:])
+
+        if isinstance(start_callback, Callable):
+            callback = callback, self._check_signature(start_callback)
+        else:
+            obj = callback[0]()
+            if obj is None:
+                callback = callback, False
+            else:
+                callback_fun = getattr(obj, callback[1])
+                callback = callback, self._check_signature(callback_fun)
 
         return callback
 
@@ -575,7 +662,9 @@ class EventEmitter:
                 return event
 
             rem: List[CallbackRef] = []
-            for cb in self._callbacks[:]:
+            for cb, pass_event in zip(
+                self._callbacks[:], self._callback_pass_event[:]
+            ):
                 if isinstance(cb, tuple):
                     obj = cb[0]()
                     if obj is None:
@@ -596,7 +685,7 @@ class EventEmitter:
                     self._block_counter.update([cb])
                     continue
 
-                self._invoke_callback(cb, event)
+                self._invoke_callback(cb, event if pass_event else None)
                 if event.blocked:
                     break
 
@@ -615,9 +704,14 @@ class EventEmitter:
 
         return event
 
-    def _invoke_callback(self, cb: Callback, event: Event):
+    def _invoke_callback(
+        self, cb: Union[Callback, Callable[[], None]], event: Optional[Event]
+    ):
         try:
-            cb(event)
+            if event is not None:
+                cb(event)
+            else:
+                cb()
         except Exception as e:
             # dead Qt object with living python pointer. not importing Qt
             # here... but this error is consistent across backends
@@ -779,12 +873,12 @@ class EmitterGroup(EventEmitter):
     source : object
         The object that the generated events apply to.
     auto_connect : bool
-        If *auto_connect* is True (default), then one connection will
+        If *auto_connect* is True, then one connection will
         be made for each emitter that looks like
         :func:`emitter.connect((source, 'on_' + event_name))
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
-        group of emitters to default callbacks.
+        group of emitters to default callbacks.  By default, false.
     emitters : keyword arguments
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
@@ -792,7 +886,7 @@ class EmitterGroup(EventEmitter):
     def __init__(
         self,
         source: Any = None,
-        auto_connect: bool = True,
+        auto_connect: bool = False,
         **emitters: Union[Type[Event], EventEmitter, None],
     ):
         EventEmitter.__init__(self, source)
@@ -875,7 +969,7 @@ class EmitterGroup(EventEmitter):
                     source=self.source, type=name, event_class=emitter  # type: ignore
                 )
             elif not isinstance(emitter, EventEmitter):
-                raise Exception(
+                raise RuntimeError(
                     trans._(
                         'Emitter must be specified as either an EventEmitter instance or Event subclass. (got {name}={emitter})',
                         deferred=True,
@@ -1033,3 +1127,17 @@ class EventBlockerAll:
 
     def __exit__(self, *args):
         self.target.unblock_all()
+
+
+def _is_pos_arg(param: inspect.Parameter):
+    """
+    Check if param is positional or named and has no default parameter.
+    """
+    return (
+        param.kind
+        in [
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ]
+        and param.default == inspect.Parameter.empty
+    )

@@ -8,6 +8,7 @@ import numpy as np
 from vispy.color import get_color_names
 
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.colormaps.standardize_color import (
     hex_to_name,
     rgb_to_hex,
@@ -20,7 +21,6 @@ from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
-    ColorType,
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,
@@ -486,22 +486,6 @@ class Shapes(Layer):
             properties, property_choices, num_data=len(data)
         )
 
-        # make the text
-        if text is None or isinstance(text, (list, np.ndarray, str)):
-            self._text = TextManager(text, len(data), self.properties)
-        elif isinstance(text, dict):
-            copied_text = deepcopy(text)
-            copied_text['properties'] = self.properties
-            copied_text['n_text'] = len(data)
-            self._text = TextManager(**copied_text)
-        else:
-            raise TypeError(
-                trans._(
-                    'text should be a string, array, or dict',
-                    deferred=True,
-                )
-            )
-
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
         # value for itself
@@ -585,6 +569,12 @@ class Shapes(Layer):
             )
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(data)
+        )
+
+        self._text = TextManager._from_layer(
+            text=text,
+            n_text=self.nshapes,
+            properties=self.properties,
         )
 
         # Trigger generation of view slice and thumbnail
@@ -1529,13 +1519,17 @@ class Shapes(Layer):
         return self.text.view_text(self._indices_view)
 
     @property
-    def _view_text_coords(self) -> np.ndarray:
+    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
         -------
         text_coords : (N x D) np.ndarray
             Array of coordinates for the N text elements in view
+        anchor_x : str
+            The vispy text anchor for the x axis
+        anchor_y : str
+            The vispy text anchor for the y axis
         """
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
@@ -2234,8 +2228,10 @@ class Shapes(Layer):
 
     @text.setter
     def text(self, text):
-        self._text._set_text(
-            text, n_text=len(self.data), properties=self.properties
+        self._text._update_from_layer(
+            text=text,
+            n_text=self.nshapes,
+            properties=self.properties,
         )
 
     def refresh_text(self):

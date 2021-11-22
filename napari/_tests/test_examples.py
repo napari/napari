@@ -21,7 +21,13 @@ skip = [
     'embed_ipython.py',  # fails without monkeypatch
     'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
     'new_theme.py',  # testing theme is extremely slow on CI
+    'dynamic-projections-dask.py',  # extremely slow / does not finish
 ]
+
+
+if os.environ.get('MIN_REQ', '') == '1':
+    skip.extend(['spheres.py', 'clipping_planes_interactive.py'])
+
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
@@ -61,6 +67,7 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
 
     from napari._qt.qt_main_window import Window
+    from napari import Viewer
 
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
@@ -78,3 +85,5 @@ def test_examples(qapp, fname, monkeypatch, capsys):
         # we use sys.exit(0) to gracefully exit from examples
         if e.code != 0:
             raise
+    finally:
+        Viewer.close_all()

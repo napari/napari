@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple, Union
 import magicgui as mgui
 import numpy as np
 
+from ..._vendor.cpython.functools import cached_property
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -26,11 +27,13 @@ from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
+from ..utils.interactivity_utils import drag_data_to_projected_distance
 from ..utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
     dims_displayed_world_to_layer,
+    get_extent_world,
 )
 from ..utils.plane import ClippingPlane, ClippingPlaneList
 from ._base_constants import Blending
@@ -183,7 +186,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
-
+    source : Source
+        source of the layer (such as a plugin or widget)
 
     Notes
     -----
@@ -280,6 +284,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
+        self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -289,7 +294,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self.events = EmitterGroup(
             source=self,
-            auto_connect=False,
             refresh=Event,
             set_data=Event,
             blending=Event,
@@ -615,7 +619,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return tuple(order)
 
     def _update_dims(self, event=None):
-        """Updates dims model, which is useful after data has been changed."""
+        """Update the dims model and clear the extent cache.
+
+        This function needs to be called whenever data or transform information
+        changes, and should be called before events get emitted.
+        """
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
@@ -637,6 +645,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._position = (0,) * (ndim - old_ndim) + self._position
 
         self._ndim = ndim
+        if 'extent' in self.__dict__:
+            del self.extent
 
         self.refresh()
 
@@ -671,36 +681,22 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
-        return self._get_extent_world(self._extent_data)
-
-    def _get_extent_world(self, data_extent):
-        """Range of layer in world coordinates base on provided data_extent
-
-        Returns
-        -------
-        extent_world : array, shape (2, D)
-        """
-        D = data_extent.shape[1]
-        full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
-            -1, D
+        return get_extent_world(
+            self._extent_data, self._data_to_world, self._array_like
         )
-        full_world_extent = self._data_to_world(full_data_extent)
-        world_extent = np.array(
-            [
-                np.min(full_world_extent, axis=0),
-                np.max(full_world_extent, axis=0),
-            ]
-        )
-        return world_extent
 
-    @property
+    @cached_property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
-        data = self._extent_data
+        extent_data = self._extent_data
+        data_to_world = self._data_to_world
+        extent_world = get_extent_world(
+            extent_data, data_to_world, self._array_like
+        )
         return Extent(
-            data=data,
-            world=self._get_extent_world(data),
-            step=abs(self._data_to_world.scale),
+            data=extent_data,
+            world=extent_world,
+            step=abs(data_to_world.scale),
         )
 
     @property
@@ -1087,6 +1083,50 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         return None
 
+    def projected_distance_from_mouse_drag(
+        self,
+        start_position: np.ndarray,
+        end_position: np.ndarray,
+        view_direction: np.ndarray,
+        vector: np.ndarray,
+        dims_displayed: Union[List, np.ndarray],
+    ):
+        """Calculate the length of the projection of a line between two mouse
+        clicks onto a vector (or array of vectors) in data coordinates.
+
+        Parameters
+        ----------
+        start_position : np.ndarray
+            Starting point of the drag vector in data coordinates
+        end_position : np.ndarray
+            End point of the drag vector in data coordinates
+        view_direction : np.ndarray
+            Vector defining the plane normal of the plane onto which the drag
+            vector is projected.
+        vector : np.ndarray
+            (3,) unit vector or (n, 3) array thereof on which to project the drag
+            vector from start_event to end_event. This argument is defined in data
+            coordinates.
+        dims_displayed : Union[List, np.ndarray]
+            (3,) list of currently displayed dimensions
+
+        Returns
+        -------
+        projected_distance : (1, ) or (n, ) np.ndarray of float
+        """
+        start_position = self._world_to_displayed_data(
+            start_position, dims_displayed
+        )
+        end_position = self._world_to_displayed_data(
+            end_position, dims_displayed
+        )
+        view_direction = self._world_to_displayed_data_ray(
+            view_direction, dims_displayed
+        )
+        return drag_data_to_projected_distance(
+            start_position, end_position, view_direction, vector
+        )
+
     @contextmanager
     def block_update_properties(self):
         self._update_properties = False
@@ -1133,6 +1173,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
+    def _world_to_displayed_data(
+        self, position: np.ndarray, dims_displayed: np.ndarray
+    ) -> tuple:
+        """Convert world to data coordinates for displayed dimensions only.
+
+        Parameters
+        ----------
+        position : tuple, list, 1D array
+            Position in world coordinates. If longer then the
+            number of dimensions of the layer, the later
+            dimensions will be used.
+        dims_displayed : list, 1D array
+            Indices of displayed dimensions of the data.
+
+        Returns
+        -------
+        tuple
+            Position in data coordinates for the displayed dimensions only
+        """
+        position_nd = self.world_to_data(position)
+        position_ndisplay = np.asarray(position_nd)[dims_displayed]
+        return tuple(position_ndisplay)
+
     @property
     def _data_to_world(self) -> Affine:
         """The transform from data to world coordinates.
@@ -1164,9 +1227,60 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(normalized_vector)
 
-    def _display_bounding_box(self, dims_displayed_mask: np.ndarray):
+    def _world_to_displayed_data_ray(
+        self, vector_world, dims_displayed
+    ) -> np.ndarray:
+        """Convert an orientation from world to displayed data coordinates.
+
+        For example, this would be used to convert the view ray.
+
+        Parameters
+        ----------
+        vector_world : tuple, list, 1D array
+            A vector in world coordinates.
+
+        Returns
+        -------
+        tuple
+            Vector in data coordinates.
+        """
+        vector_data_nd = np.asarray(self._world_to_data_ray(vector_world))
+        vector_data_ndisplay = vector_data_nd[dims_displayed]
+        vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
+        return vector_data_ndisplay
+
+    def _display_bounding_box(self, dims_displayed: np.ndarray):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
-        return self._extent_data[:, dims_displayed_mask].T
+        return self._extent_data[:, dims_displayed].T
+
+    def click_plane_from_click_data(
+        self,
+        click_position: np.ndarray,
+        view_direction: np.ndarray,
+        dims_displayed: List,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Calculate a (point, normal) plane parallel to the canvas in data
+        coordinates, centered on the centre of rotation of the camera.
+
+        Parameters
+        ----------
+        click_position : np.ndarray
+            click position in world coordinates from mouse event.
+        view_direction : np.ndarray
+            view direction in world coordinates from mouse event.
+        dims_displayed : List
+            dimensions of the data array currently in view.
+
+        Returns
+        -------
+        click_plane : Tuple[np.ndarray, np.ndarray]
+            tuple of (plane_position, plane_normal) in data coordinates.
+        """
+        click_position = np.asarray(click_position)
+        view_direction = np.asarray(view_direction)
+        plane_position = self.world_to_data(click_position)[dims_displayed]
+        plane_normal = self._world_to_data_ray(view_direction)[dims_displayed]
+        return plane_position, plane_normal
 
     def get_ray_intersections(
         self,
@@ -1207,64 +1321,102 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             If the click does not intersect the axis-aligned data bounding box,
             None is returned.
         """
-        if len(dims_displayed) == 3:
-            # create a mask to select the in view dimensions
-            dims_displayed = dims_displayed
-            dims_displayed_mask = np.zeros_like(position, dtype=bool)
-            dims_displayed_mask[dims_displayed] = True
-
-            # create the bounding box in data coordinates
-            bbox = self._display_bounding_box(dims_displayed_mask)
-
-            # get the view direction in data coords (only displayed dims)
-            if world is True:
-                view_dir = np.asarray(self._world_to_data_ray(view_direction))[
-                    dims_displayed_mask
-                ]
-            else:
-                view_dir = np.asarray(view_direction)[dims_displayed_mask]
-
-            # Get the clicked point in data coords (only displayed dims)
-            if world is True:
-                click_pos_data = np.asarray(self.world_to_data(position))[
-                    dims_displayed_mask
-                ]
-            else:
-                click_pos_data = np.asarray(position)[dims_displayed_mask]
-
-            # Determine the front and back faces
-            front_face_normal, back_face_normal = find_front_back_face(
-                click_pos_data, bbox, view_dir
-            )
-
-            # Get the locations in the plane where the ray intersects
-            if front_face_normal is not None and back_face_normal is not None:
-                start_point_disp_dims = (
-                    intersect_line_with_axis_aligned_bounding_box_3d(
-                        click_pos_data, view_dir, bbox, front_face_normal
-                    )
-                )
-                end_point_disp_dims = (
-                    intersect_line_with_axis_aligned_bounding_box_3d(
-                        click_pos_data, view_dir, bbox, back_face_normal
-                    )
-                )
-
-                # add the coordinates for the axes not displayed
-                start_point = np.asarray(position)
-                start_point[dims_displayed_mask] = start_point_disp_dims
-                end_point = np.asarray(position)
-                end_point[dims_displayed_mask] = end_point_disp_dims
-
-            else:
-                # if the click doesn't intersect the data bounding box,
-                # return None
-                start_point = None
-                end_point = None
-
-            return start_point, end_point
-        else:
+        if len(dims_displayed) != 3:
             return None, None
+
+        # create the bounding box in data coordinates
+        bounding_box = self._display_bounding_box(dims_displayed)
+        start_point, end_point = self._get_ray_intersections(
+            position=position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+            bounding_box=bounding_box,
+        )
+        return start_point, end_point
+
+    def _get_ray_intersections(
+        self,
+        position: List[float],
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+        world: bool = True,
+        bounding_box: Optional[np.ndarray] = None,
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
+        """Get the start and end point for the ray extending
+        from a point through the data bounding box.
+
+        Parameters
+        ----------
+        position
+            the position of the point in nD coordinates. World vs. data
+            is set by the world keyword argument.
+        view_direction : np.ndarray
+            a unit vector giving the direction of the ray in nD coordinates.
+            World vs. data is set by the world keyword argument.
+        dims_displayed
+            a list of the dimensions currently being displayed in the viewer.
+        world : bool
+            True if the provided coordinates are in world coordinates.
+            Default value is True.
+        bounding_box : np.ndarray
+            A (2, 3) bounding box around the data currently in view
+
+        Returns
+        -------
+        start_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point closest to the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned.
+        end_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point farthest from the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            None is returned."""
+        # get the view direction and click position in data coords
+        # for the displayed dimensions only
+        if world is True:
+            view_dir = self._world_to_displayed_data_ray(
+                view_direction, dims_displayed
+            )
+            click_pos_data = self._world_to_displayed_data(
+                position, dims_displayed
+            )
+        else:
+            view_dir = np.asarray(view_direction)[dims_displayed]
+            click_pos_data = np.asarray(position)[dims_displayed]
+
+        # Determine the front and back faces
+        front_face_normal, back_face_normal = find_front_back_face(
+            click_pos_data, bounding_box, view_dir
+        )
+
+        if front_face_normal is None and back_face_normal is None:
+            # click does not intersect the data bounding box
+            return None, None
+
+        # Calculate ray-bounding box face intersections
+        start_point_displayed_dimensions = (
+            intersect_line_with_axis_aligned_bounding_box_3d(
+                click_pos_data, view_dir, bounding_box, front_face_normal
+            )
+        )
+        end_point_displayed_dimensions = (
+            intersect_line_with_axis_aligned_bounding_box_3d(
+                click_pos_data, view_dir, bounding_box, back_face_normal
+            )
+        )
+
+        # add the coordinates for the axes not displayed
+        start_point = np.asarray(position)
+        start_point[dims_displayed] = start_point_displayed_dimensions
+        end_point = np.asarray(position)
+        end_point[dims_displayed] = end_point_displayed_dimensions
+
+        return start_point, end_point
 
     @property
     def _displayed_axes(self):
@@ -1300,6 +1452,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.scale_factor = scale_factor
 
         displayed_axes = self._displayed_axes
+        # must adjust displayed_axes according to _dims_order
+        displayed_axes = np.asarray(
+            [self._dims_order[d] for d in displayed_axes]
+        )
         # we need to compute all four corners to compute a complete,
         # data-aligned bounding box, because top-left/bottom-right may not
         # remain top-left and bottom-right after transformations.
@@ -1342,7 +1498,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 self.refresh()
 
         else:
-            self.corner_pixels = data_bbox_clipped
+            corners = np.zeros((2, self.ndim), dtype=int)
+            corners[:, displayed_axes] = data_bbox_clipped
+            self.corner_pixels = corners
 
     def get_status(
         self,

@@ -1,6 +1,7 @@
 import inspect
 import warnings
 from functools import wraps
+from types import FunctionType, GeneratorType
 from typing import Callable, Dict, Optional, Sequence, Type, Union
 
 from superqt.utils import _qthreading
@@ -37,7 +38,7 @@ class GeneratorWorker(_qthreading.GeneratorWorker, _NotifyingMixin):
 
 
 def create_worker(
-    func: Callable,
+    func: Union[FunctionType, GeneratorType],
     *args,
     _start_thread: Optional[bool] = None,
     _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,

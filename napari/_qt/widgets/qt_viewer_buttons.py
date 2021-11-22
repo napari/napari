@@ -493,14 +493,8 @@ class QtStateButton(QtViewerPushButton):
             newstate = self._offstate
         setattr(self._target, self._attribute, newstate)
 
-    def _on_change(self, event=None):
-        """Called wen mirrored value changes
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
+    def _on_change(self):
+        """Called wen mirrored value changes"""
         with self._events.blocker():
             if self.isChecked() != (
                 getattr(self._target, self._attribute) == self._onstate

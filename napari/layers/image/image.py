@@ -264,6 +264,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             attenuation=Event,
         )
 
+        self._array_like = True
+
         # Set data
         self.rgb = rgb
         self._data = data
@@ -394,7 +396,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)
-        if self._keep_autoscale:
+        if self._keep_auto_contrast:
             self.reset_contrast_limits()
         self._set_editable()
 
@@ -412,33 +414,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         shape = self.level_shapes[0]
         return np.vstack([np.zeros(len(shape)), shape])
-
-    def _get_extent_world(self, data_extent):
-        """Range of layer in world coordinates base on provided data_extent
-
-        This differs from the parent Layer class by shifting the coordinate
-        range by 1/2 pixel thickness.
-
-        Returns
-        -------
-        extent_world : array, shape (2, D)
-        """
-        D = data_extent.shape[1]
-
-        # subtract 0.5 to get from pixel center to pixel edge
-        pixel_extents = tuple(d - 0.5 for d in data_extent.T)
-
-        full_data_extent = np.array(np.meshgrid(*pixel_extents)).T.reshape(
-            -1, D
-        )
-        full_world_extent = self._data_to_world(full_data_extent)
-        world_extent = np.array(
-            [
-                np.min(full_world_extent, axis=0),
-                np.max(full_world_extent, axis=0),
-            ]
-        )
-        return world_extent
 
     @property
     def data_level(self):
@@ -656,7 +631,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 for d in self._displayed_axes:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
-                        self.corner_pixels[1, d] + 1,
+                        self.corner_pixels[1, d],
                         1,
                     )
                 self._transforms['tile2data'].translate = (
@@ -698,7 +673,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self, image_indices, image, thumbnail_source
         )
         self._load_slice(data)
-        if self._keep_autoscale or self._should_calc_clims:
+        if self._keep_auto_contrast or self._should_calc_clims:
             self.reset_contrast_limits()
             self._should_calc_clims = False
 

@@ -246,6 +246,16 @@ def test_3D_points():
     assert len(layer.data) == 10
 
 
+def test_single_point_extent():
+    """Test extent of a single 3D point at the origin."""
+    shape = (1, 3)
+    data = np.zeros(shape)
+    layer = Points(data)
+    assert np.all(layer.extent.data == 0)
+    assert np.all(layer.extent.world == 0)
+    assert np.all(layer.extent.step == 1)
+
+
 def test_4D_points():
     """Test instantiating Points layer with random 4D data."""
     shape = (10, 4)
@@ -1473,26 +1483,35 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    'position,view_direction,dims_displayed,world,scale,expected',
     [
-        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
-        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
-        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+        ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 2),
+        ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 0),
+        ((0, 5, 0, 0), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), None),
+        ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
+        ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
+        ((0, 5, 30, 15), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), 2),
+        ((0, 5, 30, 15), [0, -1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), 0),
+        ((0, 5, 0, 0), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
     ],
 )
-def test_value_3d(position, view_direction, dims_displayed, world):
-    """Currently get_value should return None in 3D"""
-    np.random.seed(0)
-    data = np.random.random((10, 3))
-    layer = Points(data)
-    layer._slice_dims([0, 0, 0], ndisplay=3)
+def test_value_3d(
+    position, view_direction, dims_displayed, world, scale, expected
+):
+    """Test get_value in 3D with and without scale"""
+    data = np.array([[0, 10, 15, 15], [0, 10, 5, 5], [0, 5, 15, 15]])
+    layer = Points(data, size=5, scale=scale)
+    layer._slice_dims([0, 0, 0, 0], ndisplay=3)
     value = layer.get_value(
         position,
         view_direction=view_direction,
         dims_displayed=dims_displayed,
         world=world,
     )
-    assert value is None
+    if expected is None:
+        assert value is None
+    else:
+        assert value == expected
 
 
 def test_message():
@@ -2143,4 +2162,26 @@ def test_set_properties_with_missing_text_property_text_becomes_constant():
 
     np.testing.assert_array_equal(
         points.text.values, ['class', 'class', 'class']
+    )
+
+
+def test_text_param_and_setter_are_consistent():
+    """See https://github.com/napari/napari/issues/1833"""
+    data = np.random.rand(5, 3) * 100
+    properties = {
+        'accepted': np.random.choice([True, False], (5,)),
+    }
+    text = {'text': 'accepted', 'color': 'black'}
+
+    points_init = Points(data, properties=properties, text=text)
+
+    points_set = Points(data, properties=properties)
+    points_set.text = text
+
+    np.testing.assert_array_equal(
+        points_init.text.values,
+        points_set.text.values,
+    )
+    np.testing.assert_array_equal(
+        points_init.text.color, points_set.text.color
     )

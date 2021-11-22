@@ -26,17 +26,8 @@ def disconnect_events(emitter, listener):
     listener : Object
         Any object that has been connected to.
     """
-    weak_listener = weakref.ref(listener)
     for em in emitter.emitters.values():
-        for callback in em.callbacks:
-            # *callback* may be either a callable object or a tuple
-            # (object, attr_name) where object.attr_name will point to a
-            # callable object. Note that only a weak reference to ``object``
-            # will be kept. If *callback* is a callable object then it is
-            # not attached to the listener and does not need to be
-            # disconnected
-            if isinstance(callback, tuple) and callback[0] is weak_listener:
-                em.disconnect(callback)
+        em.disconnect(listener)
 
 
 def connect_setattr(emitter: Emitter, obj, attr: str):
@@ -62,3 +53,13 @@ def connect_no_arg(emitter: Emitter, obj, attr: str):
     emitter.connect(_cb)
     # as in connect_setattr
     # weakref.finalize(obj, emitter.disconnect, _cb)
+
+
+def connect_setattr_value(emitter: Emitter, obj, attr: str):
+    """To get value from Event"""
+    ref = weakref.ref(obj)
+
+    def _cb(value):
+        setattr(ref(), attr, value.value)
+
+    emitter.connect(_cb)

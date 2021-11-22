@@ -119,6 +119,15 @@ def test_add_points():
     assert viewer.dims.ndim == 2
 
 
+def test_single_point_dims():
+    """Test dims of a Points layer with a single 3D point."""
+    viewer = ViewerModel()
+    shape = (1, 3)
+    data = np.zeros(shape)
+    viewer.add_points(data)
+    assert all(r == (0.0, 1.0, 1.0) for r in viewer.dims.range)
+
+
 def test_add_empty_points_to_empty_viewer():
     viewer = ViewerModel()
     layer = viewer.add_points(name='empty points')
@@ -685,7 +694,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert layer.ndim == ndim
 
     # Connect a custom callback
-    def my_custom_callback(event):
+    def my_custom_callback():
         return
 
     layer.events.connect(my_custom_callback)

@@ -112,6 +112,10 @@ def test_multiscale_screenshot_zoomed(make_napari_viewer):
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
+    # for whatever reason this is the only test where the border is 6px on hi DPI.
+    # if the 6 by 6 corner is all black assume we have a 6px border.
+    if not np.allclose(screenshot[:6, :6], np.array([0, 0, 0, 255])):
+        screen_offset = 6  # Hi DPI
     np.testing.assert_allclose(screenshot[tuple(center_coord)], target_center)
     np.testing.assert_allclose(
         screenshot[screen_offset, screen_offset], target_center
