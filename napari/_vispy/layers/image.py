@@ -64,18 +64,18 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_experimental_slicing_plane_normal_change
         )
 
+        self._on_display_change()
         self.reset()
         self._on_data_change()
 
     def _on_display_change(self, data=None):
-
         parent = self.node.parent
         self.node.parent = None
 
         self.node = self._layer_node.get_node(self.layer._ndisplay)
 
         if data is None:
-            data = np.zeros((1,) * self.layer._ndisplay)
+            data = np.zeros((1,) * self.layer._ndisplay, dtype=np.float32)
 
         if self.layer._empty:
             self.node.visible = False
@@ -87,7 +87,6 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.node.parent = parent
         self.node.order = self.order
-        self.reset()
 
     def _on_data_change(self):
         if not self.layer.loaded:
