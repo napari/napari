@@ -2,9 +2,19 @@ import inspect
 import warnings
 from functools import wraps
 from types import FunctionType, GeneratorType
-from typing import Callable, Dict, Optional, Sequence, Type, Union
+from typing import (
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from superqt.utils import _qthreading
+from typing_extensions import ParamSpec
 
 from ..utils.progress import progress
 from ..utils.translations import trans
@@ -29,11 +39,19 @@ class _NotifyingMixin:
         notification_manager.receive_warning(*show_warn_args)
 
 
-class FunctionWorker(_qthreading.FunctionWorker, _NotifyingMixin):
+_Y = TypeVar("_Y")
+_S = TypeVar("_S")
+_R = TypeVar("_R")
+_P = ParamSpec("_P")
+
+
+class FunctionWorker(_qthreading.FunctionWorker[_R], _NotifyingMixin):
     ...
 
 
-class GeneratorWorker(_qthreading.GeneratorWorker, _NotifyingMixin):
+class GeneratorWorker(
+    _qthreading.GeneratorWorker[_Y, _S, _R], _NotifyingMixin
+):
     ...
 
 
@@ -287,3 +305,27 @@ def thread_worker(
 
 
 _new_worker_qthread = _qthreading.new_worker_qthread
+
+
+def _register():
+    from functools import partial
+
+    import magicgui
+
+    from .. import layers, types
+    from ..types import LayerDataTuple
+    from ..utils import _magicgui as _mgui
+
+    for _type in (LayerDataTuple, List[LayerDataTuple]):
+        magicgui.register_type(
+            FunctionWorker[_type], return_callback=_mgui.add_worker_data
+        )
+    for layer_name in layers.NAMES:
+        _type = getattr(types, f'{layer_name.title()}Data')
+        magicgui.register_type(
+            FunctionWorker[_type],
+            return_callback=partial(_mgui.add_worker_data, _from_tuple=False),
+        )
+
+
+_register()
