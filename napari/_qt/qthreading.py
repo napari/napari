@@ -55,6 +55,9 @@ class GeneratorWorker(
     ...
 
 
+# these are re-implemented from superqt just to provide progress
+
+
 def create_worker(
     func: Union[FunctionType, GeneratorType],
     *args,

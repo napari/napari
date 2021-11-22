@@ -1,6 +1,11 @@
-from superqt.utils import FunctionWorker, GeneratorWorker, WorkerBase
+from superqt.utils import WorkerBase
 
-from .._qt.qthreading import create_worker, thread_worker
+from .._qt.qthreading import (
+    FunctionWorker,
+    GeneratorWorker,
+    create_worker,
+    thread_worker,
+)
 
 # all of these might be used by an end-user when subclassing
 __all__ = (
