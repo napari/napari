@@ -110,3 +110,15 @@ class Rendering(StringEnum):
     @classmethod
     def labels_layer_subset(cls) -> Tuple['Rendering']:
         return (cls.TRANSLUCENT, cls.ISO_CATEGORICAL)
+
+
+class Depiction3D(StringEnum):
+    """Depiction: 3D depiction mode for images.
+
+    Selects a preset rendering mode in vispy
+            * volume: images are rendered as 3D volumes.
+            * plane: images are rendered as 2D planes embedded in 3D.
+    """
+
+    VOLUME = auto()
+    PLANE = auto()
