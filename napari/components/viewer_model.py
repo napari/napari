@@ -899,7 +899,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         added: List[Layer] = []  # for layers that get added
         with progress(
             paths,
-            desc='Opening Files',
+            desc=trans._('Opening Files'),
             total=0
             if len(paths) == 1
             else None,  # indeterminate bar for 1 file

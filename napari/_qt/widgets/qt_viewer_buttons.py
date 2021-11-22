@@ -224,19 +224,11 @@ class QtViewerButtons(QFrame):
         blank = QLabel(self)  # helps with placing help symbols.
 
         shape_help_msg = trans._(
-            'Number of rows and columns in the grid. A value of -1 for either or '
-            + 'both of width and height will trigger an auto calculation of the '
-            + 'necessary grid shape to appropriately fill all the layers at the '
-            + 'appropriate stride. 0 is not a valid entry.'
+            'Number of rows and columns in the grid. A value of -1 for either or both of width and height will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride. 0 is not a valid entry.'
         )
 
         stride_help_msg = trans._(
-            'Number of layers to place in each grid square before moving on to '
-            + 'the next square. The default ordering is to place the most visible '
-            + 'layer in the top left corner of the grid. A negative stride will '
-            + 'cause the order in which the layers are placed in the grid to be '
-            + 'reversed. '
-            + '0 is not a valid entry.'
+            'Number of layers to place in each grid square before moving on to the next square. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
         )
 
         # set up

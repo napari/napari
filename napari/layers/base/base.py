@@ -1677,8 +1677,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         if layer_type not in layers.NAMES:
             raise ValueError(
-                f"Unrecognized layer_type: '{layer_type}'. "
-                f"Must be one of: {layers.NAMES}."
+                trans._(
+                    "Unrecognized layer_type: '{layer_type}'. Must be one of: {layer_names}.",
+                    deferred=True,
+                    layer_type=layer_type,
+                    layer_names=layers.NAMES,
+                )
             )
 
         Cls = getattr(layers, layer_type.title())
@@ -1691,6 +1695,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
-                "_add_layer_from_data received an unexpected keyword "
-                f"argument ({bad_key}) for layer type {layer_type}"
+                trans._(
+                    "_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}",
+                    deferred=True,
+                    bad_key=bad_key,
+                    layer_type=layer_type,
+                )
             ) from exc

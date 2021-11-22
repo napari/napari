@@ -174,8 +174,10 @@ def fix_data_vectors(
         if vectors.ndim != 3 or vectors.shape[1] != 2:
             raise ValueError(
                 trans._(
-                    f"could not reshape Vector data from {vectors.shape} to (N, 2, {ndim or 'D'})",
+                    "could not reshape Vector data from {vectors_shape} to (N, 2, {dimensions})",
                     deferred=True,
+                    vectors_shape=vectors.shape,
+                    dimensions=ndim or 'D',
                 )
             )
 
