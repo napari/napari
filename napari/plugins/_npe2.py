@@ -3,7 +3,10 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
+    Callable,
     DefaultDict,
+    Dict,
+    Iterable,
     Iterator,
     List,
     Optional,
@@ -24,6 +27,7 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QMenu
 
     from ..layers import Layer
+    from ..types import SampleDict
 
 
 def npe2_or_return(val=None):
@@ -172,7 +176,51 @@ def file_extensions_string_for_layers(
 
 @npe2_or_return(iter([]))
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
+    # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
     for wdg_contrib in npe2.PluginManager.instance().iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.name)
     return (('dock', x) for x in wdgs.items())
+
+
+@npe2_or_return(iter([]))
+def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
+    pm = npe2.PluginManager.instance()
+    return (
+        (
+            plugin_name,
+            {
+                c.key: {'data': c.open, 'display_name': c.display_name}
+                for c in contribs
+            },
+        )
+        for plugin_name, contribs in pm.iter_sample_data()
+    )
+
+
+@npe2_or_return((None, []))
+def get_sample_data(
+    plugin: str, sample: str
+) -> Tuple[Optional[Callable[[], Iterable[LayerData]]], List[Tuple[str, str]]]:
+    """Get sample data opener from npe2.
+
+    Parameters
+    ----------
+    plugin : str
+        name of a plugin providing a sample
+    sample : str
+        name of the sample
+
+    Returns
+    -------
+    tuple
+        - first item is a data "opener": a callable that returns an iterable of
+          layer data, or None, if none found.
+        - second item is a list of available samples (plugin_name, sample_name)
+          if no data opener is found.
+    """
+    pm = npe2.PluginManager.instance()
+    for c in pm._contrib._samples.get(plugin, []):
+        if c.key == sample:
+            return c.open, []
+    return None, [(p, x.key) for p, s in pm.iter_sample_data() for x in s]

@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import TYPE_CHECKING, Dict, Iterator, Tuple
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
 from qtpy.QtWidgets import QAction
@@ -13,7 +13,6 @@ from ..dialogs.screenshot_dialog import ScreenshotDialog
 from ._util import NapariMenu, populate_menu
 
 if TYPE_CHECKING:
-    from ...types import SampleDict
     from ..qt_main_window import Window
 
 
@@ -158,34 +157,12 @@ class FileMenu(NapariMenu):
         self._pref_dialog = None
 
     def _rebuild_samples_menu(self):
-        from ...plugins import menu_item_template, plugin_manager
+        from ...plugins import _npe2, menu_item_template, plugin_manager
 
         self.open_sample_menu.clear()
 
-        # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
-        _iterable: Iterator[Tuple[str, Dict[str, SampleDict]]]
-        try:
-            import npe2
-        except ImportError:
-            _iterable = iter([])
-        else:
-            pm = npe2.PluginManager.instance()
-            _iterable = (
-                (
-                    plugin_name,
-                    {
-                        c.key: {
-                            'data': c.open,
-                            'display_name': c.display_name,
-                        }
-                        for c in contribs
-                    },
-                )
-                for plugin_name, contribs in pm.iter_sample_data()
-            )
-
         for plugin_name, samples in chain(
-            _iterable, plugin_manager._sample_data.items()
+            _npe2.sample_iterator(), plugin_manager._sample_data.items()
         ):
             multiprovider = len(samples) > 1
             if multiprovider:
