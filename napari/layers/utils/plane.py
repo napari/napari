@@ -26,7 +26,6 @@ class Plane(EventedModel):
 
     normal: Tuple[float, float, float] = (1, 0, 0)
     position: Tuple[float, float, float] = (0, 0, 0)
-    enabled: bool = True
 
     @validator('normal')
     def _normalise_vector(cls, v):
@@ -113,20 +112,20 @@ class SlicingPlane(DraggablePlane):
     """Defines a draggable plane in 3D with a defined thickness.
 
     A slicing plane is a defined by a position, a normal vector and a thickness
-    value. It can also be toggled on or off.
+    value. Associated click and drag behavior can be toggled on or off.
 
     Attributes
     ----------
     position : 3-tuple
-        A 3D position on the plane, defined in sliced data coordinates (currently displayed dims).
+        A 3D position on the plane, defined in sliced data coordinates
+        (currently displayed dims).
     normal : 3-tuple
-        A 3D unit vector normal to the plane, defined in sliced data coordinates (currently displayed dims).
+        A 3D unit vector normal to the plane, defined in sliced data coordinates
+        (currently displayed dims).
     thickness : float
         Thickness of the slice.
     draggable : bool
         Whether click and drag controls are enabled for the plane.
-    enabled : bool
-        Whether the plane is considered enabled.
     """
 
     thickness: float = 0.0
@@ -147,6 +146,8 @@ class ClippingPlane(Plane):
     enabled : bool
         Whether the plane is considered enabled.
     """
+
+    enabled: bool
 
 
 class ClippingPlaneList(SelectableEventedList):
