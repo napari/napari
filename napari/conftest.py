@@ -393,8 +393,14 @@ else:
         yield
 
 
+X = 0
+
+
 def fail__obj_graph(Klass):
     import gc
+
+    global X
+    X += 1
 
     gc.collect()
     import objgraph
@@ -404,7 +410,7 @@ def fail__obj_graph(Klass):
         objgraph.show_backrefs(
             Klass._instances,
             max_depth=13,
-            filename=f'{Klass.__name__}-leak-backref-graph.png',
+            filename=f'{Klass.__name__}-leak-backref-graph-{X}.png',
         )
         assert False, len(Klass._instances)
 

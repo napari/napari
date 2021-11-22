@@ -59,8 +59,14 @@ def napari_plugin_manager(monkeypatch):
     pm.discovery_blocker.stop()
 
 
+X = 0
+
+
 def save_obj_graph(leaks, name):
     import gc
+
+    global X
+    X += 1
 
     gc.collect()
     import objgraph
@@ -77,7 +83,7 @@ def save_obj_graph(leaks, name):
         leaks,
         filter=filter,
         max_depth=7,
-        filename=f'{name}-leak-backref-graph.png',
+        filename=f'{name}-leak-backref-graph-{X}.png',
     )
 
 
