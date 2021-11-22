@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Sequence
 
 from qtpy.QtWidgets import QAction
 
-from ...plugins._npe2 import npe2_widget_iterator
+from ...plugins import _npe2
 from ...utils.translations import trans
 from ..dialogs.qt_plugin_dialog import QtPluginDialog
 from ..dialogs.qt_plugin_report import QtPluginErrReporter
@@ -58,7 +58,7 @@ class PluginsMenu(NapariMenu):
 
         # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
         for hook_type, (plugin_name, widgets) in chain(
-            npe2_widget_iterator(), plugin_manager.iter_widgets()
+            _npe2.widget_iterator(), plugin_manager.iter_widgets()
         ):
             if call_all or event.value == plugin_name:
                 self._add_plugin_actions(hook_type, plugin_name, widgets)

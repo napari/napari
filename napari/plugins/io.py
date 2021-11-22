@@ -12,8 +12,7 @@ from ..layers import Layer
 from ..types import LayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
-from . import plugin_manager
-from ._npe2 import read_with_npe2, write_layers_with_npe2
+from . import _npe2, plugin_manager
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
@@ -59,7 +58,7 @@ def read_data_with_plugins(
         If ``plugin`` is specified but raises an Exception while reading.
     """
     hookimpl: Optional[HookImplementation]
-    res = read_with_npe2(path, plugin)
+    res = _npe2.read(path, plugin)
     if res is not None:
         _ld, hookimpl = res
         return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
@@ -306,7 +305,7 @@ def _write_multiple_layers_with_plugins(
     """
 
     # Try to use NPE2 first
-    written_paths = write_layers_with_npe2(path, layers, plugin_name, _writer)
+    written_paths = _npe2.write_layers(path, layers, plugin_name, _writer)
     if written_paths:
         return written_paths
     logger.debug("Falling back to original plugin engine.")
@@ -408,7 +407,7 @@ def _write_single_layer_with_plugins(
     """
 
     # Try to use NPE2 first
-    written_paths = write_layers_with_npe2(path, [layer], plugin_name, _writer)
+    written_paths = _npe2.write_layers(path, [layer], plugin_name, _writer)
     if written_paths:
         return written_paths[0]
     logger.debug("Falling back to original plugin engine.")

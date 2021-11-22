@@ -15,7 +15,7 @@ from ..components._interaction_box_mouse_bindings import (
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..layers.base.base import Layer
-from ..plugins._npe2 import file_extensions_string_for_layers
+from ..plugins import _npe2
 from ..utils import config, perf
 from ..utils.action_manager import action_manager
 from ..utils.colormaps.standardize_color import transform_color
@@ -99,7 +99,7 @@ def _extension_string_for_layers(
     is not importable, the list of writers will be empty.
     """
     # try to use npe2
-    ext_str, writers = file_extensions_string_for_layers(layers)
+    ext_str, writers = _npe2.file_extensions_string_for_layers(layers)
     if ext_str:
         return ext_str, writers
 

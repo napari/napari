@@ -48,7 +48,7 @@ class _FakeHookimpl:
 
 
 @npe2_or_return_none
-def read_with_npe2(
+def read(
     path: Union[str, Sequence[str]], plugin: Optional[str] = None
 ) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
@@ -59,7 +59,7 @@ def read_with_npe2(
 
 
 @npe2_or_return([])
-def write_layers_with_npe2(
+def write_layers(
     path: str,
     layers: List[Layer],
     plugin_name: Optional[str] = None,
@@ -112,7 +112,7 @@ def get_widget_contribution(
 
 
 @npe2_or_return_none
-def populate_qmenu_from_manifest(menu: QMenu, menu_key: str):
+def populate_qmenu(menu: QMenu, menu_key: str):
     """Populate `menu` from a `menu_key` offering in the manifest."""
     # TODO: declare somewhere what menu_keys are valid.
     pm = npe2.PluginManager.instance()
@@ -120,7 +120,7 @@ def populate_qmenu_from_manifest(menu: QMenu, menu_key: str):
         if hasattr(item, 'submenu'):
             subm_contrib = pm.get_submenu(item.submenu)
             subm = menu.addMenu(subm_contrib.label)
-            populate_qmenu_from_manifest(subm, subm_contrib.id)
+            populate_qmenu(subm, subm_contrib.id)
         else:
             cmd = pm.get_command(item.command)
             action = menu.addAction(cmd.title)
@@ -171,7 +171,7 @@ def file_extensions_string_for_layers(
 
 
 @npe2_or_return(iter([]))
-def npe2_widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
+def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
     for wdg_contrib in npe2.PluginManager.instance().iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.name)

@@ -639,10 +639,10 @@ class Window:
             A 2-tuple containing (the DockWidget instance, the plugin widget
             instance).
         """
-        from ..plugins._npe2 import get_widget_contribution
+        from ..plugins import _npe2
         from ..viewer import Viewer
 
-        Widget = get_widget_contribution(plugin_name, widget_name)
+        Widget = _npe2.get_widget_contribution(plugin_name, widget_name)
 
         if Widget is None:
             Widget, dock_kwargs = plugin_manager.get_widget(
