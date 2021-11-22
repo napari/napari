@@ -65,8 +65,17 @@ def save_obj_graph(leaks, name):
     gc.collect()
     import objgraph
 
+    def filter(obj):
+        if 'frame' in str(obj):
+            return False
+        if 'traceback' in str(obj):
+            return False
+
+        return True
+
     objgraph.show_backrefs(
         leaks,
+        filter=filter,
         max_depth=7,
         filename=f'{name}-leak-backref-graph.png',
     )
