@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from vispy import keys
 
 from napari.utils.transforms import Affine
@@ -27,6 +28,33 @@ def test_interaction_box_display(make_napari_viewer):
             [14.5, 19.5],
         ],
     )
+
+
+def test_disable_with_3d(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    data = np.random.random((2, 6, 30, 40))
+    layer = viewer.add_image(data)
+
+    layer.mode = 'transform'
+    viewer.dims.ndisplay = 3
+    assert layer.mode == 'pan_zoom'
+    with pytest.warns(UserWarning):
+        layer.mode = 'transform'
+    assert layer.mode == 'pan_zoom'
+
+
+def test_disable_on_layer_cange(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    data = np.random.random((2, 6, 30, 40))
+    layer = viewer.add_image(data)
+
+    layer.mode = 'transform'
+    viewer.add_image(data)
+    assert viewer.overlays.interaction_box.show is False
+    viewer.layers.selection.active = layer
+    assert viewer.overlays.interaction_box.show is True
 
 
 def test_interaction_box_dim_change(make_napari_viewer):
