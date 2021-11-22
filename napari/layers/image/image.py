@@ -24,6 +24,7 @@ from ._image_constants import (
     Interpolation3D,
     Rendering,
 )
+from ._image_mouse_bindings import move_plane_along_normal
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
@@ -195,6 +196,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
+    _drag_modes = {
+        Depiction3D.VOLUME: no_op,
+        Depiction3D.PLANE: move_plane_along_normal,
+    }
 
     def __init__(
         self,
@@ -574,7 +579,25 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def depiction(self, depiction: Union[str, Depiction3D]):
         """Set the current 3D depiction mode."""
         self._depiction = Depiction3D(depiction)
+        self._update_slicing_plane_callbacks()
         self.events.depiction()
+
+    def _update_slicing_plane_callbacks(self):
+        """Connect or disconnect slicing plane callbacks as appropriate."""
+        plane_drag_callback = self._drag_modes[Depiction3D.PLANE]
+        plane_drag_callback_connected = (
+            plane_drag_callback in self.mouse_drag_callbacks
+        )
+        if (
+            self.depiction == Depiction3D.VOLUME
+            and plane_drag_callback_connected
+        ):
+            self.mouse_drag_callbacks.remove(plane_drag_callback)
+        elif (
+            self.depiction == Depiction3D.PLANE
+            and not plane_drag_callback_connected
+        ):
+            self.mouse_drag_callbacks.append(plane_drag_callback)
 
     @property
     def experimental_slicing_plane(self):

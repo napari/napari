@@ -142,6 +142,21 @@ def rotate_points(
     return rotated_points, rotation_matrix
 
 
+def point_in_bounding_box(point: np.ndarray, bounding_box: np.ndarray) -> bool:
+    """Determine whether an nD point is inside an nD bounding box.
+    Parameters
+    ----------
+    point : np.ndarray
+        (n,) array containing nD point coordinates to check.
+    bounding_box : np.ndarray
+        (2, n) array containing the min and max of the nD bounding box.
+        As returned by `Layer._extent_data`.
+    """
+    if np.all(point > bounding_box[0]) and np.all(point < bounding_box[1]):
+        return True
+    return False
+
+
 def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
     """Ensure that a point is inside of the bounding box. If the point has a
     coordinate outside of the bounding box, the value is clipped to the max
