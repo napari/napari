@@ -84,6 +84,7 @@ jobs:
         shell: bash -l {0}
         working-directory: napari-source
         run: |
+          set -x
           pip install -e . --no-deps -vvv
           version=$(python bundle.py --version)
           arch=$(python bundle.py --arch)
