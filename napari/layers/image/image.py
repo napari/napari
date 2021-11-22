@@ -18,7 +18,12 @@ from ..base import Layer, no_op
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane
-from ._image_constants import Interpolation, Interpolation3D, Mode, Rendering
+from ._image_constants import (
+    Depiction3D,
+    Interpolation,
+    Interpolation3D,
+    Rendering,
+)
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
@@ -65,6 +70,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
+    depiction : str
+        3D Depiction mode used by vispy. Must be one of our supported modes.
     iso_threshold : float
         Threshold for isosurface.
     attenuation : float
@@ -173,7 +180,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Attenuation rate for attenuated maximum intensity projection.
     experimental_slicing_plane : SlicingPlane or dict
         Properties defining plane rendering in 3D. Valid dictionary keys are
-        {'position', 'normal', 'thickness', and 'enabled'}.
+        {'position', 'normal', 'thickness', and 'draggable'}.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
@@ -213,6 +220,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         visible=True,
         multiscale=None,
         cache=True,
+        depiction='volume',
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
     ):
@@ -266,6 +274,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             mode=Event,
             interpolation=Event,
             rendering=Event,
+            depiction=Event,
             iso_threshold=Event,
             attenuation=Event,
         )
@@ -303,7 +312,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
         self._experimental_slicing_plane = SlicingPlane(
-            thickness=1, enabled=False
+            thickness=1, enabled=False, draggable=True
         )
         self._mode = Mode.PAN_ZOOM
         # Whether to calculate clims on the next set_view_slice
@@ -333,6 +342,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
+        self.depiction = depiction
         if experimental_slicing_plane is not None:
             self.experimental_slicing_plane = experimental_slicing_plane
             self.experimental_slicing_plane.update(experimental_slicing_plane)
@@ -517,7 +527,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
-        volume is displayed.  Options include:
+        voxel values are interpreted.  Options include:
 
         * ``translucent``: voxel colors are blended along the view ray until
             the result is opaque.
@@ -532,7 +542,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         * ``additive``: voxel colors are added along the view ray until
             the result is saturated.
         * ``iso``: isosurface. Cast a ray until a certain threshold is
-            encountered. At that location, lighning calculations are
+            encountered. At that location, lighting calculations are
             performed to give the visual appearance of a surface.
         * ``average``: average intensity projection. Cast a ray and display the
             average of values that were encountered.
@@ -549,6 +559,22 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Set current rendering mode."""
         self._rendering = Rendering(rendering)
         self.events.rendering()
+
+    @property
+    def depiction(self):
+        """The current 3D depiction mode.
+
+        Selects a preset depiction mode in vispy
+            * volume: images are rendered as 3D volumes.
+            * plane: images are rendered as 2D planes embedded in 3D.
+        """
+        return str(self._depiction)
+
+    @depiction.setter
+    def depiction(self, depiction: Union[str, Depiction3D]):
+        """Set the current 3D depiction mode."""
+        self._depiction = Depiction3D(depiction)
+        self.events.depiction()
 
     @property
     def experimental_slicing_plane(self):

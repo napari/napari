@@ -115,7 +115,7 @@ class Rendering(StringEnum):
 class Depiction3D(StringEnum):
     """Depiction: 3D depiction mode for images.
 
-    Selects a preset rendering mode in vispy
+    Selects a preset depiction mode in vispy
             * volume: images are rendered as 3D volumes.
             * plane: images are rendered as 2D planes embedded in 3D.
     """

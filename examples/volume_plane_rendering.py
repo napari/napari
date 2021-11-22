@@ -26,17 +26,19 @@ plane_parameters = {
     'position': (32, 32, 32),
     'normal': (0, 1, 0),
     'thickness': 10,
-    'enabled': True
+    'draggable': True
 }
 
 plane_layer = viewer.add_image(
     blobs,
     rendering='average',
     name='plane',
+    depiction='plane',
     blending='additive',
     opacity=0.5,
     experimental_slicing_plane=plane_parameters
 )
+
 
 class PlaneWidget(QWidget):
     def __init__(self):
