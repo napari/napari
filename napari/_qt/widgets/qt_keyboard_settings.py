@@ -95,7 +95,7 @@ class ShortcutEditor(QWidget):
         self.layer_combo_box.activated[str].connect(self._set_table)
         self.layer_combo_box.setCurrentText(self.VIEWER_KEYBINDINGS)
         self._set_table()
-        self._label.setText("Group")
+        self._label.setText(trans._("Group"))
         self._restore_button.clicked.connect(self.restore_defaults)
 
         # layout
@@ -246,7 +246,7 @@ class ShortcutEditor(QWidget):
             self._table.verticalHeader().setVisible(False)
 
             self._table.setColumnHidden(self._action_col, True)
-            item = QTableWidgetItem('No key bindings')
+            item = QTableWidgetItem(trans._('No key bindings'))
             item.setFlags(Qt.NoItemFlags)
             self._table.setItem(0, 0, item)
 
@@ -311,9 +311,7 @@ class ShortcutEditor(QWidget):
 
                         # show warning message
                         message = trans._(
-                            "The keybinding <b>{new_shortcut}</b>  "
-                            + "is already assigned to <b>{action_description}</b>; change or clear "
-                            + "that shortcut before assigning <b>{new_shortcut}</b> to this one.",
+                            "The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.",
                             new_shortcut=new_shortcut,
                             action_description=action.description,
                         )

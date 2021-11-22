@@ -570,7 +570,12 @@ class EventEmitter:
                 if inspect.ismethod(meth) and meth == callback:
                     return obj, name
             raise RuntimeError(
-                f"During bind method {callback} of object {obj} an error happen"
+                trans._(
+                    "During bind method {callback} of object {obj} an error happen",
+                    deferred=True,
+                    callback=callback,
+                    obj=obj,
+                )
             )
         return obj, callback.__name__
 
@@ -584,7 +589,10 @@ class EventEmitter:
 
         if sum(map(_is_pos_arg, parameters_list)) > 1:
             raise RuntimeError(
-                "Binning function cannot have more than one positional argument"
+                trans._(
+                    "Binning function cannot have more than one positional argument",
+                    deferred=True,
+                )
             )
 
         return any(
@@ -674,7 +682,13 @@ class EventEmitter:
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
                         warnings.warn(
-                            f"Problem with function {old_cb[1]} of {obj} connected to event {self}",
+                            trans._(
+                                "Problem with function {old_cb} of {obj} connected to event {self_}",
+                                deferred=True,
+                                old_cb=old_cb[1],
+                                obj=obj,
+                                self_=self,
+                            ),
                             stacklevel=2,
                             category=RuntimeWarning,
                         )

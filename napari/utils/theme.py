@@ -71,9 +71,10 @@ class Theme(EventedModel):
     def _ensure_syntax_style(value: str) -> str:
         from pygments.styles import STYLE_MAP
 
-        assert value in STYLE_MAP, (
-            "Incorrect `syntax_style` value provided. Please use one of the following:"
-            f" {', '.join(STYLE_MAP)}"
+        assert value in STYLE_MAP, trans._(
+            "Incorrect `syntax_style` value provided. Please use one of the following: {syntax_style}",
+            deferred=True,
+            syntax_style=f" {', '.join(STYLE_MAP)}",
         )
         return value
 
@@ -212,8 +213,7 @@ def get_theme(name, as_dict=None):
     if as_dict is None:
         warnings.warn(
             trans._(
-                "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`."
-                "The `as_dict=True` option will be changed to `as_dict=False` in 0.4.15",
+                "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`. The `as_dict=True` option will be changed to `as_dict=False` in 0.4.15",
                 deferred=True,
             ),
             category=FutureWarning,
