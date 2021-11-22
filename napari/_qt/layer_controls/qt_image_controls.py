@@ -2,6 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
 
 from ...layers.image._image_constants import (
+    Depiction3D,
     Interpolation,
     Interpolation3D,
     Rendering,
@@ -66,6 +67,17 @@ class QtImageControls(QtBaseImageControls):
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
 
+        depictionComboBox = QComboBox(self)
+        depiction_options = [d.value for d in Depiction3D]
+        depictionComboBox.addItems(depiction_options)
+        index = depictionComboBox.findText(
+            self.layer.depiction, Qt.MatchFixedString
+        )
+        depictionComboBox.setCurrentIndex(index)
+        depictionComboBox.activated[str].connect(self.changeDepiction)
+        self.depictionComboBox = depictionComboBox
+        self.depictionLabel = QLabel(trans._('depiction:'))
+
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
@@ -115,8 +127,10 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.interpComboBox, 6, 1)
         self.grid_layout.addWidget(self.renderLabel, 7, 0)
         self.grid_layout.addWidget(self.renderComboBox, 7, 1)
-        self.grid_layout.addWidget(self.isoThresholdLabel, 8, 0)
-        self.grid_layout.addWidget(self.isoThresholdSlider, 8, 1)
+        self.grid_layout.addWidget(self.depictionLabel, 8, 0)
+        self.grid_layout.addWidget(self.depictionComboBox, 8, 1)
+        # self.grid_layout.addWidget(self.isoThresholdLabel, 8, 0)
+        # self.grid_layout.addWidget(self.isoThresholdSlider, 8, 1)
         self.grid_layout.addWidget(self.attenuationLabel, 9, 0)
         self.grid_layout.addWidget(self.attenuationSlider, 9, 1)
         self.grid_layout.setRowStretch(9, 1)
@@ -162,6 +176,9 @@ class QtImageControls(QtBaseImageControls):
         """
         self.layer.rendering = text
         self._toggle_rendering_parameter_visbility()
+
+    def changeDepiction(self, text):
+        self.layer.depiction = text
 
     def changeIsoThreshold(self, value):
         """Change isosurface threshold on the layer model.
@@ -220,6 +237,13 @@ class QtImageControls(QtBaseImageControls):
             )
             self.renderComboBox.setCurrentIndex(index)
             self._toggle_rendering_parameter_visbility()
+
+    def _on_depiction_change(self):
+        with self.layer.event.depiction.blocker():
+            index = self.depictionComboBox.findText(
+                self.layer.depiction, Qt.MatchFixedString
+            )
+            self.depictionComboBox.setCurrentIndex(index)
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
