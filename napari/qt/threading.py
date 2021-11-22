@@ -1,4 +1,8 @@
-from superqt.utils import WorkerBase
+from superqt.utils._qthreading import (
+    GeneratorWorkerSignals,
+    WorkerBase,
+    WorkerBaseSignals,
+)
 
 from .._qt.qthreading import (
     FunctionWorker,
@@ -12,6 +16,8 @@ __all__ = (
     'create_worker',
     'FunctionWorker',
     'GeneratorWorker',
+    'GeneratorWorkerSignals',
     'thread_worker',
     'WorkerBase',
+    'WorkerBaseSignals',
 )
