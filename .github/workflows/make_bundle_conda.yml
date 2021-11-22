@@ -88,7 +88,11 @@ jobs:
           pip install -e . --no-deps -vvv
           version=$(python bundle.py --version)
           arch=$(python bundle.py --arch)
-          platform=$(conda info --json | jq -r .platform)
+          if [[ $RUNNER_OS == Windows ]]; then
+            platform="win-64"
+          else
+            platform=$(conda info --json | jq -r .platform)
+          fi
           echo NAPARI_VERSION=${version} >> $GITHUB_ENV
           echo NAPARI_ARCH=${arch} >> $GITHUB_ENV
           echo NAPARI_PLATFORM=${platform} >> $GITHUB_ENV
