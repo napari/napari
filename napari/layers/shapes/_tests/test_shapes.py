@@ -4,10 +4,11 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
-from napari.layers.utils._text_constants import Anchor, TextMode
+from napari.layers.utils._text_constants import Anchor
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -201,7 +202,6 @@ def test_empty_layer_with_text_property_choices():
         property_choices=default_properties,
         text=text_kwargs,
     )
-    assert layer.text._mode == TextMode.PROPERTY
     assert layer.text.values.size == 0
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
@@ -218,7 +218,6 @@ def test_empty_layer_with_text_formatted():
         property_choices=default_properties,
         text='shape_type: {shape_type:.2f}',
     )
-    assert layer.text._mode == TextMode.FORMATTED
     assert layer.text.values.size == 0
 
     # add a shape and check that the appropriate text value was added
@@ -303,7 +302,7 @@ def test_text_error(properties):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         Shapes(data, properties=copy(properties), text=123)
 
 

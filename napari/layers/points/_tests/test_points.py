@@ -4,6 +4,7 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 from vispy.color import get_colormap
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -769,7 +770,7 @@ def test_text_error(properties):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         Points(data, properties=copy(properties), text=123)
 
 
@@ -2150,7 +2151,7 @@ def test_set_properties_with_invalid_shape_errors_safely():
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
 
-def test_set_properties_with_missing_text_property_text_becomes_constant():
+def test_set_properties_with_missing_text_property_text_becomes_constant_empty_and_warns():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
@@ -2160,9 +2161,9 @@ def test_set_properties_with_missing_text_property_text_becomes_constant():
 
     points.properties = {'not_class': np.array(['D', 'E', 'F'])}
 
-    np.testing.assert_array_equal(
-        points.text.values, ['class', 'class', 'class']
-    )
+    with pytest.warns(RuntimeWarning):
+        values = points.text.values
+    np.testing.assert_array_equal(values, ['', '', ''])
 
 
 def test_text_param_and_setter_are_consistent():

@@ -182,7 +182,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         )
         return self.dict()
 
-    def update(self, values):
+    def update(self, values, recurse=True):
         """Update a model in place.
 
         Parameters
@@ -191,6 +191,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             Values to update the model with. If an EventedModel is passed it is
             first converted to a dictionary. The keys of this dictionary must
             be found as attributes on the current model.
+        recurse : bool
+            If True, recursively update fields that are EventedModels.
+            Otherwise, just update the immediate fields of this EventedModel.
         """
         if isinstance(values, self.__class__):
             values = values.dict()
@@ -206,7 +209,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         with self.events.blocker() as block:
             for key, value in values.items():
                 field = getattr(self, key)
-                if isinstance(field, EventedModel):
+                if isinstance(field, EventedModel) and recurse:
                     field.update(value)
                 else:
                     setattr(self, key, value)

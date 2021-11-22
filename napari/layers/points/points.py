@@ -428,6 +428,8 @@ class Points(Layer):
                                 : len(data)
                             ]
 
+                        self.text.remove(list(range(len(data), cur_npoints)))
+
                     elif len(data) > cur_npoints:
                         # If there are now more points, add the size and colors of the
                         # new ones
@@ -459,8 +461,6 @@ class Points(Layer):
                         self.selected_data = set(
                             np.arange(cur_npoints, len(data))
                         )
-
-                        self.text.add(self.current_properties, adding)
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -533,8 +533,8 @@ class Points(Layer):
             "edge_color",
         )
 
-        if self.text.values is not None:
-            self.refresh_text()
+        self.refresh_text()
+
         self.events.properties()
 
     @property
@@ -1128,7 +1128,9 @@ class Points(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.view_text(self._indices_view)
+        return self.text.string._get_array(
+            self.properties, len(self.data), self._indices_view
+        )
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
@@ -1556,8 +1558,7 @@ class Points(Layer):
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
                 )
-            with self.text.events.blocker_all():
-                self.text.remove(index)
+            self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = set()
@@ -1604,6 +1605,17 @@ class Points(Layer):
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
+
+            for k in self.properties:
+                self.properties[k] = np.concatenate(
+                    (self.properties[k], self._clipboard['properties'][k]),
+                    axis=0,
+                )
+
+            self.text._paste(
+                self._clipboard['text_strings'],
+            )
+
             self._edge._paste(
                 colors=self._clipboard['edge_color'],
                 properties=self._clipboard['properties'],
@@ -1613,23 +1625,12 @@ class Points(Layer):
                 properties=self._clipboard['properties'],
             )
 
-            for k in self.properties:
-                self.properties[k] = np.concatenate(
-                    (self.properties[k], self._clipboard['properties'][k]),
-                    axis=0,
-                )
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
             self._selected_data = set(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
-
-            if len(self._clipboard['text']) > 0:
-                self.text.values = np.concatenate(
-                    (self.text.values, self._clipboard['text']), axis=0
-                )
-
             self.refresh()
 
     def _copy_data(self):
@@ -1645,14 +1646,10 @@ class Points(Layer):
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self._slice_indices,
+                'text_strings': self.text.string._get_array(
+                    self.properties, len(self.data), index
+                ),
             }
-
-            if len(self.text.values) == 0:
-                self._clipboard['text'] = np.empty(0)
-
-            else:
-                self._clipboard['text'] = deepcopy(self.text.values[index])
-
         else:
             self._clipboard = {}
 

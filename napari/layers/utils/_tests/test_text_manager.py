@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from napari.layers.utils._text_constants import TextMode
 from napari.layers.utils.text_manager import TextManager
 
 
@@ -14,7 +13,6 @@ def test_empty_text_manager_property():
     text_manager = TextManager(
         text='confidence', n_text=0, properties=properties
     )
-    assert text_manager._mode == TextMode.PROPERTY
     assert text_manager.values.size == 0
 
     # add a text element
@@ -43,7 +41,6 @@ def test_empty_text_manager_format():
     properties = {'confidence': np.empty(0, dtype=float)}
     text = 'confidence: {confidence:.2f}'
     text_manager = TextManager(text=text, n_text=0, properties=properties)
-    assert text_manager._mode == TextMode.FORMATTED
     assert text_manager.values.size == 0
 
     # add a text element
@@ -73,7 +70,6 @@ def test_text_manager_property():
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager = TextManager(text=text, n_text=n_text, properties=properties)
     np.testing.assert_equal(text_manager.values, classes)
-    assert text_manager._mode == TextMode.PROPERTY
 
     # add new text with properties
     new_properties = {'class': np.array(['A']), 'confidence': np.array([0.5])}
@@ -96,7 +92,6 @@ def test_text_manager_format():
     )
     text_manager = TextManager(text=text, n_text=n_text, properties=properties)
     np.testing.assert_equal(text_manager.values, expected_text)
-    assert text_manager._mode == TextMode.FORMATTED
 
     # add new text with properties
     new_properties = {'class': np.array(['A']), 'confidence': np.array([0.5])}
@@ -192,14 +187,15 @@ def test_text_with_invalid_format_string_then_constant_text():
     np.testing.assert_array_equal(text_manager.values, [text] * n_text)
 
 
-def test_text_with_format_string_missing_property_then_constant_text():
+def test_text_with_format_string_missing_property_then_constant_empty_with_warning():
     n_text = 3
     text = 'score: {score:.2f}'
     properties = {'confidence': np.array([0.5, 0.3, 1])}
 
     text_manager = TextManager(text=text, n_text=n_text, properties=properties)
 
-    np.testing.assert_array_equal(text_manager.values, [text] * n_text)
+    with pytest.warns(RuntimeWarning):
+        np.testing.assert_array_equal(text_manager.values, [''] * n_text)
 
 
 def test_text_constant_then_repeat_values():
@@ -235,8 +231,7 @@ def test_add_with_text_constant_then_ignored():
 
 def test_add_with_text_constant_init_empty_then_ignored():
     # TODO: we may choose not to ignore add as part of the properties refactor.
-    properties = {'class': np.array(['A', 'B', 'C'])}
-    text_manager = TextManager(text='point', n_text=0, properties=properties)
+    text_manager = TextManager(text='point', n_text=0, properties={})
 
     text_manager.add({'class': np.array(['C'])}, 2)
 

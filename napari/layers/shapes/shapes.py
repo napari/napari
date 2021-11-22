@@ -727,8 +727,8 @@ class Shapes(Layer):
                 RuntimeWarning,
             )
 
-        if self.text.values is not None:
-            self.refresh_text()
+        self.refresh_text()
+
         self.events.properties()
 
     @property
@@ -1516,7 +1516,9 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.view_text(self._indices_view)
+        return self.text.string._get_array(
+            self.properties, len(self.data), self._indices_view
+        )
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
@@ -1981,15 +1983,10 @@ class Shapes(Layer):
                     self.properties[k] = np.concatenate(
                         (self.properties[k], new_property), axis=0
                     )
-                self.text.add(self.current_properties, n_props_to_add)
             if total_shapes < n_prop_values:
                 for k in self.properties:
                     self.properties[k] = self.properties[k][:total_shapes]
-                n_props_to_remove = n_prop_values - total_shapes
-                indices_to_remove = np.arange(n_prop_values)[
-                    -n_props_to_remove:
-                ]
-                self.text.remove(indices_to_remove)
+                self.text.remove(list(range(total_shapes, n_prop_values)))
 
             self._add_shapes(
                 data,
@@ -2847,11 +2844,10 @@ class Shapes(Layer):
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self._slice_indices,
+                'text_strings': self.text.string._get_array(
+                    self.properties, self.nshapes, index
+                ),
             }
-            if len(self.text.values) == 0:
-                self._clipboard['text'] = np.empty(0)
-            else:
-                self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
             self._clipboard = {}
 
@@ -2871,6 +2867,8 @@ class Shapes(Layer):
                     axis=0,
                 )
 
+            self.text._paste(self._clipboard['text_strings'])
+
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
@@ -2883,11 +2881,6 @@ class Shapes(Layer):
                 edge_color = self._clipboard['edge_color'][i]
                 self._data_view.add(
                     shape, face_color=face_color, edge_color=edge_color
-                )
-
-            if len(self._clipboard['text']) > 0:
-                self.text.values = np.concatenate(
-                    (self.text.values, self._clipboard['text']), axis=0
                 )
 
             self.selected_data = set(
