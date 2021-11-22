@@ -246,6 +246,7 @@ jobs:
           cat <<EOF > environment.yml
           name: build-bundle
           channels:
+            - napari/label/bundle_tools
             - conda-forge
           dependencies:
             - python ${{ matrix.python-version }}
@@ -253,6 +254,7 @@ jobs:
             - constructor
             - conda-build
             - ruamel.yaml
+            - conda-standalone
           EOF
       - name: install micromamba
         uses: mamba-org/provision-with-micromamba@main

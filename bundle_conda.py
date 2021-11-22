@@ -64,7 +64,11 @@ def _constructor(version=VERSION):
         "name": APP,
         "company": "Napari",
         "version": version,
-        "channels": ["conda-forge"],
+        "channels": [
+            "napari/label/nightly",
+            "napari/label/bundle_tools",
+            "conda-forge",
+        ],
         "conda_default_channels": ["conda-forge"],
         "installer_filename": OUTPUT_FILENAME,
         "specs": [
@@ -76,7 +80,7 @@ def _constructor(version=VERSION):
             "pip",
         ],
         "menu_packages": [
-            "napari",
+            "napari-menu",
         ],
     }
     if _use_local():
