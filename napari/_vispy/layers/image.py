@@ -64,6 +64,9 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_experimental_slicing_plane_normal_change
         )
 
+        # display_change is special (like data_change) because it requires a self.reset()
+        # this means that we have to call it manually. Also, it must be called before reset
+        # in order to set the appropriate node first
         self._on_display_change()
         self.reset()
         self._on_data_change()
