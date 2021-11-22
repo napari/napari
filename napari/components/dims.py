@@ -204,6 +204,31 @@ class Dims(EventedModel):
             self.range = full_range
         self.last_used = axis
 
+    def _set_ranges(
+        self,
+        _ranges: Sequence[Sequence[Union[int, float]]],
+        axes: Sequence[int] = None,
+    ):
+        """Sets the ranges (min, max, step) along the specified axes
+
+        Parameters
+        ----------
+        _ranges : tuple
+            Ranges specified as a sequence of (min, max, step).
+        axes : sequence of int or None
+            Axes whos range will be set. Default is ``range(len(_ranges))``.
+        """
+        full_range = list(self.range)
+        _ranges = list(_ranges)
+        if axes is None:
+            axes = range(len(_ranges))
+        if _ranges != full_range:
+            for axis, _range in zip(axes, _ranges):
+                axis = assert_axis_in_bounds(axis, self.ndim)
+                full_range[axis] = _range
+            self.range = full_range
+            self.last_used = axis
+
     def set_point(self, axis: int, value: Union[int, float]):
         """Sets point to slice dimension in world coordinates.
 

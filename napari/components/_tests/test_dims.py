@@ -90,6 +90,32 @@ def test_range():
     assert dims.range == ((0, 2, 1),) * 3 + ((0, 4, 2),)
 
 
+def test_range_set_multiple():
+    """
+    Tests bulk range setting.
+    """
+    dims = Dims(ndim=4)
+    assert dims.range == ((0, 2, 1),) * 4
+
+    dims._set_ranges([(0, 6, 3), (0, 9, 3)], axes=(0, 3))
+    assert dims.range == ((0, 6, 3),) + ((0, 2, 1),) * 2 + ((0, 9, 3),)
+
+    # default without axes specified is to set the first len(ranges) axes
+    dims._set_ranges(((0, 5, 1),) * 4)
+    assert dims.range == ((0, 5, 1),) * 4
+    assert dims.last_used == 3
+
+    dims._set_ranges([(0.0, 4.0, 1.0)])
+    assert dims.range == ((0, 4, 1),) + ((0, 5, 1),) * 3
+    assert dims.last_used == 0
+
+    # When the range matches the current range last_used is not modified.
+    current_range = list(dims.range)
+    dims._set_ranges(current_range)
+    assert dims.range == tuple(current_range)
+    assert dims.last_used == 0
+
+
 def test_axis_labels():
     dims = Dims(ndim=4)
     assert dims.axis_labels == ('0', '1', '2', '3')
