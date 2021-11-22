@@ -38,6 +38,7 @@ class _NotifyingMixin:
 
         notification_manager.receive_warning(*show_warn_args)
 
+
 _Y = TypeVar("_Y")
 _S = TypeVar("_S")
 _R = TypeVar("_R")

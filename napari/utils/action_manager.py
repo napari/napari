@@ -270,9 +270,7 @@ class ActionManager:
         if name in self._shortcuts:
             shortcuts = self._shortcuts[name]
             joinstr = (
-                ' '
-                + trans._p('or', msgctxt='<keysequence> or <keysequence>')
-                + ' '
+                ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
             )
             shortcut_str = (
                 '('
