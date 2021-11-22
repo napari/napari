@@ -772,10 +772,28 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         from ..plugins import plugin_manager
 
+        data = None
+        samples = []
         try:
-            data = plugin_manager._sample_data[plugin][sample]['data']
-        except KeyError:
-            samples = plugin_manager.available_samples()
+            from npe2 import PluginManager
+        except ImportError:
+            pass
+        else:
+            pm = PluginManager.instance()
+            for c in pm._contrib._samples.get(plugin, []):
+                if c.key == sample:
+                    data = c.open
+                    break
+            else:
+                samples = [
+                    (p, x.key) for p, s in pm.iter_sample_data() for x in s
+                ]
+        if data is None:
+            try:
+                data = plugin_manager._sample_data[plugin][sample]['data']
+            except KeyError:
+                samples += list(plugin_manager.available_samples())
+        if data is None:
             msg = trans._(
                 "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
                 plugin=plugin,
