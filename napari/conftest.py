@@ -403,7 +403,7 @@ def fail__obj_graph(Klass):
 
         objgraph.show_backrefs(
             Klass._instances,
-            max_depth=7,
+            max_depth=13,
             filename=f'{Klass.__name__}-leak-backref-graph.png',
         )
         assert False, len(Klass._instances)
