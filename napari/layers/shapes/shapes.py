@@ -1986,7 +1986,7 @@ class Shapes(Layer):
             if total_shapes < n_prop_values:
                 for k in self.properties:
                     self.properties[k] = self.properties[k][:total_shapes]
-                self.text.remove(list(range(total_shapes, n_prop_values)))
+                self.text.remove(range(total_shapes, n_prop_values))
 
             self._add_shapes(
                 data,
