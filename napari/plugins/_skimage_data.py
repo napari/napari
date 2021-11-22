@@ -1,4 +1,4 @@
-from napari_plugin_engine import napari_hook_implementation
+from functools import partial
 
 from ..utils.translations import trans
 
@@ -83,11 +83,19 @@ def _load_skimage_data(name, **kwargs):
     return [(getattr(skimage.data, name)(**kwargs), {'name': name})]
 
 
-@napari_hook_implementation
-def napari_provide_sample_data():
-    from functools import partial
+_DATA = {
+    key: {'data': partial(_load_skimage_data, key), 'display_name': dname}
+    for (key, dname) in SKIMAGE_DATA
+}
 
-    return {
-        key: {'data': partial(_load_skimage_data, key), 'display_name': dname}
-        for (key, dname) in SKIMAGE_DATA
-    }
+
+try:
+    import npe2  # noqa: F401
+
+    globals().update({k: v['data'] for k, v in _DATA.items()})
+except ImportError:
+    from napari_plugin_engine import napari_hook_implementation
+
+    @napari_hook_implementation
+    def napari_provide_sample_data():
+        return _DATA
