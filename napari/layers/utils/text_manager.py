@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Dict, Iterable, Optional, Sequence, Tuple, Union
+from typing import Dict, Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import PositiveInt, validator
@@ -109,26 +109,26 @@ class TextManager(EventedModel):
             super().__setattr__(key, value)
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
-        """Refresh all text elements from the given layer properties.
+        """Refresh all of the current text elements using updated properties values
 
         Parameters
         ----------
         properties : Dict[str, np.ndarray]
-            The properties of a layer.
+            The new properties from the layer
         """
         self._properties = properties
         self.string._clear()
         self.events.string()
 
-    def add(self, properties: dict, num_to_add: int):
+    def add(self, properties: dict, n_text: int):
         """Adds a number of a new text elements.
 
         Parameters
         ----------
         properties : dict
-            The current properties to draw the text from.
-        num_to_add : int
-            The number of text elements to add.
+            The properties to draw the text from
+        n_text : int
+            The number of text elements to add
         """
         # warnings.warn(
         #    trans._(
@@ -144,22 +144,22 @@ class TextManager(EventedModel):
         ):
             return
         new_properties = {
-            name: np.repeat(value, num_to_add, axis=0)
+            name: np.repeat(value, n_text, axis=0)
             for name, value in properties.items()
         }
-        new_values = self.string._apply(new_properties, range(num_to_add))
+        new_values = self.string._apply(new_properties, range(n_text))
         self.string._append(new_values)
 
     def _paste(self, strings: StringArray):
         self.string._append(strings)
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
-        """Removes some text elements by index.
+        """Remove the indicated text elements
 
         Parameters
         ----------
         indices_to_remove : set, list, np.ndarray
-            The indices to remove.
+            The indices of the text elements to remove.
         """
         if isinstance(indices_to_remove, set):
             indices_to_remove = list(indices_to_remove)
@@ -168,7 +168,7 @@ class TextManager(EventedModel):
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
     ) -> Tuple[np.ndarray, str, str]:
-        """Calculate the coordinates for each text element in view.
+        """Calculate the coordinates for each text element in view
 
         Parameters
         ----------
@@ -197,14 +197,13 @@ class TextManager(EventedModel):
             anchor_y = 'center'
         return text_coords, anchor_x, anchor_y
 
-    def view_text(self, indices_view: Optional = None) -> np.ndarray:
+    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
         """Get the values of the text elements in view
 
         Parameters
         ----------
-        indices_view : (N x 1) slice, range, or indices
-            Indices of the text elements in view. If None, all values are returned.
-            If not None, must be usable as indices for np.ndarray.
+        indices_view : (N x 1) np.ndarray
+            Indices of the text elements in view
 
         Returns
         -------
@@ -228,7 +227,7 @@ class TextManager(EventedModel):
     @validator('string', pre=True, always=True)
     def _check_string(
         cls,
-        string: Union[StringEncoding, dict, str, Iterable[str], None],
+        string: Union[StringEncoding, dict, str, Sequence[str], None],
     ) -> StringEncoding:
         return validate_string_encoding(string)
 
@@ -246,8 +245,8 @@ class TextManager(EventedModel):
         ----------
         text : Union[TextManager, dict, str, Sequence[str], None]
             An instance of TextManager, a dict that contains some of its state,
-            a string that may be a constant, a format string, or sequence of
-            strings specified directly.
+            a string that may be a format string, a constant string, or sequence
+            of strings specified directly.
         n_text : int
             The number of text elements to initially display, which should match
             the number of elements (e.g. points) in a layer.

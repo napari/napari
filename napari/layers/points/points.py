@@ -428,7 +428,7 @@ class Points(Layer):
                                 : len(data)
                             ]
 
-                        self.text.remove(list(range(len(data), cur_npoints)))
+                        self.text.remove(range(len(data), cur_npoints))
 
                     elif len(data) > cur_npoints:
                         # If there are now more points, add the size and colors of the

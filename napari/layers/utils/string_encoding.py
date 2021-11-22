@@ -1,5 +1,5 @@
 from string import Formatter
-from typing import Any, Dict, Iterable, Union
+from typing import Any, Dict, Sequence, Union
 
 import numpy as np
 from pydantic import Field
@@ -143,13 +143,13 @@ _STRING_ENCODING_NAMES = tuple(enc.__name__ for enc in _STRING_ENCODINGS)
 
 
 def validate_string_encoding(
-    string: Union[StringEncoding, dict, str, Iterable[str], None],
+    string: Union[StringEncoding, dict, str, Sequence[str], None],
 ) -> StringEncoding:
     """Validates and coerces an input to a StringEncoding.
 
     Parameters
     ----------
-    string : Union[StringEncoding, dict, str, Iterable[str], None]
+    string : Union[StringEncoding, dict, str, Sequence[str], None]
         The input or RHS of an assignment to a StringEncoding field. If this
         is already a StringEncoding, it is returned as is. If this is a dict,
         then we try to parse that as one of the built-in StringEncodings. If
@@ -178,7 +178,7 @@ def validate_string_encoding(
         if _is_format_string(string):
             return FormatStringEncoding(format_string=string)
         return ConstantStringEncoding(constant=string)
-    if isinstance(string, Iterable):
+    if isinstance(string, Sequence):
         return DirectStringEncoding(array=string, default='')
     raise TypeError(
         trans._(

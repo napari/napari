@@ -231,7 +231,8 @@ def test_add_with_text_constant_then_ignored():
 
 def test_add_with_text_constant_init_empty_then_ignored():
     # TODO: we may choose not to ignore add as part of the properties refactor.
-    text_manager = TextManager(text='point', n_text=0, properties={})
+    properties = {}
+    text_manager = TextManager(text='point', n_text=0, properties=properties)
 
     text_manager.add({'class': np.array(['C'])}, 2)
 
