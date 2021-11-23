@@ -63,7 +63,7 @@ jobs:
             - conda-forge
           dependencies:
             - conda-smithy
-            - python
+            - python 3.7
             - pip
             - tomlkit
             - ruamel.yaml
@@ -72,6 +72,8 @@ jobs:
 
           if [[ ${{ runner.os }} == Windows ]]; then
             echo "  - m2-sed" >> environment.yml
+            echo "  - conda-build" >> environment.yml
+            echo "  - conda-forge-ci-setup=3" >> environment.yml
           fi
 
       - name: Setup Miniconda
@@ -164,8 +166,6 @@ jobs:
           CI: github_actions
         run: |
           set "CONDA_BLD_PATH=${{ github.workspace }}${{ env.conda_bld_suffix }}"
-          call activate base
-          conda.exe install -c conda-forge 'python=3.6' conda-build conda conda-forge-ci-setup=3 pip
           if errorlevel 1 exit 1
           setup_conda_rc .\ .\recipe .\.ci_support\%CONFIG%.yaml
           if errorlevel 1 exit 1
