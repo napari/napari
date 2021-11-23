@@ -338,7 +338,12 @@ def _coerce_current_properties_value(
     """
     if isinstance(value, (np.ndarray, list, tuple)):
         if len(value) != 1:
-            raise ValueError('current_properties values should have length 1.')
+            raise ValueError(
+                trans._(
+                    'current_properties values should have length 1.',
+                    deferred=True,
+                )
+            )
         coerced_value = np.asarray(value)
     else:
         coerced_value = np.array([value])
@@ -593,3 +598,35 @@ def dims_displayed_world_to_layer(
     dims_displayed = order[-n_display_layer:]
 
     return dims_displayed
+
+
+def get_extent_world(data_extent, data_to_world, centered=False):
+    """Range of layer in world coordinates base on provided data_extent
+
+    Parameters
+    ----------
+    data_extent : array, shape (2, D)
+        Extent of layer in data coordinates.
+    data_to_world : napari.utils.transforms.Affine
+        The transform from data to world coordinates.
+    centered : bool
+        If pixels should be centered. By default False.
+
+    Returns
+    -------
+    extent_world : array, shape (2, D)
+    """
+    D = data_extent.shape[1]
+    # subtract 0.5 to get from pixel center to pixel edge
+    offset = 0.5 * bool(centered)
+    pixel_extents = tuple(d - offset for d in data_extent.T)
+
+    full_data_extent = np.array(np.meshgrid(*pixel_extents)).T.reshape(-1, D)
+    full_world_extent = data_to_world(full_data_extent)
+    world_extent = np.array(
+        [
+            np.min(full_world_extent, axis=0),
+            np.max(full_world_extent, axis=0),
+        ]
+    )
+    return world_extent

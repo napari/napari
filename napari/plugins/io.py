@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import os
 import pathlib
 import warnings
-from collections import namedtuple
 from logging import getLogger
-from typing import Any, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
@@ -11,30 +12,11 @@ from ..layers import Layer
 from ..types import LayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
-from . import plugin_manager
+from . import _npe2, plugin_manager
 
 logger = getLogger(__name__)
-
-
-def _read_with_npe2(path, plugin):
-    """Try to return data for `path`, from reader plugins using a manifest."""
-    try:
-        from npe2 import execute_command, plugin_manager
-    except ImportError:
-        return
-
-    for rdr in plugin_manager.iter_compatible_readers(path):
-        read_func = execute_command(rdr.command, kwargs={'path': path})
-        if read_func:
-            try:
-                layer_data = read_func(path)  # try to read data
-                if layer_data:
-                    # hookimpl just mocks ``.plugin_name` attribute access
-                    # until we drop support for the old hookimpl stuff.
-                    hookimpl = namedtuple('hookimpl', ('plugin_name'))
-                    return layer_data, hookimpl(rdr.command.split(".")[0])
-            except Exception:
-                continue
+if TYPE_CHECKING:
+    from npe2.manifest.contributions import WriterContribution
 
 
 def read_data_with_plugins(
@@ -75,11 +57,11 @@ def read_data_with_plugins(
     PluginCallError
         If ``plugin`` is specified but raises an Exception while reading.
     """
-
-    _ld = _read_with_npe2(path, plugin)
-    if _ld is not None:
-        _ld, hookimpl = _ld
-        return [] if _is_null_layer_sentinel(_ld) else _ld or None, hookimpl
+    hookimpl: Optional[HookImplementation]
+    res = _npe2.read(path, plugin)
+    if res is not None:
+        _ld, hookimpl = res
+        return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
 
     hook_caller = plugin_manager.hook.napari_get_reader
     path = abspath_or_url(path)
@@ -87,7 +69,7 @@ def read_data_with_plugins(
         extension = os.path.splitext(path)[-1]
         plugin = plugin_manager.get_reader_for_extension(extension)
 
-    hookimpl: Optional[HookImplementation] = None
+    hookimpl = None
     if plugin:
         if plugin not in plugin_manager.plugins:
             names = {i.plugin_name for i in hook_caller.get_hookimpls()}
@@ -181,6 +163,7 @@ def save_layers(
     layers: List[Layer],
     *,
     plugin: Optional[str] = None,
+    _writer: Optional[WriterContribution] = None,
 ) -> List[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 
@@ -231,13 +214,13 @@ def save_layers(
     """
     if len(layers) > 1:
         written = _write_multiple_layers_with_plugins(
-            path, layers, plugin_name=plugin
+            path, layers, plugin_name=plugin, _writer=_writer
         )
     elif len(layers) == 1:
-        _written = _write_single_layer_with_plugins(
-            path, layers[0], plugin_name=plugin
+        written = _write_single_layer_with_plugins(
+            path, layers[0], plugin_name=plugin, _writer=_writer
         )
-        written = [_written] if _written else []
+        written = [written] if written else []
     else:
         written = []
 
@@ -257,7 +240,7 @@ def save_layers(
     return written
 
 
-def _is_null_layer_sentinel(layer_data: Union[LayerData, Any]) -> bool:
+def _is_null_layer_sentinel(layer_data: Any) -> bool:
     """Checks if the layer data returned from a reader function indicates an
     empty file. The sentinel value used for this is ``[(None,)]``.
 
@@ -285,6 +268,7 @@ def _write_multiple_layers_with_plugins(
     layers: List[Layer],
     *,
     plugin_name: Optional[str] = None,
+    _writer: Optional[WriterContribution] = None,
 ) -> List[str]:
     """Write data from multiple layers data with a plugin.
 
@@ -319,6 +303,13 @@ def _write_multiple_layers_with_plugins(
     list of str
         A list of filenames, if any, that were written.
     """
+
+    # Try to use NPE2 first
+    written_paths = _npe2.write_layers(path, layers, plugin_name, _writer)
+    if written_paths:
+        return written_paths
+    logger.debug("Falling back to original plugin engine.")
+
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
 
@@ -328,6 +319,7 @@ def _write_multiple_layers_with_plugins(
 
     hook_caller = plugin_manager.hook.napari_get_writer
     path = abspath_or_url(path)
+    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
     if plugin_name:
         # if plugin has been specified we just directly call napari_get_writer
         # with that plugin_name.
@@ -380,6 +372,7 @@ def _write_single_layer_with_plugins(
     layer: Layer,
     *,
     plugin_name: Optional[str] = None,
+    _writer: Optional[WriterContribution] = None,
 ) -> Optional[str]:
     """Write single layer data with a plugin.
 
@@ -412,6 +405,13 @@ def _write_single_layer_with_plugins(
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
     """
+
+    # Try to use NPE2 first
+    written_paths = _npe2.write_layers(path, [layer], plugin_name, _writer)
+    if written_paths:
+        return written_paths[0]
+    logger.debug("Falling back to original plugin engine.")
+
     hook_caller = getattr(
         plugin_manager.hook, f'napari_write_{layer._type_string}'
     )
@@ -420,6 +420,7 @@ def _write_single_layer_with_plugins(
         extension = os.path.splitext(path)[-1]
         plugin_name = plugin_manager.get_writer_for_extension(extension)
 
+    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
     if plugin_name and (plugin_name not in plugin_manager.plugins):
         names = {i.plugin_name for i in hook_caller.get_hookimpls()}
         raise ValueError(

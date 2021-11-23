@@ -51,7 +51,7 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 import inspect
 import warnings
 import weakref
-from collections import Counter
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
@@ -208,6 +208,30 @@ CallbackStr = Tuple[
 ]  # dereferenced method
 
 
+class _WeakCounter:
+    """
+    Similar to collection counter but has weak keys.
+
+    It will only implement the methods we use here.
+    """
+
+    def __init__(self):
+        self._counter = weakref.WeakKeyDictionary()
+        self._nonecount = 0
+
+    def update(self, iterable):
+        for it in iterable:
+            if it is None:
+                self._nonecount += 1
+            else:
+                self._counter[it] = self.get(it, 0) + 1
+
+    def get(self, key, default):
+        if key is None:
+            return self._nonecount
+        return self._counter.get(key, default)
+
+
 class EventEmitter:
 
     """Encapsulates a list of event callbacks.
@@ -260,7 +284,7 @@ class EventEmitter:
 
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
-        self._block_counter: Counter[Optional[Callback]] = Counter()
+        self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
 
         # used to detect emitter loops
         self._emitting = False
@@ -400,6 +424,8 @@ class EventEmitter:
         callbacks = self.callbacks
         callback_refs = self.callback_refs
 
+        old_callback = callback
+
         callback, pass_event = self._normalize_cb(callback)
 
         if callback in callbacks:
@@ -489,9 +515,11 @@ class EventEmitter:
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
         self._callback_pass_event.insert(idx, pass_event)
-        return callback  # allows connect to be used as a decorator
+        return old_callback  # allows connect to be used as a decorator
 
-    def disconnect(self, callback: Union[Callback, CallbackRef, None] = None):
+    def disconnect(
+        self, callback: Union[Callback, CallbackRef, None, object] = None
+    ):
         """Disconnect a callback from this emitter.
 
         If no callback is specified, then *all* callbacks are removed.
@@ -500,10 +528,28 @@ class EventEmitter:
         if callback is None:
             self._callbacks = []
             self._callback_refs = []
-        else:
+            self._callback_pass_event = []
+        elif isinstance(callback, (Callable, tuple)):
             callback, _pass_event = self._normalize_cb(callback)
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
+                self._callbacks.pop(idx)
+                self._callback_refs.pop(idx)
+                self._callback_pass_event.pop(idx)
+        else:
+            index_list = []
+            for idx, local_callback in enumerate(self._callbacks):
+                if not (
+                    isinstance(local_callback, Sequence)
+                    and isinstance(local_callback[0], weakref.ref)
+                ):
+                    continue
+                if (
+                    local_callback[0]() is callback
+                    or local_callback[0]() is None
+                ):
+                    index_list.append(idx)
+            for idx in index_list[::-1]:
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
                 self._callback_pass_event.pop(idx)
@@ -524,7 +570,12 @@ class EventEmitter:
                 if inspect.ismethod(meth) and meth == callback:
                     return obj, name
             raise RuntimeError(
-                f"During bind method {callback} of object {obj} an error happen"
+                trans._(
+                    "During bind method {callback} of object {obj} an error happen",
+                    deferred=True,
+                    callback=callback,
+                    obj=obj,
+                )
             )
         return obj, callback.__name__
 
@@ -538,7 +589,10 @@ class EventEmitter:
 
         if sum(map(_is_pos_arg, parameters_list)) > 1:
             raise RuntimeError(
-                "Binning function cannot have more than one positional argument"
+                trans._(
+                    "Binning function cannot have more than one positional argument",
+                    deferred=True,
+                )
             )
 
         return any(
@@ -628,7 +682,13 @@ class EventEmitter:
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
                         warnings.warn(
-                            f"Problem with function {old_cb[1]} of {obj} connected to event {self}",
+                            trans._(
+                                "Problem with function {old_cb} of {obj} connected to event {self_}",
+                                deferred=True,
+                                old_cb=old_cb[1],
+                                obj=obj,
+                                self_=self,
+                            ),
                             stacklevel=2,
                             category=RuntimeWarning,
                         )
@@ -827,12 +887,12 @@ class EmitterGroup(EventEmitter):
     source : object
         The object that the generated events apply to.
     auto_connect : bool
-        If *auto_connect* is True (default), then one connection will
+        If *auto_connect* is True, then one connection will
         be made for each emitter that looks like
         :func:`emitter.connect((source, 'on_' + event_name))
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
-        group of emitters to default callbacks.
+        group of emitters to default callbacks.  By default, false.
     emitters : keyword arguments
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
@@ -840,7 +900,7 @@ class EmitterGroup(EventEmitter):
     def __init__(
         self,
         source: Any = None,
-        auto_connect: bool = True,
+        auto_connect: bool = False,
         **emitters: Union[Type[Event], EventEmitter, None],
     ):
         EventEmitter.__init__(self, source)
