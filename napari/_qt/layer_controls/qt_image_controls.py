@@ -93,7 +93,7 @@ class QtImageControls(QtBaseImageControls):
         self.planeThicknessSlider.setValue(5)
         self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
         self.planeNormalLabel = QLabel(trans._('plane normal:'))
-        self.planeNormalButtons = QtPlaneOrientationButtons(parent=self)
+        self.planeNormalButtons = PlaneOrientationButtons(parent=self)
 
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -334,7 +334,7 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_plane_parameter_visibility()
 
 
-class QtPlaneOrientationButtons(QWidget):
+class PlaneOrientationButtons(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
         self.setLayout(QHBoxLayout())

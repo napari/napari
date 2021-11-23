@@ -307,7 +307,7 @@ AutoScaleButtons QPushButton {
   padding: 4;
 }
 
-QtPlaneOrientationButtons QPushButton {
+PlaneOrientationButtons QPushButton {
     font-size: 9pt;
     padding: 4;
 }

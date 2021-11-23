@@ -41,7 +41,7 @@ class QtLayerControls(QFrame):
         self.grid_layout = QGridLayout(self)
         self.grid_layout.setContentsMargins(0, 0, 0, 0)
         self.grid_layout.setSpacing(2)
-        self.grid_layout.setColumnMinimumWidth(0, 86)
+        self.grid_layout.setColumnMinimumWidth(0, 94)
         self.grid_layout.setColumnStretch(1, 1)
         self.setLayout(self.grid_layout)
 
