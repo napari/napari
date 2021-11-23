@@ -23,6 +23,8 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.shading.connect(self._on_shading_change)
+        self.layer.events.wireframe.connect(self._on_wireframe_change)
+        self.layer.events.normals.connect(self._on_normals_change)
 
         self.reset()
         self._on_data_change()
@@ -63,6 +65,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
+        self.node.update_normals()
         self._on_shading_change()
 
         self.node.update()
@@ -96,6 +99,14 @@ class VispySurfaceLayer(VispyBaseLayer):
         if self.layer._ndisplay == 3:
             self.node.shading = shading
         self.node.update()
+
+    def _on_wireframe_change(self):
+        self.node.wireframe_filter.enabled = self.layer.wireframe
+        self.node.update()
+
+    def _on_normals_change(self):
+        self.node.normals_visual.visible = self.layer.normals
+        self.node.normals_visual.update()
 
     def reset(self, event=None):
         super().reset()

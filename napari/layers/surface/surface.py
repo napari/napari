@@ -149,6 +149,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        wireframe=False,
+        normals=False,
     ):
 
         ndim = data[0].shape[1]
@@ -170,7 +172,13 @@ class Surface(IntensityVisualizationMixin, Layer):
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
-        self.events.add(interpolation=Event, rendering=Event, shading=Event)
+        self.events.add(
+            interpolation=Event,
+            rendering=Event,
+            shading=Event,
+            wireframe=Event,
+            normals=Event,
+        )
 
         # assign mesh data and establish default behavior
         if len(data) not in (2, 3):
@@ -208,6 +216,8 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # Shading mode
         self._shading = shading
+        self.wireframe = wireframe
+        self.normals = normals
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
@@ -323,6 +333,24 @@ class Surface(IntensityVisualizationMixin, Layer):
         else:
             self._shading = Shading(shading)
         self.events.shading(value=self._shading)
+
+    @property
+    def wireframe(self) -> bool:
+        return self._wireframe
+
+    @wireframe.setter
+    def wireframe(self, value):
+        self._wireframe = bool(value)
+        self.events.wireframe()
+
+    @property
+    def normals(self) -> bool:
+        return self._normals
+
+    @normals.setter
+    def normals(self, value):
+        self._normals = bool(value)
+        self.events.normals()
 
     def _get_state(self):
         """Get dictionary of layer state.
