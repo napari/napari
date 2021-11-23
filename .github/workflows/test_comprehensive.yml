@@ -56,12 +56,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
+        platform: [ubuntu-latest, windows-latest]
         python: [3.7, 3.8, 3.9]
         include:
           # test big sur on 3.9.0
           - python: 3.9
-            platform: macos-11.0
+            platform: macos-11
             toxenv: py39-macos-pyqt
           # test with minimum specified requirements
           - python: 3.7
