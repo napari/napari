@@ -64,18 +64,21 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_experimental_slicing_plane_normal_change
         )
 
+        # display_change is special (like data_change) because it requires a self.reset()
+        # this means that we have to call it manually. Also, it must be called before reset
+        # in order to set the appropriate node first
+        self._on_display_change()
         self.reset()
         self._on_data_change()
 
     def _on_display_change(self, data=None):
-
         parent = self.node.parent
         self.node.parent = None
 
         self.node = self._layer_node.get_node(self.layer._ndisplay)
 
         if data is None:
-            data = np.zeros((1,) * self.layer._ndisplay)
+            data = np.zeros((1,) * self.layer._ndisplay, dtype=np.float32)
 
         if self.layer._empty:
             self.node.visible = False

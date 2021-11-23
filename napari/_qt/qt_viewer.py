@@ -9,13 +9,13 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-from napari.layers.base.base import Layer
-
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..layers.base.base import Layer
+from ..plugins import _npe2
 from ..utils import config, perf
 from ..utils.action_manager import action_manager
 from ..utils.colormaps.standardize_color import transform_color
@@ -86,53 +86,6 @@ def _npe2_decode_selected_filter(
     return None
 
 
-def _npe2_file_extensions_string_for_layers(
-    layers: Sequence[Layer],
-) -> Tuple[Optional[str], List[WriterContribution]]:
-    """Create extensions string using npe2.
-
-    When npe2 can be imported, returns an extension string and the list
-    of corresponding writers. Otherwise returns (None,[]).
-
-    The extension string is a ";;" delimeted string of entries. Each entry
-    has a brief description of the file type and a list of extensions. For
-    example:
-
-        "Images (*.png *.jpg *.tif);;All Files (*.*)"
-
-    The writers, when provided, are the
-    `npe2.manifest.io.WriterContribution` objects. There is one writer per
-    entry in the extension string.
-    """
-    try:
-        from npe2 import PluginManager
-    except ImportError:
-        return None, []
-
-    pm = PluginManager.instance()
-
-    layer_types = [layer._type_string for layer in layers]
-    writers = list(pm.iter_compatible_writers(layer_types))
-
-    def _items():
-        """Lookup the command name and its supported extensions."""
-        for writer in writers:
-            name = pm.get_manifest(writer.command).display_name
-            title = f"{name} {writer.name}" if writer.name else name
-            yield title, writer.filename_extensions
-
-    # extension strings are in the format:
-    #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
-
-    def _fmt_exts(es):
-        return " ".join("*" + e for e in es if e) if es else "*.*"
-
-    return (
-        ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
-        writers,
-    )
-
-
 def _extension_string_for_layers(
     layers: Sequence[Layer],
 ) -> Tuple[str, List[WriterContribution]]:
@@ -146,7 +99,7 @@ def _extension_string_for_layers(
     is not importable, the list of writers will be empty.
     """
     # try to use npe2
-    ext_str, writers = _npe2_file_extensions_string_for_layers(layers)
+    ext_str, writers = _npe2.file_extensions_string_for_layers(layers)
     if ext_str:
         return ext_str, writers
 

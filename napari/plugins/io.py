@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import pathlib
 import warnings
-from collections import namedtuple
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
@@ -13,29 +12,11 @@ from ..layers import Layer
 from ..types import LayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
-from . import plugin_manager
+from . import _npe2, plugin_manager
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
-
-
-def _read_with_npe2(
-    path: Union[str, Sequence[str]], plugin: Optional[str] = None
-) -> Optional[Tuple[List[LayerData], HookImplementation]]:
-    """Try to return data for `path`, from reader plugins using a manifest."""
-    try:
-        from npe2.io_utils import read_get_reader
-    except ImportError:
-        return None
-
-    try:
-        layer_data, reader = read_get_reader(path, plugin_name=plugin)
-    except ValueError:
-        return None
-
-    hookimpl = namedtuple('hookimpl', ('plugin_name'))
-    return layer_data, hookimpl(reader.plugin_name)
 
 
 def read_data_with_plugins(
@@ -77,7 +58,7 @@ def read_data_with_plugins(
         If ``plugin`` is specified but raises an Exception while reading.
     """
     hookimpl: Optional[HookImplementation]
-    res = _read_with_npe2(path, plugin)
+    res = _npe2.read(path, plugin)
     if res is not None:
         _ld, hookimpl = res
         return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
@@ -282,53 +263,6 @@ def _is_null_layer_sentinel(layer_data: Any) -> bool:
     )
 
 
-def _write_layers_with_npe2(
-    path: str,
-    layers: List[Layer],
-    plugin_name: Optional[str] = None,
-    writer: Optional[WriterContribution] = None,
-) -> List[str]:
-    """
-    Write layers to a file using an NPE2 plugin.
-
-    Parameters
-    ----------
-    path : str
-        The path (file, directory, url) to write.
-    layer_type : str
-        All lower-class name of the layer class to be written.
-    plugin_name : str, optional
-        Name of the plugin to write data with. If None then all plugins
-        corresponding to appropriate hook specification will be looped
-        through to find the first one that can write the data.
-    command_id : str, optional
-        npe2 command identifier that uniquely identifies the command to ivoke
-        to save layers. If specified, overrides, the plugin_name.
-
-    Returns
-    -------
-    list of str
-        Empty list when no plugin was found, otherwise a list of file paths, if any,
-        that were written.
-    """
-    try:
-        import npe2
-    except ImportError:
-        return []
-
-    layer_data = [layer.as_layer_data_tuple() for layer in layers]
-
-    if writer is None:
-        return npe2.write(
-            path=path, layer_data=layer_data, plugin_name=plugin_name
-        )
-
-    n = sum(ltc.max() for ltc in writer.layer_type_constraints())
-    args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
-    res = writer.exec(args=args)
-    return [res] if isinstance(res, str) else res or []
-
-
 def _write_multiple_layers_with_plugins(
     path: str,
     layers: List[Layer],
@@ -371,7 +305,7 @@ def _write_multiple_layers_with_plugins(
     """
 
     # Try to use NPE2 first
-    written_paths = _write_layers_with_npe2(path, layers, plugin_name, _writer)
+    written_paths = _npe2.write_layers(path, layers, plugin_name, _writer)
     if written_paths:
         return written_paths
     logger.debug("Falling back to original plugin engine.")
@@ -473,9 +407,7 @@ def _write_single_layer_with_plugins(
     """
 
     # Try to use NPE2 first
-    written_paths = _write_layers_with_npe2(
-        path, [layer], plugin_name, _writer
-    )
+    written_paths = _npe2.write_layers(path, [layer], plugin_name, _writer)
     if written_paths:
         return written_paths[0]
     logger.debug("Falling back to original plugin engine.")
