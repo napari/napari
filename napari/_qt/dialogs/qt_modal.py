@@ -167,5 +167,6 @@ class QtPopup(QDialog):
             Event from the Qt context.
         """
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            return self.close()
+            self.close()
+            return
         super().keyPressEvent(event)
