@@ -64,7 +64,8 @@ class InteractionBoxMouseBindings:
         self.initialize_key_events(viewer)
 
     def _on_remove_layer(self, event):
-        """Gets called when layer is added and removes event listener"""
+        """Gets called when layer is removed and removes event listener"""
+
         layer = event.value
         if hasattr(layer, 'mode'):
             layer.events.mode.disconnect(self)
