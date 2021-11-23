@@ -152,7 +152,7 @@ class TextManager(EventedModel):
     def _paste(self, strings: StringArray):
         self.string._append(strings)
 
-    def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
+    def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
         """Remove the indicated text elements
 
         Parameters

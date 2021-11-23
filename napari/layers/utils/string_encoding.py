@@ -128,6 +128,12 @@ class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
         )
 
 
+def _get_property_row(
+    properties: Dict[str, np.ndarray], index: int
+) -> Dict[str, Any]:
+    return {name: values[index] for name, values in properties.items()}
+
+
 # Define supported encodings as tuples instead of Union, so that they can be used with
 # isinstance without relying on get_args, which was only added in python 3.8.
 
@@ -209,9 +215,3 @@ def _is_format_string(string: str) -> bool:
     except ValueError:
         return False
     return len(fields) > 0
-
-
-def _get_property_row(
-    properties: Dict[str, np.ndarray], index: int
-) -> Dict[str, Any]:
-    return {name: values[index] for name, values in properties.items()}

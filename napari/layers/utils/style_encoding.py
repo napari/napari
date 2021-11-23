@@ -134,8 +134,7 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
         properties: Dict[str, np.ndarray],
         indices: IndicesType,
     ) -> StyleArray:
-        num_indices = len(indices)
-        return _broadcast_constant(self.constant, num_indices, indices)
+        return _broadcast_constant(self.constant, len(indices), indices)
 
     def _append(self, array: StyleArray):
         pass
@@ -196,7 +195,7 @@ class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
         self.array = _delete_in_bounds(self.array, indices)
 
     def _clear(self):
-        self.array = _empty_like_multi_array(self.default)
+        self.array = _empty_array_like(self.default)
 
     def _json_encode(self) -> dict:
         return self.dict()
@@ -251,7 +250,7 @@ class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
         self._array = _delete_in_bounds(self._array, indices)
 
     def _clear(self):
-        self._array = _empty_like_multi_array(self.fallback)
+        self._array = _empty_array_like(self.fallback)
 
     def _json_encode(self) -> dict:
         return self.dict()
@@ -286,24 +285,28 @@ def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
         )
 
 
-def _empty_like_multi_array(single_array: np.ndarray):
+def _empty_array_like(single_array: StyleValue) -> StyleArray:
     shape = (0,) + single_array.shape
     return np.empty_like(single_array, shape=shape)
 
 
 def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
-    # TODO: do we really need bounds checking here?
+    # We need to check bounds here because Points.remove_selected calls
+    # delete once directly, then calls Points.data.setter which calls
+    # delete again with OOB indices.
     safe_indices = [i for i in indices if i < array.shape[0]]
     return np.delete(array, safe_indices, axis=0)
 
 
 def _broadcast_constant(
     constant: np.ndarray, n_rows: int, indices: Optional[IndicesType]
-):
+) -> np.ndarray:
     output_length = n_rows if indices is None else len(indices)
     output_shape = (output_length,) + constant.shape
     return np.broadcast_to(constant, output_shape)
 
 
-def _maybe_index_array(array: np.ndarray, indices: Optional[IndicesType]):
+def _maybe_index_array(
+    array: np.ndarray, indices: Optional[IndicesType]
+) -> np.ndarray:
     return array if indices is None else array[indices]
