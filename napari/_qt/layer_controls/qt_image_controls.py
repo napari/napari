@@ -15,6 +15,7 @@ from ...layers.image._image_constants import (
     Interpolation3D,
     Rendering,
 )
+from ...utils.action_manager import action_manager
 from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
 
@@ -59,6 +60,9 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.events._ndisplay.connect(self._on_ndisplay_change)
+        self.layer.experimental_slicing_plane.events.thickness.connect(
+            self._on_plane_thickness_change
+        )
 
         self.interpComboBox = QComboBox(self)
         self.interpComboBox.activated[str].connect(self.changeInterpolation)
@@ -88,12 +92,32 @@ class QtImageControls(QtBaseImageControls):
 
         self.planeThicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
         self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
-        self.planeThicknessSlider.setMinimum(0)
+        self.planeThicknessSlider.setMinimum(1)
         self.planeThicknessSlider.setMaximum(50)
         self.planeThicknessSlider.setValue(5)
         self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
+        self.planeThicknessSlider.valueChanged.connect(
+            self.changePlaneThickness
+        )
+
         self.planeNormalLabel = QLabel(trans._('plane normal:'))
         self.planeNormalButtons = PlaneOrientationButtons(parent=self)
+        action_manager.bind_button(
+            'napari:orient_plane_normal_along_z',
+            self.planeNormalButtons.z_button,
+        )
+        action_manager.bind_button(
+            'napari:orient_plane_normal_along_y',
+            self.planeNormalButtons.y_button,
+        )
+        action_manager.bind_button(
+            'napari:orient_plane_normal_along_x',
+            self.planeNormalButtons.x_button,
+        )
+        action_manager.bind_button(
+            'napari:orient_plane_normal_along_view_direction',
+            self.planeNormalButtons.oblique_button,
+        )
 
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -202,6 +226,9 @@ class QtImageControls(QtBaseImageControls):
         self.layer.depiction = text
         self._toggle_plane_parameter_visibility()
 
+    def changePlaneThickness(self, value: float):
+        self.layer.experimental_slicing_plane.thickness = value
+
     def changeIsoThreshold(self, value):
         """Change isosurface threshold on the layer model.
 
@@ -261,12 +288,17 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_rendering_parameter_visbility()
 
     def _on_depiction_change(self):
-        with self.layer.event.depiction.blocker():
+        with self.layer.events.depiction.blocker():
             index = self.depictionComboBox.findText(
                 self.layer.depiction, Qt.MatchFixedString
             )
             self.depictionComboBox.setCurrentIndex(index)
             self._toggle_plane_parameter_visibility()
+
+    def _on_plane_thickness_change(self):
+        with self.layer.experimental_slicing_plane.events.blocker():
+            thickness = self.layer.experimental_slicing_plane.thickness
+            self.planeThicknessSlider.setValue(thickness)
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
