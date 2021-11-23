@@ -24,8 +24,24 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.shading.connect(self._on_shading_change)
         self.layer.events.wireframe.connect(self._on_wireframe_change)
-        self.layer.events.normals.connect(self._on_normals_change)
+        self.layer.events.face_normals.connect(self._on_face_normals_change)
+        self.layer.events.face_normals_color.connect(
+            self._on_face_normals_change
+        )
+        self.layer.events.face_normals_length.connect(
+            self._on_face_normals_change
+        )
+        self.layer.events.vertex_normals.connect(
+            self._on_vertex_normals_change
+        )
+        self.layer.events.vertex_normals_color.connect(
+            self._on_vertex_normals_change
+        )
+        self.layer.events.vertex_normals_length.connect(
+            self._on_vertex_normals_change
+        )
 
+        self.node.wireframe_filter.enabled = True
         self.reset()
         self._on_data_change()
 
@@ -65,11 +81,12 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
-        self.node.update_normals()
         self._on_shading_change()
 
         self.node.update()
         # Call to update order of translation values with new dims:
+        self.node.update_face_normals()
+        self.node.update_vertex_normals()
         self._on_matrix_change()
 
     def _on_colormap_change(self):
@@ -104,12 +121,19 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.wireframe_filter.enabled = self.layer.wireframe
         self.node.update()
 
-    def _on_normals_change(self):
-        self.node.normals_visual.visible = self.layer.normals
-        self.node.normals_visual.update()
+    def _on_face_normals_change(self):
+        self.node.update_face_normals()
+        self.node.update()
+
+    def _on_vertex_normals_change(self):
+        self.node.update_vertex_normals()
+        self.node.update()
 
     def reset(self, event=None):
         super().reset()
         self._on_colormap_change()
         self._on_contrast_limits_change()
         self._on_shading_change()
+        self._on_wireframe_change()
+        self._on_face_normals_change()
+        self._on_vertex_normals_change()

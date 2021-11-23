@@ -150,7 +150,14 @@ class Surface(IntensityVisualizationMixin, Layer):
         cache=True,
         experimental_clipping_planes=None,
         wireframe=False,
-        normals=False,
+        wireframe_color='black',
+        wireframe_width=1,
+        face_normals=False,
+        face_normals_length=5,
+        face_normals_color='yellow',
+        vertex_normals=False,
+        vertex_normals_length=5,
+        vertex_normals_color='yellow',
     ):
 
         ndim = data[0].shape[1]
@@ -177,7 +184,14 @@ class Surface(IntensityVisualizationMixin, Layer):
             rendering=Event,
             shading=Event,
             wireframe=Event,
-            normals=Event,
+            wireframe_color=Event,
+            wireframe_width=Event,
+            face_normals=Event,
+            face_normals_length=Event,
+            face_normals_color=Event,
+            vertex_normals=Event,
+            vertex_normals_length=Event,
+            vertex_normals_color=Event,
         )
 
         # assign mesh data and establish default behavior
@@ -216,8 +230,18 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # Shading mode
         self._shading = shading
+        with self.events.blocker_all():
+            self.wireframe_color = wireframe_color
+            self.wireframe_width = wireframe_width
         self.wireframe = wireframe
-        self.normals = normals
+        with self.events.blocker_all():
+            self.face_normals_length = face_normals_length
+            self.face_normals_color = face_normals_color
+        self.face_normals = face_normals
+        with self.events.blocker_all():
+            self.vertex_normals_length = vertex_normals_length
+            self.vertex_normals_color = vertex_normals_color
+        self.vertex_normals = vertex_normals
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
@@ -344,13 +368,76 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.wireframe()
 
     @property
-    def normals(self) -> bool:
-        return self._normals
+    def wireframe_color(self):
+        return self._wireframe_color
 
-    @normals.setter
-    def normals(self, value):
-        self._normals = bool(value)
-        self.events.normals()
+    @wireframe_color.setter
+    def wireframe_color(self, value):
+        self._wireframe_color = value
+        self.events.wireframe_color()
+
+    @property
+    def wireframe_width(self):
+        return self._wireframe_width
+
+    @wireframe_width.setter
+    def wireframe_width(self, value):
+        self._wireframe_width = float(value)
+        self.events.wireframe_width()
+
+    @property
+    def face_normals(self) -> bool:
+        return self._face_normals
+
+    @face_normals.setter
+    def face_normals(self, value):
+        self._face_normals = bool(value)
+        self.events.face_normals()
+
+    @property
+    def face_normals_color(self):
+        return self._face_normals_color
+
+    @face_normals_color.setter
+    def face_normals_color(self, value):
+        self._face_normals_color = value
+        self.events.face_normals_color()
+
+    @property
+    def face_normals_length(self):
+        return self._face_normals_length
+
+    @face_normals_length.setter
+    def face_normals_length(self, value):
+        self._face_normals_length = value
+        self.events.face_normals_length()
+
+    @property
+    def vertex_normals(self) -> bool:
+        return self._vertex_normals
+
+    @vertex_normals.setter
+    def vertex_normals(self, value):
+        self._vertex_normals = bool(value)
+        self.events.vertex_normals()
+
+    @property
+    def vertex_normals_color(self):
+        return self._vertex_normals_color
+
+    @vertex_normals_color.setter
+    def vertex_normals_color(self, value):
+        self._vertex_normals_color = value
+        self.events.vertex_normals_color()
+
+    @property
+    def vertex_normals_length(self):
+        return self._vertex_normals_length
+
+    @vertex_normals_length.setter
+    def vertex_normals_length(self, value):
+        self._vertex_normals_length = value
+        self.events.vertex_normals_length()
 
     def _get_state(self):
         """Get dictionary of layer state.
