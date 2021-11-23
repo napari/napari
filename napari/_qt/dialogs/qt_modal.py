@@ -50,14 +50,14 @@ class QtPopup(QDialog):
         """Show popup dialog above the mouse cursor position."""
         pos = QCursor().pos()  # mouse position
         szhint = self.sizeHint()
-        pos -= QPoint(szhint.width() / 2, szhint.height() + 14)
+        pos -= QPoint(szhint.width() // 2, szhint.height() + 14)
         self.move(pos)
         self.show()
 
     def show_right_of_mouse(self, *args):
         pos = QCursor().pos()  # mouse position
         szhint = self.sizeHint()
-        pos -= QPoint(-14, szhint.height() / 4)
+        pos -= QPoint(-14, szhint.height() // 4)
         self.move(pos)
         self.show()
 
@@ -97,9 +97,9 @@ class QtPopup(QDialog):
             left = window.pos().x()
             top = window.pos().y()
             if position in ('top', 'bottom'):
-                width = window.width() * win_ratio
+                width = int(window.width() * win_ratio)
                 width = max(width, min_length)
-                left += (window.width() - width) / 2
+                left += (window.width() - width) // 2
                 height = self.sizeHint().height()
                 top += (
                     24
@@ -107,10 +107,10 @@ class QtPopup(QDialog):
                     else (window.height() - height - 12)
                 )
             elif position in ('left', 'right'):
-                height = window.height() * win_ratio
+                height = int(window.height() * win_ratio)
                 height = max(height, min_length)
                 # 22 is for the title bar
-                top += 22 + (window.height() - height) / 2
+                top += 22 + (window.height() - height) // 2
                 width = self.sizeHint().width()
                 left += (
                     12 if position == 'left' else (window.width() - width - 12)
