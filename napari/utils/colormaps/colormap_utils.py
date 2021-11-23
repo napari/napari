@@ -568,9 +568,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     return colormap
                 raise TypeError(
                     trans._(
-                        "When providing a tuple as a colormap argument, either"
-                        "1) the first element must be a string and the second a Colormap instance"
-                        "2) or the tuple should be convertible to one or more colors",
+                        "When providing a tuple as a colormap argument, either 1) the first element must be a string and the second a Colormap instance 2) or the tuple should be convertible to one or more colors",
                         deferred=True,
                     )
                 )

@@ -770,25 +770,32 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import plugin_manager
+        from ..plugins import _npe2, plugin_manager
 
-        try:
-            data = plugin_manager._sample_data[plugin][sample]['data']
-        except KeyError:
-            samples = plugin_manager.available_samples()
+        # try with npe2
+        data, available = _npe2.get_sample_data(plugin, sample)
+
+        # then try with npe1
+        if data is None:
+            try:
+                data = plugin_manager._sample_data[plugin][sample]['data']
+            except KeyError:
+                available += list(plugin_manager.available_samples())
+
+        if data is None:
             msg = trans._(
                 "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
                 plugin=plugin,
                 sample=sample,
                 deferred=True,
             )
-            if samples:
+            if available:
                 msg = trans._(
                     "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
                     deferred=True,
                     plugin=plugin,
                     sample=sample,
-                    samples=samples,
+                    samples=available,
                 )
             else:
                 msg = trans._(
@@ -881,7 +888,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         added: List[Layer] = []  # for layers that get added
         with progress(
             paths,
-            desc='Opening Files',
+            desc=trans._('Opening Files'),
             total=0
             if len(paths) == 1
             else None,  # indeterminate bar for 1 file
