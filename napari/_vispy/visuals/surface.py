@@ -18,7 +18,6 @@ class SurfaceVisual(ClippingPlanesMixin, Mesh):
         self.vertex_normals_visual = None
         super().__init__(*args, **kwargs)
         self.attach(self.wireframe_filter)
-        self.wireframe_filter.enabled = self.layer.wireframe
 
     def update_face_normals(self):
         # we have to skirt around the fact that MeshNormals breaks with empty data

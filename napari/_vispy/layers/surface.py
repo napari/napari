@@ -41,7 +41,6 @@ class VispySurfaceLayer(VispyBaseLayer):
             self._on_vertex_normals_change
         )
 
-        self.node.wireframe_filter.enabled = True
         self.reset()
         self._on_data_change()
 
