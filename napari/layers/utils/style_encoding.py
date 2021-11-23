@@ -12,7 +12,6 @@ from ...utils.misc import StringEnum
 
 IndicesType = Union[range, List[int], np.ndarray]
 
-# TODO: bound=np.ndarray is convenient but probably overly restrictive.
 """The variable type of a single style value."""
 StyleValue = TypeVar('StyleValue', bound=np.ndarray)
 
@@ -70,7 +69,7 @@ class StyleEncoding(Protocol[StyleArray]):
         self,
         properties: Dict[str, np.ndarray],
         indices: IndicesType,
-    ):
+    ) -> StyleArray:
         pass
 
     def _clear(self):
@@ -136,7 +135,7 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
         indices: IndicesType,
     ) -> StyleArray:
         num_indices = len(indices)
-        return _broadcast_constant(self.constant, num_indices, num_indices)
+        return _broadcast_constant(self.constant, num_indices, indices)
 
     def _append(self, array: StyleArray):
         pass

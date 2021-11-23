@@ -76,7 +76,6 @@ class TextManager(EventedModel):
 
     # Should be the same properties as the layer that owns this.
     _properties: Dict[str, np.ndarray]
-    _n_text: int
 
     def __init__(self, properties=None, n_text=0, **kwargs):
         if properties is None:
@@ -93,7 +92,7 @@ class TextManager(EventedModel):
                 kwargs['string'] = text
         super().__init__(**kwargs)
         self._properties = properties
-        self._n_text = n_text
+        self.string._get_array(self._properties, n_rows=n_text)
 
     @property
     def values(self):

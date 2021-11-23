@@ -188,13 +188,13 @@ def validate_string_encoding(
     )
 
 
-def _is_format_string(format_string: str) -> bool:
-    """Returns true if the given string should be used in :class:`StringFormatEncoding`.
+def _is_format_string(string: str) -> bool:
+    """Checks if a string is a valid format string with at least one field.
 
     Parameters
     ----------
-    format_string : str
-        The format string.
+    string : str
+        The string to check.
 
     Returns
     -------
@@ -203,7 +203,7 @@ def _is_format_string(format_string: str) -> bool:
     try:
         fields = tuple(
             field
-            for _, field, _, _ in Formatter().parse(format_string)
+            for _, field, _, _ in Formatter().parse(string)
             if field is not None
         )
     except ValueError:

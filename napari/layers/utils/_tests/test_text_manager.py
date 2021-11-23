@@ -192,10 +192,12 @@ def test_text_with_format_string_missing_property_then_constant_empty_with_warni
     text = 'score: {score:.2f}'
     properties = {'confidence': np.array([0.5, 0.3, 1])}
 
-    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
-
     with pytest.warns(RuntimeWarning):
-        np.testing.assert_array_equal(text_manager.values, [''] * n_text)
+        text_manager = TextManager(
+            text=text, n_text=n_text, properties=properties
+        )
+        values = text_manager.values
+    np.testing.assert_array_equal(values, [''] * n_text)
 
 
 def test_text_constant_then_repeat_values():
