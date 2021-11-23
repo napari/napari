@@ -770,29 +770,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import plugin_manager
+        from ..plugins import _npe2, plugin_manager
 
-        data = None
-        samples = []
-        try:
-            from npe2 import PluginManager
-        except ImportError:
-            pass
-        else:
-            pm = PluginManager.instance()
-            for c in pm._contrib._samples.get(plugin, []):
-                if c.key == sample:
-                    data = c.open
-                    break
-            else:
-                samples = [
-                    (p, x.key) for p, s in pm.iter_sample_data() for x in s
-                ]
+        # try with npe2
+        data, available = _npe2.get_sample_data(plugin, sample)
+
+        # then try with npe1
         if data is None:
             try:
                 data = plugin_manager._sample_data[plugin][sample]['data']
             except KeyError:
-                samples += list(plugin_manager.available_samples())
+                available += list(plugin_manager.available_samples())
+
         if data is None:
             msg = trans._(
                 "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
@@ -800,13 +789,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 sample=sample,
                 deferred=True,
             )
-            if samples:
+            if available:
                 msg = trans._(
                     "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
                     deferred=True,
                     plugin=plugin,
                     sample=sample,
-                    samples=samples,
+                    samples=available,
                 )
             else:
                 msg = trans._(
