@@ -829,8 +829,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def help(self, help):
         if help == self.help:
             return
-        self.events.help(help=help)
         self._help = help
+        self.events.help(help=help)
 
     @property
     def interactive(self):
@@ -839,10 +839,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @interactive.setter
     def interactive(self, interactive):
-        if interactive == self.interactive:
+        if interactive == self._interactive:
             return
-        self.events.interactive(interactive=interactive)
         self._interactive = interactive
+        self.events.interactive(interactive=interactive)
 
     @property
     def cursor(self):
@@ -853,8 +853,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def cursor(self, cursor):
         if cursor == self.cursor:
             return
-        self.events.cursor(cursor=cursor)
         self._cursor = cursor
+        self.events.cursor(cursor=cursor)
 
     @property
     def cursor_size(self):
@@ -865,8 +865,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def cursor_size(self, cursor_size):
         if cursor_size == self.cursor_size:
             return
-        self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
+        self.events.cursor_size(cursor_size=cursor_size)
 
     @property
     def experimental_clipping_planes(self):
