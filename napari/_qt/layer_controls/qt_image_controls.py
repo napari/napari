@@ -1,5 +1,6 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
+from qtpy.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QSlider
+from superqt import QLabeledDoubleSlider
 
 from ...layers.image._image_constants import (
     Depiction3D,
@@ -78,6 +79,8 @@ class QtImageControls(QtBaseImageControls):
         self.depictionComboBox = depictionComboBox
         self.depictionLabel = QLabel(trans._('depiction:'))
 
+        self.slicingPlaneControls = QtSlicingPlaneControls()
+
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
@@ -131,8 +134,9 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.depictionComboBox, 8, 1)
         # self.grid_layout.addWidget(self.isoThresholdLabel, 8, 0)
         # self.grid_layout.addWidget(self.isoThresholdSlider, 8, 1)
-        self.grid_layout.addWidget(self.attenuationLabel, 9, 0)
-        self.grid_layout.addWidget(self.attenuationSlider, 9, 1)
+        # self.grid_layout.addWidget(self.attenuationLabel, 9, 0)
+        # self.grid_layout.addWidget(self.attenuationSlider, 9, 1)
+        self.grid_layout.addWidget(self.slicingPlaneControls, 9, 0)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -261,6 +265,14 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationSlider.hide()
             self.attenuationLabel.hide()
 
+    def _toggle_slicing_plane_parameter_visibility(self):
+        """Hide plane rendering parameters if they aren't needed."""
+        depiction = Depiction3D(self.layer.depiction)
+        if depiction == Depiction3D.VOLUME:
+            pass
+        if depiction == Depiction3D.PLANE:
+            pass
+
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
         interp_names = (
@@ -284,7 +296,24 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationLabel.hide()
             self.renderComboBox.hide()
             self.renderLabel.hide()
+            self.depictionComboBox.hide()
+            self.depictionLabel.hide()
         else:
             self.renderComboBox.show()
             self.renderLabel.show()
             self._toggle_rendering_parameter_visbility()
+            self.depictionComboBox.show()
+            self.depictionLabel.show()
+            self._toggle_slicing_plane_parameter_visibility()
+
+
+class QtSlicingPlaneControls(QGroupBox):
+    def __init__(self):
+        super().__init__(trans._('plane:'))
+        self.setLayout(QHBoxLayout(self))
+        self.thicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
+        self.thicknessSlider.setMinimum(0)
+        self.thicknessSlider.setMaximum(50)
+        self.thicknessSlider.setValue(5)
+
+        self.layout().addWidget(self.thicknessSlider)
