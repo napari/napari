@@ -91,7 +91,10 @@ addopts = "--maxfail=5 --durations=10"
 filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
-  "ignore:Restart required for this change:UserWarning:napari",  # triggered by a lot of async tests
+  "ignore:.*vispy.color.colormap.CubeHelixColormap.*:DeprecationWarning:napari.+vendored.+",  # triggered by a lot of async tests
+  "error::DeprecationWarning:vispy",
+  "ignore:.*np.typeDict.*:DeprecationWarning:tensorstore",
+  "ignore:Restart required for this change:UserWarning:napari",
   "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",

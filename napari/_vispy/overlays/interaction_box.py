@@ -68,9 +68,9 @@ class VispyInteractionBox:
             face_color=face_color,
             edge_color=edge_color,
             edge_width=1.5,
-            symbol='square',
-            scaling=False,
         )
+        self.marker_node.scaling = False
+        self.marker_node.symbol = 'square'
 
         if pos is None or len(pos) == 0:
             pos = np.zeros((1, self._viewer.dims.ndisplay))

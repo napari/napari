@@ -14,6 +14,7 @@ try:
     from ._qt import Window
 
 except ImportError:
+    raise
 
     class Window:  # type: ignore
         def __init__(self, *args, **kwargs):

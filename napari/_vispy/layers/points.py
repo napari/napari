@@ -56,11 +56,11 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             edge_width=self.layer.edge_width,
-            symbol=self.layer.symbol,
             edge_color=edge_color,
             face_color=face_color,
-            scaling=True,
         )
+        self.node._subvisuals[0].scaling = False
+        self.node._subvisuals[0].symbol = self.layer.symbol
 
         self.reset()
 
@@ -80,11 +80,11 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             edge_width=settings.appearance.highlight_thickness,
-            symbol=self.layer.symbol,
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
-            scaling=True,
         )
+        self.node._subvisuals[1].scaling = False
+        self.node._subvisuals[1].symbol = self.layer.symbol
 
         # only draw a box in 2D
         if self.layer._ndisplay == 2:

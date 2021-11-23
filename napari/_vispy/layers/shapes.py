@@ -90,9 +90,10 @@ class VispyShapesLayer(VispyBaseLayer):
             face_color=face_color,
             edge_color=edge_color,
             edge_width=width,
-            symbol='square',
-            scaling=False,
         )
+
+        self.node._subvisuals[3].scaling = False
+        self.node._subvisuals[3].symbol = 'square'
 
         if pos is None or len(pos) == 0:
             pos = np.zeros((1, self.layer._ndisplay))
