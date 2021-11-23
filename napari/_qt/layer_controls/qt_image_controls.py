@@ -1,5 +1,12 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QGroupBox, QHBoxLayout, QLabel, QSlider
+from qtpy.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QWidget,
+)
 from superqt import QLabeledDoubleSlider
 
 from ...layers.image._image_constants import (
@@ -79,7 +86,14 @@ class QtImageControls(QtBaseImageControls):
         self.depictionComboBox = depictionComboBox
         self.depictionLabel = QLabel(trans._('depiction:'))
 
-        self.slicingPlaneControls = QtSlicingPlaneControls()
+        self.planeThicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
+        self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
+        self.planeThicknessSlider.setMinimum(0)
+        self.planeThicknessSlider.setMaximum(50)
+        self.planeThicknessSlider.setValue(5)
+        self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
+        self.planeNormalLabel = QLabel(trans._('plane normal:'))
+        self.planeNormalButtons = QtPlaneOrientationButtons(parent=self)
 
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -132,12 +146,15 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.renderComboBox, 7, 1)
         self.grid_layout.addWidget(self.depictionLabel, 8, 0)
         self.grid_layout.addWidget(self.depictionComboBox, 8, 1)
-        # self.grid_layout.addWidget(self.isoThresholdLabel, 8, 0)
-        # self.grid_layout.addWidget(self.isoThresholdSlider, 8, 1)
-        # self.grid_layout.addWidget(self.attenuationLabel, 9, 0)
-        # self.grid_layout.addWidget(self.attenuationSlider, 9, 1)
-        self.grid_layout.addWidget(self.slicingPlaneControls, 9, 0)
-        self.grid_layout.setRowStretch(9, 1)
+        self.grid_layout.addWidget(self.planeThicknessLabel, 9, 0)
+        self.grid_layout.addWidget(self.planeThicknessSlider, 9, 1)
+        self.grid_layout.addWidget(self.planeNormalLabel, 10, 0)
+        self.grid_layout.addWidget(self.planeNormalButtons, 10, 1)
+        self.grid_layout.addWidget(self.isoThresholdLabel, 11, 0)
+        self.grid_layout.addWidget(self.isoThresholdSlider, 11, 1)
+        self.grid_layout.addWidget(self.attenuationLabel, 12, 0)
+        self.grid_layout.addWidget(self.attenuationSlider, 12, 1)
+        self.grid_layout.setRowStretch(12, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -183,6 +200,7 @@ class QtImageControls(QtBaseImageControls):
 
     def changeDepiction(self, text):
         self.layer.depiction = text
+        self._toggle_plane_parameter_visibility()
 
     def changeIsoThreshold(self, value):
         """Change isosurface threshold on the layer model.
@@ -248,6 +266,7 @@ class QtImageControls(QtBaseImageControls):
                 self.layer.depiction, Qt.MatchFixedString
             )
             self.depictionComboBox.setCurrentIndex(index)
+            self._toggle_plane_parameter_visibility()
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
@@ -265,13 +284,21 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationSlider.hide()
             self.attenuationLabel.hide()
 
-    def _toggle_slicing_plane_parameter_visibility(self):
-        """Hide plane rendering parameters if they aren't needed."""
+    def _toggle_plane_parameter_visibility(self):
+        """Hide plane rendering controls if they aren't needed."""
         depiction = Depiction3D(self.layer.depiction)
+        plane_widgets = (
+            self.planeThicknessLabel,
+            self.planeThicknessSlider,
+            self.planeNormalLabel,
+            self.planeNormalButtons,
+        )
         if depiction == Depiction3D.VOLUME:
-            pass
+            for widget in plane_widgets:
+                widget.hide()
         if depiction == Depiction3D.PLANE:
-            pass
+            for widget in plane_widgets:
+                widget.show()
 
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
@@ -304,16 +331,22 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_rendering_parameter_visbility()
             self.depictionComboBox.show()
             self.depictionLabel.show()
-            self._toggle_slicing_plane_parameter_visibility()
+            self._toggle_plane_parameter_visibility()
 
 
-class QtSlicingPlaneControls(QGroupBox):
-    def __init__(self):
-        super().__init__(trans._('plane:'))
-        self.setLayout(QHBoxLayout(self))
-        self.thicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
-        self.thicknessSlider.setMinimum(0)
-        self.thicknessSlider.setMaximum(50)
-        self.thicknessSlider.setValue(5)
+class QtPlaneOrientationButtons(QWidget):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent=parent)
+        self.setLayout(QHBoxLayout())
+        self.layout().setSpacing(2)
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
-        self.layout().addWidget(self.thicknessSlider)
+        self.x_button = QPushButton('x')
+        self.y_button = QPushButton('y')
+        self.z_button = QPushButton('z')
+        self.oblique_button = QPushButton(trans._('oblique'))
+
+        self.layout().addWidget(self.x_button)
+        self.layout().addWidget(self.y_button)
+        self.layout().addWidget(self.z_button)
+        self.layout().addWidget(self.oblique_button)

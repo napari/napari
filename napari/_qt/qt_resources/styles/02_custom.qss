@@ -307,6 +307,13 @@ AutoScaleButtons QPushButton {
   padding: 4;
 }
 
+QtPlaneOrientationButtons QPushButton {
+    font-size: 9pt;
+    padding: 4;
+}
+
+
+
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
