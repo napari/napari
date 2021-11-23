@@ -717,7 +717,7 @@ class Window:
         func = plugin_manager._function_widgets[plugin_name][widget_name]
 
         # Add function widget
-        self.add_function_widget(
+        return self.add_function_widget(
             func, name=full_name, area=None, allowed_areas=None
         )
 
