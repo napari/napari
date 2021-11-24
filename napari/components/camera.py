@@ -6,6 +6,7 @@ from scipy.spatial.transform import Rotation as R
 
 from ..utils.events import EventedModel
 from ..utils.misc import ensure_n_tuple
+from ..utils.translations import trans
 
 
 class Camera(EventedModel):
@@ -118,7 +119,12 @@ class Camera(EventedModel):
 
         # explicit check for parallel view direction and up direction
         if np.allclose(np.cross(view_direction, up_direction), 0):
-            raise ValueError("view direction and up direction are parallel")
+            raise ValueError(
+                trans._(
+                    "view direction and up direction are parallel",
+                    deferred=True,
+                )
+            )
 
         x_direction = np.cross(up_direction, view_direction)
         x_direction /= np.linalg.norm(x_direction)

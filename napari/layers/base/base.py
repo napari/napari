@@ -829,8 +829,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def help(self, help):
         if help == self.help:
             return
-        self.events.help(help=help)
         self._help = help
+        self.events.help(help=help)
 
     @property
     def interactive(self):
@@ -839,10 +839,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @interactive.setter
     def interactive(self, interactive):
-        if interactive == self.interactive:
+        if interactive == self._interactive:
             return
-        self.events.interactive(interactive=interactive)
         self._interactive = interactive
+        self.events.interactive(interactive=interactive)
 
     @property
     def cursor(self):
@@ -853,8 +853,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def cursor(self, cursor):
         if cursor == self.cursor:
             return
-        self.events.cursor(cursor=cursor)
         self._cursor = cursor
+        self.events.cursor(cursor=cursor)
 
     @property
     def cursor_size(self):
@@ -865,8 +865,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def cursor_size(self, cursor_size):
         if cursor_size == self.cursor_size:
             return
-        self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
+        self.events.cursor_size(cursor_size=cursor_size)
 
     @property
     def experimental_clipping_planes(self):
@@ -1649,8 +1649,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         if layer_type not in layers.NAMES:
             raise ValueError(
-                f"Unrecognized layer_type: '{layer_type}'. "
-                f"Must be one of: {layers.NAMES}."
+                trans._(
+                    "Unrecognized layer_type: '{layer_type}'. Must be one of: {layer_names}.",
+                    deferred=True,
+                    layer_type=layer_type,
+                    layer_names=layers.NAMES,
+                )
             )
 
         Cls = getattr(layers, layer_type.title())
@@ -1663,6 +1667,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
-                "_add_layer_from_data received an unexpected keyword "
-                f"argument ({bad_key}) for layer type {layer_type}"
+                trans._(
+                    "_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}",
+                    deferred=True,
+                    bad_key=bad_key,
+                    layer_type=layer_type,
+                )
             ) from exc

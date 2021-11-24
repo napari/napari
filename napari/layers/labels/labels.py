@@ -235,10 +235,7 @@ class Labels(_ImageBase):
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors)
-        self._all_vals = low_discrepancy_image(
-            np.arange(self.num_colors), self._seed
-        )
-        self._all_vals[0] = 0
+        self._all_vals = np.array([], dtype=float)
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
         self._contour = 0
@@ -548,8 +545,6 @@ class Labels(_ImageBase):
 
     @selected_label.setter
     def selected_label(self, selected_label):
-        if selected_label < 0:
-            raise ValueError(trans._('cannot reduce selected label below 0'))
         if selected_label == self.selected_label:
             return
 
@@ -693,7 +688,10 @@ class Labels(_ImageBase):
         # Setting contrast_limits of labels layers leads to wrong visualization of the layer
         if tuple(value) != (0, 1):
             raise AttributeError(
-                "Setting contrast_limits on labels layers is not allowed."
+                trans._(
+                    "Setting contrast_limits on labels layers is not allowed.",
+                    deferred=True,
+                )
             )
         self._contrast_limits = (0, 1)
 
@@ -729,7 +727,7 @@ class Labels(_ImageBase):
                 0,
             )
         else:
-            image = np.where(im > 0, low_discrepancy_image(im, self._seed), 0)
+            image = np.where(im != 0, low_discrepancy_image(im, self._seed), 0)
         return image
 
     def _lookup_with_index(self, im, selected_label=None):
@@ -745,7 +743,9 @@ class Labels(_ImageBase):
         if selected_label:
             if selected_label > len(self._all_vals):
                 self._color_lookup_func = self._get_color_lookup_func(
-                    im, max(np.max(im), selected_label)
+                    im,
+                    min(np.min(im), selected_label),
+                    max(np.max(im), selected_label),
                 )
             if (
                 self._color_lookup_func
@@ -763,7 +763,7 @@ class Labels(_ImageBase):
                 image = self._all_vals[im]
             except IndexError:
                 self._color_lookup_func = self._get_color_lookup_func(
-                    im, np.max(im)
+                    im, np.min(im), np.max(im)
                 )
                 if (
                     self._color_lookup_func
@@ -776,7 +776,7 @@ class Labels(_ImageBase):
                     image = self._all_vals[im]
         return image
 
-    def _get_color_lookup_func(self, data, max_label_val):
+    def _get_color_lookup_func(self, data, min_label_val, max_label_val):
         """Returns function used for mapping label values to colors
 
         If array of [0..max(data)] would be larger than data,
@@ -787,6 +787,8 @@ class Labels(_ImageBase):
         ----------
         data : array
             labels data
+        min_label_val : int
+            minimum label value in data
         max_label_val : int
             maximum label value in data
 
@@ -801,15 +803,19 @@ class Labels(_ImageBase):
         # would be larger than the image, we go back to computing the low
         # discrepancy image on the whole input image. (Up to a minimum value of
         # 1kB.)
+        min_label_val0 = min(min_label_val, 0)
+        # +1 to allow indexing with max_label_val
+        data_range = max_label_val - min_label_val0 + 1
         nbytes_low_discrepancy = low_discrepancy_image(np.array([0])).nbytes
         max_nbytes = max(data.nbytes, 1024)
-        if max_label_val * nbytes_low_discrepancy > max_nbytes:
+        if data_range * nbytes_low_discrepancy > max_nbytes:
             return self._lookup_with_low_discrepancy_image
         else:
-            if self._all_vals.size < max_label_val + 1:
-                self._all_vals = low_discrepancy_image(
-                    np.arange(max_label_val + 1), self._seed
+            if self._all_vals.size < data_range:
+                new_all_vals = low_discrepancy_image(
+                    np.arange(min_label_val0, max_label_val + 1), self._seed
                 )
+                self._all_vals = np.roll(new_all_vals, min_label_val0)
                 self._all_vals[0] = 0
             return self._lookup_with_index
 
@@ -830,8 +836,9 @@ class Labels(_ImageBase):
             Image mapped between 0 and 1 to be displayed.
         """
         if self._color_lookup_func is None:
-            max_val = np.max(raw)
-            self._color_lookup_func = self._get_color_lookup_func(raw, max_val)
+            self._color_lookup_func = self._get_color_lookup_func(
+                raw, np.min(raw), np.max(raw)
+            )
         if (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT

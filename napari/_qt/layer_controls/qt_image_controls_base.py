@@ -195,10 +195,10 @@ class AutoScaleButtons(QWidget):
         self.setLayout(QHBoxLayout())
         self.layout().setSpacing(2)
         self.layout().setContentsMargins(0, 0, 0, 0)
-        once_btn = QPushButton('once')
+        once_btn = QPushButton(trans._('once'))
         once_btn.setFocusPolicy(Qt.NoFocus)
 
-        auto_btn = QPushButton('continuous')
+        auto_btn = QPushButton(trans._('continuous'))
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
