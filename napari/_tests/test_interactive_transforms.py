@@ -2,7 +2,23 @@ import numpy as np
 import pytest
 from vispy import keys
 
+from napari.components._interaction_box_constants import Box
 from napari.utils.transforms import Affine
+
+
+def check_corners_of_interaction_box(
+    box, top_left_corner, bottom_right_corner
+):
+    if not np.allclose(box[Box.TOP_LEFT], np.array(top_left_corner) - 0.5):
+        pytest.fail(
+            f"Top-left corner incorrect {box[Box.TOP_LEFT]} vs {np.array(top_left_corner) - 0.5}"
+        )
+    if not np.allclose(
+        box[Box.BOTTOM_RIGHT], np.array(bottom_right_corner) - 0.5
+    ):
+        pytest.fail(
+            f"Bottom-right corner incorrect {box[Box.BOTTOM_RIGHT]} vs {np.array(bottom_right_corner) - 0.5}"
+        )
 
 
 def test_interaction_box_display(make_napari_viewer):
@@ -14,19 +30,8 @@ def test_interaction_box_display(make_napari_viewer):
     layer.mode = 'transform'
 
     assert viewer.overlays.interaction_box.show
-    np.testing.assert_almost_equal(
-        viewer.overlays.interaction_box._box,
-        [
-            [-0.5, -0.5],
-            [14.5, -0.5],
-            [29.5, -0.5],
-            [29.5, 19.5],
-            [29.5, 39.5],
-            [14.5, 39.5],
-            [-0.5, 39.5],
-            [-0.5, 19.5],
-            [14.5, 19.5],
-        ],
+    check_corners_of_interaction_box(
+        viewer.overlays.interaction_box._box, [0, 0], [30, 40]
     )
 
 
@@ -68,35 +73,14 @@ def test_interaction_box_dim_change(make_napari_viewer):
 
     viewer.dims._roll()
 
-    np.testing.assert_almost_equal(
-        viewer.overlays.interaction_box._box,
-        [
-            [-0.5, -0.5],
-            [2.5, -0.5],
-            [5.5, -0.5],
-            [5.5, 14.5],
-            [5.5, 29.5],
-            [2.5, 29.5],
-            [-0.5, 29.5],
-            [-0.5, 14.5],
-            [2.5, 14.5],
-        ],
+    check_corners_of_interaction_box(
+        viewer.overlays.interaction_box._box, [0, 0], [6, 30]
     )
 
     viewer.dims._transpose()
-    np.testing.assert_almost_equal(
-        viewer.overlays.interaction_box._box,
-        [
-            [-0.5, -0.5],
-            [14.5, -0.5],
-            [29.5, -0.5],
-            [29.5, 2.5],
-            [29.5, 5.5],
-            [14.5, 5.5],
-            [-0.5, 5.5],
-            [-0.5, 2.5],
-            [14.5, 2.5],
-        ],
+
+    check_corners_of_interaction_box(
+        viewer.overlays.interaction_box._box, [0, 0], [30, 6]
     )
 
 
@@ -112,7 +96,7 @@ def test_vertex_highlight(make_napari_viewer):
 
     np.testing.assert_almost_equal(
         viewer.window.qt_viewer.interaction_box_visual.round_marker_node._data[
-            'a_fg_color'
+            'a_bg_color'
         ][0][:-1],
         viewer.window.qt_viewer.interaction_box_visual._highlight_color,
     )
