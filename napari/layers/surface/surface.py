@@ -155,9 +155,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         face_normals=False,
         face_normals_length=5,
         face_normals_color='yellow',
+        face_normals_width=1,
         vertex_normals=False,
         vertex_normals_length=5,
         vertex_normals_color='yellow',
+        vertex_normals_width=1,
     ):
 
         ndim = data[0].shape[1]
@@ -189,9 +191,11 @@ class Surface(IntensityVisualizationMixin, Layer):
             face_normals=Event,
             face_normals_length=Event,
             face_normals_color=Event,
+            face_normals_width=Event,
             vertex_normals=Event,
             vertex_normals_length=Event,
             vertex_normals_color=Event,
+            vertex_normals_width=Event,
         )
 
         # assign mesh data and establish default behavior
@@ -237,10 +241,12 @@ class Surface(IntensityVisualizationMixin, Layer):
         with self.events.blocker_all():
             self.face_normals_length = face_normals_length
             self.face_normals_color = face_normals_color
+            self.face_normals_width = face_normals_width
         self.face_normals = face_normals
         with self.events.blocker_all():
             self.vertex_normals_length = vertex_normals_length
             self.vertex_normals_color = vertex_normals_color
+            self.vertex_normals_width = vertex_normals_width
         self.vertex_normals = vertex_normals
 
     def _calc_data_range(self, mode='data'):
@@ -413,6 +419,15 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.face_normals_length()
 
     @property
+    def face_normals_width(self):
+        return self._face_normals_width
+
+    @face_normals_width.setter
+    def face_normals_width(self, value):
+        self._face_normals_width = value
+        self.events.face_normals_width()
+
+    @property
     def vertex_normals(self) -> bool:
         return self._vertex_normals
 
@@ -438,6 +453,15 @@ class Surface(IntensityVisualizationMixin, Layer):
     def vertex_normals_length(self, value):
         self._vertex_normals_length = value
         self.events.vertex_normals_length()
+
+    @property
+    def vertex_normals_width(self):
+        return self._vertex_normals_width
+
+    @vertex_normals_width.setter
+    def vertex_normals_width(self, value):
+        self._vertex_normals_width = value
+        self.events.vertex_normals_width()
 
     def _get_state(self):
         """Get dictionary of layer state.

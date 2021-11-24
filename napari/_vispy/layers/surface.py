@@ -31,6 +31,9 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.layer.events.face_normals_length.connect(
             self._on_face_normals_change
         )
+        self.layer.events.face_normals_width.connect(
+            self._on_face_normals_change
+        )
         self.layer.events.vertex_normals.connect(
             self._on_vertex_normals_change
         )
@@ -38,6 +41,9 @@ class VispySurfaceLayer(VispyBaseLayer):
             self._on_vertex_normals_change
         )
         self.layer.events.vertex_normals_length.connect(
+            self._on_vertex_normals_change
+        )
+        self.layer.events.vertex_normals_width.connect(
             self._on_vertex_normals_change
         )
 
@@ -80,12 +86,12 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
+        self.node.face_normals.set_data(self.node.mesh_data)
+        self.node.vertex_normals.set_data(self.node.mesh_data)
         self._on_shading_change()
 
         self.node.update()
         # Call to update order of translation values with new dims:
-        self.node.update_face_normals()
-        self.node.update_vertex_normals()
         self._on_matrix_change()
 
     def _on_colormap_change(self):
@@ -121,12 +127,22 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_face_normals_change(self):
-        self.node.update_face_normals()
-        self.node.update()
+        self.node.face_normals.visible = self.layer.face_normals
+        if self.node.face_normals.visible:
+            self.node.face_normals.set_data(
+                length=self.layer.face_normals_length,
+                color=self.layer.face_normals_color,
+                width=self.layer.face_normals_width,
+            )
 
     def _on_vertex_normals_change(self):
-        self.node.update_vertex_normals()
-        self.node.update()
+        self.node.vertex_normals.visible = self.layer.vertex_normals
+        if self.node.vertex_normals.visible:
+            self.node.vertex_normals.set_data(
+                length=self.layer.vertex_normals_length,
+                color=self.layer.vertex_normals_color,
+                width=self.layer.vertex_normals_width,
+            )
 
     def reset(self, event=None):
         super().reset()
