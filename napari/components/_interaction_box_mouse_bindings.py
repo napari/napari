@@ -98,7 +98,8 @@ class InteractionBoxMouseBindings:
     def _couple_interaction_box_to_active(self, event=None):
         viewer = self._viewer
         active_layer = viewer.layers.selection.active
-        # This is nescessary in case the current layer has fewer dims than the viewer
+        # This is necessary in case the current layer has fewer dims than the viewer
+
         layer_dims = dims_displayed_world_to_layer(
             list(viewer.dims.displayed),
             viewer.dims.ndim,
