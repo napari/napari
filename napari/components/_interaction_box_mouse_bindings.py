@@ -64,7 +64,8 @@ class InteractionBoxMouseBindings:
         self.initialize_key_events(viewer)
 
     def _on_remove_layer(self, event):
-        """Gets called when layer is added and removes event listener"""
+        """Gets called when layer is removed and removes event listener"""
+
         layer = event.value
         if hasattr(layer, 'mode'):
             layer.events.mode.disconnect(self)
@@ -97,7 +98,8 @@ class InteractionBoxMouseBindings:
     def _couple_interaction_box_to_active(self, event=None):
         viewer = self._viewer
         active_layer = viewer.layers.selection.active
-        # This is nescessary in case the current layer has fewer dims than the viewer
+        # This is necessary in case the current layer has fewer dims than the viewer
+
         layer_dims = dims_displayed_world_to_layer(
             list(viewer.dims.displayed),
             viewer.dims.ndim,

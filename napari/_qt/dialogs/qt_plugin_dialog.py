@@ -554,6 +554,7 @@ class QPluginList(QListWidget):
 class QtPluginDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.already_installed = set()
         self.installer = Installer()
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
@@ -591,18 +592,18 @@ class QtPluginDialog(QDialog):
 
         plugin_manager.discover()  # since they might not be loaded yet
 
-        already_installed = set()
+        self.already_installed = set()
 
         for plugin_name, mod_name, distname in plugin_manager.iter_available():
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
 
-            if distname in already_installed:
+            if distname in self.already_installed:
                 continue
 
             if distname:
-                already_installed.add(distname)
+                self.already_installed.add(distname)
                 meta = standard_metadata(distname)
             else:
                 meta = {}
@@ -621,20 +622,15 @@ class QtPluginDialog(QDialog):
             )
         self.installed_label.setText(
             trans._(
-                "Installed Plugins ({amount})", amount=len(already_installed)
+                "Installed Plugins ({amount})",
+                amount=len(self.already_installed),
             )
         )
 
         # fetch available plugins
         self.worker = create_worker(iter_napari_plugin_info)
 
-        def _handle_yield(project_info):
-            if project_info.name in already_installed:
-                self.installed_list.tag_outdated(project_info)
-            else:
-                self.available_list.addItem(project_info)
-
-        self.worker.yielded.connect(_handle_yield)
+        self.worker.yielded.connect(self._handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)
         self.worker.finished.connect(self._update_count_in_label)
         self.worker.start()
@@ -775,6 +771,24 @@ class QtPluginDialog(QDialog):
 
         if packages:
             self.installer.install(packages)
+
+    def _handle_yield(self, project_info):
+        if project_info.name in self.already_installed:
+            self.installed_list.tag_outdated(project_info)
+        else:
+            self.available_list.addItem(project_info)
+
+        self.filter()
+
+    def filter(self, text: str = None) -> None:
+        """Filter by text or set current text as filter."""
+        if text is None:
+            text = self.packages_filter.text()
+        else:
+            self.packages_filter.setText(text)
+
+        self.installed_list.filter(text)
+        self.available_list.filter(text)
 
 
 if __name__ == "__main__":

@@ -77,8 +77,8 @@ jobs:
         working-directory: main
       - name: Build Generated Docs
         run: |
-          python docs/_scripts/update_preference_docs.py
-          python docs/_scripts/update_event_docs.py
+          xvfb-run python docs/_scripts/update_preference_docs.py
+          xvfb-run python docs/_scripts/update_event_docs.py
         working-directory: main
         env:
           DISPLAY: ":99.0"

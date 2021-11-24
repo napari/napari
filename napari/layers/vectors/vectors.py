@@ -203,8 +203,7 @@ class Vectors(Layer):
         # Save the vector style params
         self._edge_width = edge_width
 
-        # length attribute
-        self._length = length
+        self._length = float(length)
 
         self._data = data
 
@@ -409,7 +408,7 @@ class Vectors(Layer):
 
     @length.setter
     def length(self, length: Union[int, float]):
-        self._length = length
+        self._length = float(length)
 
         vertices, triangles = generate_vector_meshes(
             self.data[:, :, list(self._dims_displayed)],

@@ -1,7 +1,9 @@
-from typing import TYPE_CHECKING, DefaultDict, Iterator, List, Sequence, Tuple
+from itertools import chain
+from typing import TYPE_CHECKING, Sequence
 
 from qtpy.QtWidgets import QAction
 
+from ...plugins import _npe2
 from ...utils.translations import trans
 from ..dialogs.qt_plugin_dialog import QtPluginDialog
 from ..dialogs.qt_plugin_report import QtPluginErrReporter
@@ -52,25 +54,11 @@ class PluginsMenu(NapariMenu):
                 self._win._remove_dock_widget(event=event)
 
     def _add_registered_widget(self, event=None, call_all=False):
-        from itertools import chain
-
         from ...plugins import plugin_manager
 
         # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
-        _iterable: Iterator[Tuple[str, Tuple[str, Sequence[str]]]]
-        try:
-            import npe2
-        except ImportError:
-            _iterable = iter([])
-        else:
-            pm = npe2.PluginManager.instance()
-            wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
-            for wdg_contrib in pm.iter_widgets():
-                wdgs[wdg_contrib.plugin_name].append(wdg_contrib.name)
-            _iterable = (('dock', x) for x in wdgs.items())
-
         for hook_type, (plugin_name, widgets) in chain(
-            _iterable, plugin_manager.iter_widgets()
+            _npe2.widget_iterator(), plugin_manager.iter_widgets()
         ):
             if call_all or event.value == plugin_name:
                 self._add_plugin_actions(hook_type, plugin_name, widgets)
@@ -106,9 +94,13 @@ class PluginsMenu(NapariMenu):
                     return
 
                 if hook_type == 'dock':
-                    self._win.add_plugin_dock_widget(*key)
+                    dock_widget, _w = self._win.add_plugin_dock_widget(*key)
                 else:
-                    self._win._add_plugin_function_widget(*key)
+                    dock_widget = self._win._add_plugin_function_widget(*key)
+
+                # Fixes https://github.com/napari/napari/issues/3624
+                dock_widget.setFloating(True)
+                dock_widget.setFloating(False)
 
             action.setCheckable(True)
             # check that this wasn't added to the menu already

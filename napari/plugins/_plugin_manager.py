@@ -340,8 +340,7 @@ class NapariPluginManager(PluginManager):
                 _data[theme_name] = theme
             except (KeyError, ValidationError) as err:
                 warn_msg = trans._(
-                    "In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object"
-                    " for creating themes. {err!r}",
+                    "In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for creating themes. {err!r}",
                     deferred=True,
                     hook_name=hook_name,
                     plugin_name=plugin_name,
@@ -372,9 +371,7 @@ class NapariPluginManager(PluginManager):
             settings.appearance.theme = "dark"
             warnings.warn(
                 message=trans._(
-                    "The current theme {current_theme!r} was provided by the"
-                    " plugin {plugin_name!r} which was disabled or removed."
-                    " Switched theme to the default.",
+                    "The current theme {current_theme!r} was provided by the plugin {plugin_name!r} which was disabled or removed. Switched theme to the default.",
                     deferred=True,
                     plugin_name=plugin_name,
                     current_theme=current_theme,
@@ -708,9 +705,7 @@ class NapariPluginManager(PluginManager):
                 pass
             if func is None:
                 msg = trans._(
-                    'plugin {plugin!r} did not return a {type_} function when '
-                    'provided a path ending in {ext!r}.  This *may* '
-                    'indicate a typo?',
+                    'plugin {plugin!r} did not return a {type_} function when provided a path ending in {ext!r}. This *may* indicate a typo?',
                     deferred=True,
                     plugin=plugin,
                     type_=type_,
