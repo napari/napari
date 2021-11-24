@@ -110,15 +110,6 @@ class QtViewerButtons(QFrame):
         super().__init__()
 
         self.viewer = viewer
-        action_manager.context['viewer'] = viewer
-
-        def active_layer():
-            if len(self.viewer.layers.selection) == 1:
-                return next(iter(self.viewer.layers.selection))
-            else:
-                return None
-
-        action_manager.context['layer'] = active_layer
 
         self.consoleButton = QtViewerPushButton(
             self.viewer,
@@ -128,6 +119,11 @@ class QtViewerButtons(QFrame):
             ),
         )
         self.consoleButton.setProperty('expanded', False)
+        action_manager.bind_button(
+            'napari:toggle_console_visibility',
+            self.consoleButton,
+        )
+
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',

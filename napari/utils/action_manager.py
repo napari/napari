@@ -1,45 +1,33 @@
 from __future__ import annotations
 
 import warnings
-import weakref
 from collections import defaultdict
 from dataclasses import dataclass
-from inspect import signature
+from functools import partial
 from typing import TYPE_CHECKING, Callable, Dict, List, Set, Union
 
+from ..utils.events import EmitterGroup
 from .interactions import Shortcut
 from .key_bindings import KeymapProvider
 from .translations import trans
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QPushButton
+    from typing_extensions import Protocol
 
+    class SignalInstance(Protocol):
+        def connect(self, callback: Callable) -> None:
+            ...
 
-def call_with_context(function, context):
-    """
-    call function `function` with the corresponding value taken from context
+    class Button(Protocol):
+        clicked: SignalInstance
 
-    This is use in the action manager to pass the rights instances to the actions,
-    without having the need for them to take a **kwarg, and is mostly needed when
-    triggering actions via buttons, or to record.
+        def setToolTip(self, text: str) -> None:
+            ...
 
-    If we went a declarative way to trigger action we cannot refer to instances
-    or objects that must be passed to the action, or at least this is
-    problematic.
-
-    We circumvent this by having a context (dictionary of str:instance) in
-    the action manager, and anything can tell the action manager "this is the
-    current instance a key". When an action is triggered; we inspect the
-    signature look at which instances it may need and pass this as parameters.
-    """
-
-    context_keys = [
-        k
-        for k, v in signature(function).parameters.items()
-        if v.kind not in (v.VAR_POSITIONAL, v.VAR_KEYWORD)
-    ]
-    ctx = {k: v for k, v in context.items() if k in context_keys}
-    return function(**ctx)
+    class ShortcutEvent:
+        name: str
+        shortcut: str
+        tooltip: str
 
 
 @dataclass
@@ -47,96 +35,6 @@ class Action:
     command: Callable
     description: str
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
-
-    def callable(self, context):
-        if not hasattr(self, '_command_with_context'):
-            self._command_with_context = lambda: call_with_context(
-                self.command, context
-            )
-        return self._command_with_context
-
-
-class ButtonWrapper:
-    """
-    Pyside seem to have an issue where calling disconnect/connect
-    seem to segfault.
-
-    We wrap our buttons in this to no call disconnect and reconnect the same callback
-    When not necessary.
-
-    This also make it simpler to make connecting a callback idempotent, and make
-    it easier to re-update all gui elements when a shortcut or description is
-    changed.
-    """
-
-    def __init__(
-        self,
-        button: QPushButton,
-        extra_tooltip_text,
-        action_name,
-        action_manager,
-    ):
-        """
-        wrapper around button to disconnect an action only
-        if it has been connected before.
-        """
-        self._button = weakref.ref(button)
-        self._connected = None
-        self._extra_tooltip_text: str = extra_tooltip_text
-        self._action_name = action_name
-        self._action_manager = weakref.ref(action_manager)
-        button.destroyed.connect(self._destroyed)
-
-    def _destroyed(self):
-        if self._action_manager() is None:
-            return
-        self._action_manager()._buttons[self._action_name].remove(self)
-
-    def setToolTip(self, value):
-        if self._button() is None:
-            # destroyed signal not handled yet
-            return
-        return self._button().setToolTip(
-            value + ' ' + self._extra_tooltip_text
-        )
-
-    def clicked_maybe_connect(self, callback):
-        if callback is not self._connected:
-            if self._connected is not None:
-                self._button().clicked.disconnect(self._connected)
-            self._button().clicked.connect(callback)
-            self._connected = callback
-        else:
-            # do nothing it's the same callback.
-            pass
-
-    @property
-    def destroyed(self):
-        return self._button() and self._button().destroyed
-
-
-class Context:
-    def __init__(self):
-        self._attr = {}
-        self._callables = {}
-
-    def __getitem__(self, key):
-        if key in self._attr:
-            return self._attr[key]
-        elif key in self._callables:
-            return self._callables[key]()
-
-    def items(self):
-        for k, v in self._attr.items():
-            yield k, v
-        for k, v in self._callables.items():
-            yield k, v()
-
-    def __setitem__(self, key, value):
-        if callable(value):
-            self._callables[key] = value
-        else:
-            self._attr[key] = value
 
 
 class ActionManager:
@@ -152,12 +50,6 @@ class ActionManager:
     actions, buttons, in which case they will be bound only once the actions are
     registered.
 
-    For actions that need access to a global element (a viewer, a plugin, ... ),
-    you want to give this item a unique name, and add it to the action manager
-    `context` object.
-
-    >>> action_manager.context['number'] = 1
-    ... action_manager.context['qtv'] = viewer.qt_viewer
 
     >>> def callback(qtv, number):
     ...     qtv.dims[number] +=1
@@ -175,16 +67,14 @@ class ActionManager:
     def __init__(self):
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
-        self._buttons: Dict[str, Set[ButtonWrapper]] = defaultdict(set)
+        # self._buttons: Dict[str, Set[ButtonWrapper]] = defaultdict(set)
         self._shortcuts: Dict[str, Set[str]] = defaultdict(set)
-        self.context = Context()  # Dict[str, Any] = {}
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
+        self.events = EmitterGroup(source=self, shorcut_changed=None)
 
     def _debug(self, val):
         self._tooltip_include_action_name = val
-        for name in self._buttons.keys():
-            self._update_gui_elements(name)
 
     def _validate_action_name(self, name):
         if len(name.split(':')) != 2:
@@ -249,42 +139,6 @@ class ActionManager:
         self._validate_action_name(name)
         self._actions[name] = Action(command, description, keymapprovider)
         self._update_shortcut_bindings(name)
-        self._update_gui_elements(name)
-
-    def _update_buttons(self, buttons, tooltip: str, callback):
-        for button in buttons:
-            # test if only tooltip makes crash
-            button.setToolTip(tooltip)
-            button.clicked_maybe_connect(callback)
-
-    def _update_gui_elements(self, name: str):
-        """
-        Update the description and shortcuts of all the (known) gui elements.
-        """
-        if name not in self._actions:
-            return
-        buttons = self._buttons.get(name, set())
-        desc = self._actions[name].description
-
-        # update buttons with shortcut and description
-        if name in self._shortcuts:
-            shortcuts = self._shortcuts[name]
-            joinstr = (
-                ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
-            )
-            shortcut_str = (
-                '('
-                + joinstr.join(
-                    f"{Shortcut(shortcut).platform}" for shortcut in shortcuts
-                )
-                + ')'
-            )
-        else:
-            shortcut_str = ''
-
-        callable_ = self._actions[name].callable(self.context)
-        append = '[' + name + ']' if self._tooltip_include_action_name else ''
-        self._update_buttons(buttons, desc + shortcut_str + append, callable_)
 
     def _update_shortcut_bindings(self, name: str):
         """
@@ -304,7 +158,9 @@ class ActionManager:
                     action.command
                 )
 
-    def bind_button(self, name: str, button, extra_tooltip_text='') -> None:
+    def bind_button(
+        self, name: str, button: Button, extra_tooltip_text=''
+    ) -> None:
         """
         Bind `button` to trigger Action `name` on click.
 
@@ -312,10 +168,10 @@ class ActionManager:
         ----------
         name : str
             name of the corresponding action in the form ``packagename:name``
-        button : QtStateButton | QPushButton
-            A abject presenting a qt-button like interface that when clicked
-            should trigger the action. The tooltip will be set the action
-            description and the corresponding shortcut if available.
+        button : Button
+            A object providing Button interface (like QPushButton) that, when
+            clicked, should trigger the action. The tooltip will be set to the
+            action description and the corresponding shortcut if available.
         extra_tooltip_text : str
             Extra text to add at the end of the tooltip. This is useful to
             convey more information about this action as the action manager may
@@ -326,16 +182,16 @@ class ActionManager:
         calling `bind_button` can be done before an action with the
         corresponding name is registered, in which case the effect will be
         delayed until the corresponding action is registered.
-
         """
         self._validate_action_name(name)
-        if hasattr(button, 'change'):
-            button.clicked.disconnect(button.change)
-        button_wrap = ButtonWrapper(button, extra_tooltip_text, name, self)
-        assert button not in [x._button() for x in self._buttons[name]]
+        button.clicked.connect(partial(self.trigger, name))
 
-        self._buttons[name].add(button_wrap)
-        self._update_gui_elements(name)
+        def _update_tt(event: ShortcutEvent):
+            if event.name == name:
+                button.setToolTip(event.tooltip + ' ' + extra_tooltip_text)
+
+        until = getattr(button, 'destroyed', None)
+        self.events.shorcut_changed.connect(_update_tt, until=until)
 
     def bind_shortcut(self, name: str, shortcut: str) -> None:
         """
@@ -358,7 +214,7 @@ class ActionManager:
         self._validate_action_name(name)
         self._shortcuts[name].add(shortcut)
         self._update_shortcut_bindings(name)
-        self._update_gui_elements(name)
+        self._emit_shortcut_change(name, shortcut)
 
     def unbind_shortcut(self, name: str) -> Union[Set[str], None]:
         """
@@ -399,8 +255,25 @@ class ActionManager:
                 for shortcut in shortcuts:
                     action.keymapprovider.bind_key(shortcut)(None)
             del self._shortcuts[name]
-        self._update_gui_elements(name)
+
+        self._emit_shortcut_change(name)
         return shortcuts
+
+    def _emit_shortcut_change(self, name: str, shortcut=''):
+        tt = self._build_tooltip(name) if name in self._actions else ''
+        self.events.shorcut_changed(name=name, shortcut=shortcut, tooltip=tt)
+
+    def _build_tooltip(self, name: str) -> str:
+        """Build tooltip for action `name`."""
+        ttip = self._actions[name].description
+
+        if name in self._shortcuts:
+            jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
+            shorts = jstr.join(f"{Shortcut(s)}" for s in self._shortcuts[name])
+            ttip += f'({shorts})'
+
+        ttip += f'[{name}]' if self._tooltip_include_action_name else ''
+        return ttip
 
     def _get_layer_shortcuts(self, layers):
         """
@@ -471,6 +344,14 @@ class ActionManager:
                 active_shortcuts[str(shortcut)] = action.description
 
         return active_shortcuts
+
+    def trigger(self, name: str) -> None:
+        """Trigger the action `name`."""
+        # command signature dependency injections *could* happen here, for
+        # example, if a parameter is annotated as napari.Viewer, then we
+        # get and pass the current viewer, or `layers.Layer` gets the active
+        # layer... could also use context keys as valid string argument names.
+        self._actions[name].command()
 
 
 action_manager = ActionManager()
