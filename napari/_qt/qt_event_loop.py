@@ -53,181 +53,190 @@ _defaults = {
 
 
 # store reference to QApplication to prevent garbage collection
-_app_ref = None
 _IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
 
 
-def get_app(
-    *,
-    app_name: str = None,
-    app_version: str = None,
-    icon: str = None,
-    org_name: str = None,
-    org_domain: str = None,
-    app_id: str = None,
-    ipy_interactive: bool = None,
-) -> QApplication:
-    """Get or create the Qt QApplication.
+class AppManager:
+    def __init__(self):
+        self._app_ref = None
 
-    There is only one global QApplication instance, which can be retrieved by
-    calling get_app again, (or by using QApplication.instance())
+    def get_app(
+        self,
+        *,
+        app_name: str = None,
+        app_version: str = None,
+        icon: str = None,
+        org_name: str = None,
+        org_domain: str = None,
+        app_id: str = None,
+        ipy_interactive: bool = None,
+    ) -> QApplication:
+        """Get or create the Qt QApplication.
 
-    Parameters
-    ----------
-    app_name : str, optional
-        Set app name (if creating for the first time), by default 'napari'
-    app_version : str, optional
-        Set app version (if creating for the first time), by default __version__
-    icon : str, optional
-        Set app icon (if creating for the first time), by default
-        NAPARI_ICON_PATH
-    org_name : str, optional
-        Set organization name (if creating for the first time), by default
-        'napari'
-    org_domain : str, optional
-        Set organization domain (if creating for the first time), by default
-        'napari.org'
-    app_id : str, optional
-        Set organization domain (if creating for the first time).  Will be
-        passed to set_app_id (which may also be called independently), by
-        default NAPARI_APP_ID
-    ipy_interactive : bool, optional
-        Use the IPython Qt event loop ('%gui qt' magic) if running in an
-        interactive IPython terminal.
+        There is only one global QApplication instance, which can be retrieved by
+        calling get_app again, (or by using QApplication.instance())
 
-    Returns
-    -------
-    QApplication
-        [description]
+        Parameters
+        ----------
+        app_name : str, optional
+            Set app name (if creating for the first time), by default 'napari'
+        app_version : str, optional
+            Set app version (if creating for the first time), by default __version__
+        icon : str, optional
+            Set app icon (if creating for the first time), by default
+            NAPARI_ICON_PATH
+        org_name : str, optional
+            Set organization name (if creating for the first time), by default
+            'napari'
+        org_domain : str, optional
+            Set organization domain (if creating for the first time), by default
+            'napari.org'
+        app_id : str, optional
+            Set organization domain (if creating for the first time).  Will be
+            passed to set_app_id (which may also be called independently), by
+            default NAPARI_APP_ID
+        ipy_interactive : bool, optional
+            Use the IPython Qt event loop ('%gui qt' magic) if running in an
+            interactive IPython terminal.
 
-    Notes
-    -----
-    Substitutes QApplicationWithTracing when the NAPARI_PERFMON env variable
-    is set.
+        Returns
+        -------
+        QApplication
+            [description]
 
-    """
-    # napari defaults are all-or nothing.  If any of the keywords are used
-    # then they are all used.
-    set_values = {k for k, v in locals().items() if v}
-    kwargs = locals() if set_values else _defaults
-    global _app_ref
+        Notes
+        -----
+        Substitutes QApplicationWithTracing when the NAPARI_PERFMON env variable
+        is set.
 
-    app = QApplication.instance()
-    if app:
-        set_values.discard("ipy_interactive")
-        if set_values:
+        """
+        # napari defaults are all-or nothing.  If any of the keywords are used
+        # then they are all used.
+        set_values = {k for k, v in locals().items() if v}
+        kwargs = locals() if set_values else _defaults
 
-            warn(
-                trans._(
-                    "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
-                    deferred=True,
-                    args=set_values,
+        app = QApplication.instance()
+        if app:
+            set_values.discard("ipy_interactive")
+            set_values.discard("self")
+            if set_values:
+
+                warn(
+                    trans._(
+                        "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
+                        deferred=True,
+                        args=set_values,
+                    )
                 )
-            )
-        if perf_config and perf_config.trace_qt_events:
-            warn(
-                trans._(
-                    "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
-                    deferred=True,
+            if perf_config and perf_config.trace_qt_events:
+                warn(
+                    trans._(
+                        "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
+                        deferred=True,
+                    )
                 )
-            )
 
-    else:
-        # automatically determine monitor DPI.
-        # Note: this MUST be set before the QApplication is instantiated
-        if PYQT5:
-            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-
-        if perf_config and perf_config.trace_qt_events:
-            from .perf.qt_event_tracing import QApplicationWithTracing
-
-            app = QApplicationWithTracing(sys.argv)
         else:
-            app = QApplication(sys.argv)
+            # automatically determine monitor DPI.
+            # Note: this MUST be set before the QApplication is instantiated
+            if PYQT5:
+                QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 
-        # if this is the first time the Qt app is being instantiated, we set
-        # the name and metadata
-        app.setApplicationName(kwargs.get('app_name'))
-        app.setApplicationVersion(kwargs.get('app_version'))
-        app.setOrganizationName(kwargs.get('org_name'))
-        app.setOrganizationDomain(kwargs.get('org_domain'))
-        set_app_id(kwargs.get('app_id'))
+            if perf_config and perf_config.trace_qt_events:
+                from .perf.qt_event_tracing import QApplicationWithTracing
 
-        # Intercept tooltip events in order to convert all text to rich text
-        # to allow for text wrapping of tooltips
-        app.installEventFilter(QtToolTipEventFilter(app))
+                app = QApplicationWithTracing(sys.argv)
+            else:
+                app = QApplication(sys.argv)
 
-    if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(
-            NapariQtNotification.show_notification
-        )
-        notification_manager.notification_ready.connect(
-            show_console_notification
-        )
+            # if this is the first time the Qt app is being instantiated, we set
+            # the name and metadata
+            app.setApplicationName(kwargs.get('app_name'))
+            app.setApplicationVersion(kwargs.get('app_version'))
+            app.setOrganizationName(kwargs.get('org_name'))
+            app.setOrganizationDomain(kwargs.get('org_domain'))
+            set_app_id(kwargs.get('app_id'))
 
-    if app.windowIcon().isNull():
-        app.setWindowIcon(QIcon(kwargs.get('icon')))
+            # Intercept tooltip events in order to convert all text to rich text
+            # to allow for text wrapping of tooltips
+            app.installEventFilter(QtToolTipEventFilter(app))
 
-    if ipy_interactive is None:
-        ipy_interactive = get_settings().application.ipy_interactive
-    if _IPYTHON_WAS_HERE_FIRST:
-        _try_enable_ipython_gui('qt' if ipy_interactive else None)
+        if not _ipython_has_eventloop():
+            notification_manager.notification_ready.connect(
+                NapariQtNotification.show_notification
+            )
+            notification_manager.notification_ready.connect(
+                show_console_notification
+            )
 
-    if perf_config and not perf_config.patched:
-        # Will patch based on config file.
-        perf_config.patch_callables()
+        if app.windowIcon().isNull():
+            app.setWindowIcon(QIcon(kwargs.get('icon')))
 
-    if not _app_ref:  # running get_app for the first time
-        # see docstring of `wait_for_workers_to_quit` for caveats on killing
-        # workers at shutdown.
-        app.aboutToQuit.connect(wait_for_workers_to_quit)
+        if ipy_interactive is None:
+            ipy_interactive = get_settings().application.ipy_interactive
+        if _IPYTHON_WAS_HERE_FIRST:
+            _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
-        # this will register all of our resources (icons) with Qt, so that they
-        # can be used in qss files and elsewhere.
-        _register_napari_resources()
+        if perf_config and not perf_config.patched:
+            # Will patch based on config file.
+            perf_config.patch_callables()
 
-    _app_ref = app  # prevent garbage collection
+        if not self._app_ref:  # running get_app for the first time
+            # see docstring of `wait_for_workers_to_quit` for caveats on killing
+            # workers at shutdown.
+            app.aboutToQuit.connect(wait_for_workers_to_quit)
 
-    # Add the dispatcher attribute to the application to be able to dispatch
-    # notifications coming from threads
+            # this will register all of our resources (icons) with Qt, so that they
+            # can be used in qss files and elsewhere.
+            _register_napari_resources()
 
-    return app
+        self._app_ref = app  # prevent garbage collection
+
+        # Add the dispatcher attribute to the application to be able to dispatch
+        # notifications coming from threads
+
+        return app
+
+    def quit_app(self):
+        """Close all windows and quit the QApplication if napari started it."""
+        QApplication.closeAllWindows()
+        # if we started the application then the app will be named 'napari'.
+        if (
+            QApplication.applicationName() == 'napari'
+            and not _ipython_has_eventloop()
+        ):
+            QApplication.quit()
+
+        # otherwise, something else created the QApp before us (such as
+        # %gui qt IPython magic).  If we quit the app in this case, then
+        # *later* attempts to instantiate a napari viewer won't work until
+        # the event loop is restarted with app.exec_().  So rather than
+        # quit just close all the windows (and clear our app icon).
+        else:
+            QApplication.setWindowIcon(QIcon())
+
+        if perf.USE_PERFMON:
+            # Write trace file before exit, if we were writing one.
+            # Is there a better place to make sure this is done on exit?
+            perf.timers.stop_trace_file()
+
+        if config.monitor:
+            # Stop the monitor service if we were using it
+            from ..components.experimental.monitor import monitor
+
+            monitor.stop()
+
+        if config.async_loading:
+            # Shutdown the chunkloader
+            from ..components.experimental.chunk import chunk_loader
+
+            chunk_loader.shutdown()
 
 
-def quit_app():
-    """Close all windows and quit the QApplication if napari started it."""
-    QApplication.closeAllWindows()
-    # if we started the application then the app will be named 'napari'.
-    if (
-        QApplication.applicationName() == 'napari'
-        and not _ipython_has_eventloop()
-    ):
-        QApplication.quit()
+_app_manager = AppManager()
 
-    # otherwise, something else created the QApp before us (such as
-    # %gui qt IPython magic).  If we quit the app in this case, then
-    # *later* attempts to instantiate a napari viewer won't work until
-    # the event loop is restarted with app.exec_().  So rather than
-    # quit just close all the windows (and clear our app icon).
-    else:
-        QApplication.setWindowIcon(QIcon())
-
-    if perf.USE_PERFMON:
-        # Write trace file before exit, if we were writing one.
-        # Is there a better place to make sure this is done on exit?
-        perf.timers.stop_trace_file()
-
-    if config.monitor:
-        # Stop the monitor service if we were using it
-        from ..components.experimental.monitor import monitor
-
-        monitor.stop()
-
-    if config.async_loading:
-        # Shutdown the chunkloader
-        from ..components.experimental.chunk import chunk_loader
-
-        chunk_loader.shutdown()
+quit_app = _app_manager.quit_app
+get_app = _app_manager.get_app
 
 
 @contextmanager
