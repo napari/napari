@@ -1,3 +1,4 @@
+from numbers import Integral
 from typing import Sequence, Tuple, Union
 
 import numpy as np
@@ -187,47 +188,48 @@ class Dims(EventedModel):
         order[np.argsort(order)] = list(range(len(order)))
         return tuple(order)
 
-    def set_range(self, axis: int, _range: Sequence[Union[int, float]]):
+    def set_range(
+        self,
+        axis: Union[int, Sequence[int]],
+        _range: Union[
+            Sequence[Union[int, float]], Sequence[Sequence[Union[int, float]]]
+        ],
+    ):
         """Sets the range (min, max, step) for a given dimension.
 
         Parameters
         ----------
-        axis : int
-            Dimension index.
+        axis : int or sequence of int
+            Dimension index or a sequence of axes whos range will be set.
         _range : tuple
-            Range specified as (min, max, step).
+            Range specified as (min, max, step) or a sequence of these range
+            tuples.
         """
-        axis = assert_axis_in_bounds(axis, self.ndim)
-        if self.range[axis] != _range:
-            full_range = list(self.range)
-            full_range[axis] = _range
-            self.range = full_range
-        self.last_used = axis
-
-    def _set_ranges(
-        self,
-        _ranges: Sequence[Sequence[Union[int, float]]],
-        axes: Sequence[int] = None,
-    ):
-        """Sets the ranges (min, max, step) along the specified axes
-
-        Parameters
-        ----------
-        _ranges : tuple
-            Ranges specified as a sequence of (min, max, step).
-        axes : sequence of int or None
-            Axes whos range will be set. Default is ``range(len(_ranges))``.
-        """
-        full_range = list(self.range)
-        _ranges = list(_ranges)
-        if axes is None:
-            axes = range(len(_ranges))
-        if _ranges != full_range:
-            for axis, _range in zip(axes, _ranges):
-                axis = assert_axis_in_bounds(axis, self.ndim)
+        if isinstance(axis, Integral):
+            axis = assert_axis_in_bounds(axis, self.ndim)  # type: ignore
+            if self.range[axis] != _range:
+                full_range = list(self.range)
                 full_range[axis] = _range
-            self.range = full_range
+                self.range = full_range
             self.last_used = axis
+        else:
+            full_range = list(self.range)
+            _range = list(_range)  # type: ignore
+            axis = tuple(axis)  # type: ignore
+            if len(axis) != len(_range):
+                raise ValueError(
+                    "axis and _range sequences must have equal length"
+                )
+            if _range != full_range:
+                changed_axes = []
+                for ax, r in zip(axis, _range):
+                    ax = assert_axis_in_bounds(int(ax), self.ndim)
+                    if r != full_range[ax]:
+                        full_range[ax] = r
+                        changed_axes.append(ax)
+                self.range = full_range
+                # set last_used to the smallest of the changed axes
+                self.last_used = min(changed_axes)
 
     def set_point(self, axis: int, value: Union[int, float]):
         """Sets point to slice dimension in world coordinates.

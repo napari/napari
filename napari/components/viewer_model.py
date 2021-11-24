@@ -339,7 +339,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ranges = self.layers._ranges
             ndim = len(ranges)
             self.dims.ndim = ndim
-            self.dims._set_ranges(ranges)
+            self.dims.set_range(range(ndim), ranges)
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
