@@ -84,7 +84,20 @@ def calc_data_range(data, rgb=False):
     """
     if data.dtype == np.uint8:
         return [0, 255]
-    if np.prod(data.shape) > 1e7:
+
+    if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
+        # If data is very large take the average of start, middle and end.
+        center = int(data.shape[0] // 2)
+        slices = [
+            slice(0, 4096),
+            slice(center - 2048, center + 2048),
+            slice(-4096, None),
+        ]
+        reduced_data = [
+            [np.max(data[sl]) for sl in slices],
+            [np.min(data[sl]) for sl in slices],
+        ]
+    elif data.size > 1e7:
         # If data is very large take the average of the top, bottom, and
         # middle slices
         offset = 2 + int(rgb)
@@ -98,12 +111,12 @@ def calc_data_range(data, rgb=False):
             and data.shape[-offset] > 64
             and data.shape[-offset + 1] > 64
         ):
-            # Find a centeral patch of the image to take
+            # Find a central patch of the image to take
             center = [int(s // 2) for s in data.shape[-offset:]]
-            cental_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
+            central_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
             reduced_data = [
-                [np.max(data[idx + cental_slice]) for idx in idxs],
-                [np.min(data[idx + cental_slice]) for idx in idxs],
+                [np.max(data[idx + central_slice]) for idx in idxs],
+                [np.min(data[idx + central_slice]) for idx in idxs],
             ]
         else:
             reduced_data = [
@@ -338,7 +351,12 @@ def _coerce_current_properties_value(
     """
     if isinstance(value, (np.ndarray, list, tuple)):
         if len(value) != 1:
-            raise ValueError('current_properties values should have length 1.')
+            raise ValueError(
+                trans._(
+                    'current_properties values should have length 1.',
+                    deferred=True,
+                )
+            )
         coerced_value = np.asarray(value)
     else:
         coerced_value = np.array([value])
