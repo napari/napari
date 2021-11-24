@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -15,6 +17,9 @@ from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from .qt_spinbox import QtSpinBox
 from .qt_tooltip import QtToolTipLabel
+
+if TYPE_CHECKING:
+    from ...viewer import Viewer
 
 
 class QtLayerButtons(QFrame):
@@ -39,13 +44,12 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer: 'Viewer'):
         super().__init__()
 
         self.viewer = viewer
         self.deleteButton = QtDeleteButton(self.viewer)
         self.newPointsButton = QtViewerPushButton(
-            self.viewer,
             'new_points',
             trans._('New points layer'),
             lambda: self.viewer.add_points(
@@ -55,7 +59,6 @@ class QtLayerButtons(QFrame):
         )
 
         self.newShapesButton = QtViewerPushButton(
-            self.viewer,
             'new_shapes',
             trans._('New shapes layer'),
             lambda: self.viewer.add_shapes(
@@ -64,7 +67,6 @@ class QtLayerButtons(QFrame):
             ),
         )
         self.newLabelsButton = QtViewerPushButton(
-            self.viewer,
             'new_labels',
             trans._('New labels layer'),
             lambda: self.viewer._new_labels(),
@@ -98,80 +100,57 @@ class QtViewerButtons(QFrame):
         Button to transpose dimensions in the napari viewer.
     resetViewButton : QtViewerPushButton
         Button resetting the view of the rendered scene.
-    gridViewButton : QtStateButton
+    gridViewButton : QtViewerPushButton
         Button to toggle grid view mode of layers on and off.
-    ndisplayButton : QtStateButton
+    ndisplayButton : QtViewerPushButton
         Button to toggle number of displayed dimensions.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer: 'Viewer'):
         super().__init__()
 
         self.viewer = viewer
 
         self.consoleButton = QtViewerPushButton(
-            self.viewer,
-            'console',
-            trans._(
-                "Open IPython terminal",
-            ),
+            'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        action_manager.bind_button(
-            'napari:toggle_console_visibility',
-            self.consoleButton,
-        )
-
         self.rollDimsButton = QtViewerPushButton(
-            self.viewer,
-            'roll',
+            'roll', action='napari:roll_axes'
         )
-
-        action_manager.bind_button('napari:roll_axes', self.rollDimsButton)
-
         self.transposeDimsButton = QtViewerPushButton(
-            self.viewer,
-            'transpose',
+            'transpose', action='napari:transpose_axes'
         )
+        self.resetViewButton = QtViewerPushButton(
+            'home', action='napari:reset_view'
+        )
+        gvb = QtViewerPushButton(
+            'grid_view_button', action='napari:toggle_grid'
+        )
+        self.gridViewButton = gvb
+        gvb.setCheckable(True)
+        gvb.setChecked(viewer.grid.enabled)
+        gvb.setContextMenuPolicy(Qt.CustomContextMenu)
+        gvb.customContextMenuRequested.connect(self._open_grid_popup)
 
-        action_manager.bind_button(
-            'napari:transpose_axes', self.transposeDimsButton
-        )
+        @self.viewer.grid.events.enabled.connect
+        def _set_grid_mode_checkstate(event):
+            gvb.setChecked(event.value)
 
-        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
-        action_manager.bind_button('napari:reset_view', self.resetViewButton)
+        ndb = QtViewerPushButton(
+            'ndisplay_button', action='napari:toggle_ndisplay'
+        )
+        self.ndisplayButton = ndb
+        ndb.setCheckable(True)
+        ndb.setChecked(self.viewer.dims.ndisplay == 2)
+        ndb.setContextMenuPolicy(Qt.CustomContextMenu)
+        ndb.customContextMenuRequested.connect(self.open_perspective_popup)
 
-        self.gridViewButton = QtStateButton(
-            'grid_view_button',
-            self.viewer.grid,
-            'enabled',
-            self.viewer.grid.events,
-        )
-
-        self.gridViewButton.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.gridViewButton.customContextMenuRequested.connect(
-            self._open_grid_popup
-        )
-
-        action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
-
-        self.ndisplayButton = QtStateButton(
-            "ndisplay_button",
-            self.viewer.dims,
-            'ndisplay',
-            self.viewer.dims.events.ndisplay,
-            2,
-            3,
-        )
-        self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ndisplayButton.customContextMenuRequested.connect(
-            self.open_perspective_popup
-        )
-        action_manager.bind_button(
-            'napari:toggle_ndisplay', self.ndisplayButton
-        )
+        @self.viewer.dims.events.ndisplay.connect
+        def _set_ndisplay_mode_checkstate(event):
+            ndb.setChecked(event.value == 2)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -420,71 +399,14 @@ class QtViewerPushButton(QPushButton):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer, button_name, tooltip=None, slot=None):
+    def __init__(
+        self, button_name: str, tooltip: str = '', slot=None, action: str = ''
+    ):
         super().__init__()
 
-        self.viewer = viewer
         self.setToolTip(tooltip or button_name)
         self.setProperty('mode', button_name)
         if slot is not None:
             self.clicked.connect(slot)
-
-
-class QtStateButton(QtViewerPushButton):
-    """Button to toggle between two states.
-
-    Parameters
-    ----------
-    button_name : str
-        A string that will be used in qss to style the button with the
-        QtStateButton[mode=...] selector,
-    target : object
-        object on which you want to change the property when button pressed.
-    attribute:
-        name of attribute on `object` you wish to change.
-    events: EventEmitter
-        event emitter that will trigger when value is changed
-    onstate: Any
-        value to use for ``setattr(object, attribute, onstate)`` when clicking
-        this button
-    offstate: Any
-        value to use for ``setattr(object, attribute, offstate)`` when clicking
-        this button.
-    """
-
-    def __init__(
-        self,
-        button_name,
-        target,
-        attribute,
-        events,
-        onstate=True,
-        offstate=False,
-    ):
-        super().__init__(target, button_name)
-        self.setCheckable(True)
-
-        self._target = target
-        self._attribute = attribute
-        self._onstate = onstate
-        self._offstate = offstate
-        self._events = events
-        self._events.connect(self._on_change)
-        self.clicked.connect(self.change)
-        self._on_change()
-
-    def change(self):
-        """Toggle between the multiple states of this button."""
-        if self.isChecked():
-            newstate = self._onstate
-        else:
-            newstate = self._offstate
-        setattr(self._target, self._attribute, newstate)
-
-    def _on_change(self):
-        """Called wen mirrored value changes"""
-        with self._events.blocker():
-            if self.isChecked() != (
-                getattr(self._target, self._attribute) == self._onstate
-            ):
-                self.toggle()
+        if action:
+            action_manager.bind_button(action, self)
