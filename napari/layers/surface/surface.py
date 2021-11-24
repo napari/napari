@@ -81,6 +81,34 @@ class Surface(IntensityVisualizationMixin, Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
+    wireframe : bool
+        Whether the wireframe showing the edges of the faces is displayed.
+    wireframe_color : str, array-like
+        If string can be any color name recognized by vispy or hex value if
+        starting with `#`. If array-like must be 1-dimensional array with 3
+        or 4 elements.
+    wireframe_width : float
+        The width of the wireframe lines in pixels.
+    face_normals : bool
+        Whether the face normals are displayed.
+    face_normals_color : str, array-like
+        If string can be any color name recognized by vispy or hex value if
+        starting with `#`. If array-like must be 1-dimensional array with 3
+        or 4 elements.
+    face_normals_width : float
+        The width of the face normal lines in pixels.
+    face_normals_length : float
+        The length of the face normal lines in pixels.
+    vertex_normals : bool
+        Whether the vertex normals are displayed.
+    vertex_normals_color : str, array-like
+        If string can be any color name recognized by vispy or hex value if
+        starting with `#`. If array-like must be 1-dimensional array with 3
+        or 4 elements.
+    vertex_normals_width : float
+        The width of the vertex normal lines in pixels.
+    vertex_normals_length : float
+        The length of the vertex normal lines in pixels.
 
     Attributes
     ----------
