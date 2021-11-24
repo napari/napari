@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from functools import wraps
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import dask
@@ -45,9 +46,17 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     def _inner(func):
         nonlocal shortcuts
         name = 'napari:' + func.__name__
+
+        @wraps(func)
+        def _inner(*_):
+            from ...viewer import current_viewer
+
+            viewer = current_viewer()
+            func(viewer.layers.selection.active if viewer else None)
+
         action_manager.register_action(
             name=name,
-            command=func,
+            command=_inner,
             description=description,
             keymapprovider=keymapprovider,
         )

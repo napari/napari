@@ -315,12 +315,11 @@ class ActionManager:
             Dictionary of names of actions with action values for a layer.
 
         """
-        layer_actions = {}
-        for name, action in self._actions.items():
-            if action and layer == action.keymapprovider:
-                layer_actions[name] = action
-
-        return layer_actions
+        return {
+            name: action
+            for name, action in self._actions.items()
+            if action and layer == action.keymapprovider
+        }
 
     def _get_active_shortcuts(self, active_keymap):
         """
@@ -351,6 +350,11 @@ class ActionManager:
         # example, if a parameter is annotated as napari.Viewer, then we
         # get and pass the current viewer, or `layers.Layer` gets the active
         # layer... could also use context keys as valid string argument names.
+
+        # however, currently, the only "dependencies" we tend to inject are the
+        # current viewer, or the active layer.  These are handled respectively,
+        # in _viewer_key_bindings.register_viewer_action
+        # and _layer_utils.register_layer_action
         self._actions[name].command()
 
 
