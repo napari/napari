@@ -147,16 +147,14 @@ class ActionManager:
         """
         if name not in self._actions:
             return
-        action = self._actions[name]
         if name not in self._shortcuts:
             return
-        shortcuts = self._shortcuts.get(name)
-        keymapprovider = action.keymapprovider
-        if hasattr(keymapprovider, 'bind_key'):
+        action = self._actions[name]
+        shortcuts = self._shortcuts[name]
+        km_provider = action.keymapprovider
+        if hasattr(km_provider, 'bind_key'):
             for shortcut in shortcuts:
-                keymapprovider.bind_key(shortcut, overwrite=True)(
-                    action.command
-                )
+                km_provider.bind_key(shortcut, overwrite=True)(action.command)
 
     def bind_button(
         self, name: str, button: Button, extra_tooltip_text=''
