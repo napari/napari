@@ -619,8 +619,11 @@ class QtPluginDialog(QDialog):
         def _add_to_installed(distname, enabled):
 
             if distname:
-                self.already_installed.add(distname)
                 meta = standard_metadata(distname)
+                if len(meta) == 0:
+                    # will not add builtins.
+                    return
+                already_installed.add(distname)
             else:
                 meta = {}
 
