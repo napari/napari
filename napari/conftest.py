@@ -6,6 +6,7 @@ import dask.threaded
 import numpy as np
 import pooch
 import pytest
+from IPython.core.history import HistoryManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -376,3 +377,6 @@ if sys.version_info > (
             if dask.threaded.default_pool is not None:
                 dask.threaded.default_pool.shutdown()
                 dask.threaded.default_pool = None
+
+
+HistoryManager.enabled = False
