@@ -211,7 +211,6 @@ class Dims(EventedModel):
                 full_range = list(self.range)
                 full_range[axis] = _range
                 self.range = full_range
-            self.last_used = axis
         else:
             full_range = list(self.range)
             _range = list(_range)  # type: ignore
@@ -221,15 +220,10 @@ class Dims(EventedModel):
                     "axis and _range sequences must have equal length"
                 )
             if _range != full_range:
-                changed_axes = []
                 for ax, r in zip(axis, _range):
                     ax = assert_axis_in_bounds(int(ax), self.ndim)
-                    if r != full_range[ax]:
-                        full_range[ax] = r
-                        changed_axes.append(ax)
+                    full_range[ax] = r
                 self.range = full_range
-                # set last_used to the smallest of the changed axes
-                self.last_used = min(changed_axes)
 
     def set_point(self, axis: int, value: Union[int, float]):
         """Sets point to slice dimension in world coordinates.

@@ -103,18 +103,10 @@ def test_range_set_multiple():
     # last_used will be set to the smallest axis in range
     dims.set_range(range(1, 4), ((0, 5, 1),) * 3)
     assert dims.range == ((0, 6, 3),) + ((0, 5, 1),) * 3
-    assert dims.last_used == 1
-
-    # setting to an identical range doesn't modify last_used or range
-    current_range = list(dims.range)
-    dims.set_range(range(dims.ndim), current_range)
-    assert dims.range == tuple(current_range)
-    assert dims.last_used == 1
 
     # test with descending axis order
     dims.set_range(axis=(3, 0), _range=[(0, 4, 1), (0, 6, 1)])
     assert dims.range == ((0, 6, 1),) + ((0, 5, 1),) * 2 + ((0, 4, 1),)
-    assert dims.last_used == 0
 
     # out of range axis raises a ValueError
     with pytest.raises(ValueError):
