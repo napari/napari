@@ -607,15 +607,16 @@ class QtPluginDialog(QDialog):
 
         plugin_manager.discover()  # since they might not be loaded yet
 
-        self.already_installed = set()
+        try:
+            import npe2
+        except ImportError:
+            pass
+        else:
+            pm = npe2.PluginManager.instance()
 
-        for plugin_name, mod_name, distname in plugin_manager.iter_available():
-            # not showing these in the plugin dialog
-            if plugin_name in ('napari_plugin_engine',):
-                continue
+        already_installed = set()
 
-            if distname in self.already_installed:
-                continue
+        def _add_to_installed(distname, enabled):
 
             if distname:
                 self.already_installed.add(distname)
@@ -633,8 +634,24 @@ class QtPluginDialog(QDialog):
                     meta.get('license', ''),
                 ),
                 installed=True,
-                enabled=not plugin_manager.is_blocked(plugin_name),
+                enabled=enabled,
             )
+
+        for distname in pm._manifests.keys():
+            if distname in already_installed:
+                continue
+            _add_to_installed(distname, True)
+
+        for plugin_name, mod_name, distname in plugin_manager.iter_available():
+            # not showing these in the plugin dialog
+            if plugin_name in ('napari_plugin_engine',):
+                continue
+            if distname in already_installed:
+                continue
+            _add_to_installed(
+                distname, not plugin_manager.is_blocked(plugin_name)
+            )
+
         self.installed_label.setText(
             trans._(
                 "Installed Plugins ({amount})",
