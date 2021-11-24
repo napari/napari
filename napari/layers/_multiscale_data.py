@@ -8,9 +8,8 @@ from ._data_protocols import LayerDataProtocol, assert_protocol
 from .utils.layer_utils import compute_multiscale_level_and_corners
 
 
-# note: this also implements `LayerDataProtocol`, but we don't need to inherit.
-class MultiScaleData(Sequence[LayerDataProtocol]):
-    """Wrapper for multiscale data, to provide consistent API.
+class MultiScaleData(LayerDataProtocol):
+    """Wrapper for multiscale data, to provide Array API.
 
     :class:`LayerDataProtocol` is the subset of the python Array API that we
     expect array-likes to provide.  Multiscale data is just a sequence of
@@ -62,22 +61,14 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         """Tuple shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
-    # for now, we're not fully implementing LayerDataProtocol here since
-    # we don't know what to do for fancy indexing, or mixed slice/int tuples
     def __getitem__(  # type: ignore [override]
         self, key: Union[int, Tuple[slice, ...]]
-    ) -> LayerDataProtocol:
+    ) -> MultiScaleData:
         """Multiscale indexing.
 
-        When indexing with a single integer, the behavior is exactly like the
-        input squence (it retrieves the sepcified level).
-
-        When indexing with a tuple of slices, it will extract a chunk from the
-        appropriate level using `compute_multiscale_level_and_corners`.
-
-        All other `key` types are currently undefined and raise a
-        NotImplementedError (for mixed tuple of slice and int), or TypeError
-        (for everything else.)
+        This is intended to behave like normal array indexing of the highest-
+        resolution scale, but it returns a new multiscale array for those
+        indices.
         """
         if isinstance(key, int):
             return self._data[key]
