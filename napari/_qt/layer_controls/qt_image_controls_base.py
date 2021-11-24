@@ -135,14 +135,8 @@ class QtBaseImageControls(QtLayerControls):
         """
         self.layer.colormap = self.colormapComboBox.currentData()
 
-    def _on_contrast_limits_change(self, event=None):
-        """Receive layer model contrast limits change event and update slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_contrast_limits_change(self):
+        """Receive layer model contrast limits change event and update slider."""
         with qt_signals_blocked(self.contrastLimitsSlider):
             self.contrastLimitsSlider.setRange(
                 *self.layer.contrast_limits_range
@@ -154,14 +148,8 @@ class QtBaseImageControls(QtLayerControls):
             with qt_signals_blocked(self.clim_popup.slider):
                 self.clim_popup.slider.setValue(self.layer.contrast_limits)
 
-    def _on_colormap_change(self, event=None):
-        """Receive layer model colormap change event and update dropdown menu.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_colormap_change(self):
+        """Receive layer model colormap change event and update dropdown menu."""
         name = self.layer.colormap.name
         if name not in self.colormapComboBox._allitems:
             cm = AVAILABLE_COLORMAPS.get(name)
@@ -183,14 +171,8 @@ class QtBaseImageControls(QtLayerControls):
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
-    def _on_gamma_change(self, event=None):
-        """Receive the layer model gamma change event and update the slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_gamma_change(self):
+        """Receive the layer model gamma change event and update the slider."""
         with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(self.layer.gamma)
 
@@ -213,10 +195,10 @@ class AutoScaleButtons(QWidget):
         self.setLayout(QHBoxLayout())
         self.layout().setSpacing(2)
         self.layout().setContentsMargins(0, 0, 0, 0)
-        once_btn = QPushButton('once')
+        once_btn = QPushButton(trans._('once'))
         once_btn.setFocusPolicy(Qt.NoFocus)
 
-        auto_btn = QPushButton('continuous')
+        auto_btn = QPushButton(trans._('continuous'))
         auto_btn.setCheckable(True)
         auto_btn.setFocusPolicy(Qt.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))

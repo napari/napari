@@ -1,19 +1,22 @@
 import itertools
 import warnings
 from collections import namedtuple
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..layers import Image, Labels, Layer
+from ..layers import Layer
 from ..layers.image.image import _ImageBase
-from ..layers.utils._link_layers import get_linked_layers, layer_is_linked
-from ..utils._dtype import normalize_dtype
+from ..utils.context import create_context
+from ..utils.context._layerlist_context import LayerListContextKeys
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
+
+if TYPE_CHECKING:
+    from npe2.manifest.io import WriterContribution
 
 
 class LayerList(SelectableEventedList[Layer]):
@@ -31,6 +34,11 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+        self._ctx = create_context(self)
+        if self._ctx is not None:  # happens during Viewer type creation
+            self._ctx_keys = LayerListContextKeys(self._ctx)
+
+            self.selection.events.changed.connect(self._ctx_keys.update)
 
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
@@ -153,15 +161,8 @@ class LayerList(SelectableEventedList[Layer]):
             )
 
         # 512 element default extent as documented in `_get_extent_world`
-        try:
-            min_v = np.nan_to_num(min_v, nan=-0.5)
-            max_v = np.nan_to_num(max_v, nan=511.5)
-        except TypeError:
-            # In NumPy < 1.17, nan_to_num doesn't have a nan kwarg
-            min_v = np.asarray(min_v)
-            min_v[np.isnan(min_v)] = -0.5
-            max_v = np.asarray(max_v)
-            max_v[np.isnan(max_v)] = 511.5
+        min_v = np.nan_to_num(min_v, nan=-0.5)
+        max_v = np.nan_to_num(max_v, nan=511.5)
 
         # switch back to original order
         return min_v[::-1], max_v[::-1]
@@ -292,12 +293,45 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return max((layer.ndim for layer in self), default=2)
 
+    def _link_layers(
+        self,
+        method: str,
+        layers: Optional[Iterable[Union[str, Layer]]] = None,
+        attributes: Iterable[str] = (),
+    ):
+        # adding this method here allows us to emit an event when
+        # layers in this group are linked/unlinked.  Which is necessary
+        # for updating context
+        from ..layers.utils import _link_layers
+
+        if layers is not None:
+            layers = [self[x] if isinstance(x, str) else x for x in layers]  # type: ignore
+        else:
+            layers = self
+        getattr(_link_layers, method)(layers, attributes)
+        self.selection.events.changed(added={}, removed={})
+
+    def link_layers(
+        self,
+        layers: Optional[Iterable[Union[str, Layer]]] = None,
+        attributes: Iterable[str] = (),
+    ):
+        return self._link_layers('link_layers', layers, attributes)
+
+    def unlink_layers(
+        self,
+        layers: Optional[Iterable[Union[str, Layer]]] = None,
+        attributes: Iterable[str] = (),
+    ):
+        return self._link_layers('unlink_layers', layers, attributes)
+
     def save(
         self,
         path: str,
         *,
         selected: bool = False,
         plugin: Optional[str] = None,
+        _writer: Optional['WriterContribution'] = None,
     ) -> List[str]:
         """Save all or only selected layers to a path using writer plugins.
 
@@ -345,6 +379,8 @@ class LayerList(SelectableEventedList[Layer]):
             Name of the plugin to use for saving. If None then all plugins
             corresponding to appropriate hook specification will be looped
             through to find the first one that can save the data.
+        _writer : WriterContribution, optional
+            private: npe2 specific writer override.
 
         Returns
         -------
@@ -364,51 +400,4 @@ class LayerList(SelectableEventedList[Layer]):
             warnings.warn(msg)
             return []
 
-        return save_layers(path, layers, plugin=plugin)
-
-    def _selection_context(self) -> dict:
-        """Return context dict for current layerlist.selection"""
-        return {k: v(self.selection) for k, v in _CONTEXT_KEYS.items()}
-
-
-# Each key in this list is "usable" as a variable name in the the "enable_when"
-# and "show_when" expressions of the napari.layers._layer_actions.LAYER_ACTIONS
-#
-# each value is a function that takes a LayerList.selection, and returns
-# a value. LayerList._selection_context uses this dict to generate a concrete
-# context object that can be passed to the
-# `qt_action_context_menu.QtActionContextMenu` method to update the enabled
-# and/or visible items based on the state of the layerlist.
-
-
-def get_active_layer_dtype(layer):
-    dtype = None
-    if layer.active:
-        try:
-            dtype = normalize_dtype(layer.active.data.dtype).__name__
-        except AttributeError:
-            pass
-    return dtype
-
-
-_CONTEXT_KEYS = {
-    'selection_count': lambda s: len(s),
-    'all_layers_linked': lambda s: all(layer_is_linked(x) for x in s),
-    'linked_layers_unselected': lambda s: len(get_linked_layers(*s) - s),
-    'active_is_rgb': lambda s: getattr(s.active, 'rgb', False),
-    'only_images_selected': (
-        lambda s: bool(s and all(isinstance(x, Image) for x in s))
-    ),
-    'only_labels_selected': (
-        lambda s: bool(s and all(isinstance(x, Labels) for x in s))
-    ),
-    'image_active': lambda s: isinstance(s.active, Image),
-    'ndim': lambda s: s.active and getattr(s.active.data, 'ndim', None),
-    'active_layer_shape': (
-        lambda s: s.active and getattr(s.active.data, 'shape', None)
-    ),
-    'same_shape': (
-        lambda s: len({getattr(x.data, 'shape', ()) for x in s}) == 1
-    ),
-    'active_layer_dtype': get_active_layer_dtype,
-}
+        return save_layers(path, layers, plugin=plugin, _writer=_writer)

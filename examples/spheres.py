@@ -12,7 +12,7 @@ except ImportError as e:
 import napari
 
 
-vert, faces = icosa_sphere(50)
+vert, faces = icosa_sphere(10)
 
 vert *= 100
 

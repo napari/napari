@@ -34,6 +34,7 @@ def napari_plugin_manager(monkeypatch):
     from unittest.mock import patch
 
     import napari
+    import napari.plugins.io
     from napari.plugins._plugin_manager import NapariPluginManager
 
     pm = NapariPluginManager()
@@ -41,6 +42,7 @@ def napari_plugin_manager(monkeypatch):
     # make it so that internal requests for the plugin_manager
     # get this test version for the duration of the test.
     monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
+    monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
     try:
         monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
     except AttributeError:  # headless tests
@@ -162,10 +164,22 @@ def make_napari_viewer(
         if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak]):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
+            msg = f"""The following Widgets leaked!: {leak}.
+
+            Note: If other tests are failing it is likely that widgets will leak
+            as they will be (indirectly) attached to the tracebacks of previous failures.
+            Please only consider this an error if all other tests are passing.
+            """
+            # Explanation notes on the above: While we are indeed looking at the
+            # difference in sets of widgets between before and after, new object can
+            # still not be garbage collected because of it.
+            # in particular with VisPyCanvas, it looks like if a traceback keeps
+            # contains the type, then instances are still attached to the type.
+            # I'm not too sure why this is the case though.
             if _strict == 'raise':
-                raise AssertionError(f'Widgets leaked!: {leak}')
+                raise AssertionError(msg)
             else:
-                warnings.warn(f'Widgets leaked!: {leak}')
+                warnings.warn(msg)
 
 
 @pytest.fixture

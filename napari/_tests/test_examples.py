@@ -21,6 +21,7 @@ skip = [
     'embed_ipython.py',  # fails without monkeypatch
     'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
     'new_theme.py',  # testing theme is extremely slow on CI
+    'dynamic-projections-dask.py',  # extremely slow / does not finish
 ]
 
 
@@ -66,6 +67,7 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
 
     from napari._qt.qt_main_window import Window
+    from napari import Viewer
 
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
@@ -83,3 +85,5 @@ def test_examples(qapp, fname, monkeypatch, capsys):
         # we use sys.exit(0) to gracefully exit from examples
         if e.code != 0:
             raise
+    finally:
+        Viewer.close_all()

@@ -49,14 +49,14 @@ class QtPoll(QObject):
     def __init__(self, parent: QObject):
         super().__init__(parent)
 
-        self.events = EmitterGroup(source=self, auto_connect=True, poll=None)
+        self.events = EmitterGroup(source=self, poll=None)
 
         self.timer = QTimer()
         self.timer.setInterval(POLL_INTERVAL_MS)
         self.timer.timeout.connect(self._on_timer)
         self._interval = IntervalTimer()
 
-    def on_camera(self, _event) -> None:
+    def on_camera(self) -> None:
         """Called when camera view changes."""
         # When the mouse button is down and the camera is being zoomed
         # or panned, timer events are starved out. So we call poll
@@ -64,7 +64,7 @@ class QtPoll(QObject):
         # polling can continue even after the camera stops moving.
         self._poll()
 
-    def wake_up(self, _event=None) -> None:
+    def wake_up(self) -> None:
         """Wake up QtPoll so it starts polling."""
         # Start the timer so that we start polling. We used to poll once
         # right away here, but it led to crashes. Because we polled during

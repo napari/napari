@@ -19,6 +19,7 @@ class VispyPointsLayer(VispyBaseLayer):
         node = PointsVisual()
         super().__init__(layer, node)
 
+        self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer._edge.events.colors.connect(self._on_data_change)
@@ -29,7 +30,6 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.text._connect_update_events(
             self._on_text_change, self._on_blending_change
         )
-        self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.fixed_size.connect(self._on_fixed_size_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.events.antialias.connect(self._on_antialias_change)
@@ -38,7 +38,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self._on_data_change()
 
-    def _on_data_change(self, event=None):
+    def _on_data_change(self):
         if len(self.layer._indices_view) > 0:
             edge_color = self.layer._view_edge_color
             face_color = self.layer._view_face_color
@@ -62,15 +62,16 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             edge_width=self.layer.edge_width,
-            symbol=self.layer.symbol,
             edge_color=edge_color,
             face_color=face_color,
-            scaling=True,
         )
 
         self.reset()
 
-    def _on_highlight_change(self, event=None):
+    def _on_symbol_change(self):
+        self.node.symbol = self.layer.symbol
+
+    def _on_highlight_change(self):
         settings = get_settings()
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
@@ -86,10 +87,8 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             edge_width=settings.appearance.highlight_thickness,
-            symbol=self.layer.symbol,
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
-            scaling=True,
         )
 
         # only draw a box in 2D
@@ -164,7 +163,7 @@ class VispyPointsLayer(VispyBaseLayer):
         else:
             self._update_text()
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self):
         """Function to set the blending mode"""
         points_blending_kwargs = BLENDING_MODES[self.layer.blending]
         self.node.set_gl_state(**points_blending_kwargs)
@@ -174,19 +173,16 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
 
-    def _on_symbol_change(self, event=None):
-        self.node.symbol = self.layer.symbol
-
-    def _on_fixed_size_change(self, event=None):
+    def _on_fixed_size_change(self):
         self.node.scaling = not self.layer.fixed_size
 
-    def _on_antialias_change(self, event=None):
+    def _on_antialias_change(self):
         self.node.antialias = self.layer.antialias
 
-    def _on_spherical_change(self, event=None):
+    def _on_spherical_change(self):
         self.node.spherical = self.layer.spherical
 
-    def reset(self, event=None):
+    def reset(self):
         super().reset()
         self._update_text(update_node=False)
         self._on_blending_change()

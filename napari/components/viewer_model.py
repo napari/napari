@@ -29,6 +29,7 @@ from ..layers.utils.stack_utils import split_channels
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
+from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
@@ -43,6 +44,7 @@ from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
+from .overlays import Overlays
 from .scale_bar import ScaleBar
 from .text_overlay import TextOverlay
 from .tooltip import Tooltip
@@ -114,6 +116,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     text_overlay: TextOverlay = Field(
         default_factory=TextOverlay, allow_mutation=False
     )
+    overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
     status: str = 'Ready'
@@ -123,8 +126,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
+    _ctx: Context
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
+        # max_depth=0 means don't look for parent contexts.
+        self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.__config__.extra = Extra.allow
         super().__init__(
@@ -178,7 +184,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
-    def _update_viewer_grid(self, e=None):
+    def _update_viewer_grid(self):
         """Keep viewer grid settings up to date with settings values."""
 
         settings = get_settings()
@@ -251,7 +257,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         else:
             return self.layers.extent.world[:, self.dims.displayed]
 
-    def reset_view(self, event=None):
+    def reset_view(self):
         """Reset the camera view."""
 
         extent = self._sliced_extent_world
@@ -298,7 +304,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         empty_labels = np.zeros(shape, dtype=int)
         self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
-    def _update_layers(self, event=None, layers=None):
+    def _update_layers(self, *, layers=None):
         """Updates the contained layers.
 
         Parameters
@@ -325,7 +331,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
 
-    def _on_layers_change(self, event):
+    def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
@@ -358,7 +364,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
 
-    def _on_cursor_position_change(self, event):
+    def _on_cursor_position_change(self):
         """Set the layer cursor position."""
         with warnings.catch_warnings():
             # Catch the deprecation warning on layer.position
@@ -386,7 +392,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     self.cursor.position, world=True
                 )
 
-    def _on_grid_change(self, event):
+    def _on_grid_change(self):
         """Arrange the current layers is a 2D grid."""
         extent = self._sliced_extent_world
         n_layers = len(self.layers)
@@ -447,8 +453,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.name.connect(self.layers._update_name)
 
         # Update dims and grid model
-        self._on_layers_change(None)
-        self._on_grid_change(None)
+        self._on_layers_change()
+        self._on_grid_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
@@ -474,8 +480,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
-        self._on_layers_change(None)
-        self._on_grid_change(None)
+        self._on_layers_change()
+        self._on_grid_change()
 
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
@@ -764,25 +770,32 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import plugin_manager
+        from ..plugins import _npe2, plugin_manager
 
-        try:
-            data = plugin_manager._sample_data[plugin][sample]['data']
-        except KeyError:
-            samples = plugin_manager.available_samples()
+        # try with npe2
+        data, available = _npe2.get_sample_data(plugin, sample)
+
+        # then try with npe1
+        if data is None:
+            try:
+                data = plugin_manager._sample_data[plugin][sample]['data']
+            except KeyError:
+                available += list(plugin_manager.available_samples())
+
+        if data is None:
             msg = trans._(
                 "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
                 plugin=plugin,
                 sample=sample,
                 deferred=True,
             )
-            if samples:
+            if available:
                 msg = trans._(
                     "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
                     deferred=True,
                     plugin=plugin,
                     sample=sample,
-                    samples=samples,
+                    samples=available,
                 )
             else:
                 msg = trans._(
@@ -875,7 +888,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         added: List[Layer] = []  # for layers that get added
         with progress(
             paths,
-            desc='Opening Files',
+            desc=trans._('Opening Files'),
             total=0
             if len(paths) == 1
             else None,  # indeterminate bar for 1 file

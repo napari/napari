@@ -27,18 +27,6 @@ jobs:
       - name: Run task
         run: tox -e ${{ matrix.task }} -- --timeout=8
 
-  vendor:
-    name: Vendored
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Run check
-        run: python tools/check_vendored_modules.py
-
   manifest:
     # make sure all necessary files will be bundled in the release
     name: Check Manifest
@@ -100,8 +88,8 @@ jobs:
             platform: windows-latest
             backend: pyside
           # macOS py38
-          - python: 3.8
-            platform: macos-latest
+          - python: 3.9
+            platform: macos-11
             backend: pyqt # (only testing pyqt on mac in the interest of speed)
           # minimum specified requirements
           - python: 3.7

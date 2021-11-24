@@ -190,6 +190,17 @@ def _compile_qrc_pyqt5(qrc) -> bytes:
     return out
 
 
+def _compile_qrc_pyqt6(qrc) -> bytes:
+    """
+    We can't do that with PyQt6,
+
+    The maintainer has discontinued pyrcc for PyQt6
+
+    """
+
+    raise NotImplementedError('pyrcc discontinued on Pyqt6')
+
+
 def _compile_qrc_pyside2(qrc) -> bytes:
     """Compile qrc file using the PySide2 method.
 
@@ -225,7 +236,9 @@ def _compile_qrc_pyside2(qrc) -> bytes:
 
 def compile_qrc(qrc) -> bytes:
     """Compile a qrc file into a resources.py bytes"""
-    if qtpy.API_NAME == 'PyQt5':
+    if qtpy.API_NAME == 'PyQt6':
+        return _compile_qrc_pyqt6(qrc).replace(b'PyQt6', b'qtpy')
+    elif qtpy.API_NAME == 'PyQt5':
         return _compile_qrc_pyqt5(qrc).replace(b'PyQt5', b'qtpy')
     elif qtpy.API_NAME == 'PySide2':
         return _compile_qrc_pyside2(qrc).replace(b'PySide2', b'qtpy')
