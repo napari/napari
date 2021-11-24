@@ -1,12 +1,12 @@
 (npe2-manifest-spec)=
 
-# [npe2][] manifest specification
+# npe2: manifest specification
 
 ## TODO
 
 Doc
 
-- [ ] overall plugin/manifest versioning
+- [x] overall plugin/manifest versioning
 - [ ] sample data hook
 - [x] widget hook
 - [ ] plugin life cycle. activation/deactivation
@@ -19,7 +19,6 @@ Doc
 
 Impl
 
-- [ ] sample data hook
 - [ ] configuration/settings
 - [ ] Menu/submenu
 - [ ] keybindings

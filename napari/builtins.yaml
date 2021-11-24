@@ -1,9 +1,7 @@
 display_name: napari
 publisher: org.napari
 entry_point: napari.plugins._builtins
-license: BSD-3-Clause
 name: napari_builtins
-private: true
 
 contributions:
   commands:
