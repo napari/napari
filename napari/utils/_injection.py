@@ -1,13 +1,16 @@
 from functools import wraps
 from inspect import isgeneratorfunction, signature
-from typing import Any, Callable, Dict, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar
 
 from typing_extensions import get_type_hints
+
+if TYPE_CHECKING:
+    from ..layers import Layer
 
 T = TypeVar("T")
 
 
-def _get_active_layer():
+def _get_active_layer() -> Optional['Layer']:
     from ..viewer import current_viewer
 
     viewer = current_viewer()
