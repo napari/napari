@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
 from .._vendor.cpython.functools import cached_property
@@ -195,7 +194,7 @@ class ActionManager:
         delayed until the corresponding action is registered.
         """
         self._validate_action_name(name)
-        button.clicked.connect(partial(self.trigger, name))
+        button.clicked.connect(lambda: self.trigger(name))
 
         def _update_tt(event: ShortcutEvent):
             if event.name == name:
@@ -358,6 +357,7 @@ class ActionManager:
 
     def trigger(self, name: str, *args, **kwargs) -> Any:
         """Trigger the action `name`."""
+        print("trigger", name, args, kwargs)
         return self._actions[name].injected(*args, **kwargs)
 
 
