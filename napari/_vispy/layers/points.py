@@ -27,14 +27,11 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer._face.events.colors.connect(self._on_data_change)
         self.layer._face.events.color_properties.connect(self._on_data_change)
-        self.layer.text._connect_update_events(
-            self._on_text_change, self._on_blending_change
-        )
+        self.layer.text.events.connect(self._on_text_change)
         self.layer.events.fixed_size.connect(self._on_fixed_size_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.events.antialias.connect(self._on_antialias_change)
         self.layer.events.spherical.connect(self._on_spherical_change)
-        self.layer.text.events.connect(self._on_text_change)
 
         self._on_data_change()
 
