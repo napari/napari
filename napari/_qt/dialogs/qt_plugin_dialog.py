@@ -603,16 +603,9 @@ class QtPluginDialog(QDialog):
         self.available_list.clear()
 
         # fetch installed
-        from ...plugins import plugin_manager
+        from ...plugins import _npe2, plugin_manager
 
         plugin_manager.discover()  # since they might not be loaded yet
-
-        try:
-            import npe2
-        except ImportError:
-            pass
-        else:
-            pm = npe2.PluginManager.instance()
 
         already_installed = set()
 
@@ -640,7 +633,8 @@ class QtPluginDialog(QDialog):
                 enabled=enabled,
             )
 
-        for distname in pm._manifests.keys():
+        for manifest in _npe2.iter_manifests():
+            distname = normalized_name(manifest.name or '')
             if distname in already_installed:
                 continue
             _add_to_installed(distname, True)
