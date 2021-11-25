@@ -185,6 +185,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_blending_change()
         self._on_highlight_change()
         self._on_matrix_change()
+        self._on_fixed_size_change()
         self._on_antialias_change()
         self._on_spherical_change()
 
