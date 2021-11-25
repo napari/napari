@@ -182,11 +182,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         wireframe_width=1,
         face_normals=False,
         face_normals_length=5,
-        face_normals_color='yellow',
+        face_normals_color='orange',
         face_normals_width=1,
         vertex_normals=False,
         vertex_normals_length=5,
-        vertex_normals_color='yellow',
+        vertex_normals_color='blue',
         vertex_normals_width=1,
     ):
 

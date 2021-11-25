@@ -59,9 +59,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         else:
             # Offsetting so pixels now centered
             # coerce to float to solve vispy/vispy#2007
-            vertices = np.asarray(
-                self.layer._data_view[:, ::-1], dtype=np.float32
-            )
+            vertices = np.asarray(self.layer._data_view, dtype=np.float32)
             faces = self.layer._view_faces
             vertex_values = self.layer._view_vertex_values
 
@@ -95,6 +93,8 @@ class VispySurfaceLayer(VispyBaseLayer):
             meshdata = self.node.mesh_data
         self.node.face_normals.set_data(meshdata)
         self.node.vertex_normals.set_data(meshdata)
+        self._on_face_normals_change()
+        self._on_vertex_normals_change()
 
         self._on_shading_change()
 
@@ -141,6 +141,7 @@ class VispySurfaceLayer(VispyBaseLayer):
                 length=self.layer.face_normals_length,
                 color=self.layer.face_normals_color,
                 width=self.layer.face_normals_width,
+                primitive='face',
             )
 
     def _on_vertex_normals_change(self):
@@ -150,6 +151,7 @@ class VispySurfaceLayer(VispyBaseLayer):
                 length=self.layer.vertex_normals_length,
                 color=self.layer.vertex_normals_color,
                 width=self.layer.vertex_normals_width,
+                primitive='vertex',
             )
 
     def reset(self, event=None):
