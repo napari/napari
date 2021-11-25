@@ -46,7 +46,7 @@ if os.getenv("CI") and os.name == 'nt':
 def qapp():
     from qtpy.QtCore import QTimer
 
-    from napari._qt.qt_event_loop import get_app
+    from napari._qt.qt_event_loop import get_app, quit_app
 
     # it's important that we use get_app so that it connects to the
     # app.aboutToQuit.connect(wait_for_workers_to_quit)
@@ -54,7 +54,7 @@ def qapp():
 
     # quit examples that explicitly start the event loop with `napari.run()`
     # so that tests aren't waiting on a manual exit
-    QTimer.singleShot(100, app.quit)
+    QTimer.singleShot(100, quit_app)
 
     yield app
 

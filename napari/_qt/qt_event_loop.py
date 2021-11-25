@@ -59,6 +59,7 @@ _IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
 class AppManager:
     def __init__(self):
         self._app_ref = None
+        self._started_by_us = None
 
     def get_app(
         self,
@@ -148,6 +149,7 @@ class AppManager:
                 app = QApplicationWithTracing(sys.argv)
             else:
                 app = QApplication(sys.argv)
+            self._started_by_us = True
 
             # if this is the first time the Qt app is being instantiated, we set
             # the name and metadata
@@ -161,14 +163,6 @@ class AppManager:
             # to allow for text wrapping of tooltips
             app.installEventFilter(QtToolTipEventFilter(app))
 
-        if not _ipython_has_eventloop():
-            notification_manager.notification_ready.connect(
-                NapariQtNotification.show_notification
-            )
-            notification_manager.notification_ready.connect(
-                show_console_notification
-            )
-
         if app.windowIcon().isNull():
             app.setWindowIcon(QIcon(kwargs.get('icon')))
 
@@ -176,6 +170,13 @@ class AppManager:
             ipy_interactive = get_settings().application.ipy_interactive
         if _IPYTHON_WAS_HERE_FIRST:
             _try_enable_ipython_gui('qt' if ipy_interactive else None)
+        if not _ipython_has_eventloop():
+            notification_manager.notification_ready.connect(
+                NapariQtNotification.show_notification
+            )
+            notification_manager.notification_ready.connect(
+                show_console_notification
+            )
 
         if perf_config and not perf_config.patched:
             # Will patch based on config file.
@@ -201,10 +202,7 @@ class AppManager:
         """Close all windows and quit the QApplication if napari started it."""
         QApplication.closeAllWindows()
         # if we started the application then the app will be named 'napari'.
-        if (
-            QApplication.applicationName() == 'napari'
-            and not _ipython_has_eventloop()
-        ):
+        if self._started_by_us:
             QApplication.quit()
 
         # otherwise, something else created the QApp before us (such as
