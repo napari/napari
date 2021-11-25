@@ -122,6 +122,16 @@ jobs:
                      -e "s|  git_rev:.*||"  \
                      recipe/meta.yaml
 
+          if [[ $RUNNER_OS != Windows ]]; then
+            conda-smithy rerender
+            git diff
+          fi
+
+      - name: Rerender feedstock (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        working-directory: napari-feedstock
+        run: |
           conda-smithy rerender
           git diff
 
