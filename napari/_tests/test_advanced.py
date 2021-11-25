@@ -170,11 +170,14 @@ def test_update_console(make_napari_viewer):
 
     a = 4
     b = 5
-    viewer.update_console(locals())
+    locs = locals()
+    viewer.update_console(locs)
     assert 'a' in view.console.shell.user_ns
     assert view.console.shell.user_ns['a'] == a
     assert 'b' in view.console.shell.user_ns
     assert view.console.shell.user_ns['b'] == b
+    for k in locs.keys():
+        del viewer.window.qt_viewer.console.shell.user_ns[k]
 
 
 def test_changing_display_surface(make_napari_viewer):

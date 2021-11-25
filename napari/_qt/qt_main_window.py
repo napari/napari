@@ -639,11 +639,15 @@ class Window:
             A 2-tuple containing (the DockWidget instance, the plugin widget
             instance).
         """
+        from ..plugins import _npe2
         from ..viewer import Viewer
 
-        Widget, dock_kwargs = plugin_manager.get_widget(
-            plugin_name, widget_name
-        )
+        Widget = _npe2.get_widget_contribution(plugin_name, widget_name)
+
+        if Widget is None:
+            Widget, dock_kwargs = plugin_manager.get_widget(
+                plugin_name, widget_name
+            )
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
@@ -659,15 +663,20 @@ class Window:
 
         # if the signature is looking a for a napari viewer, pass it.
         kwargs = {}
-        for param in inspect.signature(Widget.__init__).parameters.values():
-            if param.name == 'napari_viewer':
-                kwargs['napari_viewer'] = self.qt_viewer.viewer
-                break
-            if param.annotation in ('napari.viewer.Viewer', Viewer):
-                kwargs[param.name] = self.qt_viewer.viewer
-                break
-            # cannot look for param.kind == param.VAR_KEYWORD because
-            # QWidget allows **kwargs but errs on unknown keyword arguments
+        try:
+            sig = inspect.signature(Widget.__init__)
+        except ValueError:
+            pass
+        else:
+            for param in sig.parameters.values():
+                if param.name == 'napari_viewer':
+                    kwargs['napari_viewer'] = self.qt_viewer.viewer
+                    break
+                if param.annotation in ('napari.viewer.Viewer', Viewer):
+                    kwargs[param.name] = self.qt_viewer.viewer
+                    break
+                # cannot look for param.kind == param.VAR_KEYWORD because
+                # QWidget allows **kwargs but errs on unknown keyword arguments
 
         # instantiate the widget
         wdg = Widget(**kwargs)
@@ -696,7 +705,7 @@ class Window:
         func = plugin_manager._function_widgets[plugin_name][widget_name]
 
         # Add function widget
-        self.add_function_widget(
+        return self.add_function_widget(
             func, name=full_name, area=None, allowed_areas=None
         )
 

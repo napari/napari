@@ -90,6 +90,33 @@ def test_range():
     assert dims.range == ((0, 2, 1),) * 3 + ((0, 4, 2),)
 
 
+def test_range_set_multiple():
+    """
+    Tests bulk range setting.
+    """
+    dims = Dims(ndim=4)
+    assert dims.range == ((0, 2, 1),) * 4
+
+    dims.set_range((0, 3), [(0, 6, 3), (0, 9, 3)])
+    assert dims.range == ((0, 6, 3),) + ((0, 2, 1),) * 2 + ((0, 9, 3),)
+
+    # last_used will be set to the smallest axis in range
+    dims.set_range(range(1, 4), ((0, 5, 1),) * 3)
+    assert dims.range == ((0, 6, 3),) + ((0, 5, 1),) * 3
+
+    # test with descending axis order
+    dims.set_range(axis=(3, 0), _range=[(0, 4, 1), (0, 6, 1)])
+    assert dims.range == ((0, 6, 1),) + ((0, 5, 1),) * 2 + ((0, 4, 1),)
+
+    # out of range axis raises a ValueError
+    with pytest.raises(ValueError):
+        dims.set_range((dims.ndim, 0), [(0.0, 4.0, 1.0)] * 2)
+
+    # sequence lengths for axis and _range do not match
+    with pytest.raises(ValueError):
+        dims.set_range((0, 1), [(0.0, 4.0, 1.0)] * 3)
+
+
 def test_axis_labels():
     dims = Dims(ndim=4)
     assert dims.axis_labels == ('0', '1', '2', '3')

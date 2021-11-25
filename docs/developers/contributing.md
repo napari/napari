@@ -1,4 +1,4 @@
-# Contributing Guide
+# Contributing guide
 
 We welcome your contributions! Please see the provided steps below and never hesitate to contact us.
 
@@ -221,7 +221,7 @@ Try entering `file:///absolute/path/to/napari/docs/_build/html/index.html` in yo
 
 To read more about the docs, how they're organized, and built, read {ref}`docs-dev`.
 
-## Code of conduct
+## Code of Conduct
 
 `napari` has a [Code of Conduct](CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
 
