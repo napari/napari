@@ -19,7 +19,11 @@ class VispyPointsLayer(VispyBaseLayer):
         node = PointsVisual()
         super().__init__(layer, node)
 
-        self.layer.events.symbol.connect(self._on_data_change)
+        # TODO: will be exposed in #3430
+        for i in (0, 1):
+            node._subvisuals[i].scaling = True
+
+        self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer._edge.events.colors.connect(self._on_data_change)
@@ -56,13 +60,14 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             edge_width=self.layer.edge_width,
-            symbol=self.layer.symbol,
             edge_color=edge_color,
             face_color=face_color,
-            scaling=True,
         )
 
         self.reset()
+
+    def _on_symbol_change(self):
+        self.node.symbol = self.layer.symbol
 
     def _on_highlight_change(self):
         settings = get_settings()
@@ -80,10 +85,8 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             edge_width=settings.appearance.highlight_thickness,
-            symbol=self.layer.symbol,
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
-            scaling=True,
         )
 
         # only draw a box in 2D
