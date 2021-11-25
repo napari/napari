@@ -3,17 +3,19 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
 from .._vendor.cpython.functools import cached_property
 from ..utils.events import EmitterGroup
 from ._injection import inject_napari_dependencies
 from .interactions import Shortcut
-from .key_bindings import KeymapProvider
 from .translations import trans
 
 if TYPE_CHECKING:
     from typing_extensions import Protocol
+
+    from .key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
         def connect(self, callback: Callable) -> None:
@@ -161,12 +163,11 @@ class ActionManager:
         if name not in self._shortcuts:
             return
         action = self._actions[name]
-        km_provider = action.keymapprovider
+        km_provider: KeymapProvider = action.keymapprovider
         if hasattr(km_provider, 'bind_key'):
-            shortcuts = self._shortcuts[name]
-            for shortcut in shortcuts:
-                cmd = action.injected
-                km_provider.bind_key(shortcut, overwrite=True)(cmd)
+            for shortcut in self._shortcuts[name]:
+                cmd = partial(self.trigger, name)
+                km_provider.bind_key(shortcut, cmd, overwrite=True)
 
     def bind_button(
         self, name: str, button: Button, extra_tooltip_text=''
@@ -357,7 +358,6 @@ class ActionManager:
 
     def trigger(self, name: str, *args, **kwargs) -> Any:
         """Trigger the action `name`."""
-        print("trigger", name, args, kwargs)
         return self._actions[name].injected(*args, **kwargs)
 
 
