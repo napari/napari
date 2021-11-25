@@ -129,7 +129,7 @@ jobs:
 
       - name: Rerender feedstock (Windows)
         if: runner.os == 'Windows'
-        shell: cmd
+        shell: cmd /C CALL {0}
         working-directory: napari-feedstock
         run: |
           conda-smithy rerender
@@ -168,7 +168,7 @@ jobs:
 
       - name: Run build scripts (Windows)
         if: runner.os == 'Windows'
-        shell: cmd
+        shell: cmd /C CALL {0}
         working-directory: napari-feedstock
         env:
           CONFIG: win_64_
