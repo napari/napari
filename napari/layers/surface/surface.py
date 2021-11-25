@@ -507,6 +507,17 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
+                'wireframe': self.wireframe,
+                'wireframe_color': self.wireframe_color,
+                'wireframe_width': self.wireframe_width,
+                'face_normals': self.face_normals,
+                'face_normals_length': self.face_normals_length,
+                'face_normals_color': self.face_normals_color,
+                'face_normals_width': self.face_normals_width,
+                'vertex_normals': self.vertex_normals,
+                'vertex_normals_length': self.vertex_normals_length,
+                'vertex_normals_color': self.vertex_normals_color,
+                'vertex_normals_width': self.vertex_normals_width,
             }
         )
         return state
