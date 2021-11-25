@@ -486,7 +486,7 @@ def test_leaks_labels(qtbot, make_napari_viewer):
     )
     dr = weakref.ref(lr().data)
     viewer.layers.clear()
-    qtbot.wait(100)  # TODO: figure out exactly what we're waiting for
+    qtbot.wait(200)  # TODO: figure out exactly what we're waiting for
     gc.collect()
     assert not gc.collect()
     assert not lr()
