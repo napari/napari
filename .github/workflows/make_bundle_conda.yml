@@ -73,7 +73,7 @@ jobs:
           if [[ ${{ runner.os }} == Windows ]]; then
             echo "  - m2-sed" >> environment.yml
             echo "  - conda-build" >> environment.yml
-            echo "  - conda-forge-ci-setup 3" >> environment.yml
+            echo "  - conda-forge-ci-setup 3.*" >> environment.yml
           fi
 
       - name: Setup Miniconda
