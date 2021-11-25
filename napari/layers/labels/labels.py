@@ -818,22 +818,7 @@ class Labels(_ImageBase):
                 self._all_vals[0] = 0
             return self._lookup_with_index
 
-    def _raw_to_displayed(self, raw):
-        """Determine displayed image from a saved raw image and a saved seed.
-
-        This function ensures that the 0 label gets mapped to the 0 displayed
-        pixel.
-
-        Parameters
-        ----------
-        raw : array or int
-            Raw integer input image.
-
-        Returns
-        -------
-        image : array
-            Image mapped between 0 and 1 to be displayed.
-        """
+    def _raw_to_displayed_choose_coloring(self, raw):
         if self._color_lookup_func is None:
             self._color_lookup_func = self._get_color_lookup_func(
                 raw, np.min(raw), np.max(raw)
@@ -881,27 +866,47 @@ class Labels(_ImageBase):
         else:
             raise ValueError("Unsupported Color Mode")
 
-        if self.contour > 0 and raw.ndim == 2:
-            image = np.zeros_like(raw)
-            struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
-            thickness = self.contour
-            thick_struct_elem = ndi.iterate_structure(
-                struct_elem, thickness
-            ).astype(bool)
-            boundaries = ndi.grey_dilation(
-                raw, footprint=struct_elem
-            ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
-            image[boundaries] = raw[boundaries]
-            image = self._all_vals[image]
-        elif self.contour > 0 and raw.ndim > 2:
-            warnings.warn(
-                trans._(
-                    "Contours are not displayed during 3D rendering",
-                    deferred=True,
-                )
-            )
-
         return image
+
+    def _raw_to_displayed(self, raw):
+        """Determine displayed image from a saved raw image and a saved seed.
+
+        This function ensures that the 0 label gets mapped to the 0 displayed
+        pixel.
+
+        Parameters
+        ----------
+        raw : array or int
+            Raw integer input image.
+
+        Returns
+        -------
+        image : array
+            Image mapped between 0 and 1 to be displayed.
+        """
+
+        image = raw
+        if self.contour > 0:
+            if raw.ndim == 2:
+                image = np.zeros_like(raw)
+                struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
+                thickness = self.contour
+                thick_struct_elem = ndi.iterate_structure(
+                    struct_elem, thickness
+                ).astype(bool)
+                boundaries = ndi.grey_dilation(
+                    raw, footprint=struct_elem
+                ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
+                image[boundaries] = raw[boundaries]
+            elif raw.ndim > 2:
+                warnings.warn(
+                    trans._(
+                        "Contours are not displayed during 3D rendering",
+                        deferred=True,
+                    )
+                )
+
+        return self._raw_to_displayed_choose_coloring(image)
 
     def new_colormap(self):
         self.seed = np.random.rand()
