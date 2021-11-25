@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import inspect
 import warnings
-from functools import wraps
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import dask
@@ -48,28 +46,9 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
         nonlocal shortcuts
         name = 'napari:' + func.__name__
 
-        if inspect.isgeneratorfunction(func):
-
-            @wraps(func)
-            def _inner(*_):
-                from ...viewer import current_viewer
-
-                viewer = current_viewer()
-                layer = viewer.layers.selection.active if viewer else None
-                yield from func(layer)
-
-        else:
-
-            @wraps(func)
-            def _inner(*_):
-                from ...viewer import current_viewer
-
-                viewer = current_viewer()
-                func(viewer.layers.selection.active if viewer else None)
-
         action_manager.register_action(
             name=name,
-            command=_inner,
+            command=func,
             description=description,
             keymapprovider=keymapprovider,
         )

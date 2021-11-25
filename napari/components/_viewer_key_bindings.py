@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import inspect
-from functools import wraps
 from typing import TYPE_CHECKING
 
 from ..settings import get_settings
@@ -23,25 +21,9 @@ def register_viewer_action(description):
     """
 
     def _inner(func):
-        if inspect.isgeneratorfunction(func):
-
-            @wraps(func)
-            def _doit(*_):
-                from ..viewer import current_viewer
-
-                yield from func(current_viewer())
-
-        else:
-
-            @wraps(func)
-            def _doit(*_):
-                from ..viewer import current_viewer
-
-                return func(current_viewer())
-
         action_manager.register_action(
             name='napari:' + func.__name__,
-            command=_doit,
+            command=func,
             description=description,
             keymapprovider=ViewerModel,
         )

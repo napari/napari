@@ -4,9 +4,11 @@ import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Dict, List, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
+from .._vendor.cpython.functools import cached_property
 from ..utils.events import EmitterGroup
+from ._injection import inject_napari_dependencies
 from .interactions import Shortcut
 from .key_bindings import KeymapProvider
 from .translations import trans
@@ -35,6 +37,16 @@ class Action:
     command: Callable
     description: str
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
+
+    @cached_property
+    def injected(self) -> Callable:
+        """command with napari objects injected.
+
+        This will inject things like the current viewer, or currently selected
+        layer into the commands.  See :func:`inject_napari_dependencies` for
+        details.
+        """
+        return inject_napari_dependencies(self.command)
 
 
 class ActionManager:
@@ -89,7 +101,7 @@ class ActionManager:
     def register_action(
         self,
         name: str,
-        command: callable,
+        command: Callable,
         description: str,
         keymapprovider: KeymapProvider,
     ):
@@ -150,11 +162,12 @@ class ActionManager:
         if name not in self._shortcuts:
             return
         action = self._actions[name]
-        shortcuts = self._shortcuts[name]
         km_provider = action.keymapprovider
         if hasattr(km_provider, 'bind_key'):
+            shortcuts = self._shortcuts[name]
             for shortcut in shortcuts:
-                km_provider.bind_key(shortcut, overwrite=True)(action.command)
+                cmd = action.injected
+                km_provider.bind_key(shortcut, overwrite=True)(cmd)
 
     def bind_button(
         self, name: str, button: Button, extra_tooltip_text=''
@@ -188,6 +201,7 @@ class ActionManager:
             if event.name == name:
                 button.setToolTip(event.tooltip + ' ' + extra_tooltip_text)
 
+        # if it's a QPushbutton, we'll remove it when it gets destroyed
         until = getattr(button, 'destroyed', None)
         self.events.shorcut_changed.connect(_update_tt, until=until)
 
@@ -342,18 +356,9 @@ class ActionManager:
 
         return active_shortcuts
 
-    def trigger(self, name: str) -> None:
+    def trigger(self, name: str, *args, **kwargs) -> Any:
         """Trigger the action `name`."""
-        # command signature dependency injections *could* happen here, for
-        # example, if a parameter is annotated as napari.Viewer, then we
-        # get and pass the current viewer, or `layers.Layer` gets the active
-        # layer... could also use context keys as valid string argument names.
-
-        # however, currently, the only "dependencies" we tend to inject are the
-        # current viewer, or the active layer.  These are handled respectively,
-        # in _viewer_key_bindings.register_viewer_action
-        # and _layer_utils.register_layer_action
-        self._actions[name].command()
+        return self._actions[name].injected(*args, **kwargs)
 
 
 action_manager = ActionManager()
