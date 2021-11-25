@@ -1,3 +1,4 @@
+from numbers import Integral
 from typing import Sequence, Tuple, Union
 
 import numpy as np
@@ -187,22 +188,42 @@ class Dims(EventedModel):
         order[np.argsort(order)] = list(range(len(order)))
         return tuple(order)
 
-    def set_range(self, axis: int, _range: Sequence[Union[int, float]]):
+    def set_range(
+        self,
+        axis: Union[int, Sequence[int]],
+        _range: Union[
+            Sequence[Union[int, float]], Sequence[Sequence[Union[int, float]]]
+        ],
+    ):
         """Sets the range (min, max, step) for a given dimension.
 
         Parameters
         ----------
-        axis : int
-            Dimension index.
+        axis : int or sequence of int
+            Dimension index or a sequence of axes whos range will be set.
         _range : tuple
-            Range specified as (min, max, step).
+            Range specified as (min, max, step) or a sequence of these range
+            tuples.
         """
-        axis = assert_axis_in_bounds(axis, self.ndim)
-        if self.range[axis] != _range:
+        if isinstance(axis, Integral):
+            axis = assert_axis_in_bounds(axis, self.ndim)  # type: ignore
+            if self.range[axis] != _range:
+                full_range = list(self.range)
+                full_range[axis] = _range
+                self.range = full_range
+        else:
             full_range = list(self.range)
-            full_range[axis] = _range
-            self.range = full_range
-        self.last_used = axis
+            _range = list(_range)  # type: ignore
+            axis = tuple(axis)  # type: ignore
+            if len(axis) != len(_range):
+                raise ValueError(
+                    "axis and _range sequences must have equal length"
+                )
+            if _range != full_range:
+                for ax, r in zip(axis, _range):
+                    ax = assert_axis_in_bounds(int(ax), self.ndim)
+                    full_range[ax] = r
+                self.range = full_range
 
     def set_point(self, axis: int, value: Union[int, float]):
         """Sets point to slice dimension in world coordinates.

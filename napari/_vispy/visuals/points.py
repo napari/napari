@@ -20,7 +20,7 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     @property
     def symbol(self):
-        return self._subvisuals[0]._symbol
+        return self._subvisuals[0].symbol
 
     @symbol.setter
     def symbol(self, value):
@@ -29,7 +29,7 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     @property
     def scaling(self):
-        return self._subvisuals[0]._scaling
+        return self._subvisuals[0].scaling
 
     @scaling.setter
     def scaling(self, value):
@@ -38,7 +38,7 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     @property
     def antialias(self):
-        return self._subvisuals[0]._antialias
+        return self._subvisuals[0].antialias
 
     @antialias.setter
     def antialias(self, value):
@@ -47,7 +47,7 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     @property
     def spherical(self):
-        return self._subvisuals[0]._spherical
+        return self._subvisuals[0].spherical
 
     @spherical.setter
     def spherical(self, value):
