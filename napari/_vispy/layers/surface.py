@@ -1,5 +1,6 @@
 import numpy as np
 from vispy.color import Colormap as VispyColormap
+from vispy.geometry import MeshData
 
 from ..visuals.surface import SurfaceVisual
 from .base import VispyBaseLayer
@@ -86,8 +87,15 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
-        self.node.face_normals.set_data(self.node.mesh_data)
-        self.node.vertex_normals.set_data(self.node.mesh_data)
+
+        # disable normals in 2D to avoid shape errors
+        if self.layer._ndisplay == 2:
+            meshdata = MeshData()
+        else:
+            meshdata = self.node.mesh_data
+        self.node.face_normals.set_data(meshdata)
+        self.node.vertex_normals.set_data(meshdata)
+
         self._on_shading_change()
 
         self.node.update()
