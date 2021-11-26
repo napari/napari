@@ -8,7 +8,7 @@ import napari
 
 vert, faces, _, _ = read_mesh(load_data_file('orig/triceratops.obj.gz'))
 
-vert *= 100
+vert *= 100  # c.f. https://github.com/napari/napari/issues/3477
 
 viewer = napari.Viewer(ndisplay=3)
 surface = viewer.add_surface(
