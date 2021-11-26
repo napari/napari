@@ -8,7 +8,7 @@ import pytest
 from magicgui import magicgui
 
 from napari import Viewer, layers, types
-from napari._tests.utils import layer_test_data, slow
+from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
 from napari.utils.misc import all_subclasses
 
@@ -67,7 +67,6 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     assert viewer.layers[0].source.widget == add_data
 
 
-@slow(10)
 @pytest.mark.skipif(
     sys.version_info < (3, 9), reason='Futures not subscriptable before py3.9'
 )
@@ -157,7 +156,6 @@ def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     viewer.add_layer(layer)
 
 
-@slow(10)
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
 def test_magicgui_add_layer(make_napari_viewer, LayerType, data, ndim):
     viewer = make_napari_viewer()
