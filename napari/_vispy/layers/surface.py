@@ -91,10 +91,12 @@ class VispySurfaceLayer(VispyBaseLayer):
             meshdata = MeshData()
         else:
             meshdata = self.node.mesh_data
-        self.node.face_normals.set_data(meshdata)
-        self.node.vertex_normals.set_data(meshdata)
-        self._on_face_normals_change()
-        self._on_vertex_normals_change()
+        if self.layer.face_normals:
+            self.node.face_normals.set_data(meshdata)
+            self._on_face_normals_change()
+        if self.layer.vertex_normals:
+            self.node.vertex_normals.set_data(meshdata)
+            self._on_vertex_normals_change()
 
         self._on_shading_change()
 
