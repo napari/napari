@@ -59,8 +59,12 @@ class VispySurfaceLayer(VispyBaseLayer):
         else:
             # Offsetting so pixels now centered
             # coerce to float to solve vispy/vispy#2007
-            vertices = np.asarray(self.layer._data_view, dtype=np.float32)
-            faces = self.layer._view_faces
+            # reverse order to get zyx instead of xyz
+            vertices = np.asarray(
+                self.layer._data_view[:, ::-1], dtype=np.float32
+            )
+            # due to above xyz>zyx, also reverse order of faces to fix handedness of normals
+            faces = self.layer._view_faces[:, ::-1]
             vertex_values = self.layer._view_vertex_values
 
         if (
