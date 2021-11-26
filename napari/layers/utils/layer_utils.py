@@ -94,8 +94,8 @@ def calc_data_range(data, rgb=False):
             slice(-4096, None),
         ]
         reduced_data = [
-            [np.max(data[sl]) for sl in slices],
-            [np.min(data[sl]) for sl in slices],
+            [np.nanmax(data[sl]) for sl in slices],
+            [np.nanmin(data[sl]) for sl in slices],
         ]
     elif data.size > 1e7:
         # If data is very large take the average of the top, bottom, and
@@ -115,21 +115,21 @@ def calc_data_range(data, rgb=False):
             center = [int(s // 2) for s in data.shape[-offset:]]
             central_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
             reduced_data = [
-                [np.max(data[idx + central_slice]) for idx in idxs],
-                [np.min(data[idx + central_slice]) for idx in idxs],
+                [np.nanmax(data[idx + central_slice]) for idx in idxs],
+                [np.nanmin(data[idx + central_slice]) for idx in idxs],
             ]
         else:
             reduced_data = [
-                [np.max(data[idx]) for idx in idxs],
-                [np.min(data[idx]) for idx in idxs],
+                [np.nanmax(data[idx]) for idx in idxs],
+                [np.nanmin(data[idx]) for idx in idxs],
             ]
         # compute everything in one go
         reduced_data = dask.compute(*reduced_data)
     else:
         reduced_data = data
 
-    min_val = np.min(reduced_data)
-    max_val = np.max(reduced_data)
+    min_val = np.nanmin(reduced_data)
+    max_val = np.nanmax(reduced_data)
 
     if min_val == max_val:
         min_val = 0
