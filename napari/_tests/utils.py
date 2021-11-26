@@ -73,19 +73,9 @@ layer_test_data = [
 try:
     import tensorstore as ts
 
-    layer_test_data.extend(
-        [
-            (Image, ts.array(np.random.random((10, 15))), 2),
-            (
-                Image,
-                [
-                    ts.array(np.random.random(s))
-                    for s in [(40, 20), (20, 10), (10, 5)]
-                ],
-                2,
-            ),
-        ]
-    )
+    m = ts.array(np.random.random((10, 15)))
+    p = [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]]
+    layer_test_data.extend([(Image, m, 2), (Image, p, 2)])
 except ImportError:
     pass
 
