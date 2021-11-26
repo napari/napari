@@ -18,6 +18,7 @@ from napari._tests.utils import (
     skip_on_win_ci,
     slow,
 )
+from napari._vispy.utils.gl import fix_data_dtype
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
@@ -297,6 +298,9 @@ def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     viewer.dims.ndisplay = 2
     datamean = viewer.layers[0].data.mean()
     assert datamean == imean
+    # also check that vispy gets (almost) the same data
+    datamean = fix_data_dtype(image).mean()
+    assert np.allclose(datamean, imean)
 
 
 def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
