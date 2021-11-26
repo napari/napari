@@ -310,6 +310,7 @@ class PluginListItem(QFrame):
         parent: QWidget = None,
         enabled: bool = True,
         installed: bool = False,
+        npe_version=1,
     ):
         super().__init__(parent)
         self.setup_ui(enabled)
@@ -324,6 +325,8 @@ class PluginListItem(QFrame):
 
         if installed:
             self.enabled_checkbox.show()
+            if npe_version != 1:
+                self.enabled_checkbox.setEnabled(False)
             self.action_button.setText(trans._("uninstall"))
             self.action_button.setObjectName("remove_button")
         else:
@@ -467,6 +470,7 @@ class QPluginList(QListWidget):
         installed=False,
         plugin_name=None,
         enabled=True,
+        npe_version=1,
     ):
         # don't add duplicates
         if (
@@ -487,6 +491,7 @@ class QPluginList(QListWidget):
             plugin_name=plugin_name,
             enabled=enabled,
             installed=installed,
+            npe_version=npe_version,
         )
         item.widget = widg
         action_name = 'uninstall' if installed else 'install'
@@ -609,7 +614,7 @@ class QtPluginDialog(QDialog):
 
         already_installed = set()
 
-        def _add_to_installed(distname, enabled):
+        def _add_to_installed(distname, enabled, npe_version=1):
 
             if distname:
                 meta = standard_metadata(distname)
@@ -631,13 +636,14 @@ class QtPluginDialog(QDialog):
                 ),
                 installed=True,
                 enabled=enabled,
+                npe_version=npe_version,
             )
 
         for manifest in _npe2.iter_manifests():
             distname = normalized_name(manifest.name or '')
             if distname in already_installed:
                 continue
-            _add_to_installed(distname, True)
+            _add_to_installed(distname, True, npe_version=2)
 
         for plugin_name, mod_name, distname in plugin_manager.iter_available():
             # not showing these in the plugin dialog
