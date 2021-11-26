@@ -30,8 +30,22 @@ def normalize_index(idx, ndim):
     return tuple(new_idx)
 
 
-def make_array_indices_multiscale(key, downsample_factors):
-    pass
+def make_array_indices_multiscale(index, downsample_factors):
+    """Rescale the coordinates on each axis by the dowsample factors.
+
+    This may result in some repeated indices in the lower-resolution levels.
+    However, making them unique is probably more expensive and certainly much
+    more complex than just ignoring the redundancy.
+    """
+    normalized_index = np.broadcast_arrays(*index)
+    shape = normalized_index[0].shape
+    ndim = len(shape)
+    concatenated = np.stack(normalized_index, axis=0)
+    rescaled = (
+        concatenated * downsample_factors[(Ellipsis,) + (np.newaxis,) * ndim]
+    )
+    rescaled_int = rescaled.astype(int)
+    return list(map(tuple, rescaled_int))
 
 
 def scale_start_stop(value, factor):
