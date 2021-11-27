@@ -1,7 +1,6 @@
 import dask.array as da
 import numpy as np
 import pytest
-import tensorstore as ts
 import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -788,6 +787,8 @@ def test_instantiate_with_experimental_clipping_planes_dict():
 
 def test_tensorstore_image():
     """Test an image coming from a tensorstore array."""
+    ts = pytest.importorskip('tensorstore')
+
     data = ts.array(
         np.full(shape=(1024, 1024), fill_value=255, dtype=np.uint8)
     )
