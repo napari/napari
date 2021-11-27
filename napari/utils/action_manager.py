@@ -79,7 +79,6 @@ class ActionManager:
     def __init__(self):
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
-        # self._buttons: Dict[str, Set[ButtonWrapper]] = defaultdict(set)
         self._shortcuts: Dict[str, Set[str]] = defaultdict(set)
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
