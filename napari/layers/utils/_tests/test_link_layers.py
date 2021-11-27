@@ -154,3 +154,10 @@ def test_unlink_single_layer():
 
     unlink_layers([l1])  # completely unlink L1 from everything
     assert not l1.events.blending.callbacks
+
+
+def test_mode_recursion():
+    l1 = layers.Points(None, name='l1')
+    l2 = layers.Points(None, name='l2')
+    link_layers([l1, l2])
+    l1.mode = 'add'

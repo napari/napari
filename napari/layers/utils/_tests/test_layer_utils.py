@@ -17,6 +17,10 @@ data_dask = da.random.random(
     size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
 )
 
+data_dask_1d = da.random.random(size=(20_000_000,), chunks=(5000,))
+
+data_dask_1d_rgb = da.random.random(size=(5_000_000, 3), chunks=(50_000, 3))
+
 data_dask_plane = da.random.random(
     size=(100_000, 100_000), chunks=(1000, 1000)
 )
@@ -76,6 +80,18 @@ def test_calc_data_fast_uint8():
 @pytest.mark.timeout(2)
 def test_calc_data_range_fast_big():
     val = calc_data_range(data_dask)
+    assert len(val) > 0
+
+
+@pytest.mark.timeout(2)
+def test_calc_data_range_fast_big_1d():
+    val = calc_data_range(data_dask_1d)
+    assert len(val) > 0
+
+
+@pytest.mark.timeout(2)
+def test_calc_data_range_fast_big_1d_rgb():
+    val = calc_data_range(data_dask_1d_rgb)
     assert len(val) > 0
 
 

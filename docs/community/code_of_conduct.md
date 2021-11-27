@@ -8,7 +8,7 @@ This code of conduct should be honored by everyone who participates in the napar
 
 This code is not exhaustive or complete. It serves to distill our common understanding of a collaborative, shared environment and goals. Please try to follow this code in spirit as much as in letter, to create a friendly and productive environment that enriches the surrounding community.
 
-## Specific Guidelines
+## Specific guidelines
 
 We strive to:
 
@@ -34,7 +34,7 @@ We strive to:
 > * Repeated harassment of others. In general, if someone asks you to stop, then stop.
 > * Advocating for, or encouraging, any of the above behaviour.
 
-## Diversity Statement
+## Diversity statement
 
 The napari project welcomes and encourages participation by everyone. We are committed to being a community that everyone enjoys being part of. Although we may not always be able to accommodate each individual’s preferences, we try our best to treat everyone kindly.
 
@@ -44,7 +44,7 @@ Though we welcome people fluent in all languages, napari development is conducte
 
 Standards for behaviour in the napari community are detailed in the Code of Conduct above. Participants in our community should uphold these standards in all their interactions and help others to do so as well (see next section).
 
-## Reporting Guidelines
+## Reporting guidelines
 
 We know that it is painfully common for internet communication to start at or devolve into obvious and flagrant abuse. We also recognize that sometimes people may have a bad day, or be unaware of some of the guidelines in this Code of Conduct. Please keep this in mind when deciding on how to respond to a breach of this Code.
 

@@ -1,9 +1,6 @@
-import warnings
-
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 
-from ...utils.translations import trans
 from ..visuals.surface import SurfaceVisual
 from .base import VispyBaseLayer
 
@@ -51,10 +48,23 @@ class VispySurfaceLayer(VispyBaseLayer):
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
 
-        self._on_shading_change()
+        # manually detach filters when we go to 2D to avoid dimensionality issues
+        # see comments in napari#3475. The filter is set again after set_data!
+        if self.layer._ndisplay == 2:
+            filt = self.node.shading_filter
+            try:
+                self.node.detach(filt)
+                self.node.shading = None
+                self.node.shading_filter = None
+            except ValueError:
+                # sometimes we try to detach non-attached filters, which causes a ValueError
+                pass
+
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
+        self._on_shading_change()
+
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
@@ -82,22 +92,10 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_colormap_change()
 
     def _on_shading_change(self):
-        if self.layer.shading == 'none':
-            self.node.shading = None
-            if self.node.shading_filter is not None:
-                self.node.shading_filter._attached = False
-        elif self.layer._ndisplay < 3:
-            warnings.warn(
-                trans._(
-                    "Alternative shading modes are only available in 3D, defaulting to none"
-                )
-            )
-            self.node.shading = None
-            if self.node.shading_filter is not None:
-                self.node.shading_filter._attached = False
-        else:
-            self.node.shading = self.layer.shading
-        self.node.mesh_data_changed()
+        shading = None if self.layer.shading == 'none' else self.layer.shading
+        if self.layer._ndisplay == 3:
+            self.node.shading = shading
+        self.node.update()
 
     def reset(self, event=None):
         super().reset()

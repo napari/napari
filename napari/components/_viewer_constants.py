@@ -47,6 +47,7 @@ class CursorStyle(str, Enum):
             * forbidden: A forbidden symbol
             * pointing: A finger for pointing
             * standard: The standard cursor
+            # crosshair: A crosshair
     """
 
     SQUARE = 'square'
@@ -55,3 +56,4 @@ class CursorStyle(str, Enum):
     FORBIDDEN = 'forbidden'
     POINTING = 'pointing'
     STANDARD = 'standard'
+    CROSSHAIR = 'crosshair'

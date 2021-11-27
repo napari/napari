@@ -556,3 +556,16 @@ def test_mixed_2d_and_3d_layers(make_napari_viewer, multiscale):
     viewer.dims.order = (1, 2, 0)
     viewer.window.qt_viewer.on_draw(None)
     assert np.all(img_multi_layer.corner_pixels == expected_corner_pixels)
+
+
+def test_remove_add_image_3D(make_napari_viewer):
+    """
+    Test that adding, removing and readding an image layer in 3D does not cause issues
+    due to the vispy node change. See https://github.com/napari/napari/pull/3670
+    """
+    viewer = make_napari_viewer(ndisplay=3)
+    img = np.ones((10, 10, 10))
+
+    layer = viewer.add_image(img)
+    viewer.layers.remove(layer)
+    viewer.layers.append(layer)

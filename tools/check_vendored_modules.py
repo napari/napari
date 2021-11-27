@@ -52,10 +52,14 @@ def check_vendored_module(org : str, reponame : str, tag : str) -> str:
 
 
 def main():
+    CI = '--ci' in sys.argv
     print("\n\nChecking vendored modules\n")
     for org, reponame, tag in [("albertosottile", "darkdetect", "master")]:
         print(f"\n * Checking '{org}/{reponame}'\n")
         diff = check_vendored_module(org, reponame, tag)
+        if CI:
+            print(f"::set-output name=vendored::{org}/{reponame}")
+            sys.exit(0)
         if diff:
             print(diff)
             print(f"\n * '{org}/{reponame}' vendor code seems to not be up to date!!!\n")

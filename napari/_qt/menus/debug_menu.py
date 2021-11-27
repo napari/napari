@@ -22,7 +22,7 @@ class DebugMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&Debug'), window._qt_window)
-        self._perf_menu = NapariMenu("Performance Trace", self)
+        self._perf_menu = NapariMenu(trans._("Performance Trace"), self)
 
         ACTIONS = [
             {
@@ -95,7 +95,7 @@ class DebugMenu(NapariMenu):
             Are we currently recording a trace file.
         """
         for action in self._perf_menu.actions():
-            if 'Start Recording' in action.text():
+            if trans._('Start Recording') in action.text():
                 action.setEnabled(not recording)
-            elif 'Stop Recording' in action.text():
+            elif trans._('Stop Recording') in action.text():
                 action.setEnabled(recording)
