@@ -105,7 +105,7 @@ jobs:
             toxenv: headless-py38-linux
           - python: '3.10'
             platform: ubuntu-latest
-            backend: pyside
+            backend: pyqt
 
     steps:
       - uses: actions/checkout@v2
