@@ -143,7 +143,6 @@ def test_add_layer_magic_name(
 
 
 @skip_on_win_ci
-@slow(20)
 def test_screenshot(make_napari_viewer):
     """Test taking a screenshot."""
     viewer = make_napari_viewer()
