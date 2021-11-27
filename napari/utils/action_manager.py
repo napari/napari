@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
-from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
 from .._vendor.cpython.functools import cached_property
@@ -166,8 +165,13 @@ class ActionManager:
         km_provider: KeymapProvider = action.keymapprovider
         if hasattr(km_provider, 'bind_key'):
             for shortcut in self._shortcuts[name]:
-                cmd = partial(self.trigger, name)
-                km_provider.bind_key(shortcut, cmd, overwrite=True)
+                # NOTE: it would be better if we could bind `self.trigger` here
+                # as it allow the action manager to be a convenient choke point
+                # to monitor all commands (useful for undo/redo, etc...), but
+                # the generator pattern in the keybindings caller makes that
+                # difficult at the moment, since `self.trigger(name)` is not a
+                # generator function (but action.injected is)
+                km_provider.bind_key(shortcut, action.injected, overwrite=True)
 
     def bind_button(
         self, name: str, button: Button, extra_tooltip_text=''
@@ -356,9 +360,9 @@ class ActionManager:
 
         return active_shortcuts
 
-    def trigger(self, name: str, *args, **kwargs) -> Any:
+    def trigger(self, name: str) -> Any:
         """Trigger the action `name`."""
-        return self._actions[name].injected(*args, **kwargs)
+        return self._actions[name].injected()
 
 
 action_manager = ActionManager()
