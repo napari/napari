@@ -6,7 +6,6 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
-import tensorstore as ts
 import xarray as xr
 import zarr
 from numpy.core.numerictypes import issubdtype
@@ -931,6 +930,8 @@ def test_add_large_colors():
 
 
 def test_fill_tensorstore():
+    ts = pytest.importorskip('tensorstore')
+
     labels = np.zeros((5, 7, 8, 9), dtype=int)
     labels[1, 2:4, 4:6, 4:6] = 1
     labels[1, 3:5, 5:7, 6:8] = 2
