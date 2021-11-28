@@ -105,6 +105,13 @@ def test_point_variable_step_size():
     assert dims.current_step == (0, 0, 2)
     assert dims.point == (0, 0, 4)
 
+    # mismatched len(axis) vs. len(value)
+    with pytest.raises(ValueError):
+        dims.set_point((0, 1), (0, 0, 0))
+
+    with pytest.raises(ValueError):
+        dims.set_current_step((0, 1), (0, 0, 0))
+
 
 def test_range():
     """
@@ -153,6 +160,10 @@ def test_axis_labels():
 
     dims.set_axis_label((0, 1, 3), ('t', 'c', 'last'))
     assert dims.axis_labels == ('t', 'c', '2', 'last')
+
+    # mismatched len(axis) vs. len(value)
+    with pytest.raises(ValueError):
+        dims.set_point((0, 1), ('x', 'y', 'z'))
 
 
 def test_order_when_changing_ndim():
