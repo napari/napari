@@ -48,7 +48,7 @@ reset_scroll_progress.__doc__ = trans._("Reset dims scroll progress")
 
 @register_viewer_action(trans._("Toggle ndisplay."))
 def toggle_ndisplay(viewer: Viewer):
-    viewer.dims.ndisplay = 2 if viewer.dims.ndisplay == 3 else 3
+    viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
 
 
 # Making this an action makes vispy really unhappy during the tests
