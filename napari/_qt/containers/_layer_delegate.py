@@ -89,7 +89,9 @@ class LayerDelegate(QStyledItemDelegate):
         # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
 
-    def get_layer_icon(self, option, index):
+    def get_layer_icon(
+        self, option: QStyleOptionViewItem, index: QtCore.QModelIndex
+    ):
         """Add the appropriate QIcon to the item based on the layer type."""
         layer = index.data(ItemRole)
         if hasattr(layer, 'is_group') and layer.is_group():  # for layer trees
@@ -103,7 +105,7 @@ class LayerDelegate(QStyledItemDelegate):
         except ValueError:
             return
         # guessing theme rather than passing it through.
-        bg = option.palette.color(option.palette.Background).red()
+        bg = option.palette.color(option.palette.ColorRole.Window).red()
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
         option.decorationSize = QSize(18, 18)
         option.decorationPosition = option.Right  # put icon on the right

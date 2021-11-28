@@ -22,7 +22,6 @@ from ..utils.perf import perf_config
 from ..utils.translations import trans
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_filters import QtToolTipEventFilter
-from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 from .utils import _maybe_allow_interrupt
 
@@ -181,10 +180,6 @@ def get_app(
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
-
-        # this will register all of our resources (icons) with Qt, so that they
-        # can be used in qss files and elsewhere.
-        _register_napari_resources()
 
     _app_ref = app  # prevent garbage collection
 

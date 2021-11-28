@@ -169,7 +169,7 @@ class _QtMainWindow(QMainWindow):
             window_position = (self.x(), self.y())
         else:
             width, height = window_position
-            screen_geo = QApplication.desktop().geometry()
+            screen_geo = QApplication.primaryScreen().geometry()
             if screen_geo.width() < width or screen_geo.height() < height:
                 window_position = (self.x(), self.y())
 

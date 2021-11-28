@@ -30,7 +30,6 @@ inputs.
 
 import os
 from contextlib import contextmanager
-from itertools import product
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Callable, Dict, Iterable, Iterator, Optional, Tuple, Union
@@ -39,12 +38,7 @@ import qtpy
 
 from ...utils.translations import trans
 
-__all__ = [
-    '_register_napari_resources',
-    'compile_qt_svgs',
-    'compile_qrc',
-    'generate_colorized_svgs',
-]
+__all__ = ['_register_napari_resources', 'compile_qt_svgs', 'compile_qrc']
 
 QRC_TEMPLATE = """
 <!DOCTYPE RCC><RCC version="1.0">
@@ -53,9 +47,7 @@ QRC_TEMPLATE = """
 </qresource>
 </RCC>
 """
-ALIAS_T = '{color}/{svg_stem}{opacity}.svg'
 FILE_T = "<file alias='{alias}'>{path}</file>"
-
 # This variable is updated by either `_register_napari_resources`
 # and turned into a function which removes existing resources from the app.
 _clear_resources: Optional[Callable] = None
@@ -107,68 +99,6 @@ def _temporary_qrc_file(
         yield str(res_file)
 
 
-def generate_colorized_svgs(
-    svg_paths: Iterable[Union[str, Path]],
-    colors: Iterable[Union[str, Tuple[str, str]]],
-    opacities: Iterable[float] = (1.0,),
-    theme_override: Optional[Dict[str, str]] = None,
-) -> Iterator[Tuple[str, str]]:
-    """Helper function to generate colorized SVGs.
-
-    This is a generator that yields tuples of ``(alias, icon_xml)`` for every
-    combination (cartesian product) of `svg_path`, `color`, and `opacity`
-    provided. It can be used as input to :func:`_temporary_qrc_file`.
-
-    Parameters
-    ----------
-    svg_paths : Iterable[Union[str, Path]]
-        An iterable of paths to svg files
-    colors : Iterable[Union[str, Tuple[str, str]]]
-        An iterable of colors.  Every icon will be generated in every color. If
-        a `color` item is a string, it should be valid svg color style. Items
-        may also be a 2-tuple of strings, in which case the first item should
-        be an available theme name
-        (:func:`~napari.utils.theme.available_themes`), and the second item
-        should be a key in the theme (:func:`~napari.utils.theme.get_theme`),
-    opacities : Iterable[float], optional
-        An iterable of opacities to generate, by default (1.0,) Opacities less
-        than one can be accessed in qss with the opacity as a percentage
-        suffix, e.g.: ``my_svg_50.svg`` for opacity 0.5.
-    theme_override : Optional[Dict[str, str]], optional
-        When one of the `colors` is a theme ``(name, key)`` tuple,
-        `theme_override` may be used to override the `key` for a specific icon
-        name in `svg_paths`.  For example ``{'exclamation': 'warning'}``, would
-        use the theme "warning" color for any icon named "exclamation.svg" by
-        default `None`
-
-    Yields
-    ------
-    (alias, xml) : Iterator[Tuple[str, str]]
-        `alias` is the name that will used to access the icon in the Qt
-        Resource system (such as QSS), and `xml` is the *raw* colorzied SVG
-        text (as read from a file, perhaps pre-colored using one of the below
-        functions).
-    """
-    from ...resources._icons import get_colorized_svg
-
-    # mapping of svg_stem to theme_key
-    theme_override = theme_override or dict()
-
-    for color, path, op in product(colors, svg_paths, opacities):
-        clrkey = color
-        svg_stem = Path(path).stem
-        if isinstance(color, tuple):
-            from ...utils.theme import get_theme
-
-            clrkey, theme_key = color
-            theme_key = theme_override.get(svg_stem, theme_key)
-            color = getattr(get_theme(clrkey, False), theme_key)
-
-        op_key = "" if op == 1 else f"_{op * 100:.0f}"
-        alias = ALIAS_T.format(color=clrkey, svg_stem=svg_stem, opacity=op_key)
-        yield (alias, get_colorized_svg(path, color, op))
-
-
 def _compile_qrc_pyqt5(qrc) -> bytes:
     """Compile qrc file using the PyQt5 method.
 
@@ -197,8 +127,10 @@ def _compile_qrc_pyqt6(qrc) -> bytes:
     The maintainer has discontinued pyrcc for PyQt6
 
     """
+    from qtpy import QtCore
 
-    raise NotImplementedError('pyrcc discontinued on Pyqt6')
+    QtCore.QDir.addSearchPath('icons', 'path_to_icons/')
+    # raise NotImplementedError('pyrcc discontinued on Pyqt6')
 
 
 def _compile_qrc_pyside2(qrc) -> bytes:
@@ -303,6 +235,7 @@ def compile_qt_svgs(
     resources : str
         compiled resources as resources.py file
     """
+    from ...resources._icons import generate_colorized_svgs
 
     svgs = generate_colorized_svgs(
         svg_paths, colors, opacities, theme_override
@@ -324,7 +257,7 @@ def _compile_napari_resources(
     save_path: Optional[Union[str, Path]] = None
 ) -> str:
     """Internal function to compile all napari icons for all themes."""
-    from ...resources._icons import ICONS
+    from ...resources._icons import ICONS, generate_colorized_svgs
     from ...utils.theme import _themes
 
     svgs = generate_colorized_svgs(
