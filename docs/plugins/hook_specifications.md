@@ -15,10 +15,9 @@
 .. autofunction:: napari_provide_sample_data
 .. autofunction:: napari_get_reader
 .. autofunction:: napari_get_writer
-
-.. _write-single-layer-hookspecs:
 ```
 
+(write-single-layer-hookspecs)=
 ### Single Layers IO
 
 The following hook specifications will be called when a user saves a single
@@ -36,7 +35,6 @@ from `Layer.data`, and a `meta` dict that will correspond to the layer's
 .. autofunction:: napari_write_points
 .. autofunction:: napari_write_shapes
 .. autofunction:: napari_write_surface
-.. autofunction:: napari_write_tracks
 .. autofunction:: napari_write_vectors
 ````
 
