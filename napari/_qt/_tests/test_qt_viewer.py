@@ -7,6 +7,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+import qtpy
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
@@ -22,6 +23,10 @@ from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
 from napari.utils.theme import available_themes
+
+skipqt6 = pytest.mark.skipif(
+    bool('6' in qtpy.API_NAME), reason='not supported on Qt6'
+)
 
 
 def test_qt_viewer(make_napari_viewer):
@@ -40,6 +45,7 @@ def test_qt_viewer(make_napari_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
+@skipqt6
 def test_qt_viewer_with_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
@@ -49,6 +55,7 @@ def test_qt_viewer_with_console(make_napari_viewer):
     assert view.dockConsole.widget() is view.console
 
 
+@skipqt6
 def test_qt_viewer_toggle_console(make_napari_viewer):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()

@@ -43,7 +43,7 @@ from . import menus
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
-from .qt_resources import get_stylesheet, register_napari_themes
+from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_viewer_dock_widget import (
@@ -413,7 +413,6 @@ class Window:
         # connect theme events before collecting plugin-provided themes
         # to ensure icons from the plugins are generated correctly.
         _themes.events.added.connect(self._add_theme)
-        _themes.events.added.connect(register_napari_themes)
         _themes.events.removed.connect(self._remove_theme)
 
         # discover any themes provided by plugins
@@ -1163,7 +1162,6 @@ class Window:
         """Carry out various teardown tasks such as event disconnection."""
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
-        _themes.events.added.disconnect(register_napari_themes)
         _themes.events.removed.disconnect(self._remove_theme)
         self.qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
         for menu in self.file_menu._INSTANCES:

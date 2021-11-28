@@ -106,6 +106,9 @@ jobs:
           - python: '3.10'
             platform: ubuntu-latest
             backend: pyqt
+          - python: 3.9
+            platform: ubuntu-latest
+            backend: pyqt6
 
     steps:
       - uses: actions/checkout@v2
