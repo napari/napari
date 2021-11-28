@@ -87,6 +87,28 @@ def make_int_slice_indices_multiscale(key, downsample_factors):
     return list(zip(*keys_by_dim))
 
 
+def make_index_multiscale(index, *, ndim, downsample_factors):
+    key = normalize_index(index, ndim)
+    types = set(map(type, key))
+    if np.ndarray in types and slice in types:
+        raise NotImplementedError(
+            'Mixed array and slice indexing is not supported.'
+        )
+    elif np.ndarray in types:
+        indices_by_level = make_array_indices_multiscale(
+            key, downsample_factors
+        )
+    elif slice in types:
+        indices_by_level = make_int_slice_indices_multiscale(
+            key, downsample_factors
+        )
+    else:
+        raise TypeError(
+            f'Cannot index multiscale data with key {key} of type {type(key)}'
+        )
+    return indices_by_level
+
+
 class MultiScaleData(LayerDataProtocol):
     """Wrapper for multiscale data, to provide Array API.
 
@@ -163,26 +185,36 @@ class MultiScaleData(LayerDataProtocol):
           each scale.
         - mixed array and slice indexing is NOT SUPPORTED.
         """
-        key = normalize_index(index, self.ndim)
-        types = set(map(type, key))
-        if np.ndarray in types and slice in types:
-            raise NotImplementedError(
-                'Mixed array and slice indexing is not supported.'
-            )
-        elif np.ndarray in types:
-            indices_by_level = make_array_indices_multiscale(
-                key, self.downsample_factors
-            )
-        elif slice in types:
-            indices_by_level = make_int_slice_indices_multiscale(
-                key, self.downsample_factors
-            )
-        else:
-            raise TypeError(
-                f'Cannot index multiscale data with key {key} of type {type(key)}'
-            )
+        indices_by_level = make_index_multiscale(
+            index, ndim=self.ndim, downsample_factors=self.downsample_factors
+        )
         new_data = [dat[idx] for dat, idx in zip(self._data, indices_by_level)]
         return MultiScaleData(new_data)
+
+    def __setitem__(  # type: ignore [override]
+        self, index: Union[int, Tuple[slice, ...]], value
+    ) -> MultiScaleData:
+        """Multiscale indexing.
+
+        This is intended to behave like normal array indexing of the highest-
+        resolution scale, but it returns a new multiscale array for those
+        indices.
+
+        We support the following types of indexing:
+        - integer indexing: we return only a single value as expected.
+        - mixed slices and integers: this behaves like NumPy indexing: the
+          dimensions corresponding to integers (if any) are dropped, the
+          sliced ones create a new multiscale array around those slices.
+        - array indexing: this behaves like NumPy fancy indexing, but returns
+          translates the indices to multiple scales and returns the values at
+          each scale.
+        - mixed array and slice indexing is NOT SUPPORTED.
+        """
+        indices_by_level = make_index_multiscale(
+            index, ndim=self.ndim, downsample_factors=self.downsample_factors
+        )
+        for dat, idx in zip(self._data, indices_by_level):
+            dat[idx] = value
 
     def __len__(self) -> int:
         return len(self._data)
@@ -207,3 +239,6 @@ class MultiScaleData(LayerDataProtocol):
             f"<MultiScaleData at {hex(id(self))}. "
             f"{len(self)} levels, '{self.dtype}', shapes: {self.shapes}>"
         )
+
+    def max(self):
+        return max(np.max(data) for data in self._data)
