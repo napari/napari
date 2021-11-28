@@ -398,6 +398,8 @@ def main():
     import platform
     from distutils.version import StrictVersion
 
+    from qtpy import API_NAME
+
     _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
         platform.release()
     ) > StrictVersion('19.0.0')
@@ -409,7 +411,7 @@ def main():
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
 
     # quick fix for Big Sur py3.9
-    if _MACOS_AT_LEAST_BIG_SUR:
+    if _MACOS_AT_LEAST_BIG_SUR and '6' not in API_NAME:
         os.environ['QT_MAC_WANTS_LAYER'] = '1'
 
     if (

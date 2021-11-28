@@ -252,8 +252,6 @@ def register_theme(name, theme):
     from ..resources._icons import build_theme_svgs
 
     QDir.addSearchPath(f'theme_{name}', build_theme_svgs(name))
-    print(f'theme_{name}')
-    print(QDir.searchPaths(f'theme_{name}'))
 
 
 def unregister_theme(name):

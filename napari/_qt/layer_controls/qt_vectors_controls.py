@@ -55,7 +55,9 @@ class QtVectorsControls(QtLayerControls):
         # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()
         color_prop_box = QComboBox(self)
-        color_prop_box.activated[str].connect(self.change_edge_color_property)
+        color_prop_box.currentTextChanged.connect(
+            self.change_edge_color_property
+        )
         color_prop_box.addItems(color_properties)
         self.color_prop_box = color_prop_box
         self.edge_prop_label = QLabel(trans._('edge property:'))
@@ -75,7 +77,9 @@ class QtVectorsControls(QtLayerControls):
         colorModeComboBox = QComboBox(self)
         color_modes = [e.value for e in ColorMode]
         colorModeComboBox.addItems(color_modes)
-        colorModeComboBox.activated[str].connect(self.change_edge_color_mode)
+        colorModeComboBox.currentTextChanged.connect(
+            self.change_edge_color_mode
+        )
         self.color_mode_comboBox = colorModeComboBox
         self._on_edge_color_mode_change()
 

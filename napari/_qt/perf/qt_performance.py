@@ -116,7 +116,7 @@ class QtPerformance(QWidget):
         self.thresh_ms = self.THRESH_DEFAULT
         self.thresh_combo = QComboBox()
         self.thresh_combo.addItems(self.THRESH_OPTIONS)
-        self.thresh_combo.activated[str].connect(self._change_thresh)
+        self.thresh_combo.currentTextChanged.connect(self._change_thresh)
         self.thresh_combo.setCurrentText(str(self.thresh_ms))
 
         combo_layout = QHBoxLayout()

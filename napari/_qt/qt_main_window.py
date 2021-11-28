@@ -475,7 +475,7 @@ class Window:
         theme.events.text.connect(self._update_theme_no_event)
         theme.events.warning.connect(self._update_theme_no_event)
         theme.events.current.connect(self._update_theme_no_event)
-        theme.events.icon.connect(self._theme_icon_changed)
+        theme.events.icon.connect(self._update_theme_no_event)
         theme.events.canvas.connect(
             lambda _: self.qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -499,7 +499,7 @@ class Window:
         theme.events.text.disconnect(self._update_theme_no_event)
         theme.events.warning.disconnect(self._update_theme_no_event)
         theme.events.current.disconnect(self._update_theme_no_event)
-        theme.events.icon.disconnect(self._theme_icon_changed)
+        theme.events.icon.disconnect(self._update_theme_no_event)
         theme.events.canvas.disconnect(
             lambda _: self.qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
@@ -524,22 +524,6 @@ class Window:
         """Remove theme and disconnect events."""
         theme = event.value
         self._disconnect_theme(theme)
-
-    def _theme_icon_changed(self):
-        """Trigger rebuild of theme and all resources.
-
-        This is really only required whenever there are changes to the `icon`
-        attribute on the `Theme` model. Most other attributes simply update
-        the stylesheet.
-        """
-        from .._qt.qt_resources import (
-            _register_napari_resources,
-            _unregister_napari_resources,
-        )
-
-        _unregister_napari_resources()
-        _register_napari_resources(True, force_rebuild=True)
-        self._update_theme()
 
     @property
     def qt_viewer(self):

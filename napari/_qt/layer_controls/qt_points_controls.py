@@ -118,7 +118,7 @@ class QtPointsControls(QtLayerControls):
                 current_index = index
 
         symbol_comboBox.setCurrentIndex(current_index)
-        symbol_comboBox.activated[str].connect(self.changeSymbol)
+        symbol_comboBox.currentTextChanged.connect(self.changeSymbol)
         self.symbolComboBox = symbol_comboBox
 
         ndim_cb = QCheckBox()

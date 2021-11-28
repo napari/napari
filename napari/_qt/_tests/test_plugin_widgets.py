@@ -94,13 +94,13 @@ def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
     assert [a.text() for a in actions] == expected_text
 
     # the first item of the plugins is a submenu (for "Test plugin1")
-    assert actions[0].menu()
+    assert actions[0].parent() is not viewer.window.plugins_menu
     subnames = ['Widg1', 'Widg2']
-    assert [a.text() for a in actions[0].menu().actions()] == subnames
+    assert [a.text() for a in actions[0].parent().actions()] == subnames
 
     # the other items for the plugins are not submenus
-    assert not actions[1].menu()
-    assert not actions[2].menu()
+    assert actions[1].parent() == viewer.window.plugins_menu
+    assert actions[2].parent() == viewer.window.plugins_menu
 
 
 def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
@@ -126,7 +126,7 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     actions[1].trigger()
 
     # trigger the 'TestP1 > Widg2' action (it's in a submenu)
-    action = actions[0].menu().actions()[1]
+    action = actions[0].parent().actions()[1]
     assert action.text() == 'Widg2'
     action.trigger()
     # make sure that a dock widget was created
