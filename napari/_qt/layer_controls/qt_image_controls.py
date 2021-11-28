@@ -7,6 +7,7 @@ from ...layers.image._image_constants import (
     Rendering,
 )
 from ...utils.translations import trans
+from ..utils import qt_signals_blocked
 from .qt_image_controls_base import QtBaseImageControls
 
 
@@ -240,17 +241,15 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationLabel.hide()
 
     def _update_interpolation_combo(self):
-        self.interpComboBox.clear()
         interp_names = (
             Interpolation3D.keys()
             if self.layer._ndisplay == 3
             else [i.value for i in Interpolation.view_subset()]
         )
-        self.interpComboBox.addItems(interp_names)
-        index = self.interpComboBox.findText(
-            self.layer.interpolation, Qt.MatchFixedString
-        )
-        self.interpComboBox.setCurrentIndex(index)
+        with qt_signals_blocked(self.interpComboBox):
+            self.interpComboBox.clear()
+            self.interpComboBox.addItems(interp_names)
+            self.interpComboBox.setCurrentText(self.layer.interpolation)
 
     def _on_ndisplay_change(self):
         """Toggle between 2D and 3D visualization modes."""
