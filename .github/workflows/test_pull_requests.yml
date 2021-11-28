@@ -25,7 +25,7 @@ jobs:
           pip install --upgrade pip
           pip install tox
       - name: Run task
-        run: tox -e ${{ matrix.task }} -- --timeout=8
+        run: tox -e ${{ matrix.task }}
 
   manifest:
     # make sure all necessary files will be bundled in the release
