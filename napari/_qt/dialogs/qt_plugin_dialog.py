@@ -268,9 +268,6 @@ class Installer(QObject):
             except KeyError:
                 pass
 
-    def help(self):
-        pass # not sure why this is necessary, but it crashes without
-
     @staticmethod
     def _is_installed_with_conda():
         """
@@ -496,9 +493,12 @@ class QPluginList(QListWidget):
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
 
-        widg.help_button.clicked.connect(
-            lambda: self.handle_action(item, project_info.name, "help")
-        )
+        if project_info.url:
+            import webbrowser
+            widg.help_button.clicked.connect(lambda: webbrowser.open(project_info.url))
+        else:
+            widg.help_button.setVisible(False)
+
         widg.action_button.clicked.connect(
             lambda: self.handle_action(item, project_info.name, action_name)
         )
