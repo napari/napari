@@ -4,6 +4,7 @@ from itertools import cycle
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from scipy.stats import gmean
 
 from ...utils.colormaps import Colormap, ValidColormapArg
@@ -457,6 +458,15 @@ class Points(Layer):
         return self._property_table.choices
 
     @property
+    def features(self) -> pd.DataFrame:
+        return self._property_table.data
+
+    @features.setter
+    def features(self, features: pd.DataFrame) -> None:
+        # TODO: check that the number of rows is the same as the number of tracks.
+        self._property_table.data = features
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._property_table.values
@@ -514,7 +524,7 @@ class Points(Layer):
             and self._mode != Mode.ADD
         ):
             for k in current_properties:
-                self._property_table.data[k][
+                self.features[k][
                     list(self.selected_data)
                 ] = current_properties[k]
         self._edge._update_current_properties(current_properties)
@@ -850,12 +860,10 @@ class Points(Layer):
                 color_property = ''
             if color_property == '':
                 if self._property_table.num_properties > 0:
-                    new_color_property = next(iter(self._property_table.data))
+                    new_color_property = next(iter(self.features))
                     color_manager.color_properties = {
                         'name': new_color_property,
-                        'values': self._property_table.data[
-                            new_color_property
-                        ].to_numpy(),
+                        'values': self.features[new_color_property].to_numpy(),
                         'current_value': np.squeeze(
                             self._property_table.default_values[
                                 new_color_property
@@ -882,7 +890,7 @@ class Points(Layer):
             # ColorMode.COLORMAP can only be applied to numeric properties
             color_property = color_manager.color_properties.name
             if (color_mode == ColorMode.COLORMAP) and not issubclass(
-                self._property_table.data[color_property].dtype.type, np.number
+                self.features[color_property].dtype.type, np.number
             ):
                 raise TypeError(
                     trans._(
@@ -1598,7 +1606,7 @@ class Points(Layer):
                 'edge_color': deepcopy(self.edge_color[index]),
                 'face_color': deepcopy(self.face_color[index]),
                 'size': deepcopy(self.size[index]),
-                'properties': deepcopy(self._property_table.data.iloc[index]),
+                'properties': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
             }
 

@@ -5,6 +5,7 @@ from itertools import cycle
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from vispy.color import get_color_names
 
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
@@ -687,6 +688,15 @@ class Shapes(Layer):
             self._finish_drawing()
 
     @property
+    def features(self) -> pd.DataFrame:
+        return self._property_table.data
+
+    @features.setter
+    def features(self, features: pd.DataFrame) -> None:
+        # TODO: check that the number of rows is the same as the number of tracks.
+        self._property_table.data = features
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
         return self._property_table.values
@@ -816,7 +826,7 @@ class Shapes(Layer):
             and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         ):
             for k in current_properties:
-                self._property_table.data[k][
+                self.features[k][
                     list(self.selected_data)
                 ] = current_properties[k]
             self.refresh_colors()
@@ -2821,7 +2831,7 @@ class Shapes(Layer):
                 ],
                 'edge_color': deepcopy(self._data_view._edge_color[index]),
                 'face_color': deepcopy(self._data_view._face_color[index]),
-                'properties': deepcopy(self._property_table.data.iloc[index]),
+                'properties': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
             }
             if len(self.text.values) == 0:

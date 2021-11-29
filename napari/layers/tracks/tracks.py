@@ -6,6 +6,7 @@ from typing import Dict, List, Union
 from warnings import warn
 
 import numpy as np
+import pandas as pd
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
@@ -381,6 +382,14 @@ class Tracks(Layer):
         self.events.rebuild_graph()
         self.events.data(value=self.data)
         self._set_editable()
+
+    @property
+    def features(self) -> pd.DataFrame:
+        return self._manager
+
+    @features.setter
+    def features(self, features: pd.DataFrame) -> None:
+        self._manager.features = features
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

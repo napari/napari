@@ -8,7 +8,7 @@ from napari.utils.events.custom_types import Array
 
 
 class PropertyTable:
-    def __init__(self, data=None):
+    def __init__(self, data: pd.DataFrame = None):
         self.data = pd.DataFrame(data)
         self.default_values = {
             name: _get_default_value_from_series(series)

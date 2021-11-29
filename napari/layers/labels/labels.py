@@ -3,6 +3,7 @@ from collections import deque
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from scipy import ndimage as ndi
 
 from ...utils import config
@@ -392,6 +393,15 @@ class Labels(_ImageBase):
         self._update_dims()
         self.events.data(value=self.data)
         self._set_editable()
+
+    @property
+    def features(self) -> pd.DataFrame:
+        return self._property_table.data
+
+    @features.setter
+    def features(self, features: pd.DataFrame) -> None:
+        # TODO: check that the number of rows is the same as the number of tracks.
+        self._property_table.data = features
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -1303,10 +1313,7 @@ class Labels(_ImageBase):
         return "\n".join(self._get_properties(position, world))
 
     def _get_properties(self, position, world) -> list:
-        if (
-            len(self._label_index) == 0
-            or self._property_table.num_properties == 0
-        ):
+        if len(self._label_index) == 0 or self.featueres.shape[1] == 0:
             return []
 
         value = self.get_value(position, world=world)
@@ -1321,7 +1328,7 @@ class Labels(_ImageBase):
         idx = self._label_index[label_value]
         return [
             f'{k}: {v[idx]}'
-            for k, v in self._property_table.data.items()
+            for k, v in self.features.items()
             if k != 'index'
             and len(v) > idx
             and v[idx] is not None

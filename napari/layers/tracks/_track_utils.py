@@ -1,6 +1,7 @@
 from typing import Dict, List, Union
 
 import numpy as np
+import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
@@ -139,6 +140,15 @@ class TrackManager:
         # indices = np.lexsort((self.data[:, 1], self.data[:, 0]))
 
     @property
+    def features(self) -> pd.DataFrame:
+        return self._property_table.data
+
+    @features.setter
+    def features(self, features: pd.DataFrame) -> None:
+        # TODO: check that the number of rows is the same as the number of tracks.
+        self._property_table.data = features
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._property_table.values
@@ -150,11 +160,9 @@ class TrackManager:
             properties=properties,
             num_data=len(self.data),
         )
-        if 'track_id' not in self._property_table.data:
-            self._property_table.data['track_id'] = self.track_ids
-        self._property_table.data = self._property_table.data.iloc[
-            self._order
-        ].reset_index()
+        if 'track_id' not in self.features:
+            self.features['track_id'] = self.track_ids
+        self.features = self.features.iloc[self._order].reset_index()
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:

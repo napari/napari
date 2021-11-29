@@ -3,6 +3,7 @@ from copy import copy
 from typing import Dict, Tuple, Union
 
 import numpy as np
+import pandas as pd
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
@@ -288,6 +289,15 @@ class Vectors(Layer):
         self._set_editable()
 
     @property
+    def features(self) -> pd.DataFrame:
+        return self._property_table.data
+
+    @features.setter
+    def features(self, features: pd.DataFrame) -> None:
+        # TODO: check that the number of rows is the same as the number of tracks.
+        self._property_table.data = features
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
         return self._property_table.values
@@ -300,10 +310,7 @@ class Vectors(Layer):
         )
 
         if self._edge.color_properties is not None:
-            if (
-                self._edge.color_properties.name
-                not in self._property_table.data
-            ):
+            if self._edge.color_properties.name not in self.features:
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
@@ -317,9 +324,7 @@ class Vectors(Layer):
                 edge_color_name = self._edge.color_properties.name
                 self._edge.color_properties = {
                     'name': edge_color_name,
-                    'values': self._property_table.data[
-                        edge_color_name
-                    ].to_numpy(),
+                    'values': self.features[edge_color_name].to_numpy(),
                     'current_value': self._property_table.default_values[
                         edge_color_name
                     ][0],
@@ -479,9 +484,7 @@ class Vectors(Layer):
                     color_property = next(iter(self.properties))
                     self._edge.color_properties = {
                         'name': color_property,
-                        'values': self._property_table.data[
-                            color_property
-                        ].to_numpy(),
+                        'values': self.features[color_property].to_numpy(),
                         'current_value': self._property_table.default_values[
                             color_property
                         ][0],
