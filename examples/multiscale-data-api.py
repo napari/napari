@@ -1,6 +1,6 @@
 import numpy as np
 
-from napari.layers._multiscale_data import MultiScaleData
+from napari.data_types._multiscale_data import MultiScaleData
 
 data0 = np.random.random((5, 40, 60))
 data1 = np.copy(data0[:, ::2, ::2])
