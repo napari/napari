@@ -79,7 +79,7 @@ class InteractionBoxMouseBindings:
     def _on_active(self, event):
         """Gets called when active layer is changed"""
         active_layer = event.value
-        if hasattr(active_layer, 'mode') and active_layer.mode == 'transform':
+        if getattr(active_layer, 'mode', None) == 'transform':
             self._couple_interaction_box_to_active()
             self._interaction_box_model.show = True
             self._layer_affine_event_helper(active_layer)
