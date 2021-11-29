@@ -138,7 +138,7 @@ class MultiScaleData(LayerDataProtocol):
     def __init__(
         self,
         data: Union[Sequence[LayerDataProtocol], MultiScaleData],
-        max_size: Optional[Sequence[int]] = None,
+        max_size: Optional[int] = None,
     ) -> None:
         self._data: List[LayerDataProtocol] = list(data)
         if not isinstance(self._data[0], da.Array):
