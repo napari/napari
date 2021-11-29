@@ -536,9 +536,6 @@ class QPluginList(QListWidget):
         elif action_name == "cancel":
             widget.set_busy(trans._("cancelling..."), update)
             method((pkg_name,))
-        elif action_name == "help":
-            import webbrowser
-            webbrowser.open("https://napari-hub.org/plugins/" + pkg_name)
 
     @Slot(ProjectInfo)
     def tag_outdated(self, project_info: ProjectInfo):
