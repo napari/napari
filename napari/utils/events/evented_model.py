@@ -125,7 +125,7 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
             class Config:
                 dependencies={'c': ['a', 'b']}
     """
-    if cls.__property_setters__:
+    if not cls.__property_setters__:
         return {}
 
     deps: Dict[str, Set[str]] = {}
