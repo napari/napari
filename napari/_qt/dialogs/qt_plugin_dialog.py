@@ -495,7 +495,10 @@ class QPluginList(QListWidget):
 
         if project_info.url:
             import webbrowser
-            widg.help_button.clicked.connect(lambda: webbrowser.open(project_info.url))
+
+            widg.help_button.clicked.connect(
+                lambda: webbrowser.open(project_info.url)
+            )
         else:
             widg.help_button.setVisible(False)
 
