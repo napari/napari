@@ -183,9 +183,9 @@ class Dims(EventedModel):
 
     @property
     def displayed_order(self) -> Tuple[int, ...]:
-        """Tuple: Order of only displayed dimensions."""
-        order = np.array(self.displayed)
-        order[np.argsort(order)] = list(range(len(order)))
+        displayed = self.displayed
+        # equivalent to: order = np.argsort(self.displayed)
+        order = sorted(range(self.ndisplay), key=lambda x: displayed[x])
         return tuple(order)
 
     def set_range(
@@ -359,9 +359,8 @@ def reorder_after_dim_reduction(order):
         The original array with the unneeded dimension
         thrown away.
     """
-    arr = np.array(order)
-    arr[np.argsort(arr)] = range(len(arr))
-    return tuple(arr.tolist())
+    arr = sorted(range(len(order)), key=lambda x: order[x])
+    return tuple(arr)
 
 
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:
