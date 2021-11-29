@@ -5,6 +5,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import dask.array as da
 import numpy as np
+import zarr
 
 from ._data_protocols import LayerDataProtocol, assert_protocol
 
@@ -141,12 +142,14 @@ class MultiScaleData(LayerDataProtocol):
         max_size: Optional[int] = None,
     ) -> None:
         self._data: List[LayerDataProtocol] = list(data)
-        if not isinstance(self._data[0], da.Array):
+        if isinstance(self._data[0], zarr.Array):
             # In order for multiscale indexing, and in particular slicing, to
             # be useful, it must be lazy. Unfortunately, zarr indexing is *not*
             # lazy, and instantiates entire arrays. Therefore, for __getitem__
             # we wrap any array type in a dask array.
             self._read_data = [da.from_array(d) for d in self._data]
+        else:
+            self._read_data = self._data
         if not self._data:
             raise ValueError("Multiscale data must be a (non-empty) sequence")
         for d in self._data:
