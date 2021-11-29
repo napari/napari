@@ -10,6 +10,9 @@ from ._data_protocols import LayerDataProtocol, assert_protocol
 # from .utils.layer_utils import compute_multiscale_level_and_corners
 
 
+HANDLED_FUNCTIONS = {}
+
+
 def normalize_index(idx, ndim):
     if isinstance(idx, numbers.Integral):
         return (idx,) + (slice(None),) * (ndim - 1)
@@ -120,7 +123,7 @@ class MultiScaleData(LayerDataProtocol):
     ----------
     data : Sequence[LayerDataProtocol]
         Levels of multiscale data, from larger to smaller.
-    max_size : Sequence[int], optional
+    max_size : int, optional
         Maximum size of a displayed tile in pixels, by default`data[-1].shape`
 
     Raises
@@ -142,7 +145,10 @@ class MultiScaleData(LayerDataProtocol):
         for d in self._data:
             assert_protocol(d)
 
-        self.max_size = self._data[-1].shape if max_size is None else max_size
+        self._max_size = 0
+        self.compute_level = -1
+        if max_size is not None:
+            self.max_size = max_size
         self.downsample_factors = (
             np.array([d.shape for d in data]) / data[0].shape
         )
@@ -165,6 +171,44 @@ class MultiScaleData(LayerDataProtocol):
     def shapes(self) -> Tuple[Tuple[int, ...], ...]:
         """Tuple shapes for all scales."""
         return tuple(im.shape for im in self._data)
+
+    @property
+    def max_size(self) -> int:
+        return self._max_size
+
+    @max_size.setter
+    def max_size(self, maxsize):
+        """Don't use more that `maxsize` elements when computing min/max/etc.
+
+        This convenience function calls set_compute_at_level, but uses the
+        size (in number of array elements) of the computation an the deciding
+        factor, rather than a specific level in the hierarchy (whose size may
+        not be known ahead of time).
+        """
+        self._max_size = maxsize
+        data_sizes = np.array([arr.size for arr in self._data])
+        usable = data_sizes < maxsize
+        self._compute_at_level = np.argmax(data_sizes * usable)
+
+    @property
+    def compute_level(self):
+        return self._compute_at_level
+
+    @compute_level.setter
+    def compute_level(self, lvl):
+        """Compute functions such as np.min and np.max at this level.
+
+        We support a subset of NumPy functions to help in certain operations,
+        such as computing contrast limits. Since exact min/max values may not
+        be preserved at different levels of an image pyramid, we create a
+        stateful switch to determine on which array in ``_data`` the NumPy
+        function is run.
+        """
+        self.max_size = self._data[lvl].size + 1
+
+    @property
+    def current_level_data(self):
+        return self._data[self.compute_level]
 
     def __getitem__(  # type: ignore [override]
         self, index: Union[int, Tuple[slice, ...]]
@@ -219,20 +263,8 @@ class MultiScaleData(LayerDataProtocol):
     def __len__(self) -> int:
         return len(self._data)
 
-    def __eq__(self, other) -> bool:
-        return self._data == other
-
-    def __add__(self, other) -> bool:
-        return self._data + other
-
-    def __mul__(self, other) -> bool:
-        return self._data * other
-
-    def __rmul__(self, other) -> bool:
-        return other * self._data
-
     def __array__(self) -> np.ndarray:
-        return np.ndarray(self._data[-1])
+        return np.ndarray(self._data[self._compute_at_level])
 
     def __repr__(self) -> str:
         return (
@@ -240,5 +272,25 @@ class MultiScaleData(LayerDataProtocol):
             f"{len(self)} levels, '{self.dtype}', shapes: {self.shapes}>"
         )
 
-    def max(self):
-        return max(np.max(data) for data in self._data)
+    def __array_function__(self, func, types, args, kwargs):
+        if func not in HANDLED_FUNCTIONS:
+            new_args = []
+            for arg in args:
+                if isinstance(arg, MultiScaleData):
+                    new_args.append(arg.current_level_data)
+                else:
+                    new_args.append(arg)
+            return func(*new_args, **kwargs)
+        # Note: this allows subclasses that don't override
+        # __array_function__ to handle MultiScaleData objects
+        if not all(issubclass(t, MultiScaleData) for t in types):
+            return NotImplemented
+        return HANDLED_FUNCTIONS[func](*args, **kwargs)
+
+    def level(self, lvl: int):
+        """Return the array at level `lvl`."""
+        return self._data[lvl]
+
+    def set_compute_at_level(self, lvl: int):
+        level_size = self._data[lvl].size
+        self.max_size = level_size + 1

@@ -20,4 +20,8 @@ print(indexed.ndim)
 
 ms[4, :, 5:10] = 2
 
-print(ms.max())
+ms.compute_level = -1
+
+print(np.max(ms))
+
+print(np.mean(ms))
