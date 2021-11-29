@@ -106,7 +106,6 @@ def test_z_order_image_points(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images_after_ndisplay(make_napari_viewer):
@@ -136,7 +135,6 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_napari_viewer):
@@ -166,7 +164,6 @@ def test_z_order_image_points_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_colormap(make_napari_viewer):
@@ -329,7 +326,6 @@ def test_grid_mode(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_attenuation(make_napari_viewer):
@@ -340,19 +336,25 @@ def test_changing_image_attenuation(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     viewer.dims.ndisplay = 3
     viewer.add_image(data, contrast_limits=[0, 1])
-    viewer.layers[0].rendering = 'attenuated_mip'
 
+    # normal mip
+    viewer.layers[0].rendering = 'mip'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    mip_value = screenshot[center][0]
+
+    # zero attenuation (still attenuated!)
+    viewer.layers[0].rendering = 'attenuated_mip'
+    viewer.layers[0].attenuation = 0.0
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    zero_att_value = screenshot[center][0]
+
+    # increase attenuation
     viewer.layers[0].attenuation = 0.5
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    # Check that rendering has not been attenuated
-    assert screenshot[center + (0,)] > 80
-
-    viewer.layers[0].attenuation = 0.02
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    more_att_value = screenshot[center][0]
     # Check that rendering has been attenuated
-    assert screenshot[center + (0,)] < 60
+    assert zero_att_value < more_att_value < mip_value
 
 
 @slow(30)

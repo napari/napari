@@ -407,7 +407,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return
         if not name:
             name = self._basename()
-        self._name = name
+        self._name = str(name)
         self.events.name()
 
     @property
