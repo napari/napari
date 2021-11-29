@@ -256,7 +256,7 @@ class MultiScaleData(LayerDataProtocol):
 
     def __setitem__(  # type: ignore [override]
         self, index: Union[int, Tuple[slice, ...]], value
-    ) -> MultiScaleData:
+    ):
         """Multiscale indexing.
 
         This is intended to behave like normal array indexing of the highest-
