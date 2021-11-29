@@ -105,7 +105,8 @@ class InteractionBoxMouseBindings:
             viewer.dims.ndim,
             active_layer.ndim,
         )
-        # The -0.5 is nescessary because the pixel at (0,0) actually extends to (-0.5,0.5) (in case of the image layer)
+        # The -0.5 is necessary because the pixel at (0,0) actually extends to (-0.5,0.5) (in case of the image layer)
+
         viewer.overlays.interaction_box.points = (
             active_layer.extent.data[:, layer_dims] - 0.5
         )
