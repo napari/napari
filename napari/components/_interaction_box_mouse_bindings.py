@@ -124,7 +124,8 @@ class InteractionBoxMouseBindings:
             self._couple_interaction_box_to_active()
 
     def _layer_affine_event_helper(self, layer):
-        """Helper function to connect listener to the transform of acctive layer and removes previous callbacks"""
+        """Helper function to connect listener to the transform of active layer and removes previous callbacks"""
+
         if self._layer_listening_for_affine is not None:
             self._layer_listening_for_affine.events.affine.disconnect(self)
         layer.events.affine.connect(self._couple_interaction_box_to_active)
