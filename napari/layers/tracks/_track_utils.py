@@ -153,7 +153,6 @@ class TrackManager:
         if 'track_id' not in self._property_table:
             self._property_table.data['track_id'] = self.track_ids
         for name in self._property_table:
-            # TODO: I'm not sure if this supports non-integer labels well.
             self._property_table[name] = self._property_table[name].array[
                 self._order
             ]

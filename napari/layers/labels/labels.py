@@ -1317,12 +1317,12 @@ class Labels(_ImageBase):
 
         idx = self._label_index[label_value]
         return [
-            f'{name}: {series[idx]}'
-            for name, series in self._property_table.data.items()
-            if name != 'index'
-            and len(series) > idx
-            and series[idx] is not None
-            and not (isinstance(series[idx], float) and np.isnan(series[idx]))
+            f'{k}: {v[idx]}'
+            for k, v in self._property_table.data.items()
+            if k != 'index'
+            and len(v) > idx
+            and v[idx] is not None
+            and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
 
 

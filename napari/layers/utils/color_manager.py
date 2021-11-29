@@ -23,7 +23,6 @@ from .color_transformations import (
     transform_color,
     transform_color_with_defaults,
 )
-from .property_table import PropertyTable
 
 
 @dataclass
@@ -202,7 +201,8 @@ class ColorManager(EventedModel):
         self,
         color: ColorType,
         n_colors: int,
-        property_table: PropertyTable,
+        properties: Dict[str, np.ndarray],
+        current_properties: Dict[str, np.ndarray],
     ):
         """Set a color property. This is convenience function
 
@@ -212,19 +212,24 @@ class ColorManager(EventedModel):
             The value for setting edge or face_color
         n_colors : int
             The number of colors that needs to be set. Typically len(data).
-        property_table : PropertyTable
-           The layer property table to use to update the colors.
+        properties : Dict[str, np.ndarray]
+            The layer property values
+        current_properties : Dict[str, np.ndarray]
+            The layer current property values
         """
         # if the provided color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
-        if is_color_mapped(color, property_table.data):
-            values = property_table.data[color].to_numpy()
+        if is_color_mapped(color, properties):
+            # note that we set ColorProperties.current_value by indexing rather than
+            # np.squeeze since the current_property values have shape (1,) and
+            # np.squeeze would return an array with shape ().
+            # see https://github.com/napari/napari/pull/3110#discussion_r680680779
             self.color_properties = ColorProperties(
                 name=color,
-                values=values,
-                current_value=property_table.default_values[color],
+                values=properties[color],
+                current_value=current_properties[color][0],
             )
-            if guess_continuous(values):
+            if guess_continuous(properties[color]):
                 self.color_mode = ColorMode.COLORMAP
             else:
                 self.color_mode = ColorMode.CYCLE
@@ -243,14 +248,14 @@ class ColorManager(EventedModel):
 
     def _refresh_colors(
         self,
-        property_table: PropertyTable,
+        properties: Dict[str, np.ndarray],
         update_color_mapping: bool = False,
     ):
         """Calculate and update colors if using a cycle or color map
         Parameters
         ----------
-        property_table : PropertyTable
-           The layer property table to use to update the colors.
+        properties : Dict[str, np.ndarray]
+           The layer properties to use to update the colors.
         update_color_mapping : bool
            If set to True, the function will recalculate the color cycle map
            or colormap (whichever is being used). If set to False, the function
@@ -263,7 +268,7 @@ class ColorManager(EventedModel):
         if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
             property_name = self.color_properties.name
             current_value = self.color_properties.current_value
-            property_values = property_table.data[property_name].to_numpy()
+            property_values = properties[property_name]
             self.color_properties = ColorProperties(
                 name=property_name,
                 values=property_values,
@@ -446,7 +451,7 @@ class ColorManager(EventedModel):
     def _from_layer_kwargs(
         cls,
         colors: Union[dict, str, np.ndarray],
-        property_table: PropertyTable,
+        properties: Dict[str, np.ndarray],
         n_colors: Optional[int] = None,
         continuous_colormap: Optional[Union[str, Colormap]] = None,
         contrast_limits: Optional[Tuple[float, float]] = None,
@@ -461,6 +466,7 @@ class ColorManager(EventedModel):
         function to coerce possible inputs into ColorManager kwargs
 
         """
+        properties = {k: np.asarray(v) for k, v in properties.items()}
         if isinstance(colors, dict):
             # if the kwargs are passed as a dictionary, unpack them
             color_values = colors.get('colors', None)
@@ -479,9 +485,7 @@ class ColorManager(EventedModel):
                 # if the color properties were given as a property name,
                 # coerce into ColorProperties
                 try:
-                    prop_values = property_table.data[
-                        color_properties
-                    ].to_numpy()
+                    prop_values = properties[color_properties]
                     prop_name = color_properties
                     color_properties = ColorProperties(
                         name=prop_name, values=prop_values
@@ -509,19 +513,18 @@ class ColorManager(EventedModel):
         }
 
         if color_properties is None:
-            if is_color_mapped(color_values, property_table.data):
+            if is_color_mapped(color_values, properties):
                 if n_colors == 0:
                     color_properties = ColorProperties(
                         name=color_values,
                         values=np.empty(
-                            0, dtype=property_table.data[color_values].dtype
+                            0, dtype=properties[color_values].dtype
                         ),
-                        current_value=property_table.data[color_values][0],
+                        current_value=properties[color_values][0],
                     )
                 else:
                     color_properties = ColorProperties(
-                        name=color_values,
-                        values=property_table.data[color_values].to_numpy(),
+                        name=color_values, values=properties[color_values]
                     )
                 if color_mode is None:
                     if guess_continuous(color_properties.values):

@@ -3,13 +3,14 @@ from typing import Dict, Optional, Union
 import numpy as np
 import pandas as pd
 
+from napari.layers.utils.layer_utils import coerce_current_properties
 from napari.utils.events.custom_types import Array
 
 
 class PropertyTable:
     def __init__(self, data=None):
         self.data = pd.DataFrame(data)
-        self._default_values = {
+        self.default_values = {
             name: _get_default_value_from_series(series)
             for name, series in self.data.items()
         }
@@ -18,17 +19,25 @@ class PropertyTable:
         if size < self.num_values:
             self.remove(range(size, self.num_values))
         elif size > self.num_values:
+            num_append = size - self.num_values
             to_append = pd.DataFrame(
                 {
-                    name: [self._default_values[name]]
-                    * (size - self.num_values)
+                    name: np.repeat(
+                        self._default_values[name], num_append, axis=0
+                    )
                     for name in self.data
-                }
+                },
+                index=range(num_append),
             )
-            self.data = self.data.append(to_append, ignore_index=True)
+            self.append(to_append)
+
+    def append(self, data: pd.DataFrame):
+        self.data = self.data.append(data, ignore_index=True)
 
     def remove(self, indices):
-        self.data = self.data.drop(labels=indices, axis=0)
+        self.data = self.data.drop(labels=indices, axis=0).reset_index(
+            drop=True
+        )
 
     @property
     def num_values(self):
@@ -41,6 +50,11 @@ class PropertyTable:
     @property
     def default_values(self) -> Dict[str, np.ndarray]:
         return self._default_values
+
+    @default_values.setter
+    def default_values(self, default_values):
+        # TODO: coerce and check consistency with data.
+        self._default_values = coerce_current_properties(default_values)
 
     @property
     def choices(self) -> Dict[str, np.ndarray]:

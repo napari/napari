@@ -1045,7 +1045,9 @@ def test_color_cycle(attribute, color_cycle):
     }
     layer = Points(data, **points_kwargs)
 
-    assert layer.properties == properties
+    for name in properties:
+        np.testing.assert_array_equal(layer.properties[name], properties[name])
+
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
     )
@@ -1197,7 +1199,10 @@ def test_color_colormap(attribute):
         f'{attribute}_colormap': 'gray',
     }
     layer = Points(data, **points_kwargs)
-    assert layer.properties == properties
+
+    for name in properties:
+        np.testing.assert_array_equal(layer.properties[name], properties[name])
+
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
@@ -2140,13 +2145,19 @@ def test_set_properties_with_invalid_shape_errors_safely():
         'class': np.array(['A', 'B', 'C']),
     }
     points = Points(np.random.rand(3, 2), text='class', properties=properties)
-    assert points.properties == properties
+    for name in properties:
+        np.testing.assert_array_equal(
+            points.properties[name], properties[name]
+        )
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
     with pytest.raises(ValueError):
         points.properties = {'class': np.array(['D', 'E'])}
 
-    assert points.properties == properties
+    for name in properties:
+        np.testing.assert_array_equal(
+            points.properties[name], properties[name]
+        )
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
 
@@ -2155,7 +2166,10 @@ def test_set_properties_with_missing_text_property_text_becomes_constant():
         'class': np.array(['A', 'B', 'C']),
     }
     points = Points(np.random.rand(3, 2), text='class', properties=properties)
-    assert points.properties == properties
+    for name in properties:
+        np.testing.assert_array_equal(
+            points.properties[name], properties[name]
+        )
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
     points.properties = {'not_class': np.array(['D', 'E', 'F'])}

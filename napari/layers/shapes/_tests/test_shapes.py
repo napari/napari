@@ -1356,6 +1356,7 @@ def test_switch_color_mode(attribute):
         layer_color, np.repeat([initial_color], shape[0], axis=0)
     )
 
+    # there should not be an edge_color_property
     color_property = getattr(layer, f'_{attribute}_color_property')
     assert color_property == ''
 
@@ -1480,7 +1481,8 @@ def test_color_cycle(attribute, color_cycle):
     }
     layer = Shapes(data, **shapes_kwargs)
 
-    assert layer.properties == properties
+    for name in properties:
+        np.testing.assert_array_equal(layer.properties[name], properties[name])
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
     )
@@ -1614,7 +1616,8 @@ def test_color_colormap(attribute):
         f'{attribute}_colormap': 'gray',
     }
     layer = Shapes(data, **shapes_kwargs)
-    assert layer.properties == properties
+    for name in properties:
+        np.testing.assert_array_equal(layer.properties[name], properties[name])
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))

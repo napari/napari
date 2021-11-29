@@ -726,7 +726,7 @@ class Shapes(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_table.all_choices
+        return self._property_table.choices
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -809,17 +809,16 @@ class Shapes(Layer):
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        update_values = (
+        self._property_table.default_values = current_properties
+        if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
-        )
-        for name, value in current_properties.items():
-            prop = self._property_table[name]
-            prop.default_value = value
-            if update_values:
-                prop.values[list(self.selected_data)] = value
-        if update_values:
+        ):
+            for k in current_properties:
+                self._property_table.data[k][
+                    list(self.selected_data)
+                ] = current_properties[k]
             self.refresh_colors()
         self.events.current_properties()
 
@@ -2822,9 +2821,7 @@ class Shapes(Layer):
                 ],
                 'edge_color': deepcopy(self._data_view._edge_color[index]),
                 'face_color': deepcopy(self._data_view._face_color[index]),
-                'properties': {
-                    k: deepcopy(v[index]) for k, v in self.properties.items()
-                },
+                'properties': deepcopy(self._property_table.data.iloc[index]),
                 'indices': self._slice_indices,
             }
             if len(self.text.values) == 0:
@@ -2844,13 +2841,7 @@ class Shapes(Layer):
                 for i in self._dims_not_displayed
             ]
 
-            for property_name, pasted_values in self._clipboard[
-                'properties'
-            ].items():
-                property_column = self._property_table[property_name]
-                property_column.values = np.concatenate(
-                    (property_column.values, pasted_values), axis=0
-                )
+            self._property_table.append(self._clipboard['properties'])
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):
