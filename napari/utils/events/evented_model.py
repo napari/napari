@@ -2,7 +2,7 @@ import operator
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Dict, Sequence, Set, Union
+from typing import Any, Callable, ClassVar, Dict, Set, Union
 
 import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
@@ -75,12 +75,6 @@ class EventedMetaclass(main.ModelMetaclass):
     """
 
     def __new__(mcs, name, bases, namespace, **kwargs):
-        # dependencies may be declared in the Model kwargs to emit an event
-        # for a computed property when a model field that it depends on changes
-        # e.g.  (@property 'c' depends on model fields 'a' and 'b')
-        # class MyModel(EventedModel, dependencies={'c': ['a', 'b']}):
-        _deps: Dict[str, Sequence[str]] = kwargs.pop('dependencies', {})
-
         with no_class_attributes():
             cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         cls.__eq_operators__ = {}
@@ -103,8 +97,41 @@ class EventedMetaclass(main.ModelMetaclass):
         for name, attr in namespace.items():
             if isinstance(attr, property) and attr.fset is not None:
                 cls.__property_setters__[name] = attr
+        cls.__field_dependents__ = _get_field_dependents(cls)
+        return cls
 
-        cls.__field_dependents__ = {}
+
+def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
+    """Return mapping of field name -> dependent set of property names.
+
+    Dependencies may be declared in the Model Config to emit an event
+    for a computed property when a model field that it depends on changes
+    e.g.  (@property 'c' depends on model fields 'a' and 'b')
+
+    Example
+    -------
+        class MyModel(EventedModel):
+            a: int = 1
+            b: int = 1
+
+            @property
+            def c(self) -> List[int]:
+                return [self.a, self.b]
+
+            @c.setter
+            def c(self, val: Sequence[int]):
+                self.a, self.b = val
+
+            class Config:
+                dependencies={'c': ['a', 'b']}
+    """
+    if cls.__property_setters__:
+        return {}
+
+    deps: Dict[str, Set[str]] = {}
+
+    _deps = getattr(cls.__config__, 'dependencies', None)
+    if _deps:
         for prop, fields in _deps.items():
             if prop not in cls.__property_setters__:
                 raise ValueError(
@@ -112,12 +139,17 @@ class EventedMetaclass(main.ModelMetaclass):
                     f'{prop!r} is not.'
                 )
             for field in fields:
-                if field in cls.__field_dependents__:
-                    cls.__field_dependents__[field].add(prop)
-                else:
-                    cls.__field_dependents__[field] = {prop}
-
-        return cls
+                if field not in cls.__fields__:
+                    warnings.warn(f"Unrecognized field dependency: {field}")
+                deps.setdefault(field, set()).add(prop)
+    else:
+        # if dependencies haven't been explicitly defined, we can glean
+        # them from the property.fset code object:
+        for prop, setter in cls.__property_setters__.items():
+            for name in setter.fset.__code__.co_names:
+                if name in cls.__fields__:
+                    deps.setdefault(name, set()).add(prop)
+    return deps
 
 
 class EventedModel(BaseModel, metaclass=EventedMetaclass):

@@ -375,20 +375,25 @@ def test_evented_model_with_string_enum_parse_obj():
     assert deserialized_model.enum_field == model.enum_field
 
 
+class T(EventedModel):
+    a: int = 1
+    b: int = 1
+
+    @property
+    def c(self) -> List[int]:
+        return [self.a, self.b]
+
+    @c.setter
+    def c(self, val: Sequence[int]):
+        self.a, self.b = val
+
+
 def test_evented_model_with_property_setters():
-    class T(EventedModel, dependencies={'c': ['a', 'b']}):
-        a: int = 1
-        b: int = 1
-
-        @property
-        def c(self) -> List[int]:
-            return [self.a, self.b]
-
-        @c.setter
-        def c(self, val: Sequence[int]):
-            self.a, self.b = val
-
     t = T()
+
+    assert list(T.__property_setters__) == ['c']
+    # the metaclass should have figured out that both a and b affect c
+    assert T.__field_dependents__ == {'a': {'c'}, 'b': {'c'}}
 
     # all the fields and properties behave as expected
     assert t.c == [1, 1]
@@ -399,6 +404,9 @@ def test_evented_model_with_property_setters():
     assert t.a == 2
     assert t.b == 3
 
+
+def test_evented_model_with_property_setters_events():
+    t = T()
     assert 'c' in t.events  # the setter has an event
     t.events.a = Mock(t.events.a)
     t.events.b = Mock(t.events.b)
