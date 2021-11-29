@@ -13,8 +13,8 @@ from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
-from ...utils.translations import trans
 from ...utils.naming import magic_name
+from ...utils.translations import trans
 from .._data_protocols import LayerDataProtocol
 from .._multiscale_data import MultiScaleData
 from ..base import Layer
@@ -222,7 +222,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         if getattr(data, 'ndim', 2) < 2:
             raise ValueError(
-                trans._('Image data must have at least 2 dimensions.'))
+                trans._('Image data must have at least 2 dimensions.')
+            )
 
         # Determine if data is a multiscale
         self._data_raw = data
@@ -288,7 +289,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._thumbnail_level = 0
         displayed_axes = self._displayed_axes
         self.corner_pixels[1][displayed_axes] = self.level_shapes[
-            self._data_level][displayed_axes]
+            self._data_level
+        ][displayed_axes]
 
         self._new_empty_slice()
 
@@ -296,8 +298,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._experimental_slicing_plane = SlicingPlane(thickness=1,
-                                                        enabled=False)
+        self._experimental_slicing_plane = SlicingPlane(
+            thickness=1, enabled=False
+        )
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
         if contrast_limits is None:
@@ -316,10 +319,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
         self._interpolation = {
-            2:
-            Interpolation.NEAREST,
-            3: (Interpolation3D.NEAREST if self.__class__.__name__ == 'Labels'
-                else Interpolation3D.LINEAR),
+            2: Interpolation.NEAREST,
+            3: (
+                Interpolation3D.NEAREST
+                if self.__class__.__name__ == 'Labels'
+                else Interpolation3D.LINEAR
+            ),
         }
         self.interpolation = interpolation
         self.rendering = rendering
@@ -333,16 +338,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image."""
         wrapper = _weakref_hide(self)
-        self._slice = ImageSlice(self._get_empty_image(),
-                                 wrapper._raw_to_displayed, self.rgb)
+        self._slice = ImageSlice(
+            self._get_empty_image(), wrapper._raw_to_displayed, self.rgb
+        )
         self._empty = True
 
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded."""
         if self.rgb:
-            return np.zeros((1, ) * self._ndisplay + (3, ))
+            return np.zeros((1,) * self._ndisplay + (3,))
         else:
-            return np.zeros((1, ) * self._ndisplay)
+            return np.zeros((1,) * self._ndisplay)
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
@@ -351,7 +357,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
             return self._dims_displayed_order + (
-                max(self._dims_displayed_order) + 1, )
+                max(self._dims_displayed_order) + 1,
+            )
         else:
             return self._dims_displayed_order
 
@@ -372,7 +379,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     "mode must be either 'data' or 'slice', got {mode!r}",
                     deferred=True,
                     mode=mode,
-                ))
+                )
+            )
         return calc_data_range(input_data, rgb=self.rgb)
 
     @property
@@ -490,7 +498,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Set current interpolation mode."""
         if self._ndisplay == 3:
             self._interpolation[self._ndisplay] = Interpolation3D(
-                interpolation)
+                interpolation
+            )
         else:
             self._interpolation[self._ndisplay] = Interpolation(interpolation)
         self.events.interpolation(value=self._interpolation[self._ndisplay])
@@ -577,17 +586,20 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         indices = np.array(self._slice_indices)
         extent = self._extent_data
         if np.any(
-                np.less(
-                    [indices[ax] for ax in not_disp],
-                    [extent[0, ax] for ax in not_disp],
-                )) or np.any(
-                    np.greater_equal(
-                        [indices[ax] for ax in not_disp],
-                        [extent[1, ax] for ax in not_disp],
-                    )):
+            np.less(
+                [indices[ax] for ax in not_disp],
+                [extent[0, ax] for ax in not_disp],
+            )
+        ) or np.any(
+            np.greater_equal(
+                [indices[ax] for ax in not_disp],
+                [extent[1, ax] for ax in not_disp],
+            )
+        ):
             return
         self._empty = False
 
+        indices = self._slice_indices
         if self.multiscale:
             if self._ndisplay == 3:
                 # If 3d redering just show lowest level of multiscale
@@ -602,14 +614,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
             # Slice currently viewed level
             level = self.data_level
-            indices = np.array(self._slice_indices)
-            downsampled_indices = (indices[not_disp] /
-                                   self.downsample_factors[level, not_disp])
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)).astype(int)
-            downsampled_indices = np.clip(
-                downsampled_indices, 0, self.level_shapes[level, not_disp] - 1)
-            indices[not_disp] = downsampled_indices
 
             scale = np.ones(self.ndim)
             for d in self._dims_displayed:
@@ -624,30 +628,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                         1,
                     )
                 self._transforms['tile2data'].translate = (
-                    self.corner_pixels[0] *
-                    self._transforms['tile2data'].scale)
-            image = self.data[level][tuple(indices)]
-            image_indices = indices
-
-            # Slice thumbnail
-            indices = np.array(self._slice_indices)
-            downsampled_indices = (
-                indices[not_disp] /
-                self.downsample_factors[self._thumbnail_level, not_disp])
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)).astype(int)
-            downsampled_indices = np.clip(
-                downsampled_indices,
-                0,
-                self.level_shapes[self._thumbnail_level, not_disp] - 1,
-            )
-            indices[not_disp] = downsampled_indices
-
-            thumbnail_source = self.data[self._thumbnail_level][tuple(indices)]
+                    self.corner_pixels[0] * self._transforms['tile2data'].scale
+                )
+            image = self.data[indices].level(level)
+            thumbnail_source = self.data[indices].level(self._thumbnail_level)
         else:
             self._transforms['tile2data'].scale = np.ones(self.ndim)
-            image_indices = self._slice_indices
-            image = self.data[image_indices]
+            image = self.data[indices]
 
             # For single-scale we don't request a separate thumbnail_source
             # from the ChunkLoader because in ImageSlice.chunk_loaded we
@@ -656,8 +643,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             thumbnail_source = None
 
         # Load our images, might be sync or async.
-        data = self._SliceDataClass(self, image_indices, image,
-                                    thumbnail_source)
+        data = self._SliceDataClass(
+            self, np.asarray(indices), image, thumbnail_source
+        )
         self._load_slice(data)
         if self._keep_auto_contrast or self._should_calc_clims:
             self.reset_contrast_limits()
@@ -743,8 +731,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if dtype in [np.dtype(np.float16)]:
             image = image.astype(np.float32)
 
-        raw_zoom_factor = np.divide(self._thumbnail_shape[:2],
-                                    image.shape[:2]).min()
+        raw_zoom_factor = np.divide(
+            self._thumbnail_shape[:2], image.shape[:2]
+        ).min()
         new_shape = np.clip(
             raw_zoom_factor * np.array(image.shape[:2]),
             1,  # smallest side should be 1 pixel wide
@@ -755,10 +744,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                downsampled = ndi.zoom(image,
-                                       zoom_factor + (1, ),
-                                       prefilter=False,
-                                       order=0)
+                downsampled = ndi.zoom(
+                    image, zoom_factor + (1,), prefilter=False, order=0
+                )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
@@ -767,30 +755,28 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             else:  # image is RGB
                 if downsampled.dtype == np.uint8:
                     alpha = np.full(
-                        downsampled.shape[:2] + (1, ),
+                        downsampled.shape[:2] + (1,),
                         int(255 * self.opacity),
                         dtype=np.uint8,
                     )
                 else:
-                    alpha = np.full(downsampled.shape[:2] + (1, ),
-                                    self.opacity)
+                    alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
         else:
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                downsampled = ndi.zoom(image,
-                                       zoom_factor,
-                                       prefilter=False,
-                                       order=0)
+                downsampled = ndi.zoom(
+                    image, zoom_factor, prefilter=False, order=0
+                )
             low, high = self.contrast_limits
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
-            downsampled = downsampled**self.gamma
+            downsampled = downsampled ** self.gamma
             color_array = self.colormap.map(downsampled.ravel())
-            colormapped = color_array.reshape(downsampled.shape + (4, ))
+            colormapped = color_array.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -858,30 +844,21 @@ class Image(_ImageBase):
             Dictionary of layer state.
         """
         state = self._get_base_state()
-        state.update({
-            'rgb':
-            self.rgb,
-            'multiscale':
-            self.multiscale,
-            'colormap':
-            self.colormap.name,
-            'contrast_limits':
-            self.contrast_limits,
-            'interpolation':
-            self.interpolation,
-            'rendering':
-            self.rendering,
-            'experimental_slicing_plane':
-            self.experimental_slicing_plane.dict(),
-            'iso_threshold':
-            self.iso_threshold,
-            'attenuation':
-            self.attenuation,
-            'gamma':
-            self.gamma,
-            'data':
-            self.data,
-        })
+        state.update(
+            {
+                'rgb': self.rgb,
+                'multiscale': self.multiscale,
+                'colormap': self.colormap.name,
+                'contrast_limits': self.contrast_limits,
+                'interpolation': self.interpolation,
+                'rendering': self.rendering,
+                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'iso_threshold': self.iso_threshold,
+                'attenuation': self.attenuation,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
         return state
 
 
