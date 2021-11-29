@@ -617,7 +617,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # for additional discussion.
         displayed = self._dims_displayed
         # equivalent to: order = np.argsort(displayed)
-        order = sorted(range(self._ndisplay), key=lambda x: displayed[x])
+        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
         return tuple(order)
 
     def _update_dims(self, event=None):

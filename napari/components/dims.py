@@ -185,7 +185,7 @@ class Dims(EventedModel):
     def displayed_order(self) -> Tuple[int, ...]:
         displayed = self.displayed
         # equivalent to: order = np.argsort(self.displayed)
-        order = sorted(range(self.ndisplay), key=lambda x: displayed[x])
+        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
         return tuple(order)
 
     def set_range(
