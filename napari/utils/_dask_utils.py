@@ -1,12 +1,13 @@
 """Dask cache utilities.
 """
-import collections.abc
 import contextlib
 from typing import Callable, ContextManager, Optional, Tuple
 
 import dask
 import dask.array as da
 from dask.cache import Cache
+
+from napari.layers._multiscale_data import MultiScaleData
 
 #: dask.cache.Cache, optional : A dask cache for opportunistic caching
 #: use :func:`~.resize_dask_cache` to actually register and resize.
@@ -77,8 +78,7 @@ def resize_dask_cache(
 def _is_dask_data(data) -> bool:
     """Return True if data is a dask array or a list/tuple of dask arrays."""
     return isinstance(data, da.Array) or (
-        isinstance(data, collections.abc.Sequence)
-        and any(isinstance(i, da.Array) for i in data)
+        isinstance(data, MultiScaleData) and data.array_type is da.Array
     )
 
 

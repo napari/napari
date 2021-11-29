@@ -173,6 +173,10 @@ class MultiScaleData(LayerDataProtocol):
         return tuple(im.shape for im in self._data)
 
     @property
+    def array_type(self) -> type:
+        return type(self._data[0])
+
+    @property
     def max_size(self) -> int:
         return self._max_size
 
@@ -188,7 +192,13 @@ class MultiScaleData(LayerDataProtocol):
         self._max_size = maxsize
         data_sizes = np.array([arr.size for arr in self._data])
         usable = data_sizes < maxsize
-        self._compute_at_level = np.argmax(data_sizes * usable)
+        if np.any(usable):
+            self._compute_at_level = np.argmax(data_sizes * usable)
+            self._max_size = maxsize
+        else:
+            # this will trigger recomputation of max_size to be the size of
+            # the lowest-resolution level
+            self.compute_level = -1
 
     @property
     def compute_level(self):
