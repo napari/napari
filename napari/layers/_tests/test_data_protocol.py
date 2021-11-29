@@ -1,8 +1,8 @@
 import pytest
 
 from napari._tests.utils import layer_test_data
+from napari.data_types._data_protocols import assert_protocol
 from napari.layers import Shapes, Surface
-from napari.layers._data_protocols import assert_protocol
 
 EASY_TYPES = [i for i in layer_test_data if i[0] not in (Shapes, Surface)]
 
