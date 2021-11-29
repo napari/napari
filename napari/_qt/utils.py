@@ -78,9 +78,10 @@ def str_to_qbytearray(string: str) -> QByteArray:
             trans._(
                 "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
                 QBYTE_FLAG=QBYTE_FLAG,
-            ))
+            )
+        )
 
-    return QByteArray.fromBase64(string[len(QBYTE_FLAG):].encode())
+    return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
 
 
 def QImg2array(img):
@@ -193,8 +194,9 @@ def crosshair_pixmap():
     painter.drawRect((size - rect_size) // 2, 0, rect_size - 1, size - 1)
 
     # Square
-    painter.drawRect((size - square) // 2, (size - square) // 2, square - 1,
-                     square - 1)
+    painter.drawRect(
+        (size - square) // 2, (size - square) // 2, square - 1, square - 1
+    )
 
     pen = QPen(Qt.black, 2)
     pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
@@ -214,19 +216,23 @@ def crosshair_pixmap():
 
     # # # Horizontal lines
     mid_vpoint = QPoint(2, size // 2)
-    painter.drawLine(mid_vpoint,
-                     QPoint(((size - center) // 2) - center + 1, size // 2))
+    painter.drawLine(
+        mid_vpoint, QPoint(((size - center) // 2) - center + 1, size // 2)
+    )
     mid_vpoint = QPoint(size - 3, size // 2)
-    painter.drawLine(mid_vpoint,
-                     QPoint(((size - center) // 2) + center + 1, size // 2))
+    painter.drawLine(
+        mid_vpoint, QPoint(((size - center) // 2) + center + 1, size // 2)
+    )
 
     # # # Vertical lines
     mid_hpoint = QPoint(size // 2, 2)
-    painter.drawLine(QPoint(size // 2, ((size - center) // 2) - center + 1),
-                     mid_hpoint)
+    painter.drawLine(
+        QPoint(size // 2, ((size - center) // 2) - center + 1), mid_hpoint
+    )
     mid_hpoint = QPoint(size // 2, size - 3)
-    painter.drawLine(QPoint(size // 2, ((size - center) // 2) + center + 1),
-                     mid_hpoint)
+    painter.drawLine(
+        QPoint(size // 2, ((size - center) // 2) + center + 1), mid_hpoint
+    )
 
     painter.end()
     return pixmap
@@ -289,8 +295,9 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     return drag
 
 
-def combine_widgets(widgets: Union[QWidget, Sequence[QWidget]],
-                    vertical: bool = False) -> QWidget:
+def combine_widgets(
+    widgets: Union[QWidget, Sequence[QWidget]], vertical: bool = False
+) -> QWidget:
     """Combine a list of widgets into a single QWidget with Layout.
 
     Parameters
@@ -331,12 +338,13 @@ def combine_widgets(widgets: Union[QWidget, Sequence[QWidget]],
                 container.layout().addWidget(widget)
             return container
     raise TypeError(
-        trans._('"widget" must be a QWidget or a sequence of QWidgets'))
+        trans._('"widget" must be a QWidget or a sequence of QWidgets')
+    )
 
 
-def add_flash_animation(widget: QWidget,
-                        duration: int = 300,
-                        color: Array = (0.5, 0.5, 0.5, 0.5)):
+def add_flash_animation(
+    widget: QWidget, duration: int = 300, color: Array = (0.5, 0.5, 0.5, 0.5)
+):
     """Add flash animation to widget to highlight certain action (e.g. taking a screenshot).
 
     Parameters
@@ -362,7 +370,8 @@ def add_flash_animation(widget: QWidget,
     # let's make sure to remove the animation from the widget because
     # if we don't, the widget will actually be black and white.
     widget._flash_animation.finished.connect(
-        partial(remove_flash_animation, weakref.ref(widget)))
+        partial(remove_flash_animation, weakref.ref(widget))
+    )
 
     widget._flash_animation.start()
 
