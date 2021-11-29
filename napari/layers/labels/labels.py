@@ -818,56 +818,6 @@ class Labels(_ImageBase):
                 self._all_vals[0] = 0
             return self._lookup_with_index
 
-    def _raw_to_displayed_choose_coloring(self, raw):
-        if self._color_lookup_func is None:
-            self._color_lookup_func = self._get_color_lookup_func(
-                raw, np.min(raw), np.max(raw)
-            )
-        if (
-            not self.show_selected_label
-            and self._color_mode == LabelColorMode.DIRECT
-        ):
-            u, inv = np.unique(raw, return_inverse=True)
-            image = np.array(
-                [
-                    self._label_color_index[x]
-                    if x in self._label_color_index
-                    else self._label_color_index[None]
-                    for x in u
-                ]
-            )[inv].reshape(raw.shape)
-        elif (
-            not self.show_selected_label
-            and self._color_mode == LabelColorMode.AUTO
-        ):
-            image = self._color_lookup_func(raw)
-        elif (
-            self.show_selected_label
-            and self._color_mode == LabelColorMode.AUTO
-        ):
-            image = self._color_lookup_func(raw, self._selected_label)
-        elif (
-            self.show_selected_label
-            and self._color_mode == LabelColorMode.DIRECT
-        ):
-            selected = self._selected_label
-            if selected not in self._label_color_index:
-                selected = None
-            index = self._label_color_index
-            image = np.where(
-                raw == selected,
-                index[selected],
-                np.where(
-                    raw != self._background_label,
-                    index[None],
-                    index[self._background_label],
-                ),
-            )
-        else:
-            raise ValueError("Unsupported Color Mode")
-
-        return image
-
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.
 
@@ -885,10 +835,10 @@ class Labels(_ImageBase):
             Image mapped between 0 and 1 to be displayed.
         """
 
-        image = raw
+        raw_modified = raw
         if self.contour > 0:
             if raw.ndim == 2:
-                image = np.zeros_like(raw)
+                raw_modified = np.zeros_like(raw)
                 struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
                 thickness = self.contour
                 thick_struct_elem = ndi.iterate_structure(
@@ -897,7 +847,7 @@ class Labels(_ImageBase):
                 boundaries = ndi.grey_dilation(
                     raw, footprint=struct_elem
                 ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
-                image[boundaries] = raw[boundaries]
+                raw_modified[boundaries] = raw[boundaries]
             elif raw.ndim > 2:
                 warnings.warn(
                     trans._(
@@ -905,8 +855,53 @@ class Labels(_ImageBase):
                         deferred=True,
                     )
                 )
-
-        return self._raw_to_displayed_choose_coloring(image)
+        if self._color_lookup_func is None:
+            self._color_lookup_func = self._get_color_lookup_func(
+                raw_modified, np.min(raw_modified), np.max(raw_modified)
+            )
+        if (
+            not self.show_selected_label
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
+            u, inv = np.unique(raw_modified, return_inverse=True)
+            image = np.array(
+                [
+                    self._label_color_index[x]
+                    if x in self._label_color_index
+                    else self._label_color_index[None]
+                    for x in u
+                ]
+            )[inv].reshape(raw_modified.shape)
+        elif (
+            not self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
+        ):
+            image = self._color_lookup_func(raw_modified)
+        elif (
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
+        ):
+            image = self._color_lookup_func(raw_modified, self._selected_label)
+        elif (
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
+            selected = self._selected_label
+            if selected not in self._label_color_index:
+                selected = None
+            index = self._label_color_index
+            image = np.where(
+                raw_modified == selected,
+                index[selected],
+                np.where(
+                    raw_modified != self._background_label,
+                    index[None],
+                    index[self._background_label],
+                ),
+            )
+        else:
+            raise ValueError("Unsupported Color Mode")
+        return image
 
     def new_colormap(self):
         self.seed = np.random.rand()
