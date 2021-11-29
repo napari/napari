@@ -1784,13 +1784,25 @@ class Points(Layer):
         msg = generate_layer_status(self.name, position, value)
 
         # if this labels layer has properties
-        properties = self._get_properties(position, world)
+        properties = self._get_properties(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
         if properties:
             msg += "; " + ", ".join(properties)
 
         return msg
 
-    def _get_tooltip_text(self, position, *, world=False):
+    def _get_tooltip_text(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ):
         """
         tooltip message of the data at a coordinate position.
 
@@ -1807,13 +1819,32 @@ class Points(Layer):
         msg : string
             String containing a message that can be used as a tooltip.
         """
-        return "\n".join(self._get_properties(position, world))
+        return "\n".join(
+            self._get_properties(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+        )
 
-    def _get_properties(self, position, world) -> list:
+    def _get_properties(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ) -> list:
         if not self._properties:
             return []
 
-        value = self.get_value(position, world=world)
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
         # if the cursor is not outside the image or on the background
         if value is None or value > self.data.shape[0]:
             return []
