@@ -33,6 +33,9 @@ class VispyInteractionBox:
         self._rotation_handle_length = 20
         self._highlight_color = (0, 0.6, 1)
 
+        self.marker_node.symbol = 'square'
+        self.marker_node.scaling = False
+
     @property
     def marker_node(self):
         """sequence of float: Scale factors."""
@@ -68,8 +71,6 @@ class VispyInteractionBox:
             face_color=face_color,
             edge_color=edge_color,
             edge_width=1.5,
-            symbol='square',
-            scaling=False,
         )
 
         if pos is None or len(pos) == 0:

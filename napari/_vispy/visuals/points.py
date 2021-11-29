@@ -18,3 +18,12 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     def __init__(self):
         super().__init__([Markers(), Markers(), Line(), Text()])
+
+    @property
+    def symbol(self):
+        return self._subvisuals[0].symbol
+
+    @symbol.setter
+    def symbol(self, value):
+        for subv in self._subvisuals[:2]:
+            subv.symbol = value
