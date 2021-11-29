@@ -282,6 +282,23 @@ class MultiScaleData(LayerDataProtocol):
     def __len__(self) -> int:
         return len(self._data)
 
+    def __eq__(self, other) -> bool:
+        """Check if equal to a second MultiScaleData, list of arrays, or array.
+
+        If another multiscale, check that all levels are equal. If a list,
+        check that each array is equal to the levels of the MultiScaleData. If
+        an array, check that the base level is equal.
+        """
+        if isinstance(other, (MultiScaleData, list)):
+            return all(
+                np.array_equal(dat, other_dat)
+                for dat, other_dat in zip(self._data, other)
+            )
+        if isinstance(other, np.ndarray):
+            return np.array_equal(self.level(0), other)
+        else:
+            return False
+
     def __iter__(self):
         yield from self._data
 
