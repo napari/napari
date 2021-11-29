@@ -89,8 +89,8 @@ class InteractionBoxMouseBindings:
     def _on_ndisplay_change(self):
         """Gets called on ndisplay change to disable interaction box in 3D"""
         if (
-            hasattr(self._viewer.layers.selection.active, 'mode')
-            and self._viewer.layers.selection.active.mode == 'transform'
+            getattr(self._viewer.layers.selection.active, 'mode', None)
+            == 'transform'
             and self._viewer.dims.ndisplay > 2
         ):
             self._viewer.layers.selection.active.mode = 'pan_zoom'
@@ -115,10 +115,9 @@ class InteractionBoxMouseBindings:
 
     def _on_dim_change(self, event):
         """Gets called when changing order of dims to make sure interaction box is using right extent and transform"""
-        viewer = self._viewer
         if (
-            hasattr(viewer.layers.selection.active, 'mode')
-            and viewer.layers.selection.active.mode == 'transform'
+            getattr(self._viewer.layers.selection.active, 'mode', None)
+            == 'transform'
         ):
             self._couple_interaction_box_to_active()
 
@@ -176,7 +175,7 @@ class InteractionBoxMouseBindings:
         action_manager.register_action(
             "napari:reset_active_layer_affine",
             self._reset_active_layer_affine,
-            trans._("Reset the affine transform of the activ layer"),
+            trans._("Reset the affine transform of the active layer"),
             self._viewer,
         )
 

@@ -141,14 +141,10 @@ class VispyInteractionBox:
                     ] = self._highlight_color
                 if self._interaction_box.show_handle:
                     vertices = box[Box.WITH_HANDLE][:, ::-1]
-                    face_color = ColorArray(
-                        [color for color in colors[Box.WITH_HANDLE]]
-                    )
+                    face_color = ColorArray(colors[Box.WITH_HANDLE])
                 else:
                     vertices = box[Box.WITHOUT_HANDLE][:, ::-1]
-                    face_color = ColorArray(
-                        [color for color in colors[Box.WITHOUT_HANDLE]]
-                    )
+                    face_color = ColorArray(colors[Box.WITHOUT_HANDLE])
 
             else:
                 vertices = np.empty((0, 2))
