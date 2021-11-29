@@ -70,13 +70,13 @@ def scale_step(step, factor):
     """
     if step is None:
         return None
-    return min(round(step * factor), 1)
+    return max(round(step * factor), 1)
 
 
 def make_int_slice_indices_multiscale(key, downsample_factors):
     keys_by_dim = []
     for dimkey, factors in zip(key, downsample_factors.T):
-        if isinstance(dimkey, int):
+        if isinstance(dimkey, numbers.Integral):
             dimkey_multiscale = np.round(dimkey * factors).astype(int)
         else:  # dimkey is a slice
             dimkey_multiscale = [
@@ -249,7 +249,9 @@ class MultiScaleData(LayerDataProtocol):
         indices_by_level = make_index_multiscale(
             index, ndim=self.ndim, downsample_factors=self.downsample_factors
         )
-        new_data = [dat[idx] for dat, idx in zip(self._data, indices_by_level)]
+        new_data = [
+            dat[idx] for dat, idx in zip(self._read_data, indices_by_level)
+        ]
         return MultiScaleData(new_data)
 
     def __setitem__(  # type: ignore [override]

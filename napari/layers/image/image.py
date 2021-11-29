@@ -9,14 +9,14 @@ from typing import TYPE_CHECKING, Sequence, Union
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...data_types._data_protocols import LayerDataProtocol
+from ...data_types._multiscale_data import MultiScaleData
 from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.naming import magic_name
 from ...utils.translations import trans
-from .._data_protocols import LayerDataProtocol
-from .._multiscale_data import MultiScaleData
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -599,7 +599,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             return
         self._empty = False
 
-        indices = self._slice_indices
+        indices = list(self._slice_indices)
         if self.multiscale:
             if self._ndisplay == 3:
                 # If 3d redering just show lowest level of multiscale
@@ -630,11 +630,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 self._transforms['tile2data'].translate = (
                     self.corner_pixels[0] * self._transforms['tile2data'].scale
                 )
-            image = self.data[indices].level(level)
-            thumbnail_source = self.data[indices].level(self._thumbnail_level)
+            image = self.data[tuple(indices)].level(level)
+            thumbnail_source = self.data[tuple(indices)].level(
+                self._thumbnail_level
+            )
         else:
             self._transforms['tile2data'].scale = np.ones(self.ndim)
-            image = self.data[indices]
+            image = self.data[tuple(indices)]
 
             # For single-scale we don't request a separate thumbnail_source
             # from the ChunkLoader because in ImageSlice.chunk_loaded we

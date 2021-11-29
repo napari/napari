@@ -4,9 +4,9 @@ from typing import Tuple
 
 import numpy as np
 
+from ...data_types._data_protocols import LayerDataProtocol
+from ...data_types._multiscale_data import MultiScaleData
 from ...utils.translations import trans
-from .._data_protocols import LayerDataProtocol
-from .._multiscale_data import MultiScaleData
 
 
 def guess_rgb(shape):
@@ -50,13 +50,13 @@ def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
     data : list or array
         The input data, perhaps with the leading axis removed.
     """
+    if isinstance(data, MultiScaleData):
+        return True, data
+
     # If the data has ndim and is not one-dimensional then cannot be multiscale
     # If data is a zarr array, this check ensure that subsets of it are not
     # instantiated. (`for d in data` instantiates `d` as a NumPy array if
     # `data` is a zarr array.)
-    if isinstance(data, MultiScaleData):
-        return True, data
-
     if hasattr(data, 'ndim') and data.ndim > 1:
         return False, data
 

@@ -7,7 +7,7 @@ import dask
 import dask.array as da
 from dask.cache import Cache
 
-from napari.layers._multiscale_data import MultiScaleData
+from ..data_types._multiscale_data import MultiScaleData
 
 #: dask.cache.Cache, optional : A dask cache for opportunistic caching
 #: use :func:`~.resize_dask_cache` to actually register and resize.
