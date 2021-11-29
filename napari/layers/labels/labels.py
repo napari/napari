@@ -15,8 +15,8 @@ from ...utils.colormaps import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import clamp_point_to_bounding_box
-from ...utils.status_messages import generate_layer_status
 from ...utils.naming import magic_name
+from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
 from ..base import no_op
 from ..image._image_utils import guess_multiscale
@@ -33,8 +33,9 @@ _REV_SHAPE_HELP = {
         Mode.PICK,
         Mode.FILL,
     },
-    trans._('hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'):
-    {Mode.PAINT},
+    trans._(
+        'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
+    ): {Mode.PAINT},
     trans._('hold <space> to pan/zoom, drag to erase a label'): {Mode.ERASE},
 }
 
@@ -244,7 +245,8 @@ class Labels(_ImageBase):
         self._color_lookup_func = None
 
         self._properties, self._label_index = self._prepare_properties(
-            properties)
+            properties
+        )
 
         super().__init__(
             data,
@@ -400,7 +402,8 @@ class Labels(_ImageBase):
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         self._properties, self._label_index = self._prepare_properties(
-            properties)
+            properties
+        )
         self.events.properties()
 
     @classmethod
@@ -498,7 +501,8 @@ class Labels(_ImageBase):
                     trans._(
                         "Only integer types are supported for Labels layers, but data contains {data_level_type}.",
                         data_level_type=data_level.dtype,
-                    ))
+                    )
+                )
             if data_level.dtype == bool:
                 int_data.append(data_level.astype(np.int8))
             else:
@@ -517,26 +521,21 @@ class Labels(_ImageBase):
             Dictionary of layer state.
         """
         state = self._get_base_state()
-        state.update({
-            'multiscale':
-            self.multiscale,
-            'num_colors':
-            self.num_colors,
-            'properties':
-            self._properties,
-            'rendering':
-            self.rendering,
-            'experimental_slicing_plane':
-            self.experimental_slicing_plane.dict(),
-            'experimental_clipping_planes':
-            [plane.dict() for plane in self.experimental_clipping_planes],
-            'seed':
-            self.seed,
-            'data':
-            self.data,
-            'color':
-            self.color,
-        })
+        state.update(
+            {
+                'multiscale': self.multiscale,
+                'num_colors': self.num_colors,
+                'properties': self._properties,
+                'rendering': self.rendering,
+                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'experimental_clipping_planes': [
+                    plane.dict() for plane in self.experimental_clipping_planes
+                ],
+                'seed': self.seed,
+                'data': self.data,
+                'color': self.color,
+            }
+        )
         return state
 
     @property
@@ -692,7 +691,8 @@ class Labels(_ImageBase):
                 trans._(
                     "Setting contrast_limits on labels layers is not allowed.",
                     deferred=True,
-                ))
+                )
+            )
         self._contrast_limits = (0, 1)
 
     def _set_editable(self, editable=None):
@@ -747,22 +747,28 @@ class Labels(_ImageBase):
                     min(np.min(im), selected_label),
                     max(np.max(im), selected_label),
                 )
-            if (self._color_lookup_func ==
-                    self._lookup_with_low_discrepancy_image):
+            if (
+                self._color_lookup_func
+                == self._lookup_with_low_discrepancy_image
+            ):
                 image = self._color_lookup_func(im, selected_label)
             else:
                 colors = np.zeros_like(self._all_vals)
                 colors[selected_label] = low_discrepancy_image(
-                    selected_label, self._seed)
+                    selected_label, self._seed
+                )
                 image = colors[im]
         else:
             try:
                 image = self._all_vals[im]
             except IndexError:
                 self._color_lookup_func = self._get_color_lookup_func(
-                    im, np.min(im), np.max(im))
-                if (self._color_lookup_func ==
-                        self._lookup_with_low_discrepancy_image):
+                    im, np.min(im), np.max(im)
+                )
+                if (
+                    self._color_lookup_func
+                    == self._lookup_with_low_discrepancy_image
+                ):
                     # revert to "classic" mode converting all pixels since we
                     # encountered a large value in the raw labels image
                     image = self._color_lookup_func(im, selected_label)
@@ -807,7 +813,8 @@ class Labels(_ImageBase):
         else:
             if self._all_vals.size < data_range:
                 new_all_vals = low_discrepancy_image(
-                    np.arange(min_label_val0, max_label_val + 1), self._seed)
+                    np.arange(min_label_val0, max_label_val + 1), self._seed
+                )
                 self._all_vals = np.roll(new_all_vals, min_label_val0)
                 self._all_vals[0] = 0
             return self._lookup_with_index
@@ -830,22 +837,35 @@ class Labels(_ImageBase):
         """
         if self._color_lookup_func is None:
             self._color_lookup_func = self._get_color_lookup_func(
-                raw, np.min(raw), np.max(raw))
-        if (not self.show_selected_label
-                and self._color_mode == LabelColorMode.DIRECT):
+                raw, np.min(raw), np.max(raw)
+            )
+        if (
+            not self.show_selected_label
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
             u, inv = np.unique(raw, return_inverse=True)
-            image = np.array([
-                self._label_color_index[x] if x in self._label_color_index else
-                self._label_color_index[None] for x in u
-            ])[inv].reshape(raw.shape)
-        elif (not self.show_selected_label
-              and self._color_mode == LabelColorMode.AUTO):
+            image = np.array(
+                [
+                    self._label_color_index[x]
+                    if x in self._label_color_index
+                    else self._label_color_index[None]
+                    for x in u
+                ]
+            )[inv].reshape(raw.shape)
+        elif (
+            not self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
+        ):
             image = self._color_lookup_func(raw)
-        elif (self.show_selected_label
-              and self._color_mode == LabelColorMode.AUTO):
+        elif (
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
+        ):
             image = self._color_lookup_func(raw, self._selected_label)
-        elif (self.show_selected_label
-              and self._color_mode == LabelColorMode.DIRECT):
+        elif (
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
             selected = self._selected_label
             if selected not in self._label_color_index:
                 selected = None
@@ -866,11 +886,12 @@ class Labels(_ImageBase):
             image = np.zeros_like(raw)
             struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
             thickness = self.contour
-            thick_struct_elem = ndi.iterate_structure(struct_elem,
-                                                      thickness).astype(bool)
+            thick_struct_elem = ndi.iterate_structure(
+                struct_elem, thickness
+            ).astype(bool)
             boundaries = ndi.grey_dilation(
-                raw, footprint=struct_elem) != ndi.grey_erosion(
-                    raw, footprint=thick_struct_elem)
+                raw, footprint=struct_elem
+            ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
             image[boundaries] = raw[boundaries]
             image = self._all_vals[image]
         elif self.contour > 0 and raw.ndim > 2:
@@ -878,7 +899,8 @@ class Labels(_ImageBase):
                 trans._(
                     "Contours are not displayed during 3D rendering",
                     deferred=True,
-                ))
+                )
+            )
 
         return image
 
@@ -931,14 +953,13 @@ class Labels(_ImageBase):
             sample_ray = end_point - start_point
             length_sample_vector = np.linalg.norm(sample_ray)
             n_points = int(2 * length_sample_vector)
-            sample_points = np.linspace(start_point,
-                                        end_point,
-                                        n_points,
-                                        endpoint=True)
+            sample_points = np.linspace(
+                start_point, end_point, n_points, endpoint=True
+            )
             im_slice = self._slice.image.raw
             clamped = clamp_point_to_bounding_box(
-                sample_points,
-                self._display_bounding_box(dims_displayed)).astype(int)
+                sample_points, self._display_bounding_box(dims_displayed)
+            ).astype(int)
             values = im_slice[tuple(clamped.T)]
             nonzero_indices = np.flatnonzero(values)
             if len(nonzero_indices > 0):
@@ -970,11 +991,14 @@ class Labels(_ImageBase):
             The first non-zero value encountered along the ray. If a
             non-zero value is not encountered, returns 0 (the background value).
         """
-        return (self._get_value_ray(
-            start_point=start_point,
-            end_point=end_point,
-            dims_displayed=dims_displayed,
-        ) or 0)
+        return (
+            self._get_value_ray(
+                start_point=start_point,
+                end_point=end_point,
+                dims_displayed=dims_displayed,
+            )
+            or 0
+        )
 
     def _reset_history(self, event=None):
         self._undo_history = deque(maxlen=self._history_limit)
@@ -1037,14 +1061,14 @@ class Labels(_ImageBase):
         self.refresh()
 
     def undo(self):
-        self._load_history(self._undo_history,
-                           self._redo_history,
-                           undoing=True)
+        self._load_history(
+            self._undo_history, self._redo_history, undoing=True
+        )
 
     def redo(self):
-        self._load_history(self._redo_history,
-                           self._undo_history,
-                           undoing=False)
+        self._load_history(
+            self._redo_history, self._undo_history, undoing=False
+        )
 
     def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
@@ -1065,16 +1089,18 @@ class Labels(_ImageBase):
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
-                np.greater_equal(int_coord, self.data.shape)):
+            np.greater_equal(int_coord, self.data.shape)
+        ):
             return
 
         # If requested new label doesn't change old label then return
         old_label = np.asarray(self.data[int_coord]).item()
-        if old_label == new_label or (self.preserve_labels
-                                      and old_label != self._background_label):
+        if old_label == new_label or (
+            self.preserve_labels and old_label != self._background_label
+        ):
             return
 
-        dims_to_fill = sorted(self._dims_order[-self.n_edit_dimensions:])
+        dims_to_fill = sorted(self._dims_order[-self.n_edit_dimensions :])
         data_slice_list = list(int_coord)
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
@@ -1088,8 +1114,9 @@ class Labels(_ImageBase):
             labeled_matches, num_features = ndi.label(matches)
             if num_features != 1:
                 match_label = labeled_matches[slice_coord]
-                matches = np.logical_and(matches,
-                                         labeled_matches == match_label)
+                matches = np.logical_and(
+                    matches, labeled_matches == match_label
+                )
 
         match_indices_local = np.nonzero(matches)
         if self.ndim not in {2, self.n_edit_dimensions}:
@@ -1106,11 +1133,13 @@ class Labels(_ImageBase):
         else:
             match_indices = match_indices_local
 
-        self._save_history((
-            match_indices,
-            np.array(self.data[match_indices], copy=True),
-            new_label,
-        ))
+        self._save_history(
+            (
+                match_indices,
+                np.array(self.data[match_indices], copy=True),
+                new_label,
+            )
+        )
 
         # Replace target pixels with new_label
         self.data[match_indices] = new_label
@@ -1134,10 +1163,11 @@ class Labels(_ImageBase):
             calls.
         """
         shape = self.data.shape
-        dims_to_paint = sorted(self._dims_order[-self.n_edit_dimensions:])
-        dims_not_painted = sorted(self._dims_order[:-self.n_edit_dimensions])
-        paint_scale = np.array([self.scale[i] for i in dims_to_paint],
-                               dtype=float)
+        dims_to_paint = sorted(self._dims_order[-self.n_edit_dimensions :])
+        dims_not_painted = sorted(self._dims_order[: -self.n_edit_dimensions])
+        paint_scale = np.array(
+            [self.scale[i] for i in dims_to_paint], dtype=float
+        )
 
         slice_coord = [int(np.round(c)) for c in coord]
         if self.n_edit_dimensions < self.ndim:
@@ -1151,8 +1181,9 @@ class Labels(_ImageBase):
         radius = np.floor(self.brush_size / 2) + 0.5
         mask_indices = sphere_indices(radius, tuple(paint_scale))
 
-        mask_indices = mask_indices + np.round(
-            np.array(coord_paint)).astype(int)
+        mask_indices = mask_indices + np.round(np.array(coord_paint)).astype(
+            int
+        )
 
         # discard candidate coordinates that are out of bounds
         mask_indices = indices_in_shape(mask_indices, shape)
@@ -1165,7 +1196,8 @@ class Labels(_ImageBase):
                 slice_coord[i] = slice_coord_temp[j]
             for i in dims_not_painted:
                 slice_coord[i] = slice_coord[i] * np.ones(
-                    mask_indices.shape[0], dtype=int)
+                    mask_indices.shape[0], dtype=int
+                )
         else:
             slice_coord = slice_coord_temp
 
@@ -1193,11 +1225,13 @@ class Labels(_ImageBase):
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
 
         # save the existing values to the history
-        self._save_history((
-            slice_coord,
-            np.array(self.data[slice_coord], copy=True),
-            new_label,
-        ))
+        self._save_history(
+            (
+                slice_coord,
+                np.array(self.data[slice_coord], copy=True),
+                new_label,
+            )
+        )
 
         # update the labels image
         self.data[slice_coord] = new_label
@@ -1283,8 +1317,11 @@ class Labels(_ImageBase):
 
         idx = self._label_index[label_value]
         return [
-            f'{k}: {v[idx]}' for k, v in self._properties.items()
-            if k != 'index' and len(v) > idx and v[idx] is not None
+            f'{k}: {v[idx]}'
+            for k, v in self._properties.items()
+            if k != 'index'
+            and len(v) > idx
+            and v[idx] is not None
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
 
