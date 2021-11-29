@@ -1276,7 +1276,12 @@ class Labels(_ImageBase):
         msg = generate_layer_status(self.name, position, value)
 
         # if this labels layer has properties
-        properties = self._get_properties(position, world)
+        properties = self._get_properties(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
         if properties:
             msg += "; " + ", ".join(properties)
 
