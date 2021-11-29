@@ -421,7 +421,8 @@ def test_edge_color_colormap():
         edge_color='angle',
         edge_colormap='gray',
     )
-    assert layer.properties == properties
+    for name in properties:
+        np.testing.assert_array_equal(layer.properties[name], properties[name])
     assert layer.edge_color_mode == 'colormap'
     edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     assert np.all(layer.edge_color == edge_color_array)

@@ -228,7 +228,9 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            property_table=self._property_table,
+            properties=self.properties
+            if self._data.size > 0
+            else self.property_choices,
         )
 
         # Data containing vectors in the currently viewed slice
@@ -298,7 +300,10 @@ class Vectors(Layer):
         )
 
         if self._edge.color_properties is not None:
-            if self._edge.color_properties.name not in self.properties:
+            if (
+                self._edge.color_properties.name
+                not in self._property_table.data
+            ):
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
@@ -312,8 +317,12 @@ class Vectors(Layer):
                 edge_color_name = self._edge.color_properties.name
                 self._edge.color_properties = {
                     'name': edge_color_name,
-                    'values': properties[edge_color_name],
-                    'current_value': self.properties[edge_color_name][-1],
+                    'values': self._property_table.data[
+                        edge_color_name
+                    ].to_numpy(),
+                    'current_value': self._property_table.default_values[
+                        edge_color_name
+                    ][0],
                 }
         self.events.properties()
 
@@ -421,7 +430,8 @@ class Vectors(Layer):
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
-            property_table=self._property_table,
+            properties=self.properties,
+            current_properties=self._property_table.default_values,
         )
         self.events.edge_color()
 
@@ -439,7 +449,7 @@ class Vectors(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        self._edge._refresh_colors(self._property_table, update_color_mapping)
+        self._edge._refresh_colors(self.properties, update_color_mapping)
 
     @property
     def edge_color_mode(self) -> ColorMode:
@@ -467,9 +477,15 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    self._edge.color_properties = self._property_table[
-                        color_property
-                    ]
+                    self._edge.color_properties = {
+                        'name': color_property,
+                        'values': self._property_table.data[
+                            color_property
+                        ].to_numpy(),
+                        'current_value': self._property_table.default_values[
+                            color_property
+                        ][0],
+                    }
                     warnings.warn(
                         trans._(
                             'edge_color property was not set, setting to: {color_property}',

@@ -794,6 +794,7 @@ class Points(Layer):
 
     @current_face_color.setter
     def current_face_color(self, face_color: ColorType) -> None:
+
         if (
             self._update_properties
             and len(self.selected_data) > 0

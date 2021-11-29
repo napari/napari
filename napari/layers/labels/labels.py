@@ -525,7 +525,7 @@ class Labels(_ImageBase):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
-                'properties': self._property_table.values,
+                'properties': self.properties,
                 'rendering': self.rendering,
                 'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
                 'experimental_clipping_planes': [
@@ -1303,7 +1303,10 @@ class Labels(_ImageBase):
         return "\n".join(self._get_properties(position, world))
 
     def _get_properties(self, position, world) -> list:
-        if not (self._label_index and self._property_table):
+        if (
+            len(self._label_index) == 0
+            or self._property_table.num_properties == 0
+        ):
             return []
 
         value = self.get_value(position, world=world)

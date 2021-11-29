@@ -141,7 +141,7 @@ class TrackManager:
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return self._property_table.all_values
+        return self._property_table.values
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -150,12 +150,11 @@ class TrackManager:
             properties=properties,
             num_data=len(self.data),
         )
-        if 'track_id' not in self._property_table:
+        if 'track_id' not in self._property_table.data:
             self._property_table.data['track_id'] = self.track_ids
-        for name in self._property_table:
-            self._property_table[name] = self._property_table[name].array[
-                self._order
-            ]
+        self._property_table.data = self._property_table.data.iloc[
+            self._order
+        ].reset_index()
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:

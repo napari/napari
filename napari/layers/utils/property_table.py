@@ -92,7 +92,7 @@ class PropertyTable:
                     else [None] * num_values
                 )
                 properties[name] = pd.Series(values, dtype=dtype)
-        # Provide an explicit when num_data is provided to error check the properties data length.
+        # Provide an explicit index when num_data is provided to error check the properties data length.
         index = None if num_data is None else range(num_data)
         data = pd.DataFrame(data=properties, index=index)
         return cls(data)
