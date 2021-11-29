@@ -213,7 +213,8 @@ class Dims(EventedModel):
                 self.range = full_range
         else:
             full_range = list(self.range)
-            _range = tuple(_range)  # type: ignore
+            # cast range to list for list comparison below
+            _range = list(_range)  # type: ignore
             axis = tuple(axis)  # type: ignore
             if len(axis) != len(_range):
                 raise ValueError(
@@ -287,7 +288,8 @@ class Dims(EventedModel):
                 self.current_step = full_current_step
         else:
             full_current_step = list(self.current_step)
-            value = tuple(value)  # type: ignore
+            # cast value to list for list comparison below
+            value = list(value)  # type: ignore
             axis = tuple(axis)  # type: ignore
             if len(axis) != len(value):
                 raise ValueError(
@@ -325,7 +327,8 @@ class Dims(EventedModel):
             self.last_used = axis
         else:
             full_axis_labels = list(self.axis_labels)
-            label = tuple(label)  # type: ignore
+            # cast label to list for list comparison below
+            label = list(label)  # type: ignore
             axis = tuple(axis)  # type: ignore
             if len(axis) != len(label):
                 raise ValueError(
