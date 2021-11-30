@@ -41,9 +41,6 @@ class VispyInteractionBox:
         self.round_marker_node.symbol = 'disc'
         self.round_marker_node.scaling = False
 
-        self.marker_node.symbol = 'square'
-        self.marker_node.scaling = False
-
     @property
     def square_marker_node(self):
         """sequence of float: Scale factors."""

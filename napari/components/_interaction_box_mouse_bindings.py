@@ -160,7 +160,6 @@ class InteractionBoxMouseBindings:
     def _on_transform_change(self, event):
         """Gets called when the interaction box is transformed to update transform of the layer"""
 
-        # TODO: right now the transform in the not displayed dimension is reset, probably would be better to preserve it
         layer_dims_displayed = dims_displayed_world_to_layer(
             list(self._viewer.dims.displayed),
             self._viewer.dims.ndim,
