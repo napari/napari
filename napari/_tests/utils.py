@@ -134,16 +134,8 @@ def are_objects_equal(object1, object2):
 
     # equal_nan does not exist in array_equal in old numpy
     if tuple(int(v) for v in np.__version__.split('.')) < (1, 19):
-        fixed = []
-        for a1, a2 in items:
-            a1 = np.asarray(a1)
-            a2 = np.asarray(a2)
-            if a1.dtype.kind == 'f':
-                a1 = a1[np.isfinite(a1)]
-            if a2.dtype.kind == 'f':
-                a2 = a2[np.isfinite(a2)]
-            fixed.append((a1, a2))
-        return np.all([a1 == a2 for a1, a2 in items])
+        fixed = [(np.nan_to_num(a1), np.nan_to_num(a2)) for a1, a2 in items]
+        return np.all([a1 == a2 for a1, a2 in fixed])
 
     try:
         return np.all(
