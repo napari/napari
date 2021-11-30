@@ -74,27 +74,6 @@ class Transform:
             trans._('Cannot subset arbitrary transforms.', deferred=True)
         )
 
-    def replace_slice(
-        self, axes: Sequence[int], transform: 'Transform'
-    ) -> 'Transform':
-        """Returns a transform where the transform at the indicated n dimensions is replaced with another n-dimensional transform
-
-        Parameters
-        ----------
-        axes: Sequence[int]
-            Axes where the transform will be replaces
-        transform: Transform
-            The transform that will be inserted. Must have as many dimension as len(axes)
-
-        Returns
-        -------
-        Transform
-            Resulting transform.
-        """
-        raise NotImplementedError(
-            trans._('Cannot subset arbitrary transforms.', deferred=True)
-        )
-
     def expand_dims(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform with added axes for non-visible dimensions.
 
