@@ -52,7 +52,10 @@ def no_class_attributes():
 
     # monkey patch the pydantic ClassAttribute object
     # the second argument to ClassAttribute is the inspect.Signature object
-    main.ClassAttribute = lambda x, y: y
+    def _return2(x, y):
+        return y
+
+    main.ClassAttribute = _return2
     try:
         yield
     finally:
