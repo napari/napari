@@ -1,4 +1,5 @@
-# Napari performance
+(napari-performance)=
+# napari performance
 
 With offline analysis tools performance dictates how long the user has to wait
 for a result, however with an interactive tool like napari performance is even
