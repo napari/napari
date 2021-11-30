@@ -23,7 +23,16 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
-from ..utils.property_table import PropertyTable
+from ..utils.layer_utils import (
+    coerce_current_properties,
+    features_append,
+    features_from_properties,
+    features_remove,
+    features_resize,
+    features_to_choices,
+    features_to_properties,
+    get_current_properties,
+)
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -313,7 +322,7 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        self._property_table = PropertyTable.from_layer_kwargs(
+        self._features = features_from_properties(
             properties=properties,
             property_choices=property_choices,
             num_data=len(data),
@@ -383,6 +392,10 @@ class Points(Layer):
 
         self.size = size
 
+        self.current_properties = get_current_properties(
+            self.properties, self.property_choices, len(self.data)
+        )
+
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
@@ -401,7 +414,9 @@ class Points(Layer):
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
-                    self._property_table.resize(len(data))
+                    self._features = features_resize(
+                        self._features, self._current_properties, len(data)
+                    )
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones
@@ -455,27 +470,29 @@ class Points(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_table.choices
+        return features_to_choices(self._features)
 
     @property
     def features(self) -> pd.DataFrame:
-        return self._property_table.data
+        return self._features
 
     @features.setter
     def features(self, features: pd.DataFrame) -> None:
         # TODO: check that the number of rows is the same as the number of tracks.
-        self._property_table.data = features
+        self._features = features
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
-        return self._property_table.values
+        return features_to_properties(self._features)
 
     @staticmethod
-    def _update_color_manager(color_manager, property_table, name):
+    def _update_color_manager(
+        color_manager, features, current_properties, name
+    ):
         if color_manager.color_properties is not None:
             color_name = color_manager.color_properties.name
-            if color_name not in property_table.data:
+            if color_name not in features:
                 color_manager.color_mode = ColorMode.DIRECT
                 color_manager.color_properties = None
                 warnings.warn(
@@ -489,22 +506,28 @@ class Points(Layer):
             else:
                 color_manager.color_properties = {
                     'name': color_name,
-                    'values': property_table.data[color_name].to_numpy(),
-                    'current_value': property_table.default_values[color_name],
+                    'values': features[color_name].to_numpy(),
+                    'current_value': current_properties[color_name],
                 }
 
     @properties.setter
     def properties(
         self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
-        self._property_table = PropertyTable.from_layer_kwargs(
+        self._features = features_from_properties(
             properties=properties, num_data=len(self._data)
         )
+        # Updating current_properties can modify properties, so block to avoid
+        # infinite recursion when explicitly setting the properties.
+        with self.block_update_properties():
+            self.current_properties = get_current_properties(
+                self.properties, self.property_choices, len(self.data)
+            )
         self._update_color_manager(
-            self._face, self._property_table, "face_color"
+            self._face, self._features, self._current_properties, "face_color"
         )
         self._update_color_manager(
-            self._edge, self._property_table, "edge_color"
+            self._edge, self._features, self._current_properties, "edge_color"
         )
         if self.text.values is not None:
             self.refresh_text()
@@ -513,11 +536,13 @@ class Points(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        return self._property_table.default_values
+        return self._current_properties
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._property_table.default_values = current_properties
+        self._current_properties = coerce_current_properties(
+            current_properties
+        )
         if (
             self._update_properties
             and len(self.selected_data) > 0
@@ -859,15 +884,13 @@ class Points(Layer):
             else:
                 color_property = ''
             if color_property == '':
-                if self._property_table.num_properties > 0:
+                if self.features.shape[1] > 0:
                     new_color_property = next(iter(self.features))
                     color_manager.color_properties = {
                         'name': new_color_property,
                         'values': self.features[new_color_property].to_numpy(),
                         'current_value': np.squeeze(
-                            self._property_table.default_values[
-                                new_color_property
-                            ]
+                            self.current_properties[new_color_property]
                         ),
                     }
                     warnings.warn(
@@ -1523,7 +1546,7 @@ class Points(Layer):
                 self._edge._remove(indices_to_remove=index)
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
-            self._property_table.remove(index)
+            self._features = features_remove(self._features, index)
             with self.text.events.blocker_all():
                 self.text.remove(index)
             if self._value in self.selected_data:
@@ -1574,14 +1597,20 @@ class Points(Layer):
             )
             self._edge._paste(
                 colors=self._clipboard['edge_color'],
-                properties=self._clipboard['properties'],
+                properties=features_to_properties(
+                    self._clipboard['properties']
+                ),
             )
             self._face._paste(
                 colors=self._clipboard['face_color'],
-                properties=self._clipboard['properties'],
+                properties=features_to_properties(
+                    self._clipboard['properties']
+                ),
             )
 
-            self._property_table.append(self._clipboard['properties'])
+            self._features = features_append(
+                self._features, self._clipboard['properties']
+            )
 
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))

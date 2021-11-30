@@ -7,7 +7,10 @@ from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.property_table import PropertyTable
+from ..utils.layer_utils import (
+    features_from_properties,
+    features_to_properties,
+)
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -67,7 +70,7 @@ class TrackManager:
 
         # store the raw data here
         self._data = None
-        self._property_table = None
+        self._features = None
         self._order = None
 
         # use a kdtree to help with fast lookup of the nearest track
@@ -141,22 +144,22 @@ class TrackManager:
 
     @property
     def features(self) -> pd.DataFrame:
-        return self._property_table.data
+        return self._features
 
     @features.setter
     def features(self, features: pd.DataFrame) -> None:
         # TODO: check that the number of rows is the same as the number of tracks.
-        self._property_table.data = features
+        self._features = features
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return self._property_table.values
+        return features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-        self._property_table = PropertyTable.from_layer_kwargs(
+        self._features = features_from_properties(
             properties=properties,
             num_data=len(self.data),
         )

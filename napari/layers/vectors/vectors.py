@@ -13,7 +13,13 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.property_table import PropertyTable
+from ..utils.layer_utils import (
+    features_from_properties,
+    features_resize,
+    features_to_choices,
+    features_to_properties,
+    get_current_properties,
+)
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
@@ -217,7 +223,7 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._property_table = PropertyTable.from_layer_kwargs(
+        self._features = features_from_properties(
             properties=properties,
             property_choices=property_choices,
             num_data=len(self.data),
@@ -269,7 +275,14 @@ class Vectors(Layer):
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
-                self._property_table.resize(n_vectors)
+                current_properties = get_current_properties(
+                    self.properties,
+                    self.property_choices,
+                    len(self.data),
+                )
+                self._features = features_resize(
+                    self._features, current_properties, n_vectors
+                )
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the
                     # extra ones
@@ -290,21 +303,21 @@ class Vectors(Layer):
 
     @property
     def features(self) -> pd.DataFrame:
-        return self._property_table.data
+        return self._features
 
     @features.setter
     def features(self, features: pd.DataFrame) -> None:
         # TODO: check that the number of rows is the same as the number of tracks.
-        self._property_table.data = features
+        self._features = features
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return self._property_table.values
+        return features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._property_table = PropertyTable.from_layer_kwargs(
+        self._features = features_from_properties(
             properties=properties,
             num_data=len(self.data),
         )
@@ -322,18 +335,17 @@ class Vectors(Layer):
                 )
             else:
                 edge_color_name = self._edge.color_properties.name
+                property_values = self.features[edge_color_name].to_numpy()
                 self._edge.color_properties = {
                     'name': edge_color_name,
-                    'values': self.features[edge_color_name].to_numpy(),
-                    'current_value': self._property_table.default_values[
-                        edge_color_name
-                    ][0],
+                    'values': property_values,
+                    'current_value': property_values[-1],
                 }
         self.events.properties()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_table.choices
+        return features_to_choices(self._features)
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -432,11 +444,14 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
+        current_properties = get_current_properties(
+            self.properties, self.property_choices, len(self.data)
+        )
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
             properties=self.properties,
-            current_properties=self._property_table.default_values,
+            current_properties=current_properties,
         )
         self.events.edge_color()
 
@@ -482,12 +497,17 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
+                    current_properties = get_current_properties(
+                        self.properties,
+                        self.property_choices,
+                        len(self.data),
+                    )
                     self._edge.color_properties = {
                         'name': color_property,
                         'values': self.features[color_property].to_numpy(),
-                        'current_value': self._property_table.default_values[
-                            color_property
-                        ][0],
+                        'current_value': np.squeeze(
+                            current_properties[color_property]
+                        ),
                     }
                     warnings.warn(
                         trans._(

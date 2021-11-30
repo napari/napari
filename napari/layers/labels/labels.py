@@ -22,7 +22,10 @@ from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.property_table import PropertyTable
+from ..utils.layer_utils import (
+    features_from_properties,
+    features_to_properties,
+)
 from ._labels_constants import LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -244,7 +247,7 @@ class Labels(_ImageBase):
         data = self._ensure_int_labels(data)
         self._color_lookup_func = None
 
-        self._property_table, self._label_index = self._prepare_properties(
+        self._features, self._label_index = self._prepare_properties(
             properties
         )
 
@@ -396,21 +399,21 @@ class Labels(_ImageBase):
 
     @property
     def features(self) -> pd.DataFrame:
-        return self._property_table.data
+        return self._features
 
     @features.setter
     def features(self, features: pd.DataFrame) -> None:
         # TODO: check that the number of rows is the same as the number of tracks.
-        self._property_table.data = features
+        self._features = features
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return self._property_table.values
+        return features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._property_table, self._label_index = self._prepare_properties(
+        self._features, self._label_index = self._prepare_properties(
             properties
         )
         self.events.properties()
@@ -418,16 +421,14 @@ class Labels(_ImageBase):
     @classmethod
     def _prepare_properties(
         cls, properties: Optional[Dict[str, Array]]
-    ) -> Tuple[PropertyTable, Dict[int, int]]:
-        property_table = PropertyTable.from_layer_kwargs(properties=properties)
+    ) -> Tuple[pd.DataFrame, Dict[int, int]]:
+        features = features_from_properties(properties=properties)
         label_index = {}
-        if 'index' in property_table.data:
-            label_index = {
-                i: k for k, i in enumerate(property_table.data['index'])
-            }
-        elif property_table.num_properties > 0:
-            label_index = {i: i for i in range(property_table.num_values)}
-        return property_table, label_index
+        if 'index' in features:
+            label_index = {i: k for k, i in enumerate(features['index'])}
+        elif features.shape[1] > 0:
+            label_index = {i: i for i in range(features.shape[0])}
+        return features, label_index
 
     @property
     def color(self):

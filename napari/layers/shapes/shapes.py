@@ -26,7 +26,16 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.property_table import PropertyTable
+from ..utils.layer_utils import (
+    coerce_current_properties,
+    features_append,
+    features_from_properties,
+    features_remove,
+    features_resize,
+    features_to_choices,
+    features_to_properties,
+    get_current_properties,
+)
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -477,7 +486,7 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        self._property_table = PropertyTable.from_layer_kwargs(
+        self._features = features_from_properties(
             properties=properties,
             property_choices=property_choices,
             num_data=number_of_shapes(data),
@@ -564,6 +573,10 @@ class Shapes(Layer):
                 elem_name="face_color",
                 default="black",
             )
+
+        self.current_properties = get_current_properties(
+            self.properties, self.property_choices, len(data)
+        )
 
         self._text = TextManager._from_layer(
             text=text,
@@ -689,21 +702,21 @@ class Shapes(Layer):
 
     @property
     def features(self) -> pd.DataFrame:
-        return self._property_table.data
+        return self._features
 
     @features.setter
     def features(self, features: pd.DataFrame) -> None:
         # TODO: check that the number of rows is the same as the number of tracks.
-        self._property_table.data = features
+        self._features = features
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return self._property_table.values
+        return features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._property_table = PropertyTable.from_layer_kwargs(
+        self._features = features_from_properties(
             properties=properties, num_data=self.nshapes
         )
         if self._face_color_property and (
@@ -736,7 +749,7 @@ class Shapes(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_table.choices
+        return features_to_choices(self._features)
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -815,11 +828,13 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return self._property_table.default_values
+        return self._current_properties
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._property_table.default_values = current_properties
+        self._current_properties = coerce_current_properties(
+            current_properties
+        )
         if (
             self._update_properties
             and len(self.selected_data) > 0
@@ -1971,7 +1986,9 @@ class Shapes(Layer):
             else:
                 n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
-            self._property_table.resize(total_shapes)
+            self._features = features_resize(
+                self._features, self._current_properties, total_shapes
+            )
             if total_shapes > n_prop_values:
                 n_props_to_add = total_shapes - n_prop_values
                 self.text.add(self.current_properties, n_props_to_add)
@@ -2524,7 +2541,7 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
-            self._property_table.remove(index)
+            self._features = features_remove(self._features, index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2851,7 +2868,9 @@ class Shapes(Layer):
                 for i in self._dims_not_displayed
             ]
 
-            self._property_table.append(self._clipboard['properties'])
+            self._features = features_append(
+                self._features, self._clipboard['properties']
+            )
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):

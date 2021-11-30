@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import dask
 import numpy as np
+import pandas as pd
 
 from ...utils.action_manager import action_manager
 from ...utils.events.custom_types import Array
@@ -309,6 +310,7 @@ def prepare_properties(
 def get_current_properties(
     properties: Dict[str, np.ndarray],
     choices: Dict[str, np.ndarray],
+    num_data: int = 0,
 ) -> Dict[str, Any]:
     """Get the current property values from the properties or choices.
 
@@ -318,6 +320,8 @@ def get_current_properties(
         The property values.
     choices : dict[str, np.ndarray]
         The property value choices.
+    num_data : int
+        The length of data that the properties represent (e.g. number of points).
 
     Returns
     -------
@@ -325,11 +329,16 @@ def get_current_properties(
         A dictionary where the key is the property name and the value is the current
         value of that property.
     """
-    if len(properties) > 0 and len(next(iter(properties.values()))) > 0:
-        return {k: np.asarray([v[-1]]) for k, v in properties.items()}
-    elif len(choices) > 0 and len(next(iter(choices.values()))) > 0:
-        return {k: np.asarray([v[0]]) for k, v in choices.items()}
-    return {k: np.asarray([None]) for k in properties}
+    current_properties = {}
+    if num_data > 0:
+        current_properties = {
+            k: np.asarray([v[-1]]) for k, v in properties.items()
+        }
+    elif num_data == 0 and len(choices) > 0:
+        current_properties = {
+            k: np.asarray([v[0]]) for k, v in choices.items()
+        }
+    return current_properties
 
 
 def _coerce_current_properties_value(
@@ -641,3 +650,65 @@ def get_extent_world(data_extent, data_to_world, centered=False):
         ]
     )
     return world_extent
+
+
+def features_from_properties(
+    *,
+    properties: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    property_choices: Optional[Dict[str, np.ndarray]] = None,
+    num_data: Optional[int] = None,
+) -> pd.DataFrame:
+    if property_choices is not None:
+        properties = pd.DataFrame(data=properties)
+        for name, choices in property_choices.items():
+            dtype = pd.CategoricalDtype(categories=choices)
+            num_values = properties.shape[0] if num_data is None else num_data
+            values = (
+                properties[name] if name in properties else [None] * num_values
+            )
+            properties[name] = pd.Series(values, dtype=dtype)
+    # Provide an explicit index when num_data is provided to error check the properties data length.
+    index = None if num_data is None else range(num_data)
+    return pd.DataFrame(data=properties, index=index)
+
+
+def features_to_choices(features: pd.DataFrame) -> Dict[str, np.ndarray]:
+    # TODO: should we copy categories?
+    return {
+        name: series.dtype.categories
+        for name, series in features.items()
+        if isinstance(series.dtype, pd.CategoricalDtype)
+    }
+
+
+def features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
+    # TODO: Should we always pass copy=True to ensure the return value does
+    # not have an effect when modified in-place?
+    return {name: series.to_numpy() for name, series in features.items()}
+
+
+def features_resize(
+    features: pd.DataFrame, default_values: dict[str, np.ndarray], size: int
+) -> pd.DataFrame:
+    current_size = features.shape[0]
+    if size < current_size:
+        return features_remove(features, range(size, current_size))
+    elif size > current_size:
+        num_append = size - current_size
+        to_append = pd.DataFrame(
+            {
+                name: np.repeat(default_values[name], num_append, axis=0)
+                for name in features
+            },
+            index=range(num_append),
+        )
+        return features_append(features, to_append)
+    return features
+
+
+def features_append(features: pd.DataFrame, to_append: pd.DataFrame):
+    return features.append(to_append, ignore_index=True)
+
+
+def features_remove(features: pd.DataFrame, indices):
+    return features.drop(labels=indices, axis=0).reset_index(drop=True)

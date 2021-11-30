@@ -385,7 +385,7 @@ class Tracks(Layer):
 
     @property
     def features(self) -> pd.DataFrame:
-        return self._manager
+        return self._manager.features
 
     @features.setter
     def features(self, features: pd.DataFrame) -> None:
