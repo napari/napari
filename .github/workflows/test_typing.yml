@@ -7,7 +7,6 @@ on:
 
 jobs:
   typing:
-    name: Test typing on modules
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
