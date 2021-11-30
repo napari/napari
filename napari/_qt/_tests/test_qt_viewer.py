@@ -310,7 +310,7 @@ def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     assert datamean == imean
     # also check that vispy gets (almost) the same data
     datamean = np.mean(fix_data_dtype(data))
-    assert np.allclose(datamean, imean, rtol=3e-04)
+    assert np.allclose(datamean, imean, rtol=5e-04)
 
 
 def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
