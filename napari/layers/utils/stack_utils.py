@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Union
 
 import numpy as np
 
+from ...data_types._multiscale_data import MultiScaleData
 from ...layers import Image
-from ...layers.image._image_utils import guess_multiscale
 from ...utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
 from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from ...utils.translations import trans
@@ -41,7 +41,7 @@ def slice_from_axis(array, *, axis, element):
 
 
 def split_channels(
-    data: np.ndarray,
+    data: Union[np.ndarray, MultiScaleData],
     channel_axis: int,
     **kwargs,
 ) -> List[FullLayerData]:
@@ -72,14 +72,7 @@ def split_channels(
     -------
     List of LayerData tuples: [(data: array, meta: Dict, type: str )]
     """
-
-    # Determine if data is a multiscale
-    multiscale = kwargs.get('multiscale')
-    if not multiscale:
-        multiscale, data = guess_multiscale(data)
-        kwargs['multiscale'] = multiscale
-
-    n_channels = (data[0] if multiscale else data).shape[channel_axis]
+    n_channels = data.shape[channel_axis]
 
     kwargs['blending'] = kwargs.get('blending') or 'additive'
     kwargs.setdefault('colormap', None)
@@ -121,13 +114,7 @@ def split_channels(
 
     layerdata_list = list()
     for i in range(n_channels):
-        if multiscale:
-            image = [
-                slice_from_axis(data[j], axis=channel_axis, element=i)
-                for j in range(len(data))
-            ]
-        else:
-            image = slice_from_axis(data, axis=channel_axis, element=i)
+        image = slice_from_axis(data, axis=channel_axis, element=i)
         i_kwargs = {}
         for key, val in kwargs.items():
             try:
