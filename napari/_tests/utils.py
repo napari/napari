@@ -209,19 +209,3 @@ def check_layer_world_data_extent(
     translated_world_extent = np.add(scaled_world_extent, translate)
     np.testing.assert_almost_equal(layer.extent.data, extent)
     np.testing.assert_almost_equal(layer.extent.world, translated_world_extent)
-
-
-def slow(timeout):
-    """
-    Both mark a function as slow, and with a timeout which is easily scalable
-    via an env variable.
-    """
-    factor = int(os.getenv('NAPARI_TESTING_TIMEOUT_SCALING', '1'))
-
-    def _slow(func):
-
-        func = pytest.mark.timeout(timeout * factor)(func)
-        func = pytest.mark.slow(func)
-        return func
-
-    return _slow

@@ -688,7 +688,7 @@ def test_paint_2d():
     assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
-@pytest.mark.timeout(1)
+@pytest.mark.timeout(1)  # TODO: see if we can test this more directly
 def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))

@@ -91,6 +91,6 @@ def test_guess_multiscale_incorrect_order():
         _, _ = guess_multiscale(data)
 
 
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(2)  # TODO: test that we're not computing more directly
 def test_timing_multiscale_big():
     assert not guess_multiscale(data_dask)[0]

@@ -1,6 +1,6 @@
 import numpy as np
 
-from napari._tests.utils import skip_on_win_ci, slow
+from napari._tests.utils import skip_on_win_ci
 
 
 def test_image_rendering(make_napari_viewer):
@@ -39,7 +39,6 @@ def test_image_rendering(make_napari_viewer):
     assert layer.rendering == 'additive'
 
 
-@slow(15)
 @skip_on_win_ci
 def test_visibility_consistency(qtbot, make_napari_viewer):
     """Make sure toggling visibility maintains image contrast.

@@ -106,5 +106,4 @@ filterwarnings = [
 markers = [
     "sync_only: Test should only be run synchronously",
     "async_only: Test should only be run asynchronously",
-    "slow: Slow test you can skip with `-m 'not slow'`, or adjust with the env variable NAPARI_TESTING_TIMEOUT_SCALING"
 ]
