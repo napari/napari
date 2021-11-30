@@ -1,4 +1,5 @@
 import numpy as np
+from vispy.color.color_array import ColorArray
 from vispy.scene.visuals import Compound, Line, Markers
 
 from ...components._interaction_box_constants import Box
@@ -9,7 +10,7 @@ class VispyInteractionBox:
 
         self._viewer = viewer
         self._interaction_box = viewer.overlays.interaction_box
-        self.node = Compound([Line(), Markers()], parent=parent)
+        self.node = Compound([Line(), Markers(), Markers()], parent=parent)
         self.node.order = order
         self._on_interaction_box_change()
         self._interaction_box.events.points.connect(
@@ -24,6 +25,9 @@ class VispyInteractionBox:
         self._interaction_box.events.show_vertices.connect(
             self._on_interaction_box_change
         )
+        self._interaction_box.events.selected_vertex.connect(
+            self._on_interaction_box_change
+        )
         self._interaction_box.events.transform.connect(
             self._on_interaction_box_change
         )
@@ -32,14 +36,20 @@ class VispyInteractionBox:
         self._vertex_size = 10
         self._rotation_handle_length = 20
         self._highlight_color = (0, 0.6, 1)
-
-        self.marker_node.symbol = 'square'
-        self.marker_node.scaling = False
+        self.square_marker_node.symbol = 'square'
+        self.square_marker_node.scaling = False
+        self.round_marker_node.symbol = 'disc'
+        self.round_marker_node.scaling = False
 
     @property
-    def marker_node(self):
+    def square_marker_node(self):
         """sequence of float: Scale factors."""
         return self.node._subvisuals[1]
+
+    @property
+    def round_marker_node(self):
+        """sequence of float: Scale factors."""
+        return self.node._subvisuals[2]
 
     @property
     def line_node(self):
@@ -63,10 +73,26 @@ class VispyInteractionBox:
             vertices = np.zeros((1, self._viewer.dims.ndisplay))
             size = 0
         else:
-            size = 10
+            size = self._vertex_size
 
-        self.marker_node.set_data(
-            vertices,
+        self.square_marker_node.set_data(
+            vertices[: Box.LEN_WITHOUT_HANDLE],
+            size=size,
+            face_color=face_color[: Box.LEN_WITHOUT_HANDLE],
+            edge_color=edge_color,
+            edge_width=1.5,
+        )
+        if self._interaction_box.selected_vertex == Box.HANDLE:
+            face_color = self._highlight_color
+        else:
+            face_color = 'white'
+        # Have to make sure vertex list is not empty to pass tests
+        round_vertices = vertices[Box.LEN_WITHOUT_HANDLE :]
+        if len(round_vertices) == 0:
+            round_vertices = np.zeros((1, self._viewer.dims.ndisplay))
+            size = 0
+        self.round_marker_node.set_data(
+            round_vertices,
             size=size,
             face_color=face_color,
             edge_color=edge_color,
@@ -108,12 +134,21 @@ class VispyInteractionBox:
 
             edge_color = self._highlight_color
             if self._interaction_box.show_vertices:
+                colors = np.array([(1.0, 1.0, 1.0) for point in box])
+                if self._interaction_box.selected_vertex is not None:
+                    colors[
+                        self._interaction_box.selected_vertex
+                    ] = self._highlight_color
                 if self._interaction_box.show_handle:
                     vertices = box[Box.WITH_HANDLE][:, ::-1]
+                    face_color = ColorArray(colors[Box.WITH_HANDLE])
                 else:
                     vertices = box[Box.WITHOUT_HANDLE][:, ::-1]
+                    face_color = ColorArray(colors[Box.WITHOUT_HANDLE])
+
             else:
                 vertices = np.empty((0, 2))
+                face_color = 'white'
 
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge

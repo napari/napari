@@ -40,4 +40,6 @@ default_shortcuts = {
     'napari:select_all_shapes': ['A'],
     'napari:delete_selected_shapes': ['Backspace', 'Delete', '3'],
     'napari:finish_drawing_shape': ['Escape'],
+    'napari:reset_active_layer_affine': ['Control-Shift-R'],
+    'napari:transform_active_layer': ['Control-Shift-A'],
 }
