@@ -21,13 +21,8 @@ repository:
 # files in table of contents _toc.yml)
 exclude_patterns: [
   'ORGANIZATION.md',
-  'roadmaps/*',
-  'community/*',
   'guides/_viewer_events.md',
   'guides/_layer_events.md',
-  'guides/docker.md', #  linked internally
-  'guides/performance.md', #  linked internally
-  'guides/rendering-explanation.md', #  linked internally
 ]
 
 # Add GitHub buttons to your book
