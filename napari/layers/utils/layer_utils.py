@@ -68,7 +68,10 @@ def _nanmin(array):
     """
     min = np.min(array)
     if not np.isfinite(min):
-        min = np.min(array[np.isfinite(array)])
+        masked = array[np.isfinite(array)]
+        if masked.size == 0:
+            return 0
+        min = np.min(masked)
     return min
 
 
@@ -78,7 +81,10 @@ def _nanmax(array):
     """
     max = np.max(array)
     if not np.isfinite(max):
-        max = np.max(array[np.isfinite(array)])
+        masked = array[np.isfinite(array)]
+        if masked.size == 0:
+            return 1
+        max = np.max(masked)
     return max
 
 
