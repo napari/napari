@@ -319,6 +319,8 @@ class QtLabelsControls(QtLayerControls):
             self.fill_button.setChecked(True)
         elif mode == Mode.ERASE:
             self.erase_button.setChecked(True)
+        elif mode == Mode.TRANSFORM:
+            pass
         else:
             raise ValueError(trans._("Mode not recognized"))
 
