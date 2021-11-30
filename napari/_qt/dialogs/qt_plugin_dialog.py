@@ -319,6 +319,9 @@ class PluginListItem(QFrame):
         self.package_author.setText(author)
         self.cancel_btn.setVisible(False)
 
+        self.help_button.setText(trans._("Website"))
+        self.help_button.setObjectName("help_button")
+
         if installed:
             self.enabled_checkbox.show()
             self.action_button.setText(trans._("uninstall"))
@@ -397,6 +400,7 @@ class PluginListItem(QFrame):
         self.update_btn.setObjectName("install_button")
         self.row1.addWidget(self.update_btn)
         self.update_btn.setVisible(False)
+        self.help_button = QPushButton(self)
         self.action_button = QPushButton(self)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -404,7 +408,9 @@ class PluginListItem(QFrame):
         sizePolicy.setHeightForWidth(
             self.action_button.sizePolicy().hasHeightForWidth()
         )
+        self.help_button.setSizePolicy(sizePolicy)
         self.action_button.setSizePolicy(sizePolicy)
+        self.row1.addWidget(self.help_button)
         self.row1.addWidget(self.action_button)
         self.v_lay.addLayout(self.row1)
         self.row2 = QHBoxLayout()
@@ -486,6 +492,15 @@ class QPluginList(QListWidget):
         action_name = 'uninstall' if installed else 'install'
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
+
+        if project_info.url:
+            import webbrowser
+
+            widg.help_button.clicked.connect(
+                lambda: webbrowser.open(project_info.url)
+            )
+        else:
+            widg.help_button.setVisible(False)
 
         widg.action_button.clicked.connect(
             lambda: self.handle_action(item, project_info.name, action_name)
