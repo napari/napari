@@ -158,7 +158,7 @@ def add_worker_data(
 
     This allows someone annotate their magicgui with a return type of
     `FunctionWorker[...]`, create a napari thread worker (e.g. with the
-    @thread_worker decorator), then simply return the worker.  We will hook up
+    ``@thread_worker`` decorator), then simply return the worker.  We will hook up
     the `returned` signal to the machinery to add the result of the
     long-running function to the viewer.
 
@@ -189,6 +189,7 @@ def add_worker_data(
                 ...
 
             return do_something_slowly(...)
+
     """
 
     cb = (
@@ -362,7 +363,7 @@ def _make_choice_data_setter(gui: CategoricalWidget, choice_name: str):
     Note, using lru_cache here so that the **same** function object is returned
     if you call this twice for the same widget/choice_name combination. This is
     so that when we connect it above in `layer.events.data.connect()`, it will
-    only get connected once (because .connect() will not add a specific callback
+    only get connected once (because ``.connect()`` will not add a specific callback
     more than once)
     """
     gui_ref = weakref.ref(gui)
@@ -395,6 +396,7 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
     >>> @magicgui
     ... def make_layer() -> napari.layers.Image:
     ...     return napari.layers.Image(np.random.rand(64, 64))
+
     """
     if result is None:
         return

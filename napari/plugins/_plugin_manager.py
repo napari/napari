@@ -46,15 +46,18 @@ CallOrderDict = Dict[str, List[PluginHookOption]]
 class NapariPluginManager(PluginManager):
     """PluginManager subclass for napari-specific functionality.
 
-    Events
-    ------
-    registered (value: str)
+    Notes
+    -----
+
+    The events emitted by the plugin include:
+
+    * registered (value: str)
         Emitted after plugin named `value` has been registered.
-    unregistered (value: str)
+    * unregistered (value: str)
         Emitted after plugin named `value` has been unregistered.
-    enabled (value: str)
+    * enabled (value: str)
         Emitted after plugin named `value` has been removed from the block list.
-    disabled (value: str)
+    * disabled (value: str)
         Emitted after plugin named `value` has been added to the block list.
     """
 
