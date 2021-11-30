@@ -46,6 +46,7 @@ class InteractionBox(EventedModel):
     transform_final: Affine = Affine()
     transform: Affine = Affine()
     allow_new_selection: bool = True
+    selected_vertex: int = None
 
     @property
     def _box(self):

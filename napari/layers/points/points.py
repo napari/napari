@@ -1065,17 +1065,24 @@ class Points(Layer):
         """
         return str(self._mode)
 
-    _drag_modes = {Mode.ADD: add, Mode.SELECT: select, Mode.PAN_ZOOM: no_op}
+    _drag_modes = {
+        Mode.ADD: add,
+        Mode.SELECT: select,
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
+    }
 
     _move_modes = {
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
     }
     _cursor_modes = {
         Mode.ADD: 'crosshair',
         Mode.SELECT: 'standard',
         Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
     }
 
     @mode.setter
