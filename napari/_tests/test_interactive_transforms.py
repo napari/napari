@@ -6,8 +6,8 @@ from napari.components._interaction_box_constants import Box
 from napari.utils.transforms import Affine
 
 
-def check_corners_of_interaction_box(
-    box, top_left_corner, bottom_right_corner
+def check_corners_of_axis_aligned_interaction_box(
+    box, *, top_left_corner=[0, 0], bottom_right_corner=None
 ):
     if not np.allclose(box[Box.TOP_LEFT], np.array(top_left_corner) - 0.5):
         pytest.fail(
@@ -30,8 +30,10 @@ def test_interaction_box_display(make_napari_viewer):
     layer.mode = 'transform'
 
     assert viewer.overlays.interaction_box.show
-    check_corners_of_interaction_box(
-        viewer.overlays.interaction_box._box, [0, 0], [30, 40]
+    check_corners_of_axis_aligned_interaction_box(
+        viewer.overlays.interaction_box._box,
+        top_left_corner=[0, 0],
+        bottom_right_corner=[30, 40],
     )
 
 
@@ -73,14 +75,18 @@ def test_interaction_box_dim_change(make_napari_viewer):
 
     viewer.dims._roll()
 
-    check_corners_of_interaction_box(
-        viewer.overlays.interaction_box._box, [0, 0], [6, 30]
+    check_corners_of_axis_aligned_interaction_box(
+        viewer.overlays.interaction_box._box,
+        top_left_corner=[0, 0],
+        bottom_right_corner=[6, 30],
     )
 
     viewer.dims._transpose()
 
-    check_corners_of_interaction_box(
-        viewer.overlays.interaction_box._box, [0, 0], [30, 6]
+    check_corners_of_axis_aligned_interaction_box(
+        viewer.overlays.interaction_box._box,
+        top_left_corner=[0, 0],
+        bottom_right_corner=[30, 6],
     )
 
 
