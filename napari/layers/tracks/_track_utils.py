@@ -239,25 +239,6 @@ class TrackManager:
 
         return data
 
-    def _validate_track_properties(
-        self, properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """validate the track properties"""
-
-        for k, v in properties.items():
-            if len(v) != len(self.data):
-                raise ValueError(
-                    trans._(
-                        'the number of properties must equal the number of vertices',
-                        deferred=True,
-                    )
-                )
-            # ensure the property values are a numpy array
-            if type(v) != np.ndarray:
-                properties[k] = np.asarray(v)
-
-        return properties
-
     def _validate_track_graph(
         self, graph: Dict[int, Union[int, List[int]]]
     ) -> Dict[int, List[int]]:

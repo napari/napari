@@ -1,7 +1,7 @@
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -38,9 +38,6 @@ from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
 from ._points_utils import create_box, fix_data_points, points_to_squares
-
-if TYPE_CHECKING:
-    from pandas import DataFrame
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -519,7 +516,7 @@ class Points(Layer):
 
     @properties.setter
     def properties(
-        self, properties: Union[Dict[str, Array], 'DataFrame', None]
+        self, properties: Union[Dict[str, Array], pd.DataFrame, None]
     ):
         self._features = features_from_properties(
             properties=properties, num_data=len(self._data)
