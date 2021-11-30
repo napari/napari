@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -19,6 +19,7 @@ from ..utils.layer_utils import (
     features_to_choices,
     features_to_properties,
     get_current_properties,
+    validate_features,
 )
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
@@ -306,9 +307,11 @@ class Vectors(Layer):
         return self._features
 
     @features.setter
-    def features(self, features: pd.DataFrame) -> None:
-        # TODO: check that the number of rows is the same as the number of tracks.
-        self._features = features
+    def features(
+        self,
+        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    ) -> None:
+        self._features = validate_features(features)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

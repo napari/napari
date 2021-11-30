@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -35,6 +35,7 @@ from ..utils.layer_utils import (
     features_to_choices,
     features_to_properties,
     get_current_properties,
+    validate_features,
 )
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
@@ -705,9 +706,11 @@ class Shapes(Layer):
         return self._features
 
     @features.setter
-    def features(self, features: pd.DataFrame) -> None:
-        # TODO: check that the number of rows is the same as the number of tracks.
-        self._features = features
+    def features(
+        self,
+        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    ) -> None:
+        self._features = validate_features(features)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

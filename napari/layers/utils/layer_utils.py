@@ -229,7 +229,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
 def prepare_properties(
     properties: Optional[Union[Dict[str, Array], DataFrame]],
     choices: Optional[Dict[str, Array]] = None,
-    num_data: Optional[int] = None,
+    num_data: int = 0,
     save_choices: bool = False,
 ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
     """Prepare properties and choices into standard forms.
@@ -255,13 +255,7 @@ def prepare_properties(
         is an ndarray of unique property value choices.
     """
     # If there is no data, non-empty properties represent choices as a deprecated behavior.
-    # We need to call this first, and handle both dict and DataFrame when checking how many property values are stored.
-    no_property_values = (
-        properties is None
-        or len(properties) == 0
-        or len(properties[next(iter(properties.keys()))]) == 0
-    )
-    if num_data == 0 and not no_property_values:
+    if num_data == 0 and properties:
         warnings.warn(
             trans._(
                 "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
@@ -287,7 +281,7 @@ def prepare_properties(
     if len(new_choices) == 0:
         new_choices = {k: np.unique(v) for k, v in choices.items()}
         if len(new_choices) > 0:
-            if num_data is not None and num_data > 0:
+            if num_data > 0:
                 properties = {
                     k: np.array([None] * num_data) for k in new_choices
                 }
@@ -652,12 +646,24 @@ def get_extent_world(data_extent, data_to_world, centered=False):
     return world_extent
 
 
+def validate_features(
+    features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    num_data: Optional[int] = None,
+) -> pd.DataFrame:
+    # Provide an explicit index when num_data is provided to
+    # - error check the properties data length
+    # - create a suitable length index when there are no columns
+    index = None if num_data is None else range(num_data)
+    return pd.DataFrame(data=features, index=index)
+
+
 def features_from_properties(
     *,
     properties: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     property_choices: Optional[Dict[str, np.ndarray]] = None,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
+    # Create categorical series for any choices provided.
     if property_choices is not None:
         properties = pd.DataFrame(data=properties)
         for name, choices in property_choices.items():
@@ -667,23 +673,18 @@ def features_from_properties(
                 properties[name] if name in properties else [None] * num_values
             )
             properties[name] = pd.Series(values, dtype=dtype)
-    # Provide an explicit index when num_data is provided to error check the properties data length.
-    index = None if num_data is None else range(num_data)
-    return pd.DataFrame(data=properties, index=index)
+    return validate_features(properties, num_data)
 
 
 def features_to_choices(features: pd.DataFrame) -> Dict[str, np.ndarray]:
-    # TODO: should we copy categories?
     return {
-        name: series.dtype.categories
+        name: series.dtype.categories.to_numpy()
         for name, series in features.items()
         if isinstance(series.dtype, pd.CategoricalDtype)
     }
 
 
 def features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
-    # TODO: Should we always pass copy=True to ensure the return value does
-    # not have an effect when modified in-place?
     return {name: series.to_numpy() for name, series in features.items()}
 
 

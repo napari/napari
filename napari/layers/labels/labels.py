@@ -25,6 +25,7 @@ from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import (
     features_from_properties,
     features_to_properties,
+    validate_features,
 )
 from ._labels_constants import LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
@@ -402,9 +403,11 @@ class Labels(_ImageBase):
         return self._features
 
     @features.setter
-    def features(self, features: pd.DataFrame) -> None:
-        # TODO: check that the number of rows is the same as the number of tracks.
-        self._features = features
+    def features(
+        self,
+        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    ) -> None:
+        self._features = validate_features(features)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 from warnings import warn
 
 import numpy as np
@@ -388,7 +388,10 @@ class Tracks(Layer):
         return self._manager.features
 
     @features.setter
-    def features(self, features: pd.DataFrame) -> None:
+    def features(
+        self,
+        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    ) -> None:
         self._manager.features = features
 
     @property

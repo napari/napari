@@ -32,6 +32,7 @@ from ..utils.layer_utils import (
     features_to_choices,
     features_to_properties,
     get_current_properties,
+    validate_features,
 )
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
@@ -477,9 +478,11 @@ class Points(Layer):
         return self._features
 
     @features.setter
-    def features(self, features: pd.DataFrame) -> None:
-        # TODO: check that the number of rows is the same as the number of tracks.
-        self._features = features
+    def features(
+        self,
+        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    ) -> None:
+        self._features = validate_features(features)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
