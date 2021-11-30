@@ -106,7 +106,6 @@ def test_z_order_image_points(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images_after_ndisplay(make_napari_viewer):
@@ -136,7 +135,6 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_napari_viewer):
@@ -166,7 +164,6 @@ def test_z_order_image_points_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_colormap(make_napari_viewer):
@@ -329,7 +326,6 @@ def test_grid_mode(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_attenuation(make_napari_viewer):
