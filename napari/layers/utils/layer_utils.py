@@ -62,6 +62,26 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     return _inner
 
 
+def _nanmin(*args, **kwargs):
+    """
+    call np.min but fall back to the slower np.nanmin if necessary
+    """
+    min = np.min(*args, **kwargs)
+    if min in [np.nan, -np.inf]:
+        min = np.nanmin(*args, **kwargs)
+    return min
+
+
+def _nanmax(*args, **kwargs):
+    """
+    call np.max but fall back to the slower np.nanmax if necessary
+    """
+    max = np.max(*args, **kwargs)
+    if max in [np.nan, np.inf]:
+        max = np.nanmax(*args, **kwargs)
+    return max
+
+
 def calc_data_range(data, rgb=False):
     """Calculate range of data values. If all values are equal return [0, 1].
 
@@ -94,8 +114,8 @@ def calc_data_range(data, rgb=False):
             slice(-4096, None),
         ]
         reduced_data = [
-            [np.nanmax(data[sl]) for sl in slices],
-            [np.nanmin(data[sl]) for sl in slices],
+            [_nanmax(data[sl]) for sl in slices],
+            [_nanmin(data[sl]) for sl in slices],
         ]
     elif data.size > 1e7:
         # If data is very large take the average of the top, bottom, and
@@ -115,21 +135,21 @@ def calc_data_range(data, rgb=False):
             center = [int(s // 2) for s in data.shape[-offset:]]
             central_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
             reduced_data = [
-                [np.nanmax(data[idx + central_slice]) for idx in idxs],
-                [np.nanmin(data[idx + central_slice]) for idx in idxs],
+                [_nanmax(data[idx + central_slice]) for idx in idxs],
+                [_nanmin(data[idx + central_slice]) for idx in idxs],
             ]
         else:
             reduced_data = [
-                [np.nanmax(data[idx]) for idx in idxs],
-                [np.nanmin(data[idx]) for idx in idxs],
+                [_nanmax(data[idx]) for idx in idxs],
+                [_nanmin(data[idx]) for idx in idxs],
             ]
         # compute everything in one go
         reduced_data = dask.compute(*reduced_data)
     else:
         reduced_data = data
 
-    min_val = np.nanmin(reduced_data)
-    max_val = np.nanmax(reduced_data)
+    min_val = _nanmin(reduced_data)
+    max_val = _nanmax(reduced_data)
 
     if min_val == max_val:
         min_val = 0
