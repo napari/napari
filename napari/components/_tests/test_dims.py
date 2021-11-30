@@ -70,13 +70,47 @@ def test_point():
     dims = Dims(ndim=4)
     assert dims.point == (0,) * 4
 
-    dims.set_range(3, (0, 5, 1))
+    dims.set_range(range(dims.ndim), ((0, 5, 1),) * dims.ndim)
     dims.set_point(3, 4)
     assert dims.point == (0, 0, 0, 4)
 
-    dims.set_range(2, (0, 5, 1))
     dims.set_point(2, 1)
     assert dims.point == (0, 0, 1, 4)
+
+    dims.set_point((0, 1, 2), (2.1, 2.6, 0.0))
+    assert dims.point == (2, 3, 0, 4)
+
+
+def test_point_variable_step_size():
+    dims = Dims(ndim=3)
+    assert dims.point == (0,) * 3
+
+    desired_range = ((0, 6, 0.5), (0, 6, 1), (0, 6, 2))
+    dims.set_range(range(3), desired_range)
+    assert dims.range == desired_range
+
+    # set point updates current_step indirectly
+    dims.set_point([0, 1, 2], (2.9, 2.9, 2.9))
+    assert dims.current_step == (6, 3, 1)
+    # point is a property computed on demand from current_step
+    assert dims.point == (3, 3, 2)
+
+    # can set step directly as well
+    # note that out of range values get clipped
+    dims.set_current_step((0, 1, 2), (1, -3, 5))
+    assert dims.current_step == (1, 0, 2)
+    assert dims.point == (0.5, 0, 4)
+
+    dims.set_current_step(0, -1)
+    assert dims.current_step == (0, 0, 2)
+    assert dims.point == (0, 0, 4)
+
+    # mismatched len(axis) vs. len(value)
+    with pytest.raises(ValueError):
+        dims.set_point((0, 1), (0, 0, 0))
+
+    with pytest.raises(ValueError):
+        dims.set_current_step((0, 1), (0, 0, 0))
 
 
 def test_range():
@@ -120,6 +154,16 @@ def test_range_set_multiple():
 def test_axis_labels():
     dims = Dims(ndim=4)
     assert dims.axis_labels == ('0', '1', '2', '3')
+
+    dims.set_axis_label(0, 't')
+    assert dims.axis_labels == ('t', '1', '2', '3')
+
+    dims.set_axis_label((0, 1, 3), ('t', 'c', 'last'))
+    assert dims.axis_labels == ('t', 'c', '2', 'last')
+
+    # mismatched len(axis) vs. len(value)
+    with pytest.raises(ValueError):
+        dims.set_point((0, 1), ('x', 'y', 'z'))
 
 
 def test_order_when_changing_ndim():
