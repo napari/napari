@@ -1,6 +1,6 @@
 import warnings
 from collections import deque
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -234,6 +234,7 @@ class Labels(_ImageBase):
         cache=True,
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
+        features=None,
     ):
 
         self._seed = seed
@@ -247,10 +248,6 @@ class Labels(_ImageBase):
 
         data = self._ensure_int_labels(data)
         self._color_lookup_func = None
-
-        self._features, self._label_index = self._prepare_properties(
-            properties
-        )
 
         super().__init__(
             data,
@@ -288,6 +285,11 @@ class Labels(_ImageBase):
             brush_shape=Event,
             contour=Event,
         )
+
+        if properties is not None:
+            self.properties = properties
+        else:
+            self.features = features
 
         self._n_edit_dimensions = 2
         self._contiguous = True
@@ -408,6 +410,7 @@ class Labels(_ImageBase):
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     ) -> None:
         self._features = validate_features(features)
+        self._label_index = self._make_label_index(self._features)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -416,22 +419,18 @@ class Labels(_ImageBase):
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._features, self._label_index = self._prepare_properties(
-            properties
-        )
+        self._features = features_from_properties(properties=properties)
+        self._label_index = self._make_label_index(self._features)
         self.events.properties()
 
     @classmethod
-    def _prepare_properties(
-        cls, properties: Optional[Dict[str, Array]]
-    ) -> Tuple[pd.DataFrame, Dict[int, int]]:
-        features = features_from_properties(properties=properties)
+    def _make_label_index(cls, features: pd.DataFrame) -> Dict[int, int]:
         label_index = {}
         if 'index' in features:
             label_index = {i: k for k, i in enumerate(features['index'])}
         elif features.shape[1] > 0:
             label_index = {i: i for i in range(features.shape[0])}
-        return features, label_index
+        return label_index
 
     @property
     def color(self):

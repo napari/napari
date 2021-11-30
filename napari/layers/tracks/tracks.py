@@ -117,6 +117,7 @@ class Tracks(Layer):
         colormaps_dict=None,
         cache=True,
         experimental_clipping_planes=None,
+        features=None,
     ):
 
         # if not provided with any data, set up an empty layer in 2D+t
@@ -125,10 +126,6 @@ class Tracks(Layer):
         else:
             # convert data to a numpy array if it is not already one
             data = np.asarray(data)
-
-        # in absence of properties make the default an empty dict
-        if properties is None:
-            properties = {}
 
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
@@ -182,9 +179,12 @@ class Tracks(Layer):
         self.display_tail = True
         self.display_graph = True
 
-        # set the data, properties and graph
+        # set the data, features, and graph
         self.data = data
-        self.properties = properties
+        if properties is not None:
+            self.properties = properties
+        else:
+            self.features = features
         self.graph = graph or {}
 
         self.color_by = color_by

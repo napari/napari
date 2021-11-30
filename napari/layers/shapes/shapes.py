@@ -435,6 +435,7 @@ class Shapes(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        features=None,
     ):
         if data is None:
             if ndim is None:
@@ -487,11 +488,16 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        self._features = features_from_properties(
-            properties=properties,
-            property_choices=property_choices,
-            num_data=number_of_shapes(data),
-        )
+        if properties is not None or property_choices is not None:
+            self._features = features_from_properties(
+                properties=properties,
+                property_choices=property_choices,
+                num_data=number_of_shapes(data),
+            )
+        else:
+            self._features = validate_features(
+                features, number_of_shapes(data)
+            )
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -710,7 +716,7 @@ class Shapes(Layer):
         self,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     ) -> None:
-        self._features = validate_features(features)
+        self._features = validate_features(features, self.nshapes)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

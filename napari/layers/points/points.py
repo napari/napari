@@ -280,6 +280,7 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
+        features=None,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -323,11 +324,14 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        self._features = features_from_properties(
-            properties=properties,
-            property_choices=property_choices,
-            num_data=len(data),
-        )
+        if properties is not None or property_choices is not None:
+            self._features = features_from_properties(
+                properties=properties,
+                property_choices=property_choices,
+                num_data=len(self.data),
+            )
+        else:
+            self.features = features
 
         self._text = TextManager._from_layer(
             text=text,
@@ -470,10 +474,6 @@ class Points(Layer):
             self.events.highlight()
 
     @property
-    def property_choices(self) -> Dict[str, np.ndarray]:
-        return features_to_choices(self._features)
-
-    @property
     def features(self) -> pd.DataFrame:
         return self._features
 
@@ -482,7 +482,11 @@ class Points(Layer):
         self,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     ) -> None:
-        self._features = validate_features(features)
+        self._features = validate_features(features, len(self.data))
+
+    @property
+    def property_choices(self) -> Dict[str, np.ndarray]:
+        return features_to_choices(self._features)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

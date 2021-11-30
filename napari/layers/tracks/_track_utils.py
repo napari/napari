@@ -152,7 +152,10 @@ class TrackManager:
         self,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     ) -> None:
-        self._features = validate_features(features)
+        features = validate_features(features, len(self.data))
+        if 'track_id' not in features:
+            features['track_id'] = self.track_ids
+        self._features = features.iloc[self._order].reset_index()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -162,13 +165,10 @@ class TrackManager:
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-        self._features = features_from_properties(
+        self.features = features_from_properties(
             properties=properties,
             num_data=len(self.data),
         )
-        if 'track_id' not in self.features:
-            self.features['track_id'] = self.track_ids
-        self.features = self.features.iloc[self._order].reset_index()
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:

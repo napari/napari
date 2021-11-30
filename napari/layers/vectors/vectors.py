@@ -176,6 +176,7 @@ class Vectors(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        features=None,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -224,11 +225,14 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._features = features_from_properties(
-            properties=properties,
-            property_choices=property_choices,
-            num_data=len(self.data),
-        )
+        if properties is not None or property_choices is not None:
+            self._features = features_from_properties(
+                properties=properties,
+                property_choices=property_choices,
+                num_data=len(self.data),
+            )
+        else:
+            self.features = features
 
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(self.data),
@@ -311,7 +315,7 @@ class Vectors(Layer):
         self,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     ) -> None:
-        self._features = validate_features(features)
+        self._features = validate_features(features, len(self.data))
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
