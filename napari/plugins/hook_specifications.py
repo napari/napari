@@ -77,9 +77,9 @@ def napari_provide_sample_data() -> Dict[str, Union[SampleData, SampleDict]]:
         1. random data from numpy
         2. a random image pulled from the internet
         3. random data from numpy, provided as a dict with the keys:
-            'display_name': a string that will show in the menu (by default,
+            * 'display_name': a string that will show in the menu (by default,
                 the `sample_key` will be shown)
-            'data': a string or callable, as in 1/2.
+            * 'data': a string or callable, as in 1/2.
 
     .. code-block:: python
 
@@ -545,4 +545,5 @@ def napari_experimental_provide_theme() -> Dict[
     >>> @napari_hook_implementation
     >>> def napari_experimental_provide_theme():
     ...     return get_new_theme()
+
     """
