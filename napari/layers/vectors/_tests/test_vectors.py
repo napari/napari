@@ -3,7 +3,10 @@ import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
-from napari._tests.utils import check_layer_world_data_extent
+from napari._tests.utils import (
+    assert_properties_equal,
+    check_layer_world_data_extent,
+)
 from napari.layers import Vectors
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -421,8 +424,7 @@ def test_edge_color_colormap():
         edge_color='angle',
         edge_colormap='gray',
     )
-    for name in properties:
-        np.testing.assert_array_equal(layer.properties[name], properties[name])
+    assert_properties_equal(layer.properties, properties)
     assert layer.edge_color_mode == 'colormap'
     edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     assert np.all(layer.edge_color == edge_color_array)

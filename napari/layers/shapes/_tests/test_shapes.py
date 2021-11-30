@@ -5,7 +5,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from napari._tests.utils import check_layer_world_data_extent
+from napari._tests.utils import (
+    assert_properties_equal,
+    check_layer_world_data_extent,
+)
 from napari.layers import Shapes
 from napari.layers.utils._text_constants import Anchor, TextMode
 from napari.utils.colormaps.standardize_color import transform_color
@@ -1481,8 +1484,7 @@ def test_color_cycle(attribute, color_cycle):
     }
     layer = Shapes(data, **shapes_kwargs)
 
-    for name in properties:
-        np.testing.assert_array_equal(layer.properties[name], properties[name])
+    assert_properties_equal(layer.properties, properties)
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
     )
@@ -1616,8 +1618,7 @@ def test_color_colormap(attribute):
         f'{attribute}_colormap': 'gray',
     }
     layer = Shapes(data, **shapes_kwargs)
-    for name in properties:
-        np.testing.assert_array_equal(layer.properties[name], properties[name])
+    assert_properties_equal(layer.properties, properties)
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))

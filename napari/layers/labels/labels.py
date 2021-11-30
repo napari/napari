@@ -1314,7 +1314,7 @@ class Labels(_ImageBase):
         return "\n".join(self._get_properties(position, world))
 
     def _get_properties(self, position, world) -> list:
-        if len(self._label_index) == 0 or self.featueres.shape[1] == 0:
+        if len(self._label_index) == 0 or self.features.shape[1] == 0:
             return []
 
         value = self.get_value(position, world=world)

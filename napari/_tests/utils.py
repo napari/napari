@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Dict
 
 import numpy as np
 import pytest
@@ -225,3 +226,11 @@ def slow(timeout):
         return func
 
     return _slow
+
+
+def assert_properties_equal(
+    actual: Dict[str, np.ndarray], expected: Dict[str, np.ndarray]
+):
+    assert actual.keys() == expected.keys()
+    for key in actual:
+        np.testing.assert_array_equal(actual[key], expected[key])
