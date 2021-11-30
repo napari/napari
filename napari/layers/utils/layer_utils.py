@@ -62,23 +62,23 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     return _inner
 
 
-def _nanmin(*args, **kwargs):
+def _nanmin(array):
     """
-    call np.min but fall back to the slower np.nanmin if necessary
+    call np.min but fall back to avoid nan and inf if necessary
     """
-    min = np.min(*args, **kwargs)
-    if min in [np.nan, -np.inf]:
-        min = np.nanmin(*args, **kwargs)
+    min = array.min()
+    if not np.isfinite(min):
+        min = np.ma.masked_invalid(array).min()
     return min
 
 
-def _nanmax(*args, **kwargs):
+def _nanmax(array):
     """
-    call np.max but fall back to the slower np.nanmax if necessary
+    call np.max but fall back to avoid nan and inf if necessary
     """
-    max = np.max(*args, **kwargs)
-    if max in [np.nan, np.inf]:
-        max = np.nanmax(*args, **kwargs)
+    max = array.max()
+    if not np.isfinite(max):
+        max = np.ma.masked_invalid(array).max()
     return max
 
 

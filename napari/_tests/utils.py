@@ -39,6 +39,7 @@ layer_test_data = [
     (Image, np.random.random((10, 15, 20)), 3),
     (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
+    (Image, np.array([[1.5, np.nan], [np.inf, 2.2]]), 2),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
     (Points, 20 * np.random.random((10, 2)), 2),
@@ -120,9 +121,30 @@ def add_layer_by_type(viewer, layer_type, data, visible=True):
     return layer2addmethod[layer_type](viewer, data, visible=visible)
 
 
+def are_objects_equal(object1, object2):
+    """
+    compare two (collections of) arrays or other objects for equality. Ignores nan.
+    """
+    if isinstance(object1, (list, tuple)):
+        items = zip(object1, object2)
+    elif isinstance(object1, dict):
+        items = [(value, object2[key]) for key, value in object1.items()]
+    else:
+        items = [(object1, object2)]
+
+    try:
+        return np.all(
+            [np.array_equal(a1, a2, equal_nan=True) for a1, a2 in items]
+        )
+    except TypeError:
+        # np.array_equal fails for arrays of type `object` (e.g: strings)
+        return np.all([a1 == a2 for a1, a2 in items])
+
+
 def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     viewer.dims.ndisplay = 2
-    assert np.all(viewer.layers[0].data == data)
+    # if multiscale or composite data (surface), check one by one
+    assert are_objects_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert view.layers.model().rowCount() == len(viewer.layers)
 
