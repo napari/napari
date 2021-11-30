@@ -11,7 +11,6 @@ import magicgui as mgui
 import numpy as np
 
 from ..._vendor.cpython.functools import cached_property
-from ...components.dims import reorder_after_dim_reduction
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -626,6 +625,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This function needs to be called whenever data or transform information
         changes, and should be called before events get emitted.
         """
+        from ...components.dims import reorder_after_dim_reduction
+
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
