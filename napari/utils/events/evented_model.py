@@ -144,9 +144,9 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
                 deps.setdefault(field, set()).add(prop)
     else:
         # if dependencies haven't been explicitly defined, we can glean
-        # them from the property.fset code object:
+        # them from the property.fget code object:
         for prop, setter in cls.__property_setters__.items():
-            for name in setter.fset.__code__.co_names:
+            for name in setter.fget.__code__.co_names:
                 if name in cls.__fields__:
                     deps.setdefault(name, set()).add(prop)
     return deps
