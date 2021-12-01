@@ -202,7 +202,7 @@ def test_changing_image_gamma(make_napari_viewer):
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    assert screenshot[center + (0,)] == 128
+    assert 127 <= screenshot[center + (0,)] <= 129
 
     layer.gamma = 0.1
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
