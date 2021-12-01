@@ -71,6 +71,7 @@ _REV_SHAPE_HELP = {
         Mode.ADD_RECTANGLE,
         Mode.ADD_ELLIPSE,
         Mode.ADD_LINE,
+        Mode.TRANSFORM,
     },
     trans._(
         'hold <space> to pan/zoom, press <esc>, or double click to finish drawing'
@@ -354,6 +355,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
+        Mode.TRANSFORM: no_op,
     }
 
     _move_modes = {
@@ -367,6 +369,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
+        Mode.TRANSFORM: no_op,
     }
 
     _double_click_modes = {
@@ -380,6 +383,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: finish_drawing_shape,
         Mode.ADD_POLYGON: finish_drawing_shape,
+        Mode.TRANSFORM: no_op,
     }
 
     _cursor_modes = {
@@ -393,6 +397,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
+        Mode.TRANSFORM: 'standard',
     }
 
     _interactive_modes = {

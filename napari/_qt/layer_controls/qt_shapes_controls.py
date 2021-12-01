@@ -346,6 +346,8 @@ class QtShapesControls(QtLayerControls):
 
         if event.mode in mode_buttons:
             mode_buttons[event.mode].setChecked(True)
+        elif event.mode == Mode.TRANSFORM:
+            pass
         else:
             raise ValueError(
                 trans._("Mode '{mode}'not recognized", mode=event.mode)

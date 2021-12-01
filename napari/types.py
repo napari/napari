@@ -112,6 +112,7 @@ def image_reader_to_layerdata_reader(
     reader_function : Callable[[PathLike], List[LayerData]]
         A function that accepts a string or list of strings, and returns data
         as a list of LayerData: List[Tuple[ArrayLike]]
+
     """
 
     @wraps(func)
@@ -123,7 +124,7 @@ def image_reader_to_layerdata_reader(
 
 
 def _register_types_with_magicgui():
-    """Register napari.types objects with magicgui."""
+    """Register ``napari.types`` objects with magicgui."""
     import sys
     from concurrent.futures import Future
 

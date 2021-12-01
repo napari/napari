@@ -12,25 +12,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  code:
-    name: Code
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [flake8, black, isort]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install tox
-      - name: Run task
-        run: tox -e ${{ matrix.task }}
 
   manifest:
     name: Check Manifest
@@ -75,6 +56,9 @@ jobs:
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
+          - python: '3.10'
+            platform: ubuntu-latest
+            toxenv: py310-linux-pyside
 
     steps:
       - uses: actions/checkout@v2

@@ -37,8 +37,8 @@ For those wishing to add custom functionality to their project.
 
 
 .. autosummary::
-   :hidden:
    :toctree:
+
    napari
 
 Starting the Event Loop
