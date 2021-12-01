@@ -157,9 +157,13 @@ def block_timer(
 
     Examples
     --------
-    with block_timer("draw") as event:
-        draw_stuff()
-    print(f"The timer took {event.duration_ms} milliseconds.")
+
+    .. code-block:: python
+
+        with block_timer("draw") as event:
+            draw_stuff()
+        print(f"The timer took {event.duration_ms} milliseconds.")
+
     """
     start_ns = perf_counter_ns()
 

@@ -32,7 +32,10 @@ from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
 _REV_SHAPE_HELP = {
-    trans._('enter paint or fill mode to edit labels'): {Mode.PAN_ZOOM},
+    trans._('enter paint or fill mode to edit labels'): {
+        Mode.PAN_ZOOM,
+        Mode.TRANSFORM,
+    },
     trans._('hold <space> to pan/zoom, click to pick a label'): {
         Mode.PICK,
         Mode.FILL,
@@ -274,7 +277,6 @@ class Labels(_ImageBase):
         )
 
         self.events.add(
-            mode=Event,
             preserve_labels=Event,
             properties=Event,
             n_edit_dimensions=Event,
@@ -643,6 +645,7 @@ class Labels(_ImageBase):
 
     _drag_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
         Mode.PICK: pick,
         Mode.PAINT: draw,
         Mode.FILL: draw,
@@ -651,6 +654,7 @@ class Labels(_ImageBase):
 
     _move_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
         Mode.PICK: no_op,
         Mode.PAINT: no_op,
         Mode.FILL: no_op,
@@ -658,6 +662,7 @@ class Labels(_ImageBase):
     }
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
         Mode.PAINT: 'circle',
         Mode.FILL: 'cross',

@@ -14,11 +14,11 @@ from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
-from ..base import Layer
+from ..base import Layer, no_op
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane
-from ._image_constants import Interpolation, Interpolation3D, Rendering
+from ._image_constants import Interpolation, Interpolation3D, Mode, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
@@ -142,6 +142,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         list should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    mode : str
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In TRANSFORM mode the image can be transformed interactively.
     colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
@@ -258,6 +263,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
         self.events.add(
+            mode=Event,
             interpolation=Event,
             rendering=Event,
             iso_threshold=Event,
@@ -299,6 +305,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._experimental_slicing_plane = SlicingPlane(
             thickness=1, enabled=False
         )
+        self._mode = Mode.PAN_ZOOM
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
         if contrast_limits is None:
@@ -559,6 +566,44 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         for the current slice has not been loaded.
         """
         return self._slice.loaded
+
+    @property
+    def mode(self) -> str:
+        """str: Interactive mode
+
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        TRANSFORM allows for manipulation of the layer transform.
+        """
+        return str(self._mode)
+
+    _drag_modes = {Mode.TRANSFORM: no_op, Mode.PAN_ZOOM: no_op}
+
+    _move_modes = {
+        Mode.TRANSFORM: no_op,
+        Mode.PAN_ZOOM: no_op,
+    }
+    _cursor_modes = {
+        Mode.TRANSFORM: 'standard',
+        Mode.PAN_ZOOM: 'standard',
+    }
+
+    @mode.setter
+    def mode(self, mode):
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
+            return
+        assert mode is not None, mode
+
+        if mode == Mode.PAN_ZOOM:
+            self.help = ''
+        else:
+            self.help = trans._(
+                'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
+            )
+
+        self.events.mode(mode=mode)
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
