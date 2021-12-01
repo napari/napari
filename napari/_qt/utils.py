@@ -479,3 +479,59 @@ def qt_might_be_rich_text(text) -> bool:
         return _Qt.mightBeRichText(text)
     except Exception:
         return bool(RICH_TEXT_PATTERN.search(text))
+
+
+def check_update_available():
+    """Checks if there is an update available.
+    It takes as parameters the current version of Spyder and a list of
+    valid cleaned releases in chronological order.
+    Example: ['2.3.2', '2.3.3' ...] or with github ['2.3.4', '2.3.3' ...]
+    """
+    # Don't perform any check for development versions
+    if 'dev' in self.version:
+        return (False, latest_release)
+
+    # Filter releases
+    if is_stable_version(self.version):
+        releases = [r for r in self.releases if is_stable_version(r)]
+    else:
+        releases = [r for r in self.releases
+                    if not is_stable_version(r) or r in self.version]
+
+    latest_release = releases[-1]
+
+    return (check_version(self.version, latest_release, '<'),
+            latest_release)
+
+
+def check_updates(channels=("conda-forge", )):
+    """"""
+    for channel in channels:
+        url = f'https://api.anaconda.org/package/{channel}/napari'
+        page = urlopen(self.url)
+        try:
+            data = page.read()
+
+            # Needed step for python3 compatibility
+            if not is_text_string(data):
+                data = data.decode()
+            data = json.loads(data)
+
+            if is_anaconda():
+                if self.releases is None:
+                    self.releases = []
+                    for item in data['packages']:
+                        if ('spyder' in item and
+                                not re.search(r'spyder-[a-zA-Z]', item)):
+                            self.releases.append(item.split('-')[1])
+                result = self.check_update_available()
+            else:
+                if self.releases is None:
+                    self.releases = [item['tag_name'].replace('v', '')
+                                        for item in data]
+                    self.releases = list(reversed(self.releases))
+
+            result = self.check_update_available()
+            self.update_available, self.latest_release = result
+        except Exception:
+            error_msg = _('Unable to retrieve information.')

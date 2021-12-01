@@ -156,6 +156,12 @@ class ApplicationSettings(EventedModel):
         description=trans._("Number of rows in the grid."),
     )
 
+    check_updates: bool = Field(  # type: ignore [valid-type]
+        default=False,
+        title=trans._("Check for updates on startup"),
+        description=trans._("Check for new available napari versions when napari starts."),
+    )
+
     @validator('window_state')
     def _validate_qbtye(cls, v):
         if v and (not isinstance(v, str) or not v.startswith('!QBYTE_')):
