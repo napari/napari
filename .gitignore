@@ -153,4 +153,3 @@ docs/guides/preferences.md
 napari/settings/napari.schema.json
 docs/guides/_layer_events.md
 docs/guides/_viewer_events.md
-napari/plugins/_builtins.py
