@@ -9,6 +9,8 @@ from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ._surface_constants import Shading
+from .normals import SurfaceNormals
+from .wireframe import SurfaceWireframe
 
 
 # Mixin must come before Layer
@@ -82,34 +84,6 @@ class Surface(IntensityVisualizationMixin, Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    wireframe : bool
-        Whether the wireframe showing the edges of the faces is displayed.
-    wireframe_color : str, array-like
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3
-        or 4 elements.
-    wireframe_width : float
-        The width of the wireframe lines in pixels.
-    face_normals : bool
-        Whether the face normals are displayed.
-    face_normals_color : str, array-like
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3
-        or 4 elements.
-    face_normals_width : float
-        The width of the face normal lines in pixels.
-    face_normals_length : float
-        The length of the face normal lines in pixels.
-    vertex_normals : bool
-        Whether the vertex normals are displayed.
-    vertex_normals_color : str, array-like
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3
-        or 4 elements.
-    vertex_normals_width : float
-        The width of the vertex normal lines in pixels.
-    vertex_normals_length : float
-        The length of the vertex normal lines in pixels.
 
     Attributes
     ----------
@@ -179,17 +153,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-        wireframe=False,
-        wireframe_color='black',
-        wireframe_width=1,
-        face_normals=False,
-        face_normals_length=5,
-        face_normals_color='orange',
-        face_normals_width=1,
-        vertex_normals=False,
-        vertex_normals_length=5,
-        vertex_normals_color='blue',
-        vertex_normals_width=1,
     ):
 
         ndim = data[0].shape[1]
@@ -215,17 +178,6 @@ class Surface(IntensityVisualizationMixin, Layer):
             interpolation=Event,
             rendering=Event,
             shading=Event,
-            wireframe=Event,
-            wireframe_color=Event,
-            wireframe_width=Event,
-            face_normals=Event,
-            face_normals_length=Event,
-            face_normals_color=Event,
-            face_normals_width=Event,
-            vertex_normals=Event,
-            vertex_normals_length=Event,
-            vertex_normals_color=Event,
-            vertex_normals_width=Event,
         )
 
         # assign mesh data and establish default behavior
@@ -264,20 +216,9 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # Shading mode
         self._shading = shading
-        with self.events.blocker_all():
-            self.wireframe_color = wireframe_color
-            self.wireframe_width = wireframe_width
-        self.wireframe = wireframe
-        with self.events.blocker_all():
-            self.face_normals_length = face_normals_length
-            self.face_normals_color = face_normals_color
-            self.face_normals_width = face_normals_width
-        self.face_normals = face_normals
-        with self.events.blocker_all():
-            self.vertex_normals_length = vertex_normals_length
-            self.vertex_normals_color = vertex_normals_color
-            self.vertex_normals_width = vertex_normals_width
-        self.vertex_normals = vertex_normals
+
+        self.wireframe = SurfaceWireframe()
+        self.normals = SurfaceNormals()
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
@@ -394,105 +335,6 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._shading = Shading(shading)
         self.events.shading(value=self._shading)
 
-    @property
-    def wireframe(self) -> bool:
-        return self._wireframe
-
-    @wireframe.setter
-    def wireframe(self, value):
-        self._wireframe = bool(value)
-        self.events.wireframe()
-
-    @property
-    def wireframe_color(self):
-        return self._wireframe_color
-
-    @wireframe_color.setter
-    def wireframe_color(self, value):
-        self._wireframe_color = value
-        self.events.wireframe_color()
-
-    @property
-    def wireframe_width(self):
-        return self._wireframe_width
-
-    @wireframe_width.setter
-    def wireframe_width(self, value):
-        self._wireframe_width = float(value)
-        self.events.wireframe_width()
-
-    @property
-    def face_normals(self) -> bool:
-        return self._face_normals
-
-    @face_normals.setter
-    def face_normals(self, value):
-        self._face_normals = bool(value)
-        self.events.face_normals()
-
-    @property
-    def face_normals_color(self):
-        return self._face_normals_color
-
-    @face_normals_color.setter
-    def face_normals_color(self, value):
-        self._face_normals_color = value
-        self.events.face_normals_color()
-
-    @property
-    def face_normals_length(self):
-        return self._face_normals_length
-
-    @face_normals_length.setter
-    def face_normals_length(self, value):
-        self._face_normals_length = value
-        self.events.face_normals_length()
-
-    @property
-    def face_normals_width(self):
-        return self._face_normals_width
-
-    @face_normals_width.setter
-    def face_normals_width(self, value):
-        self._face_normals_width = value
-        self.events.face_normals_width()
-
-    @property
-    def vertex_normals(self) -> bool:
-        return self._vertex_normals
-
-    @vertex_normals.setter
-    def vertex_normals(self, value):
-        self._vertex_normals = bool(value)
-        self.events.vertex_normals()
-
-    @property
-    def vertex_normals_color(self):
-        return self._vertex_normals_color
-
-    @vertex_normals_color.setter
-    def vertex_normals_color(self, value):
-        self._vertex_normals_color = value
-        self.events.vertex_normals_color()
-
-    @property
-    def vertex_normals_length(self):
-        return self._vertex_normals_length
-
-    @vertex_normals_length.setter
-    def vertex_normals_length(self, value):
-        self._vertex_normals_length = value
-        self.events.vertex_normals_length()
-
-    @property
-    def vertex_normals_width(self):
-        return self._vertex_normals_width
-
-    @vertex_normals_width.setter
-    def vertex_normals_width(self, value):
-        self._vertex_normals_width = value
-        self.events.vertex_normals_width()
-
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -509,17 +351,8 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
-                'wireframe': self.wireframe,
-                'wireframe_color': self.wireframe_color,
-                'wireframe_width': self.wireframe_width,
-                'face_normals': self.face_normals,
-                'face_normals_length': self.face_normals_length,
-                'face_normals_color': self.face_normals_color,
-                'face_normals_width': self.face_normals_width,
-                'vertex_normals': self.vertex_normals,
-                'vertex_normals_length': self.vertex_normals_length,
-                'vertex_normals_color': self.vertex_normals_color,
-                'vertex_normals_width': self.vertex_normals_width,
+                'wireframe': self.wireframe.to_dict(),
+                'normals': self.normals.to_dict(),
             }
         )
         return state

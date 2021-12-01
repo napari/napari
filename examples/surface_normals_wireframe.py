@@ -8,15 +8,16 @@ import napari
 
 vert, faces, _, _ = read_mesh(load_data_file('orig/triceratops.obj.gz'))
 
-vert *= 100  # c.f. https://github.com/napari/napari/issues/3477
+# put the mesh right side up, scale it up (napari#3477) and fix faces handedness
+vert *= -100
+faces = faces[:, ::-1]
 
 viewer = napari.Viewer(ndisplay=3)
-surface = viewer.add_surface(
-    data=(vert, faces),
-    wireframe=True,
-    face_normals=True,
-    vertex_normals=True,
-)
-viewer.reset_view()
+surface = viewer.add_surface(data=(vert, faces))
+
+# enable normals and wireframe
+surface.normals.face.visible = True
+surface.normals.vertex.visible = True
+surface.wireframe.visible = True
 
 napari.run()

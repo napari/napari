@@ -16,6 +16,7 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     def __init__(self, layer):
         node = SurfaceVisual()
+        self._meshdata = None
         super().__init__(layer, node)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -24,27 +25,9 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.shading.connect(self._on_shading_change)
-        self.layer.events.wireframe.connect(self._on_wireframe_change)
-        self.layer.events.face_normals.connect(self._on_face_normals_change)
-        self.layer.events.face_normals_color.connect(
-            self._on_face_normals_change
-        )
-        self.layer.events.face_normals_length.connect(
-            self._on_face_normals_change
-        )
-        self.layer.events.face_normals_width.connect(
-            self._on_face_normals_change
-        )
-        self.layer.events.vertex_normals.connect(
-            self._on_vertex_normals_change
-        )
-        self.layer.events.vertex_normals_color.connect(
-            self._on_vertex_normals_change
-        )
-        self.layer.events.vertex_normals_length.connect(
-            self._on_vertex_normals_change
-        )
-        self.layer.events.vertex_normals_width.connect(
+        self.layer.wireframe.events.connect(self._on_wireframe_change)
+        self.layer.normals.face.events.connect(self._on_face_normals_change)
+        self.layer.normals.vertex.events.connect(
             self._on_vertex_normals_change
         )
 
@@ -95,13 +78,10 @@ class VispySurfaceLayer(VispyBaseLayer):
             meshdata = MeshData()
         else:
             meshdata = self.node.mesh_data
-        if self.layer.face_normals:
-            self.node.face_normals.set_data(meshdata)
-            self._on_face_normals_change()
-        if self.layer.vertex_normals:
-            self.node.vertex_normals.set_data(meshdata)
-            self._on_vertex_normals_change()
+        self._meshdata = meshdata
 
+        self._on_face_normals_change()
+        self._on_vertex_normals_change()
         self._on_shading_change()
 
         self.node.update()
@@ -141,22 +121,24 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_face_normals_change(self):
-        self.node.face_normals.visible = self.layer.face_normals
+        self.node.face_normals.visible = self.layer.normals.face.visible
         if self.node.face_normals.visible:
             self.node.face_normals.set_data(
-                length=self.layer.face_normals_length,
-                color=self.layer.face_normals_color,
-                width=self.layer.face_normals_width,
+                self._meshdata,
+                length=self.layer.normals.face.length,
+                color=self.layer.normals.face.color,
+                width=self.layer.normals.face.width,
                 primitive='face',
             )
 
     def _on_vertex_normals_change(self):
-        self.node.vertex_normals.visible = self.layer.vertex_normals
+        self.node.vertex_normals.visible = self.layer.normals.vertex.visible
         if self.node.vertex_normals.visible:
             self.node.vertex_normals.set_data(
-                length=self.layer.vertex_normals_length,
-                color=self.layer.vertex_normals_color,
-                width=self.layer.vertex_normals_width,
+                self._meshdata,
+                length=self.layer.normals.vertex.length,
+                color=self.layer.normals.vertex.color,
+                width=self.layer.normals.vertex.width,
                 primitive='vertex',
             )
 
