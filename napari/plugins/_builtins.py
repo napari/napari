@@ -43,7 +43,7 @@ def npy_to_layer_data(path: Union[str, Sequence[str]]) -> List[LayerData]:
     if isinstance(path, str):
         return [(np.load(path),)]
 
-    return [np.load(p) for p in path]
+    return [(np.load(p),) for p in path]
 
 
 @napari_hook_implementation(trylast=True)
