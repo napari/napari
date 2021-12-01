@@ -495,17 +495,19 @@ def check_update_available():
     if is_stable_version(self.version):
         releases = [r for r in self.releases if is_stable_version(r)]
     else:
-        releases = [r for r in self.releases
-                    if not is_stable_version(r) or r in self.version]
+        releases = [
+            r
+            for r in self.releases
+            if not is_stable_version(r) or r in self.version
+        ]
 
     latest_release = releases[-1]
 
-    return (check_version(self.version, latest_release, '<'),
-            latest_release)
+    return (check_version(self.version, latest_release, '<'), latest_release)
 
 
-def check_updates(channels=("conda-forge", )):
-    """"""
+def check_updates(channels=("conda-forge",)):
+    """ """
     for channel in channels:
         url = f'https://api.anaconda.org/package/{channel}/napari'
         page = urlopen(self.url)
@@ -521,14 +523,16 @@ def check_updates(channels=("conda-forge", )):
                 if self.releases is None:
                     self.releases = []
                     for item in data['packages']:
-                        if ('spyder' in item and
-                                not re.search(r'spyder-[a-zA-Z]', item)):
+                        if 'spyder' in item and not re.search(
+                            r'spyder-[a-zA-Z]', item
+                        ):
                             self.releases.append(item.split('-')[1])
                 result = self.check_update_available()
             else:
                 if self.releases is None:
-                    self.releases = [item['tag_name'].replace('v', '')
-                                        for item in data]
+                    self.releases = [
+                        item['tag_name'].replace('v', '') for item in data
+                    ]
                     self.releases = list(reversed(self.releases))
 
             result = self.check_update_available()

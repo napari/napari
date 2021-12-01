@@ -159,7 +159,9 @@ class ApplicationSettings(EventedModel):
     check_updates: bool = Field(  # type: ignore [valid-type]
         default=False,
         title=trans._("Check for updates on startup"),
-        description=trans._("Check for new available napari versions when napari starts."),
+        description=trans._(
+            "Check for new available napari versions when napari starts."
+        ),
     )
 
     @validator('window_state')

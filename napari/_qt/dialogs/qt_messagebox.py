@@ -1,11 +1,6 @@
 from qtpy import PYQT5
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QMessageBox,
-    QVBoxLayout,
-    QCheckBox,
-    QSpacerItem,
-)
+from qtpy.QtWidgets import QCheckBox, QMessageBox, QSpacerItem, QVBoxLayout
 
 
 class QtMessageCheckBox(QMessageBox):
@@ -13,6 +8,7 @@ class QtMessageCheckBox(QMessageBox):
     A QMessageBox derived widget that includes a QCheckBox aligned to the right
     under the message and on top of the buttons.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
