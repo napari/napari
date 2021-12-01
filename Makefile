@@ -13,6 +13,9 @@ docs:
 typestubs:
 	python -m napari.utils.stubgen
 
+typecheck:
+	mypy napari/settings napari/types.py napari/plugins
+
 dist:
 	pip install -U check-manifest build
 	make typestubs
