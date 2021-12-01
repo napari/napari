@@ -61,13 +61,13 @@ For each type of _hook specification_ there is a corresponding section below. Ea
 
 #### napari_hook_spec
 
-```python=
+```python
 def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]
 ```
 
 #### npe2 contributions
 
-```yaml=
+```yaml
 display_name: napari
 name: napari_builtins
 contributions:
@@ -100,7 +100,7 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]
 
 #### Example npe2 contribution
 
-```yaml=
+```yaml
 name: napari_svg
 display_name: napari SVG
 entry_point: napari_svg
@@ -139,7 +139,7 @@ def writer_function(
 
 #### Example npe2 contribution
 
-```yaml=
+```yaml
 name: napari_svg
 display_name: napari SVG
 entry_point: napari_svg
@@ -172,7 +172,7 @@ Because layer type constraints are specified in the manifest, no plugin code has
 
 #### napari_hook_spec
 
-```python=
+```python
 def napari_experimental_provide_dock_widget() -> Union[
     AugmentedWidget, List[AugmentedWidget]
 ]
@@ -180,7 +180,7 @@ def napari_experimental_provide_dock_widget() -> Union[
 
 or
 
-```python=
+```python
 def napari_experimental_provide_function() -> Union[
     FunctionType, List[FunctionType]
 ]
@@ -188,7 +188,7 @@ def napari_experimental_provide_function() -> Union[
 
 #### Example npe2 contribution
 
-```yaml=
+```yaml
 name: napari_animation
 display_name: animation
 entry_point: napari_animation
@@ -247,7 +247,7 @@ To create the manifest, use the npe2 command in the terminal:
 
 This generates `napari_animation/napari.yaml` with contents:
 
-```yaml=
+```yaml
 description: A plugin for making animations in napari
 name: napari_animation
 publisher: Nicholas Sofroniew, Alister Burt, Guillaume Witz, Faris Abouakil, Talley
