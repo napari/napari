@@ -13,10 +13,11 @@ docs:
 typestubs:
 	python -m napari.utils.stubgen
 
-# much faster to run mypy as daemon
+# note: much faster to run mypy as daemon,
+# dmypy run -- ...
 # https://mypy.readthedocs.io/en/stable/mypy_daemon.html
 typecheck:
-	dmypy run -- napari/settings napari/types.py napari/plugins
+	mypy napari/settings napari/types.py napari/plugins
 
 dist:
 	pip install -U check-manifest build
