@@ -84,6 +84,10 @@ class Surface(IntensityVisualizationMixin, Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
+    wireframe : dict or SurfaceWireframe
+        Whether and how to display the edges of the surface mesh with a wireframe.
+    normals : dict or SurfaceNormals
+        Whether and how to display the face and vertex normals of the surface mesh.
 
     Attributes
     ----------
@@ -119,6 +123,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         * 'smooth'
     gamma : float
         Gamma correction for determining colormap linearity.
+    wireframe : SurfaceWireframe
+        Whether and how to display the edges of the surface mesh with a wireframe.
+    normals : SurfaceNormals
+        Whether and how to display the face and vertex normals of the surface mesh.
+
 
     Notes
     -----
@@ -153,6 +162,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        wireframe=None,
+        normals=None,
     ):
 
         ndim = data[0].shape[1]
@@ -217,8 +228,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         # Shading mode
         self._shading = shading
 
-        self.wireframe = SurfaceWireframe()
-        self.normals = SurfaceNormals()
+        self.wireframe = wireframe or SurfaceWireframe()
+        self.normals = normals or SurfaceNormals()
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
