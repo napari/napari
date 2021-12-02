@@ -1288,7 +1288,11 @@ class Points(Layer):
         if len(view_data) > 0:
             displayed_position = [position[i] for i in self._dims_displayed]
             # Get the point sizes
-            distances = abs(view_data - displayed_position)
+            if not self.fixed_canvas_size:
+                distances = abs(view_data - displayed_position)
+            else:
+                # TODO: calculate distance in canvas space
+                return None
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,
                 axis=1,
