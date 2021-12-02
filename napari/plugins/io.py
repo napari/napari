@@ -217,10 +217,10 @@ def save_layers(
             path, layers, plugin_name=plugin, _writer=_writer
         )
     elif len(layers) == 1:
-        written = _write_single_layer_with_plugins(
+        _written = _write_single_layer_with_plugins(
             path, layers[0], plugin_name=plugin, _writer=_writer
         )
-        written = [written] if written else []
+        written = [_written] if _written else []
     else:
         written = []
 

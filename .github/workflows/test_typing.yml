@@ -22,4 +22,4 @@ jobs:
           pip install types-PyYAML types-setuptools
 
       - name: Run mypy on typed modules
-        run: mypy napari/settings
+        run: make typecheck
