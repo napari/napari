@@ -131,8 +131,6 @@ class Points(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    fixed_size : bool
-        If active, point sizes do not change when zooming.
     antialias : float
         If non-zero, defines the width in pixels of antialiasing.
     spherical : bool
@@ -155,8 +153,6 @@ class Points(Layer):
     size : array (N, D)
         Array of sizes for each point in each dimension. Must have the same
         shape as the layer `data`.
-    fixed_size : bool
-        If active, point sizes do not change when zooming.
     antialias : float
         If non-zero, defines the width in pixels of antialiasing.
     spherical : bool
@@ -287,7 +283,6 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
-        fixed_size=False,
         antialias=1,
         spherical=False,
     ):
@@ -326,7 +321,6 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
-            fixed_size=Event,
             antialias=Event,
             spherical=Event,
         )
@@ -404,7 +398,6 @@ class Points(Layer):
             else self._property_choices,
         )
 
-        self.fixed_size = fixed_size
         self.size = size
         self.antialias = antialias
         self.spherical = spherical
@@ -691,16 +684,6 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
-
-    @property
-    def fixed_size(self):
-        """bool: maintain point size fixed regardless of zoom"""
-        return self._fixed_size
-
-    @fixed_size.setter
-    def fixed_size(self, value) -> bool:
-        self._fixed_size = bool(value)
-        self.events.fixed_size()
 
     @property
     def antialias(self):
@@ -1026,7 +1009,6 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
-                'fixed_size': self.fixed_size,
                 'antialias': self.antialias,
                 'spherical': self.spherical,
             }
