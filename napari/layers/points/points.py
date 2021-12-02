@@ -131,8 +131,6 @@ class Points(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    antialias : float
-        If non-zero, defines the width in pixels of antialiasing.
     spherical : bool
         Render lighting and shading on points to give a 3D spherical appearance.
 
@@ -153,8 +151,6 @@ class Points(Layer):
     size : array (N, D)
         Array of sizes for each point in each dimension. Must have the same
         shape as the layer `data`.
-    antialias : float
-        If non-zero, defines the width in pixels of antialiasing.
     spherical : bool
         Render lighting and shading on points to give a 3D spherical appearance.
     edge_width : float
@@ -243,6 +239,8 @@ class Points(Layer):
     _drag_start : list or None
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
+    _antialias : float
+        The amount of antialiasing pixels for both the marker and marker edge.
     """
 
     # TODO  write better documentation for edge_color and face_color
@@ -283,7 +281,6 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
-        antialias=1,
         spherical=False,
     ):
         if ndim is None and scale is not None:
@@ -321,8 +318,8 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
-            antialias=Event,
             spherical=Event,
+            _antialias=Event,
         )
 
         self._colors = get_color_namelist()
@@ -399,7 +396,7 @@ class Points(Layer):
         )
 
         self.size = size
-        self.antialias = antialias
+        self._antialias = True
         self.spherical = spherical
 
         self.current_properties = get_current_properties(
@@ -686,16 +683,16 @@ class Points(Layer):
             self.events.size()
 
     @property
-    def antialias(self):
+    def _antialias(self):
         """float: amount in pixels of antialiasing"""
-        return self._antialias
+        return self.__antialias
 
-    @antialias.setter
-    def antialias(self, value) -> Union[int, float]:
+    @_antialias.setter
+    def _antialias(self, value) -> Union[int, float]:
         if value < 0:
             value = 0
-        self._antialias = value
-        self.events.antialias()
+        self.__antialias = float(value)
+        self.events._antialias()
 
     @property
     def spherical(self):
@@ -1009,7 +1006,7 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
-                'antialias': self.antialias,
+                '_antialias': self._antialias,
                 'spherical': self.spherical,
             }
         )

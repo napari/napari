@@ -29,7 +29,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer._face.events.color_properties.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
-        self.layer.events.antialias.connect(self._on_antialias_change)
+        self.layer.events._antialias.connect(self._on_antialias_change)
         self.layer.events.spherical.connect(self._on_spherical_change)
 
         self._on_data_change()
@@ -170,7 +170,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_antialias_change(self):
-        self.node.antialias = self.layer.antialias
+        self.node.antialias = self.layer._antialias
 
     def _on_spherical_change(self):
         self.node.spherical = self.layer.spherical
