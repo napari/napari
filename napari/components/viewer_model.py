@@ -754,9 +754,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-        **kwargs
+        ``**kwargs``
             additional kwargs will be passed to the sample data loader provided
-            by `plugin`.  Use of **kwargs may raise an error if the kwargs do
+            by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
             not match the sample data loader.
 
         Returns
@@ -860,7 +860,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
-        **kwargs
+        ``**kwargs``
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
 

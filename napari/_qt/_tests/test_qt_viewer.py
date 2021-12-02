@@ -16,8 +16,8 @@ from napari._tests.utils import (
     layer_test_data,
     skip_local_popups,
     skip_on_win_ci,
-    slow,
 )
+from napari._vispy.utils.gl import fix_data_dtype
 from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
@@ -199,7 +199,6 @@ def test_z_order_adding_removing_images(make_napari_viewer):
 
 
 @skip_on_win_ci
-@slow(15)
 def test_screenshot(make_napari_viewer):
     "Test taking a screenshot"
     viewer = make_napari_viewer()
@@ -274,29 +273,42 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
 
 
 @pytest.mark.parametrize(
-    "dtype", ['int8', 'uint8', 'int16', 'uint16', 'float32']
+    "dtype",
+    [
+        'int8',
+        'uint8',
+        'int16',
+        'uint16',
+        'int32',
+        'float16',
+        'float32',
+        'float64',
+    ],
 )
 def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     """Test that the viewer doesn't change the underlying array."""
-
     image = np.random.rand(10, 32, 32)
     image *= 200 if dtype.endswith('8') else 2 ** 14
     image = image.astype(dtype)
     imean = image.mean()
 
     viewer = make_napari_viewer()
+    layer = viewer.add_image(image.copy())
+    data = layer.data
 
-    viewer.add_image(image.copy())
-    datamean = viewer.layers[0].data.mean()
+    datamean = np.mean(data)
     assert datamean == imean
     # toggle dimensions
     viewer.dims.ndisplay = 3
-    datamean = viewer.layers[0].data.mean()
+    datamean = np.mean(data)
     assert datamean == imean
     # back to 2D
     viewer.dims.ndisplay = 2
-    datamean = viewer.layers[0].data.mean()
+    datamean = np.mean(data)
     assert datamean == imean
+    # also check that vispy gets (almost) the same data
+    datamean = np.mean(fix_data_dtype(data))
+    assert np.allclose(datamean, imean, rtol=5e-04)
 
 
 def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):

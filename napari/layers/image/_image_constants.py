@@ -47,6 +47,18 @@ class Interpolation3D(StringEnum):
     NEAREST = auto()
 
 
+class Mode(StringEnum):
+    """
+    Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
+    allows for normal interactivity with the canvas.
+
+    TRANSFORM allows for manipulation of the layer transform.
+    """
+
+    TRANSFORM = auto()
+    PAN_ZOOM = auto()
+
+
 class Rendering(StringEnum):
     """Rendering: Rendering mode for the layer.
 
