@@ -280,7 +280,7 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
-        fixed_size=False,
+        fixed_canvas_size=False,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -317,7 +317,7 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
-            fixed_size=Event,
+            fixed_canvas_size=Event,
         )
 
         self._colors = get_color_namelist()
@@ -393,7 +393,7 @@ class Points(Layer):
             else self._property_choices,
         )
 
-        self.fixed_size = fixed_size
+        self.fixed_canvas_size = fixed_canvas_size
         self.size = size
 
         self.current_properties = get_current_properties(
@@ -681,14 +681,14 @@ class Points(Layer):
             self.events.size()
 
     @property
-    def fixed_size(self):
+    def fixed_canvas_size(self):
         """bool: maintain point size fixed regardless of zoom"""
-        return self._fixed_size
+        return self._fixed_canvas_size
 
-    @fixed_size.setter
-    def fixed_size(self, value) -> bool:
-        self._fixed_size = bool(value)
-        self.events.fixed_size()
+    @fixed_canvas_size.setter
+    def fixed_canvas_size(self, value) -> bool:
+        self._fixed_canvas_size = bool(value)
+        self.events.fixed_canvas_size()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -992,7 +992,7 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
-                'fixed_size': self.fixed_size,
+                'fixed_canvas_size': self.fixed_canvas_size,
             }
         )
         return state
