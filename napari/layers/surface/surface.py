@@ -351,8 +351,8 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
-                'wireframe': self.wireframe.to_dict(),
-                'normals': self.normals.to_dict(),
+                'wireframe': self.wireframe.dict(),
+                'normals': self.normals.dict(),
             }
         )
         return state
