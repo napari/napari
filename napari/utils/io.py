@@ -455,7 +455,7 @@ def read_csv(
 
 
 def csv_to_layer_data(
-    path: str, require_type: str = None
+    path: str, require_type: Optional[str] = None
 ) -> Optional[FullLayerData]:
     """Return layer data from a CSV file if detected as a valid type.
 
