@@ -1006,7 +1006,6 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
-                '_antialias': self._antialias,
                 'spherical': self.spherical,
             }
         )

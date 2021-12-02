@@ -14,7 +14,6 @@ pts_layer = viewer.add_points(
     face_color=colors,
     size=sizes,
     spherical=True,
-    antialias=0,
     edge_width=0,
 )
 
