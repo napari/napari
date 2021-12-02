@@ -25,5 +25,14 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     @symbol.setter
     def symbol(self, value):
-        for subv in self._subvisuals[:2]:
-            subv.symbol = value
+        for marker in self._subvisuals[:2]:
+            marker.symbol = value
+
+    @property
+    def scaling(self):
+        return self._subvisuals[0].scaling
+
+    @scaling.setter
+    def scaling(self, value):
+        for marker in self._subvisuals[:2]:
+            marker.scaling = value

@@ -67,7 +67,8 @@ class Points(Layer):
     size : float, array
         Size of the point marker. If given as a scalar, all points are made
         the same size. If given as an array, size must be the same
-        broadcastable to the same shape as the data.
+        broadcastable to the same shape as the data. Units are in data pixels,
+        unless fixed_canvas_size is active, in which case they are in canvas pixels.
     edge_width : float
         Width of the symbol edge in pixels.
     edge_color : str, array-like, dict
@@ -131,6 +132,8 @@ class Points(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
+    fixed_canvas_size : bool
+        If active, point sizes do not change when zooming.
 
     Attributes
     ----------
@@ -214,6 +217,8 @@ class Points(Layer):
         CYCLE allows the color to be set via a color cycle over an attribute
 
         COLORMAP allows color to be set via a color map over an attribute
+    fixed_canvas_size : bool
+        If active, point sizes do not change when zooming.
 
     Notes
     -----
@@ -275,6 +280,7 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
+        fixed_size=False,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -311,6 +317,7 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
+            fixed_size=Event,
         )
 
         self._colors = get_color_namelist()
@@ -386,6 +393,7 @@ class Points(Layer):
             else self._property_choices,
         )
 
+        self.fixed_size = fixed_size
         self.size = size
 
         self.current_properties = get_current_properties(
@@ -671,6 +679,16 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
+
+    @property
+    def fixed_size(self):
+        """bool: maintain point size fixed regardless of zoom"""
+        return self._fixed_size
+
+    @fixed_size.setter
+    def fixed_size(self, value) -> bool:
+        self._fixed_size = bool(value)
+        self.events.fixed_size()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -974,6 +992,7 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
+                'fixed_size': self.fixed_size,
             }
         )
         return state
