@@ -1,6 +1,6 @@
 import pytest
 
-from napari.utils._proxies import ReadOnlyWrapper
+from napari.utils._proxies import PublicOnlyProxy, ReadOnlyWrapper
 
 
 def test_ReadOnlyWrapper_setitem():
@@ -23,3 +23,27 @@ def test_ReadOnlyWrapper_setattr():
 
     with pytest.raises(TypeError):
         tc_read_only.x = 5
+
+
+def test_PublicOnlyProxy():
+    class X:
+        a = 1
+        _b = 'nope'
+
+    class Tester:
+        x = X()
+        _private = 2
+
+    t = Tester()
+    proxy = PublicOnlyProxy(t)
+    assert proxy.x.a == 1
+    assert isinstance(proxy, Tester)
+    with pytest.raises(AttributeError):
+        proxy._private
+
+    with pytest.raises(AttributeError):
+        # works on sub-objects too
+        proxy.x._b
+
+    assert '_private' not in dir(proxy)
+    assert '_private' in dir(t)
