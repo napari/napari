@@ -416,4 +416,4 @@ def test_multiscale_data_protocol():
 
     assert layer.data.dtype == float
     assert layer.data.shape == shapes[0]
-    assert isinstance(layer.data[:, :2, 2:8], np.ndarray)
+    assert isinstance(layer.data[0], np.ndarray)

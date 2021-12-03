@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import List, Sequence, Tuple, Union
 
 import numpy as np
 
 from ._data_protocols import LayerDataProtocol, assert_protocol
-from .utils.layer_utils import compute_multiscale_level_and_corners
 
 
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.
@@ -34,18 +33,12 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     def __init__(
         self,
         data: Sequence[LayerDataProtocol],
-        max_size: Optional[Sequence[int]] = None,
     ) -> None:
         self._data: List[LayerDataProtocol] = list(data)
         if not self._data:
             raise ValueError("Multiscale data must be a (non-empty) sequence")
         for d in self._data:
             assert_protocol(d)
-
-        self.max_size = self._data[-1].shape if max_size is None else max_size
-        self.downsample_factors = (
-            np.array([d.shape for d in data]) / data[0].shape
-        )
 
     @property
     def dtype(self) -> np.dtype:
@@ -62,42 +55,11 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         """Tuple shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
-    # for now, we're not fully implementing LayerDataProtocol here since
-    # we don't know what to do for fancy indexing, or mixed slice/int tuples
     def __getitem__(  # type: ignore [override]
         self, key: Union[int, Tuple[slice, ...]]
     ) -> LayerDataProtocol:
-        """Multiscale indexing.
-
-        When indexing with a single integer, the behavior is exactly like the
-        input squence (it retrieves the sepcified level).
-
-        When indexing with a tuple of slices, it will extract a chunk from the
-        appropriate level using `compute_multiscale_level_and_corners`.
-
-        All other `key` types are currently undefined and raise a
-        NotImplementedError (for mixed tuple of slice and int), or TypeError
-        (for everything else.)
-        """
-        if isinstance(key, int):
-            return self._data[key]
-
-        if isinstance(key, tuple):
-            if all(isinstance(idx, slice) for idx in key):
-                corners = np.array(
-                    [
-                        (sl.start or 0, sl.stop or size)
-                        for sl, size in zip(key, self._data[0].shape)
-                    ]
-                )
-                level, corners = compute_multiscale_level_and_corners(
-                    corners, self.max_size, self.downsample_factors
-                )
-                return self._data[level][corners]
-            else:
-                raise NotImplementedError("cannot handle slices and ints")
-
-        raise TypeError(f"Cannot index multiscale data with {type(key)}")
+        """Multiscale indexing."""
+        return self._data[key]
 
     def __len__(self) -> int:
         return len(self._data)
