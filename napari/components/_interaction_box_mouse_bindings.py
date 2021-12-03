@@ -1,6 +1,11 @@
+import warnings
+
 import numpy as np
 
+from ..layers.utils.layer_utils import dims_displayed_world_to_layer
+from ..utils.action_manager import action_manager
 from ..utils.transforms import Affine
+from ..utils.translations import trans
 from ._interaction_box_constants import Box
 
 
@@ -43,10 +48,153 @@ class InteractionBoxMouseBindings:
         self._selected_vertex: int = None
         self._fixed_vertex: int = None
         self._fixed_aspect: float = None
+        self._layer_listening_for_affine = None
         self._viewer = viewer
         self._interaction_box_model = viewer.overlays.interaction_box
         self._interaction_box_visual = interaction_box_visual
+        viewer.layers.events.inserted.connect(self._on_add_layer)
+        viewer.layers.events.removed.connect(self._on_remove_layer)
+        viewer.layers.selection.events.active.connect(self._on_active)
+        viewer.dims.events.order.connect(self._on_dim_change)
+        viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
+        self._interaction_box_model.events.transform_drag.connect(
+            self._on_transform_change
+        )
         self.initialize_mouse_events(viewer)
+        self.initialize_key_events(viewer)
+
+    def _on_remove_layer(self, event):
+        """Gets called when layer is removed and removes event listener"""
+
+        layer = event.value
+        if hasattr(layer, 'mode'):
+            layer.events.mode.disconnect(self)
+
+    def _on_add_layer(self, event):
+        """Gets called when layer is added and adds event listener to mode change"""
+        layer = event.value
+        if hasattr(layer, 'mode'):
+            layer.events.mode.connect(self._on_mode_change)
+
+    def _on_active(self, event):
+        """Gets called when active layer is changed"""
+        active_layer = event.value
+        if getattr(active_layer, 'mode', None) == 'transform':
+            self._couple_interaction_box_to_active()
+            self._interaction_box_model.show = True
+            self._layer_affine_event_helper(active_layer)
+        else:
+            self._interaction_box_model.show = False
+
+    def _on_ndisplay_change(self):
+        """Gets called on ndisplay change to disable interaction box in 3D"""
+        if (
+            getattr(self._viewer.layers.selection.active, 'mode', None)
+            == 'transform'
+            and self._viewer.dims.ndisplay > 2
+        ):
+            self._viewer.layers.selection.active.mode = 'pan_zoom'
+
+    def _couple_interaction_box_to_active(self, event=None):
+        viewer = self._viewer
+        active_layer = viewer.layers.selection.active
+        # This is necessary in case the current layer has fewer dims than the viewer
+
+        layer_dims = dims_displayed_world_to_layer(
+            list(viewer.dims.displayed),
+            viewer.dims.ndim,
+            active_layer.ndim,
+        )
+        # The -0.5 is necessary because the pixel at (0,0) actually extends to (-0.5,0.5) (in case of the image layer)
+
+        viewer.overlays.interaction_box.points = (
+            active_layer.extent.data[:, layer_dims] - 0.5
+        )
+        viewer.overlays.interaction_box.transform = (
+            active_layer.affine.set_slice(layer_dims)
+        )
+
+    def _on_dim_change(self, event):
+        """Gets called when changing order of dims to make sure interaction box is using right extent and transform"""
+        if (
+            getattr(self._viewer.layers.selection.active, 'mode', None)
+            == 'transform'
+        ):
+            self._couple_interaction_box_to_active()
+
+    def _layer_affine_event_helper(self, layer):
+        """Helper function to connect listener to the transform of active layer and removes previous callbacks"""
+
+        if self._layer_listening_for_affine is not None:
+            self._layer_listening_for_affine.events.affine.disconnect(self)
+        layer.events.affine.connect(self._couple_interaction_box_to_active)
+        self._layer_listening_for_affine = layer
+
+    def _on_mode_change(self, event):
+        """Gets called on mode change to enable interaction box in transform mode"""
+        viewer = self._viewer
+        if event.mode == 'transform':
+            if viewer.dims.ndisplay > 2:
+                warnings.warn(
+                    trans._(
+                        'Interactive transforms in 3D are not yet supported.',
+                        deferred=True,
+                    ),
+                    category=UserWarning,
+                )
+                viewer.layers.selection.active.mode = 'pan_zoom'
+                return
+            viewer.layers.selection.active = event.source
+            self._couple_interaction_box_to_active()
+            viewer.overlays.interaction_box.show_vertices = True
+            viewer.overlays.interaction_box.show_handle = True
+            viewer.overlays.interaction_box.allow_new_selection = False
+            viewer.overlays.interaction_box.show = True
+            self._layer_affine_event_helper(event.source)
+
+        else:
+            viewer.overlays.interaction_box.show = False
+            viewer.overlays.interaction_box.points = None
+            viewer.overlays.interaction_box.transform = Affine()
+
+    def _on_transform_change(self, event):
+        """Gets called when the interaction box is transformed to update transform of the layer"""
+
+        layer_dims_displayed = dims_displayed_world_to_layer(
+            list(self._viewer.dims.displayed),
+            self._viewer.dims.ndim,
+            self._viewer.layers.selection.active.ndim,
+        )
+        self._viewer.layers.selection.active.affine = (
+            self._viewer.layers.selection.active.affine.replace_slice(
+                layer_dims_displayed, event.value
+            )
+        )
+
+    def initialize_key_events(self, viewer):
+
+        action_manager.register_action(
+            "napari:reset_active_layer_affine",
+            self._reset_active_layer_affine,
+            trans._("Reset the affine transform of the active layer"),
+            self._viewer,
+        )
+
+        action_manager.register_action(
+            "napari:transform_active_layer",
+            self._transform_active_layer,
+            trans._("Activate transform mode for the active layer"),
+            self._viewer,
+        )
+
+        @viewer.bind_key('Shift')
+        def hold_to_lock_aspect_ratio(viewer):
+            """Hold to lock aspect ratio when resizing a shape."""
+            # on key press
+            self._fixed_aspect = True
+            yield
+            # on key release
+            self._fixed_aspect = False
 
     def initialize_mouse_events(self, viewer):
         """Adds event handling functions to the layer"""
@@ -61,7 +209,7 @@ class InteractionBoxMouseBindings:
 
             # The _box of the visual model has the handle
             box = self._interaction_box_visual._box
-            coord = event.position
+            coord = [event.position[i] for i in viewer.dims.displayed]
             distances = abs(box - coord)
 
             # Get the vertex sizes
@@ -78,6 +226,7 @@ class InteractionBoxMouseBindings:
                     self._selected_vertex = None
             else:
                 self._selected_vertex = None
+            self._interaction_box_model.selected_vertex = self._selected_vertex
 
         @viewer.mouse_drag_callbacks.append
         def mouse_drag(viewer, event):
@@ -85,7 +234,9 @@ class InteractionBoxMouseBindings:
                 return
 
             # Handling drag start, decide what action to take
-            self._set_drag_start_values(viewer, event.position)
+            self._set_drag_start_values(
+                viewer, [event.position[i] for i in viewer.dims.displayed]
+            )
             drag_callback = None
             final_callback = None
             if self._selected_vertex is not None:
@@ -154,7 +305,10 @@ class InteractionBoxMouseBindings:
         """Gets called upon mouse_move in the case of a rotation"""
         center = self._drag_start_box[Box.CENTER]
         handle = self._drag_start_box[Box.HANDLE]
-        mouse_offset = np.array(event.position) - center
+        mouse_offset = (
+            np.array([event.position[i] for i in viewer.dims.displayed])
+            - center
+        )
         handle_offset = handle - center
         angle = np.degrees(
             np.arctan2(mouse_offset[0], mouse_offset[1])
@@ -184,7 +338,9 @@ class InteractionBoxMouseBindings:
         transform = self._interaction_box_model.transform_start.inverse
         center = transform(self._drag_start_box[self._fixed_vertex])
         transform = Affine(translate=-center).compose(transform)
-        coord = transform(np.array(event.position))
+        coord = transform(
+            np.array([event.position[i] for i in viewer.dims.displayed])
+        )
         drag_start = transform(self._drag_start_box[self._selected_vertex])
         # If sidepoint of fixed aspect ratio project offset onto vector along which to scale
         # Since the fixed verted is now at the origin this vector is drag_start
@@ -221,7 +377,10 @@ class InteractionBoxMouseBindings:
     def _on_drag_translate(self, viewer, event):
         """Gets called upon mouse_move in the case of a translation operation"""
 
-        offset = np.array(event.position) - self._drag_start_coordinates
+        offset = (
+            np.array([event.position[i] for i in viewer.dims.displayed])
+            - self._drag_start_coordinates
+        )
 
         transform = Affine(translate=offset).compose(
             self._interaction_box_model.transform_start
@@ -241,7 +400,7 @@ class InteractionBoxMouseBindings:
         self._interaction_box_model.points = np.array(
             [
                 self._drag_start_coordinates,
-                np.array(event.position),
+                np.array([event.position[i] for i in viewer.dims.displayed]),
             ]
         )
         self._interaction_box_model.show = True
@@ -258,3 +417,16 @@ class InteractionBoxMouseBindings:
             self._interaction_box_model.selection_box_final = (
                 self._interaction_box_model._box[Box.WITHOUT_HANDLE]
             )
+
+    def _reset_active_layer_affine(self, event=None):
+        active_layer = self._viewer.layers.selection.active
+        if active_layer is not None:
+            active_layer.affine = Affine(ndim=active_layer.ndim)
+
+    def _transform_active_layer(self, event=None):
+        active_layer = self._viewer.layers.selection.active
+        if active_layer is not None and hasattr(active_layer, 'mode'):
+            if active_layer.mode != 'transform':
+                active_layer.mode = 'transform'
+            else:
+                active_layer.mode = 'pan_zoom'

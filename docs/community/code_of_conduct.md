@@ -1,3 +1,4 @@
+(napari-coc)=
 # Code of Conduct
 
 ## Introduction

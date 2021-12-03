@@ -1,3 +1,4 @@
+(napari-governance)=
 # Governance model
 
 ## Abstract
@@ -29,8 +30,7 @@ project in concrete ways, such as:
 - reporting issues on our
   [GitHub issues page](https://github.com/napari/napari/issues);
 - proposing a change to the documentation, or
-  [tutorials](https://github.com/napari/napari-tutorials) via a
-  GitHub pull request;
+  tutorials via a [GitHub pull request](https://github.com/napari/napari/pulls);
 - discussing the design of the napari or its tutorials on in existing
   [issues](https://github.com/napari/napari/issues) and
   [pull requests](https://github.com/napari/napari/pulls);
@@ -42,7 +42,7 @@ among other possibilities. Any community member can become a contributor, and
 all are encouraged to do so. By contributing to the project, community members
 can directly help to shape its future.
 
-Contributors are encouraged to read the [contributing guide](CONTRIBUTING.md).
+Contributors are encouraged to read the [contributing guide](napari-contributing).
 
 ### Core developers
 
@@ -56,7 +56,7 @@ activities. Core developers appear as organization members on the napari
 [GitHub organization](https://github.com/orgs/napari/people) and are on our
 [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs) GitHub team. Core
 developers are expected to review code contributions while adhering to the
-[core developer guide](CORE_DEV_GUIDE.md). New core developers can be nominated
+[core developer guide](core-dev-guide). New core developers can be nominated
 by any existing core developer, and for details on that process see our core
 developer guide.
 
@@ -88,7 +88,7 @@ is always possible. The initial steering council of napari consists of
 The SC membership is revisited every January. SC members who do
 not actively engage with the SC duties are expected to resign. New members are
 added by nomination by a core developer. Nominees should have demonstrated
-long-term, continued commitment to the project and its [mission and values](MISSION_AND_VALUES.md). A
+long-term, continued commitment to the project and its [mission and values](mission-and-values). A
 nomination will result in discussion that cannot take more than a month and
 then admission to the SC by consensus. During that time deadlocked votes of the SC will
 be postponed until the new member has joined and another vote can be held.
@@ -105,7 +105,7 @@ place on the [issue tracker](https://github.com/napari/napari/issues) and projec
 sensitive discussion may occur on a private core developer mailing list
 `napari-core-devs@googlegroups.com` or private chat channel.
 
-Decisions should be made in accordance with the [mission and values](MISSION_AND_VALUES.md)
+Decisions should be made in accordance with the [mission and values](mission-and-values)
 of the napari project.
 
 napari uses a “consensus seeking” process for making decisions. The group

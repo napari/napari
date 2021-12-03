@@ -23,6 +23,7 @@
     - file: plugins/for_napari_developers
     - file: plugins/for_plugin_developers
     - file: plugins/hook_specifications
+    - file: plugins/best_practices
 
 - file: developers/index
   sections:
@@ -36,6 +37,7 @@
     - file: developers/governance
     - file: developers/mission_and_values
     - file: developers/working_groups
+    - file: developers/profiling
     - file: developers/release
     - file: developers/roadmap_0_3
     - file: developers/roadmap_0_3_retrospective
@@ -50,6 +52,7 @@
 
 - file: release/index
   sections:
+    - file: release/release_0_4_12
     - file: release/release_0_4_11
     - file: release/release_0_4_10
     - file: release/release_0_4_9
@@ -90,3 +93,5 @@
 - file: api/index
   sections:
     - file: api/napari
+
+- file: glossary
