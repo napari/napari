@@ -6,6 +6,7 @@ import dask.threaded
 import numpy as np
 import pooch
 import pytest
+import skimage
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -21,9 +22,14 @@ from napari.utils.config import async_loading
 if not hasattr(pooch.utils, 'file_hash'):
     setattr(pooch.utils, 'file_hash', pooch.hashes.file_hash)
 
-try:
+
+SKIMAGE_VERSION = tuple(int(v) for v in skimage.__version__.split('.'))
+
+if SKIMAGE_VERSION[:2] >= (0, 19):
+    from skimage.data._fetchers import image_fetcher
+elif SKIMAGE_VERSION[:2] >= (0, 16):
     from skimage.data import image_fetcher
-except ImportError:
+else:
     from skimage.data import data_dir
 
     class image_fetcher:
