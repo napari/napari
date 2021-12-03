@@ -34,6 +34,7 @@ from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
 from ..utils import perf
+from ..utils._proxies import PublicOnlyProxy
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
@@ -670,10 +671,12 @@ class Window:
         else:
             for param in sig.parameters.values():
                 if param.name == 'napari_viewer':
-                    kwargs['napari_viewer'] = self.qt_viewer.viewer
+                    kwargs['napari_viewer'] = PublicOnlyProxy(
+                        self.qt_viewer.viewer
+                    )
                     break
                 if param.annotation in ('napari.viewer.Viewer', Viewer):
-                    kwargs[param.name] = self.qt_viewer.viewer
+                    kwargs[param.name] = PublicOnlyProxy(self.qt_viewer.viewer)
                     break
                 # cannot look for param.kind == param.VAR_KEYWORD because
                 # QWidget allows **kwargs but errs on unknown keyword arguments

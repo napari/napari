@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
     from .._qt.qthreading import FunctionWorker
     from ..layers import Layer
+    from ..utils._proxies import PublicOnlyProxy
     from ..viewer import Viewer
 
 
@@ -278,6 +279,13 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
         if hasattr(parent, 'qt_viewer'):
             return parent.qt_viewer.viewer
         parent = parent.parent()
+    return None
+
+
+def proxy_viewer_ancestor(widget) -> Optional[PublicOnlyProxy[Viewer]]:
+    viewer = find_viewer_ancestor(widget)
+    if viewer:
+        return PublicOnlyProxy(viewer)
     return None
 
 

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ._qt.qt_main_window import Window
 
 
-@mgui.register_type(bind=_magicgui.find_viewer_ancestor)
+@mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
 class Viewer(ViewerModel):
     """Napari ndarray viewer.
 
