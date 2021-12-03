@@ -372,9 +372,8 @@ class Vectors(Layer):
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
                 'ndim': self.ndim,
+                'features': self.features,
             }
         )
         return state

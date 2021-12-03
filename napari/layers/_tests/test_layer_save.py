@@ -2,8 +2,10 @@ import os
 
 import numpy as np
 
-
 # the layer_writer_and_data fixture is defined in napari/conftest.py
+import pandas as pd
+
+
 def test_layer_save(tmpdir, layer_writer_and_data):
     """Test saving layer data."""
     writer, layer_data, extension, reader, Layer = layer_writer_and_data
@@ -40,8 +42,16 @@ def test_layer_save(tmpdir, layer_writer_and_data):
     else:
         np.testing.assert_allclose(layer_data[0], read_layer_data[0])
 
-    # # Compare layer metadata
-    np.testing.assert_equal(layer_data[1], read_layer_data[1])
+    # Compare layer metadata
+    assert layer_data[1].keys() == read_layer_data[1].keys()
+    for key in layer_data[1]:
+        data = layer_data[1][key]
+        read_data = read_layer_data[1][key]
+        if isinstance(data, pd.DataFrame):
+            pd.testing.assert_frame_equal(data, read_data)
+        else:
+            np.testing.assert_equal(data, read_data)
+
     # Compare layer type
     assert layer_data[2] == read_layer_data[2]
 

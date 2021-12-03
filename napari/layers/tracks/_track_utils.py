@@ -155,7 +155,7 @@ class TrackManager:
         features = validate_features(features, len(self.data))
         if 'track_id' not in features:
             features['track_id'] = self.track_ids
-        self._features = features.iloc[self._order].reset_index()
+        self._features = features.iloc[self._order].reset_index(drop=True)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

@@ -16,15 +16,20 @@ def test_attrs_arrays(Layer, data, ndim):
 
     properties = layer._get_state()
 
-    # Check every property is in call signature
-    signature = inspect.signature(Layer)
+    # excluding affine transform and `cache` which is not yet in `_get_state`
+    # excluding properties and property_choices as deprecated parameters
+    parameters = {
+        p
+        for p in inspect.signature(Layer).parameters
+        if p not in ('cache', 'affine', 'properties', 'property_choices')
+    }
 
+    # Check every property is also a parameter.
     for prop in properties.keys():
-        assert prop in signature.parameters
+        assert prop in parameters
 
     # Check number of properties is same as number in signature
-    # excluding affine transform and `cache` which is not yet in `_get_state`
-    assert len(properties) == len(signature.parameters) - 2
+    assert len(properties) == len(parameters)
 
     # Check new layer can be created
     new_layer = Layer(**properties)
@@ -38,7 +43,7 @@ def test_attrs_arrays(Layer, data, ndim):
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
 def test_no_callbacks(Layer, data, ndim):
-    """Test no internal callbacks for layer emmitters."""
+    """Test no internal callbacks for layer emitters."""
     layer = Layer(data)
     # Check layer has been correctly created
     assert layer.ndim == ndim

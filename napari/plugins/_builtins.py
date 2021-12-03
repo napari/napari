@@ -164,14 +164,14 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
         # If an extension is provided then it must be `.csv`
         return None
 
-    properties = meta.get('properties', {})
+    properties = meta.get('features', {})
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
     column_names = ['axis-' + str(n) for n in range(data.shape[1])]
-    if properties:
-        column_names += properties.keys()
+    if len(properties) > 0:
+        column_names += list(properties.keys())
         prop_table = [
-            np.expand_dims(col, axis=1) for col in properties.values()
+            np.expand_dims(col, axis=1) for _, col in properties.items()
         ]
     else:
         prop_table = []

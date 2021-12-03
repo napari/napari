@@ -227,7 +227,7 @@ class Tracks(Layer):
         state.update(
             {
                 'data': self.data,
-                'properties': self.properties,
+                'features': self.features,
                 'graph': self.graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
@@ -369,7 +369,7 @@ class Tracks(Layer):
         self._manager.build_tracks()
 
         # reset the properties and recolor the tracks
-        self.properties = {}
+        self.features = {}
         self._recolor_tracks()
 
         # reset the graph

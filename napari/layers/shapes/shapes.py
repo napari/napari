@@ -1511,8 +1511,6 @@ class Shapes(Layer):
         state.update(
             {
                 'ndim': self.ndim,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
                 'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
@@ -1527,6 +1525,7 @@ class Shapes(Layer):
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
+                'features': self.features,
             }
         )
         return state

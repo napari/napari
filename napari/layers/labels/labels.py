@@ -540,7 +540,6 @@ class Labels(_ImageBase):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
-                'properties': self.properties,
                 'rendering': self.rendering,
                 'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
                 'experimental_clipping_planes': [
@@ -549,6 +548,7 @@ class Labels(_ImageBase):
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,
+                'features': self.features,
             }
         )
         return state
