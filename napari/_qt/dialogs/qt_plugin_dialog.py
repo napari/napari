@@ -7,6 +7,7 @@ from napari_plugin_engine.dist import standard_metadata
 from qtpy.QtCore import (
     QEvent,
     QObject,
+    QPoint,
     QProcess,
     QProcessEnvironment,
     QSize,
@@ -46,6 +47,7 @@ from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
 from ..qthreading import create_worker
+from ..widgets.qt_message_popup import WarnPopup
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
 
@@ -322,11 +324,11 @@ class PluginListItem(QFrame):
 
         self.help_button.setText(trans._("Website"))
         self.help_button.setObjectName("help_button")
+        if npe_version != 1:
+            self.enabled_checkbox.setEnabled(False)
 
         if installed:
             self.enabled_checkbox.show()
-            if npe_version != 1:
-                self.enabled_checkbox.setEnabled(False)
             self.action_button.setText(trans._("uninstall"))
             self.action_button.setObjectName("remove_button")
         else:
@@ -484,7 +486,6 @@ class QPluginList(QListWidget):
         item = QListWidgetItem(searchable_text, parent=self)
         item.version = project_info.version
         super().addItem(item)
-
         widg = PluginListItem(
             *project_info,
             parent=self,
@@ -494,6 +495,7 @@ class QPluginList(QListWidget):
             npe_version=npe_version,
         )
         item.widget = widg
+        item.npe_version = npe_version
         action_name = 'uninstall' if installed else 'install'
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
@@ -526,6 +528,19 @@ class QPluginList(QListWidget):
         item.setText("0-" + item.text())
         method = getattr(self.installer, action_name)
         self._remove_list.append((pkg_name, item))
+        if item.npe_version != 1:
+            # show warning pop up dialog
+            message = 'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+            self._warn_dialog = WarnPopup(
+                text=message,
+            )
+
+            delta_x = 75
+            global_point = widget.action_button.mapToGlobal(
+                widget.action_button.rect().topLeft()
+            )
+            global_point = QPoint(global_point.x() - delta_x, global_point.y())
+            self._warn_dialog.move(global_point)
 
         if action_name == "install":
             if update:
@@ -535,11 +550,13 @@ class QPluginList(QListWidget):
                 widget.set_busy(trans._("installing..."), update)
 
             method([pkg_name])
+            self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == "uninstall":
             widget.set_busy(trans._("uninstalling..."), update)
             widget.update_btn.setDisabled(True)
             method([pkg_name])
+            self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == "cancel":
             widget.set_busy(trans._("cancelling..."), update)
