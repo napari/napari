@@ -528,6 +528,7 @@ class QPluginList(QListWidget):
         item.setText("0-" + item.text())
         method = getattr(self.installer, action_name)
         self._remove_list.append((pkg_name, item))
+        self._warn_dialog = None
         if item.npe_version != 1:
             # show warning pop up dialog
             message = 'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
@@ -550,13 +551,15 @@ class QPluginList(QListWidget):
                 widget.set_busy(trans._("installing..."), update)
 
             method([pkg_name])
-            self._warn_dialog.exec_()
+            if self._warn_dialog:
+                self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == "uninstall":
             widget.set_busy(trans._("uninstalling..."), update)
             widget.update_btn.setDisabled(True)
             method([pkg_name])
-            self._warn_dialog.exec_()
+            if self._warn_dialog:
+                self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == "cancel":
             widget.set_busy(trans._("cancelling..."), update)
