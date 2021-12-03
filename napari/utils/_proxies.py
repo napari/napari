@@ -1,3 +1,4 @@
+import re
 from typing import Generic, TypeVar
 
 import wrapt
@@ -30,6 +31,9 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
         )
 
 
+_SUNDER = re.compile('^_[^_]')
+
+
 class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     """Prevent's private access."""
 
@@ -49,3 +53,6 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     def __repr__(self):
         return repr(self.__wrapped__)
+
+    def __dir__(self):
+        return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]

@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Type
 
 from typing_extensions import get_args
 
+from ..utils._proxies import PublicOnlyProxy
+
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
@@ -24,7 +26,6 @@ if TYPE_CHECKING:
 
     from .._qt.qthreading import FunctionWorker
     from ..layers import Layer
-    from ..utils._proxies import PublicOnlyProxy
     from ..viewer import Viewer
 
 
