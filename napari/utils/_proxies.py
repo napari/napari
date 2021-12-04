@@ -49,10 +49,20 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
                     name=name,
                 )
             )
-        return PublicOnlyProxy(super().__getattr__(name))
+        attr = super().__getattr__(name)
+        return (
+            CallablePublicOnlyProxy(attr)
+            if callable(attr)
+            else PublicOnlyProxy(attr)
+        )
 
     def __repr__(self):
         return repr(self.__wrapped__)
 
     def __dir__(self):
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
+
+
+class CallablePublicOnlyProxy(PublicOnlyProxy[_T]):
+    def __call__(self, *args, **kwargs):
+        return self.__wrapped__(*args, **kwargs)
