@@ -1,5 +1,5 @@
 import re
-from typing import Generic, TypeVar
+from typing import Callable, Generic, TypeVar
 
 import wrapt
 
@@ -63,6 +63,6 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
 
 
-class CallablePublicOnlyProxy(PublicOnlyProxy[_T]):
+class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
     def __call__(self, *args, **kwargs):
         return self.__wrapped__(*args, **kwargs)
