@@ -30,6 +30,9 @@ def test_PublicOnlyProxy():
         a = 1
         _b = 'nope'
 
+        def method(self):
+            return 2
+
     class Tester:
         x = X()
         _private = 2
@@ -37,6 +40,8 @@ def test_PublicOnlyProxy():
     t = Tester()
     proxy = PublicOnlyProxy(t)
     assert proxy.x.a == 1
+    assert proxy.x.method() == 2
+
     assert isinstance(proxy, Tester)
     with pytest.raises(AttributeError):
         proxy._private
