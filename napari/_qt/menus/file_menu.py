@@ -135,7 +135,7 @@ class FileMenu(NapariMenu):
         """Save screenshot of current display with viewer, default .png"""
         hist = get_save_history()
         dial = ScreenshotDialog(
-            self._win.screenshot, self._win.qt_viewer, hist[0], hist
+            self._win.screenshot, self._win._qt_viewer, hist[0], hist
         )
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])

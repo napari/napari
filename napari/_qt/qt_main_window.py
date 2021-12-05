@@ -543,9 +543,19 @@ class Window:
 
     @property
     def qt_viewer(self):
-        # we should eventually choose what we'd like to be "public" here
-        # and provide a "window API" that gives access to it... rather than
-        # just giving the qt_viewer.
+        warnings.warn(
+            trans._(
+                'Public access to Window.qt_viewer is deprecated and will be removed in\nv0.5.0. It is considered an "implementation detail" of the napari\napplication, not part of the napari viewer model. If your use case\nrequires access to qt_viewer, please open an issue to discuss.',
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self._qt_window._qt_viewer
+
+    @property
+    def _qt_viewer(self):
+        # this is starting to be "vestigial"... this property could be removed
         return self._qt_window._qt_viewer
 
     @property
