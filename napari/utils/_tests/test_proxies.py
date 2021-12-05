@@ -47,19 +47,19 @@ def test_PublicOnlyProxy():
     assert proxy.x.method() == 2
 
     assert isinstance(proxy, Tester)
-    with pytest.raises(AttributeError) as e:
+    with pytest.warns(FutureWarning) as e:
         proxy._private
-        assert 'Private attribute access' in str(e)
+        assert 'Private attribute access' in str(e[0].message)
 
-    with pytest.raises(AttributeError) as e:
+    with pytest.warns(FutureWarning) as e:
         # works on sub-objects too
         proxy.x._b
-        assert 'Private attribute access' in str(e)
+        assert 'Private attribute access' in str(e[0].message)
 
-    with pytest.raises(AttributeError) as e:
+    with pytest.warns(FutureWarning) as e:
         # works on sub-items too
         proxy[0]._b
-        assert 'Private attribute access' in str(e)
+        assert 'Private attribute access' in str(e[0].message)
 
     assert '_private' not in dir(proxy)
     assert '_private' in dir(t)

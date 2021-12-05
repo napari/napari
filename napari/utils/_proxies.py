@@ -1,4 +1,5 @@
 import re
+import warnings
 from typing import Any, Callable, Generic, TypeVar
 
 import wrapt
@@ -41,14 +42,22 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     def __getattr__(self, name: str):
         if name.startswith('_'):
-            name = f'{type(self.__wrapped__).__name__}.{name}'
-            raise AttributeError(
+            warnings.warn(
                 trans._(
-                    "Private attribute access ('{name}') not allowed in this context.",
+                    "Private attribute access in this context is deprecated and will be unavailable in version 0.4.14",
                     deferred=True,
-                    name=name,
-                )
+                ),
+                category=FutureWarning,
+                stacklevel=2,
             )
+            # name = f'{type(self.__wrapped__).__name__}.{name}'
+            # raise AttributeError(
+            #     trans._(
+            #         "Private attribute access ('{name}') not allowed in this context.",
+            #         deferred=True,
+            #         name=name,
+            #     )
+            # )
         return self.create(super().__getattr__(name))
 
     def __getitem__(self, key):
