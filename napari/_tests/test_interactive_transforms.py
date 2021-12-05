@@ -101,16 +101,20 @@ def test_vertex_highlight(make_napari_viewer):
     viewer.overlays.interaction_box.selected_vertex = 9
 
     np.testing.assert_almost_equal(
-        viewer.window.qt_viewer.interaction_box_visual.round_marker_node._data[
+        viewer.window._qt_viewer.interaction_box_visual.round_marker_node._data[
             'a_bg_color'
-        ][0][:-1],
-        viewer.window.qt_viewer.interaction_box_visual._highlight_color,
+        ][
+            0
+        ][
+            :-1
+        ],
+        viewer.window._qt_viewer.interaction_box_visual._highlight_color,
     )
 
 
 def test_panzoom_on_space(make_napari_viewer):
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
     data = np.random.random((2, 6, 30, 40))
     layer = viewer.add_image(data)
 
