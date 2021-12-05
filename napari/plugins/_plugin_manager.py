@@ -46,15 +46,18 @@ CallOrderDict = Dict[str, List[PluginHookOption]]
 class NapariPluginManager(PluginManager):
     """PluginManager subclass for napari-specific functionality.
 
-    Events
-    ------
-    registered (value: str)
+    Notes
+    -----
+
+    The events emitted by the plugin include:
+
+    * registered (value: str)
         Emitted after plugin named `value` has been registered.
-    unregistered (value: str)
+    * unregistered (value: str)
         Emitted after plugin named `value` has been unregistered.
-    enabled (value: str)
+    * enabled (value: str)
         Emitted after plugin named `value` has been removed from the block list.
-    disabled (value: str)
+    * disabled (value: str)
         Emitted after plugin named `value` has been added to the block list.
     """
 
@@ -136,7 +139,7 @@ class NapariPluginManager(PluginManager):
             self._theme_data,
             self._function_widgets,
         ):
-            _dict.pop(_name, None)
+            _dict.pop(_name, None)  # type: ignore
 
         self.events.unregistered(value=_name)
 
@@ -169,7 +172,7 @@ class NapariPluginManager(PluginManager):
             sooner.
         """
 
-        order = {}
+        order: CallOrderDict = {}
         for spec_name, caller in self.hooks.items():
             # no need to save call order unless we only use first result
             if first_result_only and not caller.is_firstresult:
@@ -245,10 +248,11 @@ class NapariPluginManager(PluginManager):
             warn(message=warn_message)
             return
 
-        _data = {}
-        for name, datum in list(data.items()):
-            if isinstance(datum, dict):
-                if 'data' not in datum or 'display_name' not in datum:
+        _data: Dict[str, SampleDict] = {}
+        for name, _datum in list(data.items()):
+            if isinstance(_datum, dict):
+                datum: SampleDict = _datum
+                if 'data' not in _datum or 'display_name' not in _datum:
                     warn_message = trans._(
                         'In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for key {name!r} that does not have required keys: "data" and "display_name". Ignoring',
                         deferred=True,
@@ -259,7 +263,7 @@ class NapariPluginManager(PluginManager):
                     warn(message=warn_message)
                     continue
             else:
-                datum = {'data': datum, 'display_name': name}
+                datum = {'data': _datum, 'display_name': name}
 
             if not (
                 callable(datum['data'])
@@ -368,7 +372,7 @@ class NapariPluginManager(PluginManager):
         settings = get_settings()
         current_theme = settings.appearance.theme
         if current_theme in self._theme_data[plugin_name]:
-            settings.appearance.theme = "dark"
+            settings.appearance.theme = "dark"  # type: ignore
             warnings.warn(
                 message=trans._(
                     "The current theme {current_theme!r} was provided by the plugin {plugin_name!r} which was disabled or removed. Switched theme to the default.",
@@ -398,7 +402,7 @@ class NapariPluginManager(PluginManager):
 
         dock_widgets = zip(repeat("dock"), self._dock_widgets.items())
         func_widgets = zip(repeat("func"), self._function_widgets.items())
-        yield from chain(dock_widgets, func_widgets)
+        yield from chain(dock_widgets, func_widgets)  # type: ignore [misc]
 
     def register_dock_widget(
         self,
@@ -667,7 +671,7 @@ class NapariPluginManager(PluginManager):
         self,
         plugin: str,
         extensions: Union[str, Iterable[str]],
-        type_: str = None,
+        type_: Optional[str] = None,
     ) -> None:
         """helper method for public assign_<type_>_to_extensions functions."""
         caller: HookCaller = getattr(self.hook, f'napari_get_{type_}', None)

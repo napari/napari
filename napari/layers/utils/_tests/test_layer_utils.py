@@ -16,7 +16,9 @@ from napari.layers.utils.layer_utils import (
 data_dask = da.random.random(
     size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
 )
-
+data_dask_8b = da.random.randint(
+    0, 100, size=(1_000, 10, 10), chunks=(1, 10, 10), dtype=np.uint8
+)
 data_dask_1d = da.random.random(size=(20_000_000,), chunks=(5000,))
 
 data_dask_1d_rgb = da.random.random(size=(5_000_000, 3), chunks=(50_000, 3))
@@ -66,38 +68,13 @@ def test_calc_data_range():
     assert np.all(clim == [0, 2])
 
 
-def test_calc_data_fast_uint8():
-    data = da.random.randint(
-        0,
-        100,
-        size=(1_000, 10, 10),
-        chunks=(1, 10, 10),
-        dtype=np.uint8,
-    )
-    assert calc_data_range(data) == [0, 255]
-
-
-@pytest.mark.timeout(2)
-def test_calc_data_range_fast_big():
-    val = calc_data_range(data_dask)
-    assert len(val) > 0
-
-
-@pytest.mark.timeout(2)
-def test_calc_data_range_fast_big_1d():
-    val = calc_data_range(data_dask_1d)
-    assert len(val) > 0
-
-
-@pytest.mark.timeout(2)
-def test_calc_data_range_fast_big_1d_rgb():
-    val = calc_data_range(data_dask_1d_rgb)
-    assert len(val) > 0
-
-
-@pytest.mark.timeout(2)
-def test_calc_data_range_fast_big_plane():
-    val = calc_data_range(data_dask_plane)
+@pytest.mark.timeout(2)  # TODO: test this more directly
+@pytest.mark.parametrize(
+    'data',
+    [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],
+)
+def test_calc_data_range_fast(data):
+    val = calc_data_range(data)
     assert len(val) > 0
 
 

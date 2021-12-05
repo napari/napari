@@ -9,6 +9,8 @@ from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ._surface_constants import Shading
+from .normals import SurfaceNormals
+from .wireframe import SurfaceWireframe
 
 
 # Mixin must come before Layer
@@ -70,17 +72,22 @@ class Surface(IntensityVisualizationMixin, Layer):
     shading: str, Shading
         One of a list of preset shading modes that determine the lighting model
         using when rendering the surface in 3D.
-            * Shading.NONE
-                Corresponds to shading='none'.
-            * Shading.FLAT
-                Corresponds to shading='flat'.
-            * Shading.SMOOTH
-                Corresponds to shading='smooth'.
+
+        * Shading.NONE
+            Corresponds to shading='none'.
+        * Shading.FLAT
+            Corresponds to shading='flat'.
+        * Shading.SMOOTH
+            Corresponds to shading='smooth'.
     visible : bool
         Whether the layer visual is currently being displayed.
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
+    wireframe : dict or SurfaceWireframe
+        Whether and how to display the edges of the surface mesh with a wireframe.
+    normals : dict or SurfaceNormals
+        Whether and how to display the face and vertex normals of the surface mesh.
 
     Attributes
     ----------
@@ -110,11 +117,17 @@ class Surface(IntensityVisualizationMixin, Layer):
     shading: str
         One of a list of preset shading modes that determine the lighting model
         using when rendering the surface.
-            * 'none'
-            * 'flat'
-            * 'smooth'
+
+        * 'none'
+        * 'flat'
+        * 'smooth'
     gamma : float
         Gamma correction for determining colormap linearity.
+    wireframe : SurfaceWireframe
+        Whether and how to display the edges of the surface mesh with a wireframe.
+    normals : SurfaceNormals
+        Whether and how to display the face and vertex normals of the surface mesh.
+
 
     Notes
     -----
@@ -149,6 +162,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        wireframe=None,
+        normals=None,
     ):
 
         ndim = data[0].shape[1]
@@ -170,7 +185,11 @@ class Surface(IntensityVisualizationMixin, Layer):
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
-        self.events.add(interpolation=Event, rendering=Event, shading=Event)
+        self.events.add(
+            interpolation=Event,
+            rendering=Event,
+            shading=Event,
+        )
 
         # assign mesh data and establish default behavior
         if len(data) not in (2, 3):
@@ -208,6 +227,9 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # Shading mode
         self._shading = shading
+
+        self.wireframe = wireframe or SurfaceWireframe()
+        self.normals = normals or SurfaceNormals()
 
     def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
@@ -340,6 +362,8 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'gamma': self.gamma,
                 'shading': self.shading,
                 'data': self.data,
+                'wireframe': self.wireframe.dict(),
+                'normals': self.normals.dict(),
             }
         )
         return state

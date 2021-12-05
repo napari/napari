@@ -34,6 +34,7 @@ class Mode(StringEnum):
     ADD = auto()
     SELECT = auto()
     PAN_ZOOM = auto()
+    TRANSFORM = auto()
 
 
 class Symbol(Enum):

@@ -44,15 +44,15 @@ def _only_labels(s: LayerSel) -> bool:
 
 
 def _active_type(s: LayerSel) -> Optional[str]:
-    return s.active and s.active._type_string
+    return s.active._type_string if s.active else None
 
 
 def _active_ndim(s: LayerSel) -> Optional[int]:
-    return s.active and getattr(s.active.data, "ndim", None)
+    return getattr(s.active.data, "ndim", None) if s.active else None
 
 
 def _active_shape(s: LayerSel) -> Optional[Tuple[int, ...]]:
-    return s.active and getattr(s.active.data, "shape", None)
+    return getattr(s.active.data, "shape", None) if s.active else None
 
 
 def _same_shape(s: LayerSel) -> bool:

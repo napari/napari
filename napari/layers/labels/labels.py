@@ -27,7 +27,10 @@ from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
 _REV_SHAPE_HELP = {
-    trans._('enter paint or fill mode to edit labels'): {Mode.PAN_ZOOM},
+    trans._('enter paint or fill mode to edit labels'): {
+        Mode.PAN_ZOOM,
+        Mode.TRANSFORM,
+    },
     trans._('hold <space> to pan/zoom, click to pick a label'): {
         Mode.PICK,
         Mode.FILL,
@@ -272,7 +275,6 @@ class Labels(_ImageBase):
         )
 
         self.events.add(
-            mode=Event,
             preserve_labels=Event,
             properties=Event,
             n_edit_dimensions=Event,
@@ -629,6 +631,7 @@ class Labels(_ImageBase):
 
     _drag_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
         Mode.PICK: pick,
         Mode.PAINT: draw,
         Mode.FILL: draw,
@@ -637,6 +640,7 @@ class Labels(_ImageBase):
 
     _move_modes = {
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
         Mode.PICK: no_op,
         Mode.PAINT: no_op,
         Mode.FILL: no_op,
@@ -644,6 +648,7 @@ class Labels(_ImageBase):
     }
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
         Mode.PAINT: 'circle',
         Mode.FILL: 'cross',
@@ -834,15 +839,36 @@ class Labels(_ImageBase):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
+
+        raw_modified = raw
+        if self.contour > 0:
+            if raw.ndim == 2:
+                raw_modified = np.zeros_like(raw)
+                struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
+                thickness = self.contour
+                thick_struct_elem = ndi.iterate_structure(
+                    struct_elem, thickness
+                ).astype(bool)
+                boundaries = ndi.grey_dilation(
+                    raw, footprint=struct_elem
+                ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
+                raw_modified[boundaries] = raw[boundaries]
+            elif raw.ndim > 2:
+                warnings.warn(
+                    trans._(
+                        "Contours are not displayed during 3D rendering",
+                        deferred=True,
+                    )
+                )
         if self._color_lookup_func is None:
             self._color_lookup_func = self._get_color_lookup_func(
-                raw, np.min(raw), np.max(raw)
+                raw_modified, np.min(raw_modified), np.max(raw_modified)
             )
         if (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
-            u, inv = np.unique(raw, return_inverse=True)
+            u, inv = np.unique(raw_modified, return_inverse=True)
             image = np.array(
                 [
                     self._label_color_index[x]
@@ -850,17 +876,17 @@ class Labels(_ImageBase):
                     else self._label_color_index[None]
                     for x in u
                 ]
-            )[inv].reshape(raw.shape)
+            )[inv].reshape(raw_modified.shape)
         elif (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = self._color_lookup_func(raw)
+            image = self._color_lookup_func(raw_modified)
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = self._color_lookup_func(raw, self._selected_label)
+            image = self._color_lookup_func(raw_modified, self._selected_label)
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -870,37 +896,16 @@ class Labels(_ImageBase):
                 selected = None
             index = self._label_color_index
             image = np.where(
-                raw == selected,
+                raw_modified == selected,
                 index[selected],
                 np.where(
-                    raw != self._background_label,
+                    raw_modified != self._background_label,
                     index[None],
                     index[self._background_label],
                 ),
             )
         else:
             raise ValueError("Unsupported Color Mode")
-
-        if self.contour > 0 and raw.ndim == 2:
-            image = np.zeros_like(raw)
-            struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
-            thickness = self.contour
-            thick_struct_elem = ndi.iterate_structure(
-                struct_elem, thickness
-            ).astype(bool)
-            boundaries = ndi.grey_dilation(
-                raw, footprint=struct_elem
-            ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
-            image[boundaries] = raw[boundaries]
-            image = self._all_vals[image]
-        elif self.contour > 0 and raw.ndim > 2:
-            warnings.warn(
-                trans._(
-                    "Contours are not displayed during 3D rendering",
-                    deferred=True,
-                )
-            )
-
         return image
 
     def new_colormap(self):

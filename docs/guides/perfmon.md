@@ -121,9 +121,8 @@ To simulate a performance problem in napari, add a `sleep()` call to the
 will make the method take at least 100 ms:
 
 ```{code-block} python
----
 :emphasize-lines: 2-3
----
+
 def paint(self, coord, new_label, refresh=True):
     import time
     time.sleep(0.1)

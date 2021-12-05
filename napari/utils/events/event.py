@@ -369,7 +369,7 @@ class EventEmitter:
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, CallbackStr, 'EmitterGroup'],
+        callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
         position: Union[Literal['first'], Literal['last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,

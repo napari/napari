@@ -11,7 +11,6 @@ from napari._tests.utils import (
     layer_test_data,
     skip_local_popups,
     skip_on_win_ci,
-    slow,
 )
 from napari.utils._tests.test_naming import eval_with_filename
 from napari.utils.action_manager import action_manager
@@ -87,7 +86,7 @@ def test_viewer(make_napari_viewer):
 
 
 EXPECTED_NUMBER_OF_LAYER_METHODS = {
-    'Image': 0,
+    'Image': 3,
     'Vectors': 0,
     'Surface': 0,
     'Tracks': 0,
@@ -299,7 +298,6 @@ def test_deleting_points(make_napari_viewer):
     assert len(pts_layer.data) == 3
 
 
-@slow(15)
 @skip_local_popups
 def test_custom_layer(make_napari_viewer):
     """Make sure that custom layers subclasses can be added to the viewer."""
