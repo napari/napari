@@ -1,5 +1,5 @@
 import re
-from typing import Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar
 
 import wrapt
 
@@ -35,7 +35,7 @@ _SUNDER = re.compile('^_[^_]')
 
 
 class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
-    """Prevent's private access."""
+    """Proxy to prevent private attribute and item access, recursively."""
 
     __wrapped__: _T
 
@@ -49,18 +49,22 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
                     name=name,
                 )
             )
-        attr = super().__getattr__(name)
-        return (
-            CallablePublicOnlyProxy(attr)
-            if callable(attr)
-            else PublicOnlyProxy(attr)
-        )
+        return self.create(super().__getattr__(name))
+
+    def __getitem__(self, key):
+        return self.create(super().__getitem__(key))
 
     def __repr__(self):
         return repr(self.__wrapped__)
 
     def __dir__(self):
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
+
+    @classmethod
+    def create(cls, obj: Any) -> 'PublicOnlyProxy':
+        if callable:
+            return CallablePublicOnlyProxy(obj)
+        return PublicOnlyProxy(obj)
 
 
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
