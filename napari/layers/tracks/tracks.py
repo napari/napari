@@ -1,7 +1,3 @@
-# from napari.layers.base.base import Layer
-# from napari.utils.events import Event
-# from napari.utils.colormaps import AVAILABLE_COLORMAPS
-
 from typing import Dict, List, Optional, Union
 from warnings import warn
 
@@ -393,6 +389,7 @@ class Tracks(Layer):
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     ) -> None:
         self._manager.features = features
+        self._check_color_by_in_features()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -407,21 +404,9 @@ class Tracks(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """set track properties"""
-        if self._color_by not in [*properties.keys(), 'track_id']:
-            warn(
-                (
-                    trans._(
-                        "Previous color_by key {key!r} not present in new properties. Falling back to track_id",
-                        deferred=True,
-                        key=self._color_by,
-                    )
-                ),
-                UserWarning,
-            )
-            self._color_by = 'track_id'
         self._manager.properties = properties
         self.events.properties()
-        self.events.color_by()
+        self._check_color_by_in_features()
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:
@@ -605,3 +590,18 @@ class Tracks(Layer):
 
         padded_positions = self._pad_display_data(positions)
         return labels, padded_positions
+
+    def _check_color_by_in_features(self):
+        if self._color_by not in self.features.columns:
+            warn(
+                (
+                    trans._(
+                        "Previous color_by key {key!r} not present in features. Falling back to track_id",
+                        deferred=True,
+                        key=self._color_by,
+                    )
+                ),
+                UserWarning,
+            )
+            self._color_by = 'track_id'
+            self.events.color_by()
