@@ -275,8 +275,8 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
     else:
         parent = widget.parent()
     while parent:
-        if hasattr(parent, 'qt_viewer'):
-            return parent.qt_viewer.viewer
+        if hasattr(parent, '_qt_viewer'):
+            return parent._qt_viewer.viewer
         parent = parent.parent()
     return None
 

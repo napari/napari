@@ -75,10 +75,10 @@ class Viewer(ViewerModel):
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
-        if self.window.qt_viewer._console is None:
+        if self.window._qt_viewer._console is None:
             return
         else:
-            self.window.qt_viewer.console.push(variables)
+            self.window._qt_viewer.console.push(variables)
 
     def screenshot(self, path=None, *, canvas_only=True, flash: bool = True):
         """Take currently displayed screen and convert to an image array.
@@ -103,7 +103,7 @@ class Viewer(ViewerModel):
             upper-left corner of the rendered region.
         """
         if canvas_only:
-            image = self.window.qt_viewer.screenshot(path=path, flash=flash)
+            image = self.window._qt_viewer.screenshot(path=path, flash=flash)
         else:
             image = self.window.screenshot(path=path, flash=flash)
         return image
