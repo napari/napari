@@ -643,6 +643,7 @@ class Window:
         from ..plugins import _npe2
 
         Widget = _npe2.get_widget_contribution(plugin_name, widget_name)
+        dock_kwargs = {}
 
         if Widget is None:
             Widget, dock_kwargs = plugin_manager.get_widget(
