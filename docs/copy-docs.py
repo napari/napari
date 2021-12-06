@@ -51,7 +51,7 @@ TOC_IGNORE = [
     '_templates',
     'ORGANIZATION.md',
     'guides/stable/_layer_events.md',
-    'guides/stable/_viewer_events.md'
+    'guides/stable/_viewer_events.md',
 ]
 
 
