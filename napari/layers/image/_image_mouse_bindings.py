@@ -71,3 +71,28 @@ def move_plane_along_normal(layer: Image, event: Event):
 
     # Re-enable volume_layer interactivity after the drag
     layer.interactive = True
+
+
+def set_plane_position(layer: Image, event: Event):
+    """Set plane position on double click."""
+    # early exit clauses
+    if (
+        layer.visible is False
+        or layer.interactive is False
+        or len(event.dims_displayed) < 3
+    ):
+        return
+
+    # Calculate intersection of click with plane through data in data coordinates
+    intersection = layer.plane.intersect_with_line(
+        line_position=np.asarray(event.position)[event.dims_displayed],
+        line_direction=np.asarray(event.view_direction)[event.dims_displayed],
+    )
+
+    # Check if click was on plane and if not, exit early.
+    if not point_in_bounding_box(
+        intersection, layer.extent.data[:, event.dims_displayed]
+    ):
+        return
+
+    layer.plane.position = intersection

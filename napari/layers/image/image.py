@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
+from functools import partial
 from typing import TYPE_CHECKING, Union
 
 import numpy as np
@@ -25,7 +26,7 @@ from ._image_constants import (
     Mode,
     Rendering,
 )
-from ._image_mouse_bindings import move_plane_along_normal
+from ._image_mouse_bindings import move_plane_along_normal, set_plane_position
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
@@ -197,10 +198,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-    _plane_drag_modes = {
-        Depiction3D.VOLUME: no_op,
-        Depiction3D.PLANE: move_plane_along_normal,
-    }
     _drag_modes = {Mode.TRANSFORM: no_op, Mode.PAN_ZOOM: no_op}
     _move_modes = {
         Mode.TRANSFORM: no_op,
@@ -209,6 +206,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     _cursor_modes = {
         Mode.TRANSFORM: 'standard',
         Mode.PAN_ZOOM: 'standard',
+    }
+    _double_click_modes = {
+        Depiction3D.VOLUME: no_op,
+        Depiction3D.PLANE: set_plane_position,
     }
 
     def __init__(
@@ -590,22 +591,32 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._update_plane_callbacks()
         self.events.depiction()
 
+    _plane_drag_callback = partial(move_plane_along_normal)
+    _plane_double_click_callback = partial(set_plane_position)
+
     def _update_plane_callbacks(self):
-        """Connect or disconnect slicing plane callbacks as appropriate."""
-        plane_drag_callback = self._plane_drag_modes[Depiction3D.PLANE]
+        """Connect or disconnect plane callbacks as appropriate."""
         plane_drag_callback_connected = (
-            plane_drag_callback in self.mouse_drag_callbacks
+            self._plane_drag_callback in self.mouse_drag_callbacks
         )
-        if (
-            self.depiction == Depiction3D.VOLUME
-            and plane_drag_callback_connected
-        ):
-            self.mouse_drag_callbacks.remove(plane_drag_callback)
-        elif (
-            self.depiction == Depiction3D.PLANE
-            and not plane_drag_callback_connected
-        ):
-            self.mouse_drag_callbacks.append(plane_drag_callback)
+        double_click_callback_connected = (
+            self._plane_double_click_callback
+            in self.mouse_double_click_callbacks
+        )
+        if self.depiction == Depiction3D.VOLUME:
+            if plane_drag_callback_connected:
+                self.mouse_drag_callbacks.remove(self._plane_drag_callback)
+            if double_click_callback_connected:
+                self.mouse_double_click_callbacks.remove(
+                    self._plane_double_click_callback
+                )
+        elif self.depiction == Depiction3D.PLANE:
+            if not plane_drag_callback_connected:
+                self.mouse_drag_callbacks.append(self._plane_drag_callback)
+            if not double_click_callback_connected:
+                self.mouse_double_click_callbacks.append(
+                    self._plane_double_click_callback
+                )
 
     @property
     def plane(self):
