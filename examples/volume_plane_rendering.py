@@ -3,12 +3,8 @@ Display one 3-D volume layer using the add_volume API and display it as a plane
 with a simple widget for modifying plane parameters
 """
 import napari
-import numpy as np
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout
+from napari.utils.translations import trans
 from skimage import data
-from superqt import QLabeledDoubleSlider
-
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -40,4 +36,6 @@ plane_layer = viewer.add_image(
 viewer.axes.visible = True
 viewer.camera.angles = (45, 45, 45)
 viewer.camera.zoom = 5
+viewer.text_overlay.text = trans._('shift + click and drag to move the plane')
+viewer.text_overlay.visible = True
 napari.run()
