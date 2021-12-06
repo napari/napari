@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, Dict, List, Optional, Union
 
 import dask
@@ -547,17 +546,6 @@ def features_from_properties(
     property_choices: Optional[Dict[str, np.ndarray]] = None,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
-    # If there is no data, non-empty properties represent choices as a deprecated behavior.
-    if num_data == 0 and properties:
-        warnings.warn(
-            trans._(
-                "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        property_choices = properties
-        properties = {}
     # Create categorical series for any choices provided.
     if property_choices is not None:
         properties = pd.DataFrame(data=properties)
