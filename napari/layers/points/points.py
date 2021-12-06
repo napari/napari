@@ -16,6 +16,7 @@ from ...utils.colormaps.standardize_color import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import project_points_onto_plane, rotate_points
+from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 from ..base import Layer, no_op
@@ -1747,3 +1748,115 @@ class Points(Layer):
             )
             mask[np.ix_(*submask_coords)] |= normalized_square_distances <= 1
         return mask
+
+    def get_status(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ) -> str:
+        """Status message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a status update.
+        """
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+        msg = generate_layer_status(self.name, position, value)
+
+        # if this labels layer has properties
+        properties = self._get_properties(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+        if properties:
+            msg += "; " + ", ".join(properties)
+
+        return msg
+
+    def _get_tooltip_text(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ):
+        """
+        tooltip message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a tooltip.
+        """
+        return "\n".join(
+            self._get_properties(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+        )
+
+    def _get_properties(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ) -> list:
+        if not self._properties:
+            return []
+
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+        # if the cursor is not outside the image or on the background
+        if value is None or value > self.data.shape[0]:
+            return []
+
+        return [
+            f'{k}: {v[value]}'
+            for k, v in self._properties.items()
+            if k != 'index'
+            and len(v) > value
+            and v[value] is not None
+            and not (isinstance(v[value], float) and np.isnan(v[value]))
+        ]

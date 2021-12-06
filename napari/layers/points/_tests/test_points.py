@@ -573,6 +573,9 @@ def test_properties(properties):
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     assert np.all(layer.properties['point_type'] == paste_annotations)
 
+    assert layer.get_status(data[0]).endswith("point_type: B")
+    assert layer.get_status(data[1]).endswith("point_type: A")
+
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_adding_properties(attribute):
