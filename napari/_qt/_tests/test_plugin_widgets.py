@@ -23,7 +23,7 @@ class Widg3(QWidget):
         self.viewer = v
         super().__init__()
 
-    def _fail(self):
+    def fail(self):
         """private attr not allowed"""
         self.viewer.window._qt_window
 
@@ -191,5 +191,5 @@ def test_inject_viewer_proxy(make_napari_viewer):
     viewer = make_napari_viewer()
     wdg = _instantiate_dock_widget(Widg3, viewer)
     assert isinstance(wdg.viewer, PublicOnlyProxy)
-    with pytest.raises(AttributeError):
-        wdg.viewer._fail()
+    with pytest.warns(FutureWarning):
+        wdg.fail()
