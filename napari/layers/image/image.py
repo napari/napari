@@ -22,6 +22,7 @@ from ._image_constants import (
     Depiction3D,
     Interpolation,
     Interpolation3D,
+    Mode,
     Rendering,
 )
 from ._image_mouse_bindings import move_plane_along_normal
