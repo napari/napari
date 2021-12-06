@@ -197,9 +197,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-    _drag_modes = {
+    _plane_drag_modes = {
         Depiction3D.VOLUME: no_op,
         Depiction3D.PLANE: move_plane_along_normal,
+    }
+    _drag_modes = {Mode.TRANSFORM: no_op, Mode.PAN_ZOOM: no_op}
+    _move_modes = {
+        Mode.TRANSFORM: no_op,
+        Mode.PAN_ZOOM: no_op,
+    }
+    _cursor_modes = {
+        Mode.TRANSFORM: 'standard',
+        Mode.PAN_ZOOM: 'standard',
     }
 
     def __init__(
@@ -585,7 +594,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     def _update_slicing_plane_callbacks(self):
         """Connect or disconnect slicing plane callbacks as appropriate."""
-        plane_drag_callback = self._drag_modes[Depiction3D.PLANE]
+        plane_drag_callback = self._plane_drag_modes[Depiction3D.PLANE]
         plane_drag_callback_connected = (
             plane_drag_callback in self.mouse_drag_callbacks
         )
@@ -627,17 +636,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         TRANSFORM allows for manipulation of the layer transform.
         """
         return str(self._mode)
-
-    _drag_modes = {Mode.TRANSFORM: no_op, Mode.PAN_ZOOM: no_op}
-
-    _move_modes = {
-        Mode.TRANSFORM: no_op,
-        Mode.PAN_ZOOM: no_op,
-    }
-    _cursor_modes = {
-        Mode.TRANSFORM: 'standard',
-        Mode.PAN_ZOOM: 'standard',
-    }
 
     @mode.setter
     def mode(self, mode):
