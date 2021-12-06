@@ -60,6 +60,7 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.events._ndisplay.connect(self._on_ndisplay_change)
+        self.layer.events.depiction.connect(self._on_depiction_change)
         self.layer.experimental_slicing_plane.events.thickness.connect(
             self._on_plane_thickness_change
         )

@@ -589,10 +589,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     def depiction(self, depiction: Union[str, Depiction3D]):
         """Set the current 3D depiction mode."""
         self._depiction = Depiction3D(depiction)
-        self._update_slicing_plane_callbacks()
+        self._update_plane_callbacks()
         self.events.depiction()
 
-    def _update_slicing_plane_callbacks(self):
+    def _update_plane_callbacks(self):
         """Connect or disconnect slicing plane callbacks as appropriate."""
         plane_drag_callback = self._plane_drag_modes[Depiction3D.PLANE]
         plane_drag_callback_connected = (
