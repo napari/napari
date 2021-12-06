@@ -418,7 +418,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
-        layer.translate_grid = translate
+        layer._translate_grid = translate
 
     @property
     def experimental(self):
