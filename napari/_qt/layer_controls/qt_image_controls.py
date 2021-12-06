@@ -102,7 +102,7 @@ class QtImageControls(QtBaseImageControls):
         )
 
         self.planeNormalLabel = QLabel(trans._('plane normal:'))
-        self.planeNormalButtons = PlaneOrientationButtons(parent=self)
+        self.planeNormalButtons = PlaneNormalButtons(parent=self)
         action_manager.bind_button(
             'napari:orient_plane_normal_along_z',
             self.planeNormalButtons.zButton,
@@ -327,10 +327,10 @@ class QtImageControls(QtBaseImageControls):
             self.planeNormalLabel,
             self.planeNormalButtons,
         )
-        if depiction == Depiction3D.VOLUME:
+        if depiction == Depiction3D.VOLUME or self.layer._ndisplay == 2:
             for widget in plane_widgets:
                 widget.hide()
-        if depiction == Depiction3D.PLANE:
+        if depiction == Depiction3D.PLANE and self.layer._ndisplay == 3:
             for widget in plane_widgets:
                 widget.show()
 
@@ -350,6 +350,7 @@ class QtImageControls(QtBaseImageControls):
     def _on_ndisplay_change(self):
         """Toggle between 2D and 3D visualization modes."""
         self._update_interpolation_combo()
+        self._toggle_plane_parameter_visibility()
         if self.layer._ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
@@ -365,10 +366,9 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_rendering_parameter_visbility()
             self.depictionComboBox.show()
             self.depictionLabel.show()
-            self._toggle_plane_parameter_visibility()
 
 
-class PlaneOrientationButtons(QWidget):
+class PlaneNormalButtons(QWidget):
     """Qt buttons for controlling plane orientation.
 
         Attributes
