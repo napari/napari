@@ -1839,7 +1839,7 @@ class Points(Layer):
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
     ) -> list:
-        if not self._properties:
+        if self.features.shape[1] == 0:
             return []
 
         value = self.get_value(
@@ -1854,7 +1854,7 @@ class Points(Layer):
 
         return [
             f'{k}: {v[value]}'
-            for k, v in self._properties.items()
+            for k, v in self.features.items()
             if k != 'index'
             and len(v) > value
             and v[value] is not None
