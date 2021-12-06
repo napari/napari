@@ -95,7 +95,7 @@ class QtImageControls(QtBaseImageControls):
         self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
         self.planeThicknessSlider.setMinimum(1)
         self.planeThicknessSlider.setMaximum(50)
-        self.planeThicknessSlider.setValue(5)
+        self.planeThicknessSlider.setValue(self.layer.plane.thickness)
         self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
         self.planeThicknessSlider.valueChanged.connect(
             self.changePlaneThickness
@@ -299,8 +299,7 @@ class QtImageControls(QtBaseImageControls):
 
     def _on_plane_thickness_change(self):
         with self.layer.plane.events.blocker():
-            thickness = self.layer.plane.thickness
-            self.planeThicknessSlider.setValue(thickness)
+            self.planeThicknessSlider.setValue(self.layer.plane.thickness)
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""

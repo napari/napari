@@ -63,6 +63,7 @@ def test_plane_controls_show_hide_on_depiction_change(qtbot):
     layer = Image(np.random.rand(10, 15, 20))
     layer._slice_dims(ndisplay=3)
     qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
     plane_controls = (
         qtctrl.planeNormalButtons,
         qtctrl.planeNormalLabel,
@@ -83,6 +84,7 @@ def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
     """Changing ndisplay should show/hide plane controls if depicting a plane."""
     layer = Image(np.random.rand(10, 15, 20))
     qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
     plane_controls = (
         qtctrl.planeNormalButtons,
         qtctrl.planeNormalLabel,
@@ -98,3 +100,11 @@ def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
     layer._slice_dims(ndisplay=2)
     for widget in plane_controls:
         assert widget.isHidden()
+
+
+def test_plane_slider_value_change(qtbot):
+    layer = Image(np.random.rand(10, 15, 20))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+    layer.plane.thickness *= 2
+    assert qtctrl.planeThicknessSlider.value() == layer.plane.thickness
