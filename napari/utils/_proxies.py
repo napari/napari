@@ -44,7 +44,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         if name.startswith('_'):
             warnings.warn(
                 trans._(
-                    "Private attribute access in this context is deprecated and will be unavailable in version 0.4.14",
+                    "Private attribute access in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.4.14",
                     deferred=True,
                 ),
                 category=FutureWarning,
