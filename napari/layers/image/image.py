@@ -120,7 +120,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    experimental_slicing_plane : dict or SlicingPlane
+    plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
@@ -180,7 +180,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Threshold for isosurface.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
-    experimental_slicing_plane : SlicingPlane or dict
+    plane : SlicingPlane or dict
         Properties defining plane rendering in 3D. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'draggable'}.
     experimental_clipping_planes : ClippingPlaneList
@@ -236,7 +236,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         multiscale=None,
         cache=True,
         depiction='volume',
-        experimental_slicing_plane=None,
+        plane=None,
         experimental_clipping_planes=None,
     ):
         if isinstance(data, types.GeneratorType):
@@ -326,9 +326,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._experimental_slicing_plane = SlicingPlane(
-            thickness=1, enabled=False, draggable=True
-        )
+        self._plane = SlicingPlane(thickness=1, enabled=False, draggable=True)
         self._mode = Mode.PAN_ZOOM
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
@@ -358,9 +356,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.interpolation = interpolation
         self.rendering = rendering
         self.depiction = depiction
-        if experimental_slicing_plane is not None:
-            self.experimental_slicing_plane = experimental_slicing_plane
-            self.experimental_slicing_plane.update(experimental_slicing_plane)
+        if plane is not None:
+            self.plane = plane
+            self.plane.update(plane)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -610,12 +608,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.mouse_drag_callbacks.append(plane_drag_callback)
 
     @property
-    def experimental_slicing_plane(self):
-        return self._experimental_slicing_plane
+    def plane(self):
+        return self._plane
 
-    @experimental_slicing_plane.setter
-    def experimental_slicing_plane(self, value: Union[dict, SlicingPlane]):
-        self._experimental_slicing_plane.update(value)
+    @plane.setter
+    def plane(self, value: Union[dict, SlicingPlane]):
+        self._plane.update(value)
 
     @property
     def loaded(self):
@@ -975,7 +973,7 @@ class Image(_ImageBase):
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
-                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'plane': self.plane.dict(),
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,

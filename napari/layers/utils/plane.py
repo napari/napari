@@ -98,17 +98,7 @@ class Plane(EventedModel):
         return id(self)
 
 
-class DraggablePlane(Plane):
-    """A plane in 3D with a toggle for click and drag behavior.
-
-    A draggable plane is defined by a postition, a normal vector and whether or
-    not click and drag behaviour is enabled.
-    """
-
-    draggable: bool
-
-
-class SlicingPlane(DraggablePlane):
+class SlicingPlane(Plane):
     """Defines a draggable plane in 3D with a defined thickness.
 
     A slicing plane is a defined by a position, a normal vector and a thickness

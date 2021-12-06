@@ -528,7 +528,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         visible=True,
         multiscale=None,
         cache=True,
-        experimental_slicing_plane=None,
+        plane=None,
         experimental_clipping_planes=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
@@ -690,7 +690,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'visible': visible,
             'multiscale': multiscale,
             'cache': cache,
-            'experimental_slicing_plane': experimental_slicing_plane,
+            'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
         }
 

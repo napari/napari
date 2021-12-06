@@ -74,7 +74,7 @@ def shift_plane_along_normal(viewer, event):
     )
 
     # Calculate intersection of click with plane through data
-    intersection = plane_layer.experimental_slicing_plane.intersect_with_line(
+    intersection = plane_layer.plane.intersect_with_line(
         line_position=near_point, line_direction=event.view_direction
     )
 
@@ -84,8 +84,8 @@ def shift_plane_along_normal(viewer, event):
         return
 
     # Get plane parameters in vispy coordinates (zyx -> xyz)
-    plane_normal_data_vispy = np.array(plane_layer.experimental_slicing_plane.normal)[[2, 1, 0]]
-    plane_position_data_vispy = np.array(plane_layer.experimental_slicing_plane.position)[[2, 1, 0]]
+    plane_normal_data_vispy = np.array(plane_layer.plane.normal)[[2, 1, 0]]
+    plane_position_data_vispy = np.array(plane_layer.plane.position)[[2, 1, 0]]
 
     # Get transform which maps from data (vispy) to canvas
     visual2canvas = viewer.window.qt_viewer.layer_to_visual[plane_layer].node.get_transform(
@@ -106,7 +106,7 @@ def shift_plane_along_normal(viewer, event):
     plane_layer.interactive = False
 
     # Store original plane position and start position in canvas coordinates
-    original_plane_position = plane_layer.experimental_slicing_plane.position
+    original_plane_position = plane_layer.plane.position
     start_position_canv = event.pos
 
     yield
@@ -130,10 +130,10 @@ def shift_plane_along_normal(viewer, event):
         # only update if plane position is within data bounding box
         drag_distance_data = drag_projection_on_plane_normal / np.linalg.norm(plane_normal_canv)
         updated_position = original_plane_position + drag_distance_data * np.array(
-            plane_layer.experimental_slicing_plane.normal)
+            plane_layer.plane.normal)
 
         if point_in_bounding_box(updated_position, plane_layer.extent.data):
-            plane_layer.experimental_slicing_plane.position = updated_position
+            plane_layer.plane.position = updated_position
 
         yield
     if dragged:

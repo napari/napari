@@ -61,7 +61,7 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.events._ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.depiction.connect(self._on_depiction_change)
-        self.layer.experimental_slicing_plane.events.thickness.connect(
+        self.layer.plane.events.thickness.connect(
             self._on_plane_thickness_change
         )
 
@@ -228,7 +228,7 @@ class QtImageControls(QtBaseImageControls):
         self._toggle_plane_parameter_visibility()
 
     def changePlaneThickness(self, value: float):
-        self.layer.experimental_slicing_plane.thickness = value
+        self.layer.plane.thickness = value
 
     def changeIsoThreshold(self, value):
         """Change isosurface threshold on the layer model.
@@ -298,8 +298,8 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_plane_parameter_visibility()
 
     def _on_plane_thickness_change(self):
-        with self.layer.experimental_slicing_plane.events.blocker():
-            thickness = self.layer.experimental_slicing_plane.thickness
+        with self.layer.plane.events.blocker():
+            thickness = self.layer.plane.thickness
             self.planeThicknessSlider.setValue(thickness)
 
     def _toggle_rendering_parameter_visbility(self):

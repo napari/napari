@@ -21,7 +21,7 @@ def move_plane_along_normal(layer: Image, event: Event):
         'Shift' not in event.modifiers
         or layer.visible is False
         or layer.interactive is False
-        or layer.experimental_slicing_plane.draggable is False
+        or layer.plane.draggable is False
         or len(event.dims_displayed) < 3
     ):
         return
@@ -31,7 +31,7 @@ def move_plane_along_normal(layer: Image, event: Event):
     initial_view_direction = np.asarray(event.view_direction)
 
     # Calculate intersection of click with plane through data in data coordinates
-    intersection = layer.experimental_slicing_plane.intersect_with_line(
+    intersection = layer.plane.intersect_with_line(
         line_position=initial_position[event.dims_displayed],
         line_direction=initial_view_direction[event.dims_displayed],
     )
@@ -43,9 +43,7 @@ def move_plane_along_normal(layer: Image, event: Event):
         return
 
     # Store original plane position and disable interactivity during plane drag
-    original_plane_position = np.copy(
-        layer.experimental_slicing_plane.position
-    )
+    original_plane_position = np.copy(layer.plane.position)
     layer.interactive = False
 
     yield
@@ -56,20 +54,20 @@ def move_plane_along_normal(layer: Image, event: Event):
             start_position=initial_position,
             end_position=np.asarray(event.position),
             view_direction=np.asarray(event.view_direction),
-            vector=layer.experimental_slicing_plane.normal,
+            vector=layer.plane.normal,
             dims_displayed=event.dims_displayed,
         )
 
         # Calculate updated plane position
         updated_position = original_plane_position + (
-            drag_distance * np.array(layer.experimental_slicing_plane.normal)
+            drag_distance * np.array(layer.plane.normal)
         )
 
         clamped_plane_position = clamp_point_to_bounding_box(
             updated_position, layer._display_bounding_box(event.dims_displayed)
         )
 
-        layer.experimental_slicing_plane.position = clamped_plane_position
+        layer.plane.position = clamped_plane_position
         yield
 
     # Re-enable volume_layer interactivity after the drag

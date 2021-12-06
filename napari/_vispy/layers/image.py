@@ -58,15 +58,13 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.experimental_slicing_plane.events.position.connect(
-            self._on_experimental_slicing_plane_position_change
+        self.layer.plane.events.position.connect(
+            self._on_plane_position_change
         )
-        self.layer.experimental_slicing_plane.events.thickness.connect(
-            self._on_experimental_slicing_plane_thickness_change
+        self.layer.plane.events.thickness.connect(
+            self._on_plane_thickness_change
         )
-        self.layer.experimental_slicing_plane.events.normal.connect(
-            self._on_experimental_slicing_plane_normal_change
-        )
+        self.layer.plane.events.normal.connect(self._on_plane_normal_change)
 
         # display_change is special (like data_change) because it requires a self.reset()
         # this means that we have to call it manually. Also, it must be called before reset
@@ -168,23 +166,17 @@ class VispyImageLayer(VispyBaseLayer):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
 
-    def _on_experimental_slicing_plane_thickness_change(self):
+    def _on_plane_thickness_change(self):
         if isinstance(self.node, VolumeNode):
-            self.node.plane_thickness = (
-                self.layer.experimental_slicing_plane.thickness
-            )
+            self.node.plane_thickness = self.layer.plane.thickness
 
-    def _on_experimental_slicing_plane_position_change(self):
+    def _on_plane_position_change(self):
         if isinstance(self.node, VolumeNode):
-            self.node.plane_position = (
-                self.layer.experimental_slicing_plane.position
-            )
+            self.node.plane_position = self.layer.plane.position
 
-    def _on_experimental_slicing_plane_normal_change(self):
+    def _on_plane_normal_change(self):
         if isinstance(self.node, VolumeNode):
-            self.node.plane_normal = (
-                self.layer.experimental_slicing_plane.normal
-            )
+            self.node.plane_normal = self.layer.plane.normal
 
     def reset(self, event=None):
         super().reset()
@@ -194,9 +186,9 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_gamma_change()
         self._on_rendering_change()
         self._on_depiction_change()
-        self._on_experimental_slicing_plane_position_change()
-        self._on_experimental_slicing_plane_normal_change()
-        self._on_experimental_slicing_plane_thickness_change()
+        self._on_plane_position_change()
+        self._on_plane_normal_change()
+        self._on_plane_thickness_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.

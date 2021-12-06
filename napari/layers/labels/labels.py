@@ -121,7 +121,7 @@ class Labels(_ImageBase):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    experimental_slicing_plane : dict or SlicingPlane
+    plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
@@ -193,7 +193,7 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
-    experimental_slicing_plane : SlicingPlane
+    plane : SlicingPlane
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
@@ -230,7 +230,7 @@ class Labels(_ImageBase):
         visible=True,
         multiscale=None,
         cache=True,
-        experimental_slicing_plane=None,
+        plane=None,
         experimental_clipping_planes=None,
     ):
 
@@ -270,7 +270,7 @@ class Labels(_ImageBase):
             visible=visible,
             multiscale=multiscale,
             cache=cache,
-            experimental_slicing_plane=experimental_slicing_plane,
+            plane=plane,
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
@@ -528,7 +528,7 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self._properties,
                 'rendering': self.rendering,
-                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'plane': self.experimental_slicing_plane.dict(),
                 'experimental_clipping_planes': [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
