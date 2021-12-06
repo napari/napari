@@ -18,7 +18,8 @@ def move_plane_along_normal(layer: Image, event: Event):
     """Move a layers slicing plane along its normal vector on click and drag."""
     # early exit clauses
     if (
-        layer.visible is False
+        'Shift' not in event.modifiers
+        or layer.visible is False
         or layer.interactive is False
         or layer.experimental_slicing_plane.draggable is False
         or len(event.dims_displayed) < 3

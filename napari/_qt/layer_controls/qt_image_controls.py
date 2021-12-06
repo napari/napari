@@ -288,6 +288,7 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_rendering_parameter_visbility()
 
     def _on_depiction_change(self):
+        """Receive layer model depiction change event and update combobox."""
         with self.layer.events.depiction.blocker():
             index = self.depictionComboBox.findText(
                 self.layer.depiction, Qt.MatchFixedString
