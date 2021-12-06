@@ -80,7 +80,6 @@ if tuple(np.__version__.split('.')) < ('1', '20'):
         def __getattr__(self, name: str) -> Any:
             return object.__getattribute__(self, name)
 
-
 else:
     ArrayBase = np.ndarray  # type: ignore
 
