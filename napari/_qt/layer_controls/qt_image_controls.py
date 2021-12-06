@@ -104,19 +104,19 @@ class QtImageControls(QtBaseImageControls):
         self.planeNormalButtons = PlaneOrientationButtons(parent=self)
         action_manager.bind_button(
             'napari:orient_plane_normal_along_z',
-            self.planeNormalButtons.z_button,
+            self.planeNormalButtons.zButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_y',
-            self.planeNormalButtons.y_button,
+            self.planeNormalButtons.yButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_x',
-            self.planeNormalButtons.x_button,
+            self.planeNormalButtons.xButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_view_direction',
-            self.planeNormalButtons.oblique_button,
+            self.planeNormalButtons.obliqueButton,
         )
 
         sld = QSlider(Qt.Horizontal, parent=self)
@@ -367,18 +367,32 @@ class QtImageControls(QtBaseImageControls):
 
 
 class PlaneOrientationButtons(QWidget):
+    """Qt buttons for controlling plane orientation.
+
+        Attributes
+    ----------
+    xButton : qtpy.QtWidgets.QPushButton
+        Button which orients a plane normal along the x axis.
+    yButton : qtpy.QtWidgets.QPushButton
+        Button which orients a plane normal along the y axis.
+    zButton : qtpy.QtWidgets.QPushButton
+        Button which orients a plane normal along the z axis.
+    obliqueButton : qtpy.QtWidgets.QPushButton
+        Button which orients a plane normal along the camera view direction.
+    """
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
         self.setLayout(QHBoxLayout())
         self.layout().setSpacing(2)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
-        self.x_button = QPushButton('x')
-        self.y_button = QPushButton('y')
-        self.z_button = QPushButton('z')
-        self.oblique_button = QPushButton(trans._('oblique'))
+        self.xButton = QPushButton('x')
+        self.yButton = QPushButton('y')
+        self.zButton = QPushButton('z')
+        self.obliqueButton = QPushButton(trans._('oblique'))
 
-        self.layout().addWidget(self.x_button)
-        self.layout().addWidget(self.y_button)
-        self.layout().addWidget(self.z_button)
-        self.layout().addWidget(self.oblique_button)
+        self.layout().addWidget(self.xButton)
+        self.layout().addWidget(self.yButton)
+        self.layout().addWidget(self.zButton)
+        self.layout().addWidget(self.obliqueButton)
