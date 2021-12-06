@@ -388,7 +388,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
-                    self.cursor.position, world=True
+                    self.cursor.position,
+                    view_direction=self.cursor._view_direction,
+                    dims_displayed=list(self.dims.displayed),
+                    world=True,
                 )
 
     def _on_grid_change(self):
