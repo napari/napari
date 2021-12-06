@@ -21,7 +21,6 @@ def move_plane_along_normal(layer: Image, event: Event):
         'Shift' not in event.modifiers
         or layer.visible is False
         or layer.interactive is False
-        or layer.plane.draggable is False
         or len(event.dims_displayed) < 3
     ):
         return
