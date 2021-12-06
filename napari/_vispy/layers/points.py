@@ -171,6 +171,8 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_fixed_canvas_size_change(self):
+        # in vispy Markers, when scaling is active, the size of the points changes
+        # based on zoom (i.e: they have constant world-space size)
         self.node.scaling = not self.layer.fixed_canvas_size
 
     def reset(self, event=None):

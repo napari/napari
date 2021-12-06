@@ -30,6 +30,10 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     @property
     def scaling(self):
+        """
+        Scaling property for both the markers visuals. If set to true,
+        the points rescale based on zoom (i.e: constant world-space size)
+        """
         return self._subvisuals[0].scaling
 
     @scaling.setter

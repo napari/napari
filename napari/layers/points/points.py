@@ -133,7 +133,9 @@ class Points(Layer):
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
     fixed_canvas_size : bool
-        If active, point sizes do not change when zooming.
+        If set to true, the point size is in canvas units and thus will not change size
+        on the screen when zooming. If set to False, the point size is set in data units.
+        The default value is False.
 
     Attributes
     ----------
@@ -218,7 +220,8 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
     fixed_canvas_size : bool
-        If active, point sizes do not change when zooming.
+        If set to true, the point size is in canvas units and thus will not change size
+        on the screen when zooming. If set to False, the point size is set in data units.
 
     Notes
     -----
