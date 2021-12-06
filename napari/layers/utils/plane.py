@@ -114,8 +114,6 @@ class SlicingPlane(Plane):
         (currently displayed dims).
     thickness : float
         Thickness of the slice.
-    draggable : bool
-        Whether click and drag controls are enabled for the plane.
     """
 
     thickness: float = 0.0
