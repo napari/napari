@@ -591,6 +591,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._update_plane_callbacks()
         self.events.depiction()
 
+    # the following are added as partials otherwise they are considered methods similar to
+    # https://stackoverflow.com/questions/40338652/how-to-define-enum-values-that-are-functions
     _plane_drag_callback = partial(move_plane_along_normal)
     _plane_double_click_callback = partial(set_plane_position)
 
