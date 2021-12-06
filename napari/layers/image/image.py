@@ -183,7 +183,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Attenuation rate for attenuated maximum intensity projection.
     plane : SlicingPlane or dict
         Properties defining plane rendering in 3D. Valid dictionary keys are
-        {'position', 'normal', 'thickness', and 'draggable'}.
+        {'position', 'normal', 'thickness'}.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
 
