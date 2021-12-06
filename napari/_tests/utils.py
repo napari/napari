@@ -1,8 +1,9 @@
 import os
 import sys
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from napari import Viewer
@@ -241,7 +242,20 @@ def check_layer_world_data_extent(
 
 def assert_properties_equal(
     actual: Dict[str, np.ndarray], expected: Dict[str, np.ndarray]
-):
+) -> None:
     assert actual.keys() == expected.keys()
     for key in actual:
         np.testing.assert_array_equal(actual[key], expected[key])
+
+
+def assert_layer_state_equal(
+    actual: Dict[str, Any], expected: Dict[str, Any]
+) -> None:
+    assert actual.keys() == expected.keys()
+    for name in actual:
+        actual_value = actual[name]
+        expected_value = expected[name]
+        if isinstance(actual_value, pd.DataFrame):
+            pd.testing.assert_frame_equal(actual_value, expected_value)
+        else:
+            np.testing.assert_equal(actual_value, expected_value)
