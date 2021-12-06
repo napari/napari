@@ -45,7 +45,7 @@ jobs:
           semgrep --error --lang python --pattern 'trans._($X.format(...))' napari
 
   test:
-    name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
+    name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }} ${{ matrix.PRE && 'pre' }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -86,6 +86,10 @@ jobs:
           - python: '3.10'
             platform: ubuntu-latest
             backend: pyqt
+          - python: '3.10'
+            platform: ubuntu-latest
+            backend: pyqt
+            PRE: 1
 
     steps:
       - uses: actions/checkout@v2
@@ -197,7 +201,7 @@ jobs:
         run: |
           # pip install this git sha directly from github
           pip install --upgrade pip
-          pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
+          pip install ${{ matrix.PRE && '--pre' }} git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
 
       - name: Test
         uses: GabrielBB/xvfb-action@v1
