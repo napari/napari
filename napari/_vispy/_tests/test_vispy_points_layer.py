@@ -83,3 +83,13 @@ def test_update_property_value_then_refresh_text_updates_node_strings():
     layer.refresh_text()
 
     np.testing.assert_array_equal(text_node.text, ['A', 'D', 'C'])
+
+
+def test_enable_fixed_canvas_size():
+    points = np.random.rand(3, 2)
+    layer = Points(points)
+    vispy_layer = VispyPointsLayer(layer)
+
+    assert vispy_layer.node.scaling is True
+    layer.fixed_canvas_size = True
+    assert vispy_layer.node.scaling is False
