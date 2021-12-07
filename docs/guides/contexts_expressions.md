@@ -1,3 +1,5 @@
+(context-expressions)=
+
 # Contexts and Expressions in napari
 
 ```{note}

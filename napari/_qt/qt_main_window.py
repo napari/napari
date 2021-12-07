@@ -34,6 +34,7 @@ from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
 from ..utils import perf
+from ..utils._proxies import PublicOnlyProxy
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
@@ -650,9 +651,9 @@ class Window:
             instance).
         """
         from ..plugins import _npe2
-        from ..viewer import Viewer
 
         Widget = _npe2.get_widget_contribution(plugin_name, widget_name)
+        dock_kwargs = {}
 
         if Widget is None:
             Widget, dock_kwargs = plugin_manager.get_widget(
@@ -671,25 +672,7 @@ class Window:
                 wdg = wdg._magic_widget
             return dock_widget, wdg
 
-        # if the signature is looking a for a napari viewer, pass it.
-        kwargs = {}
-        try:
-            sig = inspect.signature(Widget.__init__)
-        except ValueError:
-            pass
-        else:
-            for param in sig.parameters.values():
-                if param.name == 'napari_viewer':
-                    kwargs['napari_viewer'] = self._qt_viewer.viewer
-                    break
-                if param.annotation in ('napari.viewer.Viewer', Viewer):
-                    kwargs[param.name] = self._qt_viewer.viewer
-                    break
-                # cannot look for param.kind == param.VAR_KEYWORD because
-                # QWidget allows **kwargs but errs on unknown keyword arguments
-
-        # instantiate the widget
-        wdg = Widget(**kwargs)
+        wdg = _instantiate_dock_widget(Widget, self._qt_viewer.viewer)
 
         # Add dock widget
         dock_kwargs.pop('name', None)
@@ -1207,3 +1190,27 @@ class Window:
             self._qt_viewer.close()
             self._qt_window.close()
             del self._qt_window
+
+
+def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
+    # if the signature is looking a for a napari viewer, pass it.
+    from ..viewer import Viewer
+
+    kwargs = {}
+    try:
+        sig = inspect.signature(wdg_cls.__init__)
+    except ValueError:
+        pass
+    else:
+        for param in sig.parameters.values():
+            if param.name == 'napari_viewer':
+                kwargs['napari_viewer'] = PublicOnlyProxy(viewer)
+                break
+            if param.annotation in ('napari.viewer.Viewer', Viewer):
+                kwargs[param.name] = PublicOnlyProxy(viewer)
+                break
+            # cannot look for param.kind == param.VAR_KEYWORD because
+            # QWidget allows **kwargs but errs on unknown keyword arguments
+
+    # instantiate the widget
+    return wdg_cls(**kwargs)

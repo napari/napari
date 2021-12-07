@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Type
 
 from typing_extensions import get_args
 
+from ..utils._proxies import PublicOnlyProxy
+
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
@@ -278,6 +280,13 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
         if hasattr(parent, '_qt_viewer'):
             return parent._qt_viewer.viewer
         parent = parent.parent()
+    return None
+
+
+def proxy_viewer_ancestor(widget) -> Optional[PublicOnlyProxy[Viewer]]:
+    viewer = find_viewer_ancestor(widget)
+    if viewer:
+        return PublicOnlyProxy(viewer)
     return None
 
 
