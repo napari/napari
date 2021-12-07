@@ -1,5 +1,5 @@
 import typing
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -154,7 +154,7 @@ class Viewer(ViewerModel):
         return ret
 
 
-def current_viewer() -> Viewer:
+def current_viewer() -> Optional[Viewer]:
     """Return the currently active napari viewer."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow
