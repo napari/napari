@@ -11,7 +11,7 @@ def register_points_action(description):
 
 
 @Points.bind_key('Space')
-def hold_to_pan_zoom(layer):
+def hold_to_pan_zoom(layer: Points):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:
         # on key press
@@ -28,28 +28,28 @@ def hold_to_pan_zoom(layer):
 
 
 @register_points_action(trans._('Add points'))
-def activate_points_add_mode(layer):
+def activate_points_add_mode(layer: Points):
     layer.mode = Mode.ADD
 
 
 @register_points_action(trans._('Select points'))
-def activate_points_select_mode(layer):
+def activate_points_select_mode(layer: Points):
     layer.mode = Mode.SELECT
 
 
 @register_points_action(trans._('Pan/zoom'))
-def activate_points_pan_zoom_mode(layer):
+def activate_points_pan_zoom_mode(layer: Points):
     layer.mode = Mode.PAN_ZOOM
 
 
 @Points.bind_key('Control-C')
-def copy(layer):
+def copy(layer: Points):
     """Copy any selected points."""
     layer._copy_data()
 
 
 @Points.bind_key('Control-V')
-def paste(layer):
+def paste(layer: Points):
     """Paste any copied points."""
     layer._paste_data()
 
@@ -57,12 +57,12 @@ def paste(layer):
 @register_points_action(
     trans._("Select all points in the current view slice."),
 )
-def select_all(layer):
+def select_all(layer: Points):
     layer.selected_data = set(layer._indices_view[: len(layer._view_data)])
     layer._set_highlight()
 
 
 @register_points_action(trans._('Delete selected points'))
-def delete_selected_points(layer):
+def delete_selected_points(layer: Points):
     """Delete all selected points."""
     layer.remove_selected()
