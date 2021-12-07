@@ -45,6 +45,7 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     def _inner(func):
         nonlocal shortcuts
         name = 'napari:' + func.__name__
+
         action_manager.register_action(
             name=name,
             command=func,
