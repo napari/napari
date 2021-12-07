@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -713,13 +713,19 @@ class Shapes(Layer):
             self._finish_drawing()
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self):
+        """DataFrame-like features table.
+
+        Treat this as a very simple pandas DataFrame that maps a feature name
+        to a 1D array-like. Do not rely on other parts of the pandas DataFrame API,
+        which may not be supported by future versions of napari.
+        """
         return self._features
 
     @features.setter
     def features(
         self,
-        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._features = validate_features(features, num_data=self.nshapes)
 

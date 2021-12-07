@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -144,13 +144,19 @@ class TrackManager:
         # indices = np.lexsort((self.data[:, 1], self.data[:, 0]))
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self):
+        """DataFrame-like features table.
+
+        Treat this as a very simple pandas DataFrame that maps a feature name
+        to a 1D array-like. Do not rely on other parts of the pandas DataFrame API,
+        which may not be supported by future versions of napari.
+        """
         return self._features
 
     @features.setter
     def features(
         self,
-        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         features = validate_features(features, num_data=len(self.data))
         if 'track_id' not in features:

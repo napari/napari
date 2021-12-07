@@ -531,7 +531,7 @@ def get_extent_world(data_extent, data_to_world, centered=False):
 
 
 def validate_features(
-    features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    features: Union[Dict[str, np.ndarray], pd.DataFrame],
     *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
@@ -539,7 +539,7 @@ def validate_features(
 
     Parameters
     ----------
-    properties : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
+    features : Union[Dict[str, np.ndarray], pd.DataFrame]
         The features table input, which will be passed to the pandas
         DataFrame initializer.
     num_data : Optional[int]

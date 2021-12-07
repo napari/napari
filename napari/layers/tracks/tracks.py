@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 from warnings import warn
 
 import numpy as np
@@ -380,13 +380,19 @@ class Tracks(Layer):
         self._set_editable()
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self):
+        """DataFrame-like features table.
+
+        Treat this as a very simple pandas DataFrame that maps a feature name
+        to a 1D array-like. Do not rely on other parts of the pandas DataFrame API,
+        which may not be supported by future versions of napari.
+        """
         return self._manager.features
 
     @features.setter
     def features(
         self,
-        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
