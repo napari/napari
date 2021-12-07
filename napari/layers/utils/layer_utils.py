@@ -532,6 +532,7 @@ def get_extent_world(data_extent, data_to_world, centered=False):
 
 def validate_features(
     features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
     """Validates and coerces a features table into a pandas DataFrame.
@@ -605,7 +606,7 @@ def features_from_properties(
                 properties[name] if name in properties else [None] * num_values
             )
             properties[name] = pd.Series(values, dtype=dtype)
-    return validate_features(properties, num_data)
+    return validate_features(properties, num_data=num_data)
 
 
 def features_to_choices(features: pd.DataFrame) -> Dict[str, np.ndarray]:
@@ -698,7 +699,7 @@ def append_features(features: pd.DataFrame, to_append: pd.DataFrame):
     ----------
     features : pd.DataFrame
         The features of a layer.
-    features : pd.DataFrame
+    to_append : pd.DataFrame
         The features to append.
 
     Returns

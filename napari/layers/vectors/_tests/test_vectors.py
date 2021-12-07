@@ -243,7 +243,7 @@ def test_adding_properties():
         layer.properties = properties_2
 
     # adding properties with the wrong length should raise an exception
-    bad_properties = {'vector_type': np.array(['A'])}
+    bad_properties = {'vector_type': np.array(['A', 'B'])}
     with pytest.raises(ValueError):
         layer.properties = bad_properties
 

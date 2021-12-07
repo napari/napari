@@ -501,7 +501,7 @@ class Shapes(Layer):
             )
         else:
             self._features = validate_features(
-                features, number_of_shapes(data)
+                features, num_data=number_of_shapes(data)
             )
 
         # The following shape properties are for the new shapes that will
@@ -721,7 +721,7 @@ class Shapes(Layer):
         self,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     ) -> None:
-        self._features = validate_features(features, self.nshapes)
+        self._features = validate_features(features, num_data=self.nshapes)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

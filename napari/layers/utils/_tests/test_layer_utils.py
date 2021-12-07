@@ -4,6 +4,7 @@ import pytest
 from dask import array as da
 
 from napari.layers.utils.layer_utils import (
+    append_features,
     calc_data_range,
     coerce_current_properties,
     dims_displayed_world_to_layer,
@@ -12,6 +13,7 @@ from napari.layers.utils.layer_utils import (
     remove_features,
     resize_features,
     segment_normal,
+    validate_features,
 )
 
 data_dask = da.random.random(
@@ -186,7 +188,12 @@ def test_dims_displayed_world_to_layer(
     np.testing.assert_array_equal(dims_displayed_layer, expected)
 
 
-def test_features_from_properties_with_num_data_only():
+def test_validate_features_with_none_then_empty():
+    features = validate_features(None)
+    assert features.shape == (0, 0)
+
+
+def test_features_from_properties_with_none_and_num_data():
     features = features_from_properties(num_data=5)
     assert features.shape == (5, 0)
 
@@ -337,6 +344,38 @@ def test_resize_features_larger():
     np.testing.assert_array_equal(
         new_features['confidence'],
         [0.2, 0.5, 1, 0.8, 0.8, 0.8],
+    )
+
+
+def test_append_features():
+    features = pd.DataFrame(
+        {
+            'class': pd.Series(
+                ['sky', 'person', 'building', 'person'],
+                dtype=pd.CategoricalDtype(
+                    categories=('building', 'person', 'sky')
+                ),
+            ),
+            'confidence': pd.Series([0.2, 0.5, 1, 0.8]),
+        }
+    )
+    to_append = pd.DataFrame(
+        {
+            'class': ['sky', 'building'],
+            'confidence': [0.6, 0.1],
+        }
+    )
+
+    new_features = append_features(features, to_append)
+
+    assert new_features.shape == (6, 2)
+    np.testing.assert_array_equal(
+        new_features['class'],
+        ['sky', 'person', 'building', 'person', 'sky', 'building'],
+    )
+    np.testing.assert_array_equal(
+        new_features['confidence'],
+        [0.2, 0.5, 1, 0.8, 0.6, 0.1],
     )
 
 

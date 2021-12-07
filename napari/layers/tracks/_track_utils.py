@@ -152,7 +152,7 @@ class TrackManager:
         self,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     ) -> None:
-        features = validate_features(features, len(self.data))
+        features = validate_features(features, num_data=len(self.data))
         if 'track_id' not in features:
             features['track_id'] = self.track_ids
         self._features = features.iloc[self._order].reset_index(drop=True)

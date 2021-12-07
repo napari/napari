@@ -317,7 +317,7 @@ class Vectors(Layer):
         self,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     ) -> None:
-        self._features = validate_features(features, len(self.data))
+        self._features = validate_features(features, num_data=len(self.data))
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
