@@ -137,7 +137,7 @@ from napari.utils.translations import trans
 some_string = trans._("Localizable string")
 ```
 
-To learn more, please see the [translations guide](translations).
+To learn more, please see the {ref}`translations guide <translations>`.
 
 ## Making changes
 
