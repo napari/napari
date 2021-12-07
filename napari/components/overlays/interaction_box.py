@@ -1,8 +1,8 @@
 import numpy as np
 
-from ..utils.events import EventedModel
-from ..utils.events.custom_types import Array
-from ..utils.transforms import Affine
+from ...utils.events import EventedModel
+from ...utils.events.custom_types import Array
+from ...utils.transforms import Affine
 
 
 class InteractionBox(EventedModel):
@@ -12,7 +12,7 @@ class InteractionBox(EventedModel):
     ----------
     points : list
         Nx2 array of points whose interaction box is to be found
-    show : bool
+    visible : bool
         Bool indicating whether the box should be drawn
     show_handle : bool
         Bool indicating whether the full box with midpoints and rotation handle should be drawn.
@@ -36,7 +36,7 @@ class InteractionBox(EventedModel):
     """
 
     points: Array[float, (-1, 2)] = None
-    show: bool = False
+    visible: bool = False
     show_handle: bool = False
     show_vertices: bool = False
     selection_box_drag: Array[float, (4, 2)] = None

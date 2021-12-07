@@ -1,8 +1,9 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 from vispy.scene.widgets.viewbox import ViewBox
 
+from ...components.overlays import Axes, InteractionBox, ScaleBar, Text
 from ...layers import (
     Image,
     Labels,
@@ -14,6 +15,7 @@ from ...layers import (
     Vectors,
 )
 from ...utils.config import async_octree
+from ...utils.events import EventedModel
 from ...utils.translations import trans
 from ..layers.base import VispyBaseLayer
 from ..layers.image import VispyImageLayer
@@ -22,6 +24,11 @@ from ..layers.shapes import VispyShapesLayer
 from ..layers.surface import VispySurfaceLayer
 from ..layers.tracks import VispyTracksLayer
 from ..layers.vectors import VispyVectorsLayer
+from ..overlays.axes import VispyAxesOverlay
+from ..overlays.base import VispyBaseOverlay
+from ..overlays.interaction_box import VispyInteractionBoxOverlay
+from ..overlays.scale_bar import VispyScaleBarOverlay
+from ..overlays.text import VispyTextOverlay
 
 layer_to_visual = {
     Image: VispyImageLayer,
@@ -31,6 +38,13 @@ layer_to_visual = {
     Surface: VispySurfaceLayer,
     Vectors: VispyVectorsLayer,
     Tracks: VispyTracksLayer,
+}
+
+overlay_to_visual = {
+    Axes: VispyAxesOverlay,
+    InteractionBox: VispyInteractionBoxOverlay,
+    ScaleBar: VispyScaleBarOverlay,
+    Text: VispyTextOverlay,
 }
 
 
@@ -44,7 +58,7 @@ if async_octree:
     layer_to_visual = new_mapping
 
 
-def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
+def create_vispy_layer(layer: Layer) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters
@@ -54,8 +68,8 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
 
     Returns
     -------
-    visual : vispy.scene.visuals.VisualNode
-        Vispy visual node
+    visual : napari._vispy.layers.VispyBaseLayer
+        Vispy layer
     """
     for layer_type, visual_class in layer_to_visual.items():
         if isinstance(layer, layer_type):
@@ -66,6 +80,37 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
             'Could not find VispyLayer for layer of type {dtype}',
             deferred=True,
             dtype=type(layer),
+        )
+    )
+
+
+def create_vispy_overlay(
+    overlay: EventedModel, **kwargs
+) -> List[VispyBaseOverlay]:
+    """
+    Create vispy visuals for each overlay contained in an Overlays model based on their type,
+
+    Parameters
+    ----------
+    overlay : napari.components.overlays.VispyBaseOverlay
+        The overlay to create a visual for.
+    viewer : napari.components.ViewerModel
+        The viewer containing the overlays.
+
+    Returns
+    -------
+    vispy_overlays : napari._vispy.overlays.VispyBaseOverlay
+        Vispy overlay
+    """
+    for overlay_type, visual_class in overlay_to_visual.items():
+        if isinstance(overlay, overlay_type):
+            return visual_class(overlay=overlay, **kwargs)
+
+    raise TypeError(
+        trans._(
+            'Could not find VispyOverlay for overlay of type {dtype}',
+            deferred=True,
+            dtype=type(overlay),
         )
     )
 

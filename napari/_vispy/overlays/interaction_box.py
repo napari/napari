@@ -3,34 +3,27 @@ from vispy.color.color_array import ColorArray
 from vispy.scene.visuals import Compound, Line, Markers
 
 from ...components._interaction_box_constants import Box
+from .base import VispyBaseOverlay
 
 
-class VispyInteractionBox:
-    def __init__(self, viewer, parent=None, order=0):
+class VispyInteractionBoxOverlay(VispyBaseOverlay):
+    def __init__(self, **kwargs):
+        node = Compound([Line(), Markers(), Markers()])
+        super().__init__(node=node, **kwargs)
+        self.overlay = self.viewer.overlays.interaction_box
 
-        self._viewer = viewer
-        self._interaction_box = viewer.overlays.interaction_box
-        self.node = Compound([Line(), Markers(), Markers()], parent=parent)
-        self.node.order = order
         self._on_interaction_box_change()
-        self._interaction_box.events.points.connect(
+        self.overlay.events.points.connect(self._on_interaction_box_change)
+        self.overlay.events.show_handle.connect(
             self._on_interaction_box_change
         )
-        self._interaction_box.events.show.connect(
+        self.overlay.events.show_vertices.connect(
             self._on_interaction_box_change
         )
-        self._interaction_box.events.show_handle.connect(
+        self.overlay.events.selected_vertex.connect(
             self._on_interaction_box_change
         )
-        self._interaction_box.events.show_vertices.connect(
-            self._on_interaction_box_change
-        )
-        self._interaction_box.events.selected_vertex.connect(
-            self._on_interaction_box_change
-        )
-        self._interaction_box.events.transform.connect(
-            self._on_interaction_box_change
-        )
+        self.overlay.events.transform.connect(self._on_interaction_box_change)
         self._highlight_width = 1.5
 
         self._vertex_size = 10
@@ -70,7 +63,7 @@ class VispyInteractionBox:
         ) = self._compute_vertices_and_box()
 
         if vertices is None or len(vertices) == 0:
-            vertices = np.zeros((1, self._viewer.dims.ndisplay))
+            vertices = np.zeros((1, self.viewer.dims.ndisplay))
             size = 0
         else:
             size = self._vertex_size
@@ -82,14 +75,14 @@ class VispyInteractionBox:
             edge_color=edge_color,
             edge_width=1.5,
         )
-        if self._interaction_box.selected_vertex == Box.HANDLE:
+        if self.overlay.selected_vertex == Box.HANDLE:
             face_color = self._highlight_color
         else:
             face_color = 'white'
         # Have to make sure vertex list is not empty to pass tests
         round_vertices = vertices[Box.LEN_WITHOUT_HANDLE :]
         if len(round_vertices) == 0:
-            round_vertices = np.zeros((1, self._viewer.dims.ndisplay))
+            round_vertices = np.zeros((1, self.viewer.dims.ndisplay))
             size = 0
         self.round_marker_node.set_data(
             round_vertices,
@@ -100,7 +93,7 @@ class VispyInteractionBox:
         )
 
         if pos is None or len(pos) == 0:
-            pos = np.zeros((1, self._viewer.dims.ndisplay))
+            pos = np.zeros((1, self.viewer.dims.ndisplay))
             width = 0
 
         self.line_node.set_data(pos=pos, color=edge_color, width=width)
@@ -122,24 +115,21 @@ class VispyInteractionBox:
         width : float
             Width of the box edge
         """
-        if (
-            self._interaction_box._box is not None
-            and self._interaction_box.show
-        ):
-            box = self._interaction_box._box
-            if self._interaction_box.show_handle:
+        if self.overlay._box is not None and self.overlay.show:
+            box = self.overlay._box
+            if self.overlay.show_handle:
                 box = self._add_rotation_handle(box)
 
             face_color = self._highlight_color
 
             edge_color = self._highlight_color
-            if self._interaction_box.show_vertices:
+            if self.overlay.show_vertices:
                 colors = np.array([(1.0, 1.0, 1.0) for point in box])
-                if self._interaction_box.selected_vertex is not None:
+                if self.overlay.selected_vertex is not None:
                     colors[
-                        self._interaction_box.selected_vertex
+                        self.overlay.selected_vertex
                     ] = self._highlight_color
-                if self._interaction_box.show_handle:
+                if self.overlay.show_handle:
                     vertices = box[Box.WITH_HANDLE][:, ::-1]
                     face_color = ColorArray(colors[Box.WITH_HANDLE])
                 else:
@@ -152,7 +142,7 @@ class VispyInteractionBox:
 
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge
-            if self._interaction_box.show_handle:
+            if self.overlay.show_handle:
                 pos = box[Box.LINE_HANDLE][:, ::-1]
             else:
                 pos = box[Box.LINE][:, ::-1]
@@ -178,7 +168,7 @@ class VispyInteractionBox:
                 box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT]
             )
             if length_box > 0:
-                r = self._rotation_handle_length / self._viewer.camera.zoom
+                r = self._rotation_handle_length / self.viewer.camera.zoom
                 rot = (
                     rot
                     - r

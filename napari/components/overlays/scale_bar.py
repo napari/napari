@@ -1,8 +1,8 @@
 """Scale bar model."""
 from typing import Optional
 
-from ..utils.events import EventedModel
-from ._viewer_constants import Position
+from ...utils.events import EventedModel
+from .._viewer_constants import Position
 
 
 class ScaleBar(EventedModel):

@@ -1,4 +1,4 @@
-from functools import partial
+from functools import partial, reduce
 from typing import TYPE_CHECKING
 
 from ...settings import get_settings
@@ -15,9 +15,12 @@ class ViewMenu(NapariMenu):
         self._win = window
         super().__init__(trans._('&View'), window._qt_window)
 
+        def rgetattr(obj, attr):
+            return reduce(getattr, [obj] + attr.split('.'))
+
         def _toggle_dict(text, name, prop):
             # helper func to make a Action dict for togglers
-            obj = getattr(window.qt_viewer.viewer, name)
+            obj = rgetattr(window.qt_viewer.viewer, name)
             return {
                 'text': text,
                 'slot': partial(setattr, obj, prop),
@@ -52,24 +55,24 @@ class ViewMenu(NapariMenu):
                 'slot': window.qt_viewer._toggle_chunk_outlines,
                 'shortcut': 'Ctrl+Alt+O',
             },
-            {
-                'menu': 'Axes',
-                'items': [
-                    _toggle_dict(trans._('Visible'), 'axes', 'visible'),
-                    _toggle_dict(trans._('Colored'), 'axes', 'colored'),
-                    _toggle_dict(trans._('Labels'), 'axes', 'labels'),
-                    _toggle_dict(trans._('Dashed'), 'axes', 'dashed'),
-                    _toggle_dict(trans._('Arrows'), 'axes', 'arrows'),
-                ],
-            },
-            {
-                'menu': 'Scale Bar',
-                'items': [
-                    _toggle_dict(trans._('Visible'), 'scale_bar', 'visible'),
-                    _toggle_dict(trans._('Colored'), 'scale_bar', 'colored'),
-                    _toggle_dict(trans._('Ticks'), 'scale_bar', 'ticks'),
-                ],
-            },
+            # {
+            # 'menu': 'Axes',
+            # 'items': [
+            # _toggle_dict(trans._('Visible'), 'overlays.axes', 'visible'),
+            # _toggle_dict(trans._('Colored'), 'overlays.axes', 'colored'),
+            # _toggle_dict(trans._('Labels'), 'overlays.axes', 'labels'),
+            # _toggle_dict(trans._('Dashed'), 'overlays.axes', 'dashed'),
+            # _toggle_dict(trans._('Arrows'), 'overlays.axes', 'arrows'),
+            # ],
+            # },
+            # {
+            # 'menu': 'Scale Bar',
+            # 'items': [
+            # _toggle_dict(trans._('Visible'), 'scale_bar', 'visible'),
+            # _toggle_dict(trans._('Colored'), 'scale_bar', 'colored'),
+            # _toggle_dict(trans._('Ticks'), 'scale_bar', 'ticks'),
+            # ],
+            # },
             {
                 'text': trans._('Layer Tooltip visibility'),
                 'slot': self._tooltip_visibility_toggle,

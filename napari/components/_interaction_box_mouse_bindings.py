@@ -81,10 +81,10 @@ class InteractionBoxMouseBindings:
         active_layer = event.value
         if getattr(active_layer, 'mode', None) == 'transform':
             self._couple_interaction_box_to_active()
-            self._interaction_box_model.show = True
+            self._interaction_box_model.visible = True
             self._layer_affine_event_helper(active_layer)
         else:
-            self._interaction_box_model.show = False
+            self._interaction_box_model.visible = False
 
     def _on_ndisplay_change(self):
         """Gets called on ndisplay change to disable interaction box in 3D"""
@@ -149,11 +149,11 @@ class InteractionBoxMouseBindings:
             viewer.overlays.interaction_box.show_vertices = True
             viewer.overlays.interaction_box.show_handle = True
             viewer.overlays.interaction_box.allow_new_selection = False
-            viewer.overlays.interaction_box.show = True
+            viewer.overlays.interaction_box.visible = True
             self._layer_affine_event_helper(event.source)
 
         else:
-            viewer.overlays.interaction_box.show = False
+            viewer.overlays.interaction_box.visible = False
             viewer.overlays.interaction_box.points = None
             viewer.overlays.interaction_box.transform = Affine()
 
@@ -202,7 +202,7 @@ class InteractionBoxMouseBindings:
         @viewer.mouse_move_callbacks.append
         def mouse_move(viewer, event):
             if (
-                not self._interaction_box_model.show
+                not self._interaction_box_model.visible
                 or self._interaction_box_model._box is None
             ):
                 return
@@ -230,7 +230,7 @@ class InteractionBoxMouseBindings:
 
         @viewer.mouse_drag_callbacks.append
         def mouse_drag(viewer, event):
-            if not self._interaction_box_model.show:
+            if not self._interaction_box_model.visible:
                 return
 
             # Handling drag start, decide what action to take
@@ -254,7 +254,7 @@ class InteractionBoxMouseBindings:
             else:
                 if (
                     self._interaction_box_model._box is not None
-                    and self._interaction_box_model.show
+                    and self._interaction_box_model.visible
                     and inside_boxes(
                         np.array(
                             [
@@ -403,7 +403,7 @@ class InteractionBoxMouseBindings:
                 np.array([event.position[i] for i in viewer.dims.displayed]),
             ]
         )
-        self._interaction_box_model.show = True
+        self._interaction_box_model.visible = True
         self._interaction_box_model.show_handle = False
         self._interaction_box_model.show_vertices = False
         self._interaction_box_model.selection_box_drag = (

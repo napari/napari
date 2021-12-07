@@ -9,9 +9,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-from ..components._interaction_box_mouse_bindings import (
-    InteractionBoxMouseBindings,
-)
+# )
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..layers.base.base import Layer
@@ -47,14 +45,14 @@ from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from .widgets.qt_welcome import QtWidgetOverlay
 
+# from ..components._interaction_box_mouse_bindings import (
+# InteractionBoxMouseBindings,
+
 from .._vispy import (  # isort:skip
-    VispyAxesOverlay,
     VispyCamera,
     VispyCanvas,
-    VispyScaleBarOverlay,
-    VispyInteractionBox,
-    VispyTextOverlay,
-    create_vispy_visual,
+    create_vispy_layer,
+    create_vispy_overlay,
 )
 
 
@@ -260,6 +258,7 @@ class QtViewer(QSplitter):
         self._create_canvas()
 
         # Stacked widget to provide a welcome page
+        # TODO: make this into an Overlay as well
         self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
         self._canvas_overlay.set_welcome_visible(show_welcome_screen)
         self._canvas_overlay.sig_dropped.connect(self.dropEvent)
@@ -307,7 +306,8 @@ class QtViewer(QSplitter):
         self.canvas.events.draw.connect(self.camera.on_draw)
 
         # Add axes, scale bar
-        self._add_visuals()
+        self.overlay_to_visual = {}
+        self._add_overlay_visuals()
 
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
@@ -380,34 +380,49 @@ class QtViewer(QSplitter):
     def _diconnect_theme(self):
         self.viewer.events.theme.disconnect(self.canvas._on_theme_change)
 
-    def _add_visuals(self) -> None:
-        """Add visuals for axes, scale bar, and welcome text."""
+    def _add_overlay_visuals(self) -> None:
+        """Add visuals for overlays."""
 
-        self.axes = VispyAxesOverlay(
-            self.viewer,
-            parent=self.view.scene,
-            order=1e6,
-        )
-        self.scale_bar = VispyScaleBarOverlay(
-            self.viewer,
-            parent=self.view,
-            order=1e6 + 1,
-        )
-        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-        self.text_overlay = VispyTextOverlay(
-            self.viewer,
-            parent=self.view,
-            order=1e6 + 2,
-        )
-        self.canvas.events.resize.connect(
-            self.text_overlay._on_position_change
-        )
-        self.interaction_box_visual = VispyInteractionBox(
-            self.viewer, parent=self.view.scene, order=1e6 + 3
-        )
-        self.interaction_box_mousebindings = InteractionBoxMouseBindings(
-            self.viewer, self.interaction_box_visual
-        )
+        for i, (name, overlay) in enumerate(self.viewer.overlays):
+            if name == 'visible':
+                continue
+            vispy_overlay = create_vispy_overlay(
+                overlay, viewer=self.viewer, parent=self.view, order=1e6 + i
+            )
+
+            # we must keep a reference of they will disappear
+            # TODO: using name here because evented models are unhashable?
+            self.overlay_to_visual[name] = vispy_overlay
+
+        # self.canvas.events.resize.connect(
+        # self.viewer.overlays.text._on_position_change
+        # )
+
+        # self.axes = VispyAxesOverlay(
+        # self.viewer,
+        # parent=self.view.scene,
+        # order=1e6,
+        # )
+        # self.scale_bar = VispyScaleBarOverlay(
+        # self.viewer,
+        # parent=self.view,
+        # order=1e6 + 1,
+        # )
+        # self.text_overlay = VispyTextOverlay(
+        # viewer=self.viewer,
+        # overlay=self.viewer.overlays.text,
+        # parent=self.view,
+        # order=1e6 + 2,
+        # )
+        # self.interaction_box_visual = VispyInteractionBox(
+        # viewer=self.viewer,
+        # overlay=self.viewer.overlays.interaction_box,
+        # parent=self.view,
+        # order=1e6 + 3,
+        # )
+        # self.interaction_box_mousebindings = InteractionBoxMouseBindings(
+        # self.viewer, self.interaction_box_visual
+        # )
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
@@ -492,7 +507,7 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_visual(layer)
+        vispy_layer = create_vispy_layer(layer)
 
         # QtPoll is experimental.
         if self._qt_poll is not None:

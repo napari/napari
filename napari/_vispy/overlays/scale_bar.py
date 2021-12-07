@@ -1,4 +1,3 @@
-"""Scale Bar overlay."""
 import bisect
 
 import numpy as np
@@ -15,7 +14,7 @@ from ...utils.translations import trans
 class VispyScaleBarOverlay:
     """Scale bar in world coordinates."""
 
-    def __init__(self, viewer, parent=None, order=0):
+    def __init__(self, viewer):
         self._viewer = viewer
 
         self._data = np.array(
@@ -34,16 +33,11 @@ class VispyScaleBarOverlay:
         self._quantity = None
         self._unit_reg = None
 
-        self.node = Line(
-            connect='segments', method='gl', parent=parent, width=3
-        )
-        self.node.order = order
-        self.node.transform = STTransform()
+        self.node = Line(connect='segments', method='gl', width=3)
 
         # In order for the text to always appear centered on the scale bar,
         # the text node should use the line node as the parent.
         self.text_node = Text(pos=[0.5, -1], parent=self.node)
-        self.text_node.order = order
         self.text_node.transform = STTransform()
         self.text_node.font_size = 10
         self.text_node.anchors = ("center", "center")

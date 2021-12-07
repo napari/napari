@@ -1,13 +1,13 @@
 """Text label model."""
 from pydantic import validator
 
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.events import EventedModel
-from ..utils.events.custom_types import Array
-from ._viewer_constants import TextOverlayPosition
+from ...utils.colormaps.standardize_color import transform_color
+from ...utils.events import EventedModel
+from ...utils.events.custom_types import Array
+from .._viewer_constants import Position
 
 
-class TextOverlay(EventedModel):
+class Text(EventedModel):
     """Label model to display arbitrary text in the canvas
 
     Attributes
@@ -31,7 +31,7 @@ class TextOverlay(EventedModel):
     visible: bool = False
     color: Array[float, (4,)] = (0.5, 0.5, 0.5, 1.0)
     font_size: float = 10
-    position: TextOverlayPosition = TextOverlayPosition.TOP_LEFT
+    position: Position = Position.TOP_LEFT
     text: str = ""
 
     @validator('color', pre=True)
