@@ -17,6 +17,7 @@ from ..components.layerlist import LayerList
 from ..layers.base.base import Layer
 from ..plugins import _npe2
 from ..utils import config, perf
+from ..utils._proxies import ReadOnlyWrapper
 from ..utils.action_manager import action_manager
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.history import (
@@ -26,7 +27,6 @@ from ..utils.history import (
     update_save_history,
 )
 from ..utils.interactions import (
-    ReadOnlyWrapper,
     mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
