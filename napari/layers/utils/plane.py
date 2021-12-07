@@ -135,7 +135,7 @@ class ClippingPlane(Plane):
         Whether the plane is considered enabled.
     """
 
-    enabled: bool
+    enabled: bool = True
 
 
 class ClippingPlaneList(SelectableEventedList):
