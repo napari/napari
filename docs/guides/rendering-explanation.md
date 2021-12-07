@@ -1,3 +1,4 @@
+(rendering-explanation)=
 # Rendering in napari
 
 ## Status

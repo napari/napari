@@ -408,7 +408,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return
         if not name:
             name = self._basename()
-        self._name = name
+        self._name = str(name)
         self.events.name()
 
     @property
@@ -568,12 +568,34 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def translate_grid(self):
-        """list: Factors to shift the layer by."""
-        return self._transforms['world2grid'].translate
+        warnings.warn(
+            trans._(
+                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._translate_grid
 
     @translate_grid.setter
     def translate_grid(self, translate_grid):
-        if np.all(self.translate_grid == translate_grid):
+        warnings.warn(
+            trans._(
+                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._translate_grid = translate_grid
+
+    @property
+    def _translate_grid(self):
+        """list: Factors to shift the layer by."""
+        return self._transforms['world2grid'].translate
+
+    @_translate_grid.setter
+    def _translate_grid(self, translate_grid):
+        if np.all(self._translate_grid == translate_grid):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
@@ -614,8 +636,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # itself so that layers can be sliced in different ways for multiple
         # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
         # for additional discussion.
-        order = np.array(self._dims_displayed)
-        order[np.argsort(order)] = list(range(len(order)))
+        displayed = self._dims_displayed
+        # equivalent to: order = np.argsort(displayed)
+        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
         return tuple(order)
 
     def _update_dims(self, event=None):
@@ -624,6 +647,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This function needs to be called whenever data or transform information
         changes, and should be called before events get emitted.
         """
+        from ...components.dims import reorder_after_dim_reduction
+
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
@@ -631,9 +656,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
             self._dims_point = self._dims_point[-ndim:]
-            arr = np.array(self._dims_order[-ndim:])
-            arr[np.argsort(arr)] = range(len(arr))
-            self._dims_order = arr.tolist()
+            self._dims_order = list(
+                reorder_after_dim_reduction(self._dims_order[-ndim:])
+            )
             self._position = self._position[-ndim:]
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
@@ -1173,6 +1198,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
+    def data_to_world(self, position):
+        """Convert from data coordinates to world coordinates.
+
+        Parameters
+        ----------
+        position : tuple, list, 1D array
+            Position in data coordinates. If longer then the
+            number of dimensions of the layer, the later
+            dimensions will be used.
+
+        Returns
+        -------
+        tuple
+            Position in world coordinates.
+        """
+        if len(position) >= self.ndim:
+            coords = list(position[-self.ndim :])
+        else:
+            coords = [0] * (self.ndim - len(position)) + list(position)
+
+        return tuple(self._transforms[1:].simplified(coords))
+
     def _world_to_displayed_data(
         self, position: np.ndarray, dims_displayed: np.ndarray
     ) -> tuple:
@@ -1420,9 +1467,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def _displayed_axes(self):
-        displayed_axes = [
-            self._dims_displayed[i] for i in self._dims_displayed_order
-        ]
+        # assignment upfront to avoid repeated computation of properties
+        _dims_displayed = self._dims_displayed
+        _dims_displayed_order = self._dims_displayed_order
+        displayed_axes = [_dims_displayed[i] for i in _dims_displayed_order]
         return displayed_axes
 
     @property

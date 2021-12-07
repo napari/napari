@@ -1,4 +1,4 @@
-(plugin-best-practices)=
+(best-practices)=
 
 # Best practices when developing napari plugins
 
@@ -21,10 +21,10 @@ Here's what can go wrong if you _also_ declare one of these backends in the
 
 - If they installed via `conda install napari` and then they install your plugin
   via `pip` (or via the builtin plugin installer, which currently uses `pip`),
-  then there _will_ be a binary incompatibility between the their conda `pyqt`
-  installation, and the new pip "`PyQt5`" installation. _This will very likely
+  then there _will_ be a binary incompatibility between their conda `pyqt`
+  installation, and the new pip "`PyQt5`" installation. \*This will very likely
   lead to a broken environment, forcing the user to re-create their entire
-  environment and re-install napari_. This is an unfortunate consequence of
+  environment and re-install napari\_. This is an unfortunate consequence of
   [package naming
   decisions](https://github.com/ContinuumIO/anaconda-issues/issues/1554), and
   it's not something napari can fix.
@@ -92,7 +92,7 @@ will run into difficulties installing your plugin:
 
 ```{admonition} What about conda?
 **conda** also distributes & installs pre-compiled packages, though they aren't
-wheels.  While this definitely a fine way to install binary dependencies in a
+wheels.  While this is definitely a fine way to install binary dependencies in a
 reliable way, the built-in napari plugin installer doesn't currently work with
 conda.  If your dependency is only available on conda, but does not offer
 wheels,you *may* guide your users in using conda to install your package or one
@@ -115,7 +115,7 @@ Consider the following example plugin:
 
 ```ini
 [options.entry_points]
-napari.plugion =
+napari.plugin =
   plugin-name = mypackage.napari_plugin
 ```
 
@@ -247,7 +247,7 @@ class MyWidget:
 To test this, we can often just instantiate the widget with our own viewer, and
 then call the methods directly. As for the `event` object, notice that all we
 care about in this plugin is that it has a `modifiers` attribute that may or may
-contain the string `"Shift"`. So let's just fake it!
+not contain the string `"Shift"`. So let's just fake it!
 
 ```py
 class FakeEvent:
@@ -271,7 +271,7 @@ up to report test coverage, but you can test locally as well, using
 2. Run your tests with `pytest --cov=<your_package> --cov-report=html`
 3. Open the resulting report in your browser: `open htmlcov/index.html`
 4. The report will show line-by-line what is being tested, and what is being
-   missed. Continue writing tests until everything is covered!. If you have
+   missed. Continue writing tests until everything is covered! If you have
    lines that you _know_ never need to be tested (like debugging code) you can
    [exempt specific
    lines](https://coverage.readthedocs.io/en/coverage-4.3.3/excluding.html#excluding-code-from-coverage-py)

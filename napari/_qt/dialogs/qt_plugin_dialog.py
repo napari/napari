@@ -7,6 +7,7 @@ from napari_plugin_engine.dist import standard_metadata
 from qtpy.QtCore import (
     QEvent,
     QObject,
+    QPoint,
     QProcess,
     QProcessEnvironment,
     QSize,
@@ -46,6 +47,7 @@ from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
 from ..qthreading import create_worker
+from ..widgets.qt_message_popup import WarnPopup
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
 
@@ -310,6 +312,7 @@ class PluginListItem(QFrame):
         parent: QWidget = None,
         enabled: bool = True,
         installed: bool = False,
+        npe_version=1,
     ):
         super().__init__(parent)
         self.setup_ui(enabled)
@@ -318,6 +321,11 @@ class PluginListItem(QFrame):
         self.summary.setText(summary)
         self.package_author.setText(author)
         self.cancel_btn.setVisible(False)
+
+        self.help_button.setText(trans._("Website"))
+        self.help_button.setObjectName("help_button")
+        if npe_version != 1:
+            self.enabled_checkbox.setEnabled(False)
 
         if installed:
             self.enabled_checkbox.show()
@@ -397,6 +405,7 @@ class PluginListItem(QFrame):
         self.update_btn.setObjectName("install_button")
         self.row1.addWidget(self.update_btn)
         self.update_btn.setVisible(False)
+        self.help_button = QPushButton(self)
         self.action_button = QPushButton(self)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -404,7 +413,9 @@ class PluginListItem(QFrame):
         sizePolicy.setHeightForWidth(
             self.action_button.sizePolicy().hasHeightForWidth()
         )
+        self.help_button.setSizePolicy(sizePolicy)
         self.action_button.setSizePolicy(sizePolicy)
+        self.row1.addWidget(self.help_button)
         self.row1.addWidget(self.action_button)
         self.v_lay.addLayout(self.row1)
         self.row2 = QHBoxLayout()
@@ -461,6 +472,7 @@ class QPluginList(QListWidget):
         installed=False,
         plugin_name=None,
         enabled=True,
+        npe_version=1,
     ):
         # don't add duplicates
         if (
@@ -474,18 +486,28 @@ class QPluginList(QListWidget):
         item = QListWidgetItem(searchable_text, parent=self)
         item.version = project_info.version
         super().addItem(item)
-
         widg = PluginListItem(
             *project_info,
             parent=self,
             plugin_name=plugin_name,
             enabled=enabled,
             installed=installed,
+            npe_version=npe_version,
         )
         item.widget = widg
+        item.npe_version = npe_version
         action_name = 'uninstall' if installed else 'install'
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
+
+        if project_info.url:
+            import webbrowser
+
+            widg.help_button.clicked.connect(
+                lambda: webbrowser.open(project_info.url)
+            )
+        else:
+            widg.help_button.setVisible(False)
 
         widg.action_button.clicked.connect(
             lambda: self.handle_action(item, project_info.name, action_name)
@@ -506,6 +528,20 @@ class QPluginList(QListWidget):
         item.setText("0-" + item.text())
         method = getattr(self.installer, action_name)
         self._remove_list.append((pkg_name, item))
+        self._warn_dialog = None
+        if item.npe_version != 1:
+            # show warning pop up dialog
+            message = 'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+            self._warn_dialog = WarnPopup(
+                text=message,
+            )
+
+            delta_x = 75
+            global_point = widget.action_button.mapToGlobal(
+                widget.action_button.rect().topLeft()
+            )
+            global_point = QPoint(global_point.x() - delta_x, global_point.y())
+            self._warn_dialog.move(global_point)
 
         if action_name == "install":
             if update:
@@ -515,11 +551,15 @@ class QPluginList(QListWidget):
                 widget.set_busy(trans._("installing..."), update)
 
             method([pkg_name])
+            if self._warn_dialog:
+                self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == "uninstall":
             widget.set_busy(trans._("uninstalling..."), update)
             widget.update_btn.setDisabled(True)
             method([pkg_name])
+            if self._warn_dialog:
+                self._warn_dialog.exec_()
             self.scrollToTop()
         elif action_name == "cancel":
             widget.set_busy(trans._("cancelling..."), update)
@@ -588,23 +628,20 @@ class QtPluginDialog(QDialog):
         self.available_list.clear()
 
         # fetch installed
-        from ...plugins import plugin_manager
+        from ...plugins import _npe2, plugin_manager
 
         plugin_manager.discover()  # since they might not be loaded yet
 
-        self.already_installed = set()
+        already_installed = set()
 
-        for plugin_name, mod_name, distname in plugin_manager.iter_available():
-            # not showing these in the plugin dialog
-            if plugin_name in ('napari_plugin_engine',):
-                continue
-
-            if distname in self.already_installed:
-                continue
+        def _add_to_installed(distname, enabled, npe_version=1):
 
             if distname:
-                self.already_installed.add(distname)
                 meta = standard_metadata(distname)
+                if len(meta) == 0:
+                    # will not add builtins.
+                    return
+                already_installed.add(distname)
             else:
                 meta = {}
 
@@ -618,8 +655,26 @@ class QtPluginDialog(QDialog):
                     meta.get('license', ''),
                 ),
                 installed=True,
-                enabled=not plugin_manager.is_blocked(plugin_name),
+                enabled=enabled,
+                npe_version=npe_version,
             )
+
+        for manifest in _npe2.iter_manifests():
+            distname = normalized_name(manifest.name or '')
+            if distname in already_installed:
+                continue
+            _add_to_installed(distname, True, npe_version=2)
+
+        for plugin_name, mod_name, distname in plugin_manager.iter_available():
+            # not showing these in the plugin dialog
+            if plugin_name in ('napari_plugin_engine',):
+                continue
+            if distname in already_installed:
+                continue
+            _add_to_installed(
+                distname, not plugin_manager.is_blocked(plugin_name)
+            )
+
         self.installed_label.setText(
             trans._(
                 "Installed Plugins ({amount})",

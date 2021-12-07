@@ -1,3 +1,5 @@
+(plugins-index)=
+
 # Plugins
 
 napari loves plugins. Plugins allow people to add new readers and writers for
@@ -33,8 +35,8 @@ If you have an existing `napari-plugin-engine` plugin and want to migrate to
 the new plugin engine, [`npe2`][npe2], see the [migration
 guide](npe2-migration-guide).
 
-We recommend referring to the [best practices guide](plugin-best-practices) for
-tips on developing a quality plugin.
+To read about recommendations on how to develop your own plugin, see
+{ref}`best-practices`.
 
 ## Introducing `npe2`
 
