@@ -654,8 +654,8 @@ def test_grid_translate():
     data = np.random.random((10, 15))
     layer = Image(data)
     translate = np.array([15, 15])
-    layer.translate_grid = translate
-    np.testing.assert_allclose(layer.translate_grid, translate)
+    layer._translate_grid = translate
+    np.testing.assert_allclose(layer._translate_grid, translate)
 
 
 def test_world_data_extent():
