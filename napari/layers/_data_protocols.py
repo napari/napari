@@ -25,7 +25,8 @@ else:
 
 def _raise_protocol_error(obj: Any, protocol: type):
     """Raise a more helpful error when required protocol members are missing."""
-    needed = set(dir(protocol)).union(protocol.__annotations__) - _OBJ_NAMES
+    annotations = getattr(protocol, '__annotations__', {})
+    needed = set(dir(protocol)).union(annotations) - _OBJ_NAMES
     missing = needed - set(dir(obj))
     message = (
         f"Object of type {type(obj).__name__!r} does not implement "
@@ -72,7 +73,7 @@ class LayerDataProtocol(Protocol):
         """Returns self[key]."""
 
 
-def assert_protocol(obj: Any, protocol=LayerDataProtocol):
+def assert_protocol(obj: Any, protocol: type = LayerDataProtocol):
     """Assert `obj` is an instance of `protocol` or raise helpful error."""
     if not isinstance(obj, protocol):
         _raise_protocol_error(obj, protocol)
