@@ -27,14 +27,14 @@ from ..utils.color_transformations import (
     transform_color_with_defaults,
 )
 from ..utils.layer_utils import (
+    append_features,
     coerce_current_properties,
-    features_append,
     features_from_properties,
-    features_remove,
-    features_resize,
     features_to_choices,
     features_to_properties,
     get_current_properties,
+    remove_features,
+    resize_features,
     validate_features,
 )
 from ..utils.text_manager import TextManager
@@ -1999,8 +1999,10 @@ class Shapes(Layer):
             else:
                 n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
-            self._features = features_resize(
-                self._features, self._current_properties, total_shapes
+            self._features = resize_features(
+                self._features,
+                total_shapes,
+                current_values=self._current_properties,
             )
             if total_shapes > n_prop_values:
                 n_props_to_add = total_shapes - n_prop_values
@@ -2554,7 +2556,7 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
-            self._features = features_remove(self._features, index)
+            self._features = remove_features(self._features, index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2881,7 +2883,7 @@ class Shapes(Layer):
                 for i in self._dims_not_displayed
             ]
 
-            self._features = features_append(
+            self._features = append_features(
                 self._features, self._clipboard['properties']
             )
 

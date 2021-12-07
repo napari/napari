@@ -25,14 +25,14 @@ from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import (
+    append_features,
     coerce_current_properties,
-    features_append,
     features_from_properties,
-    features_remove,
-    features_resize,
     features_to_choices,
     features_to_properties,
     get_current_properties,
+    remove_features,
+    resize_features,
     validate_features,
 )
 from ..utils.text_manager import TextManager
@@ -417,8 +417,10 @@ class Points(Layer):
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
-                    self._features = features_resize(
-                        self._features, self._current_properties, len(data)
+                    self._features = resize_features(
+                        self._features,
+                        len(data),
+                        current_values=self._current_properties,
                     )
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
@@ -1558,7 +1560,7 @@ class Points(Layer):
                 self._edge._remove(indices_to_remove=index)
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
-            self._features = features_remove(self._features, index)
+            self._features = remove_features(self._features, index)
             with self.text.events.blocker_all():
                 self.text.remove(index)
             if self._value in self.selected_data:
@@ -1620,7 +1622,7 @@ class Points(Layer):
                 ),
             )
 
-            self._features = features_append(
+            self._features = append_features(
                 self._features, self._clipboard['properties']
             )
 

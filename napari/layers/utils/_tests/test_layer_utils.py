@@ -8,9 +8,9 @@ from napari.layers.utils.layer_utils import (
     coerce_current_properties,
     dims_displayed_world_to_layer,
     features_from_properties,
-    features_remove,
-    features_resize,
     get_current_properties,
+    remove_features,
+    resize_features,
     segment_normal,
 )
 
@@ -282,7 +282,7 @@ def test_features_from_properties_with_dataframe():
     pd.testing.assert_frame_equal(features, properties)
 
 
-def test_features_resize_smaller():
+def test_resize_features_smaller():
     features = pd.DataFrame(
         {
             'class': pd.Series(
@@ -299,14 +299,16 @@ def test_features_resize_smaller():
         'confidence': np.array([0.8]),
     }
 
-    new_features = features_resize(features, current_properties, 2)
+    new_features = resize_features(
+        features, 2, current_values=current_properties
+    )
 
     assert new_features.shape == (2, 2)
     np.testing.assert_array_equal(new_features['class'], ['sky', 'person'])
     np.testing.assert_array_equal(new_features['confidence'], [0.2, 0.5])
 
 
-def test_features_resize_larger():
+def test_resize_features_larger():
     features = pd.DataFrame(
         {
             'class': pd.Series(
@@ -323,7 +325,9 @@ def test_features_resize_larger():
         'confidence': np.array([0.8]),
     }
 
-    new_features = features_resize(features, current_properties, 6)
+    new_features = resize_features(
+        features, 6, current_values=current_properties
+    )
 
     assert new_features.shape == (6, 2)
     np.testing.assert_array_equal(
@@ -336,7 +340,7 @@ def test_features_resize_larger():
     )
 
 
-def test_features_remove():
+def test_remove_features():
     features = pd.DataFrame(
         {
             'class': pd.Series(
@@ -349,7 +353,7 @@ def test_features_remove():
         }
     )
 
-    new_features = features_remove(features, [1, 3])
+    new_features = remove_features(features, [1, 3])
 
     assert new_features.shape == (2, 2)
     np.testing.assert_array_equal(

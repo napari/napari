@@ -15,10 +15,10 @@ from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import (
     features_from_properties,
-    features_resize,
     features_to_choices,
     features_to_properties,
     get_current_properties,
+    resize_features,
     validate_features,
 )
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
@@ -285,8 +285,10 @@ class Vectors(Layer):
                     self.property_choices,
                     len(self.data),
                 )
-                self._features = features_resize(
-                    self._features, current_properties, n_vectors
+                self._features = resize_features(
+                    self._features,
+                    n_vectors,
+                    current_values=current_properties,
                 )
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the

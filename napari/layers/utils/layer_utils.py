@@ -533,9 +533,32 @@ def validate_features(
     features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
-    # Provide an explicit index when num_data is provided to
-    # - error check the properties data length
-    # - create a suitable length index when there are no columns
+    """Validates and coerces a features table into a pandas DataFrame.
+
+    Parameters
+    ----------
+    properties : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
+        The features table input, which will be passed to the pandas
+        DataFrame initializer.
+    num_data : Optional[int]
+        The number of the elements in the layer calling this, such as
+        the number of points, which is used to check that the features
+        table has the expected number of rows. If None, then the default
+        DataFrame index is used.
+
+    Returns
+    -------
+    pd.DataFrame
+        The pandas DataFrame created from the input features table.
+        If the input features are already a DataFrame, the data will not
+        be copied, otherwise they will.
+
+    Raises
+    ------
+    ValueError
+        If the input feature columns are not all the same length, or if
+        that length is not equal to the given num_data.
+    """
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 
@@ -546,6 +569,31 @@ def features_from_properties(
     property_choices: Optional[Dict[str, np.ndarray]] = None,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
+    """Validates and coerces deprecated properties input into a features DataFrame.
+
+    Parameters
+    ----------
+    properties : Dict[str, np.ndarray]
+        The properties of a layer.
+    property_choices : Dict[str, np.ndarray]
+        The property choices of a layer.
+    num_data : Optional[int]
+        The number of the elements in the layer calling this, such as
+        the number of points.
+
+    Returns
+    -------
+    pd.DataFrame
+        The pandas DataFrame created from the input features table.
+        If the input features are already a DataFrame, the data will not
+        be copied, otherwise they will.
+
+    Raises
+    ------
+    ValueError
+        If the input properties columns are not all the same length, or if
+        that length is not equal to the given num_data.
+    """
     # Create categorical series for any choices provided.
     if property_choices is not None:
         properties = pd.DataFrame(data=properties)
@@ -560,6 +608,20 @@ def features_from_properties(
 
 
 def features_to_choices(features: pd.DataFrame) -> Dict[str, np.ndarray]:
+    """Converts a features DataFrame to a deprecated property choices dictionary.
+
+    Only categorical features will have corresponding entries in the dictionary.
+
+    Parameters
+    ----------
+    features : pd.DataFrame
+        The features of a layer.
+
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        The property choices dictionary equivalent to the given features.
+    """
     return {
         name: series.dtype.categories.to_numpy()
         for name, series in features.items()
@@ -568,31 +630,98 @@ def features_to_choices(features: pd.DataFrame) -> Dict[str, np.ndarray]:
 
 
 def features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
+    """Converts a features DataFrame to a deprecated properties dictionary.
+
+    This will reference the features data when possible, but in general the
+    returned dictionary mary contain copies of those data.
+
+    Parameters
+    ----------
+    features : pd.DataFrame
+        The features of a layer.
+
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        The properties dictionary equivalent to the given features.
+    """
     return {name: series.to_numpy() for name, series in features.items()}
 
 
-def features_resize(
-    features: pd.DataFrame, default_values: dict[str, np.ndarray], size: int
+def resize_features(
+    features: pd.DataFrame,
+    size: int,
+    *,
+    current_values: Dict[str, np.ndarray],
 ) -> pd.DataFrame:
+    """Resize a features DataFrame to a new size, padding with default values if required.
+
+    Parameters
+    ----------
+    features : pd.DataFrame
+        The features of a layer.
+    size : int
+        The new size (number of rows) of the features table.
+    current_values : Dict[str, np.ndarray]
+        The current or default value for each feature stored in a length-1 array.
+        If the new size is greater than the current, these default
+        values will be repeated for the new rows. If a feature is
+        missing from this dictionary, missing values will be used instead.
+
+    Returns
+    -------
+    pd.DataFrame
+        The new resized features table. In general, this will be a copy, except
+        when the size does not change.
+    """
     current_size = features.shape[0]
     if size < current_size:
-        return features_remove(features, range(size, current_size))
+        return remove_features(features, range(size, current_size))
     elif size > current_size:
         num_append = size - current_size
         to_append = pd.DataFrame(
             {
-                name: np.repeat(default_values[name], num_append, axis=0)
+                name: np.repeat(current_values.get(name), num_append, axis=0)
                 for name in features
             },
             index=range(num_append),
         )
-        return features_append(features, to_append)
+        return append_features(features, to_append)
     return features
 
 
-def features_append(features: pd.DataFrame, to_append: pd.DataFrame):
+def append_features(features: pd.DataFrame, to_append: pd.DataFrame):
+    """Append new feature rows to an existing features table.
+
+    Parameters
+    ----------
+    features : pd.DataFrame
+        The features of a layer.
+    features : pd.DataFrame
+        The features to append.
+
+    Returns
+    -------
+    pd.DataFrame
+        The resulting features table, which contain copies of the existing
+        and given data.
+    """
     return features.append(to_append, ignore_index=True)
 
 
-def features_remove(features: pd.DataFrame, indices):
+def remove_features(features: pd.DataFrame, indices: Any):
+    """Remove rows from a features table by index.
+
+    Parameters
+    ----------
+    features : pd.DataFrame
+        The features of a layer.
+    indices : Any
+        The indices of the rows to remove.
+
+    Returns
+    -------
+    pd.DataFrame
+        The resulting features table, which contain copies of the existing data.
+    """
     return features.drop(labels=indices, axis=0).reset_index(drop=True)
