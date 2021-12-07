@@ -2863,7 +2863,7 @@ class Shapes(Layer):
                 ],
                 'edge_color': deepcopy(self._data_view._edge_color[index]),
                 'face_color': deepcopy(self._data_view._face_color[index]),
-                'properties': deepcopy(self.features.iloc[index]),
+                'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
             }
             if len(self.text.values) == 0:
@@ -2884,7 +2884,7 @@ class Shapes(Layer):
             ]
 
             self._features = append_features(
-                self._features, self._clipboard['properties']
+                self._features, self._clipboard['features']
             )
 
             # Add new shape data

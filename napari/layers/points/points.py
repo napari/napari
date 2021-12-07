@@ -1611,19 +1611,15 @@ class Points(Layer):
             )
             self._edge._paste(
                 colors=self._clipboard['edge_color'],
-                properties=features_to_properties(
-                    self._clipboard['properties']
-                ),
+                properties=features_to_properties(self._clipboard['features']),
             )
             self._face._paste(
                 colors=self._clipboard['face_color'],
-                properties=features_to_properties(
-                    self._clipboard['properties']
-                ),
+                properties=features_to_properties(self._clipboard['features']),
             )
 
             self._features = append_features(
-                self._features, self._clipboard['properties']
+                self._features, self._clipboard['features']
             )
 
             self._selected_view = list(
@@ -1649,7 +1645,7 @@ class Points(Layer):
                 'edge_color': deepcopy(self.edge_color[index]),
                 'face_color': deepcopy(self.face_color[index]),
                 'size': deepcopy(self.size[index]),
-                'properties': deepcopy(self.features.iloc[index]),
+                'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
             }
 

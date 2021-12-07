@@ -564,7 +564,7 @@ def test_properties(properties):
     # test copy/paste
     layer.selected_data = {0, 1}
     layer._copy_data()
-    assert np.all(layer._clipboard['properties']['point_type'] == ['A', 'B'])
+    assert np.all(layer._clipboard['features']['point_type'] == ['A', 'B'])
 
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)

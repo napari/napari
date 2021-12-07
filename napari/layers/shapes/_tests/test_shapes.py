@@ -73,7 +73,7 @@ def test_properties(properties):
     # test copy/paste
     layer.selected_data = {0, 1}
     layer._copy_data()
-    assert np.all(layer._clipboard['properties']['shape_type'] == ['A', 'B'])
+    assert np.all(layer._clipboard['features']['shape_type'] == ['A', 'B'])
 
     layer._paste_data()
     paste_properties = np.concatenate((add_properties, ['A', 'B']), axis=0)
