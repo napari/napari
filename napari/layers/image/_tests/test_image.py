@@ -5,6 +5,7 @@ import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
+from napari.layers.image._image_constants import ImageRendering
 from napari.layers.utils.plane import ClippingPlaneList, SlicingPlane
 from napari.utils import Colormap
 from napari.utils.transforms.transform_utils import rotate_to_matrix
@@ -826,3 +827,11 @@ def test_projected_distance_from_mouse_drag(
         dims_displayed=[0, 1, 2],
     )
     assert np.allclose(result, expected_value)
+
+
+def test_rendering_init():
+    np.random.seed(0)
+    data = np.random.rand(10, 10, 10)
+    layer = Image(data, rendering='iso')
+
+    assert layer.rendering == ImageRendering.ISO.value
