@@ -240,17 +240,14 @@ def check_layer_world_data_extent(
     np.testing.assert_almost_equal(layer.extent.world, translated_world_extent)
 
 
-def assert_properties_equal(
-    actual: Dict[str, np.ndarray], expected: Dict[str, np.ndarray]
-) -> None:
-    assert actual.keys() == expected.keys()
-    for key in actual:
-        np.testing.assert_array_equal(actual[key], expected[key])
-
-
 def assert_layer_state_equal(
     actual: Dict[str, Any], expected: Dict[str, Any]
 ) -> None:
+    """Asserts that an layer state dictionary is equal to an expected one.
+
+    This is useful because some members of state may array-like whereas others
+    maybe dataframe-like, which need to be checked for equality differently.
+    """
     assert actual.keys() == expected.keys()
     for name in actual:
         actual_value = actual[name]

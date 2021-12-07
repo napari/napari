@@ -12,10 +12,7 @@ from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
 
-from napari._tests.utils import (
-    assert_properties_equal,
-    check_layer_world_data_extent,
-)
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
 from napari.layers.image._image_constants import Rendering
 from napari.utils import Colormap
@@ -279,12 +276,12 @@ def test_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert_properties_equal(layer.properties, properties)
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
     layer = Labels(data)
     layer.properties = properties
     assert isinstance(layer.properties, dict)
-    assert_properties_equal(layer.properties, properties)
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))
@@ -345,7 +342,7 @@ def test_multiscale_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert_properties_equal(layer.properties, properties)
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))[1]
