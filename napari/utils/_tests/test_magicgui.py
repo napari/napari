@@ -10,6 +10,7 @@ from magicgui import magicgui
 from napari import Viewer, layers, types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
+from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.misc import all_subclasses
 
 try:
@@ -247,7 +248,9 @@ def test_magicgui_get_viewer(make_napari_viewer):
 
     assert func() is None
     viewer.window.add_dock_widget(func)
-    assert func() is viewer
+    v = func()
+    assert isinstance(v, PublicOnlyProxy)
+    assert v.__wrapped__ is viewer
     # no widget should be shown
     assert not func.v.visible
 

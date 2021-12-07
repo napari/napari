@@ -1,5 +1,5 @@
 import typing
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ._qt.qt_main_window import Window
 
 
-@mgui.register_type(bind=_magicgui.find_viewer_ancestor)
+@mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
 class Viewer(ViewerModel):
     """Napari ndarray viewer.
 
@@ -154,7 +154,7 @@ class Viewer(ViewerModel):
         return ret
 
 
-def current_viewer() -> Viewer:
+def current_viewer() -> Optional[Viewer]:
     """Return the currently active napari viewer."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow
