@@ -8,7 +8,7 @@ def test_multi_viewers_dont_clash(qapp):
     assert not v2.grid.enabled
 
     v1.window.activate()  # a click would do this in the actual gui
-    v1.window.qt_viewer.viewerButtons.gridViewButton.click()
+    v1.window._qt_viewer.viewerButtons.gridViewButton.click()
 
     assert not v2.grid.enabled
     assert v1.grid.enabled
