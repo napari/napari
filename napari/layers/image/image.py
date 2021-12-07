@@ -207,10 +207,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Mode.TRANSFORM: 'standard',
         Mode.PAN_ZOOM: 'standard',
     }
-    _double_click_modes = {
-        Depiction3D.VOLUME: no_op,
-        Depiction3D.PLANE: set_plane_position,
-    }
 
     def __init__(
         self,
