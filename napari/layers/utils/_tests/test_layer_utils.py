@@ -251,7 +251,7 @@ def test_features_from_properties_with_choices_only():
     )
 
 
-def test_from_layer_kwargs_with_empty_properties_and_choices():
+def test_features_from_properties_with_empty_properties_and_choices():
     properties = {
         'class': np.array([]),
     }
@@ -271,43 +271,32 @@ def test_from_layer_kwargs_with_empty_properties_and_choices():
     )
 
 
-def test_features_from_properties_with_dataframe():
-    properties = pd.DataFrame(
-        {
-            'class': pd.Series(
-                ['sky', 'person', 'building', 'person'],
-                dtype=pd.CategoricalDtype(
-                    categories=('building', 'person', 'sky')
-                ),
+TEST_FEATURES = pd.DataFrame(
+    {
+        'class': pd.Series(
+            ['sky', 'person', 'building', 'person'],
+            dtype=pd.CategoricalDtype(
+                categories=('building', 'person', 'sky')
             ),
-            'confidence': pd.Series([0.2, 0.5, 1, 0.8]),
-        }
-    )
+        ),
+        'confidence': pd.Series([0.2, 0.5, 1, 0.8]),
+    }
+)
 
-    features = features_from_properties(properties=properties)
 
-    pd.testing.assert_frame_equal(features, properties)
+def test_features_from_properties_with_dataframe():
+    features = features_from_properties(properties=TEST_FEATURES)
+    pd.testing.assert_frame_equal(features, TEST_FEATURES)
 
 
 def test_resize_features_smaller():
-    features = pd.DataFrame(
-        {
-            'class': pd.Series(
-                ['sky', 'person', 'building', 'person'],
-                dtype=pd.CategoricalDtype(
-                    categories=('building', 'person', 'sky')
-                ),
-            ),
-            'confidence': pd.Series([0.2, 0.5, 1, 0.8]),
-        }
-    )
-    current_properties = {
+    current_values = {
         'class': np.array(['person']),
         'confidence': np.array([0.8]),
     }
 
     new_features = resize_features(
-        features, 2, current_values=current_properties
+        TEST_FEATURES, 2, current_values=current_values
     )
 
     assert new_features.shape == (2, 2)
@@ -316,24 +305,13 @@ def test_resize_features_smaller():
 
 
 def test_resize_features_larger():
-    features = pd.DataFrame(
-        {
-            'class': pd.Series(
-                ['sky', 'person', 'building', 'person'],
-                dtype=pd.CategoricalDtype(
-                    categories=('building', 'person', 'sky')
-                ),
-            ),
-            'confidence': pd.Series([0.2, 0.5, 1, 0.8]),
-        }
-    )
     current_properties = {
         'class': np.array(['person']),
         'confidence': np.array([0.8]),
     }
 
     new_features = resize_features(
-        features, 6, current_values=current_properties
+        TEST_FEATURES, 6, current_values=current_properties
     )
 
     assert new_features.shape == (6, 2)
@@ -348,17 +326,6 @@ def test_resize_features_larger():
 
 
 def test_append_features():
-    features = pd.DataFrame(
-        {
-            'class': pd.Series(
-                ['sky', 'person', 'building', 'person'],
-                dtype=pd.CategoricalDtype(
-                    categories=('building', 'person', 'sky')
-                ),
-            ),
-            'confidence': pd.Series([0.2, 0.5, 1, 0.8]),
-        }
-    )
     to_append = pd.DataFrame(
         {
             'class': ['sky', 'building'],
@@ -366,7 +333,7 @@ def test_append_features():
         }
     )
 
-    new_features = append_features(features, to_append)
+    new_features = append_features(TEST_FEATURES, to_append)
 
     assert new_features.shape == (6, 2)
     np.testing.assert_array_equal(
@@ -380,19 +347,7 @@ def test_append_features():
 
 
 def test_remove_features():
-    features = pd.DataFrame(
-        {
-            'class': pd.Series(
-                ['sky', 'person', 'building', 'person'],
-                dtype=pd.CategoricalDtype(
-                    categories=('building', 'person', 'sky')
-                ),
-            ),
-            'confidence': pd.Series([0.2, 0.5, 1, 0.8]),
-        }
-    )
-
-    new_features = remove_features(features, [1, 3])
+    new_features = remove_features(TEST_FEATURES, [1, 3])
 
     assert new_features.shape == (2, 2)
     np.testing.assert_array_equal(
