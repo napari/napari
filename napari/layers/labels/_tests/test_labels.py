@@ -563,6 +563,24 @@ def test_contour(input_data, expected_data_view):
     )
 
 
+def test_contour_large_new_labels(make_napari_viewer):
+    """Check that new labels larger than the lookup table work in contour mode.
+
+    References
+    ----------
+    [1]: https://forum.image.sc/t/data-specific-reason-for-indexerror-in-raw-to-displayed/60808
+    [2]: https://github.com/napari/napari/pull/3697
+    """
+    viewer = make_napari_viewer()
+
+    labels = np.zeros((5, 10, 10), dtype=int)
+    labels[0, 4:6, 4:6] = 1
+    labels[4, 4:6, 4:6] = 1000
+    labels_layer = viewer.add_labels(labels)
+    labels_layer.contour = 1
+    viewer.dims.set_point(axis=0, value=4)
+
+
 def test_selecting_label():
     """Test selecting label."""
     np.random.seed(0)
