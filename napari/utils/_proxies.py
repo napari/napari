@@ -39,7 +39,10 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     """Proxy to prevent private attribute and item access, recursively."""
 
     __wrapped__: _T
-    _module_: str = 'napari'  # set to empty string to extend beyond napari
+
+    # __root limits the scope of the Proxy to types from the __root module
+    # set to empty string to recurse indefinitely
+    __root: str = __module__.split('.')[0]  # default to napari only
 
     def __getattr__(self, name: str):
         if name.startswith('_'):
@@ -72,8 +75,10 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     @classmethod
     def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
-        if not getattr(type(obj), '__module__', '').startswith(cls._module_):
+        # restrict the scope of this proxy to napari objects
+        if not getattr(type(obj), '__module__', '').startswith(cls.__root):
             return obj
+
         if callable:
             return CallablePublicOnlyProxy(obj)
         return PublicOnlyProxy(obj)
