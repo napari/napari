@@ -1,5 +1,6 @@
 import os
 import sys
+from collections import abc
 
 import numpy as np
 import pytest
@@ -131,7 +132,7 @@ def are_objects_equal(object1, object2):
     """
     compare two (collections of) arrays or other objects for equality. Ignores nan.
     """
-    if isinstance(object1, (list, tuple)):
+    if isinstance(object1, abc.Sequence):
         items = zip(object1, object2)
     elif isinstance(object1, dict):
         items = [(value, object2[key]) for key, value in object1.items()]
