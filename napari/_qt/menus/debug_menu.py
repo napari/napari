@@ -56,7 +56,7 @@ class DebugMenu(NapariMenu):
 
     def _start_trace_dialog(self):
         """Open Save As dialog to start recording a trace file."""
-        viewer = self._win.qt_viewer
+        viewer = self._win._qt_viewer
 
         dlg = QFileDialog()
         hist = get_save_history()
