@@ -5,7 +5,7 @@ from typing import Any, Callable, Generic, TypeVar, Union
 
 import wrapt
 
-from ..utils.misc import ROOT_DIR
+from ..utils import misc
 from ..utils.translations import trans
 
 _T = TypeVar("_T")
@@ -44,29 +44,31 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     def __getattr__(self, name: str):
         if _SUNDER.match(name):
-            # allow napari to use private attributes by checking caller
+            # allow napari to access private attributes and get an non-proxy
             frame = sys._getframe(1) if hasattr(sys, "_getframe") else None
-            if frame and ROOT_DIR not in frame.f_code.co_filename:  # type: ignore
-                typ = type(self.__wrapped__).__name__
-                warnings.warn(
-                    trans._(
-                        "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.4.14",
-                        deferred=True,
-                        name=name,
-                        typ=typ,
-                    ),
-                    category=FutureWarning,
-                    stacklevel=2,
-                )
-                # name = f'{type(self.__wrapped__).__name__}.{name}'
-                # raise AttributeError(
-                #     trans._(
-                #         "Private attribute access ('{typ}.{name}') not allowed in this context.",
-                #         deferred=True,
-                #         name=name,
-                #         typ=typ,
-                #     )
-                # )
+            if frame and misc.ROOT_DIR in frame.f_code.co_filename:  # type: ignore
+                return super().__getattr__(name)
+
+            typ = type(self.__wrapped__).__name__
+            warnings.warn(
+                trans._(
+                    "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.4.14",
+                    deferred=True,
+                    name=name,
+                    typ=typ,
+                ),
+                category=FutureWarning,
+                stacklevel=2,
+            )
+            # name = f'{type(self.__wrapped__).__name__}.{name}'
+            # raise AttributeError(
+            #     trans._(
+            #         "Private attribute access ('{typ}.{name}') not allowed in this context.",
+            #         deferred=True,
+            #         name=name,
+            #         typ=typ,
+            #     )
+            # )
         return self.create(super().__getattr__(name))
 
     def __getitem__(self, key):
@@ -81,13 +83,10 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     @classmethod
     def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
         # restrict the scope of this proxy to napari objects
-        # using string literal is more resistant to monkeypatching
         if not getattr(obj, '__module__', '').startswith('napari'):
             return obj
-
         if isinstance(obj, PublicOnlyProxy):
-            # don't double wrap
-            return obj
+            return obj  # don't double-wrap
         if callable(obj):
             return CallablePublicOnlyProxy(obj)
         return PublicOnlyProxy(obj)
