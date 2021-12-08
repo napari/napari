@@ -1141,9 +1141,9 @@ class Window:
         from .utils import add_flash_animation
 
         if canvas_only:
-            img = self.qt_viewer.canvas.native.grabFramebuffer()
+            img = self._qt_viewer.canvas.native.grabFramebuffer()
             if flash:
-                add_flash_animation(self.qt_viewer._canvas_overlay)
+                add_flash_animation(self._qt_viewer._canvas_overlay)
         else:
             img = self._qt_window.grab().toImage()
             if flash:
