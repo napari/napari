@@ -642,7 +642,6 @@ class Window:
         """
         from ..plugins import _npe2
 
-        dock_kwargs = {}
         Widget = _npe2.get_widget_contribution(plugin_name, widget_name)
         dock_kwargs = {}
 

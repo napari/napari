@@ -31,6 +31,9 @@
     - file: plugins/hook_specifications
     - file: plugins/for_napari_developers
     - file: plugins/best_practices
+    - file: plugins/npe2_getting_started
+    - file: plugins/npe2_manifest_specification
+    - file: plugins/npe2_migration_guide
 
 - file: developers/index
   sections:

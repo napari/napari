@@ -1,53 +1,38 @@
 (npe2-manifest-spec)=
 
-# npe2: manifest specification
+# npe2 manifest specification
 
-## TODO
+The **plugin manifest** is a specially formatted text file declaring the
+functionality of a [npe2][] plugin. A **plugin** is a python package that
+contains the manifest together with a suitable _[entry point group][epg]_ in
+the package metadata.
 
-Doc
+Manifest files may be [json][], [yaml][], or [toml][] files conforming to the
+manifest schema. The **schema** defines what to expect in a manifest by
+defining the fields and their data types. These fields and their meanings are
+described below.
 
-- [x] overall plugin/manifest versioning
-- [ ] sample data hook
-- [x] widget hook
-- [ ] plugin life cycle. activation/deactivation
-- [x] head matter
-- [x] commands
-- [x] reader
-- [x] writer
-- [x] theme
-- [ ] menu/keybinding
+A **plugin engine** is used to discover plugins, provide utilities for
+querying and manipulating plugins, and for exposing plugin-backed
+functionality to _napari_. **Discovery** is the process by that finds plugins,
+parses the manifests and indexes them for later use. The [npe2][] library
+manages these responsibilities.
 
-Impl
-
-- [ ] configuration/settings
-- [ ] Menu/submenu
-- [ ] keybindings
-
-Audit
-
-- [ ] examples
-  - [ ] exist
-  - [ ] correct
-- [ ] accuracy with spec.
-  - [ ] are required fields all there
-  - [ ] are optional things in the right place
-  - [ ] fields removed from spec are not mentioned
-
-## Introduction
-
-The **manifest** is a specially formatted text file declaring the functionality of a [npe2][] plugin. A **plugin** is a python package that contains the manifest together with a suitable _[entry point group][epg]_ in the package metadata.
-
-Manifest files may be [json][], [yaml][], or [toml][] files conforming to the manifest schema. The **schema** defines what to expect in a manifest by defining the fields and their data types. These fields and their meanings are described below.
-
-A **plugin manager** is used to discover plugins, provide utilities for querying and manipulating plugins, and for exposing plugin-backed functionality to _napari_. **Discovery** is the process by that finds plugins, parses the manifests and indexes them for later use.
-
-> describe lazy import and activation
+```{admonition} Backward compatibility
+Plugins targeting `napari-plugin-engine` will continue to work, but we
+recommend migrating to `npe2` as soon as possible. `npe2` includes tooling to
+help automate the process of migrating plugins. See the [migration
+guide](npe2-migration-guide) for details.
+```
 
 ## Configuring a python package to use a plugin manifest
 
 ### 1. Add package metadata for locating the manifest
 
-The manifest file should be specified in the plugin's `setup.cfg` or `setup.py` file using the _[entry point group][epg]_: `napari.manifest`. For example, this would be the section for a plugin `npe2-tester` with `napari.yaml` as the manifest file:
+The manifest file should be specified in the plugin's `setup.cfg` or
+`setup.py` file using the _[entry point group][epg]_: `napari.manifest`. For
+example, this would be the section for a plugin `npe2-tester` with
+`napari.yaml` as the manifest file:
 
 ```cfg
 [options.entry_points]
@@ -56,11 +41,12 @@ napari.manifest =
 ```
 
 The manifest file is specified relative to the submodule root path.
-So for the example it will be loaded from: `<path/to/npe2-tester>/npe2_tester/napari.yaml`.
+So for the example it will be loaded from: `<path/to/npe2-tester>/napari.yaml`.
 
 ### 2. Include the manifest in the package distribution
 
-The manifest file needs to be included as _[package data][pd]_ in distributable forms for the package. For example:
+The manifest file needs to be included as _[package data][pd]_ in
+distributable forms for the package. For example:
 
 ```toml
 [metadata]
@@ -72,175 +58,149 @@ npe2_tester =
     napari.yaml
 ```
 
-> What about MANIFEST.in
-
-## Versioning
-
-> XXX This section very rough
-
-A set of conventions define how the plugin engine interacts with plugins. We want to continue to evolve these while providing a stable platform for plugin developers.
-
-To that end, each set of conventions is assigned a **version identifier**.
-
-> version id needs definition and a name. Using semver seems easiest. I kind of like `plugin=1.0` or something like that. We don't _need_ an identifier right now.
-
-These conventions include:
-
-- How the plugin is discovered
-- How the plugin exposes functionality to the plugin engine
-- Function signatures and calling conventions
-- Manifest schema
-- Behavior expected around plugin state
-
-That covers a lot of ground!
-
-### Identifying the plugin spec version
-
-As of the introduction of `npe2`, there are two plugin systems in napari: `original` and `npe2`.
-
-The original plugin system comprises `napari-plugin-engine` library and a `plugin_manager` contained within _napari_.
-
-#### napari-plugin-engine
-
-The original `napari-plugin-engine` describes one set of conventions for defining plugins. These plugins don't declare a version. These are implicitly identified. If a plugin is not first recognized as a newer version, but follows the `napari-plugin-engine` rules around discovery then it must be a `original` plugin.
-
-#### npe2
-
-There is only one version of npe2 at the moment. A plugin detected as an npe2 plugin will be assumed to have that version. When a future version of the plugin engine needs to be indicated, an identifer will be added to the manifest.
-
-### Forwards compatibility
-
-In the wild, there are a distribution of napari versions being run at any one time. The newest versions will have access to the latest plugin engine, but older versions will not. How will these old versions deal with plugins written for a future plugin engine?
-
-A user running napari 0.4.11 uses the original `napari-plugin-engine` to interact with plugins. Newer `npe2`-style plugins won't be visible.
-
-This convention is extended. A plugin engine supporting up to _plugin_spec_version=X_ will ignore any plugins declaring a version _Y_ when _X<Y_.
-
-### Backwards compatibility
-
-Wherever possible a plugin engine supporting _plugin_spec_version=X_ should support versions _Y≤X_.
-
-It may be necessary to deprecate certain plugin types, over time.
-
-### Migrating plugins
-
-> TODO write and link to the [migration guide][mg].
-
-> TODO cli tool for automating migration
-
 ## Manifest schema
 
-When read, a manifest file is first parsed into an intermediate representation (a python `dict`) that is then validated and transformed into a [PluginManifest][]. These last steps are defined using [pydantic][]. For details refer to the `PluginManifest` api documentation.
+The plugin manifest file is a [json][], [yaml][], or [toml][] conforming to
+a schema. The `npe2` package includes a command-line tool that can be used
+to validate a schema:
 
-The `PluginManifest` is structured hierarchically. These are broken into a set of top-level properties and several sections that are outlined below.
-
-### Top-level properties
-
-> **Chopping block**: categories, license, preview, private
-
-> **non-doc**: categories
-
-> **to add**: manifest/plugin-api version identifier
-
-#### Required
-
-- **publisher**: The name of the publisher. Example: `org.napari`. A _manifest key_ of the form `<publisher>.<name>` is used to index plugins with the `PluginManager`.
-- **display_name**: User-facing text to display as the name of this plugin. Must be 3-40 characters long. Example: `napari SVG writer`.
-- **entry_point**: The module containing the `activate` function. An `activate` function is not required but an `entry_point` module must be specified regardless. Example: `napari.plugins._builtins`.
-
-##### Example
-
-```yaml
-name: napari_svg
-display_name: napari SVG
-license: BSD-3-Clause
-entry_point: napari_svg
+```
+pip install npe2
+npe2 validate my_plugin_manifest.yml
 ```
 
-#### Optional
+```{note}
+Internally, the manifest is represented by a [pydantic][] model, the
+[PluginManifest][].
+```
 
-Python package metadata (`setup.py` or `setup.cfg`) may be used to populate missing optional fields. This only happens when loading the manifest from a python package.
+The manifest file's fields are described in detail below. The manifest file's
+overall structure can be viewed as a hierarchy:
 
-- **name** The name of the plugin. Example: `napari_svg`. Should be a [PEP 508][]-compatible package name. If missing, this is populated from the python package [name][setup-name].
-- **description**: User-facing text that describes what your extension is and does. If missing, this is populated from the python package [description][setup-desc].
-- **version**: The current version of the plugin. If missing, this is populated from the python package [version][setup-version].
-- **license**: The copyright license. Preferably a [SPDX][] compatible identifier. If missing, this is populated from the python package's [license][setup-lic] field. This may effect the visual appearance of a plugin within the application.
-- **preview**: Indicates this plugin isn't quite ready for prime time. If missing, this is populated from the _development status_ [classifier][setup-classifier] in the python package metadata. This may effect the visual appearance of a plugin within the application.
+```
+<top-level properties>
+contributions:
+  commands:     <list of commands>
+  readers:      <list of readers>
+  writers:      <list of writers>
+  sample_data:  <list of sample data providers>
+  widgets:      <list of widget providers>
+  themes:       <list of themes>
+```
 
-  - more likely look at version number: If it ends with beta/alpha/rc, or is below 1.0.0 hide by default.
+Readers, writers, sample data providers and widget providers refer to callable
+python functions that a plugin defines. Each callable is identified with an
+entry in the list of `commands` via a unique id. For more see [Commands] below.
 
-- **private**: Indicates this plugin should be exempted from plugin listings in the application. For example, perhaps napari builtins should not be enabled/disabled like other plugins and so they should be marked private.
+```{note}
+Python package metadata (`setup.py` or `setup.cfg`) may be used to populate
+selected properties of the [PluginManifest][].
+```
 
-### Contributions
+## Top-level properties
 
-The contributions section is a collection of entities declaring functionality.
+### Required
 
-The main entity here is `Commands`. A **command** is a python function associated with an _id_. A **command id** is used as a unique identifer for the command. This is how other contributions, like _readers_, _writers_ or _keyboard shortcuts_, reference a command.
+- **name** The name of the plugin. Example: `napari_svg`. Should be a
+  [PEP-8][]-compatible package name. If missing, this is populated from the
+  python package [name][setup-name].
 
-Commands can statically specify their associated python function in the manifest, or dynamically during the plugin's `activate()` function.
+### Optional
 
-Some commands are executed in specific contexts that require the callable function to conform to certain requirements. For example, a command that is reference by a _reader_ must conform to the `napari_get_reader` [hook-specification][get-reader-hook].
+- **display_name**: User-facing text to display as the name of this plugin.
+  Example: `napari SVG`. Must be 3-40 characters long, containing
+  printable word characters, and must not begin or end with an underscore,
+  white space, or non-word character.
+- **entry_point**: The module containing the `activate()` function. Example:
+  `foo.bar.baz`. This should be a fully qualified module string.
 
 ## Commands
 
-Many plugin contributions rely on calling a python function. _Commands_ is a collection of these callable's and associated metadata.
-
-In addition to being listed in this section, _commands_ may be dynamically registered by the plugin's _activate()_ function.
+**command** is a python function associated with an id. The **id** is
+a unique identifier to which other contributions, like readers, can refer.
 
 ### Required fields
 
 - **id** An identifer used to reference this command within this plugin.
-- **title** Title by which the command is represented in the UI
+- **title** A description of the command. This might be used, for example,
+  when searching in a command pallette. Example: "Generate lily sample",
+  or "Read tiff image".
 
 ### Optional fields
 
 - **icon** Icon which is used to represent the command in the UI. Either a file path, an object with file paths for dark and light themes, or a theme icon references, like `$(zap)`
 - **enablement** A predicate python expression evaluated during runtime to determine the presentation of related UI elements within different contexts.
-- **python_name** Fully qualified name to callable python object implementing this command. This usually takes the form of `{obj.__module__}:{obj.__qualname__}` (e.g. `my_package.a_module:some_function`). If provided, using `register_command` in the plugin activate function is optional (but takes precedence).
+- **python_name** Fully qualified name to callable python object implementing
+  this command. This usually takes the form of
+  `{obj.__module__}:{obj.__qualname__}` (e.g.
+  `my_package.a_module:some_function`). If provided, using `register_command`
+  in the plugin activate function is optional (but takes precedence).
+
+### Example
+
+```yaml
+name: my-plugin
+contribution:
+  commands:
+    - id: my-plugin.publish_paper
+      title: Do experiments, analysis, write paper, and submit
+      python_name: my_plugin.publish_func
+```
 
 ## Readers
 
 ### Required fields
 
 - **command** Identifier of the _command_ to execute.
-- **filename_patterns** List of filename patterns (for fnmatch) that this reader can accept. Reader will be tried only if `fnmatch(filename, pattern) == True`.
-- **accepts_directories** Whether this reader accepts directories
 
-##### Example
+### Optional fields
+
+- **filename_patterns** List of filename patterns (for fnmatch) that this
+  reader can accept. Reader will be tried only if `fnmatch(filename, pattern) == True`.
+  Empty list by default.
+- **accepts_directories** If true, the reader will accept paths to directories
+  for reading data.
+
+### Example
 
 ```yaml
-contributions:
+name: my-reader
+contribution:
   commands:
-    - id: napari_builtins.get_reader
-      python_name: napari.plugins._builtins:napari_get_reader
-      title: Builtin Reader
+    - id: my-reader.read_npy_image
+      title: Open an npy file as an image
+      python_name: my_reader.load_as_image
   readers:
-    - command: napari_builtins.get_reader
-      accepts_directories: true
-      filename_patterns: ["*.csv", "*.npy"]
+    - command: my-reader.read_npy_image
+      accepts_directories: false
+      filename_patterns: ["*.npy"]
 ```
 
 ### Calling convention
 
 ```python
-def reader_function(path:str|List[str])->Optional[Callable[str,List[LayerData]]]:
+def get_reader(path:str)->Optional[Callable[[str],List[LayerData]]]:
+  ...
+  return reader
+
+def reader(path: str) -> List[LayerData]:
     ...
 ```
 
-###### Parameters
+```{note}
+The reader command is compatible with functions used for the `napari_get_reader`
+[hook specification][get-reader-hook].
+```
 
-path(str or list of str)
-: Path(s) to resources to read.
+**Parameters**
 
-###### Returns
+path(str)
+: Path to file, directory, or resource (like a url).
 
-If the resource indicated by `path` is incompatible with the reader, `None` is returned. Otherwise, a function is returned that will return a collection of `LayerData`.
+**Return**
 
-`LayerData` is a 1-, 2-, or 3-tuple of (data,), (data, meta), or (data, meta, layer_type).
-
-###### Compatibility
-
-The calling convention is compatible with the [`napari_get_reader`][get-reader-hook] hook.
+layer_data(list of LayerData)
+: Each `LayerData` element is a tuple of `(data,meta,layer_type)`.
 
 ## Writers
 
@@ -248,36 +208,44 @@ The calling convention is compatible with the [`napari_get_reader`][get-reader-h
 
 - **command** Identifier of the _command_ providing the writer.
 - **layer_types** List of layer type constraints. These determine what combinations of layers this writer handles.
-- **filename_extensions** List of filename extensions compatible with this writer. The first entry is used as the default if necessary.
-- **save_dialog_title** Brief text used to describe this writer when presented in a save dialog. When not specifed the _command's_ title is used instead.
 
-###### Example
+### Optional fields
+
+- **name** Brief text used to describe this writer when presented. Empty by
+  default.
+- **filename_extensions** List of filename extensions compatible with this
+  writer. The first entry is used as the default if necessary. Empty by default.
+
+### Examples
+
+**Example**
 
 Single-layer writer
 
 ```yaml
+name: napari
 contributions:
   commands:
-    - id: napari_builtins.write_points
+    - id: napari.write_points
       python_name: napari.plugins._builtins:napari_write_points
-      title: napari built-in points writer
-      short_title: napari points
+      title: Save points layer to csv
   writers:
-    - command: napari_builtins.write_points
+    - command: napari.write_points
       filename_extensions: [".csv"]
       layer_types: ["points"]
 ```
 
-###### Example
+**Example**
 
 Multi-layer writer
 
 ```yaml
+name: napari-svg
 contributions:
   commands:
-    - id: napari_svg.svg_writer
-      title: Write SVG
-      python_name: napari_svg.hook_implementations:writer
+    - id: napari-svg.svg_writer
+      python_name: napari-svg.hook_implementations:writer
+      title: Save layers as SVG
   writers:
     - command: napari_svg.svg_writer
       layer_types: ["image*", "labels*", "points*", "shapes*", "vectors*"]
@@ -286,9 +254,11 @@ contributions:
 
 ### Layer type constraints
 
-Given a set of layers, compatible writer plugins are selected based their _layer type constraints_.
+Given a set of layers, compatible writer plugins are selected based their
+_layer type constraints_.
 
-A writer plugin can declare that it will write between _m_ and _n_ layers of a specific type where _0≤m≤n_.
+A writer plugin can declare that it will write between _m_ and _n_ layers of a
+specific type where _0≤m≤n_.
 
 For example:
 
@@ -301,25 +271,28 @@ For example:
     image{m,n} Write between m and n layers (inclusive range). Must have m<=n.
 ```
 
-When a type is not present in the list of constraints, that corresponds to a writer that is not compatible with that type. For example, a writer declaring:
+When a type is not present in the list of constraints, that corresponds to a
+writer that is not compatible with that type. For example, a writer declaring:
 
 ```
     layer_types=["image+", "points*"]
 ```
 
-would not be selected when trying to write an `image` and a `vector` layer because the above only works for cases with 0 `vector` layers.
+would not be selected when trying to write an `image` and a `vector` layer
+because the above only works for cases with 0 `vector` layers.
 
-Note that just because a writer declares compatibility with a layer type does not mean it actually writes that type. In the example above, the writer might accept a set of layers containing `image`s and `point`s, but the write command might just ignore the `point` layers. The writer must return `None` for unwritten layers.
+Note that just because a writer declares compatibility with a layer type does
+not mean it actually writes that type. In the example above, the writer might
+accept a set of layers containing `image`s and `point`s, but the write command
+might just ignore the `point` layers. The writer must return `None` for
+unwritten layers.
 
 ### Calling convention
 
-Currently, two calling conventions are supported for writers: single-layer and multi-layer writers. When at most one layer can be matched by a writer, it must use the single-layer convention. Otherwise, the multi-layer convention must be used.
-
-###### Compatibility
-
-The single-layer writer calling convention is compatible with the single-layer hooks like ['napari_write_image'][write-image-hook] and friends.
-
-The multi-layer writer calling convention is _not_ compatible with [`napari_get_writer`][get-writer-hook] hooks, but it is compatible with the writers returned by those hooks.
+Currently, two calling conventions are supported for writers: single-layer and
+multi-layer writers. When at most one layer can be matched by a writer, it
+must use the single-layer convention. Otherwise, the multi-layer convention
+must be used.
 
 #### multi-layer writer
 
@@ -330,7 +303,7 @@ def writer_function(
     ...
 ```
 
-###### Parameters
+**Parameters**
 
 path(str)
 : Path to file, directory, or resource (like a url).
@@ -338,7 +311,7 @@ path(str)
 layer_data(list of LayerData)
 : Each `LayerData` element is a tuple of `(data,meta,layer_type)`.
 
-###### Return
+**Return**
 
 Returns a list of paths that were successfully written.
 
@@ -351,20 +324,131 @@ def writer_function(
     ...
 ```
 
-###### Parameters
+**Parameters**
 
 path(str)
 : Path to file, directory, or resource (like a url).
 
-data(array or list of array)
-: Image data. Can be N dimensional. If meta[‘rgb’] is True then the data should be interpreted as RGB or RGBA. If meta[‘multiscale’] is True, then the data should be interpreted as a multiscale image.
+data(array or list of array) : Layer data. Can be N dimensional. If an image
+and meta[‘rgb’] is True then the data should be interpreted as RGB or RGBA. If
+meta[‘multiscale’] is True, then the data should be interpreted as a
+multiscale image.
 
 meta(dict)
-: Image metadata.
+: Layer metadata.
 
-###### Return
+**Return**
 
-If data is successfully written, return the path that was written. Otherwise, if nothing was done, return None.
+If data is successfully written, return the path that was written. Otherwise,
+if nothing was done, return None.
+
+## Sample Data
+
+There are two ways of specifying sample data.
+
+1. As a **sample data generator**, a function that returns layer data.
+2. As a **sample data uri**, a `uri` that should be read using a `reader`
+   plugin.
+
+### Required fields
+
+_sample data generator_
+
+- **command** Identifier of a command that returns a layer data tuple.
+- **display_name** String to show in the GUI when referring to this sample.
+- **key** A key to identify this sample. Must be unique across the samples
+  provided by a single plugin.
+
+_sample data uri_
+
+- **uri** Path or URL to a data resource.
+- **display_name** String to show in the GUI when referring to this sample.
+- **key** A key to identify this sample. Must be unique across the samples
+  provided by a single plugin.
+
+### Optional fields
+
+_sample data uri_
+
+- **reader_plugin** Name of plugin to use to open the `uri`.
+
+### Examples
+
+**Example**
+
+Sample data generator
+
+```yaml
+name: napari
+contributions:
+  commands:
+    - id: napari.data.astronaut
+      title: Generate astronaut sample
+      python_name: napari.plugins._skimage_data:astronaut
+  sample_data:
+    - display_name: Astronaut (RGB)
+      key: astronaut
+      command: napari.data.astronaut
+```
+
+**Example**
+
+Sample data uri
+
+```yaml
+name: my-sample
+contributions:
+  sample_data:
+    - display_name: Tabueran Kribati
+      key: napari
+      uri: https://en.wikipedia.org/wiki/Napari#/media/File:Tabuaeran_Kiribati.jpg
+```
+
+### Calling convention
+
+_sample data generator_
+
+```python
+def sample_data_generator()->List[LayerData]:
+  ...
+```
+
+## Widgets
+
+### Required fields
+
+- **command** Identifier of a command that returns a Widget instance.
+- **name** User-facing name to use for the widget in, for example, menu items.
+
+### Examples
+
+```yaml
+name: napari-animation
+contributions:
+  commands:
+    - id: napari-animation.AnimationWidget
+      python_name: napari_animation._hookimpls:AnimationWidget
+      title: Open animation wizard
+  widgets:
+    - command: napari-animation.AnimationWidget
+      name: Wizard
+```
+
+### Calling Convention
+
+```python
+
+# Bind the constructor as the callable:
+# e.g. python_name: my-plugin.MyWidget
+class MyWidget(QWidget):
+  ...
+
+# Bind the function as the callable:
+# e.g. python_name: my_typed_function
+@magic_factory
+def my_typed_function(...):
+  ...
+```
 
 ## Themes
 
@@ -386,7 +470,7 @@ If data is successfully written, return the path that was written. Otherwise, if
   - **warning**
   - **current**
 
-###### Example
+### Example
 
 ```yaml
 themes:
@@ -406,133 +490,6 @@ themes:
       current: "#66d9ef"
 ```
 
-## Widgets (Experimental)
-
-Provides widgets to be docked in the viewer.
-
-This plugin contribution is marked as experimental as the API or how the returned value is handled may change here more frequently then the rest of the codebase.
-
-### Required fields
-
-command
-: Identifier of a command that returns the widget instance.
-
-### Optional fields
-
-name
-: User facing name of the widget. If multiple widgets are provided by the same plugin, the name cannot be an empty string.
-
-###### Example
-
-Manifest
-
-```yaml
-contributions:
-  command:
-    - id: my_plugin.make_widget
-      title: Willy's Wild Widget
-  widgets:
-    - command: my_plugin.make_widget
-```
-
-With a QtWidget:
-
-```python
-from qtpy.QtWidgets import QWidget
-
-class MyWidget(QWidget):
-     def __init__(self, napari_viewer):
-         self.viewer = napari_viewer
-         super().__init__()
-
-         # initialize layout
-         layout = QGridLayout()
-
-         # add a button
-         btn = QPushButton('Click me!', self)
-         def trigger():
-             print("napari has", len(napari_viewer.layers), "layers")
-         btn.clicked.connect(trigger)
-         layout.addWidget(btn)
-
-         # activate layout
-         self.setLayout(layout)
-
-def make_widget():
-     return MyWidget
-```
-
-With magicgui:
-
-```python=
-from magicgui import magic_factory
-
-@magic_factory(auto_call=True, threshold={'max': 2 ** 16})
-def threshold(
-    data: 'napari.types.ImageData',
-    threshold: int
-) -> 'napari.types.LabelsData':
-    return (data > threshold).astype(int)
-
-def make_widget():
-    return threshold
-```
-
-### Calling convention
-
-```python
-def widget_function()->FunctionGui | QWidget:
-    ...
-```
-
-###### Return
-
-A _callable_ that returns an instance of either a `QWidget` or a `FunctionGui`.
-
-###### Compatibility
-
-The calling convention for this command is compatible with [`napari_experimental_dock_widget`][dock-widget-hook].
-
-# TODO
-
-## Configuration
-
-TODO
-
-## Menus
-
-- **command_pallete**
-- **layers\_\_context**
-- **plugins\_\_widgets**
-- **test_menu**
-
-### MenuItem
-
-A list of items that one of either `MenuCommand` or `Submenu`:
-
-- **MenuCommand**
-  - **command** Identifier of the _command_ to execute.
-  - **alt** Identifier of an alternative _command_ to execute. It will be shown and invoked when pressing Alt while opening a menu.
-- **Submenu**
-  - **submenu** Identifier of the submenu to display in this item. The submenu must be declared in `contributions.submenus`.
-
-### Submenus
-
-A list of items with the following properties:
-
-- **id** identifier of the submenu
-- **label** User-facing text shown as the menu label.
-- **icon** (optional) Either a file-path, a theme icon reference (e.g. `$(zap)`), or an object with paths for dark and light themes.
-
-## Keybindings
-
-- **command** Identifier of the command to run when keybinding is triggered.
-- **key** Key or key sequence (separate keys with plus-sign and sequences with space, e.g. Ctrl+O and Ctrl+L L for a chord.
-- **mac** Mac specific key or key sequence.
-- **linux** Linux specific key or key sequence.
-- **win** Windows specific key or key sequence.
-- **when** Condition when the key is active.
-
 [epg]: https://packaging.python.org/specifications/entry-points/
 [pd]: https://setuptools.pypa.io/en/latest/userguide/datafiles.html
 [npe2]: https://github.com/tlambert03/npe2
@@ -541,7 +498,7 @@ A list of items with the following properties:
 [toml]: https://toml.io/
 [pydantic]: https://pydantic-docs.helpmanual.io/
 [pluginmanifest]: https://github.com/tlambert03/npe2/blob/main/npe2/manifest/schema.py
-[pep 508]: https://www.python.org/dev/peps/pep-0423/
+[pep 8]: https://www.python.org/dev/peps/pep-0008/
 [setup-name]: https://packaging.python.org/guides/distributing-packages-using-setuptools/#name
 [setup-version]: https://packaging.python.org/guides/distributing-packages-using-setuptools/#version
 [setup-desc]: https://packaging.python.org/guides/distributing-packages-using-setuptools/#description
@@ -551,5 +508,3 @@ A list of items with the following properties:
 [get-reader-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_get_reader
 [get-writer-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_get_writer
 [write-image-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_write_image
-[dock-widget-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_experimental_provide_dock_widget
-[mg]: https://hackmd.io/XltMlKUUT_KmOnZPx4RvAQ
