@@ -45,11 +45,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     __root: str = __name__.split('.')[0]  # default to napari only
 
     def __getattr__(self, name: str):
-        if name.startswith('_'):
+        if _SUNDER.match(name):
+            typ = type(self.__wrapped__).__name__
             warnings.warn(
                 trans._(
-                    "Private attribute access in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.4.14",
+                    "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.4.14",
                     deferred=True,
+                    name=name,
+                    typ=typ,
                 ),
                 category=FutureWarning,
                 stacklevel=2,
@@ -57,9 +60,10 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             # name = f'{type(self.__wrapped__).__name__}.{name}'
             # raise AttributeError(
             #     trans._(
-            #         "Private attribute access ('{name}') not allowed in this context.",
+            #         "Private attribute access ('{typ}.{name}') not allowed in this context.",
             #         deferred=True,
             #         name=name,
+            #         typ=typ,
             #     )
             # )
         return self.create(super().__getattr__(name))

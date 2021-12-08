@@ -1,5 +1,6 @@
 import pytest
 
+from napari.components.viewer_model import ViewerModel
 from napari.utils._proxies import PublicOnlyProxy, ReadOnlyWrapper
 
 
@@ -67,9 +68,17 @@ def test_PublicOnlyProxy():
 
 def test_public_proxy_limited_to_napari():
     """Test that the recursive public proxy goes no farther than napari."""
-    from napari.components.viewer_model import ViewerModel
+    v = ViewerModel()
+    v.add_points(None)
+    pv = PublicOnlyProxy(v)
+    assert not isinstance(pv.layers[0].data, PublicOnlyProxy)
+
+
+def test_array_from_proxy_objects():
+    """Test that the recursive public proxy goes no farther than napari."""
+    import numpy as np
 
     v = ViewerModel()
     v.add_points(None)
-    pp = PublicOnlyProxy(v)
-    assert not isinstance(pp.layers[0].data, PublicOnlyProxy)
+    pv = PublicOnlyProxy(v)
+    assert isinstance(np.array(pv.dims.displayed, dtype=int), np.ndarray)
