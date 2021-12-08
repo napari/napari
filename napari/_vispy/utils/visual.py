@@ -19,6 +19,7 @@ from ...utils.events import EventedModel
 from ...utils.translations import trans
 from ..layers.base import VispyBaseLayer
 from ..layers.image import VispyImageLayer
+from ..layers.labels import VispyLabelsLayer
 from ..layers.points import VispyPointsLayer
 from ..layers.shapes import VispyShapesLayer
 from ..layers.surface import VispySurfaceLayer
@@ -32,7 +33,7 @@ from ..overlays.text import VispyTextOverlay
 
 layer_to_visual = {
     Image: VispyImageLayer,
-    Labels: VispyImageLayer,
+    Labels: VispyLabelsLayer,
     Points: VispyPointsLayer,
     Shapes: VispyShapesLayer,
     Surface: VispySurfaceLayer,

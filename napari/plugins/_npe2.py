@@ -18,6 +18,7 @@ from typing import (
 try:
     import npe2
     from npe2.io_utils import read_get_reader
+    from npe2.manifest.schema import PluginManifest
 except ImportError:
     npe2 = None
 
@@ -172,6 +173,11 @@ def file_extensions_string_for_layers(
         ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
         writers,
     )
+
+
+@npe2_or_return(iter([]))
+def iter_manifests() -> Iterator[PluginManifest]:
+    yield from npe2.PluginManager.instance()._manifests.values()
 
 
 @npe2_or_return(iter([]))

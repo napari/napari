@@ -15,6 +15,7 @@ from ..components.layerlist import LayerList
 from ..layers.base.base import Layer
 from ..plugins import _npe2
 from ..utils import config, perf
+from ..utils._proxies import ReadOnlyWrapper
 from ..utils.action_manager import action_manager
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.history import (
@@ -24,7 +25,6 @@ from ..utils.history import (
     update_save_history,
 )
 from ..utils.interactions import (
-    ReadOnlyWrapper,
     mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
@@ -244,16 +244,6 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        action_manager.register_action(
-            "napari:toggle_console_visibility",
-            self.toggle_console_visibility,
-            trans._("Show/Hide IPython console"),
-            self.viewer,
-        )
-        action_manager.bind_button(
-            'napari:toggle_console_visibility',
-            self.viewerButtons.consoleButton,
-        )
 
         self._create_canvas()
 
@@ -773,7 +763,7 @@ class QtViewer(QSplitter):
         if cursor == 'square':
             # make sure the square fits within the current canvas
             if size < 8 or size > (
-                min(*self.viewer.window.qt_viewer.canvas.size) - 4
+                min(*self.viewer.window._qt_viewer.canvas.size) - 4
             ):
                 q_cursor = self._cursors['cross']
             else:
