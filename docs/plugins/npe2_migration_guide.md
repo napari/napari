@@ -1,11 +1,5 @@
 (npe2-migration-guide)=
 
-    tutorial
-    - hookspec/contribution point mapping
-    - tooling - cli for generating a manifest
-    - where to use original plugin system
-        - what's unsupported at the moment
-
 # npe2 migration guide
 
 We've introduced a new plugin engine. The new library [npe2][] is a
