@@ -34,10 +34,10 @@ For getting started writing new npe2 plugins see the
 
 ## What can plugins do?
 
-- Change the look of napari with a color theme - [theming][]
-- Add custom dock widgets - [dock widgets][]
-- Add file format support - [readers][] and [writers][]
-- Provide sample data - [data providers][]
+- Change the look of napari with a color theme
+- Add custom dock widgets
+- Add file format support - readers and writers
+- Provide sample data
 
 ## How to build plugins?
 
