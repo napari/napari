@@ -42,15 +42,11 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     __wrapped__: _T
 
-    # __root limits the scope of the Proxy to types from the __root module
-    # set to empty string to recurse indefinitely
-    __root: str = __name__.split('.')[0]  # default to napari only
-
     def __getattr__(self, name: str):
         if _SUNDER.match(name):
+            # allow napari to use private attributes by checking caller
             frame = sys._getframe(1) if hasattr(sys, "_getframe") else None
-            # allow napari to use private attributes
-            if frame and ROOT_DIR not in frame.f_back.f_code.co_filename:  # type: ignore
+            if frame and ROOT_DIR not in frame.f_code.co_filename:  # type: ignore
                 typ = type(self.__wrapped__).__name__
                 warnings.warn(
                     trans._(
@@ -85,7 +81,8 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     @classmethod
     def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
         # restrict the scope of this proxy to napari objects
-        if not getattr(obj, '__module__', '').startswith(cls.__root):
+        # using string literal is more resistant to monkeypatching
+        if not getattr(obj, '__module__', '').startswith('napari'):
             return obj
 
         if callable(obj):
