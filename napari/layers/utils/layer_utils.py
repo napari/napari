@@ -530,6 +530,26 @@ def get_extent_world(data_extent, data_to_world, centered=False):
     return world_extent
 
 
+def features_to_pandas_dataframe(features: Any) -> pd.DataFrame:
+    """Coerces a layer's features property to a pandas DataFrame.
+
+    In general, this may copy the data from features into the returned
+    DataFrame so there is no guarantee that changing element values in the
+    returned DataFrame will also change values in the features property.
+
+    Parameters
+    ----------
+    features
+        The features property of a layer.
+
+    Returns
+    -------
+    pd.DataFrame
+        A pandas DataFrame that stores the given features.
+    """
+    return features
+
+
 def _validate_features(
     features: Union[Dict[str, np.ndarray], pd.DataFrame],
     *,
