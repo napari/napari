@@ -1,9 +1,11 @@
 import re
+import sys
 import warnings
 from typing import Any, Callable, Generic, TypeVar, Union
 
 import wrapt
 
+from ..utils.misc import ROOT_DIR
 from ..utils.translations import trans
 
 _T = TypeVar("_T")
@@ -46,26 +48,29 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     def __getattr__(self, name: str):
         if _SUNDER.match(name):
-            typ = type(self.__wrapped__).__name__
-            warnings.warn(
-                trans._(
-                    "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.4.14",
-                    deferred=True,
-                    name=name,
-                    typ=typ,
-                ),
-                category=FutureWarning,
-                stacklevel=2,
-            )
-            # name = f'{type(self.__wrapped__).__name__}.{name}'
-            # raise AttributeError(
-            #     trans._(
-            #         "Private attribute access ('{typ}.{name}') not allowed in this context.",
-            #         deferred=True,
-            #         name=name,
-            #         typ=typ,
-            #     )
-            # )
+            frame = sys._getframe(1) if hasattr(sys, "_getframe") else None
+            # allow napari to use private attributes
+            if frame and ROOT_DIR not in frame.f_back.f_code.co_filename:  # type: ignore
+                typ = type(self.__wrapped__).__name__
+                warnings.warn(
+                    trans._(
+                        "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.4.14",
+                        deferred=True,
+                        name=name,
+                        typ=typ,
+                    ),
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+                # name = f'{type(self.__wrapped__).__name__}.{name}'
+                # raise AttributeError(
+                #     trans._(
+                #         "Private attribute access ('{typ}.{name}') not allowed in this context.",
+                #         deferred=True,
+                #         name=name,
+                #         typ=typ,
+                #     )
+                # )
         return self.create(super().__getattr__(name))
 
     def __getitem__(self, key):
