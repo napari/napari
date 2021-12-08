@@ -4,7 +4,7 @@ from ...utils.events import EventedModel
 
 # from .axes import Axes
 # from .interaction_box import InteractionBox
-# from .scale_bar import ScaleBar
+from .scale_bar import ScaleBar
 from .text import Text
 
 
@@ -33,7 +33,5 @@ class Overlays(EventedModel):
     # default_factory=Axes, allow_mutation=False
     # )
     text: Text = Field(default_factory=Text, allow_mutation=False)
-    # scale_bar: ScaleBar = Field(
-    # default_factory=ScaleBar, allow_mutation=False
-    # )
+    scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
     visible: bool = True

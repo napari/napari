@@ -17,6 +17,7 @@ class VispyTextOverlay(VispyBaseOverlay):
         self.overlay.events.color.connect(self._on_color_change)
         self.overlay.events.font_size.connect(self._on_font_size_change)
         self.overlay.events.position.connect(self._on_position_change)
+        self.node.parent.events.resize.connect(self._on_position_change)
 
         self.reset()
 
@@ -81,3 +82,4 @@ class VispyTextOverlay(VispyBaseOverlay):
         self._on_text_change()
         self._on_color_change()
         self._on_font_size_change()
+        self._on_position_change()

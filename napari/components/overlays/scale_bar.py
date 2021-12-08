@@ -1,6 +1,8 @@
 """Scale bar model."""
 from typing import Optional
 
+from pydantic import validator
+
 from ...utils.events import EventedModel
 from .._viewer_constants import Position
 
@@ -39,3 +41,9 @@ class ScaleBar(EventedModel):
     position: Position = Position.BOTTOM_RIGHT
     font_size: float = 10
     unit: Optional[str] = None
+
+    @validator('position')
+    def _no_center_position(v):
+        if v in (Position.TOP_CENTER, Position.BOTTOM_CENTER):
+            raise ValueError(f'{v} is not an allowed for scale bar')
+        return v

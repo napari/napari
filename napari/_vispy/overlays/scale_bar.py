@@ -9,14 +9,16 @@ from ...utils._units import PREFERRED_VALUES, get_unit_registry
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.theme import get_theme
 from ...utils.translations import trans
+from .base import VispyBaseOverlay
 
 
-class VispyScaleBarOverlay:
+class VispyScaleBarOverlay(VispyBaseOverlay):
     """Scale bar in world coordinates."""
 
-    def __init__(self, viewer):
-        self._viewer = viewer
+    def __init__(self, **kwargs):
+        node = Line(connect='segments', method='gl', width=3)
 
+        super().__init__(node=node, **kwargs)
         self._data = np.array(
             [
                 [0, 0, -1],
@@ -33,8 +35,6 @@ class VispyScaleBarOverlay:
         self._quantity = None
         self._unit_reg = None
 
-        self.node = Line(connect='segments', method='gl', width=3)
-
         # In order for the text to always appear centered on the scale bar,
         # the text node should use the line node as the parent.
         self.text_node = Text(pos=[0.5, -1], parent=self.node)
@@ -49,21 +49,15 @@ class VispyScaleBarOverlay:
         assert self.node.canvas is self.text_node.canvas
         # End Note
 
-        self._viewer.events.theme.connect(self._on_data_change)
-        self._viewer.scale_bar.events.visible.connect(self._on_visible_change)
-        self._viewer.scale_bar.events.colored.connect(self._on_data_change)
-        self._viewer.scale_bar.events.ticks.connect(self._on_data_change)
-        self._viewer.scale_bar.events.position.connect(
-            self._on_position_change
-        )
-        self._viewer.camera.events.zoom.connect(self._on_zoom_change)
-        self._viewer.scale_bar.events.font_size.connect(self._on_text_change)
-        self._viewer.scale_bar.events.unit.connect(self._on_dimension_change)
-
-        self._on_visible_change()
-        self._on_data_change()
-        self._on_dimension_change()
-        self._on_position_change()
+        self.viewer.events.theme.connect(self._on_data_change)
+        self.viewer.camera.events.zoom.connect(self._on_zoom_change)
+        self.overlay.events.visible.connect(self._on_visible_change)
+        self.overlay.events.colored.connect(self._on_data_change)
+        self.overlay.events.ticks.connect(self._on_data_change)
+        self.overlay.events.position.connect(self._on_position_change)
+        self.overlay.events.font_size.connect(self._on_text_change)
+        self.overlay.events.unit.connect(self._on_dimension_change)
+        self.node.parent.events.resize.connect(self._on_position_change)
 
     def _set_canvas_none(self):
         self.node._set_canvas(None)
@@ -88,9 +82,9 @@ class VispyScaleBarOverlay:
 
     def _on_dimension_change(self):
         """Update dimension."""
-        if not self._viewer.scale_bar.visible and self._unit_reg is None:
+        if not self.overlay.visible and self._unit_reg is None:
             return
-        unit = self._viewer.scale_bar.unit
+        unit = self.overlay.unit
         self._quantity = self.unit_registry(unit)
         self._on_zoom_change(force=True)
 
@@ -134,11 +128,11 @@ class VispyScaleBarOverlay:
 
     def _on_zoom_change(self, *, force: bool = False):
         """Update axes length based on zoom scale."""
-        if not self._viewer.scale_bar.visible:
+        if not self.overlay.visible:
             return
 
         # If scale has not changed, do not redraw
-        scale = 1 / self._viewer.camera.zoom
+        scale = 1 / self.viewer.camera.zoom
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4 and not force:
             return
         self._scale = scale
@@ -159,7 +153,7 @@ class VispyScaleBarOverlay:
 
         sign = (
             -1
-            if self._viewer.scale_bar.position
+            if self.overlay.position
             in [Position.TOP_RIGHT, Position.BOTTOM_RIGHT]
             else 1
         )
@@ -170,19 +164,19 @@ class VispyScaleBarOverlay:
 
     def _on_data_change(self):
         """Change color and data of scale bar."""
-        if self._viewer.scale_bar.colored:
+        if self.overlay.colored:
             color = self._default_color
         else:
             # the reason for using the `as_hex` here is to avoid
             # `UserWarning` which is emitted when RGB values are above 1
             background_color = get_theme(
-                self._viewer.theme, False
+                self.viewer.theme, False
             ).canvas.as_hex()
             background_color = transform_color(background_color)[0]
             color = np.subtract(1, background_color)
             color[-1] = background_color[-1]
 
-        if self._viewer.scale_bar.ticks:
+        if self.overlay.ticks:
             data = self._data
         else:
             data = self._data[:2]
@@ -192,27 +186,27 @@ class VispyScaleBarOverlay:
 
     def _on_visible_change(self):
         """Change visibility of scale bar."""
-        self.node.visible = self._viewer.scale_bar.visible
-        self.text_node.visible = self._viewer.scale_bar.visible
+        self.node.visible = self.overlay.visible
+        self.text_node.visible = self.overlay.visible
 
         # update unit if scale bar is visible and quantity
         # has not been specified yet or current unit is not
         # equivalent
-        if self._viewer.scale_bar.visible and (
-            self._quantity is None
-            or self._quantity.units != self._viewer.scale_bar.unit
+        if self.overlay.visible and (
+            self._quantity is None or self._quantity.units != self.overlay.unit
         ):
-            self._quantity = self.unit_registry(self._viewer.scale_bar.unit)
+            self._quantity = self.unit_registry(self.overlay.unit)
         # only force zoom update if the scale bar is visible
-        self._on_zoom_change(force=self._viewer.scale_bar.visible)
+        self._on_zoom_change(force=self.overlay.visible)
+        print(self.node.visible, self.overlay.visible)
 
     def _on_text_change(self):
         """Update text information"""
-        self.text_node.font_size = self._viewer.scale_bar.font_size
+        self.text_node.font_size = self.overlay.font_size
 
     def _on_position_change(self, _event=None):
         """Change position of scale bar."""
-        position = self._viewer.scale_bar.position
+        position = self.overlay.position
         x_bar_offset, y_bar_offset = 10, 30
         canvas_size = list(self.node.canvas.size)
 
@@ -238,7 +232,7 @@ class VispyScaleBarOverlay:
                 trans._(
                     'Position {position} not recognized.',
                     deferred=True,
-                    position=self._viewer.scale_bar.position,
+                    position=self.overlay.position,
                 )
             )
 
@@ -246,3 +240,10 @@ class VispyScaleBarOverlay:
         scale = abs(self.node.transform.scale[0])
         self.node.transform.scale = [sign * scale, 1, 1, 1]
         self.text_node.transform.translate = (0, 20, 0, 0)
+        self.node.update()
+
+    def reset(self):
+        super().reset()
+        self._on_data_change()
+        self._on_dimension_change()
+        self._on_position_change()

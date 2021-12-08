@@ -13,16 +13,11 @@ class VispyBaseOverlay:
 
         self.viewer.overlays.events.visible.connect(self._on_visible_change)
         self.overlay.events.visible.connect(self._on_visible_change)
-        self.node.parent.events.resize.connect(self._on_position_change)
 
     def _on_visible_change(self):
         self.node.visible = (
             self.viewer.overlays.visible and self.overlay.visible
         )
 
-    def _on_position_change(self, event=None):
-        pass
-
     def reset(self):
         self._on_visible_change()
-        self._on_position_change()
