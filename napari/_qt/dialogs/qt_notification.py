@@ -82,7 +82,7 @@ class NapariQtNotification(QDialog):
 
         current_window = _QtMainWindow.current()
         if current_window is not None:
-            canvas = current_window.qt_viewer._canvas_overlay
+            canvas = current_window._qt_viewer._canvas_overlay
             self.setParent(canvas)
             canvas.resized.connect(self.move_to_bottom_right)
 

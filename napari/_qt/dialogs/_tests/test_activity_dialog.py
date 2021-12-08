@@ -16,7 +16,7 @@ SHOW = bool(sys.platform == 'linux' or os.getenv("CI"))
 def qt_viewer_has_pbar(qt_viewer):
     """Returns True if the viewer has an active progress bar, else False"""
     return bool(
-        qt_viewer.window.qt_viewer.window()._activity_dialog.findChildren(
+        qt_viewer.window._qt_viewer.window()._activity_dialog.findChildren(
             QtLabeledProgressBar
         )
     )
@@ -37,7 +37,7 @@ def activity_button_shows_indicator(activity_dialog):
 
 def get_qt_labeled_progress_bar(prog, viewer):
     """Given viewer and progress, finds associated QtLabeledProgressBar"""
-    activity_dialog = viewer.window.qt_viewer.window()._activity_dialog
+    activity_dialog = viewer.window._qt_viewer.window()._activity_dialog
     pbar = activity_dialog.get_pbar_from_prog(prog)
 
     return pbar
@@ -92,7 +92,7 @@ def test_progress_nested(make_napari_viewer):
     with progress(range(10)) as pbr:
         assert qt_viewer_has_pbar(viewer)
         pbr2 = progress(range(2), nest_under=pbr)
-        prog_groups = get_progress_groups(viewer.window.qt_viewer)
+        prog_groups = get_progress_groups(viewer.window._qt_viewer)
         assert len(prog_groups) == 1
         # two progress bars + separator
         assert prog_groups[0].layout().count() == 3
@@ -106,7 +106,7 @@ def test_progress_nested(make_napari_viewer):
 )
 def test_progress_indicator(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
-    activity_dialog = viewer.window.qt_viewer.window()._activity_dialog
+    activity_dialog = viewer.window._qt_viewer.window()._activity_dialog
 
     # it's not clear why, but using the context manager here
     # causes test to fail, so we make the assertions explicitly
