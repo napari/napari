@@ -15,6 +15,7 @@ import subprocess
 import sys
 from distutils.spawn import find_executable
 from pathlib import Path
+from textwrap import dedent
 
 from ruamel import yaml
 
@@ -72,6 +73,7 @@ def _constructor(version=VERSION):
         "conda_default_channels": ["conda-forge"],
         "installer_filename": OUTPUT_FILENAME,
         "initialize_by_default": False,
+        "license_file": os.path.join(HERE, "LICENSE"),
         "specs": [
             f"napari={version}",
             f"napari-menu={version}",
@@ -88,6 +90,29 @@ def _constructor(version=VERSION):
         definitions["channels"].insert(0, "local")
     if MACOS:
         definitions["installer_type"] = "pkg"
+        definitions["readme_text"] = dedent(
+            f"""
+            Thanks for choosing napari v{version}!
+
+            napari is a fast, interactive, multi-dimensional image viewer
+            for Python. It’s designed for browsing, annotating, and
+            analyzing large multi-dimensional images.
+
+            The installation will begin shortly.
+
+            If at any point an error is shown, please save the logs
+            (⌘+L) before closing the installer and submit the resulting
+            file along with your report. Thank you!
+            """
+        )
+        definitions["conclusion_text"] = dedent(
+            f"""
+            napari v{version} was installed successfully!
+
+            You can open it now from Spotlight Search (⌘+Space).
+            Type napari and press Enter!
+            """
+        )
     if WINDOWS:
         definitions["conda_default_channels"].append("defaults")
         definitions.update(
