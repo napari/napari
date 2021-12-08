@@ -2051,7 +2051,7 @@ SKIP_WORDS = {
         'name',
         'native',
         'parent',
-        'qt_viewer',
+        '_qt_viewer',
         'widget',
         '{layer.name} (data)',
     ],
