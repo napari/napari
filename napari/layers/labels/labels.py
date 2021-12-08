@@ -23,9 +23,9 @@ from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import (
-    features_from_properties,
-    features_to_properties,
-    validate_features,
+    _features_from_properties,
+    _features_to_properties,
+    _validate_features,
 )
 from ._labels_constants import LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
@@ -417,17 +417,17 @@ class Labels(_ImageBase):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = validate_features(features)
+        self._features = _validate_features(features)
         self._label_index = self._make_label_index(self._features)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return features_to_properties(self._features)
+        return _features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._features = features_from_properties(properties=properties)
+        self._features = _features_from_properties(properties=properties)
         self._label_index = self._make_label_index(self._features)
         self.events.properties()
 

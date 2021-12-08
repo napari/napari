@@ -4,16 +4,16 @@ import pytest
 from dask import array as da
 
 from napari.layers.utils.layer_utils import (
-    append_features,
+    _append_features,
+    _features_from_properties,
+    _remove_features,
+    _resize_features,
+    _validate_features,
     calc_data_range,
     coerce_current_properties,
     dims_displayed_world_to_layer,
-    features_from_properties,
     get_current_properties,
-    remove_features,
-    resize_features,
     segment_normal,
-    validate_features,
 )
 
 data_dask = da.random.random(
@@ -189,12 +189,12 @@ def test_dims_displayed_world_to_layer(
 
 
 def test_validate_features_with_none_then_empty():
-    features = validate_features(None)
+    features = _validate_features(None)
     assert features.shape == (0, 0)
 
 
 def test_features_from_properties_with_none_and_num_data():
-    features = features_from_properties(num_data=5)
+    features = _features_from_properties(num_data=5)
     assert features.shape == (5, 0)
 
 
@@ -204,7 +204,7 @@ def test_features_from_properties_with_properties():
         'confidence': np.array([0.2, 0.5, 1, 0.8]),
     }
 
-    features = features_from_properties(properties=properties, num_data=4)
+    features = _features_from_properties(properties=properties, num_data=4)
 
     assert features.shape == (4, 2)
     np.testing.assert_array_equal(features['class'], properties['class'])
@@ -221,7 +221,7 @@ def test_features_from_properties_with_properties_and_choices():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    features = features_from_properties(
+    features = _features_from_properties(
         properties=properties, property_choices=property_choices, num_data=4
     )
 
@@ -239,7 +239,7 @@ def test_features_from_properties_with_choices_only():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    features = features_from_properties(
+    features = _features_from_properties(
         property_choices=property_choices, num_data=0
     )
 
@@ -259,7 +259,7 @@ def test_features_from_properties_with_empty_properties_and_choices():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    features = features_from_properties(
+    features = _features_from_properties(
         properties=properties, property_choices=property_choices, num_data=0
     )
 
@@ -285,7 +285,7 @@ TEST_FEATURES = pd.DataFrame(
 
 
 def test_features_from_properties_with_dataframe():
-    features = features_from_properties(properties=TEST_FEATURES)
+    features = _features_from_properties(properties=TEST_FEATURES)
     pd.testing.assert_frame_equal(features, TEST_FEATURES)
 
 
@@ -295,7 +295,7 @@ def test_resize_features_smaller():
         'confidence': np.array([0.8]),
     }
 
-    new_features = resize_features(
+    new_features = _resize_features(
         TEST_FEATURES, 2, current_values=current_values
     )
 
@@ -310,7 +310,7 @@ def test_resize_features_larger():
         'confidence': np.array([0.8]),
     }
 
-    new_features = resize_features(
+    new_features = _resize_features(
         TEST_FEATURES, 6, current_values=current_properties
     )
 
@@ -333,7 +333,7 @@ def test_append_features():
         }
     )
 
-    new_features = append_features(TEST_FEATURES, to_append)
+    new_features = _append_features(TEST_FEATURES, to_append)
 
     assert new_features.shape == (6, 2)
     np.testing.assert_array_equal(
@@ -347,7 +347,7 @@ def test_append_features():
 
 
 def test_remove_features():
-    new_features = remove_features(TEST_FEATURES, [1, 3])
+    new_features = _remove_features(TEST_FEATURES, [1, 3])
 
     assert new_features.shape == (2, 2)
     np.testing.assert_array_equal(

@@ -25,15 +25,15 @@ from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import (
-    append_features,
+    _append_features,
+    _features_from_properties,
+    _features_to_choices,
+    _features_to_properties,
+    _remove_features,
+    _resize_features,
+    _validate_features,
     coerce_current_properties,
-    features_from_properties,
-    features_to_choices,
-    features_to_properties,
     get_current_properties,
-    remove_features,
-    resize_features,
-    validate_features,
 )
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
@@ -323,7 +323,7 @@ class Points(Layer):
         self._data = np.asarray(data)
 
         if properties is not None or property_choices is not None:
-            self._features = features_from_properties(
+            self._features = _features_from_properties(
                 properties=properties,
                 property_choices=property_choices,
                 num_data=len(self.data),
@@ -417,7 +417,7 @@ class Points(Layer):
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
-                    self._features = resize_features(
+                    self._features = _resize_features(
                         self._features,
                         len(data),
                         current_values=self._current_properties,
@@ -488,16 +488,16 @@ class Points(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = validate_features(features, num_data=len(self.data))
+        self._features = _validate_features(features, num_data=len(self.data))
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return features_to_choices(self._features)
+        return _features_to_choices(self._features)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
-        return features_to_properties(self._features)
+        return _features_to_properties(self._features)
 
     @staticmethod
     def _update_color_manager(
@@ -527,7 +527,7 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], pd.DataFrame, None]
     ):
-        self._features = features_from_properties(
+        self._features = _features_from_properties(
             properties=properties, num_data=len(self._data)
         )
         # Updating current_properties can modify properties, so block to avoid
@@ -1566,7 +1566,7 @@ class Points(Layer):
                 self._edge._remove(indices_to_remove=index)
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
-            self._features = remove_features(self._features, index)
+            self._features = _remove_features(self._features, index)
             with self.text.events.blocker_all():
                 self.text.remove(index)
             if self._value in self.selected_data:
@@ -1617,14 +1617,18 @@ class Points(Layer):
             )
             self._edge._paste(
                 colors=self._clipboard['edge_color'],
-                properties=features_to_properties(self._clipboard['features']),
+                properties=_features_to_properties(
+                    self._clipboard['features']
+                ),
             )
             self._face._paste(
                 colors=self._clipboard['face_color'],
-                properties=features_to_properties(self._clipboard['features']),
+                properties=_features_to_properties(
+                    self._clipboard['features']
+                ),
             )
 
-            self._features = append_features(
+            self._features = _append_features(
                 self._features, self._clipboard['features']
             )
 

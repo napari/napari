@@ -8,9 +8,9 @@ from scipy.spatial import cKDTree
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..utils.layer_utils import (
-    features_from_properties,
-    features_to_properties,
-    validate_features,
+    _features_from_properties,
+    _features_to_properties,
+    _validate_features,
 )
 
 
@@ -158,7 +158,7 @@ class TrackManager:
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        features = validate_features(features, num_data=len(self.data))
+        features = _validate_features(features, num_data=len(self.data))
         if 'track_id' not in features:
             features['track_id'] = self.track_ids
         self._features = features.iloc[self._order].reset_index(drop=True)
@@ -166,12 +166,12 @@ class TrackManager:
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return features_to_properties(self._features)
+        return _features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-        self.features = features_from_properties(
+        self.features = _features_from_properties(
             properties=properties,
             num_data=len(self.data),
         )

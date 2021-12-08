@@ -14,12 +14,12 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import (
-    features_from_properties,
-    features_to_choices,
-    features_to_properties,
+    _features_from_properties,
+    _features_to_choices,
+    _features_to_properties,
+    _resize_features,
+    _validate_features,
     get_current_properties,
-    resize_features,
-    validate_features,
 )
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
@@ -226,7 +226,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self._dims_displayed)
 
         if properties is not None or property_choices is not None:
-            self._features = features_from_properties(
+            self._features = _features_from_properties(
                 properties=properties,
                 property_choices=property_choices,
                 num_data=len(self.data),
@@ -285,7 +285,7 @@ class Vectors(Layer):
                     self.property_choices,
                     len(self.data),
                 )
-                self._features = resize_features(
+                self._features = _resize_features(
                     self._features,
                     n_vectors,
                     current_values=current_properties,
@@ -323,16 +323,16 @@ class Vectors(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = validate_features(features, num_data=len(self.data))
+        self._features = _validate_features(features, num_data=len(self.data))
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return features_to_properties(self._features)
+        return _features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._features = features_from_properties(
+        self._features = _features_from_properties(
             properties=properties,
             num_data=len(self.data),
         )
@@ -360,7 +360,7 @@ class Vectors(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return features_to_choices(self._features)
+        return _features_to_choices(self._features)
 
     def _get_state(self):
         """Get dictionary of layer state.

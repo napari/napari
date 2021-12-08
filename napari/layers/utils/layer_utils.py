@@ -530,7 +530,7 @@ def get_extent_world(data_extent, data_to_world, centered=False):
     return world_extent
 
 
-def validate_features(
+def _validate_features(
     features: Union[Dict[str, np.ndarray], pd.DataFrame],
     *,
     num_data: Optional[int] = None,
@@ -565,7 +565,7 @@ def validate_features(
     return pd.DataFrame(data=features, index=index)
 
 
-def features_from_properties(
+def _features_from_properties(
     *,
     properties: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
     property_choices: Optional[Dict[str, np.ndarray]] = None,
@@ -606,10 +606,10 @@ def features_from_properties(
                 properties[name] if name in properties else [None] * num_values
             )
             properties[name] = pd.Series(values, dtype=dtype)
-    return validate_features(properties, num_data=num_data)
+    return _validate_features(properties, num_data=num_data)
 
 
-def features_to_choices(features: pd.DataFrame) -> Dict[str, np.ndarray]:
+def _features_to_choices(features: pd.DataFrame) -> Dict[str, np.ndarray]:
     """Converts a features DataFrame to a deprecated property choices dictionary.
 
     Only categorical features will have corresponding entries in the dictionary.
@@ -631,7 +631,7 @@ def features_to_choices(features: pd.DataFrame) -> Dict[str, np.ndarray]:
     }
 
 
-def features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
+def _features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
     """Converts a features DataFrame to a deprecated properties dictionary.
 
     This will reference the features data when possible, but in general the
@@ -650,7 +650,7 @@ def features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
     return {name: series.to_numpy() for name, series in features.items()}
 
 
-def resize_features(
+def _resize_features(
     features: pd.DataFrame,
     size: int,
     *,
@@ -678,7 +678,7 @@ def resize_features(
     """
     current_size = features.shape[0]
     if size < current_size:
-        return remove_features(features, range(size, current_size))
+        return _remove_features(features, range(size, current_size))
     elif size > current_size:
         num_append = size - current_size
         to_append = pd.DataFrame(
@@ -688,11 +688,13 @@ def resize_features(
             },
             index=range(num_append),
         )
-        return append_features(features, to_append)
+        return _append_features(features, to_append)
     return features
 
 
-def append_features(features: pd.DataFrame, to_append: pd.DataFrame):
+def _append_features(
+    features: pd.DataFrame, to_append: pd.DataFrame
+) -> pd.DataFrame:
     """Append new feature rows to an existing features table.
 
     Parameters
@@ -711,7 +713,7 @@ def append_features(features: pd.DataFrame, to_append: pd.DataFrame):
     return features.append(to_append, ignore_index=True)
 
 
-def remove_features(features: pd.DataFrame, indices: Any):
+def _remove_features(features: pd.DataFrame, indices: Any) -> pd.DataFrame:
     """Remove rows from a features table by index.
 
     Parameters
@@ -719,7 +721,8 @@ def remove_features(features: pd.DataFrame, indices: Any):
     features : pd.DataFrame
         The features of a layer.
     indices : Any
-        The indices of the rows to remove.
+        The indices of the rows to remove. Must be usable as the labels parameter
+        to pandas.DataFrame.drop.
 
     Returns
     -------

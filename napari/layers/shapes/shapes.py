@@ -27,15 +27,15 @@ from ..utils.color_transformations import (
     transform_color_with_defaults,
 )
 from ..utils.layer_utils import (
-    append_features,
+    _append_features,
+    _features_from_properties,
+    _features_to_choices,
+    _features_to_properties,
+    _remove_features,
+    _resize_features,
+    _validate_features,
     coerce_current_properties,
-    features_from_properties,
-    features_to_choices,
-    features_to_properties,
     get_current_properties,
-    remove_features,
-    resize_features,
-    validate_features,
 )
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
@@ -494,13 +494,13 @@ class Shapes(Layer):
         self._ndisplay_stored = self._ndisplay
 
         if properties is not None or property_choices is not None:
-            self._features = features_from_properties(
+            self._features = _features_from_properties(
                 properties=properties,
                 property_choices=property_choices,
                 num_data=number_of_shapes(data),
             )
         else:
-            self._features = validate_features(
+            self._features = _validate_features(
                 features, num_data=number_of_shapes(data)
             )
 
@@ -727,16 +727,16 @@ class Shapes(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = validate_features(features, num_data=self.nshapes)
+        self._features = _validate_features(features, num_data=self.nshapes)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return features_to_properties(self._features)
+        return _features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._features = features_from_properties(
+        self._features = _features_from_properties(
             properties=properties, num_data=self.nshapes
         )
         if self._face_color_property and (
@@ -769,7 +769,7 @@ class Shapes(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return features_to_choices(self._features)
+        return _features_to_choices(self._features)
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -2005,7 +2005,7 @@ class Shapes(Layer):
             else:
                 n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
-            self._features = resize_features(
+            self._features = _resize_features(
                 self._features,
                 total_shapes,
                 current_values=self._current_properties,
@@ -2562,7 +2562,7 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
-            self._features = remove_features(self._features, index)
+            self._features = _remove_features(self._features, index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2889,7 +2889,7 @@ class Shapes(Layer):
                 for i in self._dims_not_displayed
             ]
 
-            self._features = append_features(
+            self._features = _append_features(
                 self._features, self._clipboard['features']
             )
 
