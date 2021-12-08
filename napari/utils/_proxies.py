@@ -42,7 +42,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     # __root limits the scope of the Proxy to types from the __root module
     # set to empty string to recurse indefinitely
-    __root: str = __module__.split('.')[0]  # default to napari only
+    __root: str = __name__.split('.')[0]  # default to napari only
 
     def __getattr__(self, name: str):
         if name.startswith('_'):
