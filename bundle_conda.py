@@ -90,7 +90,9 @@ def _constructor(version=VERSION):
         definitions["channels"].insert(0, "local")
     if MACOS:
         definitions["installer_type"] = "pkg"
-        definitions["welcome_image"] = os.path.join(HERE, "resources", "napari_1227x600.png")
+        definitions["welcome_image"] = os.path.join(
+            HERE, "resources", "napari_1227x600.png"
+        )
         definitions["readme_text"] = dedent(
             f"""
             Thanks for choosing napari v{version}!
@@ -117,9 +119,15 @@ def _constructor(version=VERSION):
         definitions["conda_default_channels"].append("defaults")
         definitions.update(
             {
-                "welcome_image": os.path.join(HERE, "resources", "napari_164x314.png"),
-                "header_image": os.path.join(HERE, "resources", "napari_150x57.png"),
-                "icon_image": os.path.join(HERE, "napari", "resources", "icon.ico"),
+                "welcome_image": os.path.join(
+                    HERE, "resources", "napari_164x314.png"
+                ),
+                "header_image": os.path.join(
+                    HERE, "resources", "napari_150x57.png"
+                ),
+                "icon_image": os.path.join(
+                    HERE, "napari", "resources", "icon.ico"
+                ),
                 "register_python_default": False,
             }
         )
