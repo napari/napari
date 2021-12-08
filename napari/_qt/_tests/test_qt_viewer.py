@@ -480,14 +480,14 @@ def test_memory_leaking(qtbot, make_napari_viewer):
 
 
 @skip_local_popups
-def test_leaks_image(qtbot, make_napari_viewer):
+def test_leaks_image(qapp, make_napari_viewer):
 
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(viewer.add_image(np.random.rand(10, 10)))
     dr = weakref.ref(lr().data)
 
     viewer.layers.clear()
-    qtbot.wait(100)
+    qapp.processEvents()
     gc.collect()
     assert not gc.collect()
     assert not lr()
