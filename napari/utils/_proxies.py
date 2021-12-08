@@ -85,6 +85,9 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         if not getattr(obj, '__module__', '').startswith('napari'):
             return obj
 
+        if isinstance(obj, PublicOnlyProxy):
+            # don't double wrap
+            return obj
         if callable(obj):
             return CallablePublicOnlyProxy(obj)
         return PublicOnlyProxy(obj)
