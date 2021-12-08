@@ -63,3 +63,13 @@ def test_PublicOnlyProxy():
 
     assert '_private' not in dir(proxy)
     assert '_private' in dir(t)
+
+
+def test_public_proxy_limited_to_napari():
+    """Test that the recursive public proxy goes no farther than napari."""
+    from napari.components.viewer_model import ViewerModel
+
+    v = ViewerModel()
+    v.add_points(None)
+    pp = PublicOnlyProxy(v)
+    assert not isinstance(pp.layers[0].data, PublicOnlyProxy)

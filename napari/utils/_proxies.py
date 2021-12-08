@@ -1,6 +1,6 @@
 import re
 import warnings
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar, Union
 
 import wrapt
 
@@ -39,6 +39,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     """Proxy to prevent private attribute and item access, recursively."""
 
     __wrapped__: _T
+    _module_: str = 'napari'  # set to empty string to extend beyond napari
 
     def __getattr__(self, name: str):
         if name.startswith('_'):
@@ -70,7 +71,9 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
 
     @classmethod
-    def create(cls, obj: Any) -> 'PublicOnlyProxy':
+    def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
+        if not getattr(type(obj), '__module__', '').startswith(cls._module_):
+            return obj
         if callable:
             return CallablePublicOnlyProxy(obj)
         return PublicOnlyProxy(obj)
