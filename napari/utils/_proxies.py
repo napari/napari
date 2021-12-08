@@ -43,10 +43,10 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     __wrapped__: _T
 
     def __getattr__(self, name: str):
-        if _SUNDER.match(name):
+        if name.startswith("_"):
             # allow napari to access private attributes and get an non-proxy
             frame = sys._getframe(1) if hasattr(sys, "_getframe") else None
-            if frame and misc.ROOT_DIR in frame.f_code.co_filename:  # type: ignore
+            if frame.f_code.co_filename.startswith(misc.ROOT_DIR):
                 return super().__getattr__(name)
 
             typ = type(self.__wrapped__).__name__
