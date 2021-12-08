@@ -83,7 +83,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         if not getattr(type(obj), '__module__', '').startswith(cls.__root):
             return obj
 
-        if callable:
+        if callable(obj):
             return CallablePublicOnlyProxy(obj)
         return PublicOnlyProxy(obj)
 
