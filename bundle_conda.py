@@ -71,6 +71,7 @@ def _constructor(version=VERSION):
         ],
         "conda_default_channels": ["conda-forge"],
         "installer_filename": OUTPUT_FILENAME,
+        "initialize_by_default": False,
         "specs": [
             f"napari={version}",
             f"napari-menu={version}",
@@ -100,6 +101,7 @@ def _constructor(version=VERSION):
                 "default_image_color": "blue",
                 "welcome_image_text": f"{APP}",
                 "header_image_text": f"{APP}",
+                "register_python_default": False,
             }
         )
 
