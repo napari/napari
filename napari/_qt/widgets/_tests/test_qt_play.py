@@ -113,7 +113,7 @@ def ref_view(make_napari_viewer):
     np.random.seed(0)
     data = np.random.random((10, 10, 15))
     viewer.add_image(data)
-    yield ref(viewer.window.qt_viewer)
+    yield ref(viewer.window._qt_viewer)
     viewer.close()
 
 

@@ -24,17 +24,17 @@ class FileMenu(NapariMenu):
         ACTIONS = [
             {
                 'text': trans._('Open File(s)...'),
-                'slot': window.qt_viewer._open_files_dialog,
+                'slot': window._qt_viewer._open_files_dialog,
                 'shortcut': 'Ctrl+O',
             },
             {
                 'text': trans._('Open Files as Stack...'),
-                'slot': window.qt_viewer._open_files_dialog_as_stack_dialog,
+                'slot': window._qt_viewer._open_files_dialog_as_stack_dialog,
                 'shortcut': 'Ctrl+Alt+O',
             },
             {
                 'text': trans._('Open Folder...'),
-                'slot': window.qt_viewer._open_folder_dialog,
+                'slot': window._qt_viewer._open_folder_dialog,
                 'shortcut': 'Ctrl+Shift+O',
             },
             {'menu': self.open_sample_menu},
@@ -49,7 +49,7 @@ class FileMenu(NapariMenu):
             {},
             {
                 'text': trans._('Save Selected Layer(s)...'),
-                'slot': lambda: window.qt_viewer._save_layers_dialog(
+                'slot': lambda: window._qt_viewer._save_layers_dialog(
                     selected=True
                 ),
                 'shortcut': 'Ctrl+S',
@@ -57,7 +57,7 @@ class FileMenu(NapariMenu):
             },
             {
                 'text': trans._('Save All Layers...'),
-                'slot': lambda: window.qt_viewer._save_layers_dialog(
+                'slot': lambda: window._qt_viewer._save_layers_dialog(
                     selected=False
                 ),
                 'shortcut': 'Ctrl+Shift+S',
@@ -65,7 +65,7 @@ class FileMenu(NapariMenu):
             },
             {
                 'text': trans._('Save Screenshot...'),
-                'slot': window.qt_viewer._screenshot_dialog,
+                'slot': window._qt_viewer._screenshot_dialog,
                 'shortcut': 'Alt+S',
                 'statusTip': trans._(
                     'Save screenshot of current display, default .png'
@@ -81,7 +81,7 @@ class FileMenu(NapariMenu):
             },
             {
                 'text': trans._('Copy Screenshot to Clipboard'),
-                'slot': window.qt_viewer.clipboard,
+                'slot': window._qt_viewer.clipboard,
                 'shortcut': 'Alt+Shift+S',
                 'statusTip': trans._(
                     'Copy screenshot of current display to the clipboard'
@@ -129,13 +129,13 @@ class FileMenu(NapariMenu):
         self.update()
 
     def _layer_count(self, event=None):
-        return len(self._win.qt_viewer.viewer.layers)
+        return len(self._win._qt_viewer.viewer.layers)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
         hist = get_save_history()
         dial = ScreenshotDialog(
-            self._win.screenshot, self._win.qt_viewer, hist[0], hist
+            self._win.screenshot, self._win._qt_viewer, hist[0], hist
         )
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
@@ -187,7 +187,7 @@ class FileMenu(NapariMenu):
                     action = QAction(full_name, parent=self)
 
                 def _add_sample(*args, plg=plugin_name, smp=samp_name):
-                    self._win.qt_viewer.viewer.open_sample(plg, smp)
+                    self._win._qt_viewer.viewer.open_sample(plg, smp)
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
