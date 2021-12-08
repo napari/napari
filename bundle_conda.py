@@ -90,6 +90,7 @@ def _constructor(version=VERSION):
         definitions["channels"].insert(0, "local")
     if MACOS:
         definitions["installer_type"] = "pkg"
+        definitions["welcome_image"] = os.path.join(HERE, "resources", "napari_1227x600.png")
         definitions["readme_text"] = dedent(
             f"""
             Thanks for choosing napari v{version}!
@@ -109,23 +110,16 @@ def _constructor(version=VERSION):
             f"""
             napari v{version} was installed successfully!
 
-            You can open it now from Spotlight Search (⌘+Space).
-            Type napari and press Enter!
+            A shortcut should be now available in Launchpad!
             """
         )
     if WINDOWS:
         definitions["conda_default_channels"].append("defaults")
         definitions.update(
             {
-                # TODO: create banner images for installer
-                # "welcome_image":,
-                # "header_image":,
-                "icon_image": os.path.join(
-                    HERE, "napari", "resources", "icon.ico"
-                ),
-                "default_image_color": "blue",
-                "welcome_image_text": f"{APP}",
-                "header_image_text": f"{APP}",
+                "welcome_image": os.path.join(HERE, "resources", "napari_164x314.png"),
+                "header_image": os.path.join(HERE, "resources", "napari_150x57.png"),
+                "icon_image": os.path.join(HERE, "napari", "resources", "icon.ico"),
                 "register_python_default": False,
             }
         )
