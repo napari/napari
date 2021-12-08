@@ -23,7 +23,7 @@ from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import validate_properties
-from ._labels_constants import LabelColorMode, Mode
+from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
@@ -306,6 +306,32 @@ class Labels(_ImageBase):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
         self._set_editable()
+
+    @property
+    def rendering(self):
+        """Return current rendering mode.
+
+        Selects a preset rendering mode in vispy that determines how
+        lablels are displayed.  Options include:
+
+        * ``translucent``: voxel colors are blended along the view ray until
+          the result is opaque.
+        * ``iso_categorical``: isosurface for categorical data.
+          Cast a ray until a non-background value is encountered. At that
+          location, lighning calculations are performed to give the visual
+          appearance of a surface.
+
+        Returns
+        -------
+        str
+            The current rendering mode
+        """
+        return str(self._rendering)
+
+    @rendering.setter
+    def rendering(self, rendering):
+        self._rendering = LabelsRendering(rendering)
+        self.events.rendering()
 
     @property
     def contiguous(self):

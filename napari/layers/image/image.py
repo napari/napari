@@ -21,7 +21,12 @@ from ..base import Layer, no_op
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane
-from ._image_constants import Interpolation, Interpolation3D, Mode, Rendering
+from ._image_constants import (
+    ImageRendering,
+    Interpolation,
+    Interpolation3D,
+    Mode,
+)
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
@@ -512,44 +517,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.interpolation(value=self._interpolation[self._ndisplay])
 
     @property
-    def rendering(self):
-        """Return current rendering mode.
-
-        Selects a preset rendering mode in vispy that determines how
-        volume is displayed.  Options include:
-
-        * ``translucent``: voxel colors are blended along the view ray until
-            the result is opaque.
-        * ``mip``: maximum intensity projection. Cast a ray and display the
-            maximum value that was encountered.
-        * ``minip``: minimum intensity projection. Cast a ray and display the
-            minimum value that was encountered.
-        * ``attenuated_mip``: attenuated maximum intensity projection. Cast a
-            ray and attenuate values based on integral of encountered values,
-            display the maximum value that was encountered after attenuation.
-            This will make nearer objects appear more prominent.
-        * ``additive``: voxel colors are added along the view ray until
-            the result is saturated.
-        * ``iso``: isosurface. Cast a ray until a certain threshold is
-            encountered. At that location, lighning calculations are
-            performed to give the visual appearance of a surface.
-        * ``average``: average intensity projection. Cast a ray and display the
-            average of values that were encountered.
-
-        Returns
-        -------
-        str
-            The current rendering mode
-        """
-        return str(self._rendering)
-
-    @rendering.setter
-    def rendering(self, rendering):
-        """Set current rendering mode."""
-        self._rendering = Rendering(rendering)
-        self.events.rendering()
-
-    @property
     def experimental_slicing_plane(self):
         return self._experimental_slicing_plane
 
@@ -909,6 +876,43 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
 
 class Image(_ImageBase):
+    @property
+    def rendering(self):
+        """Return current rendering mode.
+
+        Selects a preset rendering mode in vispy that determines how
+        volume is displayed.  Options include:
+
+        * ``translucent``: voxel colors are blended along the view ray until
+            the result is opaque.
+        * ``mip``: maximum intensity projection. Cast a ray and display the
+            maximum value that was encountered.
+        * ``minip``: minimum intensity projection. Cast a ray and display the
+            minimum value that was encountered.
+        * ``attenuated_mip``: attenuated maximum intensity projection. Cast a
+            ray and attenuate values based on integral of encountered values,
+            display the maximum value that was encountered after attenuation.
+            This will make nearer objects appear more prominent.
+        * ``additive``: voxel colors are added along the view ray until
+            the result is saturated.
+        * ``iso``: isosurface. Cast a ray until a certain threshold is
+            encountered. At that location, lighning calculations are
+            performed to give the visual appearance of a surface.
+        * ``average``: average intensity projection. Cast a ray and display the
+            average of values that were encountered.
+
+        Returns
+        -------
+        str
+            The current rendering mode
+        """
+        return str(self._rendering)
+
+    @rendering.setter
+    def rendering(self, rendering):
+        self._rendering = ImageRendering(rendering)
+        self.events.rendering()
+
     def _get_state(self):
         """Get dictionary of layer state.
 
