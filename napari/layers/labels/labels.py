@@ -430,11 +430,19 @@ class Labels(_ImageBase):
 
     @property
     def features(self):
-        """DataFrame-like features table.
+        """Dataframe-like features table.
 
-        Treat this as a very simple pandas DataFrame that maps a feature name
-        to a 1D array-like. Do not rely on other parts of the pandas DataFrame API,
-        which may not be supported by future versions of napari.
+        It is an implementation detail that this is a `pandas.DataFrame`. In the future,
+        we will target the currently-in-development Data API dataframe protocol [1].
+        This will enable us to use alternate libraries such as xarray or cuDF for
+        additional features without breaking existing usage of this.
+
+        If you need to specifically rely on the pandas API, please coerce this to a
+        `pandas.DataFrame` using `features_to_pandas_dataframe`.
+
+        References
+        ----------
+        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
         return self._features
 
