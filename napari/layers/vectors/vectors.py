@@ -39,6 +39,9 @@ class Vectors(Layer):
     ndim : int
         Number of dimensions for vectors. When data is not None, ndim must be D.
         An empty vectors layer can be instantiated with arbitrary ndim.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a vector and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
@@ -99,6 +102,9 @@ class Vectors(Layer):
     ----------
     data : (N, 2, D) array
         The start point and projections of N vectors in D dimensions.
+    features : Dataframe-like
+        Features table where each row corresponds to a vector and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
@@ -156,6 +162,7 @@ class Vectors(Layer):
         data=None,
         *,
         ndim=None,
+        features=None,
         properties=None,
         property_choices=None,
         edge_width=1,
@@ -176,7 +183,6 @@ class Vectors(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-        features=None,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)

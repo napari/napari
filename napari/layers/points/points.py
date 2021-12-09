@@ -53,6 +53,9 @@ class Points(Layer):
     ndim : int
         Number of dimensions for shapes. When data is not None, ndim must be D.
         An empty points layer can be instantiated with arbitrary ndim.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a point and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -141,6 +144,9 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    features : DataFrame-like
+        Features table where each row corresponds to a point and each column
+        is a feature.
     properties : dict {str: array (N,)} or DataFrame
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -251,6 +257,7 @@ class Points(Layer):
         data=None,
         *,
         ndim=None,
+        features=None,
         properties=None,
         text=None,
         symbol='o',
@@ -278,7 +285,6 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
-        features=None,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)

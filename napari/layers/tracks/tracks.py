@@ -20,6 +20,9 @@ class Tracks(Layer):
         Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
         axis is the integer ID of the track. D is either 3 or 4 for planar
         or volumetric timeseries respectively.
+    features : Dataframe-like
+        Features table where each row corresponds to a point and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -93,6 +96,7 @@ class Tracks(Layer):
         self,
         data,
         *,
+        features=None,
         properties=None,
         graph=None,
         tail_width=2,
@@ -113,7 +117,6 @@ class Tracks(Layer):
         colormaps_dict=None,
         cache=True,
         experimental_clipping_planes=None,
-        features=None,
     ):
 
         # if not provided with any data, set up an empty layer in 2D+t

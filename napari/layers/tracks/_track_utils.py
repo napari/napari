@@ -35,6 +35,9 @@ class TrackManager:
         Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
         axis is the integer ID of the track. D is either 3 or 4 for planar
         or volumetric timeseries respectively.
+    features : Dataframe-like
+        Features table where each row corresponds to a point and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.

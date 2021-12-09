@@ -70,6 +70,9 @@ class Labels(_ImageBase):
         the lowest resolution scale is displayed.
     num_colors : int
         Number of unique colors to use in colormap.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a label and each column
+        is a feature. The first row corresponds to the background label.
     properties : dict {str: array (N,)} or DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
@@ -153,6 +156,9 @@ class Labels(_ImageBase):
         Labels metadata.
     num_colors : int
         Number of unique colors to use in colormap.
+    features : Dataframe-like
+        Features table where each row corresponds to a label and each column
+        is a feature. The first row corresponds to the background label.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
@@ -219,6 +225,7 @@ class Labels(_ImageBase):
         data,
         *,
         num_colors=50,
+        features=None,
         properties=None,
         color=None,
         seed=0.5,
@@ -237,7 +244,6 @@ class Labels(_ImageBase):
         cache=True,
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
-        features=None,
     ):
 
         self._seed = seed

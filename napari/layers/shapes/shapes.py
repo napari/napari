@@ -118,6 +118,9 @@ class Shapes(Layer):
     ndim : int
         Number of dimensions for shapes. When data is not None, ndim must be D.
         An empty shapes layer can be instantiated with arbitrary ndim.
+    features : dict[str, array-like] or Dataframe-like
+        Features table where each row corresponds to a shape and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -219,6 +222,9 @@ class Shapes(Layer):
     data : (N, ) list of array
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
+    features : Dataframe-like
+        Features table where each row corresponds to a shape and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -414,6 +420,7 @@ class Shapes(Layer):
         data=None,
         *,
         ndim=None,
+        features=None,
         properties=None,
         property_choices=None,
         text=None,
@@ -440,7 +447,6 @@ class Shapes(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
-        features=None,
     ):
         if data is None:
             if ndim is None:
