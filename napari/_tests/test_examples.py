@@ -8,7 +8,6 @@ from qtpy import API_NAME
 import napari
 from napari.utils.notifications import notification_manager
 
-from napari._tests.utils import slow
 
 # not testing these examples
 skip = [
@@ -21,6 +20,7 @@ skip = [
     'embed_ipython.py',  # fails without monkeypatch
     'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
     'new_theme.py',  # testing theme is extremely slow on CI
+    'dynamic-projections-dask.py',  # extremely slow / does not finish
 ]
 
 
@@ -58,7 +58,6 @@ def qapp():
     yield app
 
 
-@slow(30)
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)

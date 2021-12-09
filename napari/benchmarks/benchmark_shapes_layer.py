@@ -7,8 +7,8 @@ import collections
 import numpy as np
 
 from napari.layers import Shapes
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,

@@ -76,7 +76,9 @@ jobs:
           python -m pip install -r docs/requirements.txt
         working-directory: main
       - name: Build Generated Docs
-        run: python docs/update_docs.py
+        run: |
+          xvfb-run python docs/_scripts/update_preference_docs.py
+          xvfb-run python docs/_scripts/update_event_docs.py
         working-directory: main
         env:
           DISPLAY: ":99.0"

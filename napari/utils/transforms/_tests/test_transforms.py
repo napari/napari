@@ -303,3 +303,30 @@ def test_composite_affine_equiv_to_affine(dimensionality):
     np.testing.assert_almost_equal(
         composite.affine_matrix, affine.affine_matrix
     )
+
+
+def test_replace_slice_independence():
+    affine = Affine(ndim=6)
+
+    a = Affine(translate=(3, 8), rotate=33, scale=(0.75, 1.2), shear=[-0.5])
+    b = Affine(translate=(2, 5), rotate=-10, scale=(1.0, 2.3), shear=[-0.0])
+    c = Affine(translate=(0, 0), rotate=45, scale=(3.33, 0.9), shear=[1.5])
+
+    affine = affine.replace_slice([1, 2], a)
+    affine = affine.replace_slice([3, 4], b)
+    affine = affine.replace_slice([0, 5], c)
+
+    np.testing.assert_almost_equal(
+        a.affine_matrix, affine.set_slice([1, 2]).affine_matrix
+    )
+    np.testing.assert_almost_equal(
+        b.affine_matrix, affine.set_slice([3, 4]).affine_matrix
+    )
+    np.testing.assert_almost_equal(
+        c.affine_matrix, affine.set_slice([0, 5]).affine_matrix
+    )
+
+
+def test_replace_slice_num_dimensions():
+    with pytest.raises(ValueError):
+        Affine().replace_slice([0], Affine())

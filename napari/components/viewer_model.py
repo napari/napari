@@ -29,6 +29,7 @@ from ..layers.utils.stack_utils import split_channels
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
+from ..utils.context import Context, create_context
 from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
@@ -43,6 +44,7 @@ from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
+from .overlays import Overlays
 from .scale_bar import ScaleBar
 from .text_overlay import TextOverlay
 from .tooltip import Tooltip
@@ -114,6 +116,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     text_overlay: TextOverlay = Field(
         default_factory=TextOverlay, allow_mutation=False
     )
+    overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
     status: str = 'Ready'
@@ -123,8 +126,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
+    _ctx: Context
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
+        # max_depth=0 means don't look for parent contexts.
+        self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.__config__.extra = Extra.allow
         super().__init__(
@@ -325,6 +331,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
 
+    @staticmethod
+    def rounded_division(min_val, max_val, precision):
+        return int(((min_val + max_val) / 2) / precision) * precision
+
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
@@ -333,8 +343,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ranges = self.layers._ranges
             ndim = len(ranges)
             self.dims.ndim = ndim
-            for i, _range in enumerate(ranges):
-                self.dims.set_range(i, _range)
+            self.dims.set_range(range(ndim), ranges)
+            midpoint = [self.rounded_division(*_range) for _range in ranges]
+            self.dims.set_point(range(ndim), midpoint)
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -383,7 +394,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
-                    self.cursor.position, world=True
+                    self.cursor.position,
+                    view_direction=self.cursor._view_direction,
+                    dims_displayed=list(self.dims.displayed),
+                    world=True,
                 )
 
     def _on_grid_change(self):
@@ -410,7 +424,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
-        layer.translate_grid = translate
+        layer._translate_grid = translate
 
     @property
     def experimental(self):
@@ -749,9 +763,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-        **kwargs
+        ``**kwargs``
             additional kwargs will be passed to the sample data loader provided
-            by `plugin`.  Use of **kwargs may raise an error if the kwargs do
+            by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
             not match the sample data loader.
 
         Returns
@@ -764,25 +778,32 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import plugin_manager
+        from ..plugins import _npe2, plugin_manager
 
-        try:
-            data = plugin_manager._sample_data[plugin][sample]['data']
-        except KeyError:
-            samples = plugin_manager.available_samples()
+        # try with npe2
+        data, available = _npe2.get_sample_data(plugin, sample)
+
+        # then try with npe1
+        if data is None:
+            try:
+                data = plugin_manager._sample_data[plugin][sample]['data']
+            except KeyError:
+                available += list(plugin_manager.available_samples())
+
+        if data is None:
             msg = trans._(
                 "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
                 plugin=plugin,
                 sample=sample,
                 deferred=True,
             )
-            if samples:
+            if available:
                 msg = trans._(
                     "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
                     deferred=True,
                     plugin=plugin,
                     sample=sample,
-                    samples=samples,
+                    samples=available,
                 )
             else:
                 msg = trans._(
@@ -848,7 +869,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
-        **kwargs
+        ``**kwargs``
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
 
@@ -875,7 +896,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         added: List[Layer] = []  # for layers that get added
         with progress(
             paths,
-            desc='Opening Files',
+            desc=trans._('Opening Files'),
             total=0
             if len(paths) == 1
             else None,  # indeterminate bar for 1 file

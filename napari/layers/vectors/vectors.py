@@ -5,13 +5,13 @@ from typing import Dict, Tuple, Union
 import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg
+from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
-from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import get_current_properties, prepare_properties
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
@@ -39,7 +39,7 @@ class Vectors(Layer):
     edge_width : float
         Width for all vectors in pixels.
     length : float
-         Multiplicative factor on projections for length of all vectors.
+        Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Color of all of the vectors.
     edge_color_cycle : np.ndarray, list
@@ -97,7 +97,7 @@ class Vectors(Layer):
     edge_width : float
         Width for all vectors in pixels.
     length : float
-         Multiplicative factor on projections for length of all vectors.
+        Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Color of all of the vectors.
     edge_color_cycle : np.ndarray, list
@@ -203,8 +203,7 @@ class Vectors(Layer):
         # Save the vector style params
         self._edge_width = edge_width
 
-        # length attribute
-        self._length = length
+        self._length = float(length)
 
         self._data = data
 
@@ -409,7 +408,7 @@ class Vectors(Layer):
 
     @length.setter
     def length(self, length: Union[int, float]):
-        self._length = length
+        self._length = float(length)
 
         vertices, triangles = generate_vector_meshes(
             self.data[:, :, list(self._dims_displayed)],

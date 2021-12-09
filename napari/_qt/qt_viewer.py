@@ -1,16 +1,23 @@
 from __future__ import annotations
 
+import logging
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+from ..components._interaction_box_mouse_bindings import (
+    InteractionBoxMouseBindings,
+)
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..layers.base.base import Layer
+from ..plugins import _npe2
 from ..utils import config, perf
+from ..utils._proxies import ReadOnlyWrapper
 from ..utils.action_manager import action_manager
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.history import (
@@ -20,7 +27,6 @@ from ..utils.history import (
     update_save_history,
 )
 from ..utils.interactions import (
-    ReadOnlyWrapper,
     mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
@@ -35,7 +41,7 @@ from ..utils.translations import trans
 from .containers import QtLayerList
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
-from .utils import QImg2array, circle_pixmap, square_pixmap
+from .utils import QImg2array, circle_pixmap, crosshair_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
@@ -46,6 +52,7 @@ from .._vispy import (  # isort:skip
     VispyCamera,
     VispyCanvas,
     VispyScaleBarOverlay,
+    VispyInteractionBox,
     VispyTextOverlay,
     create_vispy_visual,
 )
@@ -53,9 +60,78 @@ from .._vispy import (  # isort:skip
 
 if TYPE_CHECKING:
     from ..viewer import Viewer
+    from npe2.manifest.contributions import WriterContribution
 
 from ..settings import get_settings
 from ..utils.io import imsave_extensions
+
+
+def _npe2_decode_selected_filter(
+    ext_str: str, selected_filter: str, writers: Sequence[WriterContribution]
+) -> Optional[WriterContribution]:
+    """Determine the writer that should be invoked to save data.
+
+    When npe2 can be imported, resolves a selected file extension
+    string into a specific writer. Otherwise, returns None.
+    """
+    # When npe2 is not present, `writers` is expected to be an empty list,
+    # `[]`. This function will return None.
+
+    for entry, writer in zip(
+        ext_str.split(";;"),
+        writers,
+    ):
+        if entry.startswith(selected_filter):
+            return writer
+    return None
+
+
+def _extension_string_for_layers(
+    layers: Sequence[Layer],
+) -> Tuple[str, List[WriterContribution]]:
+    """Return an extension string and the list of corresponding writers.
+
+    The extension string is a ";;" delimeted string of entries. Each entry
+    has a brief description of the file type and a list of extensions.
+
+    The writers, when provided, are the npe2.manifest.io.WriterContribution
+    objects. There is one writer per entry in the extension string. If npe2
+    is not importable, the list of writers will be empty.
+    """
+    # try to use npe2
+    ext_str, writers = _npe2.file_extensions_string_for_layers(layers)
+    if ext_str:
+        return ext_str, writers
+
+    # fallback to old behavior
+
+    if len(layers) == 1:
+        selected_layer = layers[0]
+        # single selected layer.
+        if selected_layer._type_string == 'image':
+
+            ext = imsave_extensions()
+
+            ext_list = [f"*{val}" for val in ext]
+            ext_str = ';;'.join(ext_list)
+
+            ext_str = trans._(
+                "All Files (*);; Image file types:;;{ext_str}",
+                ext_str=ext_str,
+            )
+
+        elif selected_layer._type_string == 'points':
+
+            ext_str = trans._("All Files (*);; *.csv;;")
+
+        else:
+            # layer other than image or points
+            ext_str = trans._("All Files (*);;")
+
+    else:
+        # multiple layers.
+        ext_str = trans._("All Files (*);;")
+    return ext_str, []
 
 
 class QtViewer(QSplitter):
@@ -170,16 +246,6 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        action_manager.register_action(
-            "napari:toggle_console_visibility",
-            self.toggle_console_visibility,
-            trans._("Show/Hide IPython console"),
-            self.viewer,
-        )
-        action_manager.bind_button(
-            'napari:toggle_console_visibility',
-            self.viewerButtons.consoleButton,
-        )
 
         self._create_canvas()
 
@@ -224,11 +290,11 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
-        self.view = self.canvas.central_widget.add_view()
+        self.view = self.canvas.central_widget.add_view(border_width=0)
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
-        self.canvas.connect(self.camera.on_draw)
+        self.canvas.events.draw.connect(self.camera.on_draw)
 
         # Add axes, scale bar
         self._add_visuals()
@@ -276,15 +342,21 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.draw.connect(self.dims.enable_play)
 
-        self.canvas.connect(self.on_mouse_double_click)
-        self.canvas.connect(self.on_mouse_move)
-        self.canvas.connect(self.on_mouse_press)
-        self.canvas.connect(self.on_mouse_release)
-        self.canvas.connect(self._key_map_handler.on_key_press)
-        self.canvas.connect(self._key_map_handler.on_key_release)
-        self.canvas.connect(self.on_mouse_wheel)
-        self.canvas.connect(self.on_draw)
-        self.canvas.connect(self.on_resize)
+        self.canvas.events.mouse_double_click.connect(
+            self.on_mouse_double_click
+        )
+        self.canvas.events.mouse_move.connect(self.on_mouse_move)
+        self.canvas.events.mouse_press.connect(self.on_mouse_press)
+        self.canvas.events.mouse_release.connect(self.on_mouse_release)
+        self.canvas.events.key_press.connect(
+            self._key_map_handler.on_key_press
+        )
+        self.canvas.events.key_release.connect(
+            self._key_map_handler.on_key_release
+        )
+        self.canvas.events.mouse_wheel.connect(self.on_mouse_wheel)
+        self.canvas.events.draw.connect(self.on_draw)
+        self.canvas.events.resize.connect(self.on_resize)
         self.canvas.bgcolor = transform_color(
             get_theme(self.viewer.theme, False).canvas.as_hex()
         )[0]
@@ -319,6 +391,12 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.resize.connect(
             self.text_overlay._on_position_change
+        )
+        self.interaction_box_visual = VispyInteractionBox(
+            self.viewer, parent=self.view.scene, order=1e6 + 3
+        )
+        self.interaction_box_mousebindings = InteractionBoxMouseBindings(
+            self.viewer, self.interaction_box_visual
         )
 
     def _create_performance_dock_widget(self):
@@ -466,39 +544,18 @@ class QtViewer(QSplitter):
             raise OSError(trans._("Nothing to save"))
 
         # prepare list of extensions for drop down menu.
-        if selected and len(self.viewer.layers.selection) == 1:
-            selected_layer = list(self.viewer.layers.selection)[0]
-            # single selected layer.
-            if selected_layer._type_string == 'image':
-
-                ext = imsave_extensions()
-
-                ext_list = ["*" + val for val in ext]
-                ext_str = ';;'.join(ext_list)
-
-                ext_str = trans._(
-                    "All Files (*);; Image file types:;;{ext_str}",
-                    ext_str=ext_str,
-                )
-
-            elif selected_layer._type_string == 'points':
-
-                ext_str = trans._("All Files (*);; *.csv;;")
-
-            else:
-                # layer other than image or points
-                ext_str = trans._("All Files (*);;")
-
-        else:
-            # multiple layers.
-            ext_str = trans._("All Files (*);;")
+        ext_str, writers = _extension_string_for_layers(
+            list(self.viewer.layers.selection)
+            if selected
+            else self.viewer.layers
+        )
 
         msg = trans._("selected") if selected else trans._("all")
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
 
-        filename, _ = dlg.getSaveFileName(
+        filename, selected_filter = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
             directory=hist[0],  # home dir by default,
@@ -509,10 +566,20 @@ class QtViewer(QSplitter):
                 else QFileDialog.Options()
             ),
         )
+        logging.debug(
+            f'QFileDialog - filename: {filename or None} '
+            f'selected_filter: {selected_filter or None}'
+        )
 
         if filename:
+            writer = _npe2_decode_selected_filter(
+                ext_str, selected_filter, writers
+            )
             with warnings.catch_warnings(record=True) as wa:
-                saved = self.viewer.layers.save(filename, selected=selected)
+                saved = self.viewer.layers.save(
+                    filename, selected=selected, _writer=writer
+                )
+                logging.debug(f'Saved {saved}')
                 error_messages = "\n".join(str(x.message.args[0]) for x in wa)
 
             if not saved:
@@ -541,6 +608,7 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
+        # CAN REMOVE THIS AFTER DEPRECATION IS DONE, see self.screenshot.
         img = self.canvas.native.grabFramebuffer()
         if flash:
             from .utils import add_flash_animation
@@ -569,6 +637,16 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+        import warnings
+
+        warnings.warn(
+            trans._(
+                "'window.qt_viewer.screenshot' is deprecated and will be removed in v0.4.14.  Please use 'window.screenshot(canvas_only=True)' instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+
         img = QImg2array(self._screenshot(flash))
         if path is not None:
             imsave(path, img)  # scikit-image imsave method
@@ -584,6 +662,15 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
+        import warnings
+
+        warnings.warn(
+            trans._(
+                "'window.qt_viewer.screenshot' is deprecated and will be removed in v0.4.14.  Please use 'window.screenshot(canvas_only=True)' instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
         cb = QGuiApplication.clipboard()
         cb.setImage(self._screenshot(flash))
 
@@ -681,13 +768,15 @@ class QtViewer(QSplitter):
         if cursor == 'square':
             # make sure the square fits within the current canvas
             if size < 8 or size > (
-                min(*self.viewer.window.qt_viewer.canvas.size) - 4
+                min(*self.viewer.window._qt_viewer.canvas.size) - 4
             ):
                 q_cursor = self._cursors['cross']
             else:
                 q_cursor = QCursor(square_pixmap(size))
         elif cursor == 'circle':
             q_cursor = QCursor(circle_pixmap(size))
+        elif cursor == 'crosshair':
+            q_cursor = QCursor(crosshair_pixmap())
         else:
             q_cursor = self._cursors[cursor]
 
@@ -888,10 +977,15 @@ class QtViewer(QSplitter):
         """
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
+                nd = len(layer._displayed_axes)
+                if nd > self.viewer.dims.ndisplay:
+                    displayed_axes = layer._displayed_axes
+                else:
+                    displayed_axes = self.viewer.dims.displayed[-nd:]
                 layer._update_draw(
                     scale_factor=1 / self.viewer.camera.zoom,
                     corner_pixels_displayed=self._canvas_corners_in_world[
-                        :, layer._displayed_axes
+                        :, displayed_axes
                     ],
                     shape_threshold=self.canvas.size,
                 )
