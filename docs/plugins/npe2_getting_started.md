@@ -35,7 +35,7 @@ Install cookiecutter and use the template as follows:
 
 ```bash
 pip install cookiecutter
-cookiecutter https://github.com/napari/cookiecutter-napari-npe2-plugin
+cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe2
 ```
 
 `cookiecutter` will start asking you questions. These will include questions
