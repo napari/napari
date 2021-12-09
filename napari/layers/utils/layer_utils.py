@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+import warnings
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import dask
 import numpy as np
 import pandas as pd
 
 from ...utils.action_manager import action_manager
+from ...utils.events.custom_types import Array
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 
@@ -248,6 +250,79 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
+def prepare_properties(
+    properties: Optional[Union[Dict[str, Array], pd.DataFrame]],
+    choices: Optional[Dict[str, Array]] = None,
+    num_data: int = 0,
+    save_choices: bool = False,
+) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    """Prepare properties and choices into standard forms.
+    Parameters
+    ----------
+    properties : dict[str, Array] or DataFrame
+        The property values.
+    choices : dict[str, Array]
+        The property value choices.
+    num_data : int
+        The length of data that the properties represent (e.g. number of points).
+    save_choices : bool
+        If true, always return all of the properties in choices.
+    Returns
+    -------
+    properties: dict[str, np.ndarray]
+        A dictionary where the key is the property name and the value
+        is an ndarray of property values.
+    choices: dict[str, np.ndarray]
+        A dictionary where the key is the property name and the value
+        is an ndarray of unique property value choices.
+    """
+    # If there is no data, non-empty properties represent choices as a deprecated behavior.
+    if num_data == 0 and properties:
+        warnings.warn(
+            trans._(
+                "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        choices = properties
+        properties = {}
+
+    properties = validate_properties(properties, expected_len=num_data)
+    choices = _validate_property_choices(choices)
+
+    # Populate the new choices by using the property keys and merging the
+    # corresponding unique property and choices values.
+    new_choices = {
+        k: np.unique(np.concatenate((v, choices.get(k, []))))
+        for k, v in properties.items()
+    }
+
+    # If there are no properties, and thus no new choices, populate new choices
+    # from the input choices, and initialize property values as missing or empty.
+    if len(new_choices) == 0:
+        new_choices = {k: np.unique(v) for k, v in choices.items()}
+        if len(new_choices) > 0:
+            if num_data > 0:
+                properties = {
+                    k: np.array([None] * num_data) for k in new_choices
+                }
+            else:
+                properties = {
+                    k: np.empty(0, v.dtype) for k, v in new_choices.items()
+                }
+
+    # For keys that are in the input choices, but not in the new choices,
+    # sometimes add appropriate array values to new choices and properties.
+    if save_choices:
+        for k, v in choices.items():
+            if k not in new_choices:
+                new_choices[k] = np.unique(v)
+                properties[k] = np.array([None] * num_data)
+
+    return properties, new_choices
+
+
 def get_current_properties(
     properties: Dict[str, np.ndarray],
     choices: Dict[str, np.ndarray],
@@ -280,6 +355,65 @@ def get_current_properties(
             k: np.asarray([v[0]]) for k, v in choices.items()
         }
     return current_properties
+
+
+def dataframe_to_properties(
+    dataframe: pd.DataFrame,
+) -> Dict[str, np.ndarray]:
+    """Convert a dataframe to a properties dictionary.
+    Parameters
+    ----------
+    dataframe : DataFrame
+        The dataframe object to be converted to a properties dictionary
+    Returns
+    -------
+    dict[str, np.ndarray]
+        A properties dictionary where the key is the property name and the value
+        is an ndarray with the property value for each point.
+    """
+    return {col: np.asarray(dataframe[col]) for col in dataframe}
+
+
+def validate_properties(
+    properties: Optional[Union[Dict[str, Array], pd.DataFrame]],
+    expected_len: Optional[int] = None,
+) -> Dict[str, np.ndarray]:
+    """Validate the type and size of properties and coerce values to numpy arrays.
+    Parameters
+    ----------
+    properties : dict[str, Array] or DataFrame
+        The property values.
+    expected_len : int
+        The expected length of each property value array.
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        The property values.
+    """
+    if properties is None or len(properties) == 0:
+        return {}
+
+    if not isinstance(properties, dict):
+        properties = dataframe_to_properties(properties)
+
+    lens = [len(v) for v in properties.values()]
+    if expected_len is None:
+        expected_len = lens[0]
+    if any(v != expected_len for v in lens):
+        raise ValueError(
+            trans._(
+                "the number of items must be equal for all properties",
+                deferred=True,
+            )
+        )
+
+    return {k: np.asarray(v) for k, v in properties.items()}
+
+
+def _validate_property_choices(property_choices):
+    if property_choices is None:
+        property_choices = {}
+    return {k: np.unique(v) for k, v in property_choices.items()}
 
 
 def _coerce_current_properties_value(
