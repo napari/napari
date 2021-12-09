@@ -108,3 +108,8 @@ def test_receive_return_proxy_object():
 
     add_layer(layer)
     assert len(viewer.layers) == 2
+
+
+def test_viewer_method():
+    viewer = PublicOnlyProxy(ViewerModel())
+    assert viewer.add_points() is not None
