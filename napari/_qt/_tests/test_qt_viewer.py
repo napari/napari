@@ -438,7 +438,7 @@ def test_process_mouse_event(make_napari_viewer):
     def on_click(layer, event):
         np.testing.assert_almost_equal(event.view_direction, [0, 1, 0, 0])
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
-        assert event.dims_point[0] == 0
+        assert event.dims_point[0] == data.shape[0] // 2
 
         expected_position = view._map_canvas2world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
