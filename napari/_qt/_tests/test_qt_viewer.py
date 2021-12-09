@@ -495,14 +495,14 @@ def test_leaks_image(qapp, make_napari_viewer):
 
 
 @skip_local_popups
-def test_leaks_labels(qtbot, make_napari_viewer):
+def test_leaks_labels(qapp, make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     lr = weakref.ref(
         viewer.add_labels((np.random.rand(10, 10) * 10).astype(np.uint8))
     )
     dr = weakref.ref(lr().data)
     viewer.layers.clear()
-    qtbot.wait(50)  # process events
+    qapp.processEvents()
     gc.collect()
     assert not gc.collect()
     assert not lr()
