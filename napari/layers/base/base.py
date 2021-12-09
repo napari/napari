@@ -29,6 +29,8 @@ from ...utils.translations import trans
 from .._source import current_source
 from ..utils.interactivity_utils import drag_data_to_projected_distance
 from ..utils.layer_utils import (
+    _features_to_choices,
+    _features_to_properties,
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
@@ -802,12 +804,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _get_state(self):
         raise NotImplementedError()
 
+    def _get_state_with_deprecated(self) -> dict:
+        state = self._get_state()
+        # TODO: this should be removed when properties have been removed.
+        # For now, this acts as simple workaround that will not break plugins
+        # that depend on reading one of these two deprecated pieces of state.
+        if 'features' in state:
+            features = state['features']
+            if 'properties' not in state:
+                state['properties'] = _features_to_properties(features)
+            if 'property_choices' not in state:
+                state['property_choices'] = _features_to_choices(features)
+        return state
+
     @property
     def _type_string(self):
         return self.__class__.__name__.lower()
 
     def as_layer_data_tuple(self):
-        state = self._get_state()
+        state = self._get_state_with_deprecated()
         state.pop('data', None)
         return self.data, state, self._type_string
 

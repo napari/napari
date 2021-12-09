@@ -437,5 +437,5 @@ def _write_single_layer_with_plugins(
         _plugin=plugin_name,
         path=abspath_or_url(path),
         data=layer.data,
-        meta=layer._get_state(),
+        meta=layer._get_state_with_deprecated(),
     )
