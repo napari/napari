@@ -225,7 +225,9 @@ def test_screenshot(make_napari_viewer):
     viewer.add_shapes(data)
 
     # Take screenshot
-    screenshot = viewer.window._qt_viewer.screenshot(flash=False)
+    with pytest.warns(FutureWarning):
+        screenshot = viewer.window._qt_viewer.screenshot(flash=False)
+    screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
     assert screenshot.ndim == 3
 
 
@@ -331,7 +333,11 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     assert clipboard_image.isNull()
 
     # capture screenshot
-    viewer.window._qt_viewer.clipboard(flash=True)
+    with pytest.warns(FutureWarning):
+        viewer.window._qt_viewer.clipboard(flash=True)
+
+    viewer.window.clipboard(flash=False, canvas_only=True)
+
     clipboard_image = QGuiApplication.clipboard().image()
     assert not clipboard_image.isNull()
 
@@ -374,7 +380,11 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
     assert clipboard_image.isNull()
 
     # capture screenshot
-    viewer.window._qt_viewer.clipboard(flash=False)
+    with pytest.warns(FutureWarning):
+        viewer.window._qt_viewer.clipboard(flash=False)
+
+    viewer.window.clipboard(flash=False, canvas_only=True)
+
     clipboard_image = QGuiApplication.clipboard().image()
     assert not clipboard_image.isNull()
 
