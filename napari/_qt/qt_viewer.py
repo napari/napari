@@ -608,6 +608,7 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
+        # CAN REMOVE THIS AFTER DEPRECATION IS DONE, see self.screenshot.
         img = self.canvas.native.grabFramebuffer()
         if flash:
             from .utils import add_flash_animation
@@ -636,6 +637,16 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+        import warnings
+
+        warnings.warn(
+            trans._(
+                "'window.qt_viewer.screenshot' is deprecated and will be removed in v0.4.14.  Please use 'window.screenshot(canvas_only=True)' instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+
         img = QImg2array(self._screenshot(flash))
         if path is not None:
             imsave(path, img)  # scikit-image imsave method
@@ -651,6 +662,15 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
+        import warnings
+
+        warnings.warn(
+            trans._(
+                "'window.qt_viewer.screenshot' is deprecated and will be removed in v0.4.14.  Please use 'window.screenshot(canvas_only=True)' instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
         cb = QGuiApplication.clipboard()
         cb.setImage(self._screenshot(flash))
 

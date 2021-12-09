@@ -56,6 +56,8 @@ from .widgets.qt_viewer_status_bar import ViewerStatusBar
 _sentinel = object()
 
 if TYPE_CHECKING:
+    from qtpy.QtGui import QImage
+
     from ..viewer import Viewer
 
 
@@ -1119,7 +1121,7 @@ class Window:
         """Restart the napari application."""
         self._qt_window.restart()
 
-    def _screenshot(self, flash=True):
+    def _screenshot(self, flash=True, canvas_only=False) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1127,15 +1129,28 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
-        """
-        img = self._qt_window.grab().toImage()
-        if flash:
-            from .utils import add_flash_animation
+        canvas_only : bool
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
 
-            add_flash_animation(self._qt_window)
+        Returns
+        ----------
+        img : QImage
+        """
+        from .utils import add_flash_animation
+
+        if canvas_only:
+            img = self._qt_viewer.canvas.native.grabFramebuffer()
+            if flash:
+                add_flash_animation(self._qt_viewer._canvas_overlay)
+        else:
+            img = self._qt_window.grab().toImage()
+            if flash:
+                add_flash_animation(self._qt_window)
         return img
 
-    def screenshot(self, path=None, flash=True):
+    def screenshot(self, path=None, flash=True, canvas_only=False):
         """Take currently displayed viewer and convert to an image array.
 
         Parameters
@@ -1145,6 +1160,10 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
+        canvas_only : bool
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
 
         Returns
         -------
@@ -1152,21 +1171,26 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self._screenshot(flash)
+        img = QImg2array(self._screenshot(flash, canvas_only))
         if path is not None:
-            imsave(path, QImg2array(img))  # scikit-image imsave method
-        return QImg2array(img)
+            imsave(path, img)  # scikit-image imsave method
+        return img
 
-    def clipboard(self, flash=True):
-        """Take a screenshot of the currently displayed viewer and copy the image to the clipboard.
+    def clipboard(self, flash=True, canvas_only=False):
+        """Copy screenshot of current viewer to the clipboard.
 
         Parameters
         ----------
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
+        canvas_only : bool
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
         """
-        QApplication.clipboard().setImage(self._screenshot(flash))
+        img = self._screenshot(flash=flash, canvas_only=canvas_only)
+        QApplication.clipboard().setImage(img)
 
     def _teardown(self):
         """Carry out various teardown tasks such as event disconnection."""
