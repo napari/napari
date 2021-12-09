@@ -156,7 +156,7 @@ contributions:
           ".tga",
         ]
       layer_types: ["image"]
-      name: lossless
+      display_name: lossless
 
     - command: napari.write_image
       filename_extensions:
@@ -174,7 +174,7 @@ contributions:
           ".mpo",
         ]
       layer_types: ["image"]
-      name: lossy
+      display_name: lossy
 
     - command: napari.write_labels
       filename_extensions:
@@ -192,21 +192,21 @@ contributions:
           ".stk",
         ]
       layer_types: ["labels"]
-      name: labels
+      display_name: labels
 
     - command: napari.write_points
       filename_extensions: [".csv"]
       layer_types: ["points"]
-      name: points
+      display_name: points
 
     - command: napari.write_shapes
       filename_extensions: [".csv"]
       layer_types: ["shapes"]
-      name: shapes
+      display_name: shapes
 
     - command: napari.write_directory
       layer_types: ["image*", "labels*", "points*", "shapes*"]
-      name: Save to Folder
+      display_name: Save to Folder
 
   sample_data:
     - display_name: Astronaut (RGB)
