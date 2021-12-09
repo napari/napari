@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
@@ -191,5 +193,8 @@ def test_inject_viewer_proxy(make_napari_viewer):
     viewer = make_napari_viewer()
     wdg = _instantiate_dock_widget(Widg3, viewer)
     assert isinstance(wdg.viewer, PublicOnlyProxy)
-    with pytest.warns(FutureWarning):
-        wdg.fail()
+
+    # simulate access from outside napari
+    with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
+        with pytest.warns(FutureWarning):
+            wdg.fail()

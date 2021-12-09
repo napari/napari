@@ -78,7 +78,7 @@ text_kwargs = {
 }
 shapes = viewer.add_shapes(
     face_color='black',
-    properties={text_property: box_annotations},
+    property_choices={text_property: box_annotations},
     text=text_kwargs,
     ndim=3
 )

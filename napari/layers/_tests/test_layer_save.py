@@ -2,6 +2,8 @@ import os
 
 import numpy as np
 
+from napari._tests.utils import assert_layer_state_equal
+
 
 # the layer_writer_and_data fixture is defined in napari/conftest.py
 def test_layer_save(tmpdir, layer_writer_and_data):
@@ -40,8 +42,9 @@ def test_layer_save(tmpdir, layer_writer_and_data):
     else:
         np.testing.assert_allclose(layer_data[0], read_layer_data[0])
 
-    # # Compare layer metadata
-    np.testing.assert_equal(layer_data[1], read_layer_data[1])
+    # Compare layer metadata
+    assert_layer_state_equal(read_layer_data[1], layer_data[1])
+
     # Compare layer type
     assert layer_data[2] == read_layer_data[2]
 
