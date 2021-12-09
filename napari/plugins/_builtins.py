@@ -6,7 +6,6 @@ import shutil
 from typing import Any, List, Optional, Sequence, Union
 
 import numpy as np
-import pandas as pd
 from napari_plugin_engine import napari_hook_implementation
 
 from ..types import (
@@ -165,15 +164,14 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
         # If an extension is provided then it must be `.csv`
         return None
 
-    features = meta.get('features', pd.DataFrame())
+    properties = meta.get('properties', {})
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
     column_names = ['axis-' + str(n) for n in range(data.shape[1])]
-    if features.shape[1] > 0:
-        column_names += list(features.columns)
+    if properties:
+        column_names += properties.keys()
         prop_table = [
-            np.expand_dims(col.to_numpy(), axis=1)
-            for _, col in features.items()
+            np.expand_dims(col, axis=1) for col in properties.values()
         ]
     else:
         prop_table = []
