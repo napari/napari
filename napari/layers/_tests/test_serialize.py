@@ -16,20 +16,16 @@ def test_attrs_arrays(Layer, data, ndim):
 
     properties = layer._get_state()
 
-    # excluding affine transform and `cache` which is not yet in `_get_state`
-    # excluding properties and property_choices as deprecated parameters
-    parameters = {
-        p
-        for p in inspect.signature(Layer).parameters
-        if p not in ('cache', 'affine', 'properties', 'property_choices')
-    }
+    # Check every property is in call signature
+    signature = inspect.signature(Layer)
 
     # Check every property is also a parameter.
     for prop in properties.keys():
-        assert prop in parameters
+        assert prop in signature.parameters
 
     # Check number of properties is same as number in signature
-    assert len(properties) == len(parameters)
+    # excluding affine transform and `cache` which is not yet in `_get_state`
+    assert len(properties) == len(signature.parameters) - 2
 
     # Check new layer can be created
     new_layer = Layer(**properties)

@@ -230,7 +230,7 @@ class Tracks(Layer):
         state.update(
             {
                 'data': self.data,
-                'features': self.features,
+                'properties': self.properties,
                 'graph': self.graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
@@ -238,6 +238,7 @@ class Tracks(Layer):
                 'tail_width': self.tail_width,
                 'tail_length': self.tail_length,
                 'head_length': self.head_length,
+                'features': self.features,
             }
         )
         return state
