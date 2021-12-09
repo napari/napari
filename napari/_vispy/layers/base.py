@@ -156,7 +156,7 @@ class VispyBaseLayer(ABC):
     def _on_experimental_clipping_planes_change(self):
         if hasattr(self.node, 'clipping_planes'):
             self.node.clipping_planes = (
-                self.layer.experimental_clipping_planes.as_array()
+                self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
     def reset(self):
