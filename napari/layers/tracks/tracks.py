@@ -1,3 +1,7 @@
+# from napari.layers.base.base import Layer
+# from napari.utils.events import Event
+# from napari.utils.colormaps import AVAILABLE_COLORMAPS
+
 from typing import Dict, List, Union
 from warnings import warn
 
