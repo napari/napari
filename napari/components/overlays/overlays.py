@@ -3,7 +3,7 @@ from pydantic import Field
 from ...utils.events import EventedModel
 
 # from .axes import Axes
-# from .interaction_box import InteractionBox
+from .interaction_box import InteractionBox
 from .scale_bar import ScaleBar
 from .text import Text
 
@@ -26,9 +26,9 @@ class Overlays(EventedModel):
     """
 
     # fields
-    # interaction_box: InteractionBox = Field(
-    # default_factory=InteractionBox, allow_mutation=False
-    # )
+    interaction_box: InteractionBox = Field(
+        default_factory=InteractionBox, allow_mutation=False
+    )
     # axes: Axes = Field(
     # default_factory=Axes, allow_mutation=False
     # )

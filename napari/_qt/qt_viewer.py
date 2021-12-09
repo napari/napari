@@ -9,6 +9,10 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+from ..components._interaction_box_mouse_bindings import (
+    InteractionBoxMouseBindings,
+)
+
 # )
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
@@ -44,9 +48,6 @@ from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from .widgets.qt_welcome import QtWidgetOverlay
-
-# from ..components._interaction_box_mouse_bindings import (
-# InteractionBoxMouseBindings,
 
 from .._vispy import (  # isort:skip
     VispyCamera,
@@ -384,35 +385,9 @@ class QtViewer(QSplitter):
             # TODO: using name here because evented models are unhashable?
             self.overlay_to_visual[name] = vispy_overlay
 
-        # self.canvas.events.resize.connect(
-        # self.viewer.overlays.text._on_position_change
-        # )
-
-        # self.axes = VispyAxesOverlay(
-        # self.viewer,
-        # parent=self.view.scene,
-        # order=1e6,
-        # )
-        # self.scale_bar = VispyScaleBarOverlay(
-        # self.viewer,
-        # parent=self.view,
-        # order=1e6 + 1,
-        # )
-        # self.text_overlay = VispyTextOverlay(
-        # viewer=self.viewer,
-        # overlay=self.viewer.overlays.text,
-        # parent=self.view,
-        # order=1e6 + 2,
-        # )
-        # self.interaction_box_visual = VispyInteractionBox(
-        # viewer=self.viewer,
-        # overlay=self.viewer.overlays.interaction_box,
-        # parent=self.view,
-        # order=1e6 + 3,
-        # )
-        # self.interaction_box_mousebindings = InteractionBoxMouseBindings(
-        # self.viewer, self.interaction_box_visual
-        # )
+        self.interaction_box_mousebindings = InteractionBoxMouseBindings(
+            self.viewer, self.overlay_to_visual['interaction_box']
+        )
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""

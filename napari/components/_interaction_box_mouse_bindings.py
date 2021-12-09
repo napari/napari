@@ -204,6 +204,7 @@ class InteractionBoxMouseBindings:
             if (
                 not self._interaction_box_model.visible
                 or self._interaction_box_model._box is None
+                or self._interaction_box_visual._box is None
             ):
                 return
 

@@ -10,9 +10,17 @@ class VispyInteractionBoxOverlay(VispyBaseOverlay):
     def __init__(self, **kwargs):
         node = Compound([Line(), Markers(), Markers()])
         super().__init__(node=node, **kwargs)
-        self.overlay = self.viewer.overlays.interaction_box
+        self.square_marker_node.symbol = 'square'
+        self.square_marker_node.scaling = False
+        self.round_marker_node.symbol = 'disc'
+        self.round_marker_node.scaling = False
+        self._highlight_width = 1.5
+        self._vertex_size = 10
+        self._rotation_handle_length = 20
+        self._highlight_color = (0, 0.6, 1)
 
         self._on_interaction_box_change()
+
         self.overlay.events.points.connect(self._on_interaction_box_change)
         self.overlay.events.show_handle.connect(
             self._on_interaction_box_change
@@ -24,15 +32,6 @@ class VispyInteractionBoxOverlay(VispyBaseOverlay):
             self._on_interaction_box_change
         )
         self.overlay.events.transform.connect(self._on_interaction_box_change)
-        self._highlight_width = 1.5
-
-        self._vertex_size = 10
-        self._rotation_handle_length = 20
-        self._highlight_color = (0, 0.6, 1)
-        self.square_marker_node.symbol = 'square'
-        self.square_marker_node.scaling = False
-        self.round_marker_node.symbol = 'disc'
-        self.round_marker_node.scaling = False
 
     @property
     def square_marker_node(self):
@@ -97,6 +96,7 @@ class VispyInteractionBoxOverlay(VispyBaseOverlay):
             width = 0
 
         self.line_node.set_data(pos=pos, color=edge_color, width=width)
+        self.node.update()
 
     def _compute_vertices_and_box(self):
         """Compute location of the box for rendering.
@@ -115,7 +115,7 @@ class VispyInteractionBoxOverlay(VispyBaseOverlay):
         width : float
             Width of the box edge
         """
-        if self.overlay._box is not None and self.overlay.show:
+        if self.overlay._box is not None and self.overlay.visible:
             box = self.overlay._box
             if self.overlay.show_handle:
                 box = self._add_rotation_handle(box)
@@ -178,3 +178,7 @@ class VispyInteractionBoxOverlay(VispyBaseOverlay):
             box = np.append(box, [rot], axis=0)
 
         return box
+
+    def reset(self):
+        super().reset()
+        self._on_interaction_box_change()
