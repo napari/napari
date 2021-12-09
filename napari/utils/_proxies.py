@@ -83,7 +83,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     @classmethod
     def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
         # restrict the scope of this proxy to napari objects
-        mod = getattr(obj, '__module__', None) or ''
+        mod = getattr(type(obj), '__module__', None) or ''
         if not mod.startswith('napari'):
             return obj
         if isinstance(obj, PublicOnlyProxy):
