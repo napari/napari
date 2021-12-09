@@ -276,12 +276,12 @@ def test_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
     layer = Labels(data)
     layer.properties = properties
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))
@@ -342,7 +342,7 @@ def test_multiscale_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))[1]
