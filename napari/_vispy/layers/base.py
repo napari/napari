@@ -156,6 +156,7 @@ class VispyBaseLayer(ABC):
     def _on_experimental_clipping_planes_change(self):
         if hasattr(self.node, 'clipping_planes'):
             self.node.clipping_planes = (
+                # invert axes because vispy uses xyz but napari zyx
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
