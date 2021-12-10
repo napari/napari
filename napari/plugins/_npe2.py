@@ -62,7 +62,6 @@ def read(
         return layer_data, _FakeHookimpl(reader.plugin_name)
     return None
 
-
 @npe2_or_return([])
 def write_layers(
     path: str,
@@ -180,6 +179,13 @@ def file_extensions_string_for_layers(
         ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
         writers,
     )
+
+@npe2_or_return((None, []))
+def get_readers(path):
+    pm = npe2.PluginManager.instance()
+    readers = list(pm.iter_compatible_readers(path))
+    reader_plugin_names = [reader.plugin_name for reader in readers]
+    return reader_plugin_names
 
 
 @npe2_or_return(iter([]))

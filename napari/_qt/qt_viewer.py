@@ -40,6 +40,7 @@ from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
 from .dialogs.screenshot_dialog import ScreenshotDialog
+from .dialogs.qt_reader_dialog import QtReaderDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, crosshair_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
@@ -1050,7 +1051,19 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
 
-        self.viewer.open(filenames, stack=bool(shift_down))
+        # TODO: what are we doing with folders?
+        # TODO: we need to check through existing associations here (?)
+
+        # we need to pop up dialog here
+        self.readerDialog = QtReaderDialog(parent=self, pth=filenames[0])
+        dialog_result = self.readerDialog.exec_()
+        if dialog_result:
+            # grab the plugin they chose 
+            plugin_choice = self.readerDialog.get_plugin_choice()
+            # try to open with it
+            self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
+            # if it works and the user chose to, save the settings
+
 
     def closeEvent(self, event):
         """Cleanup and close.
