@@ -1065,7 +1065,7 @@ class QtViewer(QSplitter):
                     self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
                     return
                 except Exception:
-                    error_message = f"Tried to open {filenames[0]} with {plugin_choice}, but reading failed.\n"
+                    error_message = f"Tried to open file with {plugin_choice}, but reading failed.\n"
 
             self.readerDialog = QtReaderDialog(parent=self, pth=filenames[0], error_message=error_message)
             dialog_result = self.readerDialog.exec_()
@@ -1082,7 +1082,7 @@ class QtViewer(QSplitter):
         self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
         # do we have settings to save?
         if persist_choice:
-            SETTINGS.plugins.extension2reader.update({extension: plugin_choice})
+            get_settings().plugins.extension2reader = {**reader_associations, extension: plugin_choice}
 
     def closeEvent(self, event):
         """Cleanup and close.
