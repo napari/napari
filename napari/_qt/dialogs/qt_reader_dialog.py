@@ -4,27 +4,26 @@ from qtpy.QtWidgets import QDialog
 
 
 class QtReaderDialog(QDialog):
-    def __init__(self, pth=None, parent=None):
+    def __init__(self, pth=None, parent=None, error_message=None):
         super().__init__(parent)
         self.setObjectName('Choose reader')
         self.setWindowTitle('Choose reader')
         self._current_file = pth
         self._reader_buttons = []
-        self.setup_ui()
+        self.setup_ui(error_message)
 
-    def setup_ui(self):
+    def setup_ui(self, error_message):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
         label = QLabel()
-        label.setText(f"Choose reader for file {self._current_file}")
+        label.setText(f"{error_message if error_message else ''}Choose reader for file {self._current_file}:")
         self.layout().addWidget(label)
 
+        # TODO: move this back out to qt_viewer?
         from ...plugins import _npe2, plugin_manager
         readers = _npe2.get_readers(self._current_file)
 
-        # we also want npe1 readers here 
-        # look at plugin_manager.hook.napari_get_reader
         npe1_readers = []
         for spec, hook_caller in plugin_manager.hooks.items():
             if spec == 'napari_get_reader':
@@ -37,9 +36,13 @@ class QtReaderDialog(QDialog):
         self.reader_btn_group = QButtonGroup(self)
         self.add_reader_buttons(readers)
         self.add_reader_buttons(npe1_readers)
+        if self.reader_btn_group.buttons():
+            self.reader_btn_group.buttons()[0].toggle()
+
         # TODO: will fail with no extension
-        persist_checkbox = QCheckBox(f'Remember this choice for files with a .{self._current_file.split(".")[1]} extension')
-        self.layout().addWidget(persist_checkbox)
+        self.persist_checkbox = QCheckBox(f'Remember this choice for files with a .{self._current_file.split(".")[1]} extension')
+        self.persist_checkbox.toggle()
+        self.layout().addWidget(self.persist_checkbox)
 
         btns = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.btn_box = QDialogButtonBox(btns)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import warnings
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 
@@ -63,7 +64,7 @@ if TYPE_CHECKING:
     from ..components import ViewerModel
     from npe2.manifest.contributions import WriterContribution
 
-from ..settings import get_settings
+from ..settings import get_settings, SETTINGS
 from ..utils.io import imsave_extensions
 
 
@@ -1051,19 +1052,37 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
 
-        # TODO: what are we doing with folders?
-        # TODO: we need to check through existing associations here (?)
+        _, extension = os.path.splitext(filenames[0])
+        reader_associations = get_settings().plugins.extension2reader
+        plugin_choice = None
+        persist_choice = False
+        error_message = None
+        #TODO: if there's no extension e.g. folder or list of files?
+        if extension:
+            if reader_associations and extension in reader_associations:
+                plugin_choice = reader_associations[extension]
+                try:
+                    self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
+                    return
+                except Exception:
+                    error_message = f"Tried to open {filenames[0]} with {plugin_choice}, but reading failed.\n"
 
-        # we need to pop up dialog here
-        self.readerDialog = QtReaderDialog(parent=self, pth=filenames[0])
-        dialog_result = self.readerDialog.exec_()
-        if dialog_result:
-            # grab the plugin they chose 
-            plugin_choice = self.readerDialog.get_plugin_choice()
-            # try to open with it
-            self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
-            # if it works and the user chose to, save the settings
-
+            self.readerDialog = QtReaderDialog(parent=self, pth=filenames[0], error_message=error_message)
+            dialog_result = self.readerDialog.exec_()
+            if dialog_result:
+                # grab the plugin they chose 
+                plugin_choice = self.readerDialog.get_plugin_choice()
+                # do they want to save settings?
+                if self.readerDialog.persist_checkbox.isChecked():
+                    persist_choice = True
+            # cancel on the dialog cancels opening the file
+            else:
+                return
+        
+        self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
+        # do we have settings to save?
+        if persist_choice:
+            SETTINGS.plugins.extension2reader.update({extension: plugin_choice})
 
     def closeEvent(self, event):
         """Cleanup and close.
