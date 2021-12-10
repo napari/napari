@@ -37,6 +37,7 @@ class VispyTracksLayer(VispyBaseLayer):
 
         # update the shaders
         self.node.tracks_filter.current_time = self.layer.current_time
+        self.node.graph_filter.current_time = self.layer.current_time
 
         # add text labels if they're visible
         if self.node._subvisuals[1].visible:
@@ -55,6 +56,9 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node.tracks_filter.use_fade = self.layer.use_fade
         self.node.tracks_filter.tail_length = self.layer.tail_length
         self.node.tracks_filter.head_length = self.layer.head_length
+        self.node.graph_filter.use_fade = self.layer.use_fade
+        self.node.graph_filter.tail_length = self.layer.tail_length
+        self.node.graph_filter.head_length = self.layer.head_length
 
         # set visibility of subvisuals
         self.node._subvisuals[0].visible = self.layer.display_tail
@@ -91,9 +95,9 @@ class VispyTracksLayer(VispyBaseLayer):
     def _on_graph_change(self):
         """Update the shader when the graph data changes."""
 
-        self.node.tracks_filter.use_fade = self.layer.use_fade
-        self.node.tracks_filter.tail_length = self.layer.tail_length
-        self.node.tracks_filter.vertex_time = self.layer.track_times
+        self.node.graph_filter.use_fade = self.layer.use_fade
+        self.node.graph_filter.tail_length = self.layer.tail_length
+        self.node.graph_filter.vertex_time = self.layer.graph_times
 
         # if the user clears a graph after it has been created, vispy offers
         # no method to clear the data, therefore, we need to set private

@@ -564,11 +564,14 @@ def test_properties(properties):
     # test copy/paste
     layer.selected_data = {0, 1}
     layer._copy_data()
-    assert np.all(layer._clipboard['properties']['point_type'] == ['A', 'B'])
+    assert np.all(layer._clipboard['features']['point_type'] == ['A', 'B'])
 
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     assert np.all(layer.properties['point_type'] == paste_annotations)
+
+    assert layer.get_status(data[0]).endswith("point_type: B")
+    assert layer.get_status(data[1]).endswith("point_type: A")
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1045,7 +1048,8 @@ def test_color_cycle(attribute, color_cycle):
     }
     layer = Points(data, **points_kwargs)
 
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
+
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
     )
@@ -1197,7 +1201,9 @@ def test_color_colormap(attribute):
         f'{attribute}_colormap': 'gray',
     }
     layer = Points(data, **points_kwargs)
-    assert layer.properties == properties
+
+    np.testing.assert_equal(layer.properties, properties)
+
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
@@ -2140,13 +2146,13 @@ def test_set_properties_with_invalid_shape_errors_safely():
         'class': np.array(['A', 'B', 'C']),
     }
     points = Points(np.random.rand(3, 2), text='class', properties=properties)
-    assert points.properties == properties
+    np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
     with pytest.raises(ValueError):
         points.properties = {'class': np.array(['D', 'E'])}
 
-    assert points.properties == properties
+    np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
 
@@ -2155,7 +2161,7 @@ def test_set_properties_with_missing_text_property_text_becomes_constant():
         'class': np.array(['A', 'B', 'C']),
     }
     points = Points(np.random.rand(3, 2), text='class', properties=properties)
-    assert points.properties == properties
+    np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
     points.properties = {'not_class': np.array(['D', 'E', 'F'])}

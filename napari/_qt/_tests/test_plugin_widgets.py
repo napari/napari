@@ -1,9 +1,13 @@
+from unittest.mock import patch
+
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
 
 import napari
 from napari import Viewer
+from napari._qt.qt_main_window import _instantiate_dock_widget
+from napari.utils._proxies import PublicOnlyProxy
 
 
 class Widg1(QWidget):
@@ -20,6 +24,10 @@ class Widg3(QWidget):
     def __init__(self, v: Viewer):
         self.viewer = v
         super().__init__()
+
+    def fail(self):
+        """private attr not allowed"""
+        self.viewer.window._qt_window
 
 
 def magicfunc(viewer: 'napari.Viewer'):
@@ -178,3 +186,15 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     assert isinstance(magic_widget(), napari.Viewer)
     # Add twice is ok, only does a show
     actions[2].trigger()
+
+
+def test_inject_viewer_proxy(make_napari_viewer):
+    """Test that the injected viewer is a public-only proxy"""
+    viewer = make_napari_viewer()
+    wdg = _instantiate_dock_widget(Widg3, viewer)
+    assert isinstance(wdg.viewer, PublicOnlyProxy)
+
+    # simulate access from outside napari
+    with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
+        with pytest.warns(FutureWarning):
+            wdg.fail()

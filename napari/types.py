@@ -40,7 +40,7 @@ FullLayerData = Tuple[Any, Dict, str]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, Path]
-PathOrPaths = Union[PathLike, Sequence[PathLike]]
+PathOrPaths = Union[str, Sequence[str]]
 ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
 WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 
@@ -78,8 +78,7 @@ if tuple(np.__version__.split('.')) < ('1', '20'):
     # https://github.com/python/mypy/issues/6701#issuecomment-609638202
     class ArrayBase(np.ndarray):
         def __getattr__(self, name: str) -> Any:
-            return super().__getattr__(name)
-
+            return object.__getattribute__(self, name)
 
 else:
     ArrayBase = np.ndarray  # type: ignore
@@ -139,7 +138,8 @@ def _register_types_with_magicgui():
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
         if sys.version_info >= (3, 9):
-            register_type(Future[_type], return_callback=_mgui.add_future_data)
+            future_type = Future[_type]  # type: ignore
+            register_type(future_type, return_callback=_mgui.add_future_data)
 
     for layer_name in layers.NAMES:
         data_type = globals().get(f'{layer_name.title()}Data')

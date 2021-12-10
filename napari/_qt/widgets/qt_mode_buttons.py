@@ -1,3 +1,5 @@
+import weakref
+
 from qtpy.QtWidgets import QPushButton, QRadioButton
 
 
@@ -31,7 +33,7 @@ class QtModeRadioButton(QRadioButton):
     ):
         super().__init__()
 
-        self.layer = layer
+        self.layer_ref = weakref.ref(layer)
         self.setToolTip(tooltip or button_name)
         self.setChecked(checked)
         self.setProperty('mode', button_name)
@@ -48,9 +50,13 @@ class QtModeRadioButton(QRadioButton):
         bool : bool
             Whether this mode is currently selected or not.
         """
-        with self.layer.events.mode.blocker(self._set_mode):
+        layer = self.layer_ref()
+        if layer is None:
+            return
+
+        with layer.events.mode.blocker(self._set_mode):
             if bool:
-                self.layer.mode = self.mode
+                layer.mode = self.mode
 
 
 class QtModePushButton(QPushButton):

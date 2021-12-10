@@ -18,6 +18,7 @@ from typing import (
 try:
     import npe2
     from npe2.io_utils import read_get_reader
+    from npe2.manifest.schema import PluginManifest
 except ImportError:
     npe2 = None
 
@@ -110,7 +111,10 @@ def get_widget_contribution(
     plugin_name: str, widget_name: str
 ) -> Optional[WidgetCallable]:
     for contrib in npe2.PluginManager.instance().iter_widgets():
-        if contrib.plugin_name == plugin_name and contrib.name == widget_name:
+        if (
+            contrib.plugin_name == plugin_name
+            and contrib.display_name == widget_name
+        ):
             return contrib.get_callable()
     return None
 
@@ -175,11 +179,16 @@ def file_extensions_string_for_layers(
 
 
 @npe2_or_return(iter([]))
+def iter_manifests() -> Iterator[PluginManifest]:
+    yield from npe2.PluginManager.instance()._manifests.values()
+
+
+@npe2_or_return(iter([]))
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
     for wdg_contrib in npe2.PluginManager.instance().iter_widgets():
-        wdgs[wdg_contrib.plugin_name].append(wdg_contrib.name)
+        wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
     return (('dock', x) for x in wdgs.items())
 
 
