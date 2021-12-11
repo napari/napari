@@ -10,6 +10,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
@@ -17,6 +18,7 @@ from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..layers.base.base import Layer
 from ..plugins import _npe2
+from ..plugins.utils import get_potential_readers
 from ..utils import config, perf
 from ..utils._proxies import ReadOnlyWrapper
 from ..utils.action_manager import action_manager
@@ -1052,37 +1054,41 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
 
-        _, extension = os.path.splitext(filenames[0])
-        reader_associations = get_settings().plugins.extension2reader
-        plugin_choice = None
-        persist_choice = False
-        error_message = None
-        #TODO: if there's no extension e.g. folder or list of files?
-        if extension:
-            if reader_associations and extension in reader_associations:
-                plugin_choice = reader_associations[extension]
-                try:
-                    self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
-                    return
-                except Exception:
-                    error_message = f"Tried to open file with {plugin_choice}, but reading failed.\n"
+        for filename in filenames:
+            _, extension = os.path.splitext(filename)
+            reader_associations = get_settings().plugins.extension2reader
+            plugin_choice = None
+            persist_choice = False
+            error_message = None
+            #TODO: if there's no extension e.g. folder or list of files?
+            if extension:
+                if reader_associations and extension in reader_associations:
+                    plugin_choice = reader_associations[extension]
+                    try:
+                        self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
+                        return
+                    except Exception:
+                        error_message = f"Tried to open file with {plugin_choice}, but reading failed.\n"
 
-            self.readerDialog = QtReaderDialog(parent=self, pth=filenames[0], error_message=error_message)
-            dialog_result = self.readerDialog.exec_()
-            if dialog_result:
-                # grab the plugin they chose 
-                plugin_choice = self.readerDialog.get_plugin_choice()
-                # do they want to save settings?
-                if self.readerDialog.persist_checkbox.isChecked():
-                    persist_choice = True
-            # cancel on the dialog cancels opening the file
-            else:
-                return
-        
-        self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
-        # do we have settings to save?
-        if persist_choice:
-            get_settings().plugins.extension2reader = {**reader_associations, extension: plugin_choice}
+                readers, npe1readers = get_potential_readers(filename)
+                self.readerDialog = QtReaderDialog(parent=self, pth=filename, error_message=error_message, readers=readers, npe1_readers=npe1readers)
+                dialog_result = self.readerDialog.exec_()
+                if dialog_result:
+                    # grab the plugin they chose 
+                    plugin_choice = self.readerDialog.get_plugin_choice()
+                    # do they want to save settings?
+                    if self.readerDialog.persist_checkbox.isChecked():
+                        persist_choice = True
+                # cancel on the dialog cancels opening the file
+                else:
+                    continue
+            # no extension - folder of files
+            elif os.path.isdir(filename):
+                pass 
+            self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
+            # do we have settings to save?
+            if persist_choice:
+                get_settings().plugins.extension2reader = {**reader_associations, extension: plugin_choice}
 
     def closeEvent(self, event):
         """Cleanup and close.

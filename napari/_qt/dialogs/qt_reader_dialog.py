@@ -4,34 +4,21 @@ from qtpy.QtWidgets import QDialog
 
 
 class QtReaderDialog(QDialog):
-    def __init__(self, pth=None, parent=None, error_message=None):
+    def __init__(self, pth=None, parent=None, readers=None, npe1_readers=None, error_message=None):
         super().__init__(parent)
         self.setObjectName('Choose reader')
         self.setWindowTitle('Choose reader')
         self._current_file = pth
         self._reader_buttons = []
-        self.setup_ui(error_message)
+        self.setup_ui(error_message, readers, npe1_readers)
 
-    def setup_ui(self, error_message):
+    def setup_ui(self, error_message, readers, npe1_readers):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
         label = QLabel()
         label.setText(f"{error_message if error_message else ''}Choose reader for file {self._current_file}:")
         self.layout().addWidget(label)
-
-        # TODO: move this back out to qt_viewer?
-        from ...plugins import _npe2, plugin_manager
-        readers = _npe2.get_readers(self._current_file)
-
-        npe1_readers = []
-        for spec, hook_caller in plugin_manager.hooks.items():
-            if spec == 'napari_get_reader':
-                potential_readers = hook_caller.get_hookimpls()
-                for get_reader in potential_readers:
-                    reader = hook_caller._call_plugin(get_reader.plugin_name, path=self._current_file)
-                    if callable(reader):
-                        npe1_readers.append(get_reader.plugin_name)
 
         self.reader_btn_group = QButtonGroup(self)
         self.add_reader_buttons(readers)
