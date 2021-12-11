@@ -808,7 +808,7 @@ def _resize_features(
     features: pd.DataFrame,
     size: int,
     *,
-    current_values: Dict[str, np.ndarray],
+    defaults: pd.DataFrame,
 ) -> pd.DataFrame:
     """Resize a features DataFrame to a new size, padding with default values if required.
 
@@ -818,11 +818,10 @@ def _resize_features(
         The features of a layer.
     size : int
         The new size (number of rows) of the features table.
-    current_values : Dict[str, np.ndarray]
-        The current or default value for each feature stored in a length-1 array.
-        If the new size is greater than the current, these default
-        values will be repeated for the new rows. If a feature is
-        missing from this dictionary, missing values will be used instead.
+    defaults : pd.DataFrame
+        The default value for each feature stored in a DataFrame with 1 row.
+        If a feature is missing from this dictionary, missing values will be
+        used instead.
 
     Returns
     -------
@@ -834,14 +833,7 @@ def _resize_features(
     if size < current_size:
         return _remove_features(features, range(size, current_size))
     elif size > current_size:
-        num_append = size - current_size
-        to_append = pd.DataFrame(
-            {
-                name: np.repeat(current_values.get(name), num_append, axis=0)
-                for name in features
-            },
-            index=range(num_append),
-        )
+        to_append = pd.concat([defaults] * (size - current_size))
         return _append_features(features, to_append)
     return features
 
@@ -884,3 +876,21 @@ def _remove_features(features: pd.DataFrame, indices: Any) -> pd.DataFrame:
         The resulting features table, which contain copies of the existing data.
     """
     return features.drop(labels=indices, axis=0).reset_index(drop=True)
+
+
+def _get_default_features(features: pd.DataFrame) -> pd.DataFrame:
+    defaults = {
+        name: _get_column_default_value(column)
+        for name, column in features.items()
+    }
+    return pd.DataFrame(defaults, index=range(1))
+
+
+def _get_column_default_value(column: pd.Series) -> Optional:
+    if column.size > 0:
+        return column.iloc[-1]
+    if isinstance(column.dtype, pd.CategoricalDtype):
+        choices = column.dtype.categories
+        if choices.size > 0:
+            return choices[0]
+    return None

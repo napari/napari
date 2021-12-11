@@ -31,11 +31,11 @@ from ..utils.layer_utils import (
     _features_from_properties,
     _features_to_choices,
     _features_to_properties,
+    _get_default_features,
     _remove_features,
     _resize_features,
     _validate_features,
     coerce_current_properties,
-    get_current_properties,
 )
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
@@ -509,6 +509,7 @@ class Shapes(Layer):
             self._features = _validate_features(
                 features, num_data=number_of_shapes(data)
             )
+        self._default_features = _get_default_features(self._features)
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -591,10 +592,6 @@ class Shapes(Layer):
                 elem_name="face_color",
                 default="black",
             )
-
-        self.current_properties = get_current_properties(
-            self.properties, self.property_choices, len(data)
-        )
 
         self._text = TextManager._from_layer(
             text=text,
@@ -742,19 +739,8 @@ class Shapes(Layer):
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._features = _validate_features(features, num_data=self.nshapes)
-
-    @property
-    def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return _features_to_properties(self._features)
-
-    @properties.setter
-    def properties(self, properties: Dict[str, Array]):
-        self._features = _features_from_properties(
-            properties=properties, num_data=self.nshapes
-        )
         if self._face_color_property and (
-            self._face_color_property not in self.properties
+            self._face_color_property not in self._features
         ):
             self._face_color_property = ''
             warnings.warn(
@@ -766,7 +752,7 @@ class Shapes(Layer):
             )
 
         if self._edge_color_property and (
-            self._edge_color_property not in self.properties
+            self._edge_color_property not in self._features
         ):
             self._edge_color_property = ''
             warnings.warn(
@@ -780,6 +766,45 @@ class Shapes(Layer):
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
+
+    @property
+    def default_features(self):
+        """Dataframe-like default features row.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._default_features
+
+    @default_features.setter
+    def default_features(
+        self,
+        default_features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    ) -> None:
+        self._default_features = _validate_features(
+            default_features, num_data=1
+        )
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
+        ):
+            for k in self._default_features:
+                self.features[k][
+                    list(self.selected_data)
+                ] = self._default_features[k][0]
+            self.refresh_colors()
+        self.events.current_properties()
+
+    @property
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
+        return _features_to_properties(self._features)
+
+    @properties.setter
+    def properties(self, properties: Dict[str, Array]):
+        self.features = _features_from_properties(
+            properties=properties, num_data=self.nshapes
+        )
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -862,24 +887,11 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return self._current_properties
+        return _features_to_properties(self._default_features)
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = coerce_current_properties(
-            current_properties
-        )
-        if (
-            self._update_properties
-            and len(self.selected_data) > 0
-            and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
-        ):
-            for k in current_properties:
-                self.features[k][
-                    list(self.selected_data)
-                ] = current_properties[k]
-            self.refresh_colors()
-        self.events.current_properties()
+        self.default_features = coerce_current_properties(current_properties)
 
     @property
     def shape_type(self):
@@ -2024,7 +2036,7 @@ class Shapes(Layer):
             self._features = _resize_features(
                 self._features,
                 total_shapes,
-                current_values=self._current_properties,
+                defaults=self._default_features,
             )
             if total_shapes > n_prop_values:
                 n_props_to_add = total_shapes - n_prop_values

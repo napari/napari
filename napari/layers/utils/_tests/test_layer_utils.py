@@ -364,14 +364,14 @@ def test_features_from_properties_with_dataframe():
 
 
 def test_resize_features_smaller():
-    current_values = {
-        'class': np.array(['person']),
-        'confidence': np.array([0.8]),
-    }
-
-    new_features = _resize_features(
-        TEST_FEATURES, 2, current_values=current_values
+    defaults = pd.DataFrame(
+        {
+            'class': ['person'],
+            'confidence': [0.8],
+        }
     )
+
+    new_features = _resize_features(TEST_FEATURES, 2, defaults=defaults)
 
     assert new_features.shape == (2, 2)
     np.testing.assert_array_equal(new_features['class'], ['sky', 'person'])
@@ -379,14 +379,14 @@ def test_resize_features_smaller():
 
 
 def test_resize_features_larger():
-    current_properties = {
-        'class': np.array(['person']),
-        'confidence': np.array([0.8]),
-    }
-
-    new_features = _resize_features(
-        TEST_FEATURES, 6, current_values=current_properties
+    defaults = pd.DataFrame(
+        {
+            'class': ['person'],
+            'confidence': [0.8],
+        }
     )
+
+    new_features = _resize_features(TEST_FEATURES, 6, defaults=defaults)
 
     assert new_features.shape == (6, 2)
     np.testing.assert_array_equal(

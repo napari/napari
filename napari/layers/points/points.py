@@ -29,11 +29,11 @@ from ..utils.layer_utils import (
     _features_from_properties,
     _features_to_choices,
     _features_to_properties,
+    _get_default_features,
     _remove_features,
     _resize_features,
     _validate_features,
     coerce_current_properties,
-    get_current_properties,
 )
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
@@ -335,7 +335,10 @@ class Points(Layer):
                 num_data=len(self.data),
             )
         else:
-            self.features = features
+            self._features = _validate_features(
+                features, num_data=len(self.data)
+            )
+        self._default_features = _get_default_features(self._features)
 
         self._text = TextManager._from_layer(
             text=text,
@@ -401,10 +404,6 @@ class Points(Layer):
 
         self.size = size
 
-        self.current_properties = get_current_properties(
-            self.properties, self.property_choices, len(self.data)
-        )
-
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
@@ -426,7 +425,7 @@ class Points(Layer):
                     self._features = _resize_features(
                         self._features,
                         len(data),
-                        current_values=self._current_properties,
+                        defaults=self._default_features,
                     )
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
@@ -503,6 +502,46 @@ class Points(Layer):
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._features = _validate_features(features, num_data=len(self.data))
+        self._default_features = _get_default_features(self._features)
+        self._update_color_manager(
+            self._face, self._features, self._default_features, "face_color"
+        )
+        self._update_color_manager(
+            self._edge, self._features, self._default_features, "edge_color"
+        )
+        if self.text.values is not None:
+            self.refresh_text()
+        self.events.properties()
+
+    @property
+    def default_features(self):
+        """Dataframe-like default features row.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._default_features
+
+    @default_features.setter
+    def default_features(
+        self,
+        default_features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    ) -> None:
+        self._default_features = _validate_features(
+            default_features, num_data=1
+        )
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
+            for k in self._default_features:
+                self.features[k][
+                    list(self.selected_data)
+                ] = self._default_features[k][0]
+        current_properties = self.current_properties
+        self._edge._update_current_properties(current_properties)
+        self._face._update_current_properties(current_properties)
+        self.events.current_properties()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -514,9 +553,7 @@ class Points(Layer):
         return _features_to_properties(self._features)
 
     @staticmethod
-    def _update_color_manager(
-        color_manager, features, current_properties, name
-    ):
+    def _update_color_manager(color_manager, features, default_features, name):
         if color_manager.color_properties is not None:
             color_name = color_manager.color_properties.name
             if color_name not in features:
@@ -534,54 +571,25 @@ class Points(Layer):
                 color_manager.color_properties = {
                     'name': color_name,
                     'values': features[color_name].to_numpy(),
-                    'current_value': current_properties[color_name],
+                    'current_value': default_features[color_name][0],
                 }
 
     @properties.setter
     def properties(
         self, properties: Union[Dict[str, Array], pd.DataFrame, None]
     ):
-        self._features = _features_from_properties(
+        self.features = _features_from_properties(
             properties=properties, num_data=len(self._data)
         )
-        # Updating current_properties can modify properties, so block to avoid
-        # infinite recursion when explicitly setting the properties.
-        with self.block_update_properties():
-            self.current_properties = get_current_properties(
-                self.properties, self.property_choices, len(self.data)
-            )
-        self._update_color_manager(
-            self._face, self._features, self._current_properties, "face_color"
-        )
-        self._update_color_manager(
-            self._edge, self._features, self._current_properties, "edge_color"
-        )
-        if self.text.values is not None:
-            self.refresh_text()
-        self.events.properties()
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        return self._current_properties
+        return _features_to_properties(self._default_features)
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = coerce_current_properties(
-            current_properties
-        )
-        if (
-            self._update_properties
-            and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
-        ):
-            for k in current_properties:
-                self.features[k][
-                    list(self.selected_data)
-                ] = current_properties[k]
-        self._edge._update_current_properties(current_properties)
-        self._face._update_current_properties(current_properties)
-        self.events.current_properties()
+        self.default_features = coerce_current_properties(current_properties)
 
     @property
     def text(self) -> TextManager:
