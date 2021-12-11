@@ -34,7 +34,7 @@ class PluginsSettings(EventedModel):
     )
     extension2reader: Dict[str, str] = Field(
         default_factory=dict,
-        title=trans._('Reader plugin extension association.'),
+        title=trans._('File extension readers'),
         description=trans._(
             'Assign file extensions to specific reader plugins'
         ),
@@ -52,6 +52,6 @@ class PluginsSettings(EventedModel):
         preferences_exclude = [
             'schema_version',
             'disabled_plugins',
-            'extension2reader',
+            # 'extension2reader',
             'extension2writer',
         ]

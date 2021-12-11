@@ -10,7 +10,6 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
@@ -42,8 +41,8 @@ from ..utils.misc import in_ipython
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
-from .dialogs.screenshot_dialog import ScreenshotDialog
 from .dialogs.qt_reader_dialog import QtReaderDialog
+from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, crosshair_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
@@ -66,7 +65,7 @@ if TYPE_CHECKING:
     from ..components import ViewerModel
     from npe2.manifest.contributions import WriterContribution
 
-from ..settings import get_settings, SETTINGS
+from ..settings import get_settings
 from ..utils.io import imsave_extensions
 
 
@@ -1064,29 +1063,47 @@ class QtViewer(QSplitter):
                 if reader_associations and extension in reader_associations:
                     plugin_choice = reader_associations[extension]
                     try:
-                        self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
+                        self.viewer.open(
+                            filenames,
+                            stack=bool(shift_down),
+                            plugin=plugin_choice,
+                        )
                         return
                     except Exception:
                         error_message = f"Tried to open file with {plugin_choice}, but reading failed.\n"
 
-            readers, npe1readers = get_potential_readers(filename)  
-            if len(readers + npe1readers) > 1:
-                self.readerDialog = QtReaderDialog(parent=self, pth=filename, error_message=error_message, readers=readers, npe1_readers=npe1readers)
+            readers, npe1readers = get_potential_readers(filename)
+            if len(readers + npe1readers) > 1 or error_message:
+                self.readerDialog = QtReaderDialog(
+                    parent=self,
+                    pth=filename,
+                    error_message=error_message,
+                    readers=readers,
+                    npe1_readers=npe1readers,
+                )
                 dialog_result = self.readerDialog.exec_()
                 if dialog_result:
-                    # grab the plugin they chose 
+                    # grab the plugin they chose
                     plugin_choice = self.readerDialog.get_plugin_choice()
                     # do they want to save settings?
-                    if hasattr(self.readerDialog, 'persist_checkbox') and self.readerDialog.persist_checkbox.isChecked():
+                    if (
+                        hasattr(self.readerDialog, 'persist_checkbox')
+                        and self.readerDialog.persist_checkbox.isChecked()
+                    ):
                         persist_choice = True
                 # cancel on the dialog cancels opening the file
                 else:
                     continue
 
-            self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
+            self.viewer.open(
+                filenames, stack=bool(shift_down), plugin=plugin_choice
+            )
             # do we have settings to save?
             if persist_choice:
-                get_settings().plugins.extension2reader = {**reader_associations, extension: plugin_choice}
+                get_settings().plugins.extension2reader = {
+                    **reader_associations,
+                    extension: plugin_choice,
+                }
 
     def closeEvent(self, event):
         """Cleanup and close.
