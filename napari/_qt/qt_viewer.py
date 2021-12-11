@@ -1060,7 +1060,6 @@ class QtViewer(QSplitter):
             plugin_choice = None
             persist_choice = False
             error_message = None
-            #TODO: if there's no extension e.g. folder or list of files?
             if extension:
                 if reader_associations and extension in reader_associations:
                     plugin_choice = reader_associations[extension]
@@ -1070,21 +1069,20 @@ class QtViewer(QSplitter):
                     except Exception:
                         error_message = f"Tried to open file with {plugin_choice}, but reading failed.\n"
 
-                readers, npe1readers = get_potential_readers(filename)
+            readers, npe1readers = get_potential_readers(filename)  
+            if len(readers + npe1readers) > 1:
                 self.readerDialog = QtReaderDialog(parent=self, pth=filename, error_message=error_message, readers=readers, npe1_readers=npe1readers)
                 dialog_result = self.readerDialog.exec_()
                 if dialog_result:
                     # grab the plugin they chose 
                     plugin_choice = self.readerDialog.get_plugin_choice()
                     # do they want to save settings?
-                    if self.readerDialog.persist_checkbox.isChecked():
+                    if hasattr(self.readerDialog, 'persist_checkbox') and self.readerDialog.persist_checkbox.isChecked():
                         persist_choice = True
                 # cancel on the dialog cancels opening the file
                 else:
                     continue
-            # no extension - folder of files
-            elif os.path.isdir(filename):
-                pass 
+
             self.viewer.open(filenames, stack=bool(shift_down), plugin=plugin_choice)
             # do we have settings to save?
             if persist_choice:

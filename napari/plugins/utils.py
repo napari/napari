@@ -1,6 +1,6 @@
 from . import _npe2, plugin_manager
 
-def get_potential_readers(filename, is_dir=False):
+def get_potential_readers(filename):
     readers = _npe2.get_readers(filename)
 
     npe1_readers = []

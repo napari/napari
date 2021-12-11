@@ -1,4 +1,5 @@
 
+import os
 from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QLabel, QRadioButton, QVBoxLayout, QDialogButtonBox
 from qtpy.QtWidgets import QDialog
 
@@ -26,10 +27,12 @@ class QtReaderDialog(QDialog):
         if self.reader_btn_group.buttons():
             self.reader_btn_group.buttons()[0].toggle()
 
-        # TODO: will fail with no extension
-        self.persist_checkbox = QCheckBox(f'Remember this choice for files with a .{self._current_file.split(".")[1]} extension')
-        self.persist_checkbox.toggle()
-        self.layout().addWidget(self.persist_checkbox)
+
+        extension = os.path.splitext(self._current_file)[1]
+        if extension:
+            self.persist_checkbox = QCheckBox(f'Remember this choice for files with a {extension} extension')
+            self.persist_checkbox.toggle()
+            self.layout().addWidget(self.persist_checkbox)
 
         btns = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.btn_box = QDialogButtonBox(btns)
