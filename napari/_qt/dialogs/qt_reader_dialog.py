@@ -1,11 +1,25 @@
-
 import os
-from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QLabel, QRadioButton, QVBoxLayout, QDialogButtonBox
+
+from PyQt5.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QDialogButtonBox,
+    QLabel,
+    QRadioButton,
+    QVBoxLayout,
+)
 from qtpy.QtWidgets import QDialog
 
 
 class QtReaderDialog(QDialog):
-    def __init__(self, pth=None, parent=None, readers=None, npe1_readers=None, error_message=None):
+    def __init__(
+        self,
+        pth=None,
+        parent=None,
+        readers=None,
+        npe1_readers=None,
+        error_message=None,
+    ):
         super().__init__(parent)
         self.setObjectName('Choose reader')
         self.setWindowTitle('Choose reader')
@@ -18,7 +32,9 @@ class QtReaderDialog(QDialog):
         self.setLayout(layout)
 
         label = QLabel()
-        label.setText(f"{error_message if error_message else ''}Choose reader for file {self._current_file}:")
+        label.setText(
+            f"{error_message if error_message else ''}Choose reader for file {self._current_file}:"
+        )
         self.layout().addWidget(label)
 
         self.reader_btn_group = QButtonGroup(self)
@@ -27,10 +43,11 @@ class QtReaderDialog(QDialog):
         if self.reader_btn_group.buttons():
             self.reader_btn_group.buttons()[0].toggle()
 
-
         extension = os.path.splitext(self._current_file)[1]
         if extension:
-            self.persist_checkbox = QCheckBox(f'Remember this choice for files with a {extension} extension')
+            self.persist_checkbox = QCheckBox(
+                f'Remember this choice for files with a {extension} extension'
+            )
             self.persist_checkbox.toggle()
             self.layout().addWidget(self.persist_checkbox)
 
@@ -51,5 +68,3 @@ class QtReaderDialog(QDialog):
 
     def get_plugin_choice(self):
         return self.reader_btn_group.checkedButton().text()
-
-

@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from ..components import ViewerModel
     from npe2.manifest.contributions import WriterContribution
 
-from ..settings import get_settings
+from ..settings import SETTINGS, get_settings
 from ..utils.io import imsave_extensions
 
 

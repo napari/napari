@@ -1,5 +1,6 @@
 from . import _npe2, plugin_manager
 
+
 def get_potential_readers(filename):
     readers = _npe2.get_readers(filename)
 
@@ -8,7 +9,9 @@ def get_potential_readers(filename):
         if spec == 'napari_get_reader':
             potential_readers = hook_caller.get_hookimpls()
             for get_reader in potential_readers:
-                reader = hook_caller._call_plugin(get_reader.plugin_name, path=filename)
+                reader = hook_caller._call_plugin(
+                    get_reader.plugin_name, path=filename
+                )
                 if callable(reader):
                     npe1_readers.append(get_reader.plugin_name)
 
