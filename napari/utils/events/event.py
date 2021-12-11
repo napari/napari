@@ -78,12 +78,9 @@ try:
 except ImportError:
     pass
 
-if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
-    from .debugging import log_event_stack
-else:
 
-    def log_event_stack(event):  # type: ignore
-        pass
+def _log_event_stack(event):  # type: ignore
+    pass
 
 
 class Event:
@@ -693,7 +690,7 @@ class EventEmitter:
                 self._block_counter.update([None])
                 return event
 
-            log_event_stack(event)
+            _log_event_stack(event)
 
             rem: List[CallbackRef] = []
             for cb, pass_event in zip(
@@ -1181,3 +1178,20 @@ def _is_pos_arg(param: inspect.Parameter):
         ]
         and param.default == inspect.Parameter.empty
     )
+
+
+def set_event_tracing_enabled(enabled=True, cfg=None):
+    global _log_event_stack
+    if enabled:
+        from .debugging import log_event_stack
+
+        if cfg is not None:
+            _log_event_stack = partial(log_event_stack, cfg=cfg)
+        else:
+            _log_event_stack = log_event_stack
+    else:
+        _log_event_stack = lambda e: None  # noqa
+
+
+if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
+    set_event_tracing_enabled()
