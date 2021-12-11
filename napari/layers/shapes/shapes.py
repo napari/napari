@@ -499,7 +499,7 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        self._features, self._default_features = _features_from_layer(
+        self._features, self._feature_defaults = _features_from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -733,7 +733,7 @@ class Shapes(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features, self._default_features = _features_from_layer(
+        self._features, self._feature_defaults = _features_from_layer(
             features=features,
             num_data=self.nshapes,
         )
@@ -766,12 +766,12 @@ class Shapes(Layer):
         self.events.properties()
 
     @property
-    def default_features(self):
-        """Dataframe-like default features row.
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
         """
-        return self._default_features
+        return self._feature_defaults
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -865,12 +865,12 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return _features_to_properties(self._default_features)
+        return _features_to_properties(self._feature_defaults)
 
     @current_properties.setter
     def current_properties(self, current_properties):
         current_properties = coerce_current_properties(current_properties)
-        self._default_features = _validate_features(
+        self._feature_defaults = _validate_features(
             current_properties, num_data=1
         )
         if (
@@ -878,10 +878,10 @@ class Shapes(Layer):
             and len(self.selected_data) > 0
             and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         ):
-            for k in self._default_features:
+            for k in self._feature_defaults:
                 self.features[k][
                     list(self.selected_data)
-                ] = self._default_features[k][0]
+                ] = self._feature_defaults[k][0]
             self.refresh_colors()
         self.events.current_properties()
 
@@ -2028,7 +2028,7 @@ class Shapes(Layer):
             self._features = _resize_features(
                 self._features,
                 total_shapes,
-                defaults=self._default_features,
+                defaults=self._feature_defaults,
             )
             if total_shapes > n_prop_values:
                 n_props_to_add = total_shapes - n_prop_values

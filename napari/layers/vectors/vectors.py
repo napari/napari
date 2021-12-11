@@ -230,7 +230,7 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._features, self._default_features = _features_from_layer(
+        self._features, self._feature_defaults = _features_from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -286,7 +286,7 @@ class Vectors(Layer):
                 self._features = _resize_features(
                     self._features,
                     n_vectors,
-                    defaults=self._default_features,
+                    defaults=self._feature_defaults,
                 )
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the
@@ -329,7 +329,7 @@ class Vectors(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features, self._default_features = _features_from_layer(
+        self._features, self._feature_defaults = _features_from_layer(
             features=features,
             num_data=len(self.data),
         )
@@ -350,19 +350,19 @@ class Vectors(Layer):
                 self._edge.color_properties = {
                     'name': edge_color_name,
                     'values': property_values,
-                    'current_value': self._default_features[edge_color_name][
+                    'current_value': self._feature_defaults[edge_color_name][
                         0
                     ],
                 }
         self.events.properties()
 
     @property
-    def default_features(self):
-        """Dataframe-like default features row.
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
         """
-        return self._default_features
+        return self._feature_defaults
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -478,7 +478,7 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
-        current_properties = _features_to_properties(self._default_features)
+        current_properties = _features_to_properties(self._feature_defaults)
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
@@ -531,10 +531,10 @@ class Vectors(Layer):
                     color_property = next(iter(self.properties))
                     self._edge.color_properties = {
                         'name': color_property,
-                        'values': self.features[color_property].to_numpy(),
-                        'current_value': self.default_features[color_property][
-                            0
-                        ],
+                        'values': self._features[color_property].to_numpy(),
+                        'current_value': self._feature_defaults[
+                            color_property
+                        ][0],
                     }
                     warnings.warn(
                         trans._(
