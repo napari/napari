@@ -19,6 +19,7 @@ def test_attrs_arrays(Layer, data, ndim):
     # Check every property is in call signature
     signature = inspect.signature(Layer)
 
+    # Check every property is also a parameter.
     for prop in properties.keys():
         assert prop in signature.parameters
 
@@ -38,7 +39,7 @@ def test_attrs_arrays(Layer, data, ndim):
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
 def test_no_callbacks(Layer, data, ndim):
-    """Test no internal callbacks for layer emmitters."""
+    """Test no internal callbacks for layer emitters."""
     layer = Layer(data)
     # Check layer has been correctly created
     assert layer.ndim == ndim
