@@ -1389,7 +1389,7 @@ class Labels(_ImageBase):
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
     ) -> list:
-        if len(self._label_index) == 0 or self._features.shape[1] == 0:
+        if len(self._label_index) == 0 or self.features.shape[1] == 0:
             return []
 
         value = self.get_value(
@@ -1409,7 +1409,7 @@ class Labels(_ImageBase):
         idx = self._label_index[label_value]
         return [
             f'{k}: {v[idx]}'
-            for k, v in self._features.items()
+            for k, v in self.features.items()
             if k != 'index'
             and len(v) > idx
             and v[idx] is not None
