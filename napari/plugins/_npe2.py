@@ -111,7 +111,10 @@ def get_widget_contribution(
     plugin_name: str, widget_name: str
 ) -> Optional[WidgetCallable]:
     for contrib in npe2.PluginManager.instance().iter_widgets():
-        if contrib.plugin_name == plugin_name and contrib.name == widget_name:
+        if (
+            contrib.plugin_name == plugin_name
+            and contrib.display_name == widget_name
+        ):
             return contrib.get_callable()
     return None
 
@@ -160,7 +163,11 @@ def file_extensions_string_for_layers(
         """Lookup the command name and its supported extensions."""
         for writer in writers:
             name = pm.get_manifest(writer.command).display_name
-            title = f"{name} {writer.name}" if writer.name else name
+            title = (
+                f"{name} {writer.display_name}"
+                if writer.display_name
+                else name
+            )
             yield title, writer.filename_extensions
 
     # extension strings are in the format:
@@ -185,7 +192,7 @@ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
     for wdg_contrib in npe2.PluginManager.instance().iter_widgets():
-        wdgs[wdg_contrib.plugin_name].append(wdg_contrib.name)
+        wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
     return (('dock', x) for x in wdgs.items())
 
 
