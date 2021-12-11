@@ -49,6 +49,7 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 import inspect
+import os
 import warnings
 import weakref
 from collections.abc import Sequence
@@ -70,6 +71,13 @@ from typing_extensions import Literal
 from vispy.util.logs import _handle_exception
 
 from ..translations import trans
+
+if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
+    from .debugging import log_event_stack
+else:
+
+    def log_event_stack(event):  # type: ignore
+        pass
 
 
 class Event:
@@ -105,6 +113,7 @@ class Event:
         # Store args
         self._type = type
         self._native = native
+        self._kwargs = kwargs
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -677,6 +686,8 @@ class EventEmitter:
             if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
                 self._block_counter.update([None])
                 return event
+
+            log_event_stack(event)
 
             rem: List[CallbackRef] = []
             for cb, pass_event in zip(
