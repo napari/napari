@@ -281,11 +281,11 @@ function actually instancing the widget. It accepts only one argument: a
 napari `Viewer` proxy instance. The proxy restricts access to some `Viewer`
 functionality like private methods.
 
-```{warning}
-A suitable conversion for `napari_experimental_provide_function()` doesn't
-exist yet. In the meantime, it's possible to wrap the functions using
-`@magicfactory` and then bind them as widgets.
-```
+Similarly `napari_experimental_provide_function` hooks return ane or more
+functions to be wrapped with [magicgui]. In `npe2`, each of these functions
+should be added as a `Command` contribution with an associated `Widget`
+contribution. For each of these `Widget` contributions, the manifest
+`autogenerate: true` flag should be set so that `npe2` knows to use `magicgui`.
 
 #### napari_hook_spec
 
@@ -305,17 +305,35 @@ def napari_experimental_provide_function() -> Union[
 
 #### Example npe2 contribution
 
+_Dock Widget_
+
 ```yaml
 name: napari-animation
 display_name: animation
 contributions:
   commands:
-    - id: napar-animation.widget
+    - id: napari-animation.widget
       python_name: napari_animation._qt:AnimationWidget
       title: Make animation widget
   widgets:
     - command: napari_animation.widget
-      name: Wizard
+      display_name: Wizard
+```
+
+_Function widget_
+
+```yaml
+name: my-function-plugin
+display_name: My function plugin!
+contributions:
+  commands:
+    - id: my-function-plugin.func
+      python_name: my_function_plugin:my_typed_function
+      title: Open widget for my function
+  widgets:
+    - command: my-function-plugin.func
+      display_name: My function
+      autogenerate: true # <-- will wrap my_typed_function with magicgui
 ```
 
 ### Sample data providers
@@ -436,3 +454,4 @@ contributions:
 [get-writer-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_get_writer
 [write-image-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_write_image
 [dock-widget-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_experimental_provide_dock_widget
+[magicgui]: https://napari.org/magicgui

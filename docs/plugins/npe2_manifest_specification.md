@@ -18,12 +18,32 @@ functionality to _napari_. **Discovery** is the process by that finds plugins,
 parses the manifests and indexes them for later use. The [npe2][] library
 manages these responsibilities.
 
+## Compatibility
+
 ```{admonition} Backward compatibility
 Plugins targeting `napari-plugin-engine` will continue to work, but we
 recommend migrating to `npe2` as soon as possible. `npe2` includes tooling to
 help automate the process of migrating plugins. See the [migration
 guide](npe2-migration-guide) for details.
 ```
+
+When authoring a plugin, you will need to describe what is the plugin's
+compatibility with `npe2`. This can be done via the `engine` field in the
+plugin manifest (see {ref}`top-level-props`).
+
+You can use the `engine` field to makes sure the plugin only gets installed
+for clients that use the plugin specification you depend on.
+
+For example, imagine you develop your plugin using the `0.1.0` engine
+specification. A few months of development go by and a new API is introduced
+to the plugin engine defining a new _engine version_, `0.2.0`. You add that
+new API and update your plugin's manifest file accordingly.
+
+Users running older versions of napari will not have the new API. Their plugin
+engine will inspect the _engine version_ declared by your plugin and correctly
+prevent your plugin from being used. When those users upgrade their napari
+installation, they'll be able to take advantage of the new functionality you
+added.
 
 ## Configuring a python package to use a plugin manifest
 
@@ -90,29 +110,35 @@ contributions:
 
 Readers, writers, sample data providers and widget providers refer to callable
 python functions that a plugin defines. Each callable is identified with an
-entry in the list of `commands` via a unique id. For more see [Commands] below.
+entry in the list of `commands` via a unique id. For more see {ref}`Commands` below.
 
 ```{note}
 Python package metadata (`setup.py` or `setup.cfg`) may be used to populate
 selected properties of the [PluginManifest][].
 ```
 
+(top-level-props)=
+
 ## Top-level properties
 
 ### Required
 
-- **name** The name of the plugin. Example: `napari_svg`. Should be a
+- **name** The name of the plugin. Example: `napari-svg`. Should be a
   [PEP-8][]-compatible package name. If missing, this is populated from the
   python package [name][setup-name].
 
 ### Optional
 
+- **engine**: A SemVer compatible version string matching the versions of the
+  plugin engine that the extension is compatible with. Example: "0.1.0".
 - **display_name**: User-facing text to display as the name of this plugin.
   Example: `napari SVG`. Must be 3-40 characters long, containing
   printable word characters, and must not begin or end with an underscore,
   white space, or non-word character.
 - **entry_point**: The module containing the `activate()` function. Example:
   `foo.bar.baz`. This should be a fully qualified module string.
+
+(commands)=
 
 ## Commands
 
@@ -121,20 +147,19 @@ a unique identifier to which other contributions, like readers, can refer.
 
 ### Required fields
 
-- **id** An identifer used to reference this command within this plugin.
+- **id** An identifier used to reference this command within this plugin.
 - **title** A description of the command. This might be used, for example,
-  when searching in a command pallette. Example: "Generate lily sample",
-  or "Read tiff image".
+  when searching in a command pallette. Examples: "Generate lily sample",
+  "Read tiff image", "Open gaussian blur widget".
 
 ### Optional fields
 
-- **icon** Icon which is used to represent the command in the UI. Either a file path, an object with file paths for dark and light themes, or a theme icon references, like `$(zap)`
-- **enablement** A predicate python expression evaluated during runtime to determine the presentation of related UI elements within different contexts.
 - **python_name** Fully qualified name to callable python object implementing
   this command. This usually takes the form of
   `{obj.__module__}:{obj.__qualname__}` (e.g.
-  `my_package.a_module:some_function`). If provided, using `register_command`
-  in the plugin activate function is optional (but takes precedence).
+  `my_package.a_module:some_function`). For a command to be useful, this
+  field must be specified,. If it isn't specified here it should be done
+  dynamically inside the plugin's 'activate()' function.
 
 ### Example
 
@@ -147,17 +172,33 @@ contribution:
       python_name: my_plugin.publish_func
 ```
 
+### Dynamic command registration
+
+Commands can be registered dynamically by the plugin's `activate()` function. For example,
+
+```python
+# inside my_plugin/__init__.py
+from npe2 import PluginContext
+def activate(context: PluginContext):
+    @context.register_command("my_plugin.hello_world")
+    def _hello():
+        ...
+
+    context.register_command("my_plugin.another_command", lambda: print("yo!"))
+```
+
+The `activate()` function is called when the plugin is loaded. It is found in the `entry_point` specified in the plugin manifest.
+
 ## Readers
 
 ### Required fields
 
 - **command** Identifier of the _command_ to execute.
+- **filename_patterns** List of filename patterns (for fnmatch) that this
+  reader can accept. Reader will be tried only if `fnmatch(filename, pattern) == True`.
 
 ### Optional fields
 
-- **filename_patterns** List of filename patterns (for fnmatch) that this
-  reader can accept. Reader will be tried only if `fnmatch(filename, pattern) == True`.
-  Empty list by default.
 - **accepts_directories** If true, the reader will accept paths to directories
   for reading data.
 
@@ -187,6 +228,8 @@ def reader(path: str) -> List[LayerData]:
     ...
 ```
 
+f
+
 ```{note}
 The reader command is compatible with functions used for the `napari_get_reader`
 [hook specification][get-reader-hook].
@@ -211,10 +254,13 @@ layer_data(list of LayerData)
 
 ### Optional fields
 
-- **name** Brief text used to describe this writer when presented. Empty by
-  default.
+- **display_name** Brief text used to describe this writer when presented.
+  Empty by default. When present this is presented along side the plugin name
+  and may be used to distinguish the kind of writer for the user. E.g. "lossy"
+  or "lossless".
 - **filename_extensions** List of filename extensions compatible with this
   writer. The first entry is used as the default if necessary. Empty by default.
+  When empty, any filename extension is accepted.
 
 ### Examples
 
@@ -415,10 +461,23 @@ def sample_data_generator()->List[LayerData]:
 
 ## Widgets
 
+```{note}
+The `napari_experimental_provide_dock_widget` and
+`napari_experimental_provide_function` hook implementations may be bound as the
+callable for Widget contributions.  `napari_experimental_provide_function`
+should use `autogenerate: true`.  See more details below.
+```
+
 ### Required fields
 
 - **command** Identifier of a command that returns a Widget instance.
-- **name** User-facing name to use for the widget in, for example, menu items.
+- **display_name** User-facing name to use for the widget in, for example,
+  menu items.
+
+### Optional fields
+
+- **autogenerate** If True, the widget will be automatically generated with
+  [magicgui] using the type-signature of the associated command.
 
 ### Examples
 
@@ -431,7 +490,7 @@ contributions:
       title: Open animation wizard
   widgets:
     - command: napari-animation.AnimationWidget
-      name: Wizard
+      display_name: Wizard
 ```
 
 ### Calling Convention
@@ -448,6 +507,14 @@ class MyWidget(QWidget):
 @magic_factory
 def my_typed_function(...):
   ...
+
+# Use `autogenerate: true` for the Widget and bind the function as the callable:
+# e.g. python_name: my_other_function
+def my_other_function(image : ImageData) -> LayerDataTuple:
+    # process the image
+    result = -image
+    # return it + some layer properties
+    return result, {'colormap':'turbo'}
 ```
 
 ## Themes
@@ -508,3 +575,4 @@ themes:
 [get-reader-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_get_reader
 [get-writer-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_get_writer
 [write-image-hook]: https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_write_image
+[magicgui]: https://napari.org/magicgui/
