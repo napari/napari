@@ -332,8 +332,9 @@ class Vectors(Layer):
             features=features,
             num_data=len(self.data),
         )
+
         if self._edge.color_properties is not None:
-            if self._edge.color_properties.name not in self._features:
+            if self._edge.color_properties.name not in self.features:
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
@@ -345,13 +346,11 @@ class Vectors(Layer):
                 )
             else:
                 edge_color_name = self._edge.color_properties.name
-                property_values = self._features[edge_color_name].to_numpy()
+                property_values = self.features[edge_color_name].to_numpy()
                 self._edge.color_properties = {
                     'name': edge_color_name,
                     'values': property_values,
-                    'current_value': self._feature_defaults[edge_color_name][
-                        0
-                    ],
+                    'current_value': self.feature_defaults[edge_color_name][0],
                 }
         self.events.properties()
 
@@ -527,10 +526,10 @@ class Vectors(Layer):
                     color_property = next(iter(self.properties))
                     self._edge.color_properties = {
                         'name': color_property,
-                        'values': self._features[color_property].to_numpy(),
-                        'current_value': self._feature_defaults[
-                            color_property
-                        ][0],
+                        'values': self.features[color_property].to_numpy(),
+                        'current_value': self.feature_defaults[color_property][
+                            0
+                        ],
                     }
                     warnings.warn(
                         trans._(
