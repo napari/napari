@@ -700,8 +700,25 @@ def _features_from_layer(
         )
     else:
         features = _validate_features(features, num_data=num_data)
-    defaults = _get_default_features(features)
+    defaults = pd.DataFrame(
+        {
+            name: _get_column_default_value(column)
+            for name, column in features.items()
+        },
+        index=range(1),
+    )
     return features, defaults
+
+
+def _get_column_default_value(column: pd.Series) -> Optional:
+    """Get the default value from a feature column."""
+    if column.size > 0:
+        return column.iloc[-1]
+    if isinstance(column.dtype, pd.CategoricalDtype):
+        choices = column.dtype.categories
+        if choices.size > 0:
+            return choices[0]
+    return None
 
 
 def _validate_features(
@@ -840,8 +857,8 @@ def _resize_features(
         The new size (number of rows) of the features table.
     defaults : pd.DataFrame
         The default value for each feature stored in a DataFrame with 1 row.
-        If a feature is missing from this dictionary, missing values will be
-        used instead.
+        If a feature is missing from this or a default cannot be inferred,
+        a missing value will be used instead.
 
     Returns
     -------
@@ -896,23 +913,3 @@ def _remove_features(features: pd.DataFrame, indices: Any) -> pd.DataFrame:
         The resulting features table, which contain copies of the existing data.
     """
     return features.drop(labels=indices, axis=0).reset_index(drop=True)
-
-
-def _get_default_features(features: pd.DataFrame) -> pd.DataFrame:
-    """Get default values from a features table."""
-    defaults = {
-        name: _get_column_default_value(column)
-        for name, column in features.items()
-    }
-    return pd.DataFrame(defaults, index=range(1))
-
-
-def _get_column_default_value(column: pd.Series) -> Optional:
-    """Get the default value from a feature column."""
-    if column.size > 0:
-        return column.iloc[-1]
-    if isinstance(column.dtype, pd.CategoricalDtype):
-        choices = column.dtype.categories
-        if choices.size > 0:
-            return choices[0]
-    return None

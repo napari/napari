@@ -30,7 +30,6 @@ from ..utils.layer_utils import (
     _features_from_properties,
     _features_to_choices,
     _features_to_properties,
-    _get_default_features,
     _remove_features,
     _resize_features,
     _validate_features,
@@ -497,8 +496,9 @@ class Points(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = _validate_features(features, num_data=len(self.data))
-        self._default_features = _get_default_features(self._features)
+        self._features, self._default_features = _features_from_layer(
+            features=features, num_data=len(self.data)
+        )
         self._update_color_manager(
             self._face, self._features, self._default_features, "face_color"
         )
@@ -516,28 +516,6 @@ class Points(Layer):
         See `features` for more details on the type of this property.
         """
         return self._default_features
-
-    @default_features.setter
-    def default_features(
-        self,
-        default_features: Union[Dict[str, np.ndarray], pd.DataFrame],
-    ) -> None:
-        self._default_features = _validate_features(
-            default_features, num_data=1
-        )
-        if (
-            self._update_properties
-            and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
-        ):
-            for k in self._default_features:
-                self.features[k][
-                    list(self.selected_data)
-                ] = self._default_features[k][0]
-        current_properties = self.current_properties
-        self._edge._update_current_properties(current_properties)
-        self._face._update_current_properties(current_properties)
-        self.events.current_properties()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -585,7 +563,23 @@ class Points(Layer):
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self.default_features = coerce_current_properties(current_properties)
+        current_properties = coerce_current_properties(current_properties)
+        self._default_features = _validate_features(
+            current_properties, num_data=1
+        )
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
+            for k in self._default_features:
+                self.features[k][
+                    list(self.selected_data)
+                ] = self._default_features[k][0]
+        current_properties = self.current_properties
+        self._edge._update_current_properties(current_properties)
+        self._face._update_current_properties(current_properties)
+        self.events.current_properties()
 
     @property
     def text(self) -> TextManager:

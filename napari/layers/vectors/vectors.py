@@ -18,9 +18,7 @@ from ..utils.layer_utils import (
     _features_from_properties,
     _features_to_choices,
     _features_to_properties,
-    _get_default_features,
     _resize_features,
-    _validate_features,
 )
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
@@ -331,8 +329,10 @@ class Vectors(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = _validate_features(features, num_data=len(self.data))
-        self._default_features = _get_default_features(self._features)
+        self._features, self._default_features = _features_from_layer(
+            features=features,
+            num_data=len(self.data),
+        )
         if self._edge.color_properties is not None:
             if self._edge.color_properties.name not in self._features:
                 self._edge.color_mode = ColorMode.DIRECT
@@ -363,15 +363,6 @@ class Vectors(Layer):
         See `features` for more details on the type of this property.
         """
         return self._default_features
-
-    @default_features.setter
-    def default_features(
-        self,
-        default_features: Union[Dict[str, np.ndarray], pd.DataFrame],
-    ) -> None:
-        self._default_features = _validate_features(
-            default_features, num_data=1
-        )
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
