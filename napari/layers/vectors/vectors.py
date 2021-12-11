@@ -14,6 +14,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import (
+    _features_from_layer,
     _features_from_properties,
     _features_to_choices,
     _features_to_properties,
@@ -231,17 +232,12 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        if properties is not None or property_choices is not None:
-            self._features = _features_from_properties(
-                properties=properties,
-                property_choices=property_choices,
-                num_data=len(self.data),
-            )
-        else:
-            self._features = _validate_features(
-                features, num_data=len(self.data)
-            )
-        self._default_features = _get_default_features(self.features)
+        self._features, self._default_features = _features_from_layer(
+            features=features,
+            properties=properties,
+            property_choices=property_choices,
+            num_data=len(self.data),
+        )
 
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(self.data),

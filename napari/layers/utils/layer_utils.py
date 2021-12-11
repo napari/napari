@@ -684,6 +684,26 @@ def features_to_pandas_dataframe(features: Any) -> pd.DataFrame:
     return features
 
 
+def _features_from_layer(
+    *,
+    features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    properties: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    property_choices: Optional[Dict[str, np.ndarray]] = None,
+    num_data: Optional[int] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Coerces a layer's keyword arguments to feature values and defaults tables."""
+    if properties is not None or property_choices is not None:
+        features = _features_from_properties(
+            properties=properties,
+            property_choices=property_choices,
+            num_data=num_data,
+        )
+    else:
+        features = _validate_features(features, num_data=num_data)
+    defaults = _get_default_features(features)
+    return features, defaults
+
+
 def _validate_features(
     features: Union[Dict[str, np.ndarray], pd.DataFrame],
     *,
@@ -879,6 +899,7 @@ def _remove_features(features: pd.DataFrame, indices: Any) -> pd.DataFrame:
 
 
 def _get_default_features(features: pd.DataFrame) -> pd.DataFrame:
+    """Get default values from a features table."""
     defaults = {
         name: _get_column_default_value(column)
         for name, column in features.items()
@@ -887,6 +908,7 @@ def _get_default_features(features: pd.DataFrame) -> pd.DataFrame:
 
 
 def _get_column_default_value(column: pd.Series) -> Optional:
+    """Get the default value from a feature column."""
     if column.size > 0:
         return column.iloc[-1]
     if isinstance(column.dtype, pd.CategoricalDtype):

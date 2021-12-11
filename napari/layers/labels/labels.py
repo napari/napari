@@ -459,6 +459,7 @@ class Labels(_ImageBase):
     ) -> None:
         self._features = _validate_features(features)
         self._label_index = self._make_label_index(self._features)
+        self.events.properties()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -467,9 +468,7 @@ class Labels(_ImageBase):
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._features = _features_from_properties(properties=properties)
-        self._label_index = self._make_label_index(self._features)
-        self.events.properties()
+        self.features = _features_from_properties(properties=properties)
 
     @classmethod
     def _make_label_index(cls, features: pd.DataFrame) -> Dict[int, int]:

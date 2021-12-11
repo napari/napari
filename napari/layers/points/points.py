@@ -26,6 +26,7 @@ from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import (
     _append_features,
+    _features_from_layer,
     _features_from_properties,
     _features_to_choices,
     _features_to_properties,
@@ -328,17 +329,12 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        if properties is not None or property_choices is not None:
-            self._features = _features_from_properties(
-                properties=properties,
-                property_choices=property_choices,
-                num_data=len(self.data),
-            )
-        else:
-            self._features = _validate_features(
-                features, num_data=len(self.data)
-            )
-        self._default_features = _get_default_features(self._features)
+        self._features, self._default_features = _features_from_layer(
+            features=features,
+            properties=properties,
+            property_choices=property_choices,
+            num_data=len(self.data),
+        )
 
         self._text = TextManager._from_layer(
             text=text,

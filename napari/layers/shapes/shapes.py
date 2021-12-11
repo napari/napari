@@ -28,10 +28,10 @@ from ..utils.color_transformations import (
 )
 from ..utils.layer_utils import (
     _append_features,
+    _features_from_layer,
     _features_from_properties,
     _features_to_choices,
     _features_to_properties,
-    _get_default_features,
     _remove_features,
     _resize_features,
     _validate_features,
@@ -499,17 +499,12 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        if properties is not None or property_choices is not None:
-            self._features = _features_from_properties(
-                properties=properties,
-                property_choices=property_choices,
-                num_data=number_of_shapes(data),
-            )
-        else:
-            self._features = _validate_features(
-                features, num_data=number_of_shapes(data)
-            )
-        self._default_features = _get_default_features(self._features)
+        self._features, self._default_features = _features_from_layer(
+            features=features,
+            properties=properties,
+            property_choices=property_choices,
+            num_data=number_of_shapes(data),
+        )
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the

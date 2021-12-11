@@ -411,6 +411,7 @@ class Tracks(Layer):
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._manager.features = features
+        self.events.properties()
         self._check_color_by_in_features()
 
     @property
