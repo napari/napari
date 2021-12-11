@@ -1,11 +1,11 @@
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QAbstractItemView,
-    QTableWidget,
-    QTableWidgetItem,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
