@@ -12,7 +12,10 @@ try:
     from rich import print
 except ImportError:
     print("TIP: run `pip install rich` for much nicer event debug printout.")
-
+try:
+    import dotenv
+except ImportError:
+    dotenv = None
 
 if TYPE_CHECKING:
     from .event import Event
@@ -28,8 +31,8 @@ class EventDebugSettings(BaseSettings):
     _cur_depth: ClassVar[int] = PrivateAttr(0)
 
     class Config:
-        env_file = '.env'
         env_prefix = 'event_debug_'
+        env_file = '.env' if dotenv is not None else ''
 
 
 _SETTINGS = EventDebugSettings()

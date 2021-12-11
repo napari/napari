@@ -72,6 +72,12 @@ from vispy.util.logs import _handle_exception
 
 from ..translations import trans
 
+try:
+    # this could move somewhere higher up... but where?
+    __import__('dotenv').load_dotenv()
+except ImportError:
+    pass
+
 if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
     from .debugging import log_event_stack
 else:
