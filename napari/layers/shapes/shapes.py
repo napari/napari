@@ -737,7 +737,7 @@ class Shapes(Layer):
             num_data=self.nshapes,
         )
         if self._face_color_property and (
-            self._face_color_property not in self._features
+            self._face_color_property not in self.features
         ):
             self._face_color_property = ''
             warnings.warn(
@@ -749,7 +749,7 @@ class Shapes(Layer):
             )
 
         if self._edge_color_property and (
-            self._edge_color_property not in self._features
+            self._edge_color_property not in self.features
         ):
             self._edge_color_property = ''
             warnings.warn(
