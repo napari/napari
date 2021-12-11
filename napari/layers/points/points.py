@@ -27,7 +27,6 @@ from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import (
     _append_features,
     _features_from_layer,
-    _features_from_properties,
     _features_to_choices,
     _features_to_properties,
     _remove_features,
@@ -552,9 +551,7 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], pd.DataFrame, None]
     ):
-        self.features = _features_from_properties(
-            properties=properties, num_data=len(self._data)
-        )
+        self.features = properties
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:

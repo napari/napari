@@ -22,11 +22,7 @@ from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import (
-    _features_from_properties,
-    _features_to_properties,
-    _validate_features,
-)
+from ..utils.layer_utils import _features_to_properties, _validate_features
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -468,7 +464,7 @@ class Labels(_ImageBase):
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self.features = _features_from_properties(properties=properties)
+        self.features = properties
 
     @classmethod
     def _make_label_index(cls, features: pd.DataFrame) -> Dict[int, int]:

@@ -15,7 +15,6 @@ from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import (
     _features_from_layer,
-    _features_from_properties,
     _features_to_choices,
     _features_to_properties,
     _resize_features,
@@ -357,24 +356,21 @@ class Vectors(Layer):
         self.events.properties()
 
     @property
-    def feature_defaults(self):
-        """Dataframe-like with one row of feature default values.
-
-        See `features` for more details on the type of this property.
-        """
-        return self._feature_defaults
-
-    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
         return _features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self.features = _features_from_properties(
-            properties=properties,
-            num_data=len(self.data),
-        )
+        self.features = properties
+
+    @property
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._feature_defaults
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:

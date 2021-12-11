@@ -29,7 +29,6 @@ from ..utils.color_transformations import (
 from ..utils.layer_utils import (
     _append_features,
     _features_from_layer,
-    _features_from_properties,
     _features_to_choices,
     _features_to_properties,
     _remove_features,
@@ -780,9 +779,7 @@ class Shapes(Layer):
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self.features = _features_from_properties(
-            properties=properties, num_data=self.nshapes
-        )
+        self.features = properties
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
