@@ -399,7 +399,7 @@ def _omit_viewer_args(constructor):
             args = args[:1] + args[2:]
         if "viewer" in kwargs:
             warnings.warn(
-                "viewer argument is depecated amd should not be used",
+                "viewer argument is deprecated and should not be used",
                 category=FutureWarning,
                 stacklevel=2,
             )
