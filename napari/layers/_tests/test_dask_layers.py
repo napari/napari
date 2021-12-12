@@ -11,13 +11,14 @@ from napari.utils import _dask_utils, resize_dask_cache
 
 
 @pytest.mark.sync_only
-def test_dask_not_greedy():
+@pytest.mark.parametrize('dtype', ['float64', 'uint8'])
+def test_dask_not_greedy(dtype):
     """Make sure that we don't immediately calculate dask arrays."""
 
     FETCH_COUNT = 0
 
     def get_plane(block_id):
-        if block_id:
+        if isinstance(block_id, tuple):
             nonlocal FETCH_COUNT
             FETCH_COUNT += 1
         return np.random.rand(1, 1, 1, 10, 10)
@@ -25,22 +26,18 @@ def test_dask_not_greedy():
     arr = da.map_blocks(
         get_plane,
         chunks=((1,) * 4, (1,) * 2, (1,) * 8, (10,), (10,)),
-        dtype=float,
+        dtype=dtype,
     )
     layer = layers.Image(arr)
-    assert FETCH_COUNT == 1
-    expected = (np.min(arr[0, 0, 0]), np.max(arr[0, 0, 0]))
-    assert tuple(layer.contrast_limits) != expected
-    FETCH_COUNT = 1  # because we just fetched one more time
 
-    arr2 = da.map_blocks(
-        get_plane,
-        chunks=((1,) * 4, (1,) * 4, (1,) * 4, (10,), (10,)),
-        dtype='uint8',
-    )
-    layer = layers.Image(arr2)
-    assert FETCH_COUNT == 1
-    assert tuple(layer.contrast_limits) == (0, 255)
+    # the <= is because before dask-2021.12.0, the above code resulted in NO
+    # fetches for uint8 data, and afterwards, results in a single fetch.
+    # the single fetch is actually the more "expected" behavior.  And all we
+    # are really trying to assert here is that we didn't fetch all the planes
+    # in the first index... so we allow 0-1 fetches.
+    assert FETCH_COUNT <= 1
+    if dtype == 'uint8':
+        assert tuple(layer.contrast_limits) == (0, 255)
 
 
 def test_dask_array_creates_cache():
