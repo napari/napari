@@ -11,6 +11,7 @@ from ast import literal_eval
 from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
+import napari.plugins._npe2 as _npe2
 
 
 class InfoAction(argparse.Action):
@@ -290,9 +291,13 @@ def _run():
             pname, *wnames = args.with_
             if wnames:
                 for wname in wnames:
-                    plugin_manager.get_widget(pname, wname)
+                    _npe2.get_widget_contribution(
+                        pname, wname
+                    ) or plugin_manager.get_widget(pname, wname)
             else:
-                plugin_manager.get_widget(pname)
+                _npe2.get_widget_contribution(
+                    pname
+                ) or plugin_manager.get_widget(pname)
 
         from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 

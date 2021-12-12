@@ -3,6 +3,7 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import inspect
+import logging
 import os
 import sys
 import time
@@ -17,6 +18,7 @@ from typing import (
     Sequence,
     Tuple,
 )
+from magicgui.widgets._bases import widget
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
@@ -654,7 +656,9 @@ class Window:
         """
         from ..plugins import _npe2
 
-        Widget = _npe2.get_widget_contribution(plugin_name, widget_name)
+        Widget, widget_name = _npe2.get_widget_contribution(
+            plugin_name, widget_name
+        )
         dock_kwargs = {}
 
         if Widget is None:
