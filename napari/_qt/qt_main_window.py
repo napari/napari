@@ -3,7 +3,6 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import inspect
-import logging
 import os
 import sys
 import time
