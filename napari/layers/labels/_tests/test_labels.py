@@ -14,7 +14,7 @@ from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
-from napari.layers.image._image_constants import Rendering
+from napari.layers.labels._labels_constants import LabelsRendering
 from napari.utils import Colormap
 from napari.utils.colormaps import low_discrepancy_image
 
@@ -276,12 +276,12 @@ def test_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
     layer = Labels(data)
     layer.properties = properties
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))
@@ -342,7 +342,7 @@ def test_multiscale_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))[1]
@@ -985,7 +985,7 @@ def test_rendering_init():
     data = np.random.randint(20, size=shape)
     layer = Labels(data, rendering='iso_categorical')
 
-    assert layer.rendering == Rendering.ISO_CATEGORICAL.value
+    assert layer.rendering == LabelsRendering.ISO_CATEGORICAL.value
 
 
 def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
