@@ -21,10 +21,10 @@ class QtReaderDialog(QDialog):
 
     def __init__(
         self,
-        pth: str = None,
+        pth: str = '',
         parent: "QWidget" = None,
-        readers: "Dict[str, str]" = None,
-        error_message: str = None,
+        readers: "Dict[str, str]" = {},
+        error_message: str = '',
     ):
         super().__init__(parent)
         self.setObjectName('Choose reader')
@@ -39,8 +39,7 @@ class QtReaderDialog(QDialog):
         # add instruction label
         layout = QVBoxLayout()
         label = QLabel(
-            f"{error_message if error_message else ''}"
-            + f"Choose reader for {self._current_file}:"
+            f"{error_message}Choose reader for {self._current_file}:"
         )
         layout.addWidget(label)
 
