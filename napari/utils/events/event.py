@@ -72,16 +72,6 @@ from vispy.util.logs import _handle_exception
 
 from ..translations import trans
 
-try:
-    # this could move somewhere higher up... but where?
-    __import__('dotenv').load_dotenv()
-except ImportError:
-    pass
-
-
-def _log_event_stack(event):  # type: ignore
-    pass
-
 
 class Event:
 
@@ -1180,6 +1170,20 @@ def _is_pos_arg(param: inspect.Parameter):
     )
 
 
+try:
+    # this could move somewhere higher up in napari imports ... but where?
+    __import__('dotenv').load_dotenv()
+except ImportError:
+    pass
+
+
+def _noop(*a, **k):
+    pass
+
+
+_log_event_stack = _noop
+
+
 def set_event_tracing_enabled(enabled=True, cfg=None):
     global _log_event_stack
     if enabled:
@@ -1190,8 +1194,8 @@ def set_event_tracing_enabled(enabled=True, cfg=None):
         else:
             _log_event_stack = log_event_stack
     else:
-        _log_event_stack = lambda e: None  # noqa
+        _log_event_stack = _noop
 
 
 if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
-    set_event_tracing_enabled()
+    set_event_tracing_enabled(True)
