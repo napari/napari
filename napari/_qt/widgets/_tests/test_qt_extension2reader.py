@@ -53,11 +53,14 @@ def test_extension2reader_removal(
     qtbot
 ):
     with restore_settings_on_exit():
-        get_settings().plugins.extension2reader = {'.test': 'test-plugin'}
+        get_settings().plugins.extension2reader = {'.test': 'test-plugin', '.abc': 'abc-plugin'}
         widget = extension2reader_widget()
+
+        assert widget._table.rowCount() == 2
 
         btn_to_click = widget._table.cellWidget(0, 1).findChild(QPushButton)
         qtbot.mouseClick(btn_to_click, Qt.LeftButton)
 
-        assert get_settings().plugins.extension2reader == {}
-        assert widget._table.rowCount() == 0             
+        assert get_settings().plugins.extension2reader == {'.abc': 'abc-plugin'}
+        assert widget._table.rowCount() == 1
+        assert widget._table.item(0, 0).text() == '.abc'             
