@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 from . import _npe2, plugin_manager
 
 if TYPE_CHECKING:
