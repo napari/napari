@@ -21,10 +21,10 @@ class QtReaderDialog(QDialog):
 
     def __init__(
         self,
-        pth: str=None,
-        parent: "QWidget" =None,
-        readers: "Dict[str, str]"=None,
-        error_message: str=None,
+        pth: str = None,
+        parent: "QWidget" = None,
+        readers: "Dict[str, str]" = None,
+        error_message: str = None,
     ):
         super().__init__(parent)
         self.setObjectName('Choose reader')
@@ -38,8 +38,10 @@ class QtReaderDialog(QDialog):
 
         # add instruction label
         layout = QVBoxLayout()
-        label = QLabel(f"{error_message if error_message else ''}"+\
-            f"Choose reader for {self._current_file}:")
+        label = QLabel(
+            f"{error_message if error_message else ''}"
+            + f"Choose reader for {self._current_file}:"
+        )
         layout.addWidget(label)
 
         # add radio button for each reader plugin
@@ -62,7 +64,7 @@ class QtReaderDialog(QDialog):
             )
             self.persist_checkbox.toggle()
             layout.addWidget(self.persist_checkbox)
-        
+
         layout.addWidget(self.btn_box)
         self.setLayout(layout)
 
