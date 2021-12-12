@@ -11,6 +11,7 @@ from ast import literal_eval
 from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
+
 import napari.plugins._npe2 as _npe2
 
 
