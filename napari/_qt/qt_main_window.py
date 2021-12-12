@@ -18,7 +18,6 @@ from typing import (
     Tuple,
 )
 
-from magicgui.widgets._bases import widget
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
