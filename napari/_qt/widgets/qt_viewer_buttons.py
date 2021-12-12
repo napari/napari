@@ -392,7 +392,7 @@ def _omit_viewer_args(constructor):
     def _func(*args, **kwargs):
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
-                "viewer argument is depecated amd should not be used",
+                "viewer argument is deprecated and should not be used",
                 category=FutureWarning,
                 stacklevel=2,
             )
