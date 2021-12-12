@@ -186,7 +186,10 @@ def file_extensions_string_for_layers(
 def get_readers(path):
     pm = npe2.PluginManager.instance()
     readers = list(pm.iter_compatible_readers(path))
-    reader_plugin_names = [reader.plugin_name for reader in readers]
+    reader_plugin_names = {
+        pm.get_manifest(reader.command).display_name: reader.plugin_name
+        for reader in readers
+    }
     return reader_plugin_names
 
 

@@ -72,6 +72,9 @@ class Extension2ReaderTable(QWidget):
                 remove_btn = QPushButton('x', objectName=f'{extension}')
                 remove_btn.setFixedWidth(30)
                 remove_btn.setStyleSheet('margin: 4px;')
+                remove_btn.setToolTip(
+                    'Remove this extension to reader association'
+                )
                 remove_btn.clicked.connect(self._remove_extension_assignment)
 
                 plugin_widg.layout().addWidget(plugin_label)
@@ -90,8 +93,11 @@ class Extension2ReaderTable(QWidget):
     def _remove_extension_assignment(self, event):
         extension_to_remove = self.sender().objectName()
         current_settings = get_settings().plugins.extension2reader
-        del current_settings[extension_to_remove]
-        get_settings().plugins.extension2reader = current_settings
+        get_settings().plugins.extension2reader = {
+            k: v
+            for k, v in current_settings.items()
+            if k != extension_to_remove
+        }
 
         for i in range(self._table.rowCount()):
             if (

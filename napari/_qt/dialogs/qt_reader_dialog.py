@@ -3,12 +3,12 @@ import os
 from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
+    QDialog,
     QDialogButtonBox,
     QLabel,
     QRadioButton,
     QVBoxLayout,
 )
-from qtpy.QtWidgets import QDialog
 
 
 class QtReaderDialog(QDialog):
@@ -17,7 +17,6 @@ class QtReaderDialog(QDialog):
         pth=None,
         parent=None,
         readers=None,
-        npe1_readers=None,
         error_message=None,
     ):
         super().__init__(parent)
@@ -25,9 +24,9 @@ class QtReaderDialog(QDialog):
         self.setWindowTitle('Choose reader')
         self._current_file = pth
         self._reader_buttons = []
-        self.setup_ui(error_message, readers, npe1_readers)
+        self.setup_ui(error_message, readers)
 
-    def setup_ui(self, error_message, readers, npe1_readers):
+    def setup_ui(self, error_message, readers):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
@@ -39,7 +38,6 @@ class QtReaderDialog(QDialog):
 
         self.reader_btn_group = QButtonGroup(self)
         self.add_reader_buttons(readers)
-        self.add_reader_buttons(npe1_readers)
         if self.reader_btn_group.buttons():
             self.reader_btn_group.buttons()[0].toggle()
 
@@ -61,8 +59,8 @@ class QtReaderDialog(QDialog):
         self._current_file = pth
 
     def add_reader_buttons(self, readers):
-        for reader in readers:
-            button = QRadioButton(f"{reader}")
+        for display_name in readers:
+            button = QRadioButton(f"{display_name}")
             self.reader_btn_group.addButton(button)
             self.layout().addWidget(button)
 

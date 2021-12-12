@@ -1072,14 +1072,13 @@ class QtViewer(QSplitter):
                     except Exception:
                         error_message = f"Tried to open file with {plugin_choice}, but reading failed.\n"
 
-            readers, npe1readers = get_potential_readers(filename)
-            if len(readers + npe1readers) > 1 or error_message:
+            readers = get_potential_readers(filename)
+            if len(readers) > 1 or error_message:
                 self.readerDialog = QtReaderDialog(
                     parent=self,
                     pth=filename,
                     error_message=error_message,
                     readers=readers,
-                    npe1_readers=npe1readers,
                 )
                 dialog_result = self.readerDialog.exec_()
                 if dialog_result:
@@ -1096,7 +1095,9 @@ class QtViewer(QSplitter):
                     continue
 
             self.viewer.open(
-                filenames, stack=bool(shift_down), plugin=plugin_choice
+                filenames,
+                stack=bool(shift_down),
+                plugin=readers[plugin_choice],
             )
             # do we have settings to save?
             if persist_choice:
