@@ -1368,6 +1368,12 @@ class Labels(_ImageBase):
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.
