@@ -1053,6 +1053,11 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
 
+        # if trying to open as a stack, just do the old behaviour
+        if shift_down:
+            self.viewer.open(filenames, stack=bool(shift_down))
+            return
+
         for filename in filenames:
             _, extension = os.path.splitext(filename)
             reader_associations = get_settings().plugins.extension2reader
@@ -1060,13 +1065,12 @@ class QtViewer(QSplitter):
             # get plugin choice from user
             # choice is None if file was opened or user chose cancel
             choice = self._get_reader_choice_for_file(
-                filename, extension, reader_associations, shift_down
+                filename, extension, reader_associations
             )
             if choice:
                 display_name, plugin_name, persist_choice = choice
                 self.viewer.open(
                     filename,
-                    stack=bool(shift_down),
                     plugin=plugin_name,
                 )
                 # do we have settings to save?
@@ -1078,7 +1082,7 @@ class QtViewer(QSplitter):
                     }
 
     def _get_reader_choice_for_file(
-        self, filename, extension, reader_associations, shift_down
+        self, filename, extension, reader_associations
     ):
         """Gets choice of reader from user for the given filename.
 
@@ -1120,7 +1124,6 @@ class QtViewer(QSplitter):
                     try:
                         self.viewer.open(
                             filename,
-                            stack=bool(shift_down),
                             plugin=readers[display_name],
                         )
                         # we've opened file successfully, so move on to next file
