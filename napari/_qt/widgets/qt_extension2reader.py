@@ -1,6 +1,5 @@
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
-    QAbstractItemView,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -15,16 +14,17 @@ from ...utils.translations import trans
 
 
 class Extension2ReaderTable(QWidget):
+    """Table showing extension to reader mappings with removal button.
+
+    Widget presented in preferences-plugin dialog."""
+
     valueChanged = Signal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
         self._table = QTableWidget()
-        self._table.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self._table.setSelectionMode(QAbstractItemView.SingleSelection)
         self._table.setShowGrid(False)
-
         self._populate_table()
 
         layout = QVBoxLayout()
@@ -32,6 +32,7 @@ class Extension2ReaderTable(QWidget):
         self.setLayout(layout)
 
     def _populate_table(self):
+        """Add row for each extension to reader mapping in settings"""
         self._extension_col = 0
         self._reader_col = 1
 
@@ -45,10 +46,7 @@ class Extension2ReaderTable(QWidget):
 
         extension2reader = get_settings().plugins.extension2reader
         if len(extension2reader) > 0:
-
-            # Set up table based on number of actions and needed columns.
             self._table.setRowCount(len(extension2reader))
-
             self._table.horizontalHeader().setStretchLastSection(True)
             self._table.horizontalHeader().setStyleSheet(
                 'border-bottom: 2px solid white;'
@@ -58,17 +56,18 @@ class Extension2ReaderTable(QWidget):
             for row, (extension, plugin_name) in enumerate(
                 extension2reader.items()
             ):
-
                 item = QTableWidgetItem(extension)
                 item.setFlags(Qt.NoItemFlags)
                 self._table.setItem(row, self._extension_col, item)
 
                 plugin_widg = QWidget()
+                # need object name to easily find row
                 plugin_widg.setObjectName(f'{extension}')
                 plugin_widg.setLayout(QHBoxLayout())
                 plugin_widg.layout().setContentsMargins(0, 0, 0, 0)
 
                 plugin_label = QLabel(plugin_name)
+                # need object name to easily work out which button was clicked
                 remove_btn = QPushButton('x', objectName=f'{extension}')
                 remove_btn.setFixedWidth(30)
                 remove_btn.setStyleSheet('margin: 4px;')
@@ -86,13 +85,16 @@ class Extension2ReaderTable(QWidget):
             self._table.setHorizontalHeaderLabels(header_strs)
 
             self._table.setColumnHidden(self._reader_col, True)
+            self._table.setColumnWidth(self._extension_col, 200)
             item = QTableWidgetItem(trans._('No extensions found.'))
             item.setFlags(Qt.NoItemFlags)
             self._table.setItem(0, 0, item)
 
     def _remove_extension_assignment(self, event):
+        """Delete extension to reader mapping setting and remove table row"""
         extension_to_remove = self.sender().objectName()
         current_settings = get_settings().plugins.extension2reader
+        # need explicit assignment to new object here for persistence
         get_settings().plugins.extension2reader = {
             k: v
             for k, v in current_settings.items()
@@ -100,9 +102,9 @@ class Extension2ReaderTable(QWidget):
         }
 
         for i in range(self._table.rowCount()):
-            if (
-                self._table.cellWidget(i, self._reader_col).objectName()
-                == extension_to_remove
-            ):
+            row_widg_name = self._table.cellWidget(
+                i, self._reader_col
+            ).objectName()
+            if row_widg_name == extension_to_remove:
                 self._table.removeRow(i)
                 return
