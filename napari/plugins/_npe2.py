@@ -109,13 +109,13 @@ def write_layers(
 @npe2_or_return_none
 def get_widget_contribution(
     plugin_name: str, widget_name: Optional[str] = None
-) -> Tuple[Optional[WidgetCallable], Optional[str]]:
+) -> Optional[Tuple[WidgetCallable, str]]:
     for contrib in npe2.PluginManager.instance().iter_widgets():
         if contrib.plugin_name == plugin_name and (
             not widget_name or contrib.display_name == widget_name
         ):
             return contrib.get_callable(), contrib.display_name
-    return None, None
+    return None
 
 
 @npe2_or_return_none
