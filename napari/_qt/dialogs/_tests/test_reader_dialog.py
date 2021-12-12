@@ -1,5 +1,4 @@
-from os import path
-from PyQt5.QtWidgets import QLabel, QRadioButton
+from qtpy.QtWidgets import QLabel, QRadioButton
 from attr import has
 import pytest
 from napari._qt.dialogs.qt_reader_dialog import QtReaderDialog
