@@ -27,6 +27,7 @@ from superqt import QElidingLabel, ensure_main_thread
 
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans
+from ..qt_resources import QColoredSVGIcon
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
@@ -82,7 +83,7 @@ class NapariQtNotification(QDialog):
 
         current_window = _QtMainWindow.current()
         if current_window is not None:
-            canvas = current_window.qt_viewer._canvas_overlay
+            canvas = current_window._qt_viewer._canvas_overlay
             self.setParent(canvas)
             canvas.resized.connect(self.move_to_bottom_right)
 
@@ -91,7 +92,7 @@ class NapariQtNotification(QDialog):
         self.setup_buttons(actions)
         self.setMouseTracking(True)
 
-        self.severity_icon.setText(NotificationSeverity(severity).as_icon())
+        self._update_icon(str(severity))
         self.message.setText(message)
         if source:
             self.source_label.setText(
@@ -107,6 +108,28 @@ class NapariQtNotification(QDialog):
         self.opacity_anim = QPropertyAnimation(self.opacity, b"opacity", self)
         self.geom_anim = QPropertyAnimation(self, b"geometry", self)
         self.move_to_bottom_right()
+
+    def _update_icon(self, severity: str):
+        """Update the icon to match the severity level."""
+        from ...settings import get_settings
+        from ...utils.theme import get_theme
+
+        settings = get_settings()
+        theme = settings.appearance.theme
+        default_color = getattr(get_theme(theme, False), 'icon')
+
+        # FIXME: Should these be defined at the theme level?
+        # Currently there is a warning one
+        colors = {
+            'error': "#D85E38",
+            'warning': "#E3B617",
+            'info': default_color,
+            'debug': default_color,
+            'none': default_color,
+        }
+        color = colors.get(severity, default_color)
+        icon = QColoredSVGIcon.from_resources(severity)
+        self.severity_icon.setPixmap(icon.colored(color=color).pixmap(15, 15))
 
     def move_to_bottom_right(self, offset=(8, 8)):
         """Position widget at the bottom right edge of the parent."""

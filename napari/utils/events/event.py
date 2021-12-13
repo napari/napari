@@ -49,9 +49,11 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 import inspect
+import os
 import warnings
 import weakref
 from collections.abc import Sequence
+from functools import partial
 from typing import (
     Any,
     Callable,
@@ -104,6 +106,7 @@ class Event:
         # Store args
         self._type = type
         self._native = native
+        self._kwargs = kwargs
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -368,11 +371,12 @@ class EventEmitter:
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, CallbackStr, 'EmitterGroup'],
+        callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
         position: Union[Literal['first'], Literal['last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
+        until: Optional['EventEmitter'] = None,
     ):
         """Connect this emitter to a new callback.
 
@@ -399,6 +403,9 @@ class EventEmitter:
         after : str | callback | list of str or callback | None
             List of callbacks that the current callback should follow.
             Can be None if no after-criteria should be used.
+        until : optional eventEmitter
+            if provided, when the event `until` is emitted, `callback`
+            will be disconnected from this emitter.
 
         Notes
         -----
@@ -515,6 +522,10 @@ class EventEmitter:
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
         self._callback_pass_event.insert(idx, pass_event)
+
+        if until is not None:
+            until.connect(partial(self.disconnect, callback))
+
         return old_callback  # allows connect to be used as a decorator
 
     def disconnect(
@@ -668,6 +679,8 @@ class EventEmitter:
             if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
                 self._block_counter.update([None])
                 return event
+
+            _log_event_stack(event)
 
             rem: List[CallbackRef] = []
             for cb, pass_event in zip(
@@ -1155,3 +1168,34 @@ def _is_pos_arg(param: inspect.Parameter):
         ]
         and param.default == inspect.Parameter.empty
     )
+
+
+try:
+    # this could move somewhere higher up in napari imports ... but where?
+    __import__('dotenv').load_dotenv()
+except ImportError:
+    pass
+
+
+def _noop(*a, **k):
+    pass
+
+
+_log_event_stack = _noop
+
+
+def set_event_tracing_enabled(enabled=True, cfg=None):
+    global _log_event_stack
+    if enabled:
+        from .debugging import log_event_stack
+
+        if cfg is not None:
+            _log_event_stack = partial(log_event_stack, cfg=cfg)
+        else:
+            _log_event_stack = log_event_stack
+    else:
+        _log_event_stack = _noop
+
+
+if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
+    set_event_tracing_enabled(True)

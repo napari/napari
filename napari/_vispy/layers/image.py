@@ -12,11 +12,17 @@ from .base import VispyBaseLayer
 
 
 class ImageLayerNode:
-    def __init__(self, custom_node: Node = None):
+    def __init__(self, custom_node: Node = None, texture_format=None):
         self._custom_node = custom_node
-        self._image_node = ImageNode(None, method='auto')
+        self._image_node = ImageNode(
+            None,
+            method='auto',
+            texture_format=texture_format,
+        )
         self._volume_node = VolumeNode(
-            np.zeros((1, 1, 1), dtype=np.float32), clim=[0, 1]
+            np.zeros((1, 1, 1), dtype=np.float32),
+            clim=[0, 1],
+            texture_format=texture_format,
         )
 
     def get_node(self, ndisplay: int) -> Node:
@@ -32,10 +38,10 @@ class ImageLayerNode:
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, node=None):
+    def __init__(self, layer, node=None, texture_format='auto'):
 
         # Use custom node from caller, or our standard image/volume nodes.
-        self._layer_node = ImageLayerNode(node)
+        self._layer_node = ImageLayerNode(node, texture_format=texture_format)
 
         # Default to 2D (image) node.
         super().__init__(layer, self._layer_node.get_node(2))

@@ -17,6 +17,7 @@ from ..components.layerlist import LayerList
 from ..layers.base.base import Layer
 from ..plugins import _npe2
 from ..utils import config, perf
+from ..utils._proxies import ReadOnlyWrapper
 from ..utils.action_manager import action_manager
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.history import (
@@ -26,7 +27,6 @@ from ..utils.history import (
     update_save_history,
 )
 from ..utils.interactions import (
-    ReadOnlyWrapper,
     mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
@@ -246,16 +246,6 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        action_manager.register_action(
-            "napari:toggle_console_visibility",
-            self.toggle_console_visibility,
-            trans._("Show/Hide IPython console"),
-            self.viewer,
-        )
-        action_manager.bind_button(
-            'napari:toggle_console_visibility',
-            self.viewerButtons.consoleButton,
-        )
 
         self._create_canvas()
 
@@ -618,6 +608,7 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
+        # CAN REMOVE THIS AFTER DEPRECATION IS DONE, see self.screenshot.
         img = self.canvas.native.grabFramebuffer()
         if flash:
             from .utils import add_flash_animation
@@ -646,6 +637,16 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+        import warnings
+
+        warnings.warn(
+            trans._(
+                "'window.qt_viewer.screenshot' is deprecated and will be removed in v0.4.14.  Please use 'window.screenshot(canvas_only=True)' instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+
         img = QImg2array(self._screenshot(flash))
         if path is not None:
             imsave(path, img)  # scikit-image imsave method
@@ -661,6 +662,15 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
         """
+        import warnings
+
+        warnings.warn(
+            trans._(
+                "'window.qt_viewer.screenshot' is deprecated and will be removed in v0.4.14.  Please use 'window.screenshot(canvas_only=True)' instead"
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
         cb = QGuiApplication.clipboard()
         cb.setImage(self._screenshot(flash))
 
@@ -758,7 +768,7 @@ class QtViewer(QSplitter):
         if cursor == 'square':
             # make sure the square fits within the current canvas
             if size < 8 or size > (
-                min(*self.viewer.window.qt_viewer.canvas.size) - 4
+                min(*self.viewer.window._qt_viewer.canvas.size) - 4
             ):
                 q_cursor = self._cursors['cross']
             else:
