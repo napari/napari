@@ -1,3 +1,8 @@
+try:
+    __import__('dotenv').load_dotenv()
+except ImportError:
+    pass
+
 import os
 import sys
 from functools import partial

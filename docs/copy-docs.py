@@ -23,6 +23,7 @@ import yaml
 # path to copy and locations to copy to if different
 TO_COPY = [
     'ORGANIZATION.md',
+    'glossary.md',
     'developers',
     'community',
     'howtos',
@@ -50,6 +51,7 @@ TOC_IGNORE = [
     'images',
     '_templates',
     'ORGANIZATION.md',
+    'glossary.md',  # this document will still be at the destination ToC
     'guides/stable/_layer_events.md',
     'guides/stable/_viewer_events.md',
 ]
