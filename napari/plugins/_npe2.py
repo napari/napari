@@ -163,7 +163,11 @@ def file_extensions_string_for_layers(
         """Lookup the command name and its supported extensions."""
         for writer in writers:
             name = pm.get_manifest(writer.command).display_name
-            title = f"{name} {writer.name}" if writer.name else name
+            title = (
+                f"{name} {writer.display_name}"
+                if writer.display_name
+                else name
+            )
             yield title, writer.filename_extensions
 
     # extension strings are in the format:
