@@ -38,7 +38,7 @@ pip install cookiecutter
 cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe2
 ```
 
-`cookiecutter` will start asking you questions. These will include questions
+`cookiecutter` will ask you a series of questions
 about the functionality you want your plugin to provide. In this guide we'll
 focus on creating a reader that can read numpy ('\*.npy') files.
 
