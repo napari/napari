@@ -207,7 +207,9 @@ PyPI, it will also be visible on the [napari hub][hub], alongside all other
 napari plugins.
 
 You can customize your plugin’s listing for the hub by following this
-[guide][hubguide].
+[guide][hubguide]. If you'd like to know what your _napari hub_ plugin page
+will look like, you can use the _napari hub plugin preview_ service - see this
+[guide][hub-guide-preview] to get started.
 
 The napari hub reads the metadata of your package and displays it in a number
 of places so that users can easily find your plugin and decide if it provides
@@ -285,3 +287,4 @@ When you are ready for users, announce your plugin on the [Image.sc Forum](https
 [glob]: https://en.wikipedia.org/wiki/Glob_(programming)
 [classifier]: https://pypi.org/classifiers/
 [hub-guide-custom-viz]: https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md#visibility
+[hub-guide-preview]: https://github.com/chanzuckerberg/napari-hub/blob/main/docs/setting-up-preview.md
