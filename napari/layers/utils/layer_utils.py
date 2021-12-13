@@ -695,8 +695,9 @@ def _validate_features(
     ----------
     features : Union[Dict[str, np.ndarray], pd.DataFrame]
         The features table input, which will be passed to the pandas
-        DataFrame initializer. If this has a non-default index, it
-        will be ignored.
+        DataFrame initializer. If this is a pandas DataFrame with a
+        non-default index, that index (except its length) will be
+        ignored.
     num_data : Optional[int]
         The number of the elements in the layer calling this, such as
         the number of points, which is used to check that the features
@@ -706,9 +707,8 @@ def _validate_features(
     Returns
     -------
     pd.DataFrame
-        The pandas DataFrame created from the input features table.
-        In general, this is will copy the features data, though that
-        behavior should not be relied on.
+        The pandas DataFrame created from the input features table. This
+        may or may not store a copy of the input data.
 
     Raises
     ------
