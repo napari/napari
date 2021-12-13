@@ -2,7 +2,7 @@
 
 # npe2 getting started guide
 
-This guide will walk you through the steps to write an `npe2`-style napari
+This guide will walk you through the steps required to write an `npe2`-style napari
 plugin from scratch.
 
 At the end of this guide, you will have a working plugin that can be installed
@@ -10,12 +10,7 @@ with `pip` and autodetected by napari.
 
 ## Overview
 
-Plugins are just python packages. They include contributions that napari
-may use when performing tasks (like reading data), and a "manifest" file that
-tells napari where in the package to find these contributions.
-
-This guide covers `npe2`-style plugins. `npe2` plugins declare the
-functionality that they contribute in a file called the plugin manifest.
+Plugins are special python packages. They include a _plugin manifest_ file that lists _contributions_ that napari may use when performing tasks.
 
 Creating a new plugin involves the following steps:
 
@@ -25,10 +20,10 @@ Creating a new plugin involves the following steps:
    - Make sure the manifest file is added to `package_data`.
 2. Create the plugin manifest file.
 
-This guide will walk you through the steps using a [cookiecutter][] template.
+This guide will walk you through the steps using a [cookiecutter] template.
 cookiecutter is a command line utility that generates a python package for you
 after asking a few questions. In this case, the package contains all the
-boilerplate needed for documenting, testing and deploying your plugin.
+boilerplate needed for building, documenting, testing and deploying your plugin.
 
 ```{note}
 Minimally, a plugin could be just three files: `setup.cfg`, a python file, and
@@ -49,7 +44,7 @@ about the functionality you want your plugin to provide. In this guide we'll
 focus on creating a reader that can read numpy ('\*.npy') files.
 
 ```sh
-# questions asked when running cookiecutter:
+# example questions asked when running cookiecutter:
 ...
 plugin_name: my-npy-reader
 ...
@@ -59,12 +54,12 @@ include_reader_plugin [y]: y
 
 Some of the cookiecutter prompts are elided above. We named our plugin
 `my_npy_reader`. This is the name that will be used for the python package. It
-should conform to the [PEP8][] naming convention (short, all-lowercase names,
+should conform to the [PEP8] naming convention (short, all-lowercase names,
 using dashes instead of underscores).
 
 When the cookiecutter asked to include a reader plugin, we selected `y`, and
 in the next question we told cookiecutter that our reader should be invoked
-for files matching the `\*.npy` glob pattern.
+for files matching the `\*.npy` [glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern.
 
 After answering all the prompts, `cookiecutter` will create a directory called
 `my_npy_reader` in the current directory that holds the generated files. It
@@ -101,7 +96,7 @@ napari.manifest =
     my-npy-reader = my_npy_reader:napari.yaml
 ```
 
-The plugin manifest file is specified relative to the top level module path. For
+The plugin manifest file is specified relative to the top level module path as specified in `setup.cfg` `options.packages.find`. For
 the example it will be loaded from:
 `<path/to/my-npy-reader>/my_npy_reader/src/my_npy_reader/napari.yaml`.
 
@@ -125,7 +120,7 @@ With `npe2` installed, we can check that this is a valid plugin manifest:
 
 ```bash
 > npe2 validate src/my_npy_reader
-✔ Manifest for 'napari FooBar' valid!
+✔ Manifest for 'My Plugin' valid!
 ```
 
 See the {ref}`npe2-manifest-spec` for more details.
@@ -240,10 +235,7 @@ napari-hub-cli preview-metadata ./my-npy-reader
 
 For more information on the tool see the repository README](https://github.com/chanzuckerberg/napari-hub-cli).
 
-If you want your plugin to be available on PyPI, but not visible on the napari hub,
-submit an issue on the [napari hub repository]
-(https://github.com/chanzuckerberg/napari-hub/issues/new) or send an email to
-`team@napari-hub.org` and it will be removed.
+If you want your plugin to be available on PyPI, but not visible on the napari hub, you can add a `.napari/config.yml` file to the root of your repository with a visibility key. For details, see the [customization guide](https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md#visibility).
 
 ## 5. Share your plugin with the world
 
