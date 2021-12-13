@@ -10,14 +10,14 @@ with `pip` and autodetected by napari.
 
 ## Overview
 
-Plugins are special python packages. They define certain functions that napari
-calls when it needs to do something like read data. The plugin also needs some
-way of declaring what it does so that napari knows it can use it.
+Plugins are just python packages. They include contributions that napari
+may use when performing tasks (like reading data), and a "manifest" file that
+tells napari where in the package to find these contributions.
 
 This guide covers `npe2`-style plugins. `npe2` plugins declare the
 functionality that they contribute in a file called the plugin manifest.
 
-Creating a new plugin from scratch involves the following steps:
+Creating a new plugin involves the following steps:
 
 1. Configure a python package to use an npe2 manifest (e.g. by editing
    `setup.cfg`):
@@ -44,11 +44,12 @@ pip install cookiecutter
 cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe2
 ```
 
-`cookiecutter` will start asking you questions. These will include questions
+`cookiecutter` will ask you a series of questions
 about the functionality you want your plugin to provide. In this guide we'll
 focus on creating a reader that can read numpy ('\*.npy') files.
 
-```
+```sh
+# questions asked when running cookiecutter:
 ...
 plugin_name: my-npy-reader
 ...
@@ -99,7 +100,7 @@ napari.manifest =
     my-npy-reader = my_npy_reader:napari.yaml
 ```
 
-The plugin manifest file is specified relative to the submodule root path. For
+The plugin manifest file is specified relative to the top level module path. For
 the example it will be loaded from:
 `<path/to/my-npy-reader>/my_npy_reader/src/my_npy_reader/napari.yaml`.
 

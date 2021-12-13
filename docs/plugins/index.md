@@ -47,7 +47,7 @@ For a guide on how to create a plugin using `napari-plugin-engine`, see
 specifications_ that developers can implement, see the
 {ref}`hook-specifications-reference`.
 
-To read about recommendations on how to develop your own plugin, see
+For special considerations when building a napari plugin, see
 {ref}`best-practices`.
 
 ## Looking for help
