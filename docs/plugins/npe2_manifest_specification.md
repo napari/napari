@@ -127,7 +127,7 @@ selected properties of the [PluginManifest][].
 ### Required
 
 - **name** The name of the plugin. Example: `napari-svg`. Should be a
-  [PEP-8][]-compatible package name. If missing, this is populated from the
+  [PEP-8]-compatible package name. If missing, this is populated from the
   python package [name][setup-name].
 
 ### Optional
@@ -572,7 +572,7 @@ themes:
 [toml]: https://toml.io/
 [pydantic]: https://pydantic-docs.helpmanual.io/
 [pluginmanifest]: https://github.com/tlambert03/npe2/blob/main/npe2/manifest/schema.py
-[pep 8]: https://www.python.org/dev/peps/pep-0008/
+[pep-8]: https://www.python.org/dev/peps/pep-0008/
 [setup-name]: https://packaging.python.org/guides/distributing-packages-using-setuptools/#name
 [setup-version]: https://packaging.python.org/guides/distributing-packages-using-setuptools/#version
 [setup-desc]: https://packaging.python.org/guides/distributing-packages-using-setuptools/#description
