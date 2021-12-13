@@ -17,7 +17,7 @@ tells napari where in the package to find these contributions.
 This guide covers `npe2`-style plugins. `npe2` plugins declare the
 functionality that they contribute in a file called the plugin manifest.
 
-Creating a new plugin from scratch involves the following steps:
+Creating a new plugin involves the following steps:
 
 1. Configure a python package to use an npe2 manifest (e.g. by editing
    `setup.cfg`):
