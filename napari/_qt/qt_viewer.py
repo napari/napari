@@ -1154,6 +1154,8 @@ class QtViewer(QSplitter):
             # cancel on the dialog cancels opening the file
             else:
                 return
+        elif len(readers) == 1:
+            display_name = next(iter(readers.keys()))
 
         return display_name, readers[display_name], persist_choice
 
