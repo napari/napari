@@ -13,7 +13,7 @@ template = """def {name}{signature}:
 """
 
 
-def create_func(cls, name=None, doc=None):
+def create_func(cls, name=None, doc=None, filename: str = '<string>'):
     cls_name = cls.__name__
 
     if name is None:
@@ -56,7 +56,8 @@ def create_func(cls, name=None, doc=None):
     )
 
     execdict = {cls_name: cls, 'napari': sys.modules.get('napari')}
-    exec(src, execdict)
+    code = compile(src, filename=filename, mode='exec')
+    exec(code, execdict)
     func = execdict[name]
 
     func.__doc__ = doc

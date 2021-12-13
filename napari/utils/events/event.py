@@ -49,6 +49,7 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 import inspect
+import os
 import warnings
 import weakref
 from collections.abc import Sequence
@@ -105,6 +106,7 @@ class Event:
         # Store args
         self._type = type
         self._native = native
+        self._kwargs = kwargs
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -678,6 +680,8 @@ class EventEmitter:
                 self._block_counter.update([None])
                 return event
 
+            _log_event_stack(event)
+
             rem: List[CallbackRef] = []
             for cb, pass_event in zip(
                 self._callbacks[:], self._callback_pass_event[:]
@@ -1164,3 +1168,34 @@ def _is_pos_arg(param: inspect.Parameter):
         ]
         and param.default == inspect.Parameter.empty
     )
+
+
+try:
+    # this could move somewhere higher up in napari imports ... but where?
+    __import__('dotenv').load_dotenv()
+except ImportError:
+    pass
+
+
+def _noop(*a, **k):
+    pass
+
+
+_log_event_stack = _noop
+
+
+def set_event_tracing_enabled(enabled=True, cfg=None):
+    global _log_event_stack
+    if enabled:
+        from .debugging import log_event_stack
+
+        if cfg is not None:
+            _log_event_stack = partial(log_event_stack, cfg=cfg)
+        else:
+            _log_event_stack = log_event_stack
+    else:
+        _log_event_stack = _noop
+
+
+if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
+    set_event_tracing_enabled(True)
