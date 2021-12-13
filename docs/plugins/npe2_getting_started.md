@@ -10,9 +10,9 @@ with `pip` and autodetected by napari.
 
 ## Overview
 
-Plugins are special python packages. They define certain functions that napari
-calls when it needs to do something like read data. The plugin also needs some
-way of declaring what it does so that napari knows it can use it.
+Plugins are just python packages. They include contributions that napari
+may use when performing tasks (like reading data), and a "manifest" file that
+tells napari where in the package to find these contributions.
 
 This guide covers `npe2`-style plugins. `npe2` plugins declare the
 functionality that they contribute in a file called the plugin manifest.
