@@ -1117,6 +1117,14 @@ class QtViewer(QSplitter):
         error_message = None
 
         readers = get_potential_readers(filename)
+        if not readers:
+            raise ValueError(trans._(
+                'No plugin found capable of reading {filename}.',
+                deferred=True,
+                filename=filename,
+            ))
+            return
+
         if extension:
             if reader_associations and extension in reader_associations:
                 display_name = reader_associations[extension]
