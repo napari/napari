@@ -14,7 +14,7 @@ described below.
 
 A **plugin engine** is used to discover plugins, provide utilities for
 querying and manipulating plugins, and for exposing plugin-backed
-functionality to _napari_. **Discovery** is the process by that finds plugins,
+functionality to _napari_. **Discovery** is the process that finds plugins,
 parses the manifests and indexes them for later use. The [npe2][] library
 manages these responsibilities.
 
@@ -154,7 +154,7 @@ a unique identifier to which other contributions, like readers, can refer.
   this command. This usually takes the form of
   `{obj.__module__}:{obj.__qualname__}` (e.g.
   `my_package.a_module:some_function`). For a command to be useful, this
-  field must be specified,. If it isn't specified here it should be done
+  field must be specified. If it isn't specified here it should be done
   dynamically inside the plugin's 'activate()' function.
 
 ### Example

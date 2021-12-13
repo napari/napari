@@ -70,7 +70,7 @@ the next step. Later we're going to come back and update this section.
 
 ### 4. Generate the plugin manifest
 
-Tse the npe2 command in the terminal:
+To create the manifest, use the npe2 command in the terminal:
 
 ```bash
 # we're in the napari-animation directory
@@ -98,7 +98,7 @@ let you know when this happens.
 ### 5. Update the package metadata
 
 Finally, we need to make sure `napari-animation` defines the npe2 entry point
-group. This lets npe2 where to find the plugin manifest file.
+group. This lets the plugin engine know where to find the plugin manifest file.
 
 ```ini
 [options.entry_points]
@@ -137,14 +137,14 @@ implementations_. These are functions decorated to indicate they fullfil a
 _hook specification_ described by napari. Though there are some exceptions,
 most _hook implementations_ can be straightforwardly mapped as a
 _contribution_ in the `npe2` manifest. More information can be found in the
-{ref}`npe2-manifest-spec`.
+{ref}`npe2-manifest-spec` - Look for "calling conventions" for each field.
 
 `npe2` provides a command-line tool that will generate plugin manifests by
 inspecting exposed _hook implementations_. Below, we will walk through the
 kinds of migrations `npe2 convert` helps with.
 
 For each type of _hook specification_ there is a corresponding section below.
-Each lists the _hook specifications_ that a relevant to that section and an
+Each lists the _hook specifications_ that are relevant to that section and an
 example manifest. For details, refer to the {ref}`npe2-manifest-spec`.
 
 ### Readers
@@ -273,11 +273,11 @@ contributions:
 ### Widgets
 
 `napari_experimental_provide_dock_widget` hooks return another function that
-can be used to instance a widget and, optionally, arguments to be passed to
+can be used to instantiate a widget and, optionally, arguments to be passed to
 that function.
 
 In contrast the callable for an `npe2` widget contribution is bound to the
-function actually instancing the widget. It accepts only one argument: a
+function actually instantiating the widget. It accepts only one argument: a
 napari `Viewer` proxy instance. The proxy restricts access to some `Viewer`
 functionality like private methods.
 
