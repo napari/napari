@@ -52,7 +52,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             typ = type(self.__wrapped__).__name__
             warnings.warn(
                 trans._(
-                    "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.4.14",
+                    "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.5.0",
                     deferred=True,
                     name=name,
                     typ=typ,
