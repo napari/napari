@@ -22,9 +22,10 @@ manages these responsibilities.
 
 ```{admonition} Backward compatibility
 Plugins targeting `napari-plugin-engine` will continue to work, but we
-recommend migrating to `npe2` as soon as possible. `npe2` includes tooling to
-help automate the process of migrating plugins. See the [migration
-guide](npe2-migration-guide) for details.
+recommend migrating to `npe2` as soon as possible. `napari-plugin-engine` has
+been used for plugins made prior to Dec. 2021. `npe2` should be used for newer
+plugins and includes tooling to help automate the process of migrating plugins.
+See the [migration guide](npe2-migration-guide) for details.
 ```
 
 When authoring a plugin, you will need to describe what is the plugin's
@@ -89,11 +90,6 @@ pip install npe2
 npe2 validate my_plugin_manifest.yml
 ```
 
-```{note}
-Internally, the manifest is represented by a [pydantic][] model, the
-[PluginManifest][].
-```
-
 The manifest file's fields are described in detail below. The manifest file's
 overall structure can be viewed as a hierarchy:
 
@@ -149,7 +145,7 @@ a unique identifier to which other contributions, like readers, can refer.
 
 - **id** An identifier used to reference this command within this plugin.
 - **title** A description of the command. This might be used, for example,
-  when searching in a command pallette. Examples: "Generate lily sample",
+  when searching in a command palette. Examples: "Generate lily sample",
   "Read tiff image", "Open gaussian blur widget".
 
 ### Optional fields
@@ -169,12 +165,13 @@ contribution:
   commands:
     - id: my-plugin.publish_paper
       title: Do experiments, analysis, write paper, and submit
-      python_name: my_plugin.publish_func
+      python_name: my_plugin:publish_func
 ```
 
 ### Dynamic command registration
 
-Commands can be registered dynamically by the plugin's `activate()` function. For example,
+Commands can be registered dynamically by the plugin's `activate()` function.
+For example,
 
 ```python
 # inside my_plugin/__init__.py
@@ -187,7 +184,8 @@ def activate(context: PluginContext):
     context.register_command("my_plugin.another_command", lambda: print("yo!"))
 ```
 
-The `activate()` function is called when the plugin is loaded. It is found in the `entry_point` specified in the plugin manifest.
+The `activate()` function is called when the plugin is loaded. It is found in
+the `entry_point` specified in the plugin manifest.
 
 ## Readers
 
@@ -232,7 +230,8 @@ f
 
 ```{note}
 The reader command is compatible with functions used for the `napari_get_reader`
-[hook specification][get-reader-hook].
+[hook specification][get-reader-hook] used by plugins based on the
+`napari-plugin-engine`. See the [](npe2-migration-guide) for more details.
 ```
 
 **Parameters**
@@ -250,7 +249,8 @@ layer_data(list of LayerData)
 ### Required fields
 
 - **command** Identifier of the _command_ providing the writer.
-- **layer_types** List of layer type constraints. These determine what combinations of layers this writer handles.
+- **layer_types** List of layer type constraints. These determine what
+  combinations of layers this writer handles.
 
 ### Optional fields
 

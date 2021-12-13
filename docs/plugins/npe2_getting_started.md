@@ -59,7 +59,8 @@ include_reader_plugin [y]: y
 
 Some of the cookiecutter prompts are elided above. We named our plugin
 `my_npy_reader`. This is the name that will be used for the python package. It
-should conform to the [PEP8][] naming convention.
+should conform to the [PEP8][] naming convention (short, all-lowercase names,
+using dashes instead of underscores).
 
 When the cookiecutter asked to include a reader plugin, we selected `y`, and
 in the next question we told cookiecutter that our reader should be invoked
@@ -204,7 +205,8 @@ pip install napari myplugin
 ## 4. Preparing for release
 
 Use the `Framework :: napari` [classifier](https://pypi.org/classifiers/) in
-your package's core metadata to make your plugin more discoverable.
+your package's core metadata to make your plugin more discoverable. If you used
+the cookiecutter, this has already been done for you.
 
 Once your package, with its `Framework :: napari` classifier, is listed on
 PyPI, it will also be visible on the [napari hub][hub], alongside all other
@@ -235,7 +237,7 @@ pip install napari-hub-cli
 and preview your metadata with
 
 ```bash
-napari-hub-cli preview-metadata /tmp/example-plugin
+napari-hub-cli preview-metadata ./my-npy-reader
 ```
 
 For more information on the tool see the repository README](https://github.com/chanzuckerberg/napari-hub-cli).
