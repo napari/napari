@@ -7,10 +7,9 @@ from napari._tests.utils import (
     skip_local_popups,
     skip_on_mac_ci,
     skip_on_win_ci,
-    slow,
 )
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
@@ -62,7 +61,6 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 0, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images(make_napari_viewer):
@@ -84,7 +82,6 @@ def test_z_order_images(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points(make_napari_viewer):
@@ -106,7 +103,6 @@ def test_z_order_image_points(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images_after_ndisplay(make_napari_viewer):
@@ -136,7 +132,6 @@ def test_z_order_images_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_napari_viewer):
@@ -166,7 +161,6 @@ def test_z_order_image_points_after_ndisplay(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_colormap(make_napari_viewer):
@@ -197,7 +191,6 @@ def test_changing_image_colormap(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_gamma(make_napari_viewer):
@@ -209,7 +202,7 @@ def test_changing_image_gamma(make_napari_viewer):
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    assert screenshot[center + (0,)] == 128
+    assert 127 <= screenshot[center + (0,)] <= 129
 
     layer.gamma = 0.1
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -228,7 +221,6 @@ def test_changing_image_gamma(make_napari_viewer):
     assert screenshot[center + (0,)] < 80
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_grid_mode(make_napari_viewer):
@@ -242,7 +234,7 @@ def test_grid_mode(make_napari_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
@@ -256,7 +248,7 @@ def test_grid_mode(make_napari_viewer):
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
         [0, 15],
@@ -319,7 +311,7 @@ def test_grid_mode(make_napari_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
@@ -329,7 +321,6 @@ def test_grid_mode(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_attenuation(make_napari_viewer):
@@ -340,22 +331,27 @@ def test_changing_image_attenuation(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     viewer.dims.ndisplay = 3
     viewer.add_image(data, contrast_limits=[0, 1])
-    viewer.layers[0].rendering = 'attenuated_mip'
 
+    # normal mip
+    viewer.layers[0].rendering = 'mip'
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    mip_value = screenshot[center][0]
+
+    # zero attenuation (still attenuated!)
+    viewer.layers[0].rendering = 'attenuated_mip'
+    viewer.layers[0].attenuation = 0.0
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    zero_att_value = screenshot[center][0]
+
+    # increase attenuation
     viewer.layers[0].attenuation = 0.5
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
-    # Check that rendering has not been attenuated
-    assert screenshot[center + (0,)] > 80
-
-    viewer.layers[0].attenuation = 0.02
-    screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    more_att_value = screenshot[center][0]
     # Check that rendering has been attenuated
-    assert screenshot[center + (0,)] < 60
+    assert zero_att_value < more_att_value < mip_value
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_labels_painting(make_napari_viewer):
@@ -429,7 +425,6 @@ def test_labels_painting(make_napari_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
-@slow(30)
 @pytest.mark.skip("Welcome visual temporarily disabled")
 @skip_on_win_ci
 @skip_local_popups
@@ -455,13 +450,12 @@ def test_welcome(make_napari_viewer):
     assert screenshot[..., :-1].max() > 0
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_axes_visible(make_napari_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_napari_viewer(show=True)
-    viewer.window.qt_viewer.set_welcome_visible(False)
+    viewer.window._qt_viewer.set_welcome_visible(False)
 
     # Check axes are not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -480,13 +474,12 @@ def test_axes_visible(make_napari_viewer):
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_scale_bar_visible(make_napari_viewer):
     """Test that something appears when scale bar becomes visible."""
     viewer = make_napari_viewer(show=True)
-    viewer.window.qt_viewer.set_welcome_visible(False)
+    viewer.window._qt_viewer.set_welcome_visible(False)
 
     # Check scale bar is not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -505,7 +498,6 @@ def test_scale_bar_visible(make_napari_viewer):
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
-@slow(30)
 @skip_on_win_ci
 @skip_local_popups
 def test_screenshot_has_no_border(make_napari_viewer):

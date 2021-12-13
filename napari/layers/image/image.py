@@ -14,11 +14,16 @@ from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
-from ..base import Layer
+from ..base import Layer, no_op
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane
-from ._image_constants import Interpolation, Interpolation3D, Rendering
+from ._image_constants import (
+    ImageRendering,
+    Interpolation,
+    Interpolation3D,
+    Mode,
+)
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
@@ -142,6 +147,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         list should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    mode : str
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In TRANSFORM mode the image can be transformed interactively.
     colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
@@ -258,6 +268,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         )
 
         self.events.add(
+            mode=Event,
             interpolation=Event,
             rendering=Event,
             iso_threshold=Event,
@@ -299,6 +310,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._experimental_slicing_plane = SlicingPlane(
             thickness=1, enabled=False
         )
+        self._mode = Mode.PAN_ZOOM
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
         if contrast_limits is None:
@@ -378,7 +390,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             input_data = data[-1] if self.multiscale else data
         else:
             raise ValueError(
-                f"mode must be either 'data' or 'slice', got {mode!r}"
+                trans._(
+                    "mode must be either 'data' or 'slice', got {mode!r}",
+                    deferred=True,
+                    mode=mode,
+                )
             )
         return calc_data_range(input_data, rgb=self.rgb)
 
@@ -502,44 +518,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.interpolation(value=self._interpolation[self._ndisplay])
 
     @property
-    def rendering(self):
-        """Return current rendering mode.
-
-        Selects a preset rendering mode in vispy that determines how
-        volume is displayed.  Options include:
-
-        * ``translucent``: voxel colors are blended along the view ray until
-            the result is opaque.
-        * ``mip``: maximum intensity projection. Cast a ray and display the
-            maximum value that was encountered.
-        * ``minip``: minimum intensity projection. Cast a ray and display the
-            minimum value that was encountered.
-        * ``attenuated_mip``: attenuated maximum intensity projection. Cast a
-            ray and attenuate values based on integral of encountered values,
-            display the maximum value that was encountered after attenuation.
-            This will make nearer objects appear more prominent.
-        * ``additive``: voxel colors are added along the view ray until
-            the result is saturated.
-        * ``iso``: isosurface. Cast a ray until a certain threshold is
-            encountered. At that location, lighning calculations are
-            performed to give the visual appearance of a surface.
-        * ``average``: average intensity projection. Cast a ray and display the
-            average of values that were encountered.
-
-        Returns
-        -------
-        str
-            The current rendering mode
-        """
-        return str(self._rendering)
-
-    @rendering.setter
-    def rendering(self, rendering):
-        """Set current rendering mode."""
-        self._rendering = Rendering(rendering)
-        self.events.rendering()
-
-    @property
     def experimental_slicing_plane(self):
         return self._experimental_slicing_plane
 
@@ -555,6 +533,44 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         for the current slice has not been loaded.
         """
         return self._slice.loaded
+
+    @property
+    def mode(self) -> str:
+        """str: Interactive mode
+
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        TRANSFORM allows for manipulation of the layer transform.
+        """
+        return str(self._mode)
+
+    _drag_modes = {Mode.TRANSFORM: no_op, Mode.PAN_ZOOM: no_op}
+
+    _move_modes = {
+        Mode.TRANSFORM: no_op,
+        Mode.PAN_ZOOM: no_op,
+    }
+    _cursor_modes = {
+        Mode.TRANSFORM: 'standard',
+        Mode.PAN_ZOOM: 'standard',
+    }
+
+    @mode.setter
+    def mode(self, mode):
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
+            return
+        assert mode is not None, mode
+
+        if mode == Mode.PAN_ZOOM:
+            self.help = ''
+        else:
+            self.help = trans._(
+                'hold <space> to pan/zoom, hold <shift> to preserve aspect ratio and rotate in 45° increments'
+            )
+
+        self.events.mode(mode=mode)
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
@@ -861,6 +877,43 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
 
 class Image(_ImageBase):
+    @property
+    def rendering(self):
+        """Return current rendering mode.
+
+        Selects a preset rendering mode in vispy that determines how
+        volume is displayed.  Options include:
+
+        * ``translucent``: voxel colors are blended along the view ray until
+            the result is opaque.
+        * ``mip``: maximum intensity projection. Cast a ray and display the
+            maximum value that was encountered.
+        * ``minip``: minimum intensity projection. Cast a ray and display the
+            minimum value that was encountered.
+        * ``attenuated_mip``: attenuated maximum intensity projection. Cast a
+            ray and attenuate values based on integral of encountered values,
+            display the maximum value that was encountered after attenuation.
+            This will make nearer objects appear more prominent.
+        * ``additive``: voxel colors are added along the view ray until
+            the result is saturated.
+        * ``iso``: isosurface. Cast a ray until a certain threshold is
+            encountered. At that location, lighning calculations are
+            performed to give the visual appearance of a surface.
+        * ``average``: average intensity projection. Cast a ray and display the
+            average of values that were encountered.
+
+        Returns
+        -------
+        str
+            The current rendering mode
+        """
+        return str(self._rendering)
+
+    @rendering.setter
+    def rendering(self, rendering):
+        self._rendering = ImageRendering(rendering)
+        self.events.rendering()
+
     def _get_state(self):
         """Get dictionary of layer state.
 

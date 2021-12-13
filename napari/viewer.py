@@ -1,5 +1,5 @@
 import typing
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ._qt.qt_main_window import Window
 
 
-@mgui.register_type(bind=_magicgui.find_viewer_ancestor)
+@mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
 class Viewer(ViewerModel):
     """Napari ndarray viewer.
 
@@ -75,10 +75,10 @@ class Viewer(ViewerModel):
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
-        if self.window.qt_viewer._console is None:
+        if self.window._qt_viewer._console is None:
             return
         else:
-            self.window.qt_viewer.console.push(variables)
+            self.window._qt_viewer.console.push(variables)
 
     def screenshot(self, path=None, *, canvas_only=True, flash: bool = True):
         """Take currently displayed screen and convert to an image array.
@@ -102,11 +102,9 @@ class Viewer(ViewerModel):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if canvas_only:
-            image = self.window.qt_viewer.screenshot(path=path, flash=flash)
-        else:
-            image = self.window.screenshot(path=path, flash=flash)
-        return image
+        return self.window.screenshot(
+            path=path, flash=flash, canvas_only=canvas_only
+        )
 
     def show(self, *, block=False):
         """Resize, show, and raise the viewer window."""
@@ -154,7 +152,7 @@ class Viewer(ViewerModel):
         return ret
 
 
-def current_viewer() -> Viewer:
+def current_viewer() -> Optional[Viewer]:
     """Return the currently active napari viewer."""
     try:
         from napari._qt.qt_main_window import _QtMainWindow

@@ -44,7 +44,11 @@ def imsave(filename: str, data: np.ndarray):
             # like repackaging on linux or anything else we fallback to
             # using compress
             warnings.warn(
-                f'Error parsing tiffile version number {tifffile.__version__:!r}'
+                trans._(
+                    'Error parsing tiffile version number {version_number}',
+                    deferred=True,
+                    version_number=f"{tifffile.__version__:!r}",
+                )
             )
 
         if compression_instead_of_compress:
@@ -451,7 +455,7 @@ def read_csv(
 
 
 def csv_to_layer_data(
-    path: str, require_type: str = None
+    path: str, require_type: Optional[str] = None
 ) -> Optional[FullLayerData]:
     """Return layer data from a CSV file if detected as a valid type.
 

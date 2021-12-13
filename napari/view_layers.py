@@ -3,6 +3,8 @@
 All functions follow this pattern, (where <layer_type> is replaced with one
 of the layer types, like "image", "points", etc...):
 
+.. code-block:: python
+
     def view_<layer_type>(*args, **kwargs):
         # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
         viewer = Viewer(**viewer_kwargs)
