@@ -42,7 +42,8 @@ cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe
 about the functionality you want your plugin to provide. In this guide we'll
 focus on creating a reader that can read numpy ('\*.npy') files.
 
-```
+```sh
+# questions asked when running cookiecutter:
 ...
 plugin_name: my_npy_reader
 ...
@@ -94,7 +95,7 @@ napari.manifest =
     my-npy-reader = my_npy_reader:napari.yaml
 ```
 
-The plugin manifest file is specified relative to the submodule root path. For
+The plugin manifest file is specified relative to the top level module path. For
 the example it will be loaded from:
 `<path/to/my-npy-reader>/my_npy_reader/src/my_npy_reader/napari.yaml`.
 
