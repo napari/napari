@@ -110,8 +110,6 @@ The generated `napari.yml` file looks like this:
 ```yaml
 name: my-npy-reader
 display_name: My Plugin
-entry_point: my_npy_reader
-
 contributions:
   commands:
     - id: my-npy-reader.get_reader
