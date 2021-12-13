@@ -41,7 +41,7 @@ cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe
 
 `cookiecutter` will ask you a series of questions
 about the functionality you want your plugin to provide. In this guide we'll
-focus on creating a reader that can read numpy ('\*.npy') files.
+focus on creating a reader that can read numpy (`*.npy`) files.
 
 ```sh
 # example questions asked when running cookiecutter:
@@ -59,7 +59,7 @@ using dashes instead of underscores).
 
 When the cookiecutter asked to include a reader plugin, we selected `y`, and
 in the next question we told cookiecutter that our reader should be invoked
-for files matching the `\*.npy` [glob](https://en.wikipedia.org/wiki/Glob_(programming)) pattern.
+for files matching the `*.npy` [glob] pattern.
 
 After answering all the prompts, `cookiecutter` will create a directory called
 `my_npy_reader` in the current directory that holds the generated files. It
@@ -174,7 +174,8 @@ napari.manifest =
 ```
 
 The manifest file is specified relative to the submodule root path.
-So for the example it will be loaded from: `<path/to/npe2-tester>/napari.yaml`.
+So for the example it will be loaded from:
+`<path/to/npe2-tester>/napari.yaml`.
 
 The manifest file also needs to be included as _[package data][pd]_ in
 distributable forms for the package. For example:
@@ -197,9 +198,9 @@ pip install napari myplugin
 
 ## 4. Preparing for release
 
-Use the `Framework :: napari` [classifier](https://pypi.org/classifiers/) in
-your package's core metadata to make your plugin more discoverable. If you used
-the cookiecutter, this has already been done for you.
+Use the `Framework :: napari` [classifier] in your package's core metadata to
+make your plugin more discoverable. If you used the cookiecutter, this has
+already been done for you.
 
 Once your package, with its `Framework :: napari` classifier, is listed on
 PyPI, it will also be visible on the [napari hub][hub], alongside all other
@@ -233,15 +234,20 @@ and preview your metadata with
 napari-hub-cli preview-metadata ./my-npy-reader
 ```
 
-For more information on the tool see the repository README](https://github.com/chanzuckerberg/napari-hub-cli).
+For more information on the tool see the `napari-hub-cli`
+[README](https://github.com/chanzuckerberg/napari-hub-cli).
 
-If you want your plugin to be available on PyPI, but not visible on the napari hub, you can add a `.napari/config.yml` file to the root of your repository with a visibility key. For details, see the [customization guide](https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md#visibility).
+If you want your plugin to be available on PyPI, but not visible on the napari
+hub, you can add a `.napari/config.yml` file to the root of your repository
+with a visibility key. For details, see the [customization
+guide][hub-guide-custom-viz].
 
 ## 5. Share your plugin with the world
 
 Once you are ready to share your plugin, [upload the Python package to
-PyPI][pypi-upload] and it can then be installed with a simple `pip install mypackage`. If you used the {ref}`plugin-cookiecutter-template`, you can also
-[setup automated deployments][autodeploy].
+PyPI][pypi-upload] and it can then be installed with a simple
+`pip install mypackage`. If you used the {ref}`plugin-cookiecutter-template`,
+you can also [setup automated deployments][autodeploy].
 
 If you are using Github, add the ["napari-plugin"
 topic](https://github.com/topics/napari-plugin) to your repo so other
@@ -276,3 +282,6 @@ When you are ready for users, announce your plugin on the [Image.sc Forum](https
 [hubguide]: https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md
 [pypi-upload]: https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives
 [autodeploy]: https://github.com/napari/cookiecutter-napari-plugin#set-up-automatic-deployments
+[glob]: https://en.wikipedia.org/wiki/Glob_(programming)
+[classifier]: https://pypi.org/classifiers/
+[hub-guide-custom-viz]: https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md#visibility

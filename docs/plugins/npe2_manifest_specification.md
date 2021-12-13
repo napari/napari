@@ -106,7 +106,14 @@ contributions:
 
 Readers, writers, sample data providers and widget providers refer to callable
 python functions that a plugin defines. Each callable is identified with an
-entry in the list of `commands` via a unique id. For more see {ref}`Commands` below.
+entry in the list of `commands` via a unique id. For more see {ref}`Commands`
+below.
+
+When a contribution like a reader refers to a command, it gives the command
+meaning. The command will be expected to conform to a specific _calling
+convention_. The _calling convention_ is described by the argument and return
+types of the associated callable, as well as conventions regarding it's
+behavior.
 
 ```{note}
 Python package metadata (`setup.py` or `setup.cfg`) may be used to populate
