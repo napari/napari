@@ -21,13 +21,19 @@ Creating a new plugin from scratch involves the following steps:
 
 1. Configure a python package to use an npe2 manifest (e.g. by editing
    `setup.cfg`):
-   - Create the _[entry point group][epg]_
+   - Create the _entry point group_.
    - Make sure the manifest file is added to `package_data`.
 2. Create the plugin manifest file.
 
-This guide will walk you through the steps using a [cookiecutter][] template
-project. cookiecutter is a command line utility that generates a project for
-you after asking a few questions.
+This guide will walk you through the steps using a [cookiecutter][] template.
+cookiecutter is a command line utility that generates a python package for you
+after asking a few questions. In this case, the package contains all the
+boilerplate needed for documenting, testing and deploying your plugin.
+
+```{note}
+Minimally, a plugin could be just three files: `setup.cfg`, a python file, and
+the plugin manifest file.
+```
 
 ## 1. Create the project using cookiecutter
 
@@ -44,10 +50,9 @@ focus on creating a reader that can read numpy ('\*.npy') files.
 
 ```
 ...
-plugin_name: my_npy_reader
+plugin_name: my-npy-reader
 ...
 include_reader_plugin [y]: y
-reader_filename_patterns [*.tif, *.tiff]: *.npy
 ...
 ```
 
@@ -55,9 +60,9 @@ Some of the cookiecutter prompts are elided above. We named our plugin
 `my_npy_reader`. This is the name that will be used for the python package. It
 should conform to the [PEP8][] naming convention.
 
-When the cookiecutter asked to include a reader plugin, we selected "y", and
+When the cookiecutter asked to include a reader plugin, we selected `y`, and
 in the next question we told cookiecutter that our reader should be invoked
-for files matching the '\*.npy' glob pattern.
+for files matching the `\*.npy` glob pattern.
 
 After answering all the prompts, `cookiecutter` will create a directory called
 `my_npy_reader` in the current directory that holds the generated files. It
@@ -85,7 +90,7 @@ my-npy-reader
 └── tox.ini
 ```
 
-Inside `setup.cfg` we added an entry point group that is used to identify
+Inside `setup.cfg` we added an [entry point group][epg] that is used to identify
 `npe2`-style plugins and to locate the plugin manifest file, `napari.yml`.
 
 ```cfg
@@ -102,17 +107,16 @@ The generated `napari.yml` file looks like this:
 
 ```yaml
 name: my-npy-reader
-author: Hero Protagonist
 display_name: My Plugin
 entry_point: my_npy_reader
 
 contributions:
   commands:
-    - id: my_npy_reader.get_reader
+    - id: my-npy-reader.get_reader
       python_name: my_plugin._reader:napari_get_reader
       title: Open data with napari FooBar
   readers:
-    - command: my_npy_reader.get_reader
+    - command: my-npy-reader.get_reader
       accepts_directories: false
       filename_patterns: ["*.npy"]
 ```

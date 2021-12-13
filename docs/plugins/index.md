@@ -2,9 +2,7 @@
 
 # Plugins
 
-napari loves plugins. Plugins allow people to add new readers and writers for
-accessing new kinds of data, customize napari's appearance, or add new widgets
-for interacting with data.
+napari loves plugins. Plugins allow people to customize and add to napari.
 
 This document describes:
 
@@ -12,9 +10,10 @@ This document describes:
 - Where to find guides and code samples to help get you started.
 - Guidelines for writing plugins.
 
-If you are looking for plugins, head to the
-[napari hub](https://napari-hub.org). Plugins can be installed directly from
-within napari -- to learn more see {ref}`find-and-install-plugins`.
+If you are looking for plugins, head to the [napari
+hub](https://napari-hub.org). Plugins can be installed directly from within
+napari or with package installers (pip/conda) via the command line -- to learn
+more see {ref}`find-and-install-plugins`.
 
 ```{admonition} Introducing npe2
 We've introduced a new plugin engine. The new library [`npe2`][npe2] is a
@@ -35,13 +34,15 @@ For getting started writing new npe2 plugins see the
 ## What can plugins do?
 
 - Change the look of napari with a color theme
-- Add custom dock widgets
+- Add custom widgets and user interface elements
 - Add file format support - readers and writers
 - Provide sample data
 
 ## How to build plugins?
 
-For a guide on how to create a plugin, see
+New plugins should target `npe2`. See the {ref}`npe2-getting-started`.
+
+For a guide on how to create a plugin using `napari-plugin-engine`, see
 {ref}`plugins-for-plugin-developers`. For a complete list of _hook
 specifications_ that developers can implement, see the
 {ref}`hook-specifications-reference`.
@@ -53,13 +54,7 @@ To read about recommendations on how to develop your own plugin, see
 
 If you have questions, try asking on the [zulip
 chat](https://napari.zulipchat.com/). Submit issues to the [napari github
-repository](https://github.com/napari/napari). Feature requests or issues
-regarding the plugin API can be submitted to the [npe2 github
-repository](https://github.com/napari/npe2).
-
-For napari contributors looking to
-understand how the napari plugin architecture is implemented, see
-{ref}`plugins-for-napari-developers`.
+repository](https://github.com/napari/napari).
 
 [npe1]: https://github.com/napari/napari-plugin-engine
 [npe2]: https://github.com/tlambert03/npe2
