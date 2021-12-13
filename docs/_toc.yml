@@ -3,6 +3,34 @@
 #
 - file: index
 
+- file: getting_started/index
+  sections:
+  - file: getting_started/installation
+  - file: getting_started/getting_started
+  - file: plugins/find-and-install-plugin
+  - file: getting_started/viewer
+  - file: getting_started/image
+  - file: getting_started/labels
+  - file: getting_started/points
+  - file: getting_started/shapes
+  - file: getting_started/surface
+  - file: getting_started/tracks
+  - file: getting_started/vectors
+  title: Getting Started
+
+- file: tutorials/index
+  sections:
+  - file: tutorials/segmentation/index
+    sections:
+    - file: tutorials/segmentation/annotate_segmentation
+  - file: tutorials/tracking/index
+    sections:
+    - file: tutorials/tracking/cell_tracking
+  - file: tutorials/applications/annotate_points
+  - file: tutorials/applications/dask
+  - file: tutorials/further-resources/napari-workshops
+  title: Tutorials
+
 - file: howtos/index
   title: How-to guides
   sections:

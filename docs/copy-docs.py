@@ -24,11 +24,13 @@ import yaml
 TO_COPY = [
     'ORGANIZATION.md',
     'glossary.md',
-    'developers',
     'community',
+    'developers',
+    'getting_started',
     'howtos',
     'release',
     'roadmaps',
+    'tutorials',
     'images',
     osp.join('_templates', 'autosummary'),
     *[
