@@ -27,7 +27,7 @@ StringArray = Array[str, (-1,)]
 
 @runtime_checkable
 class StringEncoding(StyleEncoding[StringArray], Protocol):
-    """Encodes strings from properties."""
+    """Encodes strings from features."""
 
 
 """The default string to use, which may also be used a safe fallback string."""
@@ -88,10 +88,10 @@ class IdentityStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
 
     def _apply(
         self,
-        properties: Dict[str, np.ndarray],
+        features: Any,
         indices: IndicesType,
     ) -> StringArray:
-        return np.array(properties[self.property][indices], dtype=str)
+        return np.array(features[self.property][indices], dtype=str)
 
 
 class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
@@ -115,23 +115,20 @@ class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
 
     def _apply(
         self,
-        properties: Dict[str, np.ndarray],
+        features: Any,
         indices: IndicesType,
     ) -> StringArray:
+        # TODO: maybe exploit pandas API here.
         return np.array(
             [
-                self.format_string.format(
-                    **_get_property_row(properties, index)
-                )
+                self.format_string.format(**_get_property_row(features, index))
                 for index in indices
             ]
         )
 
 
-def _get_property_row(
-    properties: Dict[str, np.ndarray], index: int
-) -> Dict[str, Any]:
-    return {name: values[index] for name, values in properties.items()}
+def _get_property_row(features: Any, index: int) -> Dict[str, Any]:
+    return {name: values[index] for name, values in features.items()}
 
 
 # Define supported encodings as tuples instead of Union, so that they can be used with

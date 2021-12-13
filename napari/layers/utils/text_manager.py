@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import Dict, Sequence, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from pydantic import PositiveInt, validator
 
 from ...utils.colormaps.standardize_color import transform_color
@@ -12,6 +13,7 @@ from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
+from .layer_utils import _validate_features
 from .string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
@@ -74,31 +76,34 @@ class TextManager(EventedModel):
     translation: Array[float] = 0
     rotation: float = 0
 
-    # Should be the same properties as the layer that owns this.
-    _properties: Dict[str, np.ndarray]
+    # Should be the same features as the layer that owns this.
+    _features: pd.DataFrame
 
-    def __init__(self, properties=None, n_text=0, **kwargs):
-        if properties is None:
-            properties = {}
+    def __init__(self, features=None, properties=None, n_text=0, **kwargs):
+        if properties is not None:
+            # TODO: deprecation warning about using properties.
+            features = _validate_features(properties, num_data=n_text)
+        elif features is None:
+            features = pd.DataFrame()
+        self._features = features
+
         if 'values' in kwargs and 'string' not in kwargs:
             # _warn_about_deprecated_values_field()
             kwargs['string'] = kwargs.pop('values')
         if 'text' in kwargs and 'string' not in kwargs:
             # _warn_about_deprecated_text_parameter()
             text = kwargs.pop('text')
-            if isinstance(text, str) and text in properties:
+            if isinstance(text, str) and text in features:
                 kwargs['string'] = IdentityStringEncoding(property=text)
             else:
                 kwargs['string'] = text
         super().__init__(**kwargs)
-        self._properties = properties
-        self.string._get_array(self._properties, n_rows=n_text)
+        self.string._get_array(self._features)
 
     @property
     def values(self):
         # _warn_about_deprecated_values_field()
-        n_text = _infer_n_text(self.string, self._properties)
-        return self.string._get_array(self._properties, n_text)
+        return self.string._get_array(self._features)
 
     def __setattr__(self, key, value):
         if key == 'values':
@@ -106,6 +111,18 @@ class TextManager(EventedModel):
             self.string = value
         else:
             super().__setattr__(key, value)
+
+    def refresh(self, features: pd.DataFrame):
+        """Refresh all of the current text elements using a new features table.
+
+        Parameters
+        ----------
+        features : pd.DataFrame
+            The new features table from the layer.
+        """
+        self._features = features
+        self.string._clear()
+        self.events.string()
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
@@ -115,9 +132,9 @@ class TextManager(EventedModel):
         properties : Dict[str, np.ndarray]
             The new properties from the layer
         """
-        self._properties = properties
-        self.string._clear()
-        self.events.string()
+        # TODO: warn about deprecated
+        features = _validate_features(properties)
+        self.refresh(features)
 
     def add(self, properties: dict, n_text: int):
         """Adds a number of a new text elements.
@@ -220,8 +237,7 @@ class TextManager(EventedModel):
             self.string, (ConstantStringEncoding, DirectStringEncoding)
         ):
             return np.array([''])
-        n_text = _infer_n_text(self.string, self._properties)
-        return self.string._get_array(self._properties, n_text, indices_view)
+        return self.string._get_array(self._features, indices_view)
 
     @validator('string', pre=True, always=True)
     def _check_string(
@@ -235,8 +251,7 @@ class TextManager(EventedModel):
         cls,
         *,
         text: Union['TextManager', dict, str, Sequence[str], None],
-        n_text: int,
-        properties: Dict[str, np.ndarray],
+        features: pd.DataFrame,
     ) -> 'TextManager':
         """Create a TextManager from a layer.
 
@@ -246,11 +261,8 @@ class TextManager(EventedModel):
             An instance of TextManager, a dict that contains some of its state,
             a string that may be a format string, a constant string, or sequence
             of strings specified directly.
-        n_text : int
-            The number of text elements to initially display, which should match
-            the number of elements (e.g. points) in a layer.
-        properties : Dict[str, np.ndarray]
-            The properties of a layer.
+        features : pd.DataFrame
+            The features table of a layer.
 
         Returns
         -------
@@ -262,20 +274,18 @@ class TextManager(EventedModel):
             kwargs = deepcopy(text)
         else:
             # TODO: add deprecation warning about this behavior.
-            if isinstance(text, str) and text in properties:
+            if isinstance(text, str) and text in features:
                 kwargs = {'string': IdentityStringEncoding(property=text)}
             else:
                 kwargs = {'string': text}
-        kwargs['n_text'] = n_text
-        kwargs['properties'] = properties
+        kwargs['features'] = features
         return cls(**kwargs)
 
     def _update_from_layer(
         self,
         *,
         text: Union['TextManager', dict, str, None],
-        n_text: int,
-        properties: Dict[str, np.ndarray],
+        features: pd.DataFrame,
     ):
         """Updates this in-place from a layer.
 
@@ -289,9 +299,7 @@ class TextManager(EventedModel):
         See :meth:`TextManager._from_layer`.
         """
         # Create a new instance from the input to populate all fields.
-        new_manager = TextManager._from_layer(
-            text=text, n_text=n_text, properties=properties
-        )
+        new_manager = TextManager._from_layer(text=text, features=features)
 
         # Update a copy of this so that any associated errors are raised
         # before actually making the update. This does not need to be a
@@ -341,12 +349,3 @@ def _warn_about_deprecated_text_parameter():
         trans._('`text` is a deprecated parameter. Use `string` instead.'),
         DeprecationWarning,
     )
-
-
-def _infer_n_text(encoding, properties: Dict[str, np.ndarray]) -> int:
-    """Infers the number of rows in the given properties table."""
-    if len(properties) > 0:
-        return len(next(iter(properties.values())))
-    if hasattr(encoding, 'array'):
-        return len(encoding.array)
-    return 0

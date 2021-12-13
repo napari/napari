@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 from pydantic import ValidationError
 
@@ -260,15 +261,16 @@ def test_from_layer():
         'translation': [-0.5, 1],
         'visible': False,
     }
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([1, 0.5, 0]),
-    }
+    features = pd.DataFrame(
+        {
+            'class': ['A', 'B', 'C'],
+            'confidence': [1, 0.5, 0],
+        }
+    )
 
     text_manager = TextManager._from_layer(
         text=text,
-        n_text=3,
-        properties=properties,
+        features=features,
     )
 
     np.testing.assert_array_equal(text_manager.values, ['A', 'B', 'C'])
@@ -282,14 +284,15 @@ def test_update_from_layer():
         'translation': [-0.5, 1],
         'visible': False,
     }
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([1, 0.5, 0]),
-    }
+    features = pd.DataFrame(
+        {
+            'class': ['A', 'B', 'C'],
+            'confidence': [1, 0.5, 0],
+        }
+    )
     text_manager = TextManager._from_layer(
         text=text,
-        n_text=3,
-        properties=properties,
+        features=features,
     )
 
     text = {
@@ -297,7 +300,7 @@ def test_update_from_layer():
         'translation': [1.5, -2],
         'size': 9000,
     }
-    text_manager._update_from_layer(text=text, n_text=3, properties=properties)
+    text_manager._update_from_layer(text=text, features=features)
 
     np.testing.assert_array_equal(
         text_manager.values, ['Conf: 1.00', 'Conf: 0.50', 'Conf: 0.00']
@@ -308,14 +311,15 @@ def test_update_from_layer():
 
 
 def test_update_from_layer_with_invalid_value_fails_safely():
-    properties = {
-        'class': np.array(['A', 'B', 'C']),
-        'confidence': np.array([1, 0.5, 0]),
-    }
+    features = pd.DataFrame(
+        {
+            'class': ['A', 'B', 'C'],
+            'confidence': [1, 0.5, 0],
+        }
+    )
     text_manager = TextManager._from_layer(
         text='class',
-        n_text=3,
-        properties=properties,
+        features=features,
     )
     before = text_manager.copy(deep=True)
 
@@ -325,19 +329,16 @@ def test_update_from_layer_with_invalid_value_fails_safely():
     }
 
     with pytest.raises(ValidationError):
-        text_manager._update_from_layer(
-            text=text, n_text=3, properties=properties
-        )
+        text_manager._update_from_layer(text=text, features=features)
 
     assert text_manager == before
 
 
 def test_update_from_layer_with_warning_only_one_emitted():
-    properties = {'class': np.array(['A', 'B', 'C'])}
+    features = pd.DataFrame({'class': ['A', 'B', 'C']})
     text_manager = TextManager._from_layer(
         text='class',
-        n_text=3,
-        properties=properties,
+        features=features,
     )
 
     text = {
@@ -347,7 +348,8 @@ def test_update_from_layer_with_warning_only_one_emitted():
 
     with pytest.warns(RuntimeWarning) as record:
         text_manager._update_from_layer(
-            text=text, n_text=3, properties=properties
+            text=text,
+            features=features,
         )
 
     assert len(record) == 1

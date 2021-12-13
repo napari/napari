@@ -339,8 +339,7 @@ class Points(Layer):
 
         self._text = TextManager._from_layer(
             text=text,
-            n_text=len(self.data),
-            properties=self.properties,
+            features=self._features,
         )
 
         # Save the point style params
@@ -590,8 +589,7 @@ class Points(Layer):
     def text(self, text):
         self._text._update_from_layer(
             text=text,
-            n_text=len(self.data),
-            properties=self.properties,
+            features=self._features,
         )
 
     def refresh_text(self):

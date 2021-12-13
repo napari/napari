@@ -1,7 +1,7 @@
 import warnings
 from abc import abstractmethod
 from enum import auto
-from typing import Dict, Generic, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as
@@ -36,13 +36,12 @@ class StyleEncoding(Protocol[StyleArray]):
 
     def _get_array(
         self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
+        features: Any,
         indices: Optional[IndicesType] = None,
     ) -> StyleArray:
-        """Get the array of values generated from this and the given properties.
+        """Get the array of values generated from this and the given features.
 
-        If generating values from the given properties fails, this will fall back
+        If generating values from the given features fails, this will fall back
         to returning some safe/default value.
 
         In general the returned value will be a read-only numpy array, as it may
@@ -50,10 +49,8 @@ class StyleEncoding(Protocol[StyleArray]):
 
         Parameters
         ----------
-        properties : Dict[str, np.ndarray]
-            The properties from which to derive the output values.
-        n_rows : int
-            The total number of rows in the properties table.
+        features : Dataframe-like
+            The features from which to derive the output values.
         indices : Optional[IndicesType]
             The row indices for which to return values. If None, return all of them.
 
@@ -67,7 +64,7 @@ class StyleEncoding(Protocol[StyleArray]):
 
     def _apply(
         self,
-        properties: Dict[str, np.ndarray],
+        features: Dict[str, np.ndarray],
         indices: IndicesType,
     ) -> StyleArray:
         pass
@@ -123,15 +120,14 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
 
     def _get_array(
         self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
+        features: Any,
         indices: Optional[IndicesType] = None,
     ) -> StyleArray:
-        return _broadcast_constant(self.constant, n_rows, indices)
+        return _broadcast_constant(self.constant, features.shape[0], indices)
 
     def _apply(
         self,
-        properties: Dict[str, np.ndarray],
+        features: Any,
         indices: IndicesType,
     ) -> StyleArray:
         return _broadcast_constant(self.constant, len(indices), indices)
@@ -171,11 +167,11 @@ class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
 
     def _get_array(
         self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
+        features: Any,
         indices: Optional[IndicesType] = None,
     ) -> StyleArray:
         current_length = self.array.shape[0]
+        n_rows = features.shape[0]
         if n_rows > current_length:
             tail_array = np.array([self.default] * (n_rows - current_length))
             self._append(tail_array)
@@ -183,7 +179,7 @@ class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
 
     def _apply(
         self,
-        properties: Dict[str, np.ndarray],
+        features: Any,
         indices: IndicesType,
     ) -> StyleArray:
         return np.array([self.default] * len(indices))
@@ -212,22 +208,20 @@ class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
         self._clear()
 
     @abstractmethod
-    def _apply(
-        self, properties: Dict[str, np.ndarray], indices: IndicesType
-    ) -> StyleArray:
+    def _apply(self, features: Any, indices: IndicesType) -> StyleArray:
         pass
 
     def _get_array(
         self,
-        properties: Dict[str, np.ndarray],
-        n_rows: int,
+        features: Any,
         indices: Optional[IndicesType] = None,
     ) -> StyleArray:
         current_length = self._array.shape[0]
+        n_rows = features.shape[0]
         tail_indices = range(current_length, n_rows)
         try:
             if len(tail_indices) > 0:
-                tail_array = self._apply(properties, tail_indices)
+                tail_array = self._apply(features, tail_indices)
                 self._append(tail_array)
             return _maybe_index_array(self._array, indices)
         except (KeyError, ValueError) as error:

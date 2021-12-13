@@ -598,8 +598,7 @@ class Shapes(Layer):
 
         self._text = TextManager._from_layer(
             text=text,
-            n_text=self.nshapes,
-            properties=self.properties,
+            features=self._features,
         )
 
         # Trigger generation of view slice and thumbnail
@@ -2270,8 +2269,7 @@ class Shapes(Layer):
     def text(self, text):
         self._text._update_from_layer(
             text=text,
-            n_text=self.nshapes,
-            properties=self.properties,
+            features=self._features,
         )
 
     def refresh_text(self):
