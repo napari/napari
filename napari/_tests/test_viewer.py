@@ -86,7 +86,7 @@ def test_viewer(make_napari_viewer):
 
 
 EXPECTED_NUMBER_OF_LAYER_METHODS = {
-    'Image': 3,
+    'Image': 7,
     'Vectors': 0,
     'Surface': 0,
     'Tracks': 0,
