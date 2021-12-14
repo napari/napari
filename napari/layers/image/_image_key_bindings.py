@@ -15,18 +15,24 @@ def register_image_action(description: str):
 @Image.bind_key('z')
 @register_image_action(trans._('Orient plane normal along z-axis'))
 def orient_plane_normal_along_z(layer: Image):
+    if napari.current_viewer().dims.ndisplay != 3:
+        return
     layer.plane.normal = layer._world_to_data_ray((1, 0, 0))
 
 
 @Image.bind_key('y')
 @register_image_action(trans._('orient plane normal along y-axis'))
 def orient_plane_normal_along_y(layer: Image):
+    if napari.current_viewer().dims.ndisplay != 3:
+        return
     layer.plane.normal = layer._world_to_data_ray((0, 1, 0))
 
 
 @Image.bind_key('x')
 @register_image_action(trans._('orient plane normal along x-axis'))
 def orient_plane_normal_along_x(layer: Image):
+    if napari.current_viewer().dims.ndisplay != 3:
+        return
     layer.plane.normal = layer._world_to_data_ray((0, 0, 1))
 
 
@@ -35,6 +41,8 @@ def orient_plane_normal_along_x(layer: Image):
     trans._('orient plane normal along camera view direction')
 )
 def orient_plane_normal_along_view_direction(layer: Image):
+    if napari.current_viewer().dims.ndisplay != 3:
+        return
     view_direction = napari.current_viewer().camera.view_direction
     layer.plane.normal = layer._world_to_data_ray(view_direction)
 
