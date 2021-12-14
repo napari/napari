@@ -589,7 +589,7 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self.properties,
                 'rendering': self.rendering,
-                'plane': self.experimental_slicing_plane.dict(),
+                'plane': self.plane.dict(),
                 'experimental_clipping_planes': [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
