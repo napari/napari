@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Tuple, Union
 
 import numpy as np
-from numpy.typing import ArrayLike
 from qtpy.QtWidgets import QGridLayout, QLabel, QWidget
 
 from ..._qt.containers import QtListView
@@ -43,7 +42,7 @@ def set_dims_order(dims: Dims, order: Tuple[int, ...]):
     dims.order = order
 
 
-def _array_in_range(arr: ArrayLike, low: int, high: int) -> bool:
+def _array_in_range(arr: np.ndarray, low: int, high: int) -> bool:
     return (arr >= low) & (arr < high)
 
 
