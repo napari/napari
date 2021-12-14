@@ -13,6 +13,7 @@ from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components import ViewerModel
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.utils import Colormap
@@ -563,7 +564,7 @@ def test_contour(input_data, expected_data_view):
     )
 
 
-def test_contour_large_new_labels(make_napari_viewer):
+def test_contour_large_new_labels():
     """Check that new labels larger than the lookup table work in contour mode.
 
     References
@@ -571,7 +572,7 @@ def test_contour_large_new_labels(make_napari_viewer):
     [1]: https://forum.image.sc/t/data-specific-reason-for-indexerror-in-raw-to-displayed/60808
     [2]: https://github.com/napari/napari/pull/3697
     """
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
 
     labels = np.zeros((5, 10, 10), dtype=int)
     labels[0, 4:6, 4:6] = 1
