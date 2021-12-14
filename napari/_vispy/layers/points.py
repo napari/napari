@@ -29,8 +29,8 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer._face.events.color_properties.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
-        self.layer.events.fixed_canvas_size.connect(
-            self._on_fixed_canvas_size_change
+        self.layer.events.experimental_canvas_size_limits.connect(
+            self._on_canvas_size_limits_change
         )
 
         self._on_data_change()
@@ -170,10 +170,10 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
 
-    def _on_fixed_canvas_size_change(self):
-        # in vispy Markers, when scaling is active, the size of the points changes
-        # based on zoom (i.e: they have constant world-space size)
-        self.node.scaling = not self.layer.fixed_canvas_size
+    def _on_canvas_size_limits_change(self):
+        min_size, max_size = self.layer.experimental_canvas_size_limits
+        self.node.clamp_filter.min_size = min_size
+        self.node.clamp_filter.max_size = max_size
 
     def reset(self, event=None):
         super().reset()
@@ -181,7 +181,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_blending_change()
         self._on_highlight_change()
         self._on_matrix_change()
-        self._on_fixed_canvas_size_change()
+        self._on_canvas_size_limits_change()
 
     def close(self):
         """Vispy visual is closing."""
