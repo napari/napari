@@ -17,6 +17,7 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     def __init__(self):
         super().__init__([Markers(), Markers(), Line(), Text()])
+        self.scaling = True
 
     @property
     def symbol(self):
@@ -26,6 +27,19 @@ class PointsVisual(ClippingPlanesMixin, Compound):
     def symbol(self, value):
         for subv in self._subvisuals[:2]:
             subv.symbol = value
+
+    @property
+    def scaling(self):
+        """
+        Scaling property for both the markers visuals. If set to true,
+        the points rescale based on zoom (i.e: constant world-space size)
+        """
+        return self._subvisuals[0].scaling
+
+    @scaling.setter
+    def scaling(self, value):
+        for marker in self._subvisuals[:2]:
+            marker.scaling = value
 
     @property
     def antialias(self):
