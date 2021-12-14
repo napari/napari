@@ -28,7 +28,7 @@ from ..utils.layer_utils import (
     prepare_properties,
 )
 from ..utils.text_manager import TextManager
-from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
+from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
 from ._points_mouse_bindings import add, highlight, select
 from ._points_utils import create_box, fix_data_points, points_to_squares
 
@@ -135,8 +135,12 @@ class Points(Layer):
         If active, point sizes do not change when zooming.
     antialias : float
         If non-zero, defines the width in pixels of antialiasing.
-    spherical : bool
-        Render lighting and shading on points to give a 3D spherical appearance.
+    shading : str, Shading
+        Render lighting and shading on points. Options are:
+            * 'none'
+                No shading is added to the points.
+            * 'spherical'
+                Shading and depth buffer are changed to give a 3D spherical look to the points
 
     Attributes
     ----------
@@ -159,8 +163,8 @@ class Points(Layer):
         If active, point sizes do not change when zooming.
     antialias : float
         If non-zero, defines the width in pixels of antialiasing.
-    spherical : bool
-        Render lighting and shading on points to give a 3D spherical appearance.
+    shading : Shading
+        Shading mode.
     edge_width : float
         Width of the marker edges in pixels for all points
     edge_color : Nx4 numpy array
@@ -289,7 +293,7 @@ class Points(Layer):
         experimental_clipping_planes=None,
         fixed_size=False,
         antialias=1,
-        spherical=False,
+        shading='none',
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -328,7 +332,7 @@ class Points(Layer):
             highlight=Event,
             fixed_size=Event,
             antialias=Event,
-            spherical=Event,
+            shading=Event,
         )
 
         self._colors = get_color_namelist()
@@ -407,7 +411,7 @@ class Points(Layer):
         self.fixed_size = fixed_size
         self.size = size
         self.antialias = antialias
-        self.spherical = spherical
+        self.shading = shading
 
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(self.data)
@@ -715,14 +719,14 @@ class Points(Layer):
         self.events.antialias()
 
     @property
-    def spherical(self):
-        """bool: display spherical shading and lighting on points"""
-        return self._spherical
+    def shading(self) -> Shading:
+        """shading mode."""
+        return self._shading
 
-    @spherical.setter
-    def spherical(self, value) -> bool:
-        self._spherical = bool(value)
-        self.events.spherical()
+    @shading.setter
+    def shading(self, value):
+        self._shading = Shading(value)
+        self.events.shading()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -1027,7 +1031,7 @@ class Points(Layer):
                 'data': self.data,
                 'fixed_size': self.fixed_size,
                 'antialias': self.antialias,
-                'spherical': self.spherical,
+                'shading': self.shading,
             }
         )
         return state

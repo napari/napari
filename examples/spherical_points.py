@@ -13,7 +13,7 @@ pts_layer = viewer.add_points(
     pts,
     face_color=colors,
     size=sizes,
-    spherical=True,
+    shading='spherical',
     antialias=0,
     edge_width=0,
 )

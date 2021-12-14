@@ -97,3 +97,20 @@ SYMBOL_TRANSLATION = OrderedDict(
         (Symbol.X, trans._('x')),
     ]
 )
+
+
+class Shading(StringEnum):
+    """Shading: Shading mode for the points.
+
+    NONE no shading is applied.
+    SPHERICAL shading and depth buffer are modified to mimic a 3D object with spherical shape
+    """
+
+    NONE = auto()
+    SPHERICAL = auto()
+
+
+SHADING_TRANSLATION = {
+    trans._("none"): Shading.NONE,
+    trans._("spherical"): Shading.SPHERICAL,
+}

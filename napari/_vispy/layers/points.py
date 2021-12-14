@@ -31,7 +31,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.fixed_size.connect(self._on_fixed_size_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.events.antialias.connect(self._on_antialias_change)
-        self.layer.events.spherical.connect(self._on_spherical_change)
+        self.layer.events.shading.connect(self._on_shading_change)
 
         self._on_data_change()
 
@@ -176,8 +176,12 @@ class VispyPointsLayer(VispyBaseLayer):
     def _on_antialias_change(self):
         self.node.antialias = self.layer.antialias
 
-    def _on_spherical_change(self):
-        self.node.spherical = self.layer.spherical
+    def _on_shading_change(self):
+        shading = self.layer.shading
+        if shading == 'spherical':
+            self.node.spherical = True
+        else:
+            self.node.spherical = False
 
     def reset(self):
         super().reset()
@@ -187,7 +191,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_matrix_change()
         self._on_fixed_size_change()
         self._on_antialias_change()
-        self._on_spherical_change()
+        self._on_shading_change()
 
     def close(self):
         """Vispy visual is closing."""
