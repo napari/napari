@@ -1,6 +1,6 @@
 (npe2-getting-started)=
 
-# npe2 Getting started guide
+# npe2 getting started guide
 
 ```{admonition} Introducing npe2
 :class: tip

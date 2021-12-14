@@ -253,8 +253,6 @@ def reader(path: str) -> List[LayerData]:
     ...
 ```
 
-f
-
 ```{note}
 The reader command is compatible with functions used for the `napari_get_reader`
 [hook specification][get-reader-hook] used by plugins based on the
