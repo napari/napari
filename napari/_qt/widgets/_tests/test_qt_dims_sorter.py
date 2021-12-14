@@ -14,7 +14,7 @@ def test_dims_sorter(make_napari_viewer):
     assert tuple(viewer.dims.order) == (1, 0)
 
 
-def test_dims_sorter_with_reodered_init(make_napari_viewer):
+def test_dims_sorter_with_reordered_init(make_napari_viewer):
     viewer = make_napari_viewer()
     viewer.dims.order = (1, 0)
 
