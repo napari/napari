@@ -357,7 +357,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.depiction = depiction
         if plane is not None:
             self.plane = plane
-            self.plane.update(plane)
+        self._reset_plane_parameters()
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -426,12 +426,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @data.setter
     def data(self, data):
+        shape_changed = data.shape == self.data.shape
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)
         if self._keep_auto_contrast:
             self.reset_contrast_limits()
         self._set_editable()
+        if shape_changed:
+            self._reset_plane_parameters()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -589,7 +592,13 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._update_plane_callbacks()
         self.events.depiction()
 
-    # the following are added as partials otherwise they are considered methods similar to
+    def _reset_plane_parameters(self):
+        """Set plane attributes to something valid."""
+        self.plane.position = np.array(self.data.shape) / 2
+        self.plane.normal = (1, 0, 0)
+
+    # The following callbacks are added as partials otherwise they are
+    # considered as methods on the class, this is similar to this problem:
     # https://stackoverflow.com/questions/40338652/how-to-define-enum-values-that-are-functions
     _plane_drag_callback = partial(move_plane_along_normal)
     _plane_double_click_callback = partial(set_plane_position)
