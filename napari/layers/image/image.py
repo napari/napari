@@ -989,6 +989,7 @@ class Image(_ImageBase):
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
+                'depiction': self.depiction,
                 'plane': self.plane.dict(),
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
