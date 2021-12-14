@@ -71,7 +71,7 @@ class QtViewerDockWidget(QDockWidget):
         object_name: str = '',
         add_vertical_stretch=True,
     ):
-        self.qt_viewer = qt_viewer
+        self._qt_viewer = qt_viewer
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name
@@ -144,7 +144,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def destroyOnClose(self):
         """Destroys dock plugin dock widget when 'x' is clicked."""
-        self.qt_viewer.viewer.window.remove_dock_widget(self)
+        self._qt_viewer.viewer.window.remove_dock_widget(self)
 
     def _maybe_add_vertical_stretch(self, widget):
         """Add vertical stretch to the bottom of a vertical layout only
@@ -198,7 +198,7 @@ class QtViewerDockWidget(QDockWidget):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
         # method, be sure to call super().keyPressEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
-        return self.qt_viewer.keyPressEvent(event)
+        return self._qt_viewer.keyPressEvent(event)
 
     def _set_title_orientation(self, area):
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
@@ -224,12 +224,12 @@ class QtViewerDockWidget(QDockWidget):
         try:
             actions = [
                 action.text()
-                for action in self.qt_viewer.viewer.window.plugins_menu.actions()
+                for action in self._qt_viewer.viewer.window.plugins_menu.actions()
             ]
             idx = actions.index(self.name)
 
             current_action = (
-                self.qt_viewer.viewer.window.plugins_menu.actions()[idx]
+                self._qt_viewer.viewer.window.plugins_menu.actions()[idx]
             )
             current_action.setChecked(visible)
             self.setVisible(visible)
@@ -285,7 +285,7 @@ class QtCustomTitleBar(QLabel):
             # dock widget.  If it is, then add the close button option to the title bar.
             actions = [
                 action.text()
-                for action in self.parent().qt_viewer.viewer.window.plugins_menu.actions()
+                for action in self.parent()._qt_viewer.viewer.window.plugins_menu.actions()
             ]
             if self.parent().name in actions:
                 add_close = True

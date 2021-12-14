@@ -137,6 +137,7 @@ def get_app(
         # Note: this MUST be set before the QApplication is instantiated
         if PYQT5:
             QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+            QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import QApplicationWithTracing

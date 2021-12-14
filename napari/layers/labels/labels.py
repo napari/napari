@@ -1,8 +1,9 @@
 import warnings
 from collections import deque
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
+import pandas as pd
 from scipy import ndimage as ndi
 
 from ...utils import config
@@ -15,14 +16,19 @@ from ...utils.colormaps import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import clamp_point_to_bounding_box
+from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
 from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import validate_properties
-from ._labels_constants import LabelColorMode, Mode
+from ..utils.layer_utils import (
+    _features_from_properties,
+    _features_to_properties,
+    _validate_features,
+)
+from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
@@ -65,6 +71,9 @@ class Labels(_ImageBase):
         the lowest resolution scale is displayed.
     num_colors : int
         Number of unique colors to use in colormap.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a label and each column
+        is a feature. The first row corresponds to the background label.
     properties : dict {str: array (N,)} or DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
@@ -148,6 +157,9 @@ class Labels(_ImageBase):
         Labels metadata.
     num_colors : int
         Number of unique colors to use in colormap.
+    features : Dataframe-like
+        Features table where each row corresponds to a label and each column
+        is a feature. The first row corresponds to the background label.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
@@ -200,8 +212,6 @@ class Labels(_ImageBase):
 
     Notes
     -----
-    _data_raw : array (N, M)
-        2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
         background label `0` is selected.
@@ -214,6 +224,7 @@ class Labels(_ImageBase):
         data,
         *,
         num_colors=50,
+        features=None,
         properties=None,
         color=None,
         seed=0.5,
@@ -233,6 +244,8 @@ class Labels(_ImageBase):
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
     ):
+        if name is None and data is not None:
+            name = magic_name(data)
 
         self._seed = seed
         self._background_label = 0
@@ -245,10 +258,6 @@ class Labels(_ImageBase):
 
         data = self._ensure_int_labels(data)
         self._color_lookup_func = None
-
-        self._properties, self._label_index = self._prepare_properties(
-            properties
-        )
 
         super().__init__(
             data,
@@ -286,6 +295,11 @@ class Labels(_ImageBase):
             contour=Event,
         )
 
+        if properties is not None:
+            self.properties = properties
+        else:
+            self.features = features
+
         self._n_edit_dimensions = 2
         self._contiguous = True
         self._brush_size = 10
@@ -305,6 +319,32 @@ class Labels(_ImageBase):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
         self._set_editable()
+
+    @property
+    def rendering(self):
+        """Return current rendering mode.
+
+        Selects a preset rendering mode in vispy that determines how
+        lablels are displayed.  Options include:
+
+        * ``translucent``: voxel colors are blended along the view ray until
+          the result is opaque.
+        * ``iso_categorical``: isosurface for categorical data.
+          Cast a ray until a non-background value is encountered. At that
+          location, lighning calculations are performed to give the visual
+          appearance of a surface.
+
+        Returns
+        -------
+        str
+            The current rendering mode
+        """
+        return str(self._rendering)
+
+    @rendering.setter
+    def rendering(self, rendering):
+        self._rendering = LabelsRendering(rendering)
+        self.events.rendering()
 
     @property
     def contiguous(self):
@@ -396,29 +436,50 @@ class Labels(_ImageBase):
         self._set_editable()
 
     @property
+    def features(self):
+        """Dataframe-like features table.
+
+        It is an implementation detail that this is a `pandas.DataFrame`. In the future,
+        we will target the currently-in-development Data API dataframe protocol [1].
+        This will enable us to use alternate libraries such as xarray or cuDF for
+        additional features without breaking existing usage of this.
+
+        If you need to specifically rely on the pandas API, please coerce this to a
+        `pandas.DataFrame` using `features_to_pandas_dataframe`.
+
+        References
+        ----------
+        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        """
+        return self._features
+
+    @features.setter
+    def features(
+        self,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    ) -> None:
+        self._features = _validate_features(features)
+        self._label_index = self._make_label_index(self._features)
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return self._properties
+        return _features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties, self._label_index = self._prepare_properties(
-            properties
-        )
+        self._features = _features_from_properties(properties=properties)
+        self._label_index = self._make_label_index(self._features)
         self.events.properties()
 
     @classmethod
-    def _prepare_properties(
-        cls, properties: Optional[Dict[str, Array]]
-    ) -> Tuple[Dict[str, np.ndarray], Dict[int, int]]:
-        properties = validate_properties(properties)
+    def _make_label_index(cls, features: pd.DataFrame) -> Dict[int, int]:
         label_index = {}
-        if 'index' in properties:
-            label_index = {i: k for k, i in enumerate(properties['index'])}
-        elif len(properties) > 0:
-            max_len = max(len(x) for x in properties.values())
-            label_index = {i: i for i in range(max_len)}
-        return properties, label_index
+        if 'index' in features:
+            label_index = {i: k for k, i in enumerate(features['index'])}
+        elif features.shape[1] > 0:
+            label_index = {i: i for i in range(features.shape[0])}
+        return label_index
 
     @property
     def color(self):
@@ -526,7 +587,7 @@ class Labels(_ImageBase):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
-                'properties': self._properties,
+                'properties': self.properties,
                 'rendering': self.rendering,
                 'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
                 'experimental_clipping_planes': [
@@ -535,6 +596,7 @@ class Labels(_ImageBase):
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,
+                'features': self.features,
             }
         )
         return state
@@ -1333,7 +1395,7 @@ class Labels(_ImageBase):
         dims_displayed: Optional[List[int]] = None,
         world: bool = False,
     ) -> list:
-        if not (self._label_index and self._properties):
+        if len(self._label_index) == 0 or self.features.shape[1] == 0:
             return []
 
         value = self.get_value(
@@ -1353,7 +1415,7 @@ class Labels(_ImageBase):
         idx = self._label_index[label_value]
         return [
             f'{k}: {v[idx]}'
-            for k, v in self._properties.items()
+            for k, v in self.features.items()
             if k != 'index'
             and len(v) > idx
             and v[idx] is not None

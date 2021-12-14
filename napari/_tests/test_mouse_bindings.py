@@ -8,7 +8,7 @@ def test_viewer_mouse_bindings(make_napari_viewer):
     """Test adding mouse bindings to the viewer"""
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     if os.getenv("CI"):
         viewer.show()
@@ -81,7 +81,7 @@ def test_layer_mouse_bindings(make_napari_viewer):
     """Test adding mouse bindings to a layer that is selected"""
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     if os.getenv("CI"):
         viewer.show()
@@ -156,7 +156,7 @@ def test_unselected_layer_mouse_bindings(make_napari_viewer):
     """Test adding mouse bindings to a layer that is not selected"""
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     if os.getenv("CI"):
         viewer.show()

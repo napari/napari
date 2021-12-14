@@ -1,2 +1,0 @@
-```{include} ../guides/docker.md
-```
