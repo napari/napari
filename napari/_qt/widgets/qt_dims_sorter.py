@@ -49,9 +49,9 @@ def _array_in_range(arr: ArrayLike, low: int, high: int) -> bool:
 
 def move_indices(axes_list: SelectableEventedList, order: Tuple[int, ...]):
     with axes_list.events.blocker_all():
-        axes = [a.axis for a in axes_list]
         if tuple(axes_list) == tuple(order):
             return
+        axes = [a.axis for a in axes_list]
         ax_to_existing_position = {a: ix for ix, a in enumerate(axes)}
         move_list = np.asarray(
             [(ax_to_existing_position[order[i]], i) for i in range(len(order))]
@@ -77,20 +77,25 @@ class QtDimsSorter(QWidget):
             [AxisModel(dims, i) for i in range(dims.ndim)]
         )
         root.events.reordered.connect(
-            lambda event, dims=dims: set_dims_order(dims, event.value)
+            lambda event: set_dims_order(dims, event.value)
         )
         dims.events.order.connect(
-            lambda event, axes_list=root: move_indices(axes_list, event.value)
+            lambda event: move_indices(root, event.value)
         )
         view = QtListView(root)
+        view.setSizeAdjustPolicy(QtListView.AdjustToContents)
+
         self.axes_list = root
-        self.setLayout(QGridLayout())
+
+        layout = QGridLayout()
+        self.setLayout(layout)
 
         widget_tooltip = QtToolTipLabel(self)
         widget_tooltip.setObjectName('help_label')
         widget_tooltip.setToolTip(trans._('Drag dimensions to reorder.'))
 
-        widget_title = trans._('Manual Dimension Sorter')
-        self.layout().addWidget(QLabel(widget_title, self), 0, 0)
+        widget_title = QLabel(trans._('Dims. Ordering'), self)
+
+        self.layout().addWidget(widget_title, 0, 0)
         self.layout().addWidget(widget_tooltip, 0, 1)
         self.layout().addWidget(view, 1, 0)

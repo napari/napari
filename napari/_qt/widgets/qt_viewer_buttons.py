@@ -17,7 +17,7 @@ from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
-from .qt_dim_sorter import QtDimsSorter
+from .qt_dims_sorter import QtDimsSorter
 from .qt_spinbox import QtSpinBox
 from .qt_tooltip import QtToolTipLabel
 
@@ -197,9 +197,12 @@ class QtViewerButtons(QFrame):
         if self.viewer.dims.ndisplay != 2:
             return
 
+        dim_sorter = QtDimsSorter(self.viewer, self)
+        dim_sorter.setObjectName('dim_sorter')
+
         # make layout
         layout = QHBoxLayout()
-        layout.addWidget(QtDimsSorter(self.viewer))
+        layout.addWidget(dim_sorter)
 
         # popup and show
         pop = QtPopup(self)
