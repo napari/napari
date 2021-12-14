@@ -1,3 +1,4 @@
+(core-dev-guide)=
 # Core Developer guide
 
 Welcome, new core developer!  The core team appreciate the quality of
@@ -11,7 +12,7 @@ GitHub team. You should now be on that list too.
 
 This document offers guidelines for your new role.  First and
 foremost, you should familiarize yourself with the project's
-[mission and values](MISSION_AND_VALUES.md).  When in
+[mission and values](mission-and-values).  When in
 doubt, always refer back there.
 
 As a core team member, you gain the responsibility of shepherding
@@ -36,7 +37,7 @@ to contribute during nights and weekends. It is important to be respectful of ot
 schedules and working habits, even if it slows the project down slightly - we are in this
 for the long run. In the same vein you also shouldn't feel pressured to be constantly
 available or online, and users or contributors who are overly demanding and unreasonable
-to the point of harassment will be directed to our [Code of Conduct](CODE_OF_CONDUCT.md).
+to the point of harassment will be directed to our [Code of Conduct](napari-coc).
 We value sustainable development practices over mad rushes.
 
 When merging, use GitHub's
@@ -44,7 +45,7 @@ When merging, use GitHub's
 to ensure a clean git history.
 
 You should also continue to make your own pull requests as before and in accordance
-with the [general contributor guide](CONTRIBUTING.md). These pull requests still
+with the [general contributor guide](napari-contributing). These pull requests still
 require the approval of another core developer before they can be merged.
 
 ## Reviewing
@@ -74,12 +75,12 @@ to both coding and non-coding users, and new features should ultimately be
 accessible to everyone using the app. `napari` targets the scientific user
 community broadly, and core features should be domain-agnostic and general purpose.
 Custom functionality is meant to be provided through our plugin ecosystem. If in doubt,
-consult back with our [mission and values](MISSION_AND_VALUES.md).
+consult back with our [mission and values](mission-and-values).
 
 2. **Performance and benchmarks:** As `napari` targets scientific applications that often involve
 large multidimensional datasets, high performance is a key value of `napari`. While
 every new feature won't scale equally to all sizes of data, keeping in mind performance
-and our [benchmarks](BENCHMARKS.md) during a review may be important, and you may
+and our [benchmarks](napari-benchmarks) during a review may be important, and you may
 need to ask for benchmarks to be run and reported or new benchmarks to be added.
 
 3. **APIs and stability:** Coding users and plugin developers will make
@@ -93,9 +94,9 @@ version numbers `0.x` and do not have a deprecation policy, but we will work to 
 
 4. **Documentation and tutorials:** All new methods should have appropriate doc
 strings following [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
-[NumPy documentation guide](https://docs.scipy.org/doc/numpy/docs/howto_document.html).
+[NumPy documentation guide](https://numpy.org/devdocs/dev/howto-docs.html#documentation-style).
 For any major new features, accompanying changes should be made to our
-[tutorials repository](https://github.com/napari/napari-tutorials), that not only
+[tutorials](https://napari.org/tutorials). These should not only
 illustrates the new feature, but explains it. Titles for all documents in napari should follow [sentence case capitalization](https://apastyle.apa.org/style-grammar-guidelines/capitalization/sentence-case), but the name `napari` should always be written in lowercase.
 
 5. **Implementations and algorithms:** You should understand the code being modified
@@ -143,14 +144,14 @@ that responsibility seriously.
 As a core member, you should be familiar with community and developer
 resources such as:
 
-- Our [contributor guide](CONTRIBUTING.md).
-- Our [code of conduct](CODE_OF_CONDUCT.md).
-- Our [governance](GOVERNANCE.md).
-- Our [mission and values](MISSION_AND_VALUES.md).
-- Our [benchmarking guide](BENCHMARKS.md).
+- Our [contributor guide](napari-contributing).
+- Our [code of conduct](napari-coc).
+- Our [governance](napari-governance).
+- Our [mission and values](mission-and-values).
+- Our [benchmarking guide](napari-benchmarks).
 - [PEP8](https://www.python.org/dev/peps/pep-0008/) for Python style.
 - [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
-   [NumPy documentation guide](https://docs.scipy.org/doc/numpy/docs/howto_document.html)
+   [NumPy documentation guide](https://numpy.org/devdocs/dev/howto-docs.html#documentation-style)
    for docstring conventions.
 - [`pre-commit`](https://pre-commit.com) hooks for autoformatting.
 - [`black`](https://github.com/psf/black) autoformatting.

@@ -27,11 +27,10 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer._face.events.colors.connect(self._on_data_change)
         self.layer._face.events.color_properties.connect(self._on_data_change)
-        self.layer.text.events.connect(self._on_text_change)
-        self.layer.events.fixed_size.connect(self._on_fixed_size_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
-        self.layer.events.antialias.connect(self._on_antialias_change)
+        self.layer.text.events.connect(self._on_text_change)
         self.layer.events.shading.connect(self._on_shading_change)
+        self.layer.events._antialias.connect(self._on_antialias_change)
 
         self._on_data_change()
 
@@ -170,11 +169,8 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
 
-    def _on_fixed_size_change(self):
-        self.node.scaling = not self.layer.fixed_size
-
     def _on_antialias_change(self):
-        self.node.antialias = self.layer.antialias
+        self.node.antialias = self.layer._antialias
 
     def _on_shading_change(self):
         shading = self.layer.shading
@@ -189,7 +185,6 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_blending_change()
         self._on_highlight_change()
         self._on_matrix_change()
-        self._on_fixed_size_change()
         self._on_antialias_change()
         self._on_shading_change()
 

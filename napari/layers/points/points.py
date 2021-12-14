@@ -131,10 +131,6 @@ class Points(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    fixed_size : bool
-        If active, point sizes do not change when zooming.
-    antialias : float
-        If non-zero, defines the width in pixels of antialiasing.
     shading : str, Shading
         Render lighting and shading on points. Options are:
             * 'none'
@@ -159,12 +155,6 @@ class Points(Layer):
     size : array (N, D)
         Array of sizes for each point in each dimension. Must have the same
         shape as the layer `data`.
-    fixed_size : bool
-        If active, point sizes do not change when zooming.
-    antialias : float
-        If non-zero, defines the width in pixels of antialiasing.
-    shading : Shading
-        Shading mode.
     edge_width : float
         Width of the marker edges in pixels for all points
     edge_color : Nx4 numpy array
@@ -230,6 +220,8 @@ class Points(Layer):
         CYCLE allows the color to be set via a color cycle over an attribute
 
         COLORMAP allows color to be set via a color map over an attribute
+    shading : Shading
+        Shading mode.
 
     Notes
     -----
@@ -251,6 +243,8 @@ class Points(Layer):
     _drag_start : list or None
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
+    _antialias : float
+        The amount of antialiasing pixels for both the marker and marker edge.
     """
 
     # TODO  write better documentation for edge_color and face_color
@@ -291,8 +285,6 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
-        fixed_size=False,
-        antialias=1,
         shading='none',
     ):
         if ndim is None and scale is not None:
@@ -330,9 +322,8 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
-            fixed_size=Event,
-            antialias=Event,
             shading=Event,
+            _antialias=Event,
         )
 
         self._colors = get_color_namelist()
@@ -408,10 +399,9 @@ class Points(Layer):
             else self._property_choices,
         )
 
-        self.fixed_size = fixed_size
         self.size = size
-        self.antialias = antialias
         self.shading = shading
+        self._antialias = True
 
         self.current_properties = get_current_properties(
             self._properties, self._property_choices, len(self.data)
@@ -697,26 +687,16 @@ class Points(Layer):
             self.events.size()
 
     @property
-    def fixed_size(self):
-        """bool: maintain point size fixed regardless of zoom"""
-        return self._fixed_size
-
-    @fixed_size.setter
-    def fixed_size(self, value) -> bool:
-        self._fixed_size = bool(value)
-        self.events.fixed_size()
-
-    @property
-    def antialias(self):
+    def _antialias(self):
         """float: amount in pixels of antialiasing"""
-        return self._antialias
+        return self.__antialias
 
-    @antialias.setter
-    def antialias(self, value) -> Union[int, float]:
+    @_antialias.setter
+    def _antialias(self, value) -> Union[int, float]:
         if value < 0:
             value = 0
-        self._antialias = value
-        self.events.antialias()
+        self.__antialias = float(value)
+        self.events._antialias()
 
     @property
     def shading(self) -> Shading:
@@ -987,6 +967,7 @@ class Points(Layer):
 
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map
+
         Parameters
         ----------
         update_color_mapping : bool
@@ -995,7 +976,7 @@ class Points(Layer):
             will use the current color cycle map or color map. For example, if you
             are adding/modifying points and want them to be colored with the same
             mapping as the other points (i.e., the new points shouldn't affect
-            the color cycle map or colormap), set update_color_mapping=False.
+            the color cycle map or colormap), set ``update_color_mapping=False``.
             Default value is False.
         """
         self._edge._refresh_colors(self.properties, update_color_mapping)
@@ -1029,8 +1010,6 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
-                'fixed_size': self.fixed_size,
-                'antialias': self.antialias,
                 'shading': self.shading,
             }
         )
@@ -1124,17 +1103,24 @@ class Points(Layer):
         """
         return str(self._mode)
 
-    _drag_modes = {Mode.ADD: add, Mode.SELECT: select, Mode.PAN_ZOOM: no_op}
+    _drag_modes = {
+        Mode.ADD: add,
+        Mode.SELECT: select,
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
+    }
 
     _move_modes = {
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
         Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
     }
     _cursor_modes = {
         Mode.ADD: 'crosshair',
         Mode.SELECT: 'standard',
         Mode.PAN_ZOOM: 'standard',
+        Mode.TRANSFORM: 'standard',
     }
 
     @mode.setter
