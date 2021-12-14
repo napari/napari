@@ -171,7 +171,7 @@ cells = data.cells3d() #ZCYX image data
 viewer = napari.view_image(cells, channel_axis=1)
 
 # load multichannel image in one line, with additional options
-viewer = napari.view_image(cells, channel_axis=1, name=["membrane", "nuclei"], colormap=["green", "magenta"], contrast_limit=[[1000,20000],[1000,50000]]
+viewer = napari.view_image(cells, channel_axis=1, name=["membrane", "nuclei"], colormap=["green", "magenta"], contrast_limit=[[1000,20000],[1000,50000]])
 
 ```
 +++
