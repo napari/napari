@@ -117,6 +117,8 @@ class Labels(_ImageBase):
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
         rendering to calculate lighting effects on labeled surfaces.
         The default value is 'iso_categorical'.
+    depiction : str
+        3D Depiction mode used by vispy. Must be one of our supported modes.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -238,6 +240,7 @@ class Labels(_ImageBase):
         opacity=0.7,
         blending='translucent',
         rendering='iso_categorical',
+        depiction='volume',
         visible=True,
         multiscale=None,
         cache=True,
@@ -266,6 +269,7 @@ class Labels(_ImageBase):
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
             rendering=rendering,
+            depiction=depiction,
             iso_threshold=0,
             name=name,
             metadata=metadata,
