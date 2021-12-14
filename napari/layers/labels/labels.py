@@ -16,6 +16,7 @@ from ...utils.colormaps import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import clamp_point_to_bounding_box
+from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
 from ..base import no_op
@@ -211,8 +212,6 @@ class Labels(_ImageBase):
 
     Notes
     -----
-    _data_raw : array (N, M)
-        2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
         background label `0` is selected.
@@ -245,6 +244,8 @@ class Labels(_ImageBase):
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
     ):
+        if name is None and data is not None:
+            name = magic_name(data)
 
         self._seed = seed
         self._background_label = 0
