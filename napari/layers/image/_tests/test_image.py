@@ -736,7 +736,7 @@ def test_image_state_update():
         setattr(image, k, v)
 
 
-def test_instiantiate_with_plane_parameter_dict():
+def test_instantiate_with_plane_parameter_dict():
     """Test that an image layer can be instantiated with plane parameters
     in a dictionary.
     """
@@ -745,9 +745,7 @@ def test_instiantiate_with_plane_parameter_dict():
         'normal': (1, 1, 1),
         'thickness': 22,
     }
-    image = Image(
-        np.ones((32, 32, 32)), experimental_slicing_plane=plane_parameters
-    )
+    image = Image(np.ones((32, 32, 32)), plane=plane_parameters)
     for k, v in plane_parameters.items():
         if k == 'normal':
             v = tuple(v / np.linalg.norm(v))
