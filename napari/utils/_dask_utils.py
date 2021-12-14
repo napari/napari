@@ -1,5 +1,6 @@
 """Dask cache utilities.
 """
+import collections.abc
 import contextlib
 from typing import Callable, ContextManager, Optional, Tuple
 
@@ -76,7 +77,7 @@ def resize_dask_cache(
 def _is_dask_data(data) -> bool:
     """Return True if data is a dask array or a list/tuple of dask arrays."""
     return isinstance(data, da.Array) or (
-        isinstance(data, (list, tuple))
+        isinstance(data, collections.abc.Sequence)
         and any(isinstance(i, da.Array) for i in data)
     )
 

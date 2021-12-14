@@ -9,7 +9,7 @@ from vispy.color import Color, ColorArray, get_colormap, get_colormaps
 
 from ..translations import trans
 from .bop_colors import bopd
-from .colormap import Colormap
+from .colormap import Colormap, ColormapInterpolationMode
 from .standardize_color import transform_color
 from .vendored import cm, colorconv
 
@@ -254,9 +254,10 @@ def color_dict_to_colormap(colors):
     label_color_index : dict of int
         Mapping of Label to color control point within colormap
     """
-
     control_colors = np.unique(list(colors.values()), axis=0)
-    colormap = Colormap(control_colors)
+    colormap = Colormap(
+        colors=control_colors, interpolation=ColormapInterpolationMode.ZERO
+    )
     control2index = {
         tuple(ctrl): i / (len(control_colors) - 1)
         for i, ctrl in enumerate(control_colors)
@@ -425,7 +426,7 @@ def vispy_or_mpl_colormap(name):
                         deferred=True,
                         name=name,
                         colormaps=", ".join(
-                            sorted([f'"{cm}"' for cm in colormaps])
+                            sorted(f'"{cm}"' for cm in colormaps)
                         ),
                     )
                 )

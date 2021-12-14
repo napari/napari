@@ -1,2 +1,0 @@
-```{include} ../community/governance.md
-```
