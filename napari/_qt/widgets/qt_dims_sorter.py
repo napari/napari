@@ -74,7 +74,7 @@ class QtDimsSorter(QWidget):
         super().__init__(parent=parent)
         dims = viewer.dims
         root = SelectableEventedList(
-            [AxisModel(dims, i) for i in range(dims.ndim)]
+            [AxisModel(dims, dims.order[i]) for i in range(dims.ndim)]
         )
         root.events.reordered.connect(
             lambda event: set_dims_order(dims, event.value)

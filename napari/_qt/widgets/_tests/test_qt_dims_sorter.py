@@ -12,3 +12,11 @@ def test_dims_sorter(make_napari_viewer):
     dim_sorter.axes_list.move(1, 0)
     assert tuple(dim_sorter.axes_list) == ('x', 'y')
     assert tuple(viewer.dims.order) == (1, 0)
+
+
+def test_dims_sorter_with_reodered_init(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.dims.order = (1, 0)
+
+    dim_sorter = QtDimsSorter(viewer)
+    assert tuple(dim_sorter.axes_list) == tuple(viewer.dims.order)
