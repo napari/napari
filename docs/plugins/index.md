@@ -2,34 +2,34 @@
 
 # Plugins
 
-napari loves plugins. Plugins allow people to customize and add to napari.
-
-This document describes:
-
-- How to build, run and publish a plugin.
-- Where to find guides and code samples to help get you started.
-- Guidelines for writing plugins.
-
-If you are looking for plugins, head to the [napari
-hub](https://napari-hub.org). Plugins can be installed directly from within
-napari or with package installers (pip/conda) via the command line -- to learn
-more see {ref}`find-and-install-plugins`.
-
 ```{admonition} Introducing npe2
-We've introduced a new plugin engine. The new library [`npe2`][npe2] is a
-re-imagining of how napari interacts with plugins. Rather than importing a
-package to discover plugin functionality, a static manifest file is used to
-declaratively describe a plugin's capabilities. Details can be found in the
-{ref}`npe2-manifest-spec`.
+:class: tip
+We introduced a new plugin engine in December 2021. The new library
+[`npe2`][npe2] is a re-imagining of how napari interacts with plugins. Rather
+than importing a package to discover plugin functionality, a static manifest
+file is used to declaratively describe a plugin's capabilities. Details can be
+found in the [](npe2-manifest-spec).
 
 Plugins targeting `napari-plugin-engine` will continue to work, but we
 recommend migrating to `npe2` as soon as possible. `npe2` includes tooling to
 help automate the process of migrating plugins. See the [migration
 guide](npe2-migration-guide) for details.
 
-For getting started writing new npe2 plugins see the
-{ref}`npe2-getting-started`.
+For getting started writing new npe2 plugins see the [](npe2-getting-started).
 ```
+
+napari loves plugins. Plugins allow people to customize and extend to napari.
+
+This document describes:
+
+- How to [build, run and publish a plugin](how-to-build-a-plugin).
+- Where to find guides and code samples to help get you started.
+- [Guidelines](best-practices) for writing plugins.
+
+If you are looking for plugins, head to the [napari
+hub](https://napari-hub.org). Plugins can be installed directly from within
+napari or with package installers (pip/conda) via the command line -- to learn
+more see {ref}`find-and-install-plugins`.
 
 ## What can plugins do?
 
@@ -37,6 +37,8 @@ For getting started writing new npe2 plugins see the
 - Add custom widgets and user interface elements
 - Add file format support - readers and writers
 - Provide sample data
+
+(how-to-build-a-plugin)=
 
 ## How to build plugins?
 

@@ -2,6 +2,14 @@
 
 # npe2 manifest specification
 
+```{admonition} Backward compatibility
+:class: tip
+We introduced a new plugin engine in December 2021. The new library [`npe2`][npe2]
+is a re-imagining of how napari interacts with plugins. Plugins targeting
+`napari-plugin-engine` will continue to work, but we recommend migrating to
+`npe2` as soon as possible.  See the [](npe2-migration-guide).
+```
+
 The **plugin manifest** is a specially formatted text file declaring the
 functionality of a [npe2][] plugin. A **plugin** is a python package that
 contains the manifest together with a suitable _[entry point group][epg]_ in
@@ -17,34 +25,6 @@ querying and manipulating plugins, and for exposing plugin-backed
 functionality to _napari_. **Discovery** is the process that finds plugins,
 parses the manifests and indexes them for later use. The [npe2][] library
 manages these responsibilities.
-
-## Compatibility
-
-```{admonition} Backward compatibility
-Plugins targeting `napari-plugin-engine` will continue to work, but we
-recommend migrating to `npe2` as soon as possible. `napari-plugin-engine` has
-been used for plugins made prior to Dec. 2021. `npe2` should be used for newer
-plugins and includes tooling to help automate the process of migrating plugins.
-See the [migration guide](npe2-migration-guide) for details.
-```
-
-When authoring a plugin, you will need to describe what is the plugin's
-compatibility with `npe2`. This can be done via the `engine` field in the
-plugin manifest (see {ref}`top-level-props`).
-
-You can use the `engine` field to makes sure the plugin only gets installed
-for clients that use the plugin specification you depend on.
-
-For example, imagine you develop your plugin using the `0.1.0` engine
-specification. A few months of development go by and a new API is introduced
-to the plugin engine defining a new _engine version_, `0.2.0`. You add that
-new API and update your plugin's manifest file accordingly.
-
-Users running older versions of napari will not have the new API. Their plugin
-engine will inspect the _engine version_ declared by your plugin and correctly
-prevent your plugin from being used. When those users upgrade their napari
-installation, they'll be able to take advantage of the new functionality you
-added.
 
 ## Configuring a python package to use a plugin manifest
 
@@ -109,15 +89,10 @@ python functions that a plugin defines. Each callable is identified with an
 entry in the list of `commands` via a unique id. For more see {ref}`Commands`
 below.
 
-When a contribution like a reader refers to a command, it gives the command
-meaning. The command will be expected to conform to a specific _calling
-convention_. The _calling convention_ is described by the argument and return
-types of the associated callable, as well as conventions regarding it's
-behavior.
-
 ```{note}
 Python package metadata (`setup.py` or `setup.cfg`) may be used to populate
-selected properties of the [PluginManifest][].
+some internal properties of the plugin manifest. These include the authors,
+description, and version.
 ```
 
 (top-level-props)=
@@ -134,6 +109,7 @@ selected properties of the [PluginManifest][].
 
 - **engine**: A SemVer compatible version string matching the versions of the
   plugin engine that the extension is compatible with. Example: "0.1.0".
+  See [][compatibility] for details.
 - **display_name**: User-facing text to display as the name of this plugin.
   Example: `napari SVG`. Must be 3-40 characters long, containing
   printable word characters, and must not begin or end with an underscore,
@@ -141,12 +117,52 @@ selected properties of the [PluginManifest][].
 - **entry_point**: The module containing the `activate()` function. Example:
   `foo.bar.baz`. This should be a fully qualified module string.
 
+```{admonition} activation and deactivation
+An `activate()` function can be used to perform one-time initialization for a
+plugin.  Similarly, a `deactivate()` function can be used to perform tear-down
+on deactivation.  These must be defined relative to the `entry_point`.
+```
+
+(compatibility)=
+
+### Compatibility
+
+A goal of `npe2` was to make it possible to add or change the plugin interface
+without breaking existing plugins. This is achieved by defining an
+**engine version**. When we want to change the plugin interface, we increment
+this number to indicate there is something new. New plugins can opt-in to the
+new behavior by declaring compatibility with that version.
+
+When authoring a plugin, you will need to describe what is the plugin's
+compatibility with `npe2`. This can be done via the `engine` field in the
+plugin manifest (see {ref}`top-level-props`).
+
+You can use the `engine` field to makes sure the plugin only gets installed
+for clients that use the plugin specification you depend on.
+
+For example, imagine you develop your plugin using the `0.1.0` engine
+specification. A few months of development go by and a new API is introduced
+to the plugin engine defining a new _engine version_, `0.2.0`. You add that
+new API and update your plugin's manifest file accordingly.
+
+Users running older versions of napari will not have the new API. Their plugin
+engine will inspect the _engine version_ declared by your plugin and correctly
+prevent your plugin from being used. When those users upgrade their napari
+installation, they'll be able to take advantage of the new functionality you
+added.
+
 (commands)=
 
 ## Commands
 
 **command** is a python function associated with an id. The **id** is
 a unique identifier to which other contributions, like readers, can refer.
+
+When a contribution like a reader refers to a command, it gives the command
+meaning. The command will be expected to conform to a specific _calling
+convention_. The **calling convention** is described by the argument and return
+types of the associated callable, as well as conventions regarding it's
+behavior.
 
 ### Required fields
 
@@ -162,7 +178,8 @@ a unique identifier to which other contributions, like readers, can refer.
   `{obj.__module__}:{obj.__qualname__}` (e.g.
   `my_package.a_module:some_function`). For a command to be useful, this
   field must be specified. If it isn't specified here it should be done
-  dynamically inside the plugin's 'activate()' function.
+  dynamically inside the plugin's 'activate()' function. _Must_ be populated
+  before being invoked at runtime.
 
 ### Example
 
@@ -175,9 +192,11 @@ contribution:
       python_name: my_plugin:publish_func
 ```
 
-### Dynamic command registration
+````{admonition} Dynamic command registration
 
 Commands can be registered dynamically by the plugin's `activate()` function.
+This is purely an alternative to listing `python_name` in the manifest.
+
 For example,
 
 ```python
@@ -193,6 +212,7 @@ def activate(context: PluginContext):
 
 The `activate()` function is called when the plugin is loaded. It is found in
 the `entry_point` specified in the plugin manifest.
+````
 
 ## Readers
 
@@ -477,7 +497,8 @@ should use `autogenerate: true`.  See more details below.
 
 ### Required fields
 
-- **command** Identifier of a command that returns a Widget instance.
+- **command** Identifier of a command that returns a Widget instance. The
+  `python_name` of the command must be populated before being invoked.
 - **display_name** User-facing name to use for the widget in, for example,
   menu items.
 

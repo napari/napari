@@ -2,11 +2,11 @@
 
 # npe2 migration guide
 
-We've introduced a new plugin engine. The new library [npe2][] is a
+We've introduced a new plugin engine. The new library [npe2] is a
 re-imagining of how napari interacts with plugins. Rather than importing a
 package to discover plugin functionality, a static manifest file is used to
 declaratively describe a plugin's capabilities. Details can be found in the
-{ref}`npe2-manifest-spec`.
+[](npe2-manifest-spec).
 
 Plugins targeting `napari-plugin-engine` will continue to work, but we
 recommend migrating to `npe2`. This guide will help you learn how!

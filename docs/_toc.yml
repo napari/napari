@@ -27,13 +27,13 @@
 - file: plugins/index
   sections:
     - file: plugins/find-and-install-plugin
-    - file: plugins/for_plugin_developers
-    - file: plugins/hook_specifications
-    - file: plugins/for_napari_developers
-    - file: plugins/best_practices
     - file: plugins/npe2_getting_started
     - file: plugins/npe2_manifest_specification
     - file: plugins/npe2_migration_guide
+    - file: plugins/best_practices
+    - file: plugins/for_plugin_developers
+    - file: plugins/hook_specifications
+    - file: plugins/for_napari_developers
 
 - file: developers/index
   sections:
