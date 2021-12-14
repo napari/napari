@@ -331,6 +331,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
 
+    @staticmethod
+    def rounded_division(min_val, max_val, precision):
+        return int(((min_val + max_val) / 2) / precision) * precision
+
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
@@ -340,6 +344,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ndim = len(ranges)
             self.dims.ndim = ndim
             self.dims.set_range(range(ndim), ranges)
+            midpoint = [self.rounded_division(*_range) for _range in ranges]
+            self.dims.set_point(range(ndim), midpoint)
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -418,7 +424,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
-        layer.translate_grid = translate
+        layer._translate_grid = translate
 
     @property
     def experimental(self):
@@ -1248,5 +1254,5 @@ for _layer in (
     layers.Tracks,
     layers.Vectors,
 ):
-    func = create_add_method(_layer)
+    func = create_add_method(_layer, filename=__file__)
     setattr(ViewerModel, func.__name__, func)

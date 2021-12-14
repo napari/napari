@@ -1,3 +1,5 @@
+(plugins-index)=
+
 # Plugins
 
 `napari` enables developers to extend functionality of the program by writing
@@ -9,3 +11,5 @@ specifications_ that developers can implement, see the
 {ref}`hook-specifications-reference`.
 
 napari users can install plugins directly from their instance of napari to enhance their workflows; to learn more see {ref}`find-and-install-plugins`.
+
+To read about recommendations on how to develop your own plugin, see {ref}`best-practices`.

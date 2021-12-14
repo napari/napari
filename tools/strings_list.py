@@ -2051,7 +2051,7 @@ SKIP_WORDS = {
         'name',
         'native',
         'parent',
-        'qt_viewer',
+        '_qt_viewer',
         'widget',
         '{layer.name} (data)',
     ],
@@ -2611,7 +2611,6 @@ SKIP_WORDS = {
     'napari/utils/mouse_bindings.py': [],
     'napari/utils/naming.py': [
         '((?<=\\A\\[)|(?<=\\s\\[))(?:\\d+|)(?=\\]$)|$',
-        '<string>',
         '{count + 1}',
         '{sep}[{start}]',
     ],
