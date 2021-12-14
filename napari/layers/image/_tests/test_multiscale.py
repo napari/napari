@@ -38,7 +38,7 @@ def test_infer_tuple_multiscale():
     """Test instantiating Image layer with random 2D multiscale data."""
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
-    data = tuple(np.random.random(s) for s in shapes)
+    data = [np.random.random(s) for s in shapes]
     layer = Image(data)
     assert layer.data == data
     assert layer.multiscale is True
@@ -67,7 +67,7 @@ def test_multiscale_tuple():
     shape = (40, 20)
     np.random.seed(0)
     img = np.random.random(shape)
-    data = tuple(pyramid_gaussian(img, multichannel=False))
+    data = list(pyramid_gaussian(img, multichannel=False))
     layer = Image(data)
     assert layer.data == data
     assert layer.multiscale is True
