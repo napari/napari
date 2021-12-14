@@ -1,9 +1,11 @@
 import re
+import sys
 import warnings
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar, Union
 
 import wrapt
 
+from ..utils import misc
 from ..utils.translations import trans
 
 _T = TypeVar("_T")
@@ -41,11 +43,19 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
     __wrapped__: _T
 
     def __getattr__(self, name: str):
-        if name.startswith('_'):
+        if name.startswith("_"):
+            # allow napari to access private attributes and get an non-proxy
+            frame = sys._getframe(1) if hasattr(sys, "_getframe") else None
+            if frame.f_code.co_filename.startswith(misc.ROOT_DIR):
+                return super().__getattr__(name)
+
+            typ = type(self.__wrapped__).__name__
             warnings.warn(
                 trans._(
-                    "Private attribute access in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.4.14",
+                    "Private attribute access ('{typ}.{name}') in this context (e.g. inside a plugin widget or dock widget) is deprecated and will be unavailable in version 0.5.0",
                     deferred=True,
+                    name=name,
+                    typ=typ,
                 ),
                 category=FutureWarning,
                 stacklevel=2,
@@ -53,9 +63,10 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             # name = f'{type(self.__wrapped__).__name__}.{name}'
             # raise AttributeError(
             #     trans._(
-            #         "Private attribute access ('{name}') not allowed in this context.",
+            #         "Private attribute access ('{typ}.{name}') not allowed in this context.",
             #         deferred=True,
             #         name=name,
+            #         typ=typ,
             #     )
             # )
         return self.create(super().__getattr__(name))
@@ -70,8 +81,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         return [x for x in dir(self.__wrapped__) if not _SUNDER.match(x)]
 
     @classmethod
-    def create(cls, obj: Any) -> 'PublicOnlyProxy':
-        if callable:
+    def create(cls, obj: Any) -> Union['PublicOnlyProxy', Any]:
+        # restrict the scope of this proxy to napari objects
+        mod = getattr(type(obj), '__module__', None) or ''
+        if not mod.startswith('napari'):
+            return obj
+        if isinstance(obj, PublicOnlyProxy):
+            return obj  # don't double-wrap
+        if callable(obj):
             return CallablePublicOnlyProxy(obj)
         return PublicOnlyProxy(obj)
 

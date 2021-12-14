@@ -2611,7 +2611,6 @@ SKIP_WORDS = {
     'napari/utils/mouse_bindings.py': [],
     'napari/utils/naming.py': [
         '((?<=\\A\\[)|(?<=\\s\\[))(?:\\d+|)(?=\\]$)|$',
-        '<string>',
         '{count + 1}',
         '{sep}[{start}]',
     ],
