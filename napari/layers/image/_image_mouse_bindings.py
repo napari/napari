@@ -26,14 +26,22 @@ def move_plane_along_normal(layer: Image, event: Event):
         return
 
     # Store mouse position at start of drag
-    initial_position = np.asarray(event.position)
-    initial_view_direction = np.asarray(event.view_direction)
+    initial_position_world = np.asarray(event.position)
+    initial_view_direction_world = np.asarray(event.view_direction)
+
+    initial_position_data = layer._world_to_displayed_data(
+        initial_position_world, event.dims_displayed
+    )
+    initial_view_direction_data = layer._world_to_displayed_data_ray(
+        initial_view_direction_world, event.dims_displayed
+    )
 
     # Calculate intersection of click with plane through data in data coordinates
     intersection = layer.plane.intersect_with_line(
-        line_position=initial_position[event.dims_displayed],
-        line_direction=initial_view_direction[event.dims_displayed],
+        line_position=initial_position_data,
+        line_direction=initial_view_direction_data,
     )
+    layer.plane.position = intersection
 
     # Check if click was on plane and if not, exit early.
     if not point_in_bounding_box(
@@ -50,7 +58,7 @@ def move_plane_along_normal(layer: Image, event: Event):
     while event.type == 'mouse_move':
         # Project mouse drag onto plane normal
         drag_distance = layer.projected_distance_from_mouse_drag(
-            start_position=initial_position,
+            start_position=initial_position_world,
             end_position=np.asarray(event.position),
             view_direction=np.asarray(event.view_direction),
             vector=layer.plane.normal,
