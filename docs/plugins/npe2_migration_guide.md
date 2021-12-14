@@ -77,6 +77,11 @@ To create the manifest, use the npe2 command in the terminal:
 npe2 convert animation --out napari_animation/napari.yaml
 ```
 
+```{note}
+This step uses `napari-plugin-engine` to discover the plugins installed on the
+system. If you have other plugins installed there's a chance they may interfere.
+```
+
 This generates `napari_animation/napari.yaml` with contents:
 
 ```yaml
@@ -143,9 +148,10 @@ _contribution_ in the `npe2` manifest. More information can be found in the
 inspecting exposed _hook implementations_. Below, we will walk through the
 kinds of migrations `npe2 convert` helps with.
 
-For each type of _hook specification_ there is a corresponding section below.
-Each lists the _hook specifications_ that are relevant to that section and an
-example manifest. For details, refer to the {ref}`npe2-manifest-spec`.
+For each type of _hook specification_ there is a corresponding section below
+with migration tips. Each lists the _hook specifications_ that are relevant to
+that section and an example manifest. For details, refer to the
+{ref}`npe2-manifest-spec`.
 
 ### Readers
 

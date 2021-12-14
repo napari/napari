@@ -10,8 +10,8 @@ is a re-imagining of how napari interacts with plugins. Plugins targeting
 `npe2` as soon as possible.
 ```
 
-This guide will walk you through the steps required to write an `npe2`-style
-napari plugin from scratch.
+This guide will walk you through the steps required to write a napari plugin
+from scratch.
 
 At the end of this guide, you will have a working plugin that can be installed
 with `pip` and autodetected by napari.
