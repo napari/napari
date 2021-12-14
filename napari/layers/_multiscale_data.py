@@ -77,7 +77,7 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         return other * self._data
 
     def __array__(self) -> np.ndarray:
-        return np.ndarray(self._data[-1])
+        return np.asarray(self._data[-1])
 
     def __repr__(self) -> str:
         return (
