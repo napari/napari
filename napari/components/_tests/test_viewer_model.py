@@ -328,7 +328,7 @@ def test_swappable_dims():
     # midpoints indices into the data below depend on the data range.
     # This depends on the values in vectors_data and thus the random seed.
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[4, 6, :, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[4, 6, :, :]
     )
 
     # Swap dims
@@ -338,7 +338,7 @@ def test_swappable_dims():
         viewer.layers[image_name]._data_view == image_data[4, :, 5, :]
     )
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[4, :, 5, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[4, :, 5, :]
     )
 
 

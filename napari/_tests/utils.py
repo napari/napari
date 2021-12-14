@@ -1,5 +1,6 @@
 import os
 import sys
+from collections import abc
 from typing import Any, Dict
 
 import numpy as np
@@ -43,7 +44,13 @@ layer_test_data = [
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
     (Image, np.array([[1.5, np.nan], [np.inf, 2.2]]), 2),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
+    (Labels, np.zeros((10, 10), dtype=bool), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
+    (
+        Labels,
+        [np.random.randint(20, size=s) for s in [(40, 20), (20, 10), (10, 5)]],
+        2,
+    ),
     (Points, 20 * np.random.random((10, 2)), 2),
     (Points, 20 * np.random.random((10, 3)), 3),
     (Vectors, 20 * np.random.random((10, 2, 2)), 2),
@@ -127,7 +134,7 @@ def are_objects_equal(object1, object2):
     """
     compare two (collections of) arrays or other objects for equality. Ignores nan.
     """
-    if isinstance(object1, (list, tuple)):
+    if isinstance(object1, abc.Sequence):
         items = zip(object1, object2)
     elif isinstance(object1, dict):
         items = [(value, object2[key]) for key, value in object1.items()]
