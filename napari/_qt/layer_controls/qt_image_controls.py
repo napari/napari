@@ -10,10 +10,10 @@ from qtpy.QtWidgets import (
 from superqt import QLabeledDoubleSlider
 
 from ...layers.image._image_constants import (
-    Depiction3D,
     ImageRendering,
     Interpolation,
     Interpolation3D,
+    VolumeDepiction,
 )
 from ...utils.action_manager import action_manager
 from ...utils.translations import trans
@@ -81,7 +81,7 @@ class QtImageControls(QtBaseImageControls):
         self.renderLabel = QLabel(trans._('rendering:'))
 
         depictionComboBox = QComboBox(self)
-        depiction_options = [d.value for d in Depiction3D]
+        depiction_options = [d.value for d in VolumeDepiction]
         depictionComboBox.addItems(depiction_options)
         index = depictionComboBox.findText(
             self.layer.depiction, Qt.MatchFixedString
@@ -319,17 +319,17 @@ class QtImageControls(QtBaseImageControls):
 
     def _toggle_plane_parameter_visibility(self):
         """Hide plane rendering controls if they aren't needed."""
-        depiction = Depiction3D(self.layer.depiction)
+        depiction = VolumeDepiction(self.layer.depiction)
         plane_widgets = (
             self.planeThicknessLabel,
             self.planeThicknessSlider,
             self.planeNormalLabel,
             self.planeNormalButtons,
         )
-        if depiction == Depiction3D.VOLUME or self.layer._ndisplay == 2:
+        if depiction == VolumeDepiction.VOLUME or self.layer._ndisplay == 2:
             for widget in plane_widgets:
                 widget.hide()
-        if depiction == Depiction3D.PLANE and self.layer._ndisplay == 3:
+        if depiction == VolumeDepiction.PLANE and self.layer._ndisplay == 3:
             for widget in plane_widgets:
                 widget.show()
 

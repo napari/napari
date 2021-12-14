@@ -90,7 +90,7 @@ class ImageRendering(StringEnum):
     AVERAGE = auto()
 
 
-class Depiction3D(StringEnum):
+class VolumeDepiction(StringEnum):
     """Depiction: 3D depiction mode for images.
 
     Selects a preset depiction mode in vispy

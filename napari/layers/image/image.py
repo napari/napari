@@ -23,11 +23,11 @@ from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane
 from ._image_constants import (
-    Depiction3D,
     ImageRendering,
     Interpolation,
     Interpolation3D,
     Mode,
+    VolumeDepiction,
 )
 from ._image_mouse_bindings import move_plane_along_normal, set_plane_position
 from ._image_slice import ImageSlice
@@ -534,9 +534,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return str(self._depiction)
 
     @depiction.setter
-    def depiction(self, depiction: Union[str, Depiction3D]):
+    def depiction(self, depiction: Union[str, VolumeDepiction]):
         """Set the current 3D depiction mode."""
-        self._depiction = Depiction3D(depiction)
+        self._depiction = VolumeDepiction(depiction)
         self._update_plane_callbacks()
         self.events.depiction()
 
@@ -560,14 +560,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._plane_double_click_callback
             in self.mouse_double_click_callbacks
         )
-        if self.depiction == Depiction3D.VOLUME:
+        if self.depiction == VolumeDepiction.VOLUME:
             if plane_drag_callback_connected:
                 self.mouse_drag_callbacks.remove(self._plane_drag_callback)
             if double_click_callback_connected:
                 self.mouse_double_click_callbacks.remove(
                     self._plane_double_click_callback
                 )
-        elif self.depiction == Depiction3D.PLANE:
+        elif self.depiction == VolumeDepiction.PLANE:
             if not plane_drag_callback_connected:
                 self.mouse_drag_callbacks.append(self._plane_drag_callback)
             if not double_click_callback_connected:
