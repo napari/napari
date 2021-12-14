@@ -1,3 +1,5 @@
+import functools
+
 import numpy as np
 
 from napari.layers import Image
@@ -168,8 +170,17 @@ def test_plane_drag_callback():
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
     layer = Image(data, depiction='volume')
-    assert move_plane_along_normal not in layer.mouse_drag_callbacks
+
+    # plane callback is stored on the layer as a partial, get original func
+    def get_mouse_drag_callbacks():
+        mouse_drag_callbacks = [
+            cb.func if isinstance(cb, functools.partial) else cb
+            for cb in layer.mouse_drag_callbacks
+        ]
+        return mouse_drag_callbacks
+
+    assert move_plane_along_normal not in get_mouse_drag_callbacks()
     layer.depiction = 'plane'
-    assert move_plane_along_normal in layer.mouse_drag_callbacks
+    assert move_plane_along_normal in get_mouse_drag_callbacks()
     layer.depiction = 'volume'
-    assert move_plane_along_normal not in layer.mouse_drag_callbacks
+    assert move_plane_along_normal not in get_mouse_drag_callbacks()
