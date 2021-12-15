@@ -470,7 +470,7 @@ Sample data uri
 name: my-sample
 contributions:
   sample_data:
-    - display_name: Tabueran Kribati
+    - display_name: Tabueran Kiribati
       key: napari
       uri: https://en.wikipedia.org/wiki/Napari#/media/File:Tabuaeran_Kiribati.jpg
 ```
