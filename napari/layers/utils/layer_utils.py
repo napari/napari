@@ -695,7 +695,9 @@ def _validate_features(
     ----------
     features : Union[Dict[str, np.ndarray], pd.DataFrame]
         The features table input, which will be passed to the pandas
-        DataFrame initializer.
+        DataFrame initializer. If this is a pandas DataFrame with a
+        non-default index, that index (except its length) will be
+        ignored.
     num_data : Optional[int]
         The number of the elements in the layer calling this, such as
         the number of points, which is used to check that the features
@@ -705,9 +707,8 @@ def _validate_features(
     Returns
     -------
     pd.DataFrame
-        The pandas DataFrame created from the input features table.
-        If the input features are already a DataFrame, the data will not
-        be copied, otherwise they will.
+        The pandas DataFrame created from the input features table. This
+        may or may not store a copy of the input data.
 
     Raises
     ------
@@ -715,6 +716,8 @@ def _validate_features(
         If the input feature columns are not all the same length, or if
         that length is not equal to the given num_data.
     """
+    if isinstance(features, pd.DataFrame):
+        features = features.reset_index(drop=True)
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 
