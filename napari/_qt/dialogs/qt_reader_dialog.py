@@ -69,7 +69,7 @@ class QtReaderDialog(QDialog):
 
     def add_reader_buttons(self, layout, readers):
         """Add radio button to layout for each reader in readers"""
-        for display_name in readers:
+        for display_name in sorted(readers):
             button = QRadioButton(f"{display_name}")
             self.reader_btn_group.addButton(button)
             layout.addWidget(button)

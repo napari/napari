@@ -1100,8 +1100,6 @@ class QtViewer(QSplitter):
             Extension of the given filename
         reader_associations : Dict[str, str]
             Existing user settings for extension to reader
-        shift_down : bool
-            Whether shift was held while dragging & dropping files
 
         Returns
         -------
@@ -1114,7 +1112,7 @@ class QtViewer(QSplitter):
         """
         display_name = None
         persist_choice = False
-        error_message = None
+        error_message = ''
 
         readers = get_potential_readers(filename)
         if not readers:
