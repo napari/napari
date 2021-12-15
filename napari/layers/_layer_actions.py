@@ -59,7 +59,9 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
         return
     if layer._type_string != 'image':
         raise NotImplementedError(
-            "Projections are only implemented for images"
+            trans._(
+                "Projections are only implemented for images", deferred=True
+            )
         )
 
     # this is not the desired behavior for coordinate-based layers
@@ -83,7 +85,10 @@ def _convert_dtype(ll: LayerList, mode='int64'):
         return
     if layer._type_string != 'labels':
         raise NotImplementedError(
-            "Data type conversion only implemented for labels"
+            trans._(
+                "Data type conversion only implemented for labels",
+                deferred=True,
+            )
         )
 
     target_dtype = np.dtype(mode)
@@ -92,7 +97,10 @@ def _convert_dtype(ll: LayerList, mode='int64'):
         or np.max(layer.data) > np.iinfo(target_dtype).max
     ):
         raise AssertionError(
-            "Labeling contains values outside of the target data type range."
+            trans._(
+                "Labeling contains values outside of the target data type range.",
+                deferred=True,
+            )
         )
     else:
         layer.data = layer.data.astype(np.dtype(mode))

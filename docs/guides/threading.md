@@ -506,7 +506,7 @@ look at the two main concrete subclasses in napari:
 {class}`~napari.qt.threading.GeneratorWorker`.  You may also wish to simply
 subclass one of those two classes.
 
-#### Adding custom signals
+### Adding custom signals
 
 In order to emit signals, an object must inherit from `QObject`.  However,
 due to challenges with multiple inheritance in Qt, the signals for

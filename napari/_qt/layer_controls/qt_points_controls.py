@@ -224,6 +224,8 @@ class QtPointsControls(QtLayerControls):
             self.select_button.setChecked(True)
         elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
+        elif mode == Mode.TRANSFORM:
+            pass
         else:
             raise ValueError(trans._("Mode not recognized {mode}", mode=mode))
 

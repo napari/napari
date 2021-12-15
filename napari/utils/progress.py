@@ -37,9 +37,12 @@ class progress(tqdm):
     ...             sleep(delay)
 
     or equivalently, using the `progrange` shorthand
-    ...     with progrange(steps) as pbr:
-    ...         for i in pbr:
-    ...             sleep(delay)
+
+    .. code-block:: python
+
+        with progrange(steps) as pbr:
+            for i in pbr:
+                sleep(delay)
 
     For manual updates:
 
@@ -126,7 +129,7 @@ class progress(tqdm):
 
 
 def progrange(*args, **kwargs):
-    """Shorthand for `progress(range(*args), **kwargs)`.
+    """Shorthand for ``progress(range(*args), **kwargs)``.
 
     Adds tqdm based progress bar to napari viewer, if it
     exists, and returns the wrapped range object.
@@ -135,5 +138,6 @@ def progrange(*args, **kwargs):
     -------
     progress
         wrapped range object
+
     """
     return progress(range(*args), **kwargs)

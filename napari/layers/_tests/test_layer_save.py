@@ -2,6 +2,17 @@ import os
 
 import numpy as np
 
+from napari._tests.utils import assert_layer_state_equal
+
+try:
+    import npe2  # noqa: F401
+
+    BUILTINS = 'napari'
+    SVG = 'napari-svg'
+except ImportError:
+    BUILTINS = 'builtins'
+    SVG = 'svg'
+
 
 # the layer_writer_and_data fixture is defined in napari/conftest.py
 def test_layer_save(tmpdir, layer_writer_and_data):
@@ -14,7 +25,7 @@ def test_layer_save(tmpdir, layer_writer_and_data):
     assert not os.path.isfile(path)
 
     # Write data
-    assert layer.save(path, plugin='builtins')
+    assert layer.save(path, plugin=BUILTINS)
 
     # Check file now exists
     assert os.path.isfile(path)
@@ -40,8 +51,9 @@ def test_layer_save(tmpdir, layer_writer_and_data):
     else:
         np.testing.assert_allclose(layer_data[0], read_layer_data[0])
 
-    # # Compare layer metadata
-    np.testing.assert_equal(layer_data[1], read_layer_data[1])
+    # Compare layer metadata
+    assert_layer_state_equal(read_layer_data[1], layer_data[1])
+
     # Compare layer type
     assert layer_data[2] == read_layer_data[2]
 
@@ -55,7 +67,7 @@ def test_layer_save_svg(tmpdir, layer):
     assert not os.path.isfile(path)
 
     # Write data
-    assert layer.save(path, plugin='svg')
+    assert layer.save(path, plugin=SVG)
 
     # Check file now exists
     assert os.path.isfile(path)

@@ -17,6 +17,14 @@ repository:
   path_to_book: docs # Optional path to your book, relative to the repository root
   branch: main # Which branch of the repository should be used when creating links (optional)
 
+# Exclude files from build (prevents Sphinx warnings about missing
+# files in table of contents _toc.yml)
+exclude_patterns: [
+  'ORGANIZATION.md',
+  'guides/_viewer_events.md',
+  'guides/_layer_events.md',
+]
+
 # Add GitHub buttons to your book
 # See https://jupyterbook.org/customize/config.html#add-a-link-to-your-repository
 html:
@@ -36,6 +44,7 @@ sphinx:
     autosummary_generate: True
     autosummary_imported_members: True
     html_theme: furo
+    html_theme_options: {}
     pygments_style: solarized-dark
     templates_path:
         - '_templates'
@@ -44,7 +53,7 @@ sphinx:
         - "https://docs.python.org/3"
         - null
       numpy:
-        - "https://docs.scipy.org/doc/numpy/"
+        - "https://numpy.org/doc/stable/"
         - null
       napari_plugin_engine:
         - "https://napari-plugin-engine.readthedocs.io/en/latest/"

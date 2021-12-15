@@ -23,10 +23,14 @@ import yaml
 # path to copy and locations to copy to if different
 TO_COPY = [
     'ORGANIZATION.md',
-    'developers',
+    'glossary.md',
     'community',
+    'developers',
+    'getting_started',
+    'howtos',
     'release',
     'roadmaps',
+    'tutorials',
     'images',
     osp.join('_templates', 'autosummary'),
     *[
@@ -49,6 +53,9 @@ TOC_IGNORE = [
     'images',
     '_templates',
     'ORGANIZATION.md',
+    'glossary.md',  # this document will still be at the destination ToC
+    'guides/stable/_layer_events.md',
+    'guides/stable/_viewer_events.md',
 ]
 
 
@@ -203,12 +210,14 @@ def update_toc(toc, paths, ignore=[]):
         files = [section['file'] for section in sections]
 
         # find and remove deleted files from toc
-        for i, path in enumerate(files):
+        j = 0
+        for path in files:
             if path in remaining_paths:
                 remaining_paths.remove(path)
+                j += 1
             else:
                 print(f'deleting {path} from toc')
-                del sections[i]  # delete from toc
+                del sections[j]  # delete from toc
 
         new_files = filter(
             lambda path: path.startswith(parent_dir), remaining_paths

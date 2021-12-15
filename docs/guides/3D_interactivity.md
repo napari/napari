@@ -1,3 +1,5 @@
+(3d-interactivity)=
+
 # 3D interactivity
 
 ## Coordinate systems in napari

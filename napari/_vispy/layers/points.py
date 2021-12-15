@@ -19,7 +19,7 @@ class VispyPointsLayer(VispyBaseLayer):
         node = PointsVisual()
         super().__init__(layer, node)
 
-        self.layer.events.symbol.connect(self._on_data_change)
+        self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer._edge.events.colors.connect(self._on_data_change)
@@ -29,6 +29,8 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer._face.events.color_properties.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
+        self.layer.events.shading.connect(self._on_shading_change)
+        self.layer.events._antialias.connect(self._on_antialias_change)
 
         self._on_data_change()
 
@@ -56,13 +58,14 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             edge_width=self.layer.edge_width,
-            symbol=self.layer.symbol,
             edge_color=edge_color,
             face_color=face_color,
-            scaling=True,
         )
 
         self.reset()
+
+    def _on_symbol_change(self):
+        self.node.symbol = self.layer.symbol
 
     def _on_highlight_change(self):
         settings = get_settings()
@@ -80,10 +83,8 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             edge_width=settings.appearance.highlight_thickness,
-            symbol=self.layer.symbol,
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
-            scaling=True,
         )
 
         # only draw a box in 2D
@@ -168,12 +169,24 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
 
-    def reset(self, event=None):
+    def _on_antialias_change(self):
+        self.node.antialias = self.layer._antialias
+
+    def _on_shading_change(self):
+        shading = self.layer.shading
+        if shading == 'spherical':
+            self.node.spherical = True
+        else:
+            self.node.spherical = False
+
+    def reset(self):
         super().reset()
         self._update_text(update_node=False)
         self._on_blending_change()
         self._on_highlight_change()
         self._on_matrix_change()
+        self._on_antialias_change()
+        self._on_shading_change()
 
     def close(self):
         """Vispy visual is closing."""
