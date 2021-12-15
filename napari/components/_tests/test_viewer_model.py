@@ -744,3 +744,13 @@ def test_not_mutable_fields(field):
     assert 'has allow_mutation set to False and cannot be assigned' in str(
         err.value
     )
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_status_tooltip(Layer, data, ndim):
+    viewer = ViewerModel()
+    viewer.tooltip.visible = True
+    layer = Layer(data)
+    viewer.layers.append(layer)
+    viewer.cursor.position = (1,) * ndim
+    viewer._on_cursor_position_change()
