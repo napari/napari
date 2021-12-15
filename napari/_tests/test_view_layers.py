@@ -58,6 +58,7 @@ def test_docstring(layer):
     if name == 'Image':
         # For Image just test arguments that are in layer are in method
         named_method_params = [m.name for m in method_params]
+        print(named_method_params)
         for layer_param in layer_params:
             l_name, l_type, l_description = layer_param
             assert l_name in named_method_params

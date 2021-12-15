@@ -590,6 +590,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Rendering mode used by vispy. Must be one of our supported
             modes. If a list then must be same length as the axis that is being
             expanded as channels.
+        depiction : str
+            Selects a preset volume depiction mode in vispy
+              * volume: images are rendered as 3D volumes.
+              * plane: images are rendered as 2D planes embedded in 3D.
         iso_threshold : float or list
             Threshold for isosurface. If a list then must be same length as the
             axis that is being expanded as channels.
@@ -651,7 +655,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         cache : bool
             Whether slices of out-of-core datasets should be cached upon
             retrieval. Currently, this only applies to dask arrays.
-        experimental_slicing_plane : dict or SlicingPlane
+        plane : dict or SlicingPlane
             Properties defining plane rendering in 3D. Properties are defined in
             data coordinates. Valid dictionary keys are
             {'position', 'normal', 'thickness', and 'enabled'}.
