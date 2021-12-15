@@ -406,7 +406,7 @@ meta[‘multiscale’] is True, then the data should be interpreted as a
 multiscale image.
 
 meta(dict)
-: Layer metadata.
+: layer attributes.
 
 **Return**
 

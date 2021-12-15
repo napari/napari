@@ -8,6 +8,8 @@ We introduced a new plugin engine in December 2021. The new library [`npe2`][npe
 is a re-imagining of how napari interacts with plugins. Plugins targeting
 `napari-plugin-engine` will continue to work, but we recommend migrating to
 `npe2` as soon as possible.
+
+For more on migrating an existing plugins see the [](npe2-migration-guide).
 ```
 
 This guide will walk you through the steps required to write a napari plugin
