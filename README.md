@@ -106,7 +106,11 @@ From inside an IPython shell, you can open up an interactive viewer by calling
 from skimage import data
 import napari
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.Viewer()
+viewer.open_sample('scikit-image', 'cells3d')
+# viewer.open_image('my/image/filename.zarr')  # or look at your own data
+
+viewer.dims.ndisplay = 3  # selects 3D mode
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -117,7 +121,8 @@ To use napari from inside a script, use `napari.run()`:
 from skimage import data
 import napari
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.Viewer()
+viewer.open_sample('scikit-image', 'cells3d')
 napari.run()  # start the "event loop" and show the viewer
 ```
 
