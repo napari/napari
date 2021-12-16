@@ -51,6 +51,8 @@ from ..widgets.qt_message_popup import WarnPopup
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
 
+from ..qt_resources import QColoredSVGIcon
+
 
 # TODO: add error icon and handle pip install errors
 class Installer(QObject):
@@ -326,6 +328,15 @@ class PluginListItem(QFrame):
         self.help_button.setObjectName("help_button")
         if npe_version != 1:
             self.enabled_checkbox.setEnabled(False)
+            self.enabled_checkbox.setToolTip(
+                'This is a npe2 plugin and cannot be enabled/disabled at this time.'
+            )
+
+            icon = QColoredSVGIcon.from_resources('logo_silhouette')
+            self.npe2_icon.setPixmap(
+                icon.colored(color='#33F0FF').pixmap(20, 20)
+            )
+            self.npe2_text.show()
 
         if installed:
             self.enabled_checkbox.show()
@@ -371,6 +382,10 @@ class PluginListItem(QFrame):
         self.enabled_checkbox.setText("")
         self.row1.addWidget(self.enabled_checkbox)
         self.plugin_name = QLabel(self)
+        self.npe2_icon = QLabel(self)
+        self.npe2_text = QLabel(self)
+        self.npe2_text.setText('npe2')
+        self.npe2_text.hide()
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -382,6 +397,9 @@ class PluginListItem(QFrame):
         font15.setPointSize(15)
         self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
+        self.row1.addWidget(self.npe2_icon)
+        self.row1.addWidget(self.npe2_text)
+        self.row1.setSpacing(-1)
 
         self.item_status = QLabel(self)
         self.item_status.setObjectName("small_italic_text")
