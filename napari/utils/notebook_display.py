@@ -35,7 +35,13 @@ class NotebookScreenshot:
     ```
     """
 
-    def __init__(self, viewer, *, canvas_only=False, alt_text=None):
+    def __init__(
+        self,
+        viewer,
+        *,
+        canvas_only=False,
+        alt_text="Screenshot of the napari image viewer.",
+    ):
         """Initialize screenshot object.
 
         Parameters
@@ -80,10 +86,7 @@ class NotebookScreenshot:
     def _repr_html_(self):
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
-        if self.alt_text is not None:
-            html = f'<img src="{url}" alt="{self.alt_text}"></img>'
-        else:
-            html = f'<img src="{url}""></img>'
+        html = f'<img src="{url}" alt="{self.alt_text}"></img>'
         return html
 
 
