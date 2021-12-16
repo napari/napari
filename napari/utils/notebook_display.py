@@ -35,7 +35,7 @@ class NotebookScreenshot:
     ```
     """
 
-    def __init__(self, viewer, *, canvas_only=False):
+    def __init__(self, viewer, *, canvas_only=False, alt_text=None):
         """Initialize screenshot object.
 
         Parameters
@@ -46,10 +46,15 @@ class NotebookScreenshot:
             If False include the napari viewer frame in the screenshot,
             and if True then take screenshot of just the image display canvas.
             By default, False.
+        alt_text : str, optional
+            Image description alternative text, for screenreader accessibility.
+            Good alt-text describes the image and any text within the image
+            in no more than three short, complete sentences.
         """
         self.viewer = viewer
         self.canvas_only = canvas_only
         self.image = None
+        self.alt_text = alt_text
 
     def _repr_png_(self):
         """PNG representation of the viewer object for IPython.
@@ -75,7 +80,10 @@ class NotebookScreenshot:
     def _repr_html_(self):
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
-        html = f'<img src="{url}"></img>'
+        if self.alt_text is not None:
+            html = f'<img src="{url}" alt="{self.alt_text}"></img>'
+        else:
+            html = f'<img src="{url}""></img>'
         return html
 
 
