@@ -26,16 +26,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    _append_features,
-    _features_from_layer,
-    _features_to_choices,
-    _features_to_properties,
-    _remove_features,
-    _resize_features,
-    _validate_features,
-    coerce_current_properties,
-)
+from ..utils.layer_utils import FeaturesManager
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -500,7 +491,7 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        self._features, self._feature_defaults = _features_from_layer(
+        self._feature_manager = FeaturesManager._from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -727,17 +718,14 @@ class Shapes(Layer):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        return self._feature_manager.values()
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features, self._feature_defaults = _features_from_layer(
-            features=features,
-            num_data=self.nshapes,
-        )
+        self._feature_manager.set_values(features, num_data=self.nshapes)
         if self._face_color_property and (
             self._face_color_property not in self.features
         ):
@@ -772,12 +760,12 @@ class Shapes(Layer):
 
         See `features` for more details on the type of this property.
         """
-        return self._feature_defaults
+        return self._feature_manager.defaults()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return _features_to_properties(self._features)
+        return self._feature_manager.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -785,7 +773,7 @@ class Shapes(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return _features_to_choices(self._features)
+        return self._feature_manager.choices()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -864,23 +852,21 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return _features_to_properties(self._feature_defaults)
+        return self._feature_manager.currents()
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        current_properties = coerce_current_properties(current_properties)
-        self._feature_defaults = _validate_features(
-            current_properties, num_data=1
-        )
+        update_indices = None
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         ):
-            for k in self._feature_defaults:
-                self.features[k][
-                    list(self.selected_data)
-                ] = self._feature_defaults[k][0]
+            update_indices = list(self.selected_data)
+        self._feature_manager.set_currents(
+            current_properties, update_indices=update_indices
+        )
+        if update_indices is not None:
             self.refresh_colors()
         self.events.current_properties()
 
@@ -2024,11 +2010,7 @@ class Shapes(Layer):
             else:
                 n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
-            self._features = _resize_features(
-                self._features,
-                total_shapes,
-                defaults=self._feature_defaults,
-            )
+            self._feature_manager.resize(total_shapes)
             if total_shapes > n_prop_values:
                 n_props_to_add = total_shapes - n_prop_values
                 self.text.add(self.current_properties, n_props_to_add)
@@ -2581,7 +2563,7 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
-            self._features = _remove_features(self._features, index)
+            self._feature_manager.remove(index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2908,9 +2890,7 @@ class Shapes(Layer):
                 for i in self._dims_not_displayed
             ]
 
-            self._features = _append_features(
-                self._features, self._clipboard['features']
-            )
+            self._feature_manager.append(self._clipboard['features'])
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):

@@ -13,12 +13,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import (
-    _features_from_layer,
-    _features_to_choices,
-    _features_to_properties,
-    _resize_features,
-)
+from ..utils.layer_utils import FeaturesManager
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
@@ -231,7 +226,7 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._features, self._feature_defaults = _features_from_layer(
+        self._feature_manager = FeaturesManager._from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -284,11 +279,7 @@ class Vectors(Layer):
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
-                self._features = _resize_features(
-                    self._features,
-                    n_vectors,
-                    defaults=self._feature_defaults,
-                )
+                self._feature_manager.resize(n_vectors)
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the
                     # extra ones
@@ -323,18 +314,14 @@ class Vectors(Layer):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        return self._feature_manager.values()
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features, self._feature_defaults = _features_from_layer(
-            features=features,
-            num_data=len(self.data),
-        )
-
+        self._feature_manager.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
             if self._edge.color_properties.name not in self.features:
                 self._edge.color_mode = ColorMode.DIRECT
@@ -348,10 +335,9 @@ class Vectors(Layer):
                 )
             else:
                 edge_color_name = self._edge.color_properties.name
-                property_values = self.features[edge_color_name].to_numpy()
                 self._edge.color_properties = {
                     'name': edge_color_name,
-                    'values': property_values,
+                    'values': self.features[edge_color_name].to_numpy(),
                     'current_value': self.feature_defaults[edge_color_name][0],
                 }
         self.events.properties()
@@ -359,7 +345,7 @@ class Vectors(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return _features_to_properties(self._features)
+        return self._feature_manager.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -371,11 +357,11 @@ class Vectors(Layer):
 
         See `features` for more details on the type of this property.
         """
-        return self._feature_defaults
+        return self._feature_manager.defaults()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return _features_to_choices(self._features)
+        return self._feature_manager.choices()
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -475,12 +461,11 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
-        current_properties = _features_to_properties(self._feature_defaults)
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
             properties=self.properties,
-            current_properties=current_properties,
+            current_properties=self._feature_manager.currents(),
         )
         self.events.edge_color()
 

@@ -7,7 +7,7 @@ from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.layer_utils import _features_to_properties, _validate_features
+from ..utils.layer_utils import FeaturesManager
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -70,7 +70,7 @@ class TrackManager:
 
         # store the raw data here
         self._data = None
-        self._features = None
+        self._feature_manager = FeaturesManager({})
         self._order = None
 
         # use a kdtree to help with fast lookup of the nearest track
@@ -158,22 +158,23 @@ class TrackManager:
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        return self._feature_manager.values()
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        features = _validate_features(features, num_data=len(self.data))
+        self._feature_manager.set_values(features, num_data=len(self.data))
+        features = self._feature_manager.values()
         if 'track_id' not in features:
             features['track_id'] = self.track_ids
-        self._features = features.iloc[self._order].reset_index(drop=True)
+        self._feature_manager.reorder(self._order)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return _features_to_properties(self._features)
+        return self._feature_manager.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):

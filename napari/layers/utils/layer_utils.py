@@ -684,58 +684,145 @@ def features_to_pandas_dataframe(features: Any) -> pd.DataFrame:
     return features
 
 
-def _features_from_layer(
-    *,
-    features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
-    properties: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
-    property_choices: Optional[Dict[str, np.ndarray]] = None,
-    num_data: Optional[int] = None,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Coerces a layer's keyword arguments to feature values and defaults tables.
+class FeaturesManager:
+    def __init__(self, values, *, num_data: Optional[int] = None):
+        self._values = _validate_features(values, num_data=num_data)
+        self._defaults = self._make_defaults()
 
-    Parameters
-    ----------
-    features : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
-        The features input to a layer.
-    properties : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
-        The properties input to a layer.
-    property_choices : Optional[Dict[str, np.ndarray]]
-        The property choices input to a layer.
-    num_data : Optional[int]
-        The number of the elements in the layer calling this, such as
-        the number of points.
-
-    Returns
-    -------
-    pd.DataFrame
-        The pandas DataFrame created from the input features or properties.
-    pd.DataFrame
-        The pandas DataFrame of default values. The names and dtypes will be
-        the same as the features data, but the table will have exactly one row.
-
-    Raises
-    ------
-    ValueError
-        If the input properties columns are not all the same length, or if
-        that length is not equal to the given num_data.
-    """
-    if properties is not None or property_choices is not None:
-        features = _features_from_properties(
-            properties=properties,
-            property_choices=property_choices,
-            num_data=num_data,
+    def _make_defaults(self) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                name: _get_default_column(column)
+                for name, column in self._values.items()
+            },
+            index=range(1),
+            copy=True,
         )
-    else:
-        features = _validate_features(features, num_data=num_data)
-    defaults = pd.DataFrame(
-        {
-            name: _get_default_column(column)
-            for name, column in features.items()
-        },
-        index=range(1),
-        copy=True,
-    )
-    return features, defaults
+
+    def values(self) -> pd.DataFrame:
+        return self._values
+
+    def set_values(self, values, *, num_data=None):
+        self._values = _validate_features(values, num_data=num_data)
+        self._defaults = self._make_defaults()
+
+    def defaults(self) -> pd.DataFrame:
+        return self._defaults
+
+    def properties(self) -> Dict[str, np.ndarray]:
+        """Converts this to a deprecated properties dictionary.
+
+        This will reference the features data when possible, but in general the
+        returned dictionary mary contain copies of those data.
+
+        Returns
+        -------
+        Dict[str, np.ndarray]
+            The properties dictionary equivalent to the given features.
+        """
+        return _features_to_properties(self._values)
+
+    def choices(self) -> Dict[str, np.ndarray]:
+        """Converts this to a deprecated property choices dictionary.
+
+        Only categorical features will have corresponding entries in the dictionary.
+
+        Returns
+        -------
+        Dict[str, np.ndarray]
+            The property choices dictionary equivalent to this.
+        """
+        return {
+            name: series.dtype.categories.to_numpy()
+            for name, series in self._values.items()
+            if isinstance(series.dtype, pd.CategoricalDtype)
+        }
+
+    def currents(self) -> Dict[str, np.ndarray]:
+        return _features_to_properties(self._defaults)
+
+    def set_currents(
+        self,
+        currents: Dict[str, np.ndarray],
+        *,
+        update_indices: Optional[List[int]] = None,
+    ):
+        currents = coerce_current_properties(currents)
+        self._defaults = _validate_features(currents, num_data=1)
+        if update_indices is not None:
+            for k in self._defaults:
+                self._values[k][update_indices] = self._defaults[k][0]
+
+    def resize(
+        self,
+        size: int,
+    ):
+        """Resize this padding with default values if required.
+
+        Parameters
+        ----------
+        size : int
+            The new size (number of rows) of the features table.
+        """
+        current_size = self._values.shape[0]
+        if size < current_size:
+            self.remove(range(size, current_size))
+        elif size > current_size:
+            to_append = pd.concat([self._defaults] * (size - current_size))
+            self.append(to_append)
+
+    def append(self, to_append: pd.DataFrame):
+        """Append new feature rows to this.
+
+        Parameters
+        ----------
+        to_append : pd.DataFrame
+            The features to append.
+        """
+        self._values = self._values.append(to_append, ignore_index=True)
+
+    def remove(self, indices: Any):
+        """Remove rows from this by index.
+
+        Parameters
+        ----------
+        indices : Any
+            The indices of the rows to remove. Must be usable as the labels parameter
+            to pandas.DataFrame.drop.
+
+        Returns
+        -------
+        pd.DataFrame
+            The resulting features table, which contain copies of the existing data.
+        """
+        self._values = self._values.drop(labels=indices, axis=0).reset_index(
+            drop=True
+        )
+
+    def reorder(self, order):
+        self._values = self._values.iloc[order].reset_index(drop=True)
+
+    @classmethod
+    def _from_layer(
+        cls,
+        *,
+        features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+        properties: Optional[
+            Union[Dict[str, np.ndarray], pd.DataFrame]
+        ] = None,
+        property_choices: Optional[Dict[str, np.ndarray]] = None,
+        num_data: Optional[int] = None,
+    ) -> FeaturesManager:
+        """Coerces a layer's keyword arguments to feature values and defaults tables."""
+        if properties is not None or property_choices is not None:
+            features = _features_from_properties(
+                properties=properties,
+                property_choices=property_choices,
+                num_data=num_data,
+            )
+        else:
+            features = _validate_features(features, num_data=num_data)
+        return cls(features, num_data=num_data)
 
 
 def _get_default_column(column: pd.Series) -> pd.Series:
@@ -808,116 +895,5 @@ def _features_from_properties(
     return _validate_features(properties, num_data=num_data)
 
 
-def _features_to_choices(features: pd.DataFrame) -> Dict[str, np.ndarray]:
-    """Converts a features DataFrame to a deprecated property choices dictionary.
-
-    Only categorical features will have corresponding entries in the dictionary.
-
-    Parameters
-    ----------
-    features : pd.DataFrame
-        The features of a layer.
-
-    Returns
-    -------
-    Dict[str, np.ndarray]
-        The property choices dictionary equivalent to the given features.
-    """
-    return {
-        name: series.dtype.categories.to_numpy()
-        for name, series in features.items()
-        if isinstance(series.dtype, pd.CategoricalDtype)
-    }
-
-
 def _features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
-    """Converts a features DataFrame to a deprecated properties dictionary.
-
-    This will reference the features data when possible, but in general the
-    returned dictionary mary contain copies of those data.
-
-    Parameters
-    ----------
-    features : pd.DataFrame
-        The features of a layer.
-
-    Returns
-    -------
-    Dict[str, np.ndarray]
-        The properties dictionary equivalent to the given features.
-    """
     return {name: series.to_numpy() for name, series in features.items()}
-
-
-def _resize_features(
-    features: pd.DataFrame,
-    size: int,
-    *,
-    defaults: pd.DataFrame,
-) -> pd.DataFrame:
-    """Resize a features DataFrame to a new size, padding with default values if required.
-
-    Parameters
-    ----------
-    features : pd.DataFrame
-        The features of a layer.
-    size : int
-        The new size (number of rows) of the features table.
-    defaults : pd.DataFrame
-        The default value for each feature stored in a DataFrame with 1 row.
-        If a feature is missing from this or a default cannot be inferred,
-        a missing value will be used instead.
-
-    Returns
-    -------
-    pd.DataFrame
-        The new resized features table. In general, this will be a copy, except
-        when the size does not change.
-    """
-    current_size = features.shape[0]
-    if size < current_size:
-        return _remove_features(features, range(size, current_size))
-    elif size > current_size:
-        to_append = pd.concat([defaults] * (size - current_size))
-        return _append_features(features, to_append)
-    return features
-
-
-def _append_features(
-    features: pd.DataFrame, to_append: pd.DataFrame
-) -> pd.DataFrame:
-    """Append new feature rows to an existing features table.
-
-    Parameters
-    ----------
-    features : pd.DataFrame
-        The features of a layer.
-    to_append : pd.DataFrame
-        The features to append.
-
-    Returns
-    -------
-    pd.DataFrame
-        The resulting features table, which contain copies of the existing
-        and given data.
-    """
-    return features.append(to_append, ignore_index=True)
-
-
-def _remove_features(features: pd.DataFrame, indices: Any) -> pd.DataFrame:
-    """Remove rows from a features table by index.
-
-    Parameters
-    ----------
-    features : pd.DataFrame
-        The features of a layer.
-    indices : Any
-        The indices of the rows to remove. Must be usable as the labels parameter
-        to pandas.DataFrame.drop.
-
-    Returns
-    -------
-    pd.DataFrame
-        The resulting features table, which contain copies of the existing data.
-    """
-    return features.drop(labels=indices, axis=0).reset_index(drop=True)
