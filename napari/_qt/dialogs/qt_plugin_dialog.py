@@ -327,16 +327,7 @@ class PluginListItem(QFrame):
         self.help_button.setText(trans._("Website"))
         self.help_button.setObjectName("help_button")
         if npe_version != 1:
-            self.enabled_checkbox.setEnabled(False)
-            self.enabled_checkbox.setToolTip(
-                'This is a npe2 plugin and cannot be enabled/disabled at this time.'
-            )
-
-            icon = QColoredSVGIcon.from_resources('logo_silhouette')
-            self.npe2_icon.setPixmap(
-                icon.colored(color='#33F0FF').pixmap(20, 20)
-            )
-            self.npe2_text.show()
+            self._handle_npe2_plugin()
 
         if installed:
             self.enabled_checkbox.show()
@@ -346,6 +337,18 @@ class PluginListItem(QFrame):
             self.enabled_checkbox.hide()
             self.action_button.setText(trans._("install"))
             self.action_button.setObjectName("install_button")
+
+    def _handle_npe2_plugin(self):
+        self.enabled_checkbox.setEnabled(False)
+        self.enabled_checkbox.setToolTip(
+            'This is a npe2 plugin and cannot be enabled/disabled at this time.'
+        )
+
+        icon = QColoredSVGIcon.from_resources('logo_silhouette')
+        self.npe2_icon.setPixmap(
+            icon.colored(color='#33F0FF').pixmap(20, 20)
+        )
+        self.npe2_text.show()
 
     def _get_dialog(self) -> QDialog:
         p = self.parent()
@@ -382,10 +385,6 @@ class PluginListItem(QFrame):
         self.enabled_checkbox.setText("")
         self.row1.addWidget(self.enabled_checkbox)
         self.plugin_name = QLabel(self)
-        self.npe2_icon = QLabel(self)
-        self.npe2_text = QLabel(self)
-        self.npe2_text.setText('npe2')
-        self.npe2_text.hide()
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -397,9 +396,14 @@ class PluginListItem(QFrame):
         font15.setPointSize(15)
         self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
+
+        self.npe2_icon = QLabel(self)
+        self.npe2_text = QLabel(self)
+        self.npe2_text.setText('npe2')
+        self.npe2_text.hide()
         self.row1.addWidget(self.npe2_icon)
         self.row1.addWidget(self.npe2_text)
-        self.row1.setSpacing(-1)
+
 
         self.item_status = QLabel(self)
         self.item_status.setObjectName("small_italic_text")
@@ -474,6 +478,7 @@ class PluginListItem(QFrame):
         for plugin_name, _, distname in plugin_manager.iter_available():
             if distname and distname == current_distname:
                 plugin_manager.set_blocked(plugin_name, not enabled)
+
 
 
 class QPluginList(QListWidget):
