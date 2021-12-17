@@ -21,6 +21,7 @@ chapters:
   - file: guides/events_reference
   - file: guides/preferences
   - file: guides/contexts_expressions
+  - file: guides/color
 
 - file: plugins/index
   sections:
