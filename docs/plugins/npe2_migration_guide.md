@@ -2,6 +2,13 @@
 
 # npe2 migration guide
 
+```{warning}
+This guide is still a work in progress.
+
+There are inaccuracies and mistakes. If you notice any, feel free to submit
+issues to the [napari github repository](https://github.com/napari/napari).
+```
+
 We've introduced a new plugin engine. The new library [npe2] is a
 re-imagining of how napari interacts with plugins. Rather than importing a
 package to discover plugin functionality, a static manifest file is used to

@@ -11,7 +11,7 @@ file is used to declaratively describe a plugin's capabilities. Details can be
 found in the [](npe2-manifest-spec).
 
 Plugins targeting `napari-plugin-engine` will continue to work, but we
-recommend migrating to `npe2` as soon as possible. `npe2` includes tooling to
+recommend migrating to `npe2` eventually. `npe2` includes tooling to
 help automate the process of migrating plugins. See the [migration
 guide](npe2-migration-guide) for details.
 
