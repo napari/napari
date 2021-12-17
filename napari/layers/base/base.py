@@ -20,7 +20,6 @@ from ...utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
@@ -222,7 +221,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         super().__init__()
 
         if name is None and data is not None:
-            name = magic_name(data, path_prefix=ROOT_DIR)
+            name = magic_name(data)
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -408,7 +407,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             return
         if not name:
             name = self._basename()
-        self._name = name
+        self._name = str(name)
         self.events.name()
 
     @property
@@ -568,12 +567,34 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def translate_grid(self):
-        """list: Factors to shift the layer by."""
-        return self._transforms['world2grid'].translate
+        warnings.warn(
+            trans._(
+                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._translate_grid
 
     @translate_grid.setter
     def translate_grid(self, translate_grid):
-        if np.all(self.translate_grid == translate_grid):
+        warnings.warn(
+            trans._(
+                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._translate_grid = translate_grid
+
+    @property
+    def _translate_grid(self):
+        """list: Factors to shift the layer by."""
+        return self._transforms['world2grid'].translate
+
+    @_translate_grid.setter
+    def _translate_grid(self, translate_grid):
+        if np.all(self._translate_grid == translate_grid):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
@@ -614,8 +635,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # itself so that layers can be sliced in different ways for multiple
         # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
         # for additional discussion.
-        order = np.array(self._dims_displayed)
-        order[np.argsort(order)] = list(range(len(order)))
+        displayed = self._dims_displayed
+        # equivalent to: order = np.argsort(displayed)
+        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
         return tuple(order)
 
     def _update_dims(self, event=None):
@@ -624,6 +646,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This function needs to be called whenever data or transform information
         changes, and should be called before events get emitted.
         """
+        from ...components.dims import reorder_after_dim_reduction
+
         ndim = self._get_ndim()
 
         old_ndim = self._ndim
@@ -631,9 +655,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
             self._dims_point = self._dims_point[-ndim:]
-            arr = np.array(self._dims_order[-ndim:])
-            arr[np.argsort(arr)] = range(len(arr))
-            self._dims_order = arr.tolist()
+            self._dims_order = list(
+                reorder_after_dim_reduction(self._dims_order[-ndim:])
+            )
             self._position = self._position[-ndim:]
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
@@ -829,8 +853,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def help(self, help):
         if help == self.help:
             return
-        self.events.help(help=help)
         self._help = help
+        self.events.help(help=help)
 
     @property
     def interactive(self):
@@ -839,10 +863,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @interactive.setter
     def interactive(self, interactive):
-        if interactive == self.interactive:
+        if interactive == self._interactive:
             return
-        self.events.interactive(interactive=interactive)
         self._interactive = interactive
+        self.events.interactive(interactive=interactive)
 
     @property
     def cursor(self):
@@ -853,8 +877,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def cursor(self, cursor):
         if cursor == self.cursor:
             return
-        self.events.cursor(cursor=cursor)
         self._cursor = cursor
+        self.events.cursor(cursor=cursor)
 
     @property
     def cursor_size(self):
@@ -865,8 +889,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def cursor_size(self, cursor_size):
         if cursor_size == self.cursor_size:
             return
-        self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
+        self.events.cursor_size(cursor_size=cursor_size)
 
     @property
     def experimental_clipping_planes(self):
@@ -1173,6 +1197,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
+    def data_to_world(self, position):
+        """Convert from data coordinates to world coordinates.
+
+        Parameters
+        ----------
+        position : tuple, list, 1D array
+            Position in data coordinates. If longer then the
+            number of dimensions of the layer, the later
+            dimensions will be used.
+
+        Returns
+        -------
+        tuple
+            Position in world coordinates.
+        """
+        if len(position) >= self.ndim:
+            coords = list(position[-self.ndim :])
+        else:
+            coords = [0] * (self.ndim - len(position)) + list(position)
+
+        return tuple(self._transforms[1:].simplified(coords))
+
     def _world_to_displayed_data(
         self, position: np.ndarray, dims_displayed: np.ndarray
     ) -> tuple:
@@ -1420,9 +1466,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def _displayed_axes(self):
-        displayed_axes = [
-            self._dims_displayed[i] for i in self._dims_displayed_order
-        ]
+        # assignment upfront to avoid repeated computation of properties
+        _dims_displayed = self._dims_displayed
+        _dims_displayed_order = self._dims_displayed_order
+        displayed_axes = [_dims_displayed[i] for i in _dims_displayed_order]
         return displayed_axes
 
     @property
@@ -1540,7 +1587,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         return generate_layer_status(self.name, position, value)
 
-    def _get_tooltip_text(self, position, *, world=False):
+    def _get_tooltip_text(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ):
         """
         tooltip message of the data at a coordinate position.
 
@@ -1548,6 +1602,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.
@@ -1649,8 +1709,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         if layer_type not in layers.NAMES:
             raise ValueError(
-                f"Unrecognized layer_type: '{layer_type}'. "
-                f"Must be one of: {layers.NAMES}."
+                trans._(
+                    "Unrecognized layer_type: '{layer_type}'. Must be one of: {layer_names}.",
+                    deferred=True,
+                    layer_type=layer_type,
+                    layer_names=layers.NAMES,
+                )
             )
 
         Cls = getattr(layers, layer_type.title())
@@ -1663,6 +1727,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
-                "_add_layer_from_data received an unexpected keyword "
-                f"argument ({bad_key}) for layer type {layer_type}"
+                trans._(
+                    "_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}",
+                    deferred=True,
+                    bad_key=bad_key,
+                    layer_type=layer_type,
+                )
             ) from exc

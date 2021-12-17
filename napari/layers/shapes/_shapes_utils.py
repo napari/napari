@@ -1108,7 +1108,10 @@ def validate_num_vertices(
         ):
             raise ValueError(
                 trans._(
-                    f"{shape_type} {shape} has invalid number of vertices: {len(shape)}.",
+                    "{shape_type} {shape} has invalid number of vertices: {shape_length}.",
                     deferred=True,
+                    shape_type=shape_type,
+                    shape=shape,
+                    shape_length=len(shape),
                 )
             )

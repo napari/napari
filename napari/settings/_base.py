@@ -54,7 +54,12 @@ class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
 
                 @emitter.connect
                 def _warn_restart(*_):
-                    warn("Restart required for this change to take effect.")
+                    warn(
+                        trans._(
+                            "Restart required for this change to take effect.",
+                            deferred=True,
+                        )
+                    )
 
     def _on_sub_event(self, event: Event, field=None):
         """emit the field.attr name and new value"""
@@ -155,7 +160,12 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """
         path = path or self.config_path
         if not path:
-            raise ValueError("No path provided in config or save argument.")
+            raise ValueError(
+                trans._(
+                    "No path provided in config or save argument.",
+                    deferred=True,
+                )
+            )
 
         path = Path(path).expanduser().resolve()
         path.parent.mkdir(exist_ok=True, parents=True)
@@ -170,7 +180,11 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             _data = json_dumps(data, default=self.__json_encoder__)
         else:
             raise NotImplementedError(
-                f"Can only currently dump to `.json` or `.yaml`, not {path!r}"
+                trans._(
+                    "Can only currently dump to `.json` or `.yaml`, not {path!r}",
+                    deferred=True,
+                    path=path,
+                )
             )
         with open(path, 'w') as target:
             target.write(_data)
@@ -386,11 +400,10 @@ def config_file_settings_source(
 
         # if errors occur, we still want to boot, so we just remove bad keys
         errors = err.errors()
-        msg = (
-            "Validation errors in config file(s).\n"
-            "The following fields have been reset to the default value:\n\n"
-            + display_errors(errors)
-            + "\n"
+        msg = trans._(
+            "Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n",
+            deferred=True,
+            errors=display_errors(errors),
         )
         try:
             # we're about to nuke some settings, so just in case... try backup

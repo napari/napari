@@ -514,6 +514,43 @@ class Affine(Transform):
             name=self.name,
         )
 
+    def replace_slice(
+        self, axes: Sequence[int], transform: 'Affine'
+    ) -> 'Affine':
+        """Returns a transform where the transform at the indicated n dimensions is replaced with another n-dimensional transform
+
+        Parameters
+        ----------
+        axes: Sequence[int]
+            Axes where the transform will be replaced
+        transform: Affine
+            The transform that will be inserted. Must have as many dimension as len(axes)
+
+        Returns
+        -------
+        Affine
+            Resulting transform.
+        """
+
+        if len(axes) != transform.ndim:
+            raise ValueError(
+                trans._(
+                    'Dimensionality of provided axes list and transform differ.',
+                    deferred=True,
+                )
+            )
+
+        linear_matrix = np.copy(self.linear_matrix)
+        linear_matrix[np.ix_(axes, axes)] = transform.linear_matrix
+        translate = np.copy(self.translate)
+        translate[axes] = transform.translate
+        return Affine(
+            linear_matrix=linear_matrix,
+            translate=translate,
+            ndim=len(axes),
+            name=self.name,
+        )
+
     def expand_dims(self, axes: Sequence[int]) -> 'Affine':
         """Return a transform with added axes for non-visible dimensions.
 

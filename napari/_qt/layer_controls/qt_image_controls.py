@@ -2,9 +2,9 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
 
 from ...layers.image._image_constants import (
+    ImageRendering,
     Interpolation,
     Interpolation3D,
-    Rendering,
 )
 from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
@@ -56,7 +56,7 @@ class QtImageControls(QtBaseImageControls):
         self.interpLabel = QLabel(trans._('interpolation:'))
 
         renderComboBox = QComboBox(self)
-        rendering_options = [i.value for i in Rendering.image_layer_subset()]
+        rendering_options = [i.value for i in ImageRendering]
         renderComboBox.addItems(rendering_options)
         index = renderComboBox.findText(
             self.layer.rendering, Qt.MatchFixedString
@@ -223,14 +223,14 @@ class QtImageControls(QtBaseImageControls):
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
-        rendering = Rendering(self.layer.rendering)
-        if rendering == Rendering.ISO:
+        rendering = ImageRendering(self.layer.rendering)
+        if rendering == ImageRendering.ISO:
             self.isoThresholdSlider.show()
             self.isoThresholdLabel.show()
         else:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
-        if rendering == Rendering.ATTENUATED_MIP:
+        if rendering == ImageRendering.ATTENUATED_MIP:
             self.attenuationSlider.show()
             self.attenuationLabel.show()
         else:

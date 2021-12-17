@@ -1,6 +1,8 @@
 import numpy as np
 
-from napari._tests.utils import skip_on_win_ci, slow
+from napari._tests.utils import skip_on_win_ci
+from napari._vispy.layers.image import VispyImageLayer
+from napari.layers.image import Image
 
 
 def test_image_rendering(make_napari_viewer):
@@ -39,7 +41,6 @@ def test_image_rendering(make_napari_viewer):
     assert layer.rendering == 'additive'
 
 
-@slow(15)
 @skip_on_win_ci
 def test_visibility_consistency(qtbot, make_napari_viewer):
     """Make sure toggling visibility maintains image contrast.
@@ -57,3 +58,24 @@ def test_visibility_consistency(qtbot, make_napari_viewer):
     layer.visible = True
     screen2 = viewer.screenshot(flash=False).astype('float')
     assert np.max(np.abs(screen2 - screen1)) < 5
+
+
+def test_clipping_planes_dims():
+    """
+    Ensure that dims are correctly set on clipping planes
+    (vispy uses xyz, napary zyx)
+    """
+    clipping_planes = {
+        'position': (1, 2, 3),
+        'normal': (1, 2, 3),
+    }
+    image_layer = Image(
+        np.zeros((2, 2, 2)), experimental_clipping_planes=clipping_planes
+    )
+    vispy_layer = VispyImageLayer(image_layer)
+    napari_clip = image_layer.experimental_clipping_planes.as_array()
+    # needed to get volume node
+    image_layer._ndisplay = 3
+    vispy_layer._on_display_change()
+    vispy_clip = vispy_layer.node.clipping_planes
+    assert np.all(napari_clip == vispy_clip[..., ::-1])

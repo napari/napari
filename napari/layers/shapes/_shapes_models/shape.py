@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from copy import copy
 
 import numpy as np
 
@@ -427,9 +426,10 @@ class Shape(ABC):
                         self.slice_key[0, j], self.slice_key[1, j] + 1
                     )
                 j += 1
-            displayed_order = np.array(copy(self.dims_displayed))
-            displayed_order[np.argsort(displayed_order)] = list(
-                range(len(displayed_order))
+            # equivalent to: displayed_order = np.argsort(self.dims_displayed)
+            dims_displayed = self.dims_displayed
+            displayed_order = sorted(
+                range(len(dims_displayed)), key=lambda x: dims_displayed[x]
             )
             mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
         else:

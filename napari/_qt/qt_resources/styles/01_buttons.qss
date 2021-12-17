@@ -51,19 +51,19 @@ QtViewerPushButton[mode="home"] {
   image: url(":/themes/{{ name }}/home.svg");
 }
 
-QtStateButton[mode="ndisplay_button"]:checked {
+QtViewerPushButton[mode="ndisplay_button"]:checked {
   image: url(":/themes/{{ name }}/3D.svg");
 }
 
-QtStateButton[mode="ndisplay_button"] {
+QtViewerPushButton[mode="ndisplay_button"] {
   image: url(":/themes/{{ name }}/2D.svg");
 }
 
-QtStateButton[mode="grid_view_button"]:checked {
+QtViewerPushButton[mode="grid_view_button"]:checked {
   image: url(":/themes/{{ name }}/square.svg");
 }
 
-QtStateButton[mode="grid_view_button"] {
+QtViewerPushButton[mode="grid_view_button"] {
   image: url(":/themes/{{ name }}/grid.svg");
 }
 

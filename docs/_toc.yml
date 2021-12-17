@@ -3,53 +3,68 @@
 #
 - file: index
 
+- file: howtos/index
+  title: How-to guides
+  sections:
+    - file: howtos/connecting_events
+    - file: howtos/napari_imageJ
+    - file: howtos/docker
+    - file: howtos/perfmon
+
 - file: guides/index
   sections:
-    - file: guides/3D_interactivity
-    - file: guides/event_loop
-    - file: guides/connecting_events
-    - file: guides/events_reference
-    - file: guides/threading
     - file: guides/magicgui
-    - file: guides/perfmon
+    - file: guides/event_loop
+    - file: guides/threading
+    - file: guides/rendering-explanation
     - file: guides/rendering
+    - file: guides/performance
+    - file: guides/3D_interactivity
+    - file: guides/events_reference
     - file: guides/preferences
-    - file: guides/translations
     - file: guides/contexts_expressions
 
 - file: plugins/index
   sections:
     - file: plugins/find-and-install-plugin
-    - file: plugins/for_napari_developers
+    - file: plugins/npe2_getting_started
+    - file: plugins/npe2_manifest_specification
+    - file: plugins/npe2_migration_guide
+    - file: plugins/best_practices
     - file: plugins/for_plugin_developers
     - file: plugins/hook_specifications
+    - file: plugins/for_napari_developers
 
 - file: developers/index
   sections:
-    - file: developers/team
     - file: developers/benchmarks
-    - file: developers/code_of_conduct
-    - file: developers/code_of_conduct_reporting
     - file: developers/contributing
     - file: developers/core_dev_guide
+    - file: developers/profiling
     - file: developers/docs
-    - file: developers/governance
-    - file: developers/mission_and_values
-    - file: developers/working_groups
+    - file: developers/translations
+    - file: developers/profiling
     - file: developers/release
-    - file: developers/roadmap_0_3
-    - file: developers/roadmap_0_3_retrospective
-    - file: developers/roadmap_0_4
     - file: developers/testing
 
-- file: explanations/index
+- file: community/index
   sections:
-    - file: explanations/docker
-    - file: explanations/performance
-    - file: explanations/rendering
+    - file: community/mission_and_values
+    - file: community/team
+    - file: community/code_of_conduct
+    - file: community/code_of_conduct_reporting
+    - file: community/governance
+    - file: community/working_groups
+
+- file: roadmaps/index
+  sections:
+    - file: roadmaps/0_3
+    - file: roadmaps/0_3_retrospective
+    - file: roadmaps/0_4
 
 - file: release/index
   sections:
+    - file: release/release_0_4_12
     - file: release/release_0_4_11
     - file: release/release_0_4_10
     - file: release/release_0_4_9
@@ -90,3 +105,5 @@
 - file: api/index
   sections:
     - file: api/napari
+
+- file: glossary

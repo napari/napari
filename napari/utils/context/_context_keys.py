@@ -20,6 +20,7 @@ from typing import (
 
 from typing_extensions import Literal
 
+from ..translations import trans
 from ._expressions import Name
 
 if TYPE_CHECKING:
@@ -134,7 +135,11 @@ class ContextKey(Name, Generic[A, T]):
         """
         if self.id:
             raise ValueError(
-                f"Cannot change id of ContextKey (already {self.id!r})"
+                trans._(
+                    "Cannot change id of ContextKey (already {identifier!r})",
+                    deferred=True,
+                    identifier=self.id,
+                )
             )
         self._owner = owner
         self.id = name
