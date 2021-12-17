@@ -339,7 +339,6 @@ class PluginListItem(QFrame):
             self.action_button.setObjectName("install_button")
 
     def _handle_npe2_plugin(self):
-
         npe2_icon = QLabel(self)
         icon = QColoredSVGIcon.from_resources('logo_silhouette')
         npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
@@ -470,7 +469,6 @@ class PluginListItem(QFrame):
         for plugin_name, _, distname in plugin_manager.iter_available():
             if distname and distname == current_distname:
                 plugin_manager.set_blocked(plugin_name, not enabled)
-
 
 
 class QPluginList(QListWidget):
