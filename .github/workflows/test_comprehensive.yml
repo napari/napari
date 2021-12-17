@@ -15,7 +15,6 @@ jobs:
 
   manifest:
     name: Check Manifest
-    needs: code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -31,7 +30,6 @@ jobs:
         run: check-manifest
 
   test:
-    needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
     strategy:
