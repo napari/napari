@@ -20,7 +20,6 @@ from ...utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
@@ -222,7 +221,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         super().__init__()
 
         if name is None and data is not None:
-            name = magic_name(data, path_prefix=ROOT_DIR)
+            name = magic_name(data)
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -568,12 +567,34 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def translate_grid(self):
-        """list: Factors to shift the layer by."""
-        return self._transforms['world2grid'].translate
+        warnings.warn(
+            trans._(
+                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._translate_grid
 
     @translate_grid.setter
     def translate_grid(self, translate_grid):
-        if np.all(self.translate_grid == translate_grid):
+        warnings.warn(
+            trans._(
+                "translate_grid will become private in v0.4.14. See Layer.translate or Layer.data_to_world() instead.",
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._translate_grid = translate_grid
+
+    @property
+    def _translate_grid(self):
+        """list: Factors to shift the layer by."""
+        return self._transforms['world2grid'].translate
+
+    @_translate_grid.setter
+    def _translate_grid(self, translate_grid):
+        if np.all(self._translate_grid == translate_grid):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
@@ -1176,6 +1197,28 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
+    def data_to_world(self, position):
+        """Convert from data coordinates to world coordinates.
+
+        Parameters
+        ----------
+        position : tuple, list, 1D array
+            Position in data coordinates. If longer then the
+            number of dimensions of the layer, the later
+            dimensions will be used.
+
+        Returns
+        -------
+        tuple
+            Position in world coordinates.
+        """
+        if len(position) >= self.ndim:
+            coords = list(position[-self.ndim :])
+        else:
+            coords = [0] * (self.ndim - len(position)) + list(position)
+
+        return tuple(self._transforms[1:].simplified(coords))
+
     def _world_to_displayed_data(
         self, position: np.ndarray, dims_displayed: np.ndarray
     ) -> tuple:
@@ -1544,7 +1587,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         return generate_layer_status(self.name, position, value)
 
-    def _get_tooltip_text(self, position, *, world=False):
+    def _get_tooltip_text(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ):
         """
         tooltip message of the data at a coordinate position.
 
@@ -1552,6 +1602,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.

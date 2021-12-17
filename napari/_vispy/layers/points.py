@@ -29,6 +29,8 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer._face.events.color_properties.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
+        self.layer.events.shading.connect(self._on_shading_change)
+        self.layer.events._antialias.connect(self._on_antialias_change)
         self.layer.events.experimental_canvas_size_limits.connect(
             self._on_canvas_size_limits_change
         )
@@ -170,17 +172,29 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
 
+    def _on_antialias_change(self):
+        self.node.antialias = self.layer._antialias
+
+    def _on_shading_change(self):
+        shading = self.layer.shading
+        if shading == 'spherical':
+            self.node.spherical = True
+        else:
+            self.node.spherical = False
+
     def _on_canvas_size_limits_change(self):
         min_size, max_size = self.layer.experimental_canvas_size_limits
         self.node.clamp_filter.min_size = min_size
         self.node.clamp_filter.max_size = max_size
 
-    def reset(self, event=None):
+    def reset(self):
         super().reset()
         self._update_text(update_node=False)
         self._on_blending_change()
         self._on_highlight_change()
         self._on_matrix_change()
+        self._on_antialias_change()
+        self._on_shading_change()
         self._on_canvas_size_limits_change()
 
     def close(self):

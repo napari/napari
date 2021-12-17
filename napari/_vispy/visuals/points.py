@@ -1,8 +1,7 @@
-from vispy.scene.visuals import Compound, Line, Text
+from vispy.scene.visuals import Compound, Line, Markers, Text
 
 from ..filters.points_clamp_size import ClampSizeFilter
 from .clipping_planes_mixin import ClippingPlanesMixin
-from .markers import Markers
 
 
 class PointsVisual(ClippingPlanesMixin, Compound):
@@ -44,3 +43,20 @@ class PointsVisual(ClippingPlanesMixin, Compound):
     def scaling(self, value):
         for marker in self._subvisuals[:2]:
             marker.scaling = value
+
+    @property
+    def antialias(self):
+        return self._subvisuals[0].antialias
+
+    @antialias.setter
+    def antialias(self, value):
+        for marker in self._subvisuals[:2]:
+            marker.antialias = value
+
+    @property
+    def spherical(self):
+        return self._subvisuals[0].spherical
+
+    @spherical.setter
+    def spherical(self, value):
+        self._subvisuals[0].spherical = value

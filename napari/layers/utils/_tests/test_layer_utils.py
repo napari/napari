@@ -4,6 +4,11 @@ import pytest
 from dask import array as da
 
 from napari.layers.utils.layer_utils import (
+    _append_features,
+    _features_from_properties,
+    _remove_features,
+    _resize_features,
+    _validate_features,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -192,7 +197,8 @@ def test_get_current_properties_with_property_choices_then_first_values():
     }
 
     current_properties = get_current_properties(
-        properties, property_choices, 0
+        properties,
+        property_choices,
     )
 
     assert current_properties == {
@@ -254,3 +260,189 @@ def test_dims_displayed_world_to_layer(
         dims_displayed, ndim_world=ndim_world, ndim_layer=ndim_layer
     )
     np.testing.assert_array_equal(dims_displayed_layer, expected)
+
+
+def test_validate_features_with_none_then_empty():
+    features = _validate_features(None)
+    assert features.shape == (0, 0)
+
+
+def test_features_from_properties_with_none_and_num_data():
+    features = _features_from_properties(num_data=5)
+    assert features.shape == (5, 0)
+
+
+def test_features_from_properties_with_properties():
+    properties = {
+        'class': np.array(['sky', 'person', 'building', 'person']),
+        'confidence': np.array([0.2, 0.5, 1, 0.8]),
+    }
+
+    features = _features_from_properties(properties=properties, num_data=4)
+
+    assert features.shape == (4, 2)
+    np.testing.assert_array_equal(features['class'], properties['class'])
+    np.testing.assert_array_equal(
+        features['confidence'], properties['confidence']
+    )
+
+
+def test_features_from_properties_with_properties_and_choices():
+    properties = {
+        'class': np.array(['sky', 'person', 'building', 'person']),
+    }
+    property_choices = {
+        'class': np.array(['building', 'person', 'sky']),
+    }
+
+    features = _features_from_properties(
+        properties=properties, property_choices=property_choices, num_data=4
+    )
+
+    assert features.shape == (4, 1)
+    class_column = features['class']
+    np.testing.assert_array_equal(class_column, properties['class'])
+    assert isinstance(class_column.dtype, pd.CategoricalDtype)
+    np.testing.assert_array_equal(
+        class_column.dtype.categories, property_choices['class']
+    )
+
+
+def test_features_from_properties_with_choices_only():
+    property_choices = {
+        'class': np.array(['building', 'person', 'sky']),
+    }
+
+    features = _features_from_properties(
+        property_choices=property_choices, num_data=0
+    )
+
+    assert features.shape == (0, 1)
+    class_column = features['class']
+    assert isinstance(class_column.dtype, pd.CategoricalDtype)
+    np.testing.assert_array_equal(
+        class_column.dtype.categories, property_choices['class']
+    )
+
+
+def test_features_from_properties_with_empty_properties_and_choices():
+    properties = {
+        'class': np.array([]),
+    }
+    property_choices = {
+        'class': np.array(['building', 'person', 'sky']),
+    }
+
+    features = _features_from_properties(
+        properties=properties, property_choices=property_choices, num_data=0
+    )
+
+    assert features.shape == (0, 1)
+    class_column = features['class']
+    assert isinstance(class_column.dtype, pd.CategoricalDtype)
+    np.testing.assert_array_equal(
+        class_column.dtype.categories, property_choices['class']
+    )
+
+
+TEST_FEATURES = pd.DataFrame(
+    {
+        'class': pd.Series(
+            ['sky', 'person', 'building', 'person'],
+            dtype=pd.CategoricalDtype(
+                categories=('building', 'person', 'sky')
+            ),
+        ),
+        'confidence': pd.Series([0.2, 0.5, 1, 0.8]),
+    }
+)
+
+
+def test_features_from_properties_with_dataframe():
+    features = _features_from_properties(properties=TEST_FEATURES)
+    pd.testing.assert_frame_equal(features, TEST_FEATURES)
+
+
+def test_resize_features_smaller():
+    current_values = {
+        'class': np.array(['person']),
+        'confidence': np.array([0.8]),
+    }
+
+    new_features = _resize_features(
+        TEST_FEATURES, 2, current_values=current_values
+    )
+
+    assert new_features.shape == (2, 2)
+    np.testing.assert_array_equal(new_features['class'], ['sky', 'person'])
+    np.testing.assert_array_equal(new_features['confidence'], [0.2, 0.5])
+
+
+def test_resize_features_larger():
+    current_properties = {
+        'class': np.array(['person']),
+        'confidence': np.array([0.8]),
+    }
+
+    new_features = _resize_features(
+        TEST_FEATURES, 6, current_values=current_properties
+    )
+
+    assert new_features.shape == (6, 2)
+    np.testing.assert_array_equal(
+        new_features['class'],
+        ['sky', 'person', 'building', 'person', 'person', 'person'],
+    )
+    np.testing.assert_array_equal(
+        new_features['confidence'],
+        [0.2, 0.5, 1, 0.8, 0.8, 0.8],
+    )
+
+
+def test_append_features():
+    to_append = pd.DataFrame(
+        {
+            'class': ['sky', 'building'],
+            'confidence': [0.6, 0.1],
+        }
+    )
+
+    new_features = _append_features(TEST_FEATURES, to_append)
+
+    assert new_features.shape == (6, 2)
+    np.testing.assert_array_equal(
+        new_features['class'],
+        ['sky', 'person', 'building', 'person', 'sky', 'building'],
+    )
+    np.testing.assert_array_equal(
+        new_features['confidence'],
+        [0.2, 0.5, 1, 0.8, 0.6, 0.1],
+    )
+
+
+def test_remove_features():
+    new_features = _remove_features(TEST_FEATURES, [1, 3])
+
+    assert new_features.shape == (2, 2)
+    np.testing.assert_array_equal(
+        new_features['class'],
+        ['sky', 'building'],
+    )
+    np.testing.assert_array_equal(
+        new_features['confidence'],
+        [0.2, 1],
+    )
+
+
+def test_validate_features_with_custom_index_without_num_data():
+    input = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
+    actual = _validate_features(input)
+    expected = input.reset_index(drop=True)
+    pd.testing.assert_frame_equal(actual, expected)
+
+
+def test_validate_features_with_custom_index_and_num_data():
+    input = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
+    actual = _validate_features(input, num_data=2)
+    expected = input.reset_index(drop=True)
+    pd.testing.assert_frame_equal(actual, expected)

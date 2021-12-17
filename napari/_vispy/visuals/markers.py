@@ -5,7 +5,6 @@ from vispy.scene.visuals import Markers as BaseMarkers
 # layer is invisible and the self._data property is None
 class Markers(BaseMarkers):
     def _compute_bounds(self, axis, view):
-        # This if statement needs to be added to vispy master
         if self._data is None:
             return None
         pos = self._data['a_position']
