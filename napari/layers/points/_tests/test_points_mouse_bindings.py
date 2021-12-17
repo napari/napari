@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pytest
@@ -20,9 +20,13 @@ class Event:
     type: str
     is_dragging: bool = False
     modifiers: List[str] = field(default_factory=list)
-    position: Tuple[int, int] = (0, 0)  # world coords
+    position: Union[Tuple[int, int], Tuple[int, int, int]] = (
+        0,
+        0,
+    )  # world coords
     pos: np.ndarray = np.zeros(2)  # canvas coords
     view_direction: Optional[List[float]] = None
+    up_direction: Optional[List[float]] = None
     dims_displayed: List[int] = field(default_factory=lambda: [0, 1])
 
 
@@ -75,7 +79,7 @@ def create_known_points_layer_3d():
     # extra variables usually set when layer is added to viewer must be declared
     # for certain 3D related methods.
     # e.g. Points._display_bounding_box_augmented, Points.get_ray_intersections
-    layer._indices_view = [0, 1, 2, 3]
+    layer._indices_view = np.array([0, 1, 2, 3])
     layer._ndisplay = 3
 
     assert np.all(layer.data == data)
@@ -274,7 +278,7 @@ def test_unselect_by_click_point_3d(create_known_points_layer_3d):
     assert layer.selected_data == {0}
 
 
-def test_selct_by_shift_click_3d(create_known_points_layer_3d):
+def test_select_by_shift_click_3d(create_known_points_layer_3d):
     """Select selecting point by shift clicking on an additional point in 3D"""
     layer, n_points, _ = create_known_points_layer_3d
 
@@ -493,7 +497,7 @@ def test_unselecting_points(create_known_points_layer_2d):
     assert len(layer.selected_data) == 0
 
 
-def test_selecting_all_points_with_drag(create_known_points_layer_2d):
+def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
     """Select all points when drag box includes all of them."""
     layer, n_points, known_non_point = create_known_points_layer_2d
 
@@ -523,8 +527,8 @@ def test_selecting_all_points_with_drag(create_known_points_layer_2d):
     assert len(layer.selected_data) == n_points
 
 
-def test_selecting_no_points_with_drag(create_known_points_layer_2d):
-    """Select all points when drag box includes all of them."""
+def test_selecting_no_points_with_drag_2d(create_known_points_layer_2d):
+    """Select no points when drag box outside of all of them."""
     layer, n_points, known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
@@ -554,4 +558,126 @@ def test_selecting_no_points_with_drag(create_known_points_layer_2d):
     mouse_release_callbacks(layer, event)
 
     # Check no points selected as drag box doesn't contain them
+    assert len(layer.selected_data) == 0
+
+
+def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
+    """Select all points when drag box includes all of them."""
+    layer, n_points, known_non_point = create_known_points_layer_3d
+
+    layer.mode = 'select'
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            position=(5, 0, 0),
+            view_direction=[1, 0, 0],
+            up_direction=[0, 1, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate drag start
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=(5, 0, 0),
+            view_direction=[1, 0, 0],
+            up_direction=[0, 1, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate drag end
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=(5, 6, 6),
+            view_direction=[1, 0, 0],
+            up_direction=[0, 1, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_release',
+            is_dragging=True,
+            position=(5, 6, 6),
+            view_direction=[1, 0, 0],
+            up_direction=[0, 1, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check all points selected as drag box contains them
+    assert layer.selected_data == {0, 1}
+
+
+def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
+    """Select no points when drag box outside of all of them."""
+    layer, n_points, known_non_point = create_known_points_layer_3d
+
+    layer.mode = 'select'
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            position=(5, 15, 15),
+            view_direction=[1, 0, 0],
+            up_direction=[0, 1, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate drag start
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=(5, 15, 15),
+            view_direction=[1, 0, 0],
+            up_direction=[0, 1, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate drag end
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=(5, 20, 20),
+            view_direction=[1, 0, 0],
+            up_direction=[0, 1, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_release',
+            is_dragging=True,
+            position=(5, 20, 20),
+            view_direction=[1, 0, 0],
+            up_direction=[0, 1, 0],
+            dims_displayed=[0, 1, 2],
+        )
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check all points selected as drag box contains them
     assert len(layer.selected_data) == 0

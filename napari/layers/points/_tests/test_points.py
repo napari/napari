@@ -403,6 +403,25 @@ def test_deleting_selected_value_changes():
     assert layer._value == 3
 
 
+def test_remove_selected_updates_value():
+    """Test that removing a point that is not layer._value
+    updates the index to account for the removed data.
+    """
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # set the value
+    layer._value = 3
+    layer._value_stored = 3
+
+    layer.selected_data = {0, 5, 6, 7}
+    layer.remove_selected()
+
+    assert layer._value == 2
+
+
 def test_move():
     """Test moving points."""
     shape = (10, 2)
