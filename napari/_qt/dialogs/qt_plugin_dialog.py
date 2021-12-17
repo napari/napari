@@ -339,16 +339,16 @@ class PluginListItem(QFrame):
             self.action_button.setObjectName("install_button")
 
     def _handle_npe2_plugin(self):
+
+        npe2_icon = QLabel(self)
+        icon = QColoredSVGIcon.from_resources('logo_silhouette')
+        npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
+        self.row1.insertWidget(2, QLabel('npe2'))
+        self.row1.insertWidget(2, npe2_icon)
         self.enabled_checkbox.setEnabled(False)
         self.enabled_checkbox.setToolTip(
             'This is a npe2 plugin and cannot be enabled/disabled at this time.'
         )
-
-        icon = QColoredSVGIcon.from_resources('logo_silhouette')
-        self.npe2_icon.setPixmap(
-            icon.colored(color='#33F0FF').pixmap(20, 20)
-        )
-        self.npe2_text.show()
 
     def _get_dialog(self) -> QDialog:
         p = self.parent()
@@ -396,14 +396,6 @@ class PluginListItem(QFrame):
         font15.setPointSize(15)
         self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
-
-        self.npe2_icon = QLabel(self)
-        self.npe2_text = QLabel(self)
-        self.npe2_text.setText('npe2')
-        self.npe2_text.hide()
-        self.row1.addWidget(self.npe2_icon)
-        self.row1.addWidget(self.npe2_text)
-
 
         self.item_status = QLabel(self)
         self.item_status.setObjectName("small_italic_text")
