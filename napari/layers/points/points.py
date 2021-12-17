@@ -67,8 +67,7 @@ class Points(Layer):
     size : float, array
         Size of the point marker. If given as a scalar, all points are made
         the same size. If given as an array, size must be the same
-        broadcastable to the same shape as the data. Units are in data pixels,
-        unless fixed_canvas_size is active, in which case they are in canvas pixels.
+        broadcastable to the same shape as the data. Units are in data pixels.
     edge_width : float
         Width of the symbol edge in pixels.
     edge_color : str, array-like, dict
@@ -132,10 +131,8 @@ class Points(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    fixed_canvas_size : bool
-        If set to true, the point size is in canvas units and thus will not change size
-        on the screen when zooming. If set to False, the point size is set in data units.
-        The default value is False.
+    experimental_canvas_size_limits : tuple of float
+        Lower and upper limits for the size of points in canvas pixels.
 
     Attributes
     ----------
@@ -219,9 +216,8 @@ class Points(Layer):
         CYCLE allows the color to be set via a color cycle over an attribute
 
         COLORMAP allows color to be set via a color map over an attribute
-    fixed_canvas_size : bool
-        If set to true, the point size is in canvas units and thus will not change size
-        on the screen when zooming. If set to False, the point size is set in data units.
+    experimental_canvas_size_limits : tuple of float
+        Lower and upper limits for the size of points in canvas pixels.
 
     Notes
     -----
@@ -283,7 +279,7 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
-        fixed_canvas_size=False,
+        experimental_canvas_size_limits=(0, 10000),
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -320,7 +316,7 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
-            fixed_canvas_size=Event,
+            experimental_canvas_size_limits=Event,
         )
 
         self._colors = get_color_namelist()
@@ -396,7 +392,7 @@ class Points(Layer):
             else self._property_choices,
         )
 
-        self.fixed_canvas_size = fixed_canvas_size
+        self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.size = size
 
         self.current_properties = get_current_properties(
@@ -684,14 +680,16 @@ class Points(Layer):
             self.events.size()
 
     @property
-    def fixed_canvas_size(self):
-        """bool: maintain point size fixed regardless of zoom"""
-        return self._fixed_canvas_size
+    def experimental_canvas_size_limits(self) -> Tuple[float, float]:
+        """Limit the canvas size of points"""
+        return self._experimental_canvas_size_limits
 
-    @fixed_canvas_size.setter
-    def fixed_canvas_size(self, value) -> bool:
-        self._fixed_canvas_size = bool(value)
-        self.events.fixed_canvas_size()
+    @experimental_canvas_size_limits.setter
+    def experimental_canvas_size_limits(self, value):
+        self._experimental_canvas_size_limits = float(value[0]), float(
+            value[1]
+        )
+        self.events.experimental_canvas_size_limits()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -995,7 +993,7 @@ class Points(Layer):
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
-                'fixed_canvas_size': self.fixed_canvas_size,
+                'experimental_canvas_size_limits': self.experimental_canvas_size_limits,
             }
         )
         return state
@@ -1291,11 +1289,8 @@ class Points(Layer):
         if len(view_data) > 0:
             displayed_position = [position[i] for i in self._dims_displayed]
             # Get the point sizes
-            if not self.fixed_canvas_size:
-                distances = abs(view_data - displayed_position)
-            else:
-                # TODO: calculate distance in canvas space
-                return None
+            # TODO: calculate distance in canvas space to account for canvas_size_limits
+            distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,
                 axis=1,
