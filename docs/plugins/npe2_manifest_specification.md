@@ -2,12 +2,19 @@
 
 # npe2 manifest specification
 
+```{warning}
+This guide is still a work in progress.
+
+There are inaccuracies and mistakes. If you notice any, feel free to submit
+issues to the [napari github repository](https://github.com/napari/napari).
+```
+
 ```{admonition} Backward compatibility
 :class: tip
 We introduced a new plugin engine in December 2021. The new library [`npe2`][npe2]
 is a re-imagining of how napari interacts with plugins. Plugins targeting
 `napari-plugin-engine` will continue to work, but we recommend migrating to
-`npe2` as soon as possible.  See the [](npe2-migration-guide).
+`npe2` eventually.  See the [](npe2-migration-guide).
 ```
 
 The **plugin manifest** is a specially formatted text file declaring the
