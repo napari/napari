@@ -173,7 +173,7 @@ Colormap(
 
 In this case, values of 0 are mapped to black (`[0, 0, 0, 1]`),
 values of 1 are mapped to blue (`[0, 0, 1, 1]`),
-and values in `(0, 1)` are mapped to colors that linearly interpolated
+and values in `(0, 1)` are mapped to colors that are linearly interpolated
 between black and blue.
 
 A few types of input are supported.
