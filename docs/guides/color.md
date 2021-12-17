@@ -1,27 +1,17 @@
----
-jupytext:
-  formats: ipynb,md:myst
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.10.3
-kernelspec:
-  display_name: Python 3 (ipykernel)
-  language: python
-  name: python3
----
+(color)=
 
 # Colors and colormaps
 
 This document describes how to programmatically define colors and colormaps in napari.
+It is intended for users of napari that are comfortable using the napari API and
+developers who want to include color as part of something they are building.
 
 
 ## Colors
 
-In many places, napari allows you to specify color.
+In many places, napari allows the specification of color.
 This might be the color of an individual point, the color of text annotations, or a color value in a colormap.
-For example, we can make the face color red for all points in a layer.
+For example, the face color of all points in a layer can be defined as red.
 
 ```python
 In [1]: points.face_color = 'red'
@@ -54,7 +44,7 @@ vispy's `Color` and `ColorArray`, which are not accepted by `transform_color`.
 
 ### Supported single color input
 
-We could have provided the single face color as red in many equivalent ways.
+The single face color could have been defined as red in many equivalent ways.
 
 ```python
 # CSS3 name
@@ -82,8 +72,8 @@ or must be one of [matplotlib's single character shorthand names](https://matplo
 
 ### Supported multiple color input
 
-Sometimes you might want to specify many colors.
-For example, you can manually specify the colors of all the points in your layer individually
+Sometimes there is a need to specify many colors at once.
+For example, the face colors of all the points in a layer can be specified individually
 
 ```python
 In [3]: points.face_color = ['red', 'lime', 'blue']
@@ -134,7 +124,7 @@ points.face_color = np.array([
 ])
 ```
 
-However, when specifying many colors in a sequence or generator you should *not mix different single color types*.
+However, when specifying many colors in a sequence or generator *do not mix different single color types*.
 For example, something like
 
 ```python
@@ -161,7 +151,7 @@ or categorical (e.g. `int`, `str`), so napari has two different types of colorma
 
 The [`Colormap`](https://github.com/napari/napari/blob/c86cf87a788b1bbe62afc0b92b9ebdca1331a3e5/napari/utils/colormaps/colormap.py#L28)
 class defines a map from a continuous or real value to a color.
-For example, if we have a 2D image of floats between 0 and 1, then we can map those pixel values to colors.
+For example, a 2D image of floats between 0 and 1 can be mapped to colors.
 
 ```python
 In [6]: image.colormap = 'blue'
@@ -181,6 +171,11 @@ Colormap(
 )
 ```
 
+In this case, values of 0 are mapped to black (`[0, 0, 0, 1]`),
+values of 1 are mapped to blue (`[0, 0, 1, 1]`),
+and values in `(0, 1)` are mapped to colors that linearly interpolated
+between black and blue.
+
 A few types of input are supported.
 The easiest to use is the colormap name as above.
 ```python
@@ -193,7 +188,7 @@ By default colormap names come from one of the following sources.
 - Standard optical primary and secondary colors: `'red', 'green', 'blue', 'yellow', 'magenta', 'cyan'`.
 - BOP (blue, orange, purple) colormap names: `'bop blue', 'bop orange', 'bop purple'`.
 
-More specifically, you can always check the available colormap names that can be used.
+More specifically, the available colormap names can be listed at any time.
 
 ```python
 In [8]: list(napari.utils.colormaps.AVAILABLE_COLORMAPS)
@@ -206,8 +201,8 @@ Out[8]:
  'yellow']
 ```
 
-If you want to define your own colormap that is not defined and named by default
-you can pass an instance of a napari `Colormap`
+If there is a need for a custom colormap that is not available by default,
+pass an instance of a napari `Colormap`
 
 
 ```python
@@ -220,7 +215,7 @@ image.colormap = Colormap(
 ```
 
 which will be added to `AVAILABLE_COLORMAPS` after it is successfully created.
-Equivalently, you can pass a `dict` representation of the same colormap.
+Equivalently, pass a `dict` representation of the same colormap.
 
 ```python
 image.colormap = {
@@ -231,7 +226,7 @@ image.colormap = {
 }
 ```
 
-Lastly, you can pass a non-string single color value
+Any single color value that is not a string can also be used
 
 ```python
 image.colormap = (0, 0, 1)
@@ -251,8 +246,7 @@ It is defined by two components.
 1. A dictionary that maps from values to colors.
 2. A cycle of fallback colors that used when a value is not found in the dictionary.
 
-For example, we could define a points layer's face color to be mapped from
-an optional cell type
+For example, a points layer's face color could be mapped from an optional cell type
 
 ```python
 In  [9]: points.properties = {'cell_type': ['astrocyte', 'microglia', None]}
@@ -272,7 +266,7 @@ array([[1., 0., 0., 1.],
        [0., 0., 1., 1.]], dtype=float32)
 ```
 
-Alternatively, we can only specify a dictionary to describe the mapping
+Alternatively, a dictionary alone can be used to define the mapping
 
 ```python
 In [13]: points.face_color_cycle = {
@@ -284,7 +278,7 @@ In [13]: points.face_color_cycle = {
 
 in which case the fallback color will default to `['white']`.
 
-Or we can only specify a sequence to describe the fallback color cycle
+Or a sequence alone can be used to defined the fallback color cycle
 
 ```python
 In [14]: points.face_color_cycle = ['lime', 'magenta', 'cyan']
