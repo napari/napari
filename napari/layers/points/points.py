@@ -31,7 +31,7 @@ from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
 from ._points_utils import (
-    _create_box_3d,
+    _create_box_from_corners_3d,
     create_box,
     fix_data_points,
     points_to_squares,
@@ -1489,8 +1489,8 @@ class Points(Layer):
             if self._drag_normal is None:
                 pos = create_box(self._drag_box)
             else:
-                pos = _create_box_3d(
-                    self._drag_box, self._drag_normal[0], self._drag_up[0]
+                pos = _create_box_from_corners_3d(
+                    self._drag_box, self._drag_normal, self._drag_up
                 )
             pos = pos[list(range(4)) + [0]]
         else:
@@ -1572,8 +1572,17 @@ class Points(Layer):
                 self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
-            self.selected_data = set()
+            else:
+                if self._value is not None:
+                    # update the index of self._value to account for the
+                    # data being removed
+                    indices_removed = np.array(index) < self._value
+                    offset = np.sum(indices_removed)
+                    self._value -= offset
+                    self._value_stored -= offset
+
             self.data = np.delete(self.data, index, axis=0)
+            self.selected_data = set()
 
     def _move(self, index, coord):
         """Moves points relative drag start location.

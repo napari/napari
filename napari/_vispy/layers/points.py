@@ -103,11 +103,6 @@ class VispyPointsLayer(VispyBaseLayer):
             color=self._highlight_color,
             width=width,
         )
-        # else:
-        #     self.node._subvisuals[2].set_data(
-        #         pos=np.zeros((1, self.layer._ndisplay)),
-        #         width=0,
-        #     )
 
         self.node.update()
 
@@ -166,6 +161,11 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_blending_kwargs = BLENDING_MODES[self.layer.text.blending]
         text_node.set_gl_state(**text_blending_kwargs)
+
+        # selection box is always without depth
+        box_blending_kwargs = BLENDING_MODES['translucent_no_depth']
+        self.node._subvisuals[2].set_gl_state(**box_blending_kwargs)
+
         self.node.update()
 
     def reset(self, event=None):
