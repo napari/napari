@@ -46,12 +46,11 @@ from ...plugins.pypi import (
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
+from ..qt_resources import QColoredSVGIcon
 from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
-
-from ..qt_resources import QColoredSVGIcon
 
 
 # TODO: add error icon and handle pip install errors
