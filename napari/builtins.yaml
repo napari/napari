@@ -1,5 +1,4 @@
 display_name: napari
-entry_point: napari.plugins._builtins
 name: napari
 
 contributions:
