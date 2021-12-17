@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 from napari.layers import Points
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,

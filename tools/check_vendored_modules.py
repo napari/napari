@@ -58,7 +58,7 @@ def main():
         print(f"\n * Checking '{org}/{reponame}'\n")
         diff = check_vendored_module(org, reponame, tag)
         if CI:
-            print("::set-output name=vendored::{org}/{reponame}")
+            print(f"::set-output name=vendored::{org}/{reponame}")
             sys.exit(0)
         if diff:
             print(diff)

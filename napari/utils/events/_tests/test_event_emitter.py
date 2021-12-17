@@ -23,6 +23,69 @@ def test_event_blocker_count():
     assert block.count == 3
 
 
+def test_weakref_event_emitter():
+    """
+    We are testing that an event blocker does not keep hard reference to
+    the object we are blocking, especially if it's a bound method.
+
+    The reason it used to keep references is to get the count of how many time
+    a callback was blocked, but if the object does not exists, then the bound method
+    does not and thus there is no way to ask for it's count.
+
+    so we can keep only weak refs.
+
+    """
+    e = EventEmitter(type='test_weak')
+
+    class Obj:
+        def cb(self):
+            pass
+
+    o = Obj()
+    ref_o = weakref.ref(o)
+
+    e.connect(o.cb)
+
+    #
+    with e.blocker(o.cb):
+        e()
+
+    del o
+    assert ref_o() is None
+
+
+@pytest.mark.parametrize('disconnect_and_should_be_none', [True, False])
+def test_weakref_event_emitter_cb(disconnect_and_should_be_none):
+    """
+
+    Note that as above but with pure callback, We keep a reference to it, the
+    reason is that unlike with bound method, the callback may be a closure and
+    may not stick around.
+
+    We thus expect the wekref to be None only if explicitely disconnected
+
+    """
+    e = EventEmitter(type='test_weak')
+
+    def cb(self):
+        pass
+
+    ref_cb = weakref.ref(cb)
+
+    e.connect(cb)
+
+    with e.blocker(cb):
+        e()
+
+    if disconnect_and_should_be_none:
+        e.disconnect(cb)
+        del cb
+        assert ref_cb() is None
+    else:
+        del cb
+        assert ref_cb() is not None
+
+
 def test_error_on_connect():
     """Check that connections happen correctly even on decorated methods.
 

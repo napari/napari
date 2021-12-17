@@ -17,10 +17,12 @@ class TracksVisual(ClippingPlanesMixin, Compound):
 
     def __init__(self):
         self.tracks_filter = TracksFilter()
+        self.graph_filter = TracksFilter()
 
         super().__init__([Line(), Text(), Line()])
 
-        self.attach(self.tracks_filter)
+        self._subvisuals[0].attach(self.tracks_filter)
+        self._subvisuals[2].attach(self.graph_filter)
 
         # text label properties
         self._subvisuals[1].color = 'white'

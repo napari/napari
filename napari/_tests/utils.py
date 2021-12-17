@@ -1,9 +1,11 @@
 import os
 import sys
+from collections import abc
+from typing import Any, Dict
 
 import numpy as np
+import pandas as pd
 import pytest
-import tensorstore as ts
 
 from napari import Viewer
 from napari.layers import (
@@ -37,17 +39,18 @@ Used as pytest params for testing layer add and view functionality (Layer class,
 """
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
-    (Image, ts.array(np.random.random((10, 15))), 2),
     (Image, np.random.random((10, 15, 20)), 3),
     (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
+    (Image, np.array([[1.5, np.nan], [np.inf, 2.2]]), 2),
+    (Labels, np.random.randint(20, size=(10, 15)), 2),
+    (Labels, np.zeros((10, 10), dtype=bool), 2),
+    (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
     (
-        Image,
-        [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]],
+        Labels,
+        [np.random.randint(20, size=s) for s in [(40, 20), (20, 10), (10, 5)]],
         2,
     ),
-    (Labels, np.random.randint(20, size=(10, 15)), 2),
-    (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
     (Points, 20 * np.random.random((10, 2)), 2),
     (Points, 20 * np.random.random((10, 3)), 3),
     (Vectors, 20 * np.random.random((10, 2, 2)), 2),
@@ -77,6 +80,14 @@ layer_test_data = [
     ),
 ]
 
+try:
+    import tensorstore as ts
+
+    m = ts.array(np.random.random((10, 15)))
+    p = [ts.array(np.random.random(s)) for s in [(40, 20), (20, 10), (10, 5)]]
+    layer_test_data.extend([(Image, m, 2), (Image, p, 2)])
+except ImportError:
+    pass
 
 classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
@@ -119,9 +130,35 @@ def add_layer_by_type(viewer, layer_type, data, visible=True):
     return layer2addmethod[layer_type](viewer, data, visible=visible)
 
 
+def are_objects_equal(object1, object2):
+    """
+    compare two (collections of) arrays or other objects for equality. Ignores nan.
+    """
+    if isinstance(object1, abc.Sequence):
+        items = zip(object1, object2)
+    elif isinstance(object1, dict):
+        items = [(value, object2[key]) for key, value in object1.items()]
+    else:
+        items = [(object1, object2)]
+
+    # equal_nan does not exist in array_equal in old numpy
+    if tuple(int(v) for v in np.__version__.split('.')) < (1, 19):
+        fixed = [(np.nan_to_num(a1), np.nan_to_num(a2)) for a1, a2 in items]
+        return np.all([np.all(a1 == a2) for a1, a2 in fixed])
+
+    try:
+        return np.all(
+            [np.array_equal(a1, a2, equal_nan=True) for a1, a2 in items]
+        )
+    except TypeError:
+        # np.array_equal fails for arrays of type `object` (e.g: strings)
+        return np.all([a1 == a2 for a1, a2 in items])
+
+
 def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     viewer.dims.ndisplay = 2
-    assert np.all(viewer.layers[0].data == data)
+    # if multiscale or composite data (surface), check one by one
+    assert are_objects_equal(viewer.layers[0].data, data)
     assert len(viewer.layers) == 1
     assert view.layers.model().rowCount() == len(viewer.layers)
 
@@ -167,7 +204,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         return None
 
     # Get an handle on visual layer:
-    vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]
+    vis_lyr = viewer.window._qt_viewer.layer_to_visual[layer]
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
         disp_dims = list(viewer.dims.displayed)  # dimensions displayed in 2D
@@ -210,17 +247,19 @@ def check_layer_world_data_extent(
     np.testing.assert_almost_equal(layer.extent.world, translated_world_extent)
 
 
-def slow(timeout):
+def assert_layer_state_equal(
+    actual: Dict[str, Any], expected: Dict[str, Any]
+) -> None:
+    """Asserts that an layer state dictionary is equal to an expected one.
+
+    This is useful because some members of state may array-like whereas others
+    maybe dataframe-like, which need to be checked for equality differently.
     """
-    Both mark a function as slow, and with a timeout which is easily scalable
-    via an env variable.
-    """
-    factor = int(os.getenv('NAPARI_TESTING_TIMEOUT_SCALING', '1'))
-
-    def _slow(func):
-
-        func = pytest.mark.timeout(timeout * factor)(func)
-        func = pytest.mark.slow(func)
-        return func
-
-    return _slow
+    assert actual.keys() == expected.keys()
+    for name in actual:
+        actual_value = actual[name]
+        expected_value = expected[name]
+        if isinstance(actual_value, pd.DataFrame):
+            pd.testing.assert_frame_equal(actual_value, expected_value)
+        else:
+            np.testing.assert_equal(actual_value, expected_value)

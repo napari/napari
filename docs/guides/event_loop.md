@@ -29,7 +29,7 @@ If you would prefer that napari did *not* start the interactive
 event loop for you in IPython, then you can disable it with:
 
 ```python
-from napari.utils import get_settings
+from napari.settings import get_settings
 
 get_settings().application.ipy_interactive = False
 ```
@@ -164,4 +164,4 @@ usage of napari.
 :::
 
 Now that you have an understanding of how napari creates the event loop, you may
-wish to learn more about {ref}`hooking up your own actions <connecting-events >` and callbacks to specific events.  
+wish to learn more about {ref}`hooking up your own actions <connecting-events>` and callbacks to specific events.

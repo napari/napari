@@ -8,10 +8,7 @@ from napari_plugin_engine import napari_hook_implementation
 if TYPE_CHECKING:
     from napari.plugins._plugin_manager import NapariPluginManager
 
-from napari._tests.utils import slow
 
-
-@slow(15)
 def test_plugin_discovery_is_delayed():
     """Test that plugins are not getting discovered at napari import time."""
     cmd = [

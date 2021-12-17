@@ -1,6 +1,5 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
-import contextlib
 import re
 import warnings
 from ast import literal_eval
@@ -71,9 +70,10 @@ class Theme(EventedModel):
     def _ensure_syntax_style(value: str) -> str:
         from pygments.styles import STYLE_MAP
 
-        assert value in STYLE_MAP, (
-            "Incorrect `syntax_style` value provided. Please use one of the following:"
-            f" {', '.join(STYLE_MAP)}"
+        assert value in STYLE_MAP, trans._(
+            "Incorrect `syntax_style` value provided. Please use one of the following: {syntax_style}",
+            deferred=True,
+            syntax_style=f" {', '.join(STYLE_MAP)}",
         )
         return value
 
@@ -212,8 +212,7 @@ def get_theme(name, as_dict=None):
     if as_dict is None:
         warnings.warn(
             trans._(
-                "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`."
-                "The `as_dict=True` option will be changed to `as_dict=False` in 0.4.15",
+                "Themes were changed to use evented model with Pydantic's color type rather than the `rgb(x, y, z)`. The `as_dict=True` option will be changed to `as_dict=False` in 0.4.15",
                 deferred=True,
             ),
             category=FutureWarning,
@@ -320,15 +319,21 @@ _themes: EventedDict[str, Theme] = EventedDict(
     basetype=Theme,
 )
 
-with contextlib.suppress(ImportError):
-    from npe2 import PluginManager
 
-    for theme in PluginManager.instance().iter_themes():
+# this function here instead of plugins._npe2 to avoid circular import
+def _install_npe2_themes(_themes):
+    try:
+        import npe2
+    except ImportError:
+        return
+    for theme in npe2.PluginManager.instance().iter_themes():
         # `theme.type` is dark/light and supplies defaults for keys that
         # are not provided by the plugin
         d = _themes[theme.type].dict()
         d.update(theme.colors.dict(exclude_unset=True))
         _themes[theme.id] = Theme(**d)
 
+
+_install_npe2_themes(_themes)
 _themes.events.added.connect(rebuild_theme_settings)
 _themes.events.removed.connect(rebuild_theme_settings)

@@ -5,7 +5,6 @@ import pytest
 
 from napari import Viewer
 from napari._qt.qt_event_loop import _ipython_has_eventloop, run, set_app_id
-from napari._tests.utils import slow
 
 
 @pytest.mark.skipif(os.name != "Windows", reason="Windows specific")
@@ -30,7 +29,6 @@ def test_windows_grouping_overwrite(make_napari_viewer):
     assert get_app_id() == ""
 
 
-@slow(30)
 def test_run_outside_ipython(qapp, monkeypatch):
     """Test that we don't incorrectly give ipython the event loop."""
     assert not _ipython_has_eventloop()

@@ -412,7 +412,12 @@ def main():
     if _MACOS_AT_LEAST_BIG_SUR:
         os.environ['QT_MAC_WANTS_LAYER'] = '1'
 
-    if _MACOS_AT_LEAST_CATALINA and _RUNNING_CONDA and not _RUNNING_PYTHONW:
+    if (
+        _MACOS_AT_LEAST_CATALINA
+        and not _MACOS_AT_LEAST_BIG_SUR
+        and _RUNNING_CONDA
+        and not _RUNNING_PYTHONW
+    ):
         python_path = Path(sys.exec_prefix) / 'bin' / 'pythonw'
 
         if python_path.exists():
