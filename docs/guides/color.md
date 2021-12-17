@@ -103,13 +103,13 @@ For the most part, any tuple, list, array, or generator of single colors
 is acceptable input when specifying multiple colors.
 
 ```python
-# Tuple, list, array, or generator of names.
+# Tuple, list, array, or generator of names
 points.face_color = ('red', 'lime', 'blue')
 points.face_color = ['red', 'lime', 'blue']
 points.face_color = np.array(['red', 'lime', 'blue'])
 points.face_color = c for c in ('red', 'lime', 'blue')
 
-# List of RGB or RGBA tuples or lists.
+# List of RGB or RGBA tuples or lists
 points.face_color = [
     (1, 0, 0),
     (0, 1, 0),
@@ -251,7 +251,8 @@ It is defined by two components.
 1. A dictionary that maps from values to colors.
 2. A cycle of fallback colors that used when a value is not found in the dictionary.
 
-For example, we can define a points layer's face color to be mapped from an optional cell type.
+For example, we could define a points layer's face color to be mapped from
+an optional cell type
 
 ```python
 In  [9]: points.properties = {'cell_type': ['astrocyte', 'microglia', None]}
