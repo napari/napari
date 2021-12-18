@@ -175,6 +175,8 @@ def _compile_qrc_pyqt5(qrc) -> bytes:
     PyQt5 compiles qrc files using a direct function from the shared library
     PyQt5.pyrcc.  They provide access via a helper function in `pyrcc_main`.
     """
+    # If this fails w/ ModuleNotFoundError: 'PyQt5.pyrcc_main' on Ubuntu,
+    # install system package 'pyqt5-dev-tools'.
     from PyQt5.pyrcc_main import processResourceFile
 
     # could not capture stdout no matter what I tried, so using a temp file.
