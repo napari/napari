@@ -56,6 +56,9 @@ conda activate napari-env
 pip install "napari[all]"
 ```
 
+If you're installing on Ubuntu and get the error `ModuleNotFoundError: No module named 'PyQt5.pyrcc_main'`, running `sudo apt install pyqt5-dev-tools`
+will install the missing dependency.  
+
 ### from source
 
 To clone the repository locally and install in editable mode use
