@@ -661,7 +661,7 @@ class QtPluginDialog(QDialog):
 
         for manifest in _npe2.iter_manifests():
             distname = normalized_name(manifest.name or '')
-            if distname in already_installed:
+            if distname in already_installed or distname == 'napari':
                 continue
             _add_to_installed(distname, True, npe_version=2)
 
