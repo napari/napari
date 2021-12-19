@@ -1116,11 +1116,13 @@ class QtViewer(QSplitter):
 
         readers = get_potential_readers(filename)
         if not readers:
-            raise ValueError(trans._(
-                'No plugin found capable of reading {filename}.',
-                deferred=True,
-                filename=filename,
-            ))
+            raise ValueError(
+                trans._(
+                    'No plugin found capable of reading {filename}.',
+                    deferred=True,
+                    filename=filename,
+                )
+            )
             return
 
         if extension:
