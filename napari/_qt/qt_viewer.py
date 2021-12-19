@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import warnings
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from ..components import ViewerModel
     from npe2.manifest.contributions import WriterContribution
 
-from ..settings import SETTINGS, get_settings
+from ..settings import get_settings
 from ..utils.io import imsave_extensions
 
 
@@ -1059,13 +1059,23 @@ class QtViewer(QSplitter):
             return
 
         for filename in filenames:
+            readers = get_potential_readers(filename)
+            if not readers:
+                raise ValueError(
+                    trans._(
+                        'No plugin found capable of reading {filename}.',
+                        deferred=True,
+                        filename=filename,
+                    )
+                )
+                return
+
             _, extension = os.path.splitext(filename)
             reader_associations = get_settings().plugins.extension2reader
-
             # get plugin choice from user
             # choice is None if file was opened or user chose cancel
-            choice = self._get_reader_choice_for_file(
-                filename, extension, reader_associations
+            choice = _get_reader_choice_for_file(
+                self, filename, extension, readers, reader_associations
             )
             if choice:
                 display_name, plugin_name, persist_choice = choice
@@ -1080,90 +1090,6 @@ class QtViewer(QSplitter):
                         **reader_associations,
                         extension: display_name,
                     }
-
-    def _get_reader_choice_for_file(
-        self, filename, extension, reader_associations
-    ):
-        """Gets choice of reader from user for the given filename.
-
-        If an existing association is set for this extension, tries
-        to open with that reader, and pops choice dialog if that fails.
-
-        If no existing association is set, pop the choice dialog and
-        get a chosen reader from the users.
-
-        Parameters
-        ----------
-        filename : str
-            Path to file (or folder) trying to open.
-        extension : str
-            Extension of the given filename
-        reader_associations : Dict[str, str]
-            Existing user settings for extension to reader
-
-        Returns
-        -------
-        display_name
-            Display name of the chosen plugin
-        plugin_name
-            Registered name of the chosen plugin
-        persist_choice
-            Whether to persist the chosen plugin choice or not
-        """
-        display_name = None
-        persist_choice = False
-        error_message = ''
-
-        readers = get_potential_readers(filename)
-        if not readers:
-            raise ValueError(trans._(
-                'No plugin found capable of reading {filename}.',
-                deferred=True,
-                filename=filename,
-            ))
-            return
-
-        if extension:
-            if reader_associations and extension in reader_associations:
-                display_name = reader_associations[extension]
-                if display_name in readers:
-                    try:
-                        self.viewer.open(
-                            filename,
-                            plugin=readers[display_name],
-                        )
-                        # we've opened file successfully, so move on to next file
-                        return
-                    except Exception:
-                        error_message = f"Tried to open file with {display_name}, but reading failed.\n"
-                else:
-                    error_message = f"Can't find {display_name} plugin associated with {extension} files.\n"
-
-        # if we have more than one reader or we errored with current setting
-        if len(readers) > 1 or error_message:
-            self.readerDialog = QtReaderDialog(
-                parent=self,
-                pth=filename,
-                error_message=error_message,
-                readers=readers,
-            )
-            dialog_result = self.readerDialog.exec_()
-            if dialog_result:
-                # grab the plugin they chose
-                display_name = self.readerDialog.get_plugin_choice()
-                # do they want to save settings?
-                if (
-                    hasattr(self.readerDialog, 'persist_checkbox')
-                    and self.readerDialog.persist_checkbox.isChecked()
-                ):
-                    persist_choice = True
-            # cancel on the dialog cancels opening the file
-            else:
-                return
-        elif len(readers) == 1:
-            display_name = next(iter(readers.keys()))
-
-        return display_name, readers[display_name], persist_choice
 
     def closeEvent(self, event):
         """Cleanup and close.
@@ -1264,3 +1190,87 @@ def _create_remote_manager(
     qt_poll.events.poll.connect(monitor.on_poll)
 
     return manager
+
+
+def _get_reader_choice_for_file(
+    qt_viewer: QtViewer,
+    filename: str,
+    extension: str,
+    readers: Dict[str, str],
+    reader_associations: Dict[str, str],
+) -> Tuple(str, str, bool):
+    """Gets choice of reader from user for the given filename.
+
+    If an existing association is set for this extension, tries
+    to open with that reader, and pops choice dialog if that fails.
+
+    If no existing association is set, pop the choice dialog and
+    get a chosen reader from the users.
+
+    Parameters
+    ----------
+    qt_viewer : QtViewer
+        Viewer where we're trying to open the file
+    filename : str
+        Path to file (or folder) trying to open.
+    extension : str
+        Extension of the given filename
+    readers: str
+        Dictionary of display-name:plugin-name of potential readers for file
+    reader_associations : Dict[str, str]
+        Existing user settings for extension to reader
+
+    Returns
+    -------
+    display_name: str
+        Display name of the chosen plugin
+    plugin_name: str
+        Registered name of the chosen plugin
+    persist_choice: bool
+        Whether to persist the chosen plugin choice or not
+    """
+    display_name = ''
+    error_message = ''
+    persist_choice = False
+
+    if extension:
+        if reader_associations and extension in reader_associations:
+            display_name = reader_associations[extension]
+            if display_name in readers:
+                try:
+                    qt_viewer.viewer.open(
+                        filename,
+                        plugin=readers[display_name],
+                    )
+                    # we've opened file successfully, so move on to next file
+                    return
+                except Exception:
+                    error_message = f"Tried to open file with {display_name}, but reading failed.\n"
+            else:
+                error_message = f"Can't find {display_name} plugin associated with {extension} files.\n"
+
+    # if we have more than one reader or we errored with current setting
+    if len(readers) > 1 or error_message:
+        readerDialog = QtReaderDialog(
+            parent=qt_viewer,
+            pth=filename,
+            error_message=error_message,
+            readers=readers,
+        )
+        dialog_result = readerDialog.exec_()
+        if dialog_result:
+            # grab the plugin they chose
+            display_name = readerDialog.get_plugin_choice()
+            # do they want to save settings?
+            if (
+                hasattr(readerDialog, 'persist_checkbox')
+                and readerDialog.persist_checkbox.isChecked()
+            ):
+                persist_choice = True
+        # cancel on the dialog cancels opening the file
+        else:
+            return
+    elif len(readers) == 1:
+        display_name = next(iter(readers.keys()))
+
+    return display_name, readers[display_name], persist_choice

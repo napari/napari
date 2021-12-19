@@ -10,6 +10,7 @@ import pytest
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
+from napari._qt.qt_viewer import _get_reader_choice_for_file
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
@@ -595,3 +596,18 @@ def test_remove_add_image_3D(make_napari_viewer):
     layer = viewer.add_image(img)
     viewer.layers.remove(layer)
     viewer.layers.append(layer)
+
+
+def test_get_reader_choice_single_reader(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer()
+    filename = './my_file.abc'
+    extension = '.abc'
+    readers = {'disp-name': 'plugin_name'}
+    reader_associations = {}
+    choice = _get_reader_choice_for_file(
+        viewer, filename, extension, readers, reader_associations
+    )
+
+    assert choice[0] == 'disp-name'
+    assert choice[1] == 'plugin_name'
+    assert choice[2] is False
