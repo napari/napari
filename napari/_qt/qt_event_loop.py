@@ -356,6 +356,13 @@ def run(
         return
 
     app = QApplication.instance()
+
+    # Undo __main__.py sys.argv[0] workaround now that the app has been created
+    # in case something else relies on argv[0] being the real thing
+    if sys.platform == "darwin" and hasattr(sys, "_old_argv_0"):
+        sys.argv[0] = sys._old_argv_0
+        del sys._old_argv_0
+
     if _pycharm_has_eventloop(app):
         # explicit check for PyCharm pydev console
         return

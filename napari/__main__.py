@@ -441,6 +441,13 @@ def main():
 
         multiprocessing.set_start_method('fork')
 
+    # Prevent __main__.py from being the app name if run with python -m napari
+    if sys.platform == "darwin" and not sys.argv[0].endswith("/napari"):
+        # we need a path with basename `napari`; adding ../ makes it an existing
+        # path too, just in case -- we undo this later once QApplication() is created
+        sys._old_argv_0 = sys.argv[0]
+        sys.argv[0] += "/../napari"
+
     _run()
 
 
