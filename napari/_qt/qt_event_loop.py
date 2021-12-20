@@ -156,7 +156,7 @@ def get_app(
 
         # Intercept tooltip events in order to convert all text to rich text
         # to allow for text wrapping of tooltips
-        app.installEventFilter(QtToolTipEventFilter(app))
+        app.installEventFilter(QtToolTipEventFilter())
 
     if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(

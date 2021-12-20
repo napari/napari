@@ -72,6 +72,7 @@ ignore = [
   "binder/postBuild",
   "binder/xfce4-panel.xml",
   "binder/xsettings.xml",
+  ".env_sample",
 ]
 
 [tool.isort]
@@ -94,6 +95,7 @@ filterwarnings = [
   "ignore:Restart required for this change:UserWarning:napari",  # triggered by a lot of async tests
   "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
+  "ignore::DeprecationWarning:tensorstore",
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
   "ignore:pythonw executable not found:UserWarning:",
   "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",

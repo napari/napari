@@ -27,6 +27,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QMainWindow,
     QShortcut,
+    QToolTip,
     QWidget,
 )
 
@@ -115,7 +116,6 @@ class _QtMainWindow(QMainWindow):
             plugin_manager.set_call_order(settings.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
-        self._qt_viewer.viewer.tooltip.events.text.connect(self.update_tooltip)
 
         # since we initialize canvas before window,
         # we need to manually connect them again.
@@ -128,12 +128,6 @@ class _QtMainWindow(QMainWindow):
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
 
-    def update_tooltip(self, event):
-        if self._qt_viewer.viewer.tooltip.visible:
-            self._qt_viewer.setToolTip(event.value)
-        else:
-            self._qt_viewer.setToolTip("")
-
     @classmethod
     def current(cls):
         return cls._instances[-1] if cls._instances else None
@@ -144,6 +138,13 @@ class _QtMainWindow(QMainWindow):
         return window._qt_viewer.viewer if window else None
 
     def event(self, e):
+        if (
+            e.type() == QEvent.ToolTip
+            and self._qt_viewer.viewer.tooltip.visible
+        ):
+            QToolTip.showText(
+                e.globalPos(), self._qt_viewer.viewer.tooltip.text, self
+            )
         if e.type() == QEvent.Close:
             # when we close the MainWindow, remove it from the instances list
             try:

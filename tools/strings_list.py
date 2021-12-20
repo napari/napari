@@ -659,6 +659,7 @@ SKIP_WORDS = {
         'new_points',
         'new_shapes',
         'roll',
+        'dim_sorter',
         'transpose',
         'layer',
         'gridStrideBox',
@@ -2611,7 +2612,6 @@ SKIP_WORDS = {
     'napari/utils/mouse_bindings.py': [],
     'napari/utils/naming.py': [
         '((?<=\\A\\[)|(?<=\\s\\[))(?:\\d+|)(?=\\]$)|$',
-        '<string>',
         '{count + 1}',
         '{sep}[{start}]',
     ],
