@@ -59,7 +59,7 @@ from .._vispy import (  # isort:skip
 
 
 if TYPE_CHECKING:
-    from ..viewer import Viewer
+    from ..components import ViewerModel
     from npe2.manifest.contributions import WriterContribution
 
 from ..settings import get_settings
@@ -177,7 +177,7 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer: Viewer, show_welcome_screen: bool = False):
+    def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 

@@ -34,17 +34,22 @@ The `npe2` tool provides a few commands to help you develop your plugin. In
 this case we're asking for help with the `convert` command:
 
 ```
-Usage: npe2 convert [OPTIONS] PLUGIN_NAME
+Usage: npe2 convert [OPTIONS] PATH
 
-  Convert existing plugin to new manifest.
+  Convert first generation napari plugin to new (manifest) format.
 
 Arguments:
-  PLUGIN_NAME  The name of the plugin to convert  [required]
+  PATH  Path of a local repository to convert (package must also be installed
+        in current environment). Or, the name of an installed package/plugin.
+        If a package is provided instead of a directory, the new manifest will
+        simply be printed to stdout.  [required]
+
 
 Options:
-  --format [yaml|json|toml]  [default: yaml]
-  --out PATH
-  --help                     Show this message and exit.
+  -n, --dry-runs  Just print manifest to stdout. Do not modify anything
+                  [default: False]
+
+  --help          Show this message and exit.
 ```
 
 ### 2. Install your `napari-plugin-engine` based plugin.
@@ -75,13 +80,15 @@ napari.plugin =
 That metadata gives the name of the plugin: "animation". The name is used in
 the next step. Later we're going to come back and update this section.
 
-### 4. Generate the plugin manifest
+### 4. Convert your plugin.
 
-To create the manifest, use the npe2 command in the terminal:
+Use the `npe2` command in the terminal:
 
 ```bash
 # we're in the napari-animation directory
-npe2 convert animation --out napari_animation/napari.yaml
+> npe2 convert .
+✔  Conversion complete!
+If you have any napari_plugin_engine imports or hook_implementation decorators, you may remove them now.
 ```
 
 ```{note}
@@ -89,48 +96,47 @@ This step uses `napari-plugin-engine` to discover the plugins installed on the
 system. If you have other plugins installed there's a chance they may interfere.
 ```
 
-This generates `napari_animation/napari.yaml` with contents:
+This generates `napari_animation/napari.yaml` and modifies the package metadta
+(in `setup.cfg` or `setup.py`).
+
+The plugin manifest contains:
 
 ```yaml
-name: napari_animation
+# Manifest is written to napari-animation/napari_animation/napari.yaml
 contributions:
   commands:
-    - id: napari_animation.AnimationWidget
+    - id: napari-animation.AnimationWidget
       python_name: napari_animation._hookimpls:AnimationWidget
       title: Create Wizard
   widgets:
-    - command: napari_animation.AnimationWidget
-      name: Wizard
+    - command: napari-animation.AnimationWidget
+      display_name: Wizard
+engine: 0.1.0
+name: napari-animation
 ```
 
+```{note}
 In this case, the manifest could be created without any intervention, but
 sometimes the generated manifest needs to be edited. The conversion tool will
 let you know when this happens.
-
-### 5. Update the package metadata
-
-Finally, we need to make sure `napari-animation` defines the npe2 entry point
-group. This lets the plugin engine know where to find the plugin manifest file.
-
-```ini
-[options.entry_points]
-# napari.plugin =
-  # animation = napari_animation
-napari.manifest =
-    napari-animation = napari_animation:napari.yaml
 ```
 
-Since we're interested in creating distributions of our package, make sure the
-manifest gets included as package data:
+The package metadata will have a new entry point. The old one is removed:
 
-```ini
-[options]
-include_package_data = True
-   ...
+```diff
+[options.entry_points]
+- napari.plugin =
+-    animation = napari_animation
++ napari.manifest =
++    napari-animation = napari_animation:napari.yaml
+```
 
-[options.package_data]
-napari_animation =
-    napari.yaml
+the manifest was also added to `options.package_data` so that it will be
+included with any distribution.
+
+```diff
++ [options.package_data]
++ napari_animation = napari.yaml
 ```
 
 All done! Update the local package metadata by repeating:
