@@ -5,7 +5,7 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     _append_features,
-    _features_from_properties,
+    _features_from_layer,
     _remove_features,
     _resize_features,
     _validate_features,
@@ -267,27 +267,33 @@ def test_validate_features_with_none_then_empty():
     assert features.shape == (0, 0)
 
 
-def test_features_from_properties_with_none_and_num_data():
-    features = _features_from_properties(num_data=5)
+def test_features_from_layer_with_num_data_only():
+    features, defaults = _features_from_layer(num_data=5)
     assert features.shape == (5, 0)
+    assert defaults.shape == (1, 0)
 
 
-def test_features_from_properties_with_properties():
+def test_features_from_layer_with_properties_and_num_data():
     properties = {
         'class': np.array(['sky', 'person', 'building', 'person']),
         'confidence': np.array([0.2, 0.5, 1, 0.8]),
     }
 
-    features = _features_from_properties(properties=properties, num_data=4)
+    features, defaults = _features_from_layer(
+        properties=properties, num_data=4
+    )
 
     assert features.shape == (4, 2)
     np.testing.assert_array_equal(features['class'], properties['class'])
     np.testing.assert_array_equal(
         features['confidence'], properties['confidence']
     )
+    assert defaults.shape == (1, 2)
+    assert defaults['class'][0] == properties['class'][-1]
+    assert defaults['confidence'][0] == properties['confidence'][-1]
 
 
-def test_features_from_properties_with_properties_and_choices():
+def test_features_from_layer_with_properties_and_choices():
     properties = {
         'class': np.array(['sky', 'person', 'building', 'person']),
     }
@@ -295,7 +301,7 @@ def test_features_from_properties_with_properties_and_choices():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    features = _features_from_properties(
+    features, defaults = _features_from_layer(
         properties=properties, property_choices=property_choices, num_data=4
     )
 
@@ -306,14 +312,16 @@ def test_features_from_properties_with_properties_and_choices():
     np.testing.assert_array_equal(
         class_column.dtype.categories, property_choices['class']
     )
+    assert defaults.shape == (1, 1)
+    assert defaults['class'][0] == properties['class'][-1]
 
 
-def test_features_from_properties_with_choices_only():
+def test_features_from_layers_with_choices_only():
     property_choices = {
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    features = _features_from_properties(
+    features, defaults = _features_from_layer(
         property_choices=property_choices, num_data=0
     )
 
@@ -323,9 +331,11 @@ def test_features_from_properties_with_choices_only():
     np.testing.assert_array_equal(
         class_column.dtype.categories, property_choices['class']
     )
+    assert defaults.shape == (1, 1)
+    assert defaults['class'][0] == property_choices['class'][0]
 
 
-def test_features_from_properties_with_empty_properties_and_choices():
+def test_features_from_layer_with_empty_properties_and_choices():
     properties = {
         'class': np.array([]),
     }
@@ -333,7 +343,7 @@ def test_features_from_properties_with_empty_properties_and_choices():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    features = _features_from_properties(
+    features, defaults = _features_from_layer(
         properties=properties, property_choices=property_choices, num_data=0
     )
 
@@ -343,6 +353,8 @@ def test_features_from_properties_with_empty_properties_and_choices():
     np.testing.assert_array_equal(
         class_column.dtype.categories, property_choices['class']
     )
+    assert defaults.shape == (1, 1)
+    assert defaults['class'][0] == property_choices['class'][0]
 
 
 TEST_FEATURES = pd.DataFrame(
@@ -358,9 +370,11 @@ TEST_FEATURES = pd.DataFrame(
 )
 
 
-def test_features_from_properties_with_dataframe():
-    features = _features_from_properties(properties=TEST_FEATURES)
+def test_features_from_layer_with_properties_as_dataframe():
+    features, defaults = _features_from_layer(properties=TEST_FEATURES)
     pd.testing.assert_frame_equal(features, TEST_FEATURES)
+    assert defaults['class'][0] == TEST_FEATURES['class'].iloc[-1]
+    assert defaults['confidence'][0] == TEST_FEATURES['confidence'].iloc[-1]
 
 
 def test_resize_features_smaller():

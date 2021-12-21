@@ -691,7 +691,36 @@ def _features_from_layer(
     property_choices: Optional[Dict[str, np.ndarray]] = None,
     num_data: Optional[int] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Coerces a layer's keyword arguments to feature values and defaults tables."""
+    """Coerces a layer's keyword arguments to feature values and defaults tables.
+
+    Parameters
+    ----------
+    features : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
+        The features input to a layer.
+    properties : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
+        The properties input to a layer.
+    property_choices : Optional[Dict[str, np.ndarray]]
+        The property choices input to a layer.
+    num_data : Optional[int]
+        The number of the elements in the layer calling this, such as
+        the number of points.
+
+    Returns
+    -------
+    pd.DataFrame
+        The pandas DataFrame created from the input features table.
+        If the input features are already a DataFrame, the data will not
+        be copied, otherwise they will.
+    pd.DataFrame
+        The pandas DataFrame of default values. The names and dtypes will be
+        the same as the features data, but the table will have exactly one row.
+
+    Raises
+    ------
+    ValueError
+        If the input properties columns are not all the same length, or if
+        that length is not equal to the given num_data.
+    """
     if properties is not None or property_choices is not None:
         features = _features_from_properties(
             properties=properties,
@@ -705,6 +734,7 @@ def _features_from_layer(
             name: _get_default_column(column)
             for name, column in features.items()
         },
+        index=range(1),
         copy=True,
     )
     return features, defaults
@@ -715,7 +745,7 @@ def _get_default_column(column: pd.Series) -> pd.Series:
     value = None
     if column.size > 0:
         value = column.iloc[-1]
-    if isinstance(column.dtype, pd.CategoricalDtype):
+    elif isinstance(column.dtype, pd.CategoricalDtype):
         choices = column.dtype.categories
         if choices.size > 0:
             value = choices[0]
@@ -766,31 +796,7 @@ def _features_from_properties(
     property_choices: Optional[Dict[str, np.ndarray]] = None,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
-    """Validates and coerces deprecated properties input into a features DataFrame.
-
-    Parameters
-    ----------
-    properties : Dict[str, np.ndarray]
-        The properties of a layer.
-    property_choices : Dict[str, np.ndarray]
-        The property choices of a layer.
-    num_data : Optional[int]
-        The number of the elements in the layer calling this, such as
-        the number of points.
-
-    Returns
-    -------
-    pd.DataFrame
-        The pandas DataFrame created from the input features table.
-        If the input features are already a DataFrame, the data will not
-        be copied, otherwise they will.
-
-    Raises
-    ------
-    ValueError
-        If the input properties columns are not all the same length, or if
-        that length is not equal to the given num_data.
-    """
+    """Validates and coerces deprecated properties input into a features DataFrame."""
     # Create categorical series for any choices provided.
     if property_choices is not None:
         properties = pd.DataFrame(data=properties)
