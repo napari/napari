@@ -287,6 +287,28 @@ def test_new_points():
     assert viewer.dims.ndim == 2
 
 
+def test_view_centering_with_points_add():
+    """Test if the viewer is only centered when the first
+    points were added
+    Regression test for issue  #3803
+    """
+    image = np.zeros((5, 10, 10))
+
+    viewer = ViewerModel()
+    viewer.add_image(image)
+    assert tuple(viewer.dims.point) == (2, 5, 5)
+
+    viewer.dims.set_point(0, 0)
+    # viewer point shouldn't change after this
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+    pts_layer = viewer.add_points(ndim=3)
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+    pts_layer.add([(0, 8, 8)])
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+
 def test_new_shapes():
     """Test adding new shapes layer."""
     # Add labels to empty viewer
