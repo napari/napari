@@ -15,7 +15,6 @@ import subprocess
 import sys
 from distutils.spawn import find_executable
 from pathlib import Path
-from textwrap import dedent
 
 from ruamel import yaml
 
@@ -46,6 +45,7 @@ else:
 
 
 OUTPUT_FILENAME = f"{APP}-{VERSION}-{OS}-{ARCH}.{EXT}"
+clean_these_files = []
 
 
 def _use_local():
@@ -90,50 +90,28 @@ def _constructor(version=VERSION):
         definitions["channels"].insert(0, "local")
     if MACOS:
         definitions["installer_type"] = "pkg"
-        definitions["welcome_image"] = os.path.join(
-            HERE, "resources", "napari_1227x600.png"
-        )
-        definitions["readme_text"] = dedent(
-            f"""
-            Thanks for choosing napari v{version}!
-
-            napari is a fast, interactive, multi-dimensional image viewer
-            for Python. It’s designed for browsing, annotating, and
-            analyzing large multi-dimensional images.
-
-            The installation will begin shortly.
-
-            If at any point an error is shown, please save the logs
-            (⌘+L) before closing the installer and submit the resulting
-            file along with your report. Thank you!
-            """
-        )
-        definitions["conclusion_text"] = dedent(
-            f"""
-            napari v{version} was installed successfully!
-
-            A shortcut should be now available in Launchpad!
-            """
-        )
+        definitions["welcome_image"] = os.path.join(HERE, "resources", "napari_1227x600.png")
+        welcome_text_tmpl = (Path(HERE) / "resources" / "osx_pkg_welcome.rtf.tmpl").read_text()
+        welcome_file = Path(HERE) / "resources" / "osx_pkg_welcome.rtf"
+        clean_these_files.append(welcome_file)
+        welcome_file.write_text(welcome_text_tmpl.replace("__VERSION__", version))
+        definitions["welcome_file"] = str(welcome_file)
+        definitions["conclusion_text"] = ""
+        definitions["readme_text"] = ""
     if WINDOWS:
         definitions["conda_default_channels"].append("defaults")
         definitions.update(
             {
-                "welcome_image": os.path.join(
-                    HERE, "resources", "napari_164x314.png"
-                ),
-                "header_image": os.path.join(
-                    HERE, "resources", "napari_150x57.png"
-                ),
-                "icon_image": os.path.join(
-                    HERE, "napari", "resources", "icon.ico"
-                ),
+                "welcome_image": os.path.join(HERE, "resources", "napari_164x314.png"),
+                "header_image": os.path.join(HERE, "resources", "napari_150x57.png"),
+                "icon_image": os.path.join(HERE, "napari", "resources", "icon.ico"),
                 "register_python_default": False,
             }
         )
 
     print("Calling `constructor` with these definitions:")
     print(yaml.dump(definitions, default_flow_style=False))
+    clean_these_files.append("construct.yaml")
 
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
@@ -146,8 +124,11 @@ def _constructor(version=VERSION):
 def main():
     print("Cleaning...")
     clean()
-
-    _constructor()
+    try:
+        _constructor()
+    finally:
+        for path in clean_these_files:
+            os.unlink(path)
 
     assert Path(OUTPUT_FILENAME).exists()
     return OUTPUT_FILENAME
