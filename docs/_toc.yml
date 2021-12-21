@@ -1,6 +1,6 @@
-format: jb-article
+format: jb-book
 root: index
-sections:
+chapters:
 - file: howtos/index
   title: How-to guides
   sections:
