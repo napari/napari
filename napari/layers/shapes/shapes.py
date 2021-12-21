@@ -224,6 +224,8 @@ class Shapes(Layer):
     features : Dataframe-like
         Features table where each row corresponds to a shape and each column
         is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.

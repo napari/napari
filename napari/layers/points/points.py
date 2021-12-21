@@ -152,6 +152,8 @@ class Points(Layer):
     features : DataFrame-like
         Features table where each row corresponds to a point and each column
         is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
     properties : dict {str: array (N,)} or DataFrame
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
