@@ -702,23 +702,24 @@ def _features_from_layer(
         features = _validate_features(features, num_data=num_data)
     defaults = pd.DataFrame(
         {
-            name: _get_column_default_value(column)
+            name: _get_default_column(column)
             for name, column in features.items()
         },
-        index=range(1),
+        copy=True,
     )
     return features, defaults
 
 
-def _get_column_default_value(column: pd.Series) -> Optional:
-    """Get the default value from a feature column."""
+def _get_default_column(column: pd.Series) -> pd.Series:
+    """Get the default column of length 1 from a data column."""
+    value = None
     if column.size > 0:
-        return column.iloc[-1]
+        value = column.iloc[-1]
     if isinstance(column.dtype, pd.CategoricalDtype):
         choices = column.dtype.categories
         if choices.size > 0:
-            return choices[0]
-    return None
+            value = choices[0]
+    return pd.Series(data=value, dtype=column.dtype, index=range(1))
 
 
 def _validate_features(
