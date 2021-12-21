@@ -79,10 +79,6 @@ We named our plugin `my-py-reader`. This is the name that will be used for
 the python package. It should conform to the [PEP8] naming convention
 (short, all-lowercase names, using dashes instead of underscores).
 
-When the cookiecutter asked to include a reader plugin, we selected `y`, and
-in the next question we told cookiecutter that our reader should be invoked
-for files matching the `*.npy` [glob] pattern.
-
 After answering all the prompts, `cookiecutter` will create a directory called
 `my_npy_reader` in the current directory that holds the generated files. It
 will look something like this:
