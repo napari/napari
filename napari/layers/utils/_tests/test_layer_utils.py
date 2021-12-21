@@ -432,3 +432,17 @@ def test_remove_features():
         new_features['confidence'],
         [0.2, 1],
     )
+
+
+def test_validate_features_with_custom_index_without_num_data():
+    input = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
+    actual = _validate_features(input)
+    expected = input.reset_index(drop=True)
+    pd.testing.assert_frame_equal(actual, expected)
+
+
+def test_validate_features_with_custom_index_and_num_data():
+    input = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
+    actual = _validate_features(input, num_data=2)
+    expected = input.reset_index(drop=True)
+    pd.testing.assert_frame_equal(actual, expected)

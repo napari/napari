@@ -35,7 +35,7 @@ from ..utils.layer_utils import (
     coerce_current_properties,
 )
 from ..utils.text_manager import TextManager
-from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
+from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
 from ._points_mouse_bindings import add, highlight, select
 from ._points_utils import create_box, fix_data_points, points_to_squares
 
@@ -138,6 +138,12 @@ class Points(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
+    shading : str, Shading
+        Render lighting and shading on points. Options are:
+            * 'none'
+                No shading is added to the points.
+            * 'spherical'
+                Shading and depth buffer are changed to give a 3D spherical look to the points
 
     Attributes
     ----------
@@ -224,6 +230,8 @@ class Points(Layer):
         CYCLE allows the color to be set via a color cycle over an attribute
 
         COLORMAP allows color to be set via a color map over an attribute
+    shading : Shading
+        Shading mode.
 
     Notes
     -----
@@ -243,6 +251,8 @@ class Points(Layer):
     _drag_start : list or None
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
+    _antialias : float
+        The amount of antialiasing pixels for both the marker and marker edge.
     """
 
     # TODO  write better documentation for edge_color and face_color
@@ -284,6 +294,7 @@ class Points(Layer):
         cache=True,
         property_choices=None,
         experimental_clipping_planes=None,
+        shading='none',
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -320,6 +331,8 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
+            shading=Event,
+            _antialias=Event,
         )
 
         self._colors = get_color_namelist()
@@ -397,6 +410,8 @@ class Points(Layer):
         )
 
         self.size = size
+        self.shading = shading
+        self._antialias = True
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -636,7 +651,6 @@ class Points(Layer):
 
     @symbol.setter
     def symbol(self, symbol: Union[str, Symbol]) -> None:
-
         if isinstance(symbol, str):
             # Convert the alias string to the deduplicated string
             if symbol in SYMBOL_ALIAS:
@@ -687,6 +701,28 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
+
+    @property
+    def _antialias(self):
+        """float: amount in pixels of antialiasing"""
+        return self.__antialias
+
+    @_antialias.setter
+    def _antialias(self, value) -> Union[int, float]:
+        if value < 0:
+            value = 0
+        self.__antialias = float(value)
+        self.events._antialias()
+
+    @property
+    def shading(self) -> Shading:
+        """shading mode."""
+        return self._shading
+
+    @shading.setter
+    def shading(self, value):
+        self._shading = Shading(value)
+        self.events.shading()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -991,6 +1027,7 @@ class Points(Layer):
                 'ndim': self.ndim,
                 'data': self.data,
                 'features': self.features,
+                'shading': self.shading,
             }
         )
         return state
@@ -1832,6 +1869,12 @@ class Points(Layer):
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.
