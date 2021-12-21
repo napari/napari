@@ -708,9 +708,7 @@ def _features_from_layer(
     Returns
     -------
     pd.DataFrame
-        The pandas DataFrame created from the input features table.
-        If the input features are already a DataFrame, the data will not
-        be copied, otherwise they will.
+        The pandas DataFrame created from the input features or properties.
     pd.DataFrame
         The pandas DataFrame of default values. The names and dtypes will be
         the same as the features data, but the table will have exactly one row.
