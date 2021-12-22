@@ -443,10 +443,15 @@ def main():
 
     # Prevent __main__.py from being the app name if run with python -m napari
     if sys.platform == "darwin" and not sys.argv[0].endswith("/napari"):
-        # we need a path with basename `napari`; adding ../ makes it an existing
+        # we need a path with basename `napari`; adding ../../ makes it an existing
         # path too, just in case -- we undo this later once QApplication() is created
+        # example:
+        # sys.argv[0] was /path/to/installation/napari/__main__.py
+        # sys.argv[0] + "/../../napari" turns that into 
+        # /path/to/installation/napari/__main__.py/../../napari
+        # which is the same as /path/to/installation/napari
         sys._old_argv_0 = sys.argv[0]
-        sys.argv[0] += "/../napari"
+        sys.argv[0] += "/../../napari"
 
     _run()
 
