@@ -597,6 +597,7 @@ def test_remove_add_image_3D(make_napari_viewer):
     viewer.layers.append(layer)
 
 
+@skip_on_win_ci
 @skip_local_popups
 def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
     """Test out-of-view multiscale image viewing fix.
@@ -610,12 +611,8 @@ def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
     viewer.add_shapes(
         data=[
             np.array(
-                [
-                    [1500.0, 4500.0],
-                    [4500.0, 4500.0],
-                    [4500.0, 1500.0],
-                    [1500.0, 1500.0],
-                ]
+                [[1500, 4500], [4500, 4500], [4500, 1500], [1500, 1500]],
+                dtype=float,
             )
         ],
         shape_type=['polygon'],
