@@ -90,11 +90,17 @@ def _constructor(version=VERSION):
         definitions["channels"].insert(0, "local")
     if MACOS:
         definitions["installer_type"] = "pkg"
-        definitions["welcome_image"] = os.path.join(HERE, "resources", "napari_1227x600.png")
-        welcome_text_tmpl = (Path(HERE) / "resources" / "osx_pkg_welcome.rtf.tmpl").read_text()
+        definitions["welcome_image"] = os.path.join(
+            HERE, "resources", "napari_1227x600.png"
+        )
+        welcome_text_tmpl = (
+            Path(HERE) / "resources" / "osx_pkg_welcome.rtf.tmpl"
+        ).read_text()
         welcome_file = Path(HERE) / "resources" / "osx_pkg_welcome.rtf"
         clean_these_files.append(welcome_file)
-        welcome_file.write_text(welcome_text_tmpl.replace("__VERSION__", version))
+        welcome_file.write_text(
+            welcome_text_tmpl.replace("__VERSION__", version)
+        )
         definitions["welcome_file"] = str(welcome_file)
         definitions["conclusion_text"] = ""
         definitions["readme_text"] = ""
@@ -102,9 +108,15 @@ def _constructor(version=VERSION):
         definitions["conda_default_channels"].append("defaults")
         definitions.update(
             {
-                "welcome_image": os.path.join(HERE, "resources", "napari_164x314.png"),
-                "header_image": os.path.join(HERE, "resources", "napari_150x57.png"),
-                "icon_image": os.path.join(HERE, "napari", "resources", "icon.ico"),
+                "welcome_image": os.path.join(
+                    HERE, "resources", "napari_164x314.png"
+                ),
+                "header_image": os.path.join(
+                    HERE, "resources", "napari_150x57.png"
+                ),
+                "icon_image": os.path.join(
+                    HERE, "napari", "resources", "icon.ico"
+                ),
                 "register_python_default": False,
             }
         )
