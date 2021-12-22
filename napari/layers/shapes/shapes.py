@@ -1580,6 +1580,13 @@ class Shapes(Layer):
         anchor_y : str
             The vispy text anchor for the y axis
         """
+
+        # short circuit if no text present
+        if len(self.text.values) == 0:
+            return self.text.compute_text_coords(
+                np.zeros((0, self._ndisplay)), self._ndisplay
+            )
+
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
             self._data_view.data[i] for i in self._indices_view
