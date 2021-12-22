@@ -1537,6 +1537,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             corners = np.zeros((2, self.ndim))
             corners[:, displayed_axes] = scaled_corners
             corners = corners.astype(int)
+            display_shape = tuple(
+                corners[1, displayed_axes] - corners[0, displayed_axes]
+            )
+            if any(s == 0 for s in display_shape):
+                return
             if self.data_level != level or not np.all(
                 self.corner_pixels == corners
             ):
