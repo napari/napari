@@ -220,6 +220,10 @@ class Shape(ABC):
                     if i == 0 or not np.all(p == data[i - 1])
                 ]
             )
+            idx = np.concatenate(
+                [[True], ~np.all(data[1:] == data[:-1], axis=-1)]
+            )
+            clean_data = data[idx].copy()
 
             if not is_collinear(clean_data[:, -2:]):
                 if clean_data.shape[1] == 2:

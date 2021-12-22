@@ -566,15 +566,14 @@ def triangulate_edge(path, closed=False):
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
+
+    path = np.asanyarray(path)
+
     # Remove any equal adjacent points
     if len(path) > 2:
-        clean_path = np.array(
-            [
-                p
-                for i, p in enumerate(path)
-                if i == 0 or not np.all(p == path[i - 1])
-            ]
-        )
+        idx = np.concatenate([[True], ~np.all(path[1:] == path[:-1], axis=-1)])
+        clean_path = path[idx].copy()
+
         if clean_path.shape[0] == 1:
             clean_path = np.concatenate((clean_path, clean_path), axis=0)
     else:
