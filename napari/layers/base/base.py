@@ -1434,7 +1434,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         world : bool
             True if the provided coordinates are in world coordinates.
             Default value is True.
-        bounding_box: np.ndarray
+        bounding_box : np.ndarray
             A (2, 3) bounding box around the data currently in view
 
         Returns

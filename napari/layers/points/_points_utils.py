@@ -159,11 +159,9 @@ def _points_in_box_3d(
 
     # determine which points are in the box using the
     # axis-aligned basis
-    inside = points_in_box(
+    return points_in_box(
         bbox_corners_axis_aligned, points_axis_aligned, sizes
     )
-
-    return inside
 
 
 def points_in_box(

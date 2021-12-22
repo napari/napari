@@ -165,7 +165,7 @@ class Camera(EventedModel):
 
     def calculate_nd_up_direction(
         self, ndim: int, dims_displayed: Tuple[int]
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
         """Calculate the nD up direction vector of the camera.
 
         Parameters
