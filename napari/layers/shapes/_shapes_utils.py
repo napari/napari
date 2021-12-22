@@ -533,7 +533,23 @@ def triangulate_face(data):
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    vertices, triangles = PolygonData(vertices=data).triangulate()
+
+    try:
+        # see https://github.com/vispy/vispy/issues/1029
+        import triangle
+
+        edges = np.empty((len(data), 2), dtype=np.uint32)
+        edges[:, 0] = np.arange(len(data))
+        edges[:, 1] = edges[:, 0] + 1
+        # connect last with first vertex
+        edges[-1, 1] = 0
+
+        res = triangle.triangulate(dict(vertices=data, segments=edges), "p")
+        vertices, triangles = res['vertices'], res['triangles']
+
+    except ImportError:
+        vertices, triangles = PolygonData(vertices=data).triangulate()
+
     triangles = triangles.astype(np.uint32)
 
     return vertices, triangles
