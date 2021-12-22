@@ -863,19 +863,47 @@ def path_to_mask(mask_shape, vertices):
     -------
     mask : np.ndarray
         Boolean array with `True` for points along the path
+
     """
+    mask_shape = np.asarray(mask_shape, dtype=int)
     mask = np.zeros(mask_shape, dtype=bool)
-    vertices = np.round(
-        np.clip(vertices, 0, np.subtract(mask_shape, 1))
-    ).astype(int)
+
+    vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
+
+    # remove identical, consecutive vertices
+    duplicates = np.all(np.diff(vertices, axis=0) == 0, axis=-1)
+    duplicates = np.concatenate(([False], duplicates))
+    vertices = vertices[~duplicates]
+
+    ii, jj = [], []
     for i in range(len(vertices) - 1):
         start = vertices[i]
         stop = vertices[i + 1]
         step = np.ceil(np.max(abs(stop - start))).astype(int)
-        x_vals = np.linspace(start[0], stop[0], step)
-        y_vals = np.linspace(start[1], stop[1], step)
-        for x, y in zip(x_vals, y_vals):
-            mask[int(x), int(y)] = 1
+        if step > 1:
+            x_vals = (
+                (
+                    start[0]
+                    + np.arange(step) * (stop[0] - start[0]) / (step - 1)
+                )
+                .astype(int)
+                .tolist()
+            )
+            y_vals = (
+                (
+                    start[1]
+                    + np.arange(step) * (stop[1] - start[1]) / (step - 1)
+                )
+                .astype(int)
+                .tolist()
+            )
+        else:
+            x_vals, y_vals = [start[0]], [start[1]]
+        ii.extend(x_vals)
+        jj.extend(y_vals)
+
+    mask[ii, jj] = 1
+
     return mask
 
 
