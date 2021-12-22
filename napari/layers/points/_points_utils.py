@@ -107,8 +107,21 @@ def _points_in_box_3d(
     box_normal: np.ndarray,
     up_direction: np.ndarray,
 ) -> List[int]:
-    """Determine which points are inside of a by a bounding box that is extended
-    along its normal direction.
+    """Determine which points are inside of a bounding box that is extended
+    infinitely in both directions along the normal vector.
+
+    Point selection algorithm:
+        1. Project the points in view and drag box corners on to a plane
+        parallel to the canvas (i.e., normal direction is the view direction).
+        2. Rotate the points/bbox corners to a new basis comprising
+        the bbox normal, the camera up direction, and the
+        "horizontal direction" (i.e., vector orthogonal to bbox normal
+        and camera up direction). This makes it such that the bounding box
+        is axis aligned (i.e., the major and minor axes of the bounding
+        box are aligned with the new 0 and 1 axes).
+        3. Determine which points are in the bounding box in 2D. We can
+        simplify to 2D since the points and bounding box now lie in the same
+        plane.
 
     Parameters
     ----------
