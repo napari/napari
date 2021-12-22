@@ -9,8 +9,12 @@ from ...utils.translations import trans
 def _create_box_from_corners_3d(
     box_corners: np.ndarray, box_normal: np.ndarray, up_vector: np.ndarray
 ) -> np.ndarray:
-    """Get the corners for a box in 3D from the corners, the normal direction,
+    """Get the corners for a box in 3D from two opposing corners, the normal direction,
     and the up direction.
+
+    The resulting box will include the two corners passed in as box_corners,
+    lie in a plane with normal box_normal, and have one of its axes aligned
+    with the up_vector.
 
     Parameters
     ----------

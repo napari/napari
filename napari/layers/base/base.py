@@ -1294,13 +1294,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _world_to_data_dims_displayed(
         self, dims_displayed: List[int], ndim_world: int
     ) -> np.ndarray:
-        """Convert the displayed dims in world coordinates to the data coordinates.
+        """Convert the indices of the displayed dims from world coordinates
+        to the data coordinates.
 
-        This accounts for differences in dimensionality of the world and the data.
-        for example a global order of [2, 1, 0, 3] -> [0, 1] for a layer that
-        only has two dimensions or -> [1, 0, 2] for a layer with three as that
-        corresponds to the relative order of the last two and three dimensions
-        respectively
+        This accounts for differences in dimensionality between the world
+        and the data coordinates. For example a world dims order of
+        [2, 1, 0, 3] would be [0, 1] for a layer that only has two dimensions
+        or [1, 0, 2] for a layer with three as that corresponds to the
+        relative order of the last two and three dimensions respectively
 
         Parameters
         ----------
