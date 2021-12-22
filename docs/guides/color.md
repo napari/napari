@@ -21,8 +21,18 @@ In [1]: points.face_color = 'red'
 
 Internally, napari typically coerces an input color value like `'red'` to an RGBA (red, green, blue, alpha)
 array with `shape=(4,)` and `dtype=np.float32` where the values are in `[0, 1]`.
+Each element of this array defines the contribution of each RGBA color component to the overall color,
+where a value of 0 means there is no contribution and a value of 1 means that component is saturated.
+
+For example, a purely `'red'` color is coerced to the array `[1, 0, 0, 1]` where the red component is
+saturated, but the green and blue components do not contribute at all.
+The last element (alpha) similarly describes the opacity of the color, where a value of 0 corresponds to
+transparent and a value of 1 corresponds to opaque.
+Most colors are represented as a soft mix of the RGB color components and an opaque alpha value, such as
+[cornflower blue](https://en.wikipedia.org/wiki/Cornflower_blue) which could be represented as `[0.395, 0.585, 0.930, 1]`.
+
 When storing N color values, a similar array of `shape=(N, 4)` is used where each row represents a single color value.
-For example, reading the points layer's red face color gives us such an array.
+For example, reading the points layer's red face color gives us such an array
 
 ```python
 In [2]: points.face_color
@@ -31,6 +41,8 @@ array([[1., 0., 0., 1.],
        [1., 0., 0., 1.],
        [1., 0., 0., 1.]])
 ```
+
+where in this case there are `N=3` points.
 
 The [`transform_color`](https://github.com/napari/napari/blob/5f96d5d814aad697c367bdadbb1a57750e2114ad/napari/utils/colormaps/standardize_color.py#L33)
 function is responsible for coercing color input values to the standard form and supports a variety of inputs.
@@ -136,29 +148,27 @@ is not supported or guaranteed to work.
 
 ## Colormaps
 
-In general, a colormap is a function that maps from an arbitrary domain to a some color space range.
-As napari's standard form of color is an RGBA array, this range is the RGBA color space.
+In napari, a colormap maps data values to RGBA colors and is used in at least two ways.
 
-In napari, colormaps are used in two ways.
 - To map an image pixel value to an RGBA color.
 - To map a property value to an RGBA color.
 
-In both cases the types of values in the domain may be continuous (e.g. `float`)
-or categorical (e.g. `int`, `str`), so napari has two different types of colormaps to handle those cases.
+In both cases, the types of data values may either be continuous (e.g. `float`) or categorical (e.g. `int`, `str`),
+so napari has two different types of colormaps to handle those two cases.
 
 
 ### Continuous maps
 
 The [`Colormap`](https://github.com/napari/napari/blob/c86cf87a788b1bbe62afc0b92b9ebdca1331a3e5/napari/utils/colormaps/colormap.py#L28)
 class defines a map from a continuous or real value to a color.
-For example, a 2D image of floats between 0 and 1 can be mapped to colors.
+For example, a 2D image of floats between 0 and 1 can be mapped to colors as follows.
 
 ```python
 In [6]: image.colormap = 'blue'
 ```
 
 Internally, the [`ensure_colormap`](https://github.com/napari/napari/blob/c86cf87a788b1bbe62afc0b92b9ebdca1331a3e5/napari/utils/colormaps/colormap_utils.py#L492)
-function is used to coerce colormap input values to an instance of napari's `Colormap`.
+function is used to coerce colormap input values to an instance of napari's [`Colormap`](https://github.com/napari/napari/blob/c86cf87a788b1bbe62afc0b92b9ebdca1331a3e5/napari/utils/colormaps/colormap.py#L28).
 
 ```python
 In [7]: image.colormap
@@ -171,13 +181,23 @@ Colormap(
 )
 ```
 
-In this case, values of 0 are mapped to black (`[0, 0, 0, 1]`),
+In the `Colormap` object returned, the `controls` attribute defines the
+input data values that the colormap maps from and the `colors` attribute
+defines the output colors that it maps to.
+The `interpolation` attribute defines how to interpolate `color` when an
+input value does not exactly equal one of the values in `controls`.
+And the `name` attribute gives the colormap a name that can be referred to later.
+
+In this case, input data values of 0 are mapped to black (`[0, 0, 0, 1]`),
 values of 1 are mapped to blue (`[0, 0, 1, 1]`),
 and values in `(0, 1)` are mapped to colors that are linearly interpolated
 between black and blue.
 
+#### Supported input
+
 A few types of input are supported.
 The easiest to use is the colormap name as above.
+
 ```python
 image.colormap = 'blue'
 ```
@@ -201,11 +221,25 @@ Out[8]:
  'yellow']
 ```
 
-If there is a need for a custom colormap that is not available by default,
-pass an instance of a napari `Colormap`
-
+Any single color value that is not a string can also be used
 
 ```python
+image.colormap = (0, 0, 1)
+```
+
+in which case a colormap from black to the given color will be generated.
+In general, the color value cannot be given as a name string because strings
+are reserved to refer to existing colormap names.
+
+
+#### Custom colormaps
+
+If there is a need for a custom colormap that is not available by default,
+pass an instance of a napari `Colormap`.
+For example, the same black to blue colormap as above can be explicitly created as
+
+```python
+from napari.utils.colormaps import Colormap
 image.colormap = Colormap(
     colors=[[0, 0, 0, 1], [0, 0, 1, 1]],
     name='blue',
@@ -214,7 +248,8 @@ image.colormap = Colormap(
 )
 ```
 
-which will be added to `AVAILABLE_COLORMAPS` after it is successfully created.
+where in general the new `Colormap` will add a new entry or replace
+an existing entry in `AVAILABLE_COLORMAPS`.
 Equivalently, pass a `dict` representation of the same colormap.
 
 ```python
@@ -226,15 +261,10 @@ image.colormap = {
 }
 ```
 
-Any single color value that is not a string can also be used
+Any custom colormap can be created as long two requirements are met.
 
-```python
-image.colormap = (0, 0, 1)
-```
-
-in which case a colormap from black to the given color will be generated.
-In general, the color value cannot be given as a name string because strings
-are reserved to refer to existing colormap names.
+1. The lengths of `colors` and `controls` are equal.
+2. `controls` starts with 0, ends with 1, and is sorted in increasing order.
 
 
 ### Categorical maps
