@@ -353,6 +353,178 @@ class ShapeList:
             # Set z_order
             self._update_z_order()
 
+    def add_multiple(
+        self,
+        shapes,
+        face_colors=None,
+        edge_colors=None,
+        z_refresh=True,
+    ):
+        """Add multiple shapes at once (faster than adding them one by one)
+
+        Parameters
+        ----------
+        shapes : iterable of Shape
+            Each Shape must be a subclass of Shape, one of "{'Line', 'Rectangle',
+            'Ellipse', 'Path', 'Polygon'}"
+        face_colors: iterable of face_color
+        edge_colors: iterable of edge_color
+        z_refresh : bool
+            If set to true, the mesh elements are reindexed with the new z order.
+            When shape_index is provided, z_refresh will be overwritten to false,
+            as the z indices will not change.
+            When adding a batch of shapes, set to false  and then call
+            ShapesList._update_z_order() once at the end.
+
+        TODO: Currently shares a lot of code with `add()`, with the
+        difference being that `add()` supports inserting shapes at a specific
+        `shape_index`, whereas `add_multiple` will append them as a full batch
+        """
+
+        all_z_index = list()
+        all_face_color = list()
+        all_edge_color = list()
+        all_vertices = list()
+        all_index = list()
+        all_mesh_vertices = list()
+        all_mesh_vertices_centers = list()
+        all_mesh_vertices_offsets = list()
+        all_mesh_vertices_index = list()
+        all_mesh_triangles = list()
+        all_mesh_triangles_index = list()
+        all_mesh_triangles_colors = list()
+
+        m_mesh_vertices_count = len(self._mesh.vertices)
+
+        for shape, face_color, edge_color in zip(
+            shapes, face_colors, edge_colors
+        ):
+
+            if not issubclass(type(shape), Shape):
+                raise ValueError(
+                    trans._(
+                        'shape must be subclass of Shape',
+                        deferred=True,
+                    )
+                )
+
+            shape_index = len(self.shapes)
+            self.shapes.append(shape)
+            all_z_index.append(shape.z_index)
+
+            if face_color is None:
+                face_color = np.array([1, 1, 1, 1])
+            all_face_color.append(face_color)
+
+            if edge_color is None:
+                edge_color = np.array([0, 0, 0, 1])
+            all_edge_color.append(edge_color)
+
+            all_vertices.append(shape.data_displayed)
+
+            index = [shape_index] * len(shape.data)
+            all_index.append(index)
+
+            # Add faces to mesh
+            m = m_mesh_vertices_count
+            vertices = shape._face_vertices
+            all_mesh_vertices.append(vertices)
+            m_mesh_vertices_count += len(vertices)
+            vertices = shape._face_vertices
+            all_mesh_vertices_centers.append(vertices)
+            vertices = np.zeros(shape._face_vertices.shape)
+            all_mesh_vertices_offsets.append(vertices)
+
+            # same but faster than:
+            # index = np.repeat([[shape_index, 0]], len(vertices), axis=0)
+            index = np.zeros((len(vertices), 2), np.int32)
+            index[:, 0] = shape_index
+            all_mesh_vertices_index.append(index)
+
+            triangles = shape._face_triangles + m
+            all_mesh_triangles.append(triangles)
+
+            # same but faster than:
+            # index = np.repeat([[shape_index, 0]], len(triangles), axis=0)
+            index = np.zeros((len(triangles), 2), np.int32)
+            index[:, 0] = shape_index
+
+            all_mesh_triangles_index.append(index)
+
+            color_array = np.repeat([face_color], len(triangles), axis=0)
+            all_mesh_triangles_colors.append(color_array)
+
+            # Add edges to mesh
+            m = m_mesh_vertices_count
+
+            vertices = (
+                shape._edge_vertices + shape.edge_width * shape._edge_offsets
+            )
+            all_mesh_vertices.append(vertices)
+            m_mesh_vertices_count += len(vertices)
+
+            vertices = shape._edge_vertices
+            all_mesh_vertices_centers.append(vertices)
+
+            vertices = shape._edge_offsets
+            all_mesh_vertices_offsets.append(vertices)
+
+            # same but faster than:
+            # index = np.repeat([[shape_index, 1]], len(vertices), axis=0)
+            index = np.ones((len(vertices), 2), np.int32)
+            index[:, 0] = shape_index
+            all_mesh_vertices_index.append(index)
+
+            triangles = shape._edge_triangles + m
+            all_mesh_triangles.append(triangles)
+
+            # same but faster than:
+            # index = np.repeat([[shape_index, 1]], len(triangles), axis=0)
+            index = np.ones((len(triangles), 2), np.int32)
+            index[:, 0] = shape_index
+            all_mesh_triangles_index.append(index)
+
+            color_array = np.repeat([edge_color], len(triangles), axis=0)
+            all_mesh_triangles_colors.append(color_array)
+
+        # assemble properties
+        self._z_index = np.append(self._z_index, np.array(all_z_index), axis=0)
+        self._face_color = np.vstack(
+            (self._face_color, np.vstack(all_face_color))
+        )
+        self._edge_color = np.vstack(
+            (self._edge_color, np.vstack(all_edge_color))
+        )
+        self._vertices = np.vstack((self._vertices, np.vstack(all_vertices)))
+        self._index = np.append(self._index, np.concatenate(all_index), axis=0)
+
+        self._mesh.vertices = np.vstack(
+            (self._mesh.vertices, np.vstack(all_mesh_vertices))
+        )
+        self._mesh.vertices_centers = np.vstack(
+            (self._mesh.vertices_centers, np.vstack(all_mesh_vertices_centers))
+        )
+        self._mesh.vertices_offsets = np.vstack(
+            (self._mesh.vertices_offsets, np.vstack(all_mesh_vertices_offsets))
+        )
+        self._mesh.vertices_index = np.vstack(
+            (self._mesh.vertices_index, np.vstack(all_mesh_vertices_index))
+        )
+
+        self._mesh.triangles = np.vstack(
+            (self._mesh.triangles, np.vstack(all_mesh_triangles))
+        )
+        self._mesh.triangles_index = np.vstack(
+            (self._mesh.triangles_index, np.vstack(all_mesh_triangles_index))
+        )
+        self._mesh.triangles_colors = np.vstack(
+            (self._mesh.triangles_colors, np.vstack(all_mesh_triangles_colors))
+        )
+
+        if z_refresh:
+            # Set z_order
+            self._update_z_order()
+
     def remove_all(self):
         """Removes all shapes"""
         self.shapes = []
