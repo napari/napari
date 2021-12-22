@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
-    from typing import Dict
+    from typing import Dict, Optional, Tuple
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -79,3 +79,18 @@ class QtReaderDialog(QDialog):
         checked_btn = self.reader_btn_group.checkedButton()
         if checked_btn:
             return checked_btn.text()
+
+    def get_user_choices(self) -> "Optional[Tuple[str, bool]]":
+        dialog_result = self.exec_()
+        # user pressed cancel
+        if not dialog_result:
+            return
+
+        # grab the selected radio button text
+        display_name = self.get_plugin_choice()
+        # is setting being persisted?
+        persist_choice = (
+            hasattr(self, 'persist_checkbox')
+            and self.persist_checkbox.isChecked()
+        )
+        return display_name, persist_choice

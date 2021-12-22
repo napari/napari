@@ -64,6 +64,7 @@ from .._vispy import (  # isort:skip
 if TYPE_CHECKING:
     from ..components import ViewerModel
     from npe2.manifest.contributions import WriterContribution
+    from typing import Any
 
 from ..settings import get_settings
 from ..utils.io import imsave_extensions
@@ -1072,13 +1073,39 @@ class QtViewer(QSplitter):
 
             _, extension = os.path.splitext(filename)
             reader_associations = get_settings().plugins.extension2reader
+            error_message = ''
+            # if we have an existing setting for this extension
+            if extension and extension in reader_associations:
+                display_name = reader_associations[extension]
+                # if this plugin is a potential reader
+                if display_name in readers:
+                    try:
+                        # try to open using the associated plugin
+                        self.viewer.open(
+                            filename,
+                            plugin=readers[display_name],
+                        )
+                        # we've opened file successfully, so move on to next file
+                        return
+                    except Exception:
+                        error_message = f"Tried to open file with {display_name}, but reading failed.\n"
+                else:
+                    error_message = f"Can't find {display_name} plugin associated with {extension} files.\n"
+
             # get plugin choice from user
             # choice is None if file was opened or user chose cancel
+            readerDialog = QtReaderDialog(
+                parent=self,
+                pth=filename,
+                error_message=error_message,
+                readers=readers,
+            )
             choice = _get_reader_choice_for_file(
-                self, filename, extension, readers, reader_associations
+                readerDialog, readers, error_message
             )
             if choice:
-                display_name, plugin_name, persist_choice = choice
+                display_name, persist_choice = choice
+                plugin_name = readers[display_name]
                 self.viewer.open(
                     filename,
                     plugin=plugin_name,
@@ -1193,12 +1220,8 @@ def _create_remote_manager(
 
 
 def _get_reader_choice_for_file(
-    qt_viewer: QtViewer,
-    filename: str,
-    extension: str,
-    readers: Dict[str, str],
-    reader_associations: Dict[str, str],
-) -> Tuple(str, str, bool):
+    readerDialog: Any, readers: Dict[str, str], error_message: str
+) -> Tuple(str, bool):
     """Gets choice of reader from user for the given filename.
 
     If an existing association is set for this extension, tries
@@ -1209,68 +1232,28 @@ def _get_reader_choice_for_file(
 
     Parameters
     ----------
-    qt_viewer : QtViewer
-        Viewer where we're trying to open the file
-    filename : str
-        Path to file (or folder) trying to open.
-    extension : str
-        Extension of the given filename
+    readerDialog : QtReaderDialog or MockQtReaderDialog
+        reader dialog to use for choices from the user
     readers: str
         Dictionary of display-name:plugin-name of potential readers for file
-    reader_associations : Dict[str, str]
-        Existing user settings for extension to reader
 
     Returns
     -------
     display_name: str
         Display name of the chosen plugin
-    plugin_name: str
-        Registered name of the chosen plugin
     persist_choice: bool
         Whether to persist the chosen plugin choice or not
     """
     display_name = ''
-    error_message = ''
     persist_choice = False
 
-    if extension:
-        if reader_associations and extension in reader_associations:
-            display_name = reader_associations[extension]
-            if display_name in readers:
-                try:
-                    qt_viewer.viewer.open(
-                        filename,
-                        plugin=readers[display_name],
-                    )
-                    # we've opened file successfully, so move on to next file
-                    return
-                except Exception:
-                    error_message = f"Tried to open file with {display_name}, but reading failed.\n"
-            else:
-                error_message = f"Can't find {display_name} plugin associated with {extension} files.\n"
-
-    # if we have more than one reader or we errored with current setting
-    if len(readers) > 1 or error_message:
-        readerDialog = QtReaderDialog(
-            parent=qt_viewer,
-            pth=filename,
-            error_message=error_message,
-            readers=readers,
-        )
-        dialog_result = readerDialog.exec_()
-        if dialog_result:
-            # grab the plugin they chose
-            display_name = readerDialog.get_plugin_choice()
-            # do they want to save settings?
-            if (
-                hasattr(readerDialog, 'persist_checkbox')
-                and readerDialog.persist_checkbox.isChecked()
-            ):
-                persist_choice = True
-        # cancel on the dialog cancels opening the file
-        else:
-            return
-    elif len(readers) == 1:
+    if len(readers) == 1 and not error_message:
         display_name = next(iter(readers.keys()))
+        return display_name, persist_choice
 
-    return display_name, readers[display_name], persist_choice
+    # we need to get their choice from the dialog
+    res = readerDialog.get_user_choices()
+    if not res:
+        return
+    display_name, persist_choice = res
+    return display_name, persist_choice
