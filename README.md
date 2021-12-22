@@ -22,11 +22,17 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 
 ## installation
 
-You can install napari with pip or conda (or alternatively install [napari as a bundled app](https://napari.org/tutorials/fundamentals/installation.html#install-as-a-bundled-app)):
-- `pip install "napari[all]"`
-- `conda install -c conda-forge napari
+It is recommended to install napari into a virtual environment, like this:
 
-See here for the full [installation guide](https://napari.org/tutorials/fundamentals/installation.html).
+```sh
+conda create -y -n napari-env -c conda-forge python=3.9 pip
+conda activate napari-env
+python -m pip install "napari[all]"
+```
+
+If you prefer conda over pip, you can replace the last line with: `conda install -c conda-forge napari`
+
+See here for the full [installation guide](https://napari.org/tutorials/fundamentals/installation.html), including how to [install napari as a bundled app](https://napari.org/tutorials/fundamentals/installation.html#install-as-a-bundled-app).
 
 ## simple example
 
