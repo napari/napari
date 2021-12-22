@@ -1293,7 +1293,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _world_to_data_dims_displayed(
         self, dims_displayed: List[int], ndim_world: int
-    ) -> np.ndarray:
+    ) -> List[int]:
         """Convert the indices of the displayed dims from world coordinates
         to the data coordinates.
 
@@ -1312,17 +1312,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         Returns
         -------
-        dims_displayed_data : np.ndarray
+        dims_displayed_data : List[int]
             The displayed dimensions in data coordinates.
         """
         offset = ndim_world - self.ndim
         order = np.array(dims_displayed)
         if offset <= 0:
-            dims_displayed_data = list(range(-offset)) + list(order - offset)
+            return list(range(-offset)) + list(order - offset)
         else:
-            dims_displayed_data = list(order[order >= offset] - offset)
-
-        return dims_displayed_data
+            return list(order[order >= offset] - offset)
 
     def _display_bounding_box(self, dims_displayed: np.ndarray):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
