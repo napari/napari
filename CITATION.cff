@@ -53,8 +53,9 @@ authors:
   family-names: Buckley
   affiliation: Monash University
   orcid:  https://orcid.org/0000-0003-2763-492X 
-- given-names: Andy
+- given-names: Andrew
   family-names: Sweet
+  affiliation: Chan Zuckerberg Initiative
 - given-names: Lukasz
   family-names: Migas
   affiliation: Delft University of Technology
@@ -63,6 +64,7 @@ authors:
 - given-names: Lorenzo
   family-names: Gaifas
   affiliation: Gutsche Lab - University of Grenoble
+  orcid: https://orcid.org/0000-0003-4875-9422
 - given-names: Jordão
   family-names: Bragantini
   affiliation: Chan Zuckerberg Biohub
@@ -72,6 +74,7 @@ authors:
 - given-names: Hector
   family-names: Muñoz
   affiliation: University of California, Los Angeles
+  orcid: https://orcid.org/0000-0001-7851-2549
 - given-names: Jeremy
   family-names: Freeman
   affiliation: '@carbonplan'
