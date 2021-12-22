@@ -87,8 +87,6 @@ class VispyPointsLayer(VispyBaseLayer):
             face_color=transform_color('transparent'),
         )
 
-        # only draw a box in 2D
-        # if self.layer._ndisplay == 2:
         if (
             self.layer._highlight_box is None
             or 0 in self.layer._highlight_box.shape

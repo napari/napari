@@ -156,22 +156,22 @@ def _update_drag_vectors_from_event(layer, event):
     """
     n_display = len(event.dims_displayed)
     if n_display == 3:
-        ndim_world = len(event.position)
         # if in 3D, set the drag normal and up directions
         # get the indices of the displayed dimensions
+        ndim_world = len(event.position)
         dims_displayed_data = layer._world_to_data_dims_displayed(
             dims_displayed=event.dims_displayed, ndim_world=ndim_world
         )
 
-        # get the view direction in data coordinates
-        layer._drag_normal = np.asarray(
-            layer._world_to_data_ray(event.view_direction)
-        )[dims_displayed_data]
+        # get the view direction in displayed data coordinates
+        layer._drag_normal = layer._world_to_displayed_data_ray(
+            event.view_direction, dims_displayed_data
+        )
 
-        # get the up direction of the camera
-        layer._drag_up = np.asarray(
-            layer._world_to_data_ray(event.up_direction)
-        )[dims_displayed_data]
+        # get the up direction of the camera in displayed data coordinates
+        layer._drag_up = layer._world_to_displayed_data_ray(
+            event.up_direction, dims_displayed_data
+        )
 
     else:
         # if in 2D, set the drag normal and up to None
