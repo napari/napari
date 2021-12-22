@@ -625,135 +625,155 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    clean_path = np.array(path).astype(float)
 
+    def _mirror_point(x, y):
+        return 2 * y - x
+
+    def _sign_nonzero(x):
+        y = np.sign(x).astype(int)
+        y[y == 0] = 1
+        return y
+
+    def _sign_cross(x, y):
+        """sign of cross product (faster for 2d)"""
+        if x.shape[1] == y.shape[1] == 2:
+            return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
+        elif x.shape[1] == y.shape[1] == 3:
+            return _sign_nonzero(np.cross(x, y))
+        else:
+            raise ValueError(x.shape[1], y.shape[1])
+
+    path = np.asarray(path, dtype=float)
+
+    # add first vertex to the end if closed
     if closed:
-        if np.all(clean_path[0] == clean_path[-1]) and len(clean_path) > 2:
-            clean_path = clean_path[:-1]
-        full_path = np.concatenate(
-            ([clean_path[-1]], clean_path, [clean_path[0]]), axis=0
-        )
-        normals = [
-            segment_normal(full_path[i], full_path[i + 1])
-            for i in range(len(clean_path))
-        ]
-        normals = np.array(normals)
-        full_path = np.concatenate((clean_path, [clean_path[0]]), axis=0)
-        full_normals = np.concatenate((normals, [normals[0]]), axis=0)
-    else:
-        full_path = np.concatenate((clean_path, [clean_path[-2]]), axis=0)
-        normals = [
-            segment_normal(full_path[i], full_path[i + 1])
-            for i in range(len(clean_path))
-        ]
-        normals[-1] = -normals[-1]
-        normals = np.array(normals)
-        full_path = clean_path
-        full_normals = np.concatenate(([normals[0]], normals), axis=0)
+        path = np.concatenate((path, [path[0]]))
 
-    miters = np.array(
-        [full_normals[i : i + 2].mean(axis=0) for i in range(len(full_path))]
+    # extend path by adding a vertex at beginning and end
+    # to get the mean normals correct
+    if closed:
+        _ext_point1 = path[-2]
+        _ext_point2 = path[1]
+    else:
+        _ext_point1 = _mirror_point(path[1], path[0])
+        _ext_point2 = _mirror_point(path[-2], path[-1])
+
+    full_path = np.concatenate(([_ext_point1], path, [_ext_point2]), axis=0)
+
+    full_normals = segment_normal(full_path[:-1], full_path[1:])
+
+    # miters per vertex are the average normals of left and right edge
+    miters = 0.5 * (full_normals[:-1] + full_normals[1:])
+
+    # scale miters such that their dot product with normals is 1
+    _mf_dot = np.expand_dims(
+        np.einsum('ij,ij->i', miters, full_normals[:-1]), -1
     )
-    miters = np.array(
-        [
-            miters[i] / np.dot(miters[i], full_normals[i])
-            if np.dot(miters[i], full_normals[i]) != 0
-            else full_normals[i]
-            for i in range(len(full_path))
-        ]
+    miters = np.divide(
+        miters,
+        _mf_dot,
+        out=np.zeros_like(miters),
+        where=np.abs(_mf_dot) > 1e-10,
     )
     miter_lengths = np.linalg.norm(miters, axis=1)
-    miters = 0.5 * miters
-    vertex_offsets = []
-    central_path = []
-    triangles = []
-    m = 0
 
-    for i in range(len(full_path)):
-        if i == 0:
-            if (bevel or miter_lengths[i] > limit) and closed:
-                offset = np.array([miters[i, 1], -miters[i, 0]])
-                offset = 0.5 * offset / np.linalg.norm(offset)
-                flip = np.sign(np.dot(offset, full_normals[i]))
-                vertex_offsets.append(offset)
-                vertex_offsets.append(
-                    -flip * miters[i] / miter_lengths[i] * limit
+    # miter_signs -> +1 if edges turn clockwise, -1 if anticlockwise
+    # used later to discern bevel positions
+    miter_signs = _sign_cross(full_normals[1:], full_normals[:-1])
+    miters = 0.5 * miters
+
+    # generate centers/offsets
+    centers = np.repeat(path, 2, axis=0)
+    offsets = np.repeat(miters, 2, axis=0)
+    offsets[::2] *= -1
+
+    triangles0 = np.tile(np.array([[0, 1, 3], [0, 3, 2]]), (len(path) - 1, 1))
+    triangles = triangles0 + 2 * np.repeat(
+        np.arange(len(path) - 1)[:, np.newaxis], 2, 0
+    )
+
+    # treat bevels
+    idx_bevel = np.where(np.bitwise_or(bevel, miter_lengths > limit))[0]
+
+    if len(idx_bevel) > 0:
+        # only the 'outwards sticking' offsets should be changed
+        # TODO: This is not entirely true as in extreme cases both can go to infty
+        idx_offset = (miter_signs[idx_bevel] < 0).astype(int)
+        idx_bevel_full = 2 * idx_bevel + idx_offset
+        sign_bevel = np.expand_dims(miter_signs[idx_bevel], -1)
+
+        # adjust offset of outer "left" vertex
+        offsets[idx_bevel_full] = (
+            -0.5 * full_normals[:-1][idx_bevel] * sign_bevel
+        )
+        # limit offset of inner vertex to <limit>
+        offsets[2 * idx_bevel + (1 - idx_offset)] *= limit / np.linalg.norm(
+            offsets[2 * idx_bevel + (1 - idx_offset)], axis=-1, keepdims=True
+        )
+
+        # special cases for the first and last vertices
+        _first = np.where(idx_bevel == 0)[0]
+        _last = np.where(idx_bevel == len(path) - 1)[0]
+
+        offsets[idx_bevel_full[_first]] = (
+            -0.5 * full_normals[1:][idx_bevel[_first]] * sign_bevel[_first]
+        )
+        offsets[idx_bevel_full[_last]] = (
+            0.5 * full_normals[1:][idx_bevel[_last]] * sign_bevel[_last]
+        )
+
+        _nonspecial = np.bitwise_and(
+            idx_bevel != 0, idx_bevel != len(path) - 1
+        )
+
+        idx_bevel = idx_bevel[_nonspecial]
+        idx_bevel_full = idx_bevel_full[_nonspecial]
+        sign_bevel = sign_bevel[_nonspecial]
+        idx_last_offset = idx_offset[_last]
+        idx_offset = idx_offset[_nonspecial]
+
+        # add new "right" bevel vertices
+        centers_bevel = path[idx_bevel]
+        offsets_bevel = -0.5 * full_normals[1:][idx_bevel] * sign_bevel
+
+        # change vertices of triangles to the newly added right vertices
+        triangles[2 * idx_bevel, idx_offset] = len(centers) + np.arange(
+            len(idx_bevel)
+        )
+        triangles[2 * idx_bevel + (1 - idx_offset), idx_offset] = len(
+            centers
+        ) + np.arange(len(idx_bevel))
+
+        # add center triangle
+        triangles0 = np.tile(np.array([[0, 1, 2]]), (len(idx_bevel), 1))
+
+        triangles_bevel = np.array(
+            [
+                2 * idx_bevel + idx_offset,
+                2 * idx_bevel + (1 - idx_offset),
+                len(centers) + np.arange(len(idx_bevel)),
+            ]
+        ).T
+
+        # add last bevel triangle (if closed)
+        if len(_last) > 0:
+            triangles_bevel = np.vstack(
+                (
+                    triangles_bevel,
+                    np.array([[0, 1, len(centers) - 2 + idx_last_offset[0]]]),
                 )
-                vertex_offsets.append(-offset)
-                central_path.append(full_path[i])
-                central_path.append(full_path[i])
-                central_path.append(full_path[i])
-                triangles.append([0, 1, 2])
-                m = m + 1
-            else:
-                vertex_offsets.append(-miters[i])
-                vertex_offsets.append(miters[i])
-                central_path.append(full_path[i])
-                central_path.append(full_path[i])
-        elif i == len(full_path) - 1:
-            if closed:
-                a = vertex_offsets[m + 1]
-                b = vertex_offsets[1]
-                ray = full_path[i] - full_path[i - 1]
-                if np.cross(a, ray) * np.cross(b, ray) > 0:
-                    triangles.append([m, m + 1, 1])
-                    triangles.append([m, 0, 1])
-                else:
-                    triangles.append([m, m + 1, 1])
-                    triangles.append([m + 1, 0, 1])
-            else:
-                vertex_offsets.append(-miters[i])
-                vertex_offsets.append(miters[i])
-                central_path.append(full_path[i])
-                central_path.append(full_path[i])
-                a = vertex_offsets[m + 1]
-                b = vertex_offsets[m + 3]
-                ray = full_path[i] - full_path[i - 1]
-                if np.cross(a, ray) * np.cross(b, ray) > 0:
-                    triangles.append([m, m + 1, m + 3])
-                    triangles.append([m, m + 2, m + 3])
-                else:
-                    triangles.append([m, m + 1, m + 3])
-                    triangles.append([m + 1, m + 2, m + 3])
-        elif bevel or miter_lengths[i] > limit:
-            offset = np.array([miters[i, 1], -miters[i, 0]])
-            offset = 0.5 * offset / np.linalg.norm(offset)
-            flip = np.sign(np.dot(offset, full_normals[i]))
-            vertex_offsets.append(offset)
-            vertex_offsets.append(-flip * miters[i] / miter_lengths[i] * limit)
-            vertex_offsets.append(-offset)
-            central_path.append(full_path[i])
-            central_path.append(full_path[i])
-            central_path.append(full_path[i])
-            a = vertex_offsets[m + 1]
-            b = vertex_offsets[m + 3]
-            ray = full_path[i] - full_path[i - 1]
-            if np.cross(a, ray) * np.cross(b, ray) > 0:
-                triangles.append([m, m + 1, m + 3])
-                triangles.append([m, m + 2, m + 3])
-            else:
-                triangles.append([m, m + 1, m + 3])
-                triangles.append([m + 1, m + 2, m + 3])
-            triangles.append([m + 2, m + 3, m + 4])
-            m = m + 3
-        else:
-            vertex_offsets.append(-miters[i])
-            vertex_offsets.append(miters[i])
-            central_path.append(full_path[i])
-            central_path.append(full_path[i])
-            a = vertex_offsets[m + 1]
-            b = vertex_offsets[m + 3]
-            ray = full_path[i] - full_path[i - 1]
-            if np.cross(a, ray) * np.cross(b, ray) > 0:
-                triangles.append([m, m + 1, m + 3])
-                triangles.append([m, m + 2, m + 3])
-            else:
-                triangles.append([m, m + 1, m + 3])
-                triangles.append([m + 1, m + 2, m + 3])
-            m = m + 2
-    centers = np.array(central_path)
-    offsets = np.array(vertex_offsets)
-    triangles = np.array(triangles)
+            )
+
+        # add all new centers, offsets, and triangles
+        centers = np.concatenate([centers, centers_bevel])
+        offsets = np.concatenate([offsets, offsets_bevel])
+        triangles = np.concatenate([triangles, triangles_bevel])
+
+    # extracting vectors (~4x faster than np.moveaxis)
+    a, b, c = tuple(offsets[triangles][:, i] for i in range(3))
+    # flip negative oriented triangles
+    flip_idx = _sign_cross(b - a, c - a) < 0
+    triangles[flip_idx] = np.flip(triangles[flip_idx], axis=-1)
 
     return centers, offsets, triangles
 
