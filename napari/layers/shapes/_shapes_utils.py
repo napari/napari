@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import numpy as np
+from skimage.draw import line, polygon2mask
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
@@ -891,34 +892,13 @@ def path_to_mask(mask_shape, vertices):
     duplicates = np.concatenate(([False], duplicates))
     vertices = vertices[~duplicates]
 
-    ii, jj = [], []
-    for i in range(len(vertices) - 1):
-        start = vertices[i]
-        stop = vertices[i + 1]
-        step = np.ceil(np.max(abs(stop - start))).astype(int)
-        if step > 1:
-            x_vals = (
-                (
-                    start[0]
-                    + np.arange(step) * (stop[0] - start[0]) / (step - 1)
-                )
-                .astype(int)
-                .tolist()
-            )
-            y_vals = (
-                (
-                    start[1]
-                    + np.arange(step) * (stop[1] - start[1]) / (step - 1)
-                )
-                .astype(int)
-                .tolist()
-            )
-        else:
-            x_vals, y_vals = [start[0]], [start[1]]
-        ii.extend(x_vals)
-        jj.extend(y_vals)
+    iis, jjs = [], []
+    for v1, v2 in zip(vertices, vertices[1:]):
+        ii, jj = line(*v1, *v2)
+        iis.extend(ii.tolist())
+        jjs.extend(jj.tolist())
 
-    mask[ii, jj] = 1
+    mask[iis, jjs] = 1
 
     return mask
 
@@ -940,16 +920,7 @@ def poly_to_mask(mask_shape, vertices):
     mask : np.ndarray
         Boolean array with `True` for points inside the polygon
     """
-    mask = np.zeros(mask_shape, dtype=bool)
-    bottom = vertices.min(axis=0).astype('int')
-    bottom = np.clip(bottom, 0, np.subtract(mask_shape, 1))
-    top = np.ceil(vertices.max(axis=0)).astype('int')
-    # top = np.append([top], [mask_shape], axis=0).min(axis=0)
-    top = np.clip(top, 0, np.subtract(mask_shape, 1))
-    if np.all(top > bottom):
-        bb_mask = grid_points_in_poly(top - bottom, vertices - bottom)
-        mask[bottom[0] : top[0], bottom[1] : top[1]] = bb_mask
-    return mask
+    return polygon2mask(mask_shape, vertices)
 
 
 def grid_points_in_poly(shape, vertices):
