@@ -69,6 +69,10 @@ points.face_color = 'r'
 points.face_color = '#ff0000'
 points.face_color = '#ff0000ff'
 
+# Short-hand RGB or RGBA hex-code
+points.face_color = '#f00'
+points.face_color = '#f00f'
+
 # RGB or RGBA tuple, list, or array
 points.face_color = (1, 0, 0)
 points.face_color = (1, 0, 0, 1)
@@ -80,6 +84,9 @@ points.face_color = np.array([1, 0, 0, 1])
 
 A named color string must either be from the [CSS3 specification](https://www.w3.org/TR/css-color-3/#svg-color)
 or must be one of [matplotlib's single character shorthand names](https://matplotlib.org/stable/tutorials/colors/colors.html#specifying-colors).
+
+In the case that the alpha value is omitted and only the RGB values are given (e.g. `[1, 0, 0]`),
+a default alpha value of 1 will be used to create an opaque color.
 
 
 ### Supported multiple color input
@@ -168,7 +175,8 @@ In [6]: image.colormap = 'blue'
 ```
 
 Internally, the [`ensure_colormap`](https://github.com/napari/napari/blob/c86cf87a788b1bbe62afc0b92b9ebdca1331a3e5/napari/utils/colormaps/colormap_utils.py#L492)
-function is used to coerce colormap input values to an instance of napari's [`Colormap`](https://github.com/napari/napari/blob/c86cf87a788b1bbe62afc0b92b9ebdca1331a3e5/napari/utils/colormaps/colormap.py#L28).
+function is used to coerce colormap input values to an instance of napari's
+[`Colormap`](https://github.com/napari/napari/blob/c86cf87a788b1bbe62afc0b92b9ebdca1331a3e5/napari/utils/colormaps/colormap.py#L28).
 
 ```python
 In [7]: image.colormap
@@ -188,9 +196,9 @@ The `interpolation` attribute defines how to interpolate `color` when an
 input value does not exactly equal one of the values in `controls`.
 And the `name` attribute gives the colormap a name that can be referred to later.
 
-In this case, input data values of 0 are mapped to black (`[0, 0, 0, 1]`),
-values of 1 are mapped to blue (`[0, 0, 1, 1]`),
-and values in `(0, 1)` are mapped to colors that are linearly interpolated
+In this case, input data values of 0 or less are mapped to black (`[0, 0, 0, 1]`),
+values of 1 or more are mapped to blue (`[0, 0, 1, 1]`),
+and values in between 0 and 1 are mapped to colors that are linearly interpolated
 between black and blue.
 
 #### Supported input
@@ -206,7 +214,7 @@ By default colormap names come from one of the following sources.
 
 - Some of [matplotlib's colormap names](https://matplotlib.org/stable/tutorials/colors/colormaps.html).
 - Standard optical primary and secondary colors: `'red', 'green', 'blue', 'yellow', 'magenta', 'cyan'`.
-- BOP (blue, orange, purple) colormap names: `'bop blue', 'bop orange', 'bop purple'`.
+- [BOP (blue, orange, purple) complementary colormap](https://github.com/cleterrier/ChrisLUTs#bop) names: `'bop blue', 'bop orange', 'bop purple'`.
 
 More specifically, the available colormap names can be listed at any time.
 
@@ -315,6 +323,9 @@ In [14]: points.face_color_cycle = ['lime', 'magenta', 'cyan']
 ```
 
 in which case the mapping will initially be an empty dictionary.
-As values from the fallback cycle are used, the value to color mappings
-they define will be added to the dictionary.
+As values from the fallback cycle are used when an input value is missing,
+the new value to color mapping defined will be added to the dictionary.
+This means that a colormap defined with a fallback cycle with more than one
+color will be sensitive to the input data that has values missing from the
+initial mapping dictionary.
 
