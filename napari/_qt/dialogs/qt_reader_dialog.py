@@ -22,8 +22,8 @@ class QtReaderDialog(QDialog):
     def __init__(
         self,
         pth: str = '',
-        parent: "QWidget" = None,
-        readers: "Dict[str, str]" = {},
+        parent: QWidget = None,
+        readers: Dict[str, str] = {},
         error_message: str = '',
     ):
         super().__init__(parent)
@@ -87,7 +87,7 @@ class QtReaderDialog(QDialog):
             and self.persist_checkbox.isChecked()
         )
 
-    def get_user_choices(self) -> "Optional[Tuple[str, bool]]":
+    def get_user_choices(self) -> Optional[Tuple[str, bool]]:
         """Execute dialog and get user choices"""
         dialog_result = self.exec_()
         # user pressed cancel
