@@ -1294,8 +1294,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _world_to_data_dims_displayed(
         self, dims_displayed: List[int], ndim_world: int
     ) -> List[int]:
-        """Convert the indices of the displayed dims from world coordinates
-        to the data coordinates.
+        """Convert indices of displayed dims from world to data coordinates.
 
         This accounts for differences in dimensionality between the world
         and the data coordinates. For example a world dims order of
