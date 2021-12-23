@@ -365,8 +365,8 @@ jobs:
           security list-keychain -d user -s $KEYCHAIN_PATH
 
           # export identity name
-          fields=($(security find-identity | grep -m 1 "Developer ID Installer"))
-          identity=${fields[@]:2}
+          # identity=$(security find-identity -p codesigning | grep -m 1 -o '"Developer ID Installer.*"' | tr -d '"')
+          identity=$(security find-identity -p codesigning | grep -m 1 -o '".*test.*"' | tr -d '"')
 
           echo "CONSTRUCTOR_SIGNING_IDENTITY=${identity}" >> $GITHUB_ENV
 
