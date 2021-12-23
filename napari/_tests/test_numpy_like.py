@@ -4,7 +4,7 @@ import xarray as xr
 import zarr
 
 
-def test_dask_2D(make_napari_viewer):
+def test_dask_2D(make_napari_viewer, dask_shutdown):
     """Test adding 2D dask image."""
     viewer = make_napari_viewer()
 
@@ -14,7 +14,7 @@ def test_dask_2D(make_napari_viewer):
     assert np.all(viewer.layers[0].data == data)
 
 
-def test_dask_nD(make_napari_viewer):
+def test_dask_nD(make_napari_viewer, dask_shutdown):
     """Test adding nD dask image."""
     viewer = make_napari_viewer()
 
@@ -46,7 +46,7 @@ def test_zarr_nD(make_napari_viewer):
     assert np.all(viewer.layers[0].data == data)
 
 
-def test_zarr_dask_2D(make_napari_viewer):
+def test_zarr_dask_2D(make_napari_viewer, dask_shutdown):
     """Test adding 2D dask image."""
     viewer = make_napari_viewer()
 
@@ -57,7 +57,7 @@ def test_zarr_dask_2D(make_napari_viewer):
     assert np.all(viewer.layers[0].data == zdata)
 
 
-def test_zarr_dask_nD(make_napari_viewer):
+def test_zarr_dask_nD(make_napari_viewer, dask_shutdown):
     """Test adding nD zarr image."""
     viewer = make_napari_viewer()
 

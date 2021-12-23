@@ -12,7 +12,7 @@ from napari.utils import _dask_utils, resize_dask_cache
 
 @pytest.mark.sync_only
 @pytest.mark.parametrize('dtype', ['float64', 'uint8'])
-def test_dask_not_greedy(dtype):
+def test_dask_not_greedy(dtype, dask_shutdown):
     """Make sure that we don't immediately calculate dask arrays."""
 
     FETCH_COUNT = 0
@@ -40,7 +40,7 @@ def test_dask_not_greedy(dtype):
         assert tuple(layer.contrast_limits) == (0, 255)
 
 
-def test_dask_array_creates_cache():
+def test_dask_array_creates_cache(dask_shutdown):
     """Test that dask arrays create cache but turns off fusion."""
     resize_dask_cache(1)
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
@@ -73,7 +73,7 @@ def test_dask_array_creates_cache():
     layer2.set_view_slice()
 
 
-def test_list_of_dask_arrays_doesnt_create_cache():
+def test_list_of_dask_arrays_doesnt_create_cache(dask_shutdown):
     """Test that adding a list of dask array also creates a dask cache."""
     resize_dask_cache(1)  # in case other tests created it
     assert _dask_utils._DASK_CACHE.cache.available_bytes == 1
@@ -109,7 +109,9 @@ def delayed_dask_stack():
 
 
 @pytest.mark.sync_only
-def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
+def test_dask_global_optimized_slicing(
+    delayed_dask_stack, monkeypatch, dask_shutdown
+):
     """Test that dask_configure reduces compute with dask stacks."""
 
     # add dask stack to the viewer, making sure to pass multiscale and clims
@@ -151,7 +153,9 @@ def test_dask_global_optimized_slicing(delayed_dask_stack, monkeypatch):
 
 
 @pytest.mark.sync_only
-def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
+def test_dask_unoptimized_slicing(
+    delayed_dask_stack, monkeypatch, dask_shutdown
+):
     """Prove that the dask_configure function works with a counterexample."""
     # we start with a cache...but then intentionally turn it off per-layer.
     resize_dask_cache(10000)
@@ -192,7 +196,9 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
 
 
 @pytest.mark.sync_only
-def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
+def test_dask_local_unoptimized_slicing(
+    delayed_dask_stack, monkeypatch, dask_shutdown
+):
     """Prove that the dask_configure function works with a counterexample."""
     # make sure we are not caching for this test, which also tests that we
     # can turn off caching
@@ -233,7 +239,7 @@ def test_dask_local_unoptimized_slicing(delayed_dask_stack, monkeypatch):
 
 
 @pytest.mark.sync_only
-def test_dask_cache_resizing(delayed_dask_stack):
+def test_dask_cache_resizing(delayed_dask_stack, dask_shutdown):
     """Test that we can spin up, resize, and spin down the cache."""
 
     # make sure we have a cache
@@ -274,7 +280,7 @@ def test_dask_cache_resizing(delayed_dask_stack):
     assert len(_dask_utils._DASK_CACHE.cache.heap.heap) > 0
 
 
-def test_prevent_dask_cache(delayed_dask_stack):
+def test_prevent_dask_cache(delayed_dask_stack, dask_shutdown):
     """Test that pre-emptively setting cache to zero keeps it off"""
     resize_dask_cache(0)
 

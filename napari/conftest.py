@@ -24,6 +24,15 @@ from napari.plugins._builtins import (
 from napari.utils import io
 from napari.utils.config import async_loading
 
+
+@pytest.fixture
+def dask_shutdown(request):
+    yield
+    if dask.threaded.default_pool is not None:
+        dask.threaded.default_pool.shutdown()
+        dask.threaded.default_pool = None
+
+
 if not hasattr(pooch.utils, 'file_hash'):
     setattr(pooch.utils, 'file_hash', pooch.hashes.file_hash)
 

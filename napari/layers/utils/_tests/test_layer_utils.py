@@ -73,7 +73,7 @@ def test_calc_data_range():
     assert np.all(clim == [0, 2])
 
 
-@pytest.mark.timeout(2)  # TODO: test this more directly
+@pytest.mark.timeout(6)  # TODO: test this more directly
 @pytest.mark.parametrize(
     'data',
     [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],

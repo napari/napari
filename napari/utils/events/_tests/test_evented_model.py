@@ -306,7 +306,7 @@ def test_nested_evented_model_serialization():
     assert deserialized == m
 
 
-def test_evented_model_dask_delayed():
+def test_evented_model_dask_delayed(dask_shutdown):
     """Test that evented models work with dask delayed objects"""
 
     class MyObject(EventedModel):

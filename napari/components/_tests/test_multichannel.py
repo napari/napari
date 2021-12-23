@@ -197,7 +197,7 @@ def test_multichannel_implicit_multiscale():
         assert viewer.layers[i].colormap.name == base_colormaps[i]
 
 
-def test_multichannel_dask_array():
+def test_multichannel_dask_array(dask_shutdown):
     """Test adding multichannel dask array."""
     viewer = ViewerModel()
     np.random.seed(0)

@@ -1,11 +1,13 @@
 import collections
 import os
 import sys
+import threading
 import warnings
 from contextlib import suppress
 from typing import TYPE_CHECKING, List
 from unittest.mock import patch
 
+import dask.threaded
 import pytest
 
 if TYPE_CHECKING:
@@ -137,7 +139,11 @@ def make_napari_viewer(
 
         return viewer
 
+    assert dask.threaded.default_pool is None
+    old_count = threading.active_count()
     yield actual_factory
+
+    assert dask.threaded.default_pool is None
 
     # Some tests might have the viewer closed, so this call will not be able
     # to access the window.
@@ -153,6 +159,10 @@ def make_napari_viewer(
                 viewer.close()
         else:
             viewer.close()
+    new_count = threading.active_count()
+    assert (
+        old_count == new_count
+    ), f"Unclosed threads ({old_count}->{new_count}) after test {threading.enumerate()}"
 
     # only check for leaked widgets if an exception was raised during the test,
     # or "strict" mode was used.

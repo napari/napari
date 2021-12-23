@@ -187,7 +187,7 @@ def test_notification_error(mock_show, monkeypatch, clean_current):
 
 @pytest.mark.sync_only
 @pytest.mark.skipif(PY37_OR_LOWER, reason="Fails on py37")
-def test_notifications_error_with_threading(make_napari_viewer):
+def test_notifications_error_with_threading(make_napari_viewer, dask_shutdown):
     """Test notifications of `threading` threads, using a dask example."""
     random_image = da.random.random(size=(50, 50))
     with notification_manager:
