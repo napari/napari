@@ -34,17 +34,18 @@ authors:
   affiliation: Iber Lab - ETH Zürich
 - given-names: Matthias
   family-names: Bussonnier
-  affiliation: '@Quansight-Labs'
+  affiliation: Quansight Labs
 - given-names: Draga
   family-names: Doncila Pop
-- given-names: ACS
-  family-names: ''
+- given-names: Ahmet
+  family-names: Can Solak
   affiliation: Chan Zuckerberg Biohub
 - given-names: Ziyang
   family-names: Liu
   affiliation: Chan Zuckerberg Initiative Foundation
 - given-names: Pam
-  family-names: ''
+  family-names: Wadhwa
+  affiliation: Quansight Labs
 - given-names: Alister
   family-names: Burt
   affiliation: MRC-LMB
@@ -71,7 +72,7 @@ authors:
   affiliation: Chan Zuckerberg Biohub
 - given-names: Jaime
   family-names: Rodríguez-Guerra
-  affiliation: '@quansight'
+  affiliation: Quansight Labs
 - given-names: Hector
   family-names: Muñoz
   affiliation: University of California, Los Angeles
