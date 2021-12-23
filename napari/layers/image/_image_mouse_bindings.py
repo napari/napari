@@ -41,13 +41,14 @@ def move_plane_along_normal(layer: Image, event: Event):
         line_position=initial_position_data,
         line_direction=initial_view_direction_data,
     )
-    layer.plane.position = intersection
 
     # Check if click was on plane and if not, exit early.
     if not point_in_bounding_box(
         intersection, layer.extent.data[:, event.dims_displayed]
     ):
         return
+        
+    layer.plane.position = intersection
 
     # Store original plane position and disable interactivity during plane drag
     original_plane_position = np.copy(layer.plane.position)
