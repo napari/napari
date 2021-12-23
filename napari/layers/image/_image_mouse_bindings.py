@@ -47,7 +47,7 @@ def move_plane_along_normal(layer: Image, event: Event):
         intersection, layer.extent.data[:, event.dims_displayed]
     ):
         return
-        
+
     layer.plane.position = intersection
 
     # Store original plane position and disable interactivity during plane drag
