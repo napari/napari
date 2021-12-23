@@ -340,9 +340,50 @@ jobs:
           echo "::endgroup::"
           xvfb-run --auto-servernum python bundle_conda.py
 
+      - name: Load signing certificate (MacOS)
+        shell: bash -l {0}
+        if: runner.os == 'macOS'
+        env:
+          APPLE_INSTALLER_CERTIFICATE_BASE64: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_BASE64 }}
+          APPLE_INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}
+          TEMP_KEYCHAIN_PASSWORD: ${{ secrets.TEMP_KEYCHAIN_PASSWORD }}
+        run: |
+          # create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/developer_cert.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/installer-signing.keychain-db
+
+          # import certificate and provisioning profile from secrets
+          echo -n "$APPLE_INSTALLER_CERTIFICATE_BASE64" | base64 --decode --output $CERTIFICATE_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$TEMP_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$TEMP_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$APPLE_INSTALLER_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          # export identity name
+          fields=($(security find-identity | grep -m 1 "Developer ID Installer"))
+          identity=${fields[@]:2}
+
+          echo "CONSTRUCTOR_SIGNING_IDENTITY=${identity}" >> $GITHUB_ENV
+
+      - name: Load signing certificate (Windows)
+        shell: cmd
+        if: runner.os == 'Windows'
+        run: |
+          echo ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }} > certificate.txt
+          certutil -decode certificate.txt windows_certificate.pfx
+          echo CONSTRUCTOR_SIGNING_CERTIFICATE=windows_certificate.pfx >> %GITHUB_ENV%
+
       - name: Make Bundle (MacOS/Windows)
         shell: bash -l {0}
         if: runner.os != 'Linux'
+        env:
+          CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          CONSTRUCTOR_SIGNTOOL_PATH: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
         run: python bundle_conda.py
 
       - name: Upload Artifact

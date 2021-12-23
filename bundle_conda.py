@@ -104,6 +104,10 @@ def _constructor(version=VERSION):
         definitions["welcome_file"] = str(welcome_file)
         definitions["conclusion_text"] = ""
         definitions["readme_text"] = ""
+        signing_identity = os.environ.get("CONSTRUCTOR_SIGNING_IDENTITY")
+        if signing_identity:
+            definitions["signing_identity_name"] = signing_identity
+
     if WINDOWS:
         definitions["conda_default_channels"].append("defaults")
         definitions.update(
@@ -120,6 +124,9 @@ def _constructor(version=VERSION):
                 "register_python_default": False,
             }
         )
+        signing_certificate = os.environ.get("CONSTRUCTOR_SIGNING_CERTIFICATE")
+        if signing_certificate:
+            definitions["signing_certificate"] = signing_certificate
 
     print("Calling `constructor` with these definitions:")
     print(yaml.dump(definitions, default_flow_style=False))
