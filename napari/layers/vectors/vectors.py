@@ -3,16 +3,24 @@ from copy import copy
 from typing import Dict, Tuple, Union
 
 import numpy as np
+import pandas as pd
 
 from ...utils.colormaps import Colormap, ValidColormapArg
-from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
-from ..utils.layer_utils import get_current_properties, prepare_properties
+from ..utils.color_transformations import ColorType
+from ..utils.layer_utils import (
+    _features_from_properties,
+    _features_to_choices,
+    _features_to_properties,
+    _resize_features,
+    _validate_features,
+    get_current_properties,
+)
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
@@ -31,6 +39,9 @@ class Vectors(Layer):
     ndim : int
         Number of dimensions for vectors. When data is not None, ndim must be D.
         An empty vectors layer can be instantiated with arbitrary ndim.
+    features : dict[str, array-like] or DataFrame
+        Features table where each row corresponds to a vector and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
@@ -39,7 +50,7 @@ class Vectors(Layer):
     edge_width : float
         Width for all vectors in pixels.
     length : float
-         Multiplicative factor on projections for length of all vectors.
+        Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Color of all of the vectors.
     edge_color_cycle : np.ndarray, list
@@ -91,13 +102,16 @@ class Vectors(Layer):
     ----------
     data : (N, 2, D) array
         The start point and projections of N vectors in D dimensions.
+    features : Dataframe-like
+        Features table where each row corresponds to a vector and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
     edge_width : float
         Width for all vectors in pixels.
     length : float
-         Multiplicative factor on projections for length of all vectors.
+        Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Color of all of the vectors.
     edge_color_cycle : np.ndarray, list
@@ -148,6 +162,7 @@ class Vectors(Layer):
         data=None,
         *,
         ndim=None,
+        features=None,
         properties=None,
         property_choices=None,
         edge_width=1,
@@ -216,9 +231,14 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._properties, self._property_choices = prepare_properties(
-            properties, property_choices, num_data=len(self.data)
-        )
+        if properties is not None or property_choices is not None:
+            self._features = _features_from_properties(
+                properties=properties,
+                property_choices=property_choices,
+                num_data=len(self.data),
+            )
+        else:
+            self.features = features
 
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(self.data),
@@ -226,9 +246,9 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=self._properties
+            properties=self.properties
             if self._data.size > 0
-            else self._property_choices,
+            else self.property_choices,
         )
 
         # Data containing vectors in the currently viewed slice
@@ -266,6 +286,16 @@ class Vectors(Layer):
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
+                current_properties = get_current_properties(
+                    self.properties,
+                    self.property_choices,
+                    len(self.data),
+                )
+                self._features = _resize_features(
+                    self._features,
+                    n_vectors,
+                    current_values=current_properties,
+                )
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the
                     # extra ones
@@ -274,23 +304,10 @@ class Vectors(Layer):
                             np.arange(n_vectors, len(self._edge.colors))
                         )
 
-                    for k in self.properties:
-                        self.properties[k] = self.properties[k][:n_vectors]
-
                 elif n_vectors > previous_n_vectors:
                     # If there are now more points, add the size and colors of the
                     # new ones
                     adding = n_vectors - previous_n_vectors
-
-                    for k in self.properties:
-                        new_property = np.repeat(
-                            self.properties[k][-1], adding, axis=0
-                        )
-                        self.properties[k] = np.concatenate(
-                            (self.properties[k], new_property), axis=0
-                        )
-
-                    # add new colors
                     self._edge._add(n_colors=adding)
 
         self._update_dims()
@@ -298,18 +315,44 @@ class Vectors(Layer):
         self._set_editable()
 
     @property
+    def features(self):
+        """Dataframe-like features table.
+
+        It is an implementation detail that this is a `pandas.DataFrame`. In the future,
+        we will target the currently-in-development Data API dataframe protocol [1].
+        This will enable us to use alternate libraries such as xarray or cuDF for
+        additional features without breaking existing usage of this.
+
+        If you need to specifically rely on the pandas API, please coerce this to a
+        `pandas.DataFrame` using `features_to_pandas_dataframe`.
+
+        References
+        ----------
+        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        """
+        return self._features
+
+    @features.setter
+    def features(
+        self,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    ) -> None:
+        self._features = _validate_features(features, num_data=len(self.data))
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return self._properties
+        return _features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._properties, self._property_choices = prepare_properties(
-            properties, self._property_choices, num_data=len(self.data)
+        self._features = _features_from_properties(
+            properties=properties,
+            num_data=len(self.data),
         )
 
         if self._edge.color_properties is not None:
-            if self._edge.color_properties.name not in self._properties:
+            if self._edge.color_properties.name not in self.features:
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
@@ -321,16 +364,17 @@ class Vectors(Layer):
                 )
             else:
                 edge_color_name = self._edge.color_properties.name
+                property_values = self.features[edge_color_name].to_numpy()
                 self._edge.color_properties = {
                     'name': edge_color_name,
-                    'values': properties[edge_color_name],
-                    'current_value': self._properties[edge_color_name][-1],
+                    'values': property_values,
+                    'current_value': property_values[-1],
                 }
         self.events.properties()
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_choices
+        return _features_to_choices(self._features)
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -351,8 +395,9 @@ class Vectors(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
-                'property_choices': self._property_choices,
+                'property_choices': self.property_choices,
                 'ndim': self.ndim,
+                'features': self.features,
             }
         )
         return state
@@ -430,7 +475,7 @@ class Vectors(Layer):
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
         current_properties = get_current_properties(
-            self._properties, self._property_choices, len(self.data)
+            self.properties, self.property_choices, len(self.data)
         )
         self._edge._set_color(
             color=edge_color,
@@ -483,13 +528,13 @@ class Vectors(Layer):
                 if self.properties:
                     color_property = next(iter(self.properties))
                     current_properties = get_current_properties(
-                        self._properties,
-                        self._property_choices,
+                        self.properties,
+                        self.property_choices,
                         len(self.data),
                     )
                     self._edge.color_properties = {
                         'name': color_property,
-                        'values': self.properties[color_property],
+                        'values': self.features[color_property].to_numpy(),
                         'current_value': np.squeeze(
                             current_properties[color_property]
                         ),

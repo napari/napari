@@ -331,6 +331,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
 
+    @staticmethod
+    def rounded_division(min_val, max_val, precision):
+        return int(((min_val + max_val) / 2) / precision) * precision
+
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
@@ -388,7 +392,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
-                    self.cursor.position, world=True
+                    self.cursor.position,
+                    view_direction=self.cursor._view_direction,
+                    dims_displayed=list(self.dims.displayed),
+                    world=True,
                 )
 
     def _on_grid_change(self):
@@ -415,7 +422,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
-        layer.translate_grid = translate
+        layer._translate_grid = translate
 
     @property
     def experimental(self):
@@ -459,6 +466,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if len(self.layers) == 1:
             self.reset_view()
+            ranges = self.layers._ranges
+            midpoint = [self.rounded_division(*_range) for _range in ranges]
+            self.dims.set_point(range(len(ranges)), midpoint)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
@@ -754,9 +764,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-        **kwargs
+        ``**kwargs``
             additional kwargs will be passed to the sample data loader provided
-            by `plugin`.  Use of **kwargs may raise an error if the kwargs do
+            by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
             not match the sample data loader.
 
         Returns
@@ -860,7 +870,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
-        **kwargs
+        ``**kwargs``
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
 
@@ -1243,5 +1253,5 @@ for _layer in (
     layers.Tracks,
     layers.Vectors,
 ):
-    func = create_add_method(_layer)
+    func = create_add_method(_layer, filename=__file__)
     setattr(ViewerModel, func.__name__, func)

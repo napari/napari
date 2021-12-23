@@ -6,9 +6,8 @@ import pytest
 from qtpy import API_NAME
 
 import napari
+from napari._qt.qt_main_window import Window
 from napari.utils.notifications import notification_manager
-
-from napari._tests.utils import slow
 
 # not testing these examples
 skip = [
@@ -37,40 +36,20 @@ examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
 if os.getenv("CI") and os.name == 'nt' and API_NAME == 'PyQt5':
     examples = []
 
-if os.getenv("CI") and os.name == 'nt':
-    if 'to_screenshot.py' in examples:
-        examples.remove('to_screenshot.py')
+if os.getenv("CI") and os.name == 'nt' and 'to_screenshot.py' in examples:
+    examples.remove('to_screenshot.py')
 
 
-@pytest.fixture
-def qapp():
-    from qtpy.QtCore import QTimer
-
-    from napari._qt.qt_event_loop import get_app
-
-    # it's important that we use get_app so that it connects to the
-    # app.aboutToQuit.connect(wait_for_workers_to_quit)
-    app = get_app()
-
-    # quit examples that explicitly start the event loop with `napari.run()`
-    # so that tests aren't waiting on a manual exit
-    QTimer.singleShot(100, app.quit)
-
-    yield app
-
-
-@slow(30)
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
-def test_examples(qapp, fname, monkeypatch, capsys):
+def test_examples(fname, monkeypatch):
     """Test that all of our examples are still working without warnings."""
-
-    from napari._qt.qt_main_window import Window
-    from napari import Viewer
 
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
+    # prevent running the event loop
+    monkeypatch.setattr(napari, 'run', lambda *a, **k: None)
 
     # make sure our sys.excepthook override doesn't hide errors
     def raise_errors(etype, value, tb):
@@ -86,4 +65,4 @@ def test_examples(qapp, fname, monkeypatch, capsys):
         if e.code != 0:
             raise
     finally:
-        Viewer.close_all()
+        napari.Viewer.close_all()

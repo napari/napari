@@ -1,3 +1,4 @@
+(napari-testing)=
 # Testing
 
 ## Overview

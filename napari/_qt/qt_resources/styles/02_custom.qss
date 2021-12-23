@@ -531,6 +531,13 @@ PluginListItem {
   border-radius: 3px;
 }
 
+
+PluginListItem QCheckBox::indicator:disabled {
+  background-color: {{ opacity(foreground, 127) }};
+  image: url(":/themes/{{ name }}/check_50.svg");
+}
+
+
 QPushButton#install_button {
   background-color: {{ current }}
 }

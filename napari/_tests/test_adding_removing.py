@@ -5,14 +5,12 @@ from napari._tests.utils import (
     layer_test_data,
     skip_local_popups,
     skip_on_win_ci,
-    slow,
 )
 from napari.layers import Image
 from napari.utils.events.event import WarningEmitter
 
 
 @skip_on_win_ci
-@slow(15)
 @skip_local_popups
 @pytest.mark.parametrize('Layer, data, _', layer_test_data)
 def test_add_all_layers(make_napari_viewer, Layer, data, _):

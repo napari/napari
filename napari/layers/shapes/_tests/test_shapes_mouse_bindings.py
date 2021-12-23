@@ -5,8 +5,8 @@ import pytest
 
 from napari.layers import Shapes
 from napari.layers.shapes.shapes import Mode
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
     mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,

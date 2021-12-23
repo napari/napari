@@ -15,7 +15,7 @@ class HelpMenu(NapariMenu):
             {
                 'text': trans._('napari Info'),
                 'slot': lambda e: QtAbout.showAbout(
-                    window.qt_viewer, window._qt_window
+                    window._qt_viewer, window._qt_window
                 ),
                 'shortcut': 'Ctrl+/',
                 'statusTip': trans._('About napari'),

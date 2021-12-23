@@ -12,29 +12,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  code:
-    name: Code
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [flake8, black, isort]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install tox
-      - name: Run task
-        run: tox -e ${{ matrix.task }}
 
   manifest:
     name: Check Manifest
-    needs: code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -50,7 +30,6 @@ jobs:
         run: check-manifest
 
   test:
-    needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
     strategy:

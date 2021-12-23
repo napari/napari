@@ -6,6 +6,15 @@ import pytest
 from napari.components import LayerList
 from napari.layers import Image
 
+try:
+    import npe2  # noqa: F401
+
+    BUILTINS = 'napari'
+    SVG = 'napari-svg'
+except ImportError:
+    BUILTINS = 'builtins'
+    SVG = 'svg'
+
 
 def test_empty_layers_list():
     """
@@ -338,7 +347,7 @@ def test_layers_save(tmpdir, layer_data_and_types):
     assert not os.path.isdir(path)
 
     # Write data
-    layers.save(path, plugin='builtins')
+    layers.save(path, plugin=BUILTINS)
 
     # Check folder now exists
     assert os.path.isdir(path)
@@ -366,7 +375,7 @@ def test_layers_save_none_selected(tmpdir, layer_data_and_types):
 
     # Write data (will get a warning that nothing is selected)
     with pytest.warns(UserWarning):
-        layers.save(path, selected=True, plugin='builtins')
+        layers.save(path, selected=True, plugin=BUILTINS)
 
     # Check folder still does not exist
     assert not os.path.isdir(path)
@@ -393,7 +402,7 @@ def test_layers_save_selected(tmpdir, layer_data_and_types):
     assert not os.path.isdir(path)
 
     # Write data
-    layers.save(path, selected=True, plugin='builtins')
+    layers.save(path, selected=True, plugin=BUILTINS)
 
     # Check folder exists
     assert os.path.isdir(path)
@@ -418,7 +427,7 @@ def test_layers_save_svg(tmpdir, layers):
     assert not os.path.isfile(path)
 
     # Write data
-    layers.save(path, plugin='svg')
+    layers.save(path, plugin=SVG)
 
     # Check file now exists
     assert os.path.isfile(path)

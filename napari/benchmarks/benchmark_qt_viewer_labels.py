@@ -31,8 +31,8 @@ class QtViewerSingleLabelsSuite:
 
     def time_zoom(self):
         """Time to zoom in and zoom out."""
-        self.viewer.window.qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window.qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
 
     def time_set_view_slice(self):
         """Time to set view slice."""
@@ -52,7 +52,7 @@ class QtViewerSingleLabelsSuite:
 
     def time_raw_to_displayed(self):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint(self):
         """Time to paint."""

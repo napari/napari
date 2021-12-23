@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 from napari._qt.qt_main_window import Window, _QtMainWindow
-from napari._tests.utils import slow
 from napari.utils.theme import (
     _themes,
     get_theme,
@@ -10,7 +9,6 @@ from napari.utils.theme import (
 )
 
 
-@slow(10)
 def test_current_viewer(make_napari_viewer, qapp):
     """Test that we can retrieve the "current" viewer window easily.
 
@@ -80,6 +78,6 @@ def test_update_theme(
 
 def test_lazy_console(make_napari_viewer):
     v = make_napari_viewer()
-    assert v.window.qt_viewer._console is None
+    assert v.window._qt_viewer._console is None
     v.update_console({"test": "test"})
-    assert v.window.qt_viewer._console is None
+    assert v.window._qt_viewer._console is None
