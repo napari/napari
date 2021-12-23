@@ -98,6 +98,7 @@ def _constructor(version=VERSION):
     definitions = {
         "name": APP,
         "company": "Napari",
+        "reverse_domain_identifier": "org.napari",
         "version": version,
         "channels": [
             "napari/label/nightly",
