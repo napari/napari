@@ -139,12 +139,19 @@ def get_app(
             QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
             QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
+        argv = sys.argv.copy()
+        if sys.platform == "darwin" and not argv[0].endswith("napari"):
+            # Make sure the app name in the Application menu is `napari`
+            # which is taken from the basename of sys.argv[0]; we use
+            # a copy so the original value is still available at sys.argv
+            argv[0] = "napari"
+
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import QApplicationWithTracing
 
-            app = QApplicationWithTracing(sys.argv)
+            app = QApplicationWithTracing(argv)
         else:
-            app = QApplication(sys.argv)
+            app = QApplication(argv)
 
         # if this is the first time the Qt app is being instantiated, we set
         # the name and metadata
@@ -356,6 +363,7 @@ def run(
         return
 
     app = QApplication.instance()
+
     if _pycharm_has_eventloop(app):
         # explicit check for PyCharm pydev console
         return
