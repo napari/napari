@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING
+from typing import Dict, Optional, Tuple
+
+from qtpy.QtWidgets import QWidget
 
 from napari._qt.qt_viewer import _get_reader_choice_for_file
-
-if TYPE_CHECKING:
-    from typing import Dict, Optional, Tuple
-
-    from qtpy.QtWidgets import QWidget
 
 
 class MockQtReaderDialog:
@@ -14,7 +11,7 @@ class MockQtReaderDialog:
     def __init__(
         self,
         pth: str = '',
-        parent: "QWidget" = None,
+        parent: QWidget = None,
         readers: "Dict[str, str]" = {},
         error_message: str = '',
     ):
@@ -37,7 +34,7 @@ class MockQtReaderDialog:
         """Mock that user chose to cancel on the dialog"""
         self._cancelled = True
 
-    def get_user_choices(self) -> "Optional[Tuple[str, bool]]":
+    def get_user_choices(self) -> Optional[Tuple[str, bool]]:
         """Mock function for 'executing' dialog and getting user choices"""
         if self._cancelled:
             return

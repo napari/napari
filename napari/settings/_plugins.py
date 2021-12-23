@@ -52,6 +52,5 @@ class PluginsSettings(EventedModel):
         preferences_exclude = [
             'schema_version',
             'disabled_plugins',
-            # 'extension2reader',
             'extension2writer',
         ]

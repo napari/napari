@@ -92,7 +92,7 @@ class QtReaderDialog(QDialog):
         dialog_result = self.exec_()
         # user pressed cancel
         if not dialog_result:
-            return
+            return None
 
         # grab the selected radio button text
         display_name = self._get_plugin_choice()
