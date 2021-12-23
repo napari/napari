@@ -150,12 +150,10 @@ class Camera(EventedModel):
         dims_displayed : Tuple[int]
             Dimensions in which to embed the 3D view vector.
 
-
         Returns
         -------
         view_direction_nd : np.ndarray
             nD view direction vector as an (ndim, ) ndarray
-
         """
         if len(dims_displayed) != 3:
             return None
@@ -175,12 +173,10 @@ class Camera(EventedModel):
         dims_displayed : Tuple[int]
             Dimensions in which to embed the 3D view vector.
 
-
         Returns
         -------
         up_direction_nd : np.ndarray
             nD view direction vector as an (ndim, ) ndarray
-
         """
         if len(dims_displayed) != 3:
             return None
