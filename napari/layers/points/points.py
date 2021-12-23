@@ -1348,7 +1348,10 @@ class Points(Layer):
         if len(view_data) > 0:
             displayed_position = [position[i] for i in self._dims_displayed]
             # Get the point sizes
-            # TODO: calculate distance in canvas space to account for canvas_size_limits
+            # TODO: calculate distance in canvas space to account for canvas_size_limits.
+            # Without this implementation, point hover and selection (and anything depending
+            # on self.get_value()) won't be aware of the real extent of points, causing
+            # unexpected behaviour. See #3734 for details.
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,
