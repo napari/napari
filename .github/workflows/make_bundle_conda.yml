@@ -371,17 +371,16 @@ jobs:
           echo "CONSTRUCTOR_SIGNING_IDENTITY=${identity}" >> $GITHUB_ENV
 
       - name: Load signing certificate (Windows)
-        shell: cmd
         if: runner.os == 'Windows'
         run: |
-          echo ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }} > certificate.txt
-          certutil -decode certificate.txt windows_certificate.pfx
-          echo CONSTRUCTOR_SIGNING_CERTIFICATE=windows_certificate.pfx >> %GITHUB_ENV%
+          Set-Content -Path "${{ runner.temp }}/certificate.b64.txt" -Value '${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}'
+          certutil -decode "${{ runner.temp }}/certificate.b64.txt" "${{ runner.temp }}/certificate.pfx"
 
       - name: Make Bundle (MacOS/Windows)
         shell: bash -l {0}
         if: runner.os != 'Linux'
         env:
+          CONSTRUCTOR_SIGNING_CERTIFICATE: "${{ runner.temp }}/certificate.pfx"
           CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
           CONSTRUCTOR_SIGNTOOL_PATH: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
         run: python bundle_conda.py
