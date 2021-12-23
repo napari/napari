@@ -74,23 +74,28 @@ class QtReaderDialog(QDialog):
             self.reader_btn_group.addButton(button)
             layout.addWidget(button)
 
-    def get_plugin_choice(self):
+    def _get_plugin_choice(self):
         """Get user's plugin choice based on the checked button"""
         checked_btn = self.reader_btn_group.checkedButton()
         if checked_btn:
             return checked_btn.text()
 
+    def _get_persist_choice(self):
+        """Get persistence checkbox choice"""
+        return (
+            hasattr(self, 'persist_checkbox')
+            and self.persist_checkbox.isChecked()
+        )
+
     def get_user_choices(self) -> "Optional[Tuple[str, bool]]":
+        """Execute dialog and get user choices"""
         dialog_result = self.exec_()
         # user pressed cancel
         if not dialog_result:
             return
 
         # grab the selected radio button text
-        display_name = self.get_plugin_choice()
-        # is setting being persisted?
-        persist_choice = (
-            hasattr(self, 'persist_checkbox')
-            and self.persist_checkbox.isChecked()
-        )
+        display_name = self._get_plugin_choice()
+        # grab the persistence checkbox choice
+        persist_choice = self._get_persist_choice()
         return display_name, persist_choice

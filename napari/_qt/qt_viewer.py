@@ -1041,6 +1041,12 @@ class QtViewer(QSplitter):
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop.
 
+        For each file, attempt to open with existing associated reader
+        (if available). If no reader is associated or opening fails,
+        and more than one reader is available, open dialog and ask
+        user to choose among available readers. User can choose to persist
+        this choice.
+
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
@@ -1054,12 +1060,13 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
 
-        # if trying to open as a stack, just do the old behaviour
+        # if trying to open as a stack, open with any available reader
         if shift_down:
             self.viewer.open(filenames, stack=bool(shift_down))
             return
 
         for filename in filenames:
+            # get available readers for this file from all registered plugins
             readers = get_potential_readers(filename)
             if not readers:
                 raise ValueError(
@@ -1069,7 +1076,6 @@ class QtViewer(QSplitter):
                         filename=filename,
                     )
                 )
-                return
 
             _, extension = os.path.splitext(filename)
             reader_associations = get_settings().plugins.extension2reader
@@ -1077,7 +1083,7 @@ class QtViewer(QSplitter):
             # if we have an existing setting for this extension
             if extension and extension in reader_associations:
                 display_name = reader_associations[extension]
-                # if this plugin is a potential reader
+                # if this plugin is currently registered
                 if display_name in readers:
                     try:
                         # try to open using the associated plugin
@@ -1092,14 +1098,14 @@ class QtViewer(QSplitter):
                 else:
                     error_message = f"Can't find {display_name} plugin associated with {extension} files.\n"
 
-            # get plugin choice from user
-            # choice is None if file was opened or user chose cancel
             readerDialog = QtReaderDialog(
                 parent=self,
                 pth=filename,
                 error_message=error_message,
                 readers=readers,
             )
+            # get plugin choice from user
+            # choice is None if file was opened or user chose cancel
             choice = _get_reader_choice_for_file(
                 readerDialog, readers, error_message
             )
@@ -1112,7 +1118,7 @@ class QtViewer(QSplitter):
                 )
                 # do we have settings to save?
                 if persist_choice:
-                    # need explicit reassignment for persistence
+                    # need explicit reassignment of object for persistence
                     get_settings().plugins.extension2reader = {
                         **reader_associations,
                         extension: display_name,
@@ -1220,15 +1226,15 @@ def _create_remote_manager(
 
 
 def _get_reader_choice_for_file(
-    readerDialog: Any, readers: Dict[str, str], error_message: str
-) -> Tuple(str, bool):
+    readerDialog: Any, readers: Dict[str, str], has_errored: bool
+) -> Optional(Tuple(str, bool)):
     """Gets choice of reader from user for the given filename.
 
-    If an existing association is set for this extension, tries
-    to open with that reader, and pops choice dialog if that fails.
+    If there is just one reader and no error message, dialog
+    is not shown. Otherwise, launch dialog and ask user for
+    plugin choice and whether setting is persisted.
 
-    If no existing association is set, pop the choice dialog and
-    get a chosen reader from the users.
+    Returns None if user cancels on dialog.
 
     Parameters
     ----------
@@ -1243,16 +1249,21 @@ def _get_reader_choice_for_file(
         Display name of the chosen plugin
     persist_choice: bool
         Whether to persist the chosen plugin choice or not
+    has_errored: bool
+        True when we've tried to read this file and failed, otherwise False
     """
     display_name = ''
     persist_choice = False
 
-    if len(readers) == 1 and not error_message:
+    # if we have just one reader and no errors from existing settings
+    if len(readers) == 1 and not has_errored:
+        # no need to open the dialog, just get the reader choice
         display_name = next(iter(readers.keys()))
         return display_name, persist_choice
 
-    # we need to get their choice from the dialog
+    # either we have more reader options or there was an error
     res = readerDialog.get_user_choices()
+    # user pressed cancel, return None
     if not res:
         return
     display_name, persist_choice = res
