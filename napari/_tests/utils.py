@@ -30,7 +30,8 @@ skip_on_mac_ci = pytest.mark.skipif(
 
 skip_local_popups = pytest.mark.skipif(
     not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
-    reason='Tests requiring GUI windows are skipped locally by default.',
+    reason='Tests requiring GUI windows are skipped locally by default.'
+    ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
 )
 
 
