@@ -88,7 +88,11 @@ def _constructor(version=VERSION):
     }
     if _use_local():
         definitions["channels"].insert(0, "local")
+    if LINUX:
+        definitions["default_prefix"] = os.path.join('%USERPROFILE%', f"{APP}-{version}")
     if MACOS:
+        # we change this bc the installer takes the name as the default install location basename
+        definitions["name"] = f"{APP}-{version}"
         definitions["installer_type"] = "pkg"
         definitions["welcome_image"] = os.path.join(
             HERE, "resources", "napari_1227x600.png"
@@ -122,6 +126,9 @@ def _constructor(version=VERSION):
                     HERE, "napari", "resources", "icon.ico"
                 ),
                 "register_python_default": False,
+                "default_prefix": os.path.join('%USERPROFILE%', f"{APP}-{version}"),
+                "default_prefix_domain_user": os.path.join('%LOCALAPPDATA%', f"{APP}-{version}"),
+                "default_prefix_all_users": os.path.join('%ALLUSERSPROFILE%', f"{APP}-{version}"),
             }
         )
         signing_certificate = os.environ.get("CONSTRUCTOR_SIGNING_CERTIFICATE")
