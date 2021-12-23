@@ -786,7 +786,7 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         triangles = np.concatenate([triangles, triangles_bevel])
 
     # extracting vectors (~4x faster than np.moveaxis)
-    a, b, c = tuple(offsets[triangles][:, i] for i in range(3))
+    a, b, c = tuple((centers + offsets)[triangles][:, i] for i in range(3))
     # flip negative oriented triangles
     flip_idx = _sign_cross(b - a, c - a) < 0
     triangles[flip_idx] = np.flip(triangles[flip_idx], axis=-1)

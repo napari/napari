@@ -213,13 +213,6 @@ class Shape(ABC):
             self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
         if face:
-            clean_data = np.array(
-                [
-                    p
-                    for i, p in enumerate(data)
-                    if i == 0 or not np.all(p == data[i - 1])
-                ]
-            )
             idx = np.concatenate(
                 [[True], ~np.all(data[1:] == data[:-1], axis=-1)]
             )
