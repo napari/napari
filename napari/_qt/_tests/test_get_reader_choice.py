@@ -11,9 +11,8 @@ class MockQtReaderDialog:
     def __init__(
         self,
         pth: str = '',
-        # unused but required for mocking dialog behaviour
         parent: QWidget = None,
-        readers: Dict[str, str] = {},
+        readers: "Dict[str, str]" = {},
         error_message: str = '',
     ):
         self._current_file = pth

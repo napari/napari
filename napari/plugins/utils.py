@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from typing import Dict
 
 
-def get_potential_readers(filename: str) -> Dict[str, str]:
+def get_potential_readers(filename: str) -> "Dict[str, str]":
     """Given filename, returns all readers that may read the file.
 
     Original plugin engine readers are checked based on returning
