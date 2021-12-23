@@ -141,18 +141,17 @@ def _toggle_selected(selected_data, value):
 
 
 def _update_drag_vectors_from_event(layer, event):
-    """Update the drag normal and drag up vectors on the Points layer from
-    a mouse event object.
+    """Update the drag normal and up vectors on layer from a mouse event.
 
     Note that in 2D mode, the layer._drag_normal and layer._drag_up
-    are set to None
+    are set to None.
 
     Parameters
     ----------
     layer : "napari.layers.Points"
-        The Points layer to update
+        The Points layer to update.
     event
-        The mouse event object
+        The mouse event object.
     """
     n_display = len(event.dims_displayed)
     if n_display == 3:
