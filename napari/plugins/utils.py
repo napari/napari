@@ -34,4 +34,8 @@ def get_potential_readers(filename: str) -> "Dict[str, str]":
                     ] = get_reader.plugin_name
     readers.update(npe1_readers)
 
+    # if npe2 is present, remove npe1 builtins
+    if 'napari' in readers and 'builtins' in readers:
+        del readers['builtins']
+
     return readers
