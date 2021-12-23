@@ -1537,6 +1537,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             corners = np.zeros((2, self.ndim))
             corners[:, displayed_axes] = scaled_corners
             corners = corners.astype(int)
+            display_shape = tuple(
+                corners[1, displayed_axes] - corners[0, displayed_axes]
+            )
+            if any(s == 0 for s in display_shape):
+                return
             if self.data_level != level or not np.all(
                 self.corner_pixels == corners
             ):
@@ -1587,7 +1592,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         return generate_layer_status(self.name, position, value)
 
-    def _get_tooltip_text(self, position, *, world=False):
+    def _get_tooltip_text(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ):
         """
         tooltip message of the data at a coordinate position.
 
@@ -1595,6 +1607,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.

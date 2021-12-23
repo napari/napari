@@ -385,7 +385,7 @@ class QtShapesControls(QtLayerControls):
         value : float
             Line width of shapes.
         """
-        self.layer.current_edge_width = float(value) / 2
+        self.layer.current_edge_width = float(value)
 
     def change_text_visibility(self, state):
         """Toggle the visibility of the text.
@@ -409,7 +409,7 @@ class QtShapesControls(QtLayerControls):
         """Receive layer model edge line width change event and update slider."""
         with self.layer.events.edge_width.blocker():
             value = self.layer.current_edge_width
-            value = np.clip(int(2 * value), 0, 40)
+            value = np.clip(int(value), 0, 40)
             self.widthSlider.setValue(value)
 
     def _on_current_edge_color_change(self):

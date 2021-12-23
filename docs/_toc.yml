@@ -1,106 +1,106 @@
-# Table of content
-# Learn more at https://jupyterbook.org/customize/toc.html
-#
-- file: index
-
+format: jb-book
+root: index
+chapters:
 - file: howtos/index
   title: How-to guides
   sections:
-    - file: howtos/connecting_events
-    - file: howtos/napari_imageJ
-    - file: howtos/docker
-    - file: howtos/perfmon
+  - file: howtos/connecting_events
+  - file: howtos/napari_imageJ
+  - file: howtos/docker
+  - file: howtos/perfmon
 
 - file: guides/index
   sections:
-    - file: guides/magicgui
-    - file: guides/event_loop
-    - file: guides/threading
-    - file: guides/rendering-explanation
-    - file: guides/rendering
-    - file: guides/performance
-    - file: guides/3D_interactivity
-    - file: guides/events_reference
-    - file: guides/preferences
-    - file: guides/contexts_expressions
+  - file: guides/magicgui
+  - file: guides/event_loop
+  - file: guides/threading
+  - file: guides/rendering-explanation
+  - file: guides/rendering
+  - file: guides/performance
+  - file: guides/3D_interactivity
+  - file: guides/events_reference
+  - file: guides/preferences
+  - file: guides/contexts_expressions
 
 - file: plugins/index
   sections:
-    - file: plugins/find-and-install-plugin
-    - file: plugins/for_plugin_developers
-    - file: plugins/hook_specifications
-    - file: plugins/for_napari_developers
-    - file: plugins/best_practices
+  - file: plugins/find-and-install-plugin
+  - file: plugins/npe2_getting_started
+  - file: plugins/npe2_manifest_specification
+  - file: plugins/npe2_migration_guide
+  - file: plugins/best_practices
+  - file: plugins/for_plugin_developers
+  - file: plugins/hook_specifications
+  - file: plugins/for_napari_developers
 
 - file: developers/index
   sections:
-    - file: developers/benchmarks
-    - file: developers/contributing
-    - file: developers/core_dev_guide
-    - file: developers/profiling
-    - file: developers/docs
-    - file: developers/translations
-    - file: developers/profiling
-    - file: developers/release
-    - file: developers/testing
+  - file: developers/benchmarks
+  - file: developers/contributing
+  - file: developers/core_dev_guide
+  - file: developers/profiling
+  - file: developers/docs
+  - file: developers/translations
+  - file: developers/release
+  - file: developers/testing
 
 - file: community/index
   sections:
-    - file: community/mission_and_values
-    - file: community/team
-    - file: community/code_of_conduct
-    - file: community/code_of_conduct_reporting
-    - file: community/governance
-    - file: community/working_groups
+  - file: community/mission_and_values
+  - file: community/team
+  - file: community/code_of_conduct
+  - file: community/code_of_conduct_reporting
+  - file: community/governance
+  - file: community/working_groups
 
 - file: roadmaps/index
   sections:
-    - file: roadmaps/0_3
-    - file: roadmaps/0_3_retrospective
-    - file: roadmaps/0_4
+  - file: roadmaps/0_3
+  - file: roadmaps/0_3_retrospective
+  - file: roadmaps/0_4
 
 - file: release/index
   sections:
-    - file: release/release_0_4_12
-    - file: release/release_0_4_11
-    - file: release/release_0_4_10
-    - file: release/release_0_4_9
-    - file: release/release_0_4_8
-    - file: release/release_0_4_7
-    - file: release/release_0_4_6
-    - file: release/release_0_4_5
-    - file: release/release_0_4_4
-    - file: release/release_0_4_3
-    - file: release/release_0_4_2
-    - file: release/release_0_4_1
-    - file: release/release_0_4_0
-    - file: release/release_0_3_8
-    - file: release/release_0_3_7
-    - file: release/release_0_3_6
-    - file: release/release_0_3_5
-    - file: release/release_0_3_4
-    - file: release/release_0_3_3
-    - file: release/release_0_3_2
-    - file: release/release_0_3_1
-    - file: release/release_0_3_0
-    - file: release/release_0_2_12
-    - file: release/release_0_2_11
-    - file: release/release_0_2_10
-    - file: release/release_0_2_9
-    - file: release/release_0_2_8
-    - file: release/release_0_2_7
-    - file: release/release_0_2_6
-    - file: release/release_0_2_5
-    - file: release/release_0_2_4
-    - file: release/release_0_2_3
-    - file: release/release_0_2_1
-    - file: release/release_0_2_0
-    - file: release/release_0_1_5
-    - file: release/release_0_1_3
-    - file: release/release_0_1_0
+  - file: release/release_0_4_12
+  - file: release/release_0_4_11
+  - file: release/release_0_4_10
+  - file: release/release_0_4_9
+  - file: release/release_0_4_8
+  - file: release/release_0_4_7
+  - file: release/release_0_4_6
+  - file: release/release_0_4_5
+  - file: release/release_0_4_4
+  - file: release/release_0_4_3
+  - file: release/release_0_4_2
+  - file: release/release_0_4_1
+  - file: release/release_0_4_0
+  - file: release/release_0_3_8
+  - file: release/release_0_3_7
+  - file: release/release_0_3_6
+  - file: release/release_0_3_5
+  - file: release/release_0_3_4
+  - file: release/release_0_3_3
+  - file: release/release_0_3_2
+  - file: release/release_0_3_1
+  - file: release/release_0_3_0
+  - file: release/release_0_2_12
+  - file: release/release_0_2_11
+  - file: release/release_0_2_10
+  - file: release/release_0_2_9
+  - file: release/release_0_2_8
+  - file: release/release_0_2_7
+  - file: release/release_0_2_6
+  - file: release/release_0_2_5
+  - file: release/release_0_2_4
+  - file: release/release_0_2_3
+  - file: release/release_0_2_1
+  - file: release/release_0_2_0
+  - file: release/release_0_1_5
+  - file: release/release_0_1_3
+  - file: release/release_0_1_0
 
 - file: api/index
   sections:
-    - file: api/napari
+  - file: api/napari
 
 - file: glossary

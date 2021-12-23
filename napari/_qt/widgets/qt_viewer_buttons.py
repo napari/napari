@@ -17,6 +17,7 @@ from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
+from .qt_dims_sorter import QtDimsSorter
 from .qt_spinbox import QtSpinBox
 from .qt_tooltip import QtToolTipLabel
 
@@ -119,9 +120,12 @@ class QtViewerButtons(QFrame):
             'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        self.rollDimsButton = QtViewerPushButton(
-            'roll', action='napari:roll_axes'
-        )
+
+        rdb = QtViewerPushButton('roll', action='napari:roll_axes')
+        self.rollDimsButton = rdb
+        rdb.setContextMenuPolicy(Qt.CustomContextMenu)
+        rdb.customContextMenuRequested.connect(self._open_roll_popup)
+
         self.transposeDimsButton = QtViewerPushButton(
             'transpose', action='napari:transpose_axes'
         )
@@ -182,6 +186,23 @@ class QtViewerButtons(QFrame):
         layout = QHBoxLayout()
         layout.addWidget(QLabel(trans._('Perspective'), self))
         layout.addWidget(sld)
+
+        # popup and show
+        pop = QtPopup(self)
+        pop.frame.setLayout(layout)
+        pop.show_above_mouse()
+
+    def _open_roll_popup(self):
+        """Open a grid popup to manually order the dimensions"""
+        if self.viewer.dims.ndisplay != 2:
+            return
+
+        dim_sorter = QtDimsSorter(self.viewer, self)
+        dim_sorter.setObjectName('dim_sorter')
+
+        # make layout
+        layout = QHBoxLayout()
+        layout.addWidget(dim_sorter)
 
         # popup and show
         pop = QtPopup(self)
