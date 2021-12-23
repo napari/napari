@@ -87,28 +87,21 @@ class VispyPointsLayer(VispyBaseLayer):
             face_color=transform_color('transparent'),
         )
 
-        # only draw a box in 2D
-        if self.layer._ndisplay == 2:
-            if (
-                self.layer._highlight_box is None
-                or 0 in self.layer._highlight_box.shape
-            ):
-                pos = np.zeros((1, self.layer._ndisplay))
-                width = 0
-            else:
-                pos = self.layer._highlight_box
-                width = settings.appearance.highlight_thickness
-
-            self.node._subvisuals[2].set_data(
-                pos=pos[:, ::-1],
-                color=self._highlight_color,
-                width=width,
-            )
+        if (
+            self.layer._highlight_box is None
+            or 0 in self.layer._highlight_box.shape
+        ):
+            pos = np.zeros((1, self.layer._ndisplay))
+            width = 0
         else:
-            self.node._subvisuals[2].set_data(
-                pos=np.zeros((1, self.layer._ndisplay)),
-                width=0,
-            )
+            pos = self.layer._highlight_box
+            width = settings.appearance.highlight_thickness
+
+        self.node._subvisuals[2].set_data(
+            pos=pos[:, ::-1],
+            color=self._highlight_color,
+            width=width,
+        )
 
         self.node.update()
 
@@ -167,6 +160,11 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_blending_kwargs = BLENDING_MODES[self.layer.text.blending]
         text_node.set_gl_state(**text_blending_kwargs)
+
+        # selection box is always without depth
+        box_blending_kwargs = BLENDING_MODES['translucent_no_depth']
+        self.node._subvisuals[2].set_gl_state(**box_blending_kwargs)
+
         self.node.update()
 
     def _on_antialias_change(self):
