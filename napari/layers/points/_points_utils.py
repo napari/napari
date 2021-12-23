@@ -9,8 +9,7 @@ from ...utils.translations import trans
 def _create_box_from_corners_3d(
     box_corners: np.ndarray, box_normal: np.ndarray, up_vector: np.ndarray
 ) -> np.ndarray:
-    """Get the corners for a box in 3D from two opposing corners, the normal direction,
-    and the up direction.
+    """Get front corners for 3D box from opposing corners and edge directions.
 
     The resulting box will include the two corners passed in as box_corners,
     lie in a plane with normal box_normal, and have one of its axes aligned
@@ -107,8 +106,10 @@ def _points_in_box_3d(
     box_normal: np.ndarray,
     up_direction: np.ndarray,
 ) -> List[int]:
-    """Determine which points are inside of a bounding box that is extended
-    infinitely in both directions along the normal vector.
+    """Determine which points are inside of 2D bounding box.
+
+    The 2D bounding box extends infinitely in both directions along its normal
+    vector.
 
     Point selection algorithm:
         1. Project the points in view and drag box corners on to a plane
@@ -178,10 +179,12 @@ def _points_in_box_3d(
 def points_in_box(
     corners: np.ndarray, points: np.ndarray, sizes: np.ndarray
 ) -> List[int]:
-    """Determine which points are in an axis aligned box defined by the corners
+    """Find which points are in an axis aligned box defined by its corners.
 
     Parameters
     ----------
+    corners : (2, 2) array
+        The top-left and bottom-right corners of the box.
     points : (N, 2) array
         Points to be checked
     sizes : (N,) array
