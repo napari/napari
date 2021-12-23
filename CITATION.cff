@@ -2,10 +2,8 @@
 # Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
 cff-version: 1.0.3
 message: If you use this software, please cite it using these metadata.
-# FIXME title as repository name might not be the best name, please make human readable
 title: 'napari: a multi-dimensional image viewer for Python'
-doi: 10.5281/zenodo.5399494
-# FIXME splitting of full names is error prone, please check if given/family name are correct
+doi: 10.5281/zenodo.3555620
 authors:
 - given-names: Nicholas
   family-names: Sofroniew
@@ -52,7 +50,7 @@ authors:
 - given-names: Genevieve
   family-names: Buckley
   affiliation: Monash University
-  orcid:  https://orcid.org/0000-0003-2763-492X 
+  orcid:  https://orcid.org/0000-0003-2763-492X
 - given-names: Andrew
   family-names: Sweet
   affiliation: Chan Zuckerberg Initiative
@@ -98,7 +96,5 @@ authors:
 - given-names: Abigail
   family-names: McGovern
   affiliation: Monash University
-version: 0.4.11
-date-released: 2021-09-03
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
