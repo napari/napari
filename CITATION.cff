@@ -15,7 +15,7 @@ authors:
   orcid: "https://orcid.org/0000-0002-2409-0181"
 - given-names: Kira
   family-names: Evans
-  affiliation: '@chanzuckerberg'
+  affiliation: Chan Zuckerberg Initiative
 - given-names: Juan
   family-names: Nunez-Iglesias
   affiliation: Biomedicine Discovery Institute, Monash University
@@ -25,6 +25,7 @@ authors:
   orcid: https://orcid.org/0000-0002-5470-1676
 - given-names: Philip
   family-names: Winston
+  affiliation: Tobeva Software
 - given-names: Gonzalo
   family-names: Peña-Castellanos
   affiliation: Quansight, Inc. / SIHSA Ltda
@@ -59,6 +60,7 @@ authors:
   affiliation: Delft University of Technology
 - given-names: Volker
   family-names: Hilsenstein
+  affiliation: EMBL Heidelberg, Germany
 - given-names: Lorenzo
   family-names: Gaifas
   affiliation: Gutsche Lab - University of Grenoble
@@ -75,7 +77,7 @@ authors:
   orcid: https://orcid.org/0000-0001-7851-2549
 - given-names: Jeremy
   family-names: Freeman
-  affiliation: '@carbonplan'
+  affiliation: Chan Zuckerberg Initiative
 - given-names: Peter
   family-names: Boone
 - given-names: Alan
