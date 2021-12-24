@@ -78,9 +78,9 @@ class Points(Layer):
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
         square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
     size : float, array
-        Size of the point marker. If given as a scalar, all points are made
-        the same size. If given as an array, size must be the same
-        broadcastable to the same shape as the data.
+        Size of the point marker in data pixels. If given as a scalar, all points are made
+        the same size. If given as an array, size must be the same or broadcastable
+        to the same shape as the data.
     edge_width : float
         Width of the symbol edge in pixels.
     edge_color : str, array-like, dict
@@ -150,6 +150,8 @@ class Points(Layer):
                 No shading is added to the points.
             * 'spherical'
                 Shading and depth buffer are changed to give a 3D spherical look to the points
+    experimental_canvas_size_limits : tuple of float
+        Lower and upper limits for the size of points in canvas pixels.
 
     Attributes
     ----------
@@ -238,6 +240,8 @@ class Points(Layer):
         COLORMAP allows color to be set via a color map over an attribute
     shading : Shading
         Shading mode.
+    experimental_canvas_size_limits : tuple of float
+        Lower and upper limits for the size of points in canvas pixels.
 
     Notes
     -----
@@ -301,6 +305,7 @@ class Points(Layer):
         property_choices=None,
         experimental_clipping_planes=None,
         shading='none',
+        experimental_canvas_size_limits=(0, 10000),
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -339,6 +344,7 @@ class Points(Layer):
             highlight=Event,
             shading=Event,
             _antialias=Event,
+            experimental_canvas_size_limits=Event,
         )
 
         self._colors = get_color_namelist()
@@ -419,6 +425,7 @@ class Points(Layer):
             properties=color_properties,
         )
 
+        self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.size = size
         self.shading = shading
         self._antialias = True
@@ -737,6 +744,18 @@ class Points(Layer):
         self.events.shading()
 
     @property
+    def experimental_canvas_size_limits(self) -> Tuple[float, float]:
+        """Limit the canvas size of points"""
+        return self._experimental_canvas_size_limits
+
+    @experimental_canvas_size_limits.setter
+    def experimental_canvas_size_limits(self, value):
+        self._experimental_canvas_size_limits = float(value[0]), float(
+            value[1]
+        )
+        self.events.experimental_canvas_size_limits()
+
+    @property
     def edge_width(self) -> Union[None, int, float]:
         """float: width used for all point markers."""
         return self._edge_width
@@ -1040,6 +1059,7 @@ class Points(Layer):
                 'data': self.data,
                 'features': self.features,
                 'shading': self.shading,
+                'experimental_canvas_size_limits': self.experimental_canvas_size_limits,
             }
         )
         return state
@@ -1335,6 +1355,10 @@ class Points(Layer):
         if len(view_data) > 0:
             displayed_position = [position[i] for i in self._dims_displayed]
             # Get the point sizes
+            # TODO: calculate distance in canvas space to account for canvas_size_limits.
+            # Without this implementation, point hover and selection (and anything depending
+            # on self.get_value()) won't be aware of the real extent of points, causing
+            # unexpected behaviour. See #3734 for details.
             distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,

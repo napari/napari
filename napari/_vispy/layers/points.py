@@ -31,6 +31,9 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.text.events.connect(self._on_text_change)
         self.layer.events.shading.connect(self._on_shading_change)
         self.layer.events._antialias.connect(self._on_antialias_change)
+        self.layer.events.experimental_canvas_size_limits.connect(
+            self._on_canvas_size_limits_change
+        )
 
         self._on_data_change()
 
@@ -177,6 +180,11 @@ class VispyPointsLayer(VispyBaseLayer):
         else:
             self.node.spherical = False
 
+    def _on_canvas_size_limits_change(self):
+        min_size, max_size = self.layer.experimental_canvas_size_limits
+        self.node.clamp_filter.min_size = min_size
+        self.node.clamp_filter.max_size = max_size
+
     def reset(self):
         super().reset()
         self._update_text(update_node=False)
@@ -185,6 +193,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_matrix_change()
         self._on_antialias_change()
         self._on_shading_change()
+        self._on_canvas_size_limits_change()
 
     def close(self):
         """Vispy visual is closing."""
