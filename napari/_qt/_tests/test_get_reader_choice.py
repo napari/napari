@@ -1,6 +1,7 @@
-from typing import Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
-from qtpy.QtWidgets import QWidget
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
 
 from napari._qt.qt_viewer import _get_reader_choice_for_file
 
@@ -11,7 +12,7 @@ class MockQtReaderDialog:
     def __init__(
         self,
         pth: str = '',
-        parent: QWidget = None,
+        parent: 'QWidget' = None,
         readers: Dict[str, str] = {},
         error_message: str = '',
     ):
