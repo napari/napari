@@ -365,8 +365,7 @@ jobs:
           security list-keychain -d user -s $KEYCHAIN_PATH
 
           # export identity name
-          # identity=$(security find-identity -p codesigning | grep -m 1 -o '"Developer ID Installer.*"' | tr -d '"')
-          identity=$(security find-identity -p codesigning | grep -m 1 -o '".*test.*"' | tr -d '"')
+          identity=$(security find-identity -p codesigning | grep -m 1 -o '"Developer ID Installer.*"' | tr -d '"')
 
           echo "CONSTRUCTOR_SIGNING_IDENTITY=${identity}" >> $GITHUB_ENV
 
@@ -380,7 +379,8 @@ jobs:
         shell: bash -l {0}
         if: runner.os != 'Linux'
         env:
-          CONSTRUCTOR_SIGNING_CERTIFICATE: "${{ runner.temp }}/certificate.pfx"
+          # uncomment this line to enable windows signing
+          # CONSTRUCTOR_SIGNING_CERTIFICATE: "${{ runner.temp }}/certificate.pfx"
           CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
           CONSTRUCTOR_SIGNTOOL_PATH: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
         run: python bundle_conda.py
