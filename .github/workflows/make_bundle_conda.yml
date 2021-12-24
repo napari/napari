@@ -361,11 +361,11 @@ jobs:
           security unlock-keychain -p "$TEMP_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
           # import certificate to keychain
-          security import $CERTIFICATE_PATH -P "$APPLE_INSTALLER_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $CERTIFICATE_PATH -P $APPLE_INSTALLER_CERTIFICATE_PASSWORD -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
           # export identity name
-          identity=$(security find-identity -p codesigning | grep -m 1 -o '"Developer ID Installer.*"' | tr -d '"')
+          identity=$(security find-identity $KEYCHAIN_PATH | grep -m 1 -o '"Developer ID Installer.*"' | tr -d '"')
 
           echo "CONSTRUCTOR_SIGNING_IDENTITY=${identity}" >> $GITHUB_ENV
 
