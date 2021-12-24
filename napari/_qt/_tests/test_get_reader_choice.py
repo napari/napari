@@ -12,7 +12,7 @@ class MockQtReaderDialog:
         self,
         pth: str = '',
         parent: QWidget = None,
-        readers: "Dict[str, str]" = {},
+        readers: Dict[str, str] = {},
         error_message: str = '',
     ):
         self._current_file = pth
