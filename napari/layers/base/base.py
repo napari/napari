@@ -1049,7 +1049,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     )
                 position = self.world_to_data(position)
 
-            if dims_displayed is not None:
+            if (dims_displayed is not None) and (view_direction is not None):
                 if len(dims_displayed) == 2 or self.ndim == 2:
                     value = self._get_value(position=tuple(position))
 
