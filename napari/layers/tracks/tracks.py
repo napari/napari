@@ -411,6 +411,7 @@ class Tracks(Layer):
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._manager.features = features
+        self.events.properties()
         self._check_color_by_in_features()
 
     @property
@@ -426,9 +427,7 @@ class Tracks(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """set track properties"""
-        self._manager.properties = properties
-        self.events.properties()
-        self._check_color_by_in_features()
+        self.features = properties
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:

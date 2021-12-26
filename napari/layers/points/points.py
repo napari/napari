@@ -26,14 +26,13 @@ from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import (
     _append_features,
-    _features_from_properties,
+    _features_from_layer,
     _features_to_choices,
     _features_to_properties,
     _remove_features,
     _resize_features,
     _validate_features,
     coerce_current_properties,
-    get_current_properties,
 )
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
@@ -160,6 +159,8 @@ class Points(Layer):
     features : DataFrame-like
         Features table where each row corresponds to a point and each column
         is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
     properties : dict {str: array (N,)} or DataFrame
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -352,14 +353,12 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        if properties is not None or property_choices is not None:
-            self._features = _features_from_properties(
-                properties=properties,
-                property_choices=property_choices,
-                num_data=len(self.data),
-            )
-        else:
-            self.features = features
+        self._features, self._feature_defaults = _features_from_layer(
+            features=features,
+            properties=properties,
+            property_choices=property_choices,
+            num_data=len(self.data),
+        )
 
         self._text = TextManager._from_layer(
             text=text,
@@ -430,10 +429,6 @@ class Points(Layer):
         self.shading = shading
         self._antialias = True
 
-        self.current_properties = get_current_properties(
-            self.properties, self.property_choices, len(self.data)
-        )
-
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
@@ -455,7 +450,7 @@ class Points(Layer):
                     self._features = _resize_features(
                         self._features,
                         len(data),
-                        current_values=self._current_properties,
+                        defaults=self._feature_defaults,
                     )
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
@@ -531,7 +526,26 @@ class Points(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = _validate_features(features, num_data=len(self.data))
+        self._features, self._feature_defaults = _features_from_layer(
+            features=features, num_data=len(self.data)
+        )
+        self._update_color_manager(
+            self._face, self._features, self._feature_defaults, "face_color"
+        )
+        self._update_color_manager(
+            self._edge, self._features, self._feature_defaults, "edge_color"
+        )
+        if self.text.values is not None:
+            self.refresh_text()
+        self.events.properties()
+
+    @property
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._feature_defaults
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -543,9 +557,7 @@ class Points(Layer):
         return _features_to_properties(self._features)
 
     @staticmethod
-    def _update_color_manager(
-        color_manager, features, current_properties, name
-    ):
+    def _update_color_manager(color_manager, features, feature_defaults, name):
         if color_manager.color_properties is not None:
             color_name = color_manager.color_properties.name
             if color_name not in features:
@@ -563,51 +575,36 @@ class Points(Layer):
                 color_manager.color_properties = {
                     'name': color_name,
                     'values': features[color_name].to_numpy(),
-                    'current_value': current_properties[color_name],
+                    'current_value': feature_defaults[color_name][0],
                 }
 
     @properties.setter
     def properties(
         self, properties: Union[Dict[str, Array], pd.DataFrame, None]
     ):
-        self._features = _features_from_properties(
-            properties=properties, num_data=len(self._data)
-        )
-        # Updating current_properties can modify properties, so block to avoid
-        # infinite recursion when explicitly setting the properties.
-        with self.block_update_properties():
-            self.current_properties = get_current_properties(
-                self.properties, self.property_choices, len(self.data)
-            )
-        self._update_color_manager(
-            self._face, self._features, self._current_properties, "face_color"
-        )
-        self._update_color_manager(
-            self._edge, self._features, self._current_properties, "edge_color"
-        )
-        if self.text.values is not None:
-            self.refresh_text()
-        self.events.properties()
+        self.features = properties
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        return self._current_properties
+        return _features_to_properties(self._feature_defaults)
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = coerce_current_properties(
-            current_properties
+        current_properties = coerce_current_properties(current_properties)
+        self._feature_defaults = _validate_features(
+            current_properties, num_data=1
         )
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode != Mode.ADD
         ):
-            for k in current_properties:
+            for k in self._feature_defaults:
                 self.features[k][
                     list(self.selected_data)
-                ] = current_properties[k]
+                ] = self._feature_defaults[k][0]
+        current_properties = self.current_properties
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
