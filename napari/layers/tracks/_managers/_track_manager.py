@@ -24,6 +24,7 @@ def connex(vertices: np.ndarray) -> list:
 
 class TrackManager(BaseTrackManager):
     """Manage track data and simplify interactions with the Tracks layer.
+    TODO: update this
 
     Attributes
     ----------

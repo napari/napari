@@ -640,11 +640,13 @@ class Tracks(Layer):
         """Switches Tracks' mode, it rebuilds the tracks and the graph."""
         data, graph, features = self.data, self.graph, self.features
         if state:
-            self._manager = InteractiveTrackManager()
+            self._manager = InteractiveTrackManager(
+                data=data, graph=graph, features=features
+            )
         else:
             self._manager = TrackManager()
+            self.data = data
+            self.graph = graph
+            self.features = features
 
-        self.data = data
-        self.graph = graph
-        self.features = features
         self.events.interactive_mode(state=state)

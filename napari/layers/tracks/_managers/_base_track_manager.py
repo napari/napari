@@ -11,6 +11,7 @@ from ...utils.layer_utils import _features_to_properties
 
 class BaseTrackManager(ABC):
     """Manage track data and simplify interactions with the Tracks layer.
+    TODO: update this
 
     Attributes
     ----------

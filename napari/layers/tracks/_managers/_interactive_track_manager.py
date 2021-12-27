@@ -1,13 +1,48 @@
-from typing import Dict, List, Union
+import warnings
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-from scipy.sparse import coo_matrix
-from scipy.spatial import cKDTree
 
 from ....utils.translations import trans
 from ...utils.layer_utils import _validate_features
 from ._base_track_manager import BaseTrackManager
+
+
+@dataclass
+class Node:
+    """Node class corresponding to each indivisual row of tracks' data.
+       The indexing (`data_index`) is used to query the data information from the input data.
+
+    Attributes
+    ----------
+    index : int
+        node's unique identifying index.
+    vertex : np.array
+        node's vertex coordinates T, (Z), Y, X`.
+    features : pd.DataFrame
+        node's features.
+    parents :  List[Node]
+        list of node's parents, more than one parent represents a track merge.
+    children: List[Node]
+        list of node's children, more than one child represents a track split (division).
+    """
+
+    index: int
+    vertex: np.ndarray
+    features: Optional[pd.DataFrame] = None
+    parents: List['Node'] = field(default_factory=list)
+    children: List['Node'] = field(default_factory=list)
+
+    @property
+    def time(self) -> int:
+        return self.vertex[0]
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            raise NotImplementedError
+        return self.index == other.index
 
 
 # FIXME: don't forget to remove this
@@ -25,6 +60,7 @@ def connex(vertices: np.ndarray) -> list:
 
 class InteractiveTrackManager(BaseTrackManager):
     """Manage track data and simplify interactions with the Tracks layer.
+    TODO: update this
 
     Attributes
     ----------
@@ -67,81 +103,109 @@ class InteractiveTrackManager(BaseTrackManager):
         Track ID for each vertex in track_vertices.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        data: Optional[np.ndarray] = None,
+        graph: Dict = {},
+        features: Optional[pd.DataFrame] = None,
+    ):
 
         # store the raw data here
-        self._data = None
-        self._features = None
-        self._order = None
+        self._ndim = 0
 
-        # use a kdtree to help with fast lookup of the nearest track
-        self._kdtree = None
+        # stores the nodes in each specific time point
+        self._time_to_nodes: Dict[int, List[Node]] = {}
 
-        # NOTE(arl): _tracks and _connex store raw data for vispy
-        self._points = None
-        self._points_id = None
-        self._points_lookup = None
-        self._ordered_points_idx = None
+        # maps from the data row indices to their respective node
+        self._id_to_nodes: Dict[int, Node] = {}
+        self._max_node_index = 0
 
-        self._track_vertices = None
-        self._track_connex = None
-        self._track_colors = None
+        # stores the last node of tracks, so they can be transversed backwardly
+        self._tracks: Dict[int, Node] = {}
 
-        self._graph = None
-        self._graph_vertices = None
-        self._graph_connex = None
+        self._features: Optional[pd.DataFrame] = None
 
-        # lookup table for vertex indices from track id
-        self._id2idxs = None
+        if data is None:
+            assert len(graph) == 0 and features is None
+        else:
+            self._build_tracks(data, graph, features)
+
+    def _build_tracks(
+        self,
+        data: Union[list, np.ndarray],
+        graph: Dict,
+        features: Optional[pd.DataFrame],
+    ) -> None:
+
+        columns = ['TrackID', 'T', 'Z', 'Y', 'X']
+
+        if data.shape[1] == 4:
+            columns.remove('Z')
+        elif data.shape[1] != 5:
+            raise RuntimeError(
+                f'Tracks data must have 4 or 5 columns, found {data.shape[1]}.'
+            )
+
+        # naming input_data to avoid confusion with the actual data that needs to be computed from the nodes
+        data = pd.DataFrame(data, columns=columns)
+        self._ndim = data.shape[1] - 1
+
+        self._time_to_nodes = {}
+        self._tracks = {}
+        self._id_to_nodes = {}
+
+        # used make connections from `graph`
+        track_to_roots: Dict[int, Node] = {}
+        track_to_leafs: Dict[int, Node] = {}
+
+        for track_id, track in data.groupby('TrackID', sort=False):
+            parent_node = None
+            track = track.sort_values('T')
+            for index, row in track.iterrows():
+                feats = None if features is None else features[index]
+                node = self._add_node(index, row[1:].values, feats)
+
+                if parent_node is not None:
+                    parent_node.children.append(node)
+                    node.parents.append(parent_node)
+                else:
+                    track_to_roots[track_id] = node
+
+                parent_node = node
+
+            # leaf (last) node
+            self._tracks[node.index] = node
+            track_to_leafs[track_id] = node
+
+        for track_id, parents in graph.items():
+            node = track_to_roots[track_id]
+            for parent_track_id in parents:
+                parent = track_to_leafs[parent_track_id]
+                if len(parent.children) == 0:
+                    # it's not a leaf anymore
+                    del self._tracks[parent.index]
+                node.parents.append(parent)
+                parent.children.append(node)
+
+        self._max_node_index = data.shape[0]
+
+    @property
+    def ndim(self) -> int:
+        """Determine number of spatiotemporal dimensions of the layer."""
+        if self._ndim == 0 and len(self._id_to_nodes) > 0:
+            node = next(iter(self._id_to_nodes.values()))
+            self._ndim = len(node.vertex)
+
+        return self._ndim
 
     @property
     def data(self) -> np.ndarray:
         """array (N, D+1): Coordinates for N points in D+1 dimensions."""
-        return self._data
+        raise NotImplementedError
 
     @data.setter
     def data(self, data: Union[list, np.ndarray]):
-        """set the vertex data and build the vispy arrays for display"""
-
-        # convert data to a numpy array if it is not already one
-        data = np.asarray(data)
-
-        # Sort data by ID then time
-        self._order = np.lexsort((data[:, 1], data[:, 0]))
-        data = data[self._order]
-
-        # check check the formatting of the incoming track data
-        self._data = self._validate_track_data(data)
-
-        # build the indices for sorting points by time
-        self._ordered_points_idx = np.argsort(self.data[:, 1])
-        self._points = self.data[self._ordered_points_idx, 1:]
-
-        # build a tree of the track data to allow fast lookup of nearest track
-        self._kdtree = cKDTree(self._points)
-
-        # make the lookup table
-        # NOTE(arl): it's important to convert the time index to an integer
-        # here to make sure that we align with the napari dims index which
-        # will be an integer - however, the time index does not necessarily
-        # need to be an int, and the shader will render correctly.
-        frames = list(set(self._points[:, 0].astype(np.uint).tolist()))
-        self._points_lookup = {}
-        for f in frames:
-            idx = np.where(self._points[:, 0] == f)[0]
-            self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
-
-        # make a second lookup table using a sparse matrix to convert track id
-        # to the vertex indices
-        self._id2idxs = coo_matrix(
-            (
-                np.broadcast_to(1, self.track_ids.size),  # just dummy ones
-                (self.track_ids, np.arange(self.track_ids.size)),
-            )
-        ).tocsr()
-
-        # sort the data by ID then time
-        # indices = np.lexsort((self.data[:, 1], self.data[:, 0]))
+        raise NotImplementedError
 
     @property
     def features(self):
@@ -159,7 +223,7 @@ class InteractiveTrackManager(BaseTrackManager):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        raise NotImplementedError
 
     @features.setter
     def features(
@@ -170,153 +234,36 @@ class InteractiveTrackManager(BaseTrackManager):
         if 'track_id' not in features:
             features['track_id'] = self.track_ids
         self._features = features.iloc[self._order].reset_index(drop=True)
+        raise NotImplementedError
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
-        return self._graph
+        raise NotImplementedError
 
     @graph.setter
     def graph(self, graph: Dict[int, Union[int, List[int]]]):
         """set the track graph"""
-        self._graph = self._validate_track_graph(graph)
+        raise NotImplementedError
 
     @property
-    def unique_track_ids(self):
+    def unique_track_ids(self) -> np.ndarray:
         """return the unique track identifiers"""
-        return np.unique(self.track_ids)
+        return np.array(list(self._tracks.keys()))
 
     def __len__(self):
         """return the number of tracks"""
         return len(self.unique_track_ids) if self.data is not None else 0
 
-    def _vertex_indices_from_id(self, track_id: int):
-        """return the vertices corresponding to a track id"""
-        return self._id2idxs[track_id].nonzero()[1]
-
-    def _validate_track_data(self, data: np.ndarray) -> np.ndarray:
-        """validate the coordinate data"""
-
-        if data.ndim != 2:
-            raise ValueError(
-                trans._('track vertices should be a NxD array', deferred=True)
-            )
-
-        if data.shape[1] < 4 or data.shape[1] > 5:
-            raise ValueError(
-                trans._(
-                    'track vertices should be 4 or 5-dimensional',
-                    deferred=True,
-                )
-            )
-
-        # check that all IDs are integers
-        ids = data[:, 0]
-        if not np.all(np.floor(ids) == ids):
-            raise ValueError(
-                trans._('track id must be an integer', deferred=True)
-            )
-
-        if not all([t >= 0 for t in data[:, 1]]):
-            raise ValueError(
-                trans._(
-                    'track timestamps must be greater than zero', deferred=True
-                )
-            )
-
-        # check that data are sorted by ID then time
-        indices = np.lexsort((data[:, 1], data[:, 0]))
-        if not np.array_equal(indices, np.arange(data[:, 0].size)):
-            raise ValueError(
-                trans._(
-                    'tracks should be ordered by ID and time', deferred=True
-                )
-            )
-
-        return data
-
-    def _validate_track_graph(
-        self, graph: Dict[int, Union[int, List[int]]]
-    ) -> Dict[int, List[int]]:
-        """validate the track graph"""
-
-        # check that graph nodes are of correct format
-        for node_idx, parents_idx in graph.items():
-            # make sure parents are always a list
-            if type(parents_idx) != list:
-                graph[node_idx] = [parents_idx]
-
-        # check that graph nodes exist in the track id lookup
-        for node_idx, parents_idx in graph.items():
-            nodes = [node_idx] + parents_idx
-            for node in nodes:
-                if node not in self.unique_track_ids:
-                    raise ValueError(
-                        trans._(
-                            'graph node {node_idx} not found',
-                            deferred=True,
-                            node_idx=node_idx,
-                        )
-                    )
-
-        return graph
-
     def build_tracks(self):
-        """build the tracks"""
-
-        points_id = []
-        track_vertices = []
-        track_connex = []
-
-        # NOTE(arl): this takes some time when the number of tracks is large
-        for idx in self.unique_track_ids:
-            indices = self._vertex_indices_from_id(idx)
-
-            # grab the correct vertices and sort by time
-            vertices = self.data[indices, 1:]
-            vertices = vertices[vertices[:, 0].argsort()]
-
-            # coordinates of the text identifiers, vertices and connections
-            points_id += [idx] * vertices.shape[0]
-            track_vertices.append(vertices)
-            track_connex.append(connex(vertices))
-
-        self._points_id = np.array(points_id)[self._ordered_points_idx]
-        self._track_vertices = np.concatenate(track_vertices, axis=0)
-        self._track_connex = np.concatenate(track_connex, axis=0)
+        pass
 
     def build_graph(self):
-        """build the track graph"""
-
-        graph_vertices = []
-        graph_connex = []
-
-        for node_idx, parents_idx in self.graph.items():
-            # we join from the first observation of the node, to the last
-            # observation of the parent
-            node_start = self._vertex_indices_from_id(node_idx)[0]
-            node = self.data[node_start, 1:]
-
-            for parent_idx in parents_idx:
-                parent_stop = self._vertex_indices_from_id(parent_idx)[-1]
-                parent = self.data[parent_stop, 1:]
-
-                verts = np.stack([node, parent], axis=0)
-
-                graph_vertices.append(verts)
-                graph_connex.append([True, False])
-
-        # if there is a graph, store the vertices and connection arrays,
-        # otherwise, clear the vertex arrays
-        if graph_vertices:
-            self._graph_vertices = np.concatenate(graph_vertices, axis=0)
-            self._graph_connex = np.concatenate(graph_connex, axis=0)
-        else:
-            self._graph_vertices = None
-            self._graph_connex = None
+        pass
 
     def vertex_properties(self, color_by: str) -> np.ndarray:
         """return the properties of tracks by vertex"""
+        raise NotImplementedError
 
         if color_by not in self.properties:
             raise ValueError(
@@ -329,8 +276,10 @@ class InteractiveTrackManager(BaseTrackManager):
 
         return self.properties[color_by]
 
-    def get_value(self, coords):
+    def get_value(self, coords: np.ndarray) -> int:
         """use a kd-tree to lookup the ID of the nearest tree"""
+        raise NotImplementedError
+
         if self._kdtree is None:
             return
 
@@ -346,14 +295,9 @@ class InteractiveTrackManager(BaseTrackManager):
             return self._points_id[pruned[0]]  # return the track ID
 
     @property
-    def ndim(self) -> int:
-        """Determine number of spatiotemporal dimensions of the layer."""
-        return self.data.shape[1] - 1
-
-    @property
     def max_time(self) -> int:
         """Determine the maximum timestamp of the dataset"""
-        return int(np.max(self.track_times))
+        return max(self._time_to_nodes.keys())
 
     @property
     def track_vertices(self) -> np.ndarray:
@@ -403,3 +347,129 @@ class InteractiveTrackManager(BaseTrackManager):
         pos = self._points[lookup, ...]
         lbl = [f'ID:{i}' for i in self._points_id[lookup]]
         return lbl, pos
+
+    def _get_node(self, index: int) -> Node:
+        try:
+            return self._id_to_nodes[index]
+        except KeyError:
+            raise KeyError(
+                f'Node with index {index} not found in InteractiveTrackManager'
+            )
+
+    def link(self, child_id: int, parent_id: int) -> None:
+        child = self._get_node(child_id)
+        parent = self._get_node(parent_id)
+
+        if child in parent.children:
+            warnings.warn(
+                f'Node {parent_id} is already a parent of {child_id}.'
+            )
+            return
+
+        if len(parent.children) == 0:
+            # it won't be a leaf anymore
+            del self._tracks[parent_id]
+
+        child.parents.append(parent)
+        parent.children.append(child)
+
+    def _unlink_pair(self, child: Node, parent: Node) -> None:
+        child.parents.remove(parent)
+        parent.children.remove(child)
+
+        if len(parent.children) == 0:
+            # it becomes a leaf it there isn't a child
+            self._tracks[parent.index] == parent
+
+    def unlink(
+        self, child_id: Optional[int] = None, parent_id: Optional[int] = None
+    ) -> None:
+        """
+        Disconnects nodes indexed by child_id and parent_id.
+        If one of them is not provided it disconnects every all of its connections.
+        """
+        if child_id is None and parent_id is None:
+            raise RuntimeError(
+                '`child_id`, `parent_id` or both must be supplified.'
+            )
+
+        if child_id is None:
+            parent = self._get_node(parent_id)
+            for child in tuple(parent.children):
+                self._unlink_pair(child, parent)
+
+        elif parent_id is None:
+            child = self._get_node(child_id)
+            for parent in tuple(child.parents):
+                self._unlink_pair(child, parent)
+
+        else:
+            child = self._get_node(child_id)
+            parent = self._get_node(parent_id)
+            self._unlink_pair(child, parent)
+
+    def remove(self, node_index: int, keep_link: bool = False) -> None:
+        node = self._get_node(node_index)
+
+        # removing from storages
+        del self._id_to_nodes[node_index]
+        if len(node.children) == 0:
+            del self._tracks[node_index]
+        # this operation is not done in constant time
+        self._time_to_nodes[node.time].remove(node)
+
+        if keep_link:
+            if len(node.children) > 1 and len(node.parents) > 1:
+                # this is not allowed since the connection would be arbitrary
+                raise RuntimeError(
+                    'Removal with linking is not allowed for nodes with multiple'
+                    + f'children ({len(node.children)}) and parents {len(node.parents)}.'
+                )
+
+            for child in node.children:
+                for parent in node.parents:
+                    parent.children.append(child)
+                    child.parents.append(parent)
+
+        for child in node.children:
+            child.parents.remove(node)
+
+        for parent in node.parents:
+            parent.children.remove(node)
+            if len(parent.children) == 0:
+                # if no children exists it becomes a leaf
+                self._tracks[parent.track_id] = parent
+
+    def _add_node(
+        self,
+        index: int,
+        vertex: np.ndarray,
+        features: Optional[pd.DataFrame] = None,
+    ) -> Node:
+        node = Node(index=index, vertex=vertex, features=features)
+        self._id_to_nodes[index] = node
+
+        time = node.time
+        if time not in self._time_to_nodes:
+            self._time_to_nodes[time] = []
+
+        self._time_to_nodes[time].append(node)
+
+        return node
+
+    def add(
+        self,
+        vertex: Union[list, np.ndarray],
+        features: Optional[pd.DataFrame] = None,
+    ) -> int:
+        if len(vertex) != self.ndim and self.ndim != 0:
+            # ndim is 0 when the data is empty
+            raise RuntimeError(
+                f'Vertex must match data dimension. Found {len(vertex)}, expected {self._ndim}.'
+            )
+
+        self._max_node_index += 1
+        node = self._add_node(
+            index=self._max_node_index, vertex=vertex, features=features
+        )
+        self._tracks[node.index] = node
