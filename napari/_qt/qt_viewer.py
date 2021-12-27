@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import warnings
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
+from weakref import WeakSet
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -177,11 +178,14 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
+    _instances = WeakSet()
+
     def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
+        self._instances.add(self)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         self._show_welcome_screen = show_welcome_screen
