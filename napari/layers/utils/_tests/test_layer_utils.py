@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -73,14 +75,16 @@ def test_calc_data_range():
     assert np.all(clim == [0, 2])
 
 
-@pytest.mark.timeout(2)  # TODO: test this more directly
 @pytest.mark.parametrize(
     'data',
     [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],
 )
 def test_calc_data_range_fast(data):
+    now = time.monotonic()
     val = calc_data_range(data)
     assert len(val) > 0
+    elapsed = time.monotonic() - now
+    assert elapsed < 5, "test took too long, computation was likely not lazy"
 
 
 def test_segment_normal_2d():
