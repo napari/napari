@@ -31,6 +31,8 @@ def dask_shutdown(request):
     if dask.threaded.default_pool is not None:
         dask.threaded.default_pool.shutdown()
         dask.threaded.default_pool = None
+    # we do not raise if there is no dask pool as this is used in some parametrized
+    # test that only _sometime_ use dask.
 
 
 if not hasattr(pooch.utils, 'file_hash'):

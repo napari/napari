@@ -43,7 +43,7 @@ if os.getenv("CI") and os.name == 'nt' and 'to_screenshot.py' in examples:
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
-def test_examples(fname, monkeypatch):
+def test_examples(fname, monkeypatch, dask_shutdown):
     """Test that all of our examples are still working without warnings."""
 
     # hide viewer window
