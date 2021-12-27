@@ -5,11 +5,12 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
-from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.layer_utils import _features_to_properties, _validate_features
+from ..utils.layer_utils import _validate_features
+from ._base_track_manager import BaseTrackManager
 
 
+# FIXME: don't forget to remove this
 def connex(vertices: np.ndarray) -> list:
     """Connection array to build vertex edges for vispy LineVisual.
 
@@ -22,7 +23,7 @@ def connex(vertices: np.ndarray) -> list:
     return [True] * (vertices.shape[0] - 1) + [False]
 
 
-class TrackManager:
+class InteractiveTrackManager(BaseTrackManager):
     """Manage track data and simplify interactions with the Tracks layer.
 
     Attributes
@@ -171,16 +172,6 @@ class TrackManager:
         self._features = features.iloc[self._order].reset_index(drop=True)
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return _features_to_properties(self._features)
-
-    @properties.setter
-    def properties(self, properties: Dict[str, Array]):
-        """set track properties"""
-        self.features = properties
-
-    @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
         return self._graph
@@ -189,11 +180,6 @@ class TrackManager:
     def graph(self, graph: Dict[int, Union[int, List[int]]]):
         """set the track graph"""
         self._graph = self._validate_track_graph(graph)
-
-    @property
-    def track_ids(self):
-        """return the track identifiers"""
-        return self.data[:, 0].astype(np.uint32)
 
     @property
     def unique_track_ids(self):

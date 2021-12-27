@@ -12,7 +12,8 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
 from ...utils.translations import trans
 from ..base import Layer
-from ._track_utils import TrackManager
+from ._interactive_track_manager import InteractiveTrackManager
+from ._track_manager import TrackManager
 
 
 class Tracks(Layer):
@@ -162,10 +163,14 @@ class Tracks(Layer):
             properties=Event,
             rebuild_tracks=Event,
             rebuild_graph=Event,
+            interactive_mode=Event,
         )
 
         # track manager deals with data slicing, graph building and properties
         self._manager = TrackManager()
+        self._interactive_mode = (
+            False  # setter cannot be used before setting `data`
+        )
         self._track_colors = None
         self._colormaps_dict = colormaps_dict or {}  # additional colormaps
         self._color_by = color_by  # default color by ID
@@ -626,3 +631,21 @@ class Tracks(Layer):
             )
             self._color_by = 'track_id'
             self.events.color_by()
+
+    @property
+    def interactive_mode(self) -> bool:
+        return self._interactive_mode
+
+    @interactive_mode.setter
+    def interactive_mode(self, state: bool) -> None:
+        """Switches Tracks' mode, it rebuilds the tracks and the graph."""
+        data, graph, features = self.data, self.graph, self.features
+        if state:
+            self._manager = InteractiveTrackManager()
+        else:
+            self._manager = TrackManager()
+
+        self.data = data
+        self.graph = graph
+        self.features = features
+        self.events.interactive_mode(state=state)
