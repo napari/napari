@@ -5,8 +5,8 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
-from ...utils.translations import trans
-from ..utils.layer_utils import _validate_features
+from ....utils.translations import trans
+from ...utils.layer_utils import _validate_features
 from ._base_track_manager import BaseTrackManager
 
 

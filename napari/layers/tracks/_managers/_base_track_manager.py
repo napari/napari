@@ -4,9 +4,9 @@ from typing import Dict, List, Union
 import numpy as np
 import pandas as pd
 
-from ...utils.events.custom_types import Array
-from ...utils.translations import trans
-from ..utils.layer_utils import _features_to_properties
+from ....utils.events.custom_types import Array
+from ....utils.translations import trans
+from ...utils.layer_utils import _features_to_properties
 
 
 class BaseTrackManager(ABC):

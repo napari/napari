@@ -12,8 +12,7 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
 from ...utils.translations import trans
 from ..base import Layer
-from ._interactive_track_manager import InteractiveTrackManager
-from ._track_manager import TrackManager
+from ._managers import InteractiveTrackManager, TrackManager
 
 
 class Tracks(Layer):
