@@ -133,7 +133,15 @@ class InteractiveTrackManager(BaseTrackManager):
         # stores the last node of tracks, so they can be transversed backwardly
         self._leafs: Dict[int, Node] = {}
 
-        self._features: Optional[pd.DataFrame] = None
+        # attributes computed (and updated) after serialization
+        self._graph: Dict[int, List[int]] = {}
+        self._graph_vertices: np.ndarray = ...
+        self._graph_connex: np.ndarray = ...
+        self._track_ids: np.ndarray = ...
+        self._track_vertices: np.ndarray = ...
+        self._track_connex: np.ndarray = ...
+        self._features: pd.DataFrame = ...
+        self._is_serialized = False
 
         if data is None:
             assert len(graph) == 0 and features is None
@@ -277,17 +285,18 @@ class InteractiveTrackManager(BaseTrackManager):
         """return the number of tracks"""
         return len(self.unique_track_ids)
 
+    @update_serialization
     def build_tracks(self) -> None:
         """tracks building is not necessary, this is done by the serialization."""
         pass
 
+    @update_serialization
     def build_graph(self) -> None:
         """graph building is not necessary, this is done by the serialization."""
         pass
 
     def serialize(self) -> None:
-        self._graph: Dict[int, List[int]] = {}
-
+        self._graph = {}
         track_ids = []
         vertices = []
         connex = []
@@ -344,6 +353,17 @@ class InteractiveTrackManager(BaseTrackManager):
                     connex.append(False)
                     break
 
+        graph_vertices = []
+        graph_connex = []
+        for node_id, parents in self._graph.items():
+            node = self._id_to_nodes[node_id]
+            for parent_id in parents:
+                parent = self._id_to_nodes[parent_id]
+                graph_vertices += [node.vertex, parent.vertex]
+                graph_connex += [True, False]
+
+        self._graph_vertices = np.array(graph_vertices)
+        self._graph_connex = np.array(graph_connex)
         self._track_ids = np.array(track_ids)
         self._track_vertices = np.array(vertices)
         self._track_connex = np.array(connex)
