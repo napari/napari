@@ -45,11 +45,24 @@ class Node:
             raise NotImplementedError
         return self.index == other.index
 
+    def __repr__(self) -> str:
+        return f'<Node> id: {self.index} vertex: {self.vertex}'
 
-def require_serialization(method):
+
+def outdate_serialization(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         self._is_serialized = False
+        return method(self, *args, **kwargs)
+
+    return wrapper
+
+
+def update_serialization(method):
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self._is_serialized:
+            self.serialize()
         return method(self, *args, **kwargs)
 
     return wrapper
@@ -117,7 +130,7 @@ class InteractiveTrackManager(BaseTrackManager):
         self._max_node_index = 0
 
         # stores the last node of tracks, so they can be transversed backwardly
-        self._tracks: Dict[int, Node] = {}
+        self._leafs: Dict[int, Node] = {}
 
         self._features: Optional[pd.DataFrame] = None
 
@@ -129,7 +142,7 @@ class InteractiveTrackManager(BaseTrackManager):
         # stores if serialization of tracks is up to date
         self._is_serialized = False
 
-    @require_serialization
+    @outdate_serialization
     def set_data(
         self,
         data: Union[list, np.ndarray],
@@ -151,7 +164,7 @@ class InteractiveTrackManager(BaseTrackManager):
         self._ndim = data.shape[1] - 1
 
         self._time_to_nodes = {}
-        self._tracks = {}
+        self._leafs = {}
         self._id_to_nodes = {}
 
         # used make connections from `graph`
@@ -174,7 +187,7 @@ class InteractiveTrackManager(BaseTrackManager):
                 parent_node = node
 
             # leaf (last) node
-            self._tracks[node.index] = node
+            self._leafs[node.index] = node
             track_to_leafs[track_id] = node
 
         for track_id, parents in graph.items():
@@ -183,7 +196,7 @@ class InteractiveTrackManager(BaseTrackManager):
                 parent = track_to_leafs[parent_track_id]
                 if len(parent.children) == 0:
                     # it's not a leaf anymore
-                    del self._tracks[parent.index]
+                    del self._leafs[parent.index]
                 node.parents.append(parent)
                 parent.children.append(node)
 
@@ -199,9 +212,13 @@ class InteractiveTrackManager(BaseTrackManager):
         return self._ndim
 
     @property
+    @update_serialization
     def data(self) -> np.ndarray:
         """array (N, D+1): Coordinates for N points in D+1 dimensions."""
-        raise NotImplementedError
+        data = np.concatenate(
+            (self._track_ids[:, None], self._vertices), axis=1
+        )
+        return data
 
     @data.setter
     def data(self, data: Union[list, np.ndarray]) -> None:
@@ -237,10 +254,9 @@ class InteractiveTrackManager(BaseTrackManager):
         self._features = features.iloc[self._order].reset_index(drop=True)
 
     @property
+    @update_serialization
     def graph(self) -> Dict[int, Union[int, List[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
-        if not self._is_serialized:
-            self.serialize()
         return self._graph
 
     @graph.setter
@@ -251,7 +267,7 @@ class InteractiveTrackManager(BaseTrackManager):
     @property
     def unique_track_ids(self) -> np.ndarray:
         """return the unique track identifiers"""
-        return np.array(list(self._tracks.keys()))
+        return np.array(list(self._leafs.keys()))
 
     def __len__(self):
         """return the number of tracks"""
@@ -271,7 +287,7 @@ class InteractiveTrackManager(BaseTrackManager):
         connex = []
         features = []
 
-        queue = list(self._tracks.values())
+        queue = list(self._leafs.values())
         seen = set()  # seen track ids
         while queue:
             node = queue.pop()
@@ -279,18 +295,22 @@ class InteractiveTrackManager(BaseTrackManager):
             seen.add(track_id)
 
             while True:
-                if node.children > 1 and node.index not in seen:
+                if len(node.children) > 1:
                     # if it has multiple children it's split into multiple tracks
                     # as it's done with the default TrackManager
-                    for child in node.children:
-                        if child.index not in self._graph:
-                            self._graph[child.index] = [node]
-                        else:
-                            self._graph[child.index].append(node)
+                    if track_id not in self._graph:
+                        self._graph[track_id] = [node.index]
+                    else:
+                        self._graph[track_id].append(node.index)
 
-                    track_id = node.index
-                    seen.add(track_id)
                     connex[-1] = False
+                    if node.index in seen:
+                        # parent have already been computed
+                        break
+                    else:
+                        # start a new tracklet
+                        track_id = node.index
+                        seen.add(track_id)
 
                 track_ids.append(track_id)
                 vertices.append(node.vertex)
@@ -298,24 +318,28 @@ class InteractiveTrackManager(BaseTrackManager):
                     features.append(node.features)
 
                 if len(node.parents) == 0:
-                    # if orphan just break the connection
+                    # if orphan stop the backtracking
                     connex.append(False)
                     break
                 elif len(node.parents) == 1:
-                    # if a single parent continue as usual
-                    node = node.parents
+                    # if it has single parent continue as usual
+                    node = node.parents[0]
                     connex.append(True)
                 else:
-                    # if multiple parents it starts a new connection and append indices to graph
+                    # if it has multiple parents it starts a new connection and append indices to graph
                     if node.index not in self._graph:
-                        self._graph[node.index] = []
+                        self._graph[track_id] = []
                     for parent in node.parents:
-                        if parent not in seen:
-                            queue.append(parent.index)
-                        self._graph[node.index].append(parent.index)
+                        if parent.index not in seen:
+                            queue.append(parent)
+                        self._graph[track_id].append(parent.index)
                     connex.append(False)
                     break
 
+        self._track_ids = np.array(track_ids)
+        self._vertices = np.array(vertices)
+        self._connex = np.array(connex)
+        self._features = None if len(features) == 0 else pd.DataFrame(features)
         self._is_serialized = True
 
     def vertex_properties(self, color_by: str) -> np.ndarray:
@@ -414,7 +438,7 @@ class InteractiveTrackManager(BaseTrackManager):
                 f'Node with index {index} not found in InteractiveTrackManager'
             )
 
-    @require_serialization
+    @outdate_serialization
     def link(self, child_id: int, parent_id: int) -> None:
         child = self._get_node(child_id)
         parent = self._get_node(parent_id)
@@ -427,7 +451,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
         if len(parent.children) == 0:
             # it won't be a leaf anymore
-            del self._tracks[parent_id]
+            del self._leafs[parent_id]
 
         child.parents.append(parent)
         parent.children.append(child)
@@ -438,9 +462,9 @@ class InteractiveTrackManager(BaseTrackManager):
 
         if len(parent.children) == 0:
             # it becomes a leaf it there isn't a child
-            self._tracks[parent.index] == parent
+            self._leafs[parent.index] == parent
 
-    @require_serialization
+    @outdate_serialization
     def unlink(
         self, child_id: Optional[int] = None, parent_id: Optional[int] = None
     ) -> None:
@@ -468,14 +492,14 @@ class InteractiveTrackManager(BaseTrackManager):
             parent = self._get_node(parent_id)
             self._unlink_pair(child, parent)
 
-    @require_serialization
+    @outdate_serialization
     def remove(self, node_index: int, keep_link: bool = False) -> None:
         node = self._get_node(node_index)
 
         # removing from storages
         del self._id_to_nodes[node_index]
         if len(node.children) == 0:
-            del self._tracks[node_index]
+            del self._leafs[node_index]
         # this operation is not done in constant time
         self._time_to_nodes[node.time].remove(node)
 
@@ -499,7 +523,7 @@ class InteractiveTrackManager(BaseTrackManager):
             parent.children.remove(node)
             if len(parent.children) == 0:
                 # if no children exists it becomes a leaf
-                self._tracks[parent.track_id] = parent
+                self._leafs[parent.track_id] = parent
 
     def _add_node(
         self,
@@ -518,7 +542,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
         return node
 
-    @require_serialization
+    @outdate_serialization
     def add(
         self,
         vertex: Union[list, np.ndarray],
@@ -534,4 +558,23 @@ class InteractiveTrackManager(BaseTrackManager):
         node = self._add_node(
             index=self._max_node_index, vertex=vertex, features=features
         )
-        self._tracks[node.index] = node
+        self._leafs[node.index] = node
+
+    @update_serialization
+    def relabel_track_ids(self, mapping: Dict[int, int]) -> None:
+        max_out = max(mapping.values()) + 1
+
+        def get_value(index: int) -> int:
+            if index not in mapping:
+                nonlocal max_out
+                mapping[index] = max_out
+                max_out += 1
+            return mapping[index]
+
+        new_graph = {}
+        for node, parents in self._graph.items():
+            new_graph[get_value(node)] = [get_value(p) for p in parents]
+        self._graph = new_graph
+
+        vmap = np.vectorize(get_value)
+        self._track_ids = vmap(self._track_ids)
