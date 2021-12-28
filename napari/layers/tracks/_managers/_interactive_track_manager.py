@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ...utils.layer_utils import _validate_features
 from ._base_track_manager import BaseTrackManager
 
 
@@ -173,9 +172,13 @@ class InteractiveTrackManager(BaseTrackManager):
         for track_id, track in data.groupby('TrackID', sort=False):
             parent_node = None
             track = track.sort_values('T')
-            for index, row in track.iterrows():
+            indices = track.index
+            values = track.values
+            # iterating with range is much faster than using pandas `.iterrows`.
+            for i in range(len(indices)):
+                index = indices[i]
                 feats = None if features is None else features.iloc[index]
-                node = self._add_node(index, row[1:].values, feats)
+                node = self._add_node(index, values[i, 1:], feats)
 
                 if parent_node is not None:
                     parent_node.children.append(node)
@@ -210,6 +213,12 @@ class InteractiveTrackManager(BaseTrackManager):
 
         return self._ndim
 
+    @staticmethod
+    def _raise_setter_error(variable_name: str) -> None:
+        raise ValueError(
+            f'Tracks `{variable_name}` cannot be set while in `interactive_mode`.'
+        )
+
     @property
     @update_serialization
     def data(self) -> np.ndarray:
@@ -221,7 +230,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
     @data.setter
     def data(self, data: Union[list, np.ndarray]) -> None:
-        raise NotImplementedError
+        self._raise_setter_error('data')
 
     @property
     @update_serialization
@@ -247,11 +256,7 @@ class InteractiveTrackManager(BaseTrackManager):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        raise NotImplementedError
-        features = _validate_features(features, num_data=len(self.data))
-        if 'track_id' not in features:
-            features['track_id'] = self.track_ids
-        self._features = features.iloc[self._order].reset_index(drop=True)
+        self._raise_setter_error('features')
 
     @property
     @update_serialization
@@ -260,9 +265,8 @@ class InteractiveTrackManager(BaseTrackManager):
         return self._graph
 
     @graph.setter
-    def graph(self, graph: Dict[int, Union[int, List[int]]]):
-        """set the track graph"""
-        raise NotImplementedError
+    def graph(self, graph: Dict[int, Union[int, List[int]]]) -> None:
+        self._raise_setter_error('graph')
 
     @property
     def unique_track_ids(self) -> np.ndarray:
@@ -274,9 +278,11 @@ class InteractiveTrackManager(BaseTrackManager):
         return len(self.unique_track_ids)
 
     def build_tracks(self) -> None:
+        """tracks building is not necessary, this is done by the serialization."""
         pass
 
     def build_graph(self) -> None:
+        """graph building is not necessary, this is done by the serialization."""
         pass
 
     def serialize(self) -> None:
@@ -530,24 +536,46 @@ class InteractiveTrackManager(BaseTrackManager):
 
         return node
 
-    @outdate_serialization
-    def add(
-        self,
-        vertex: Union[list, np.ndarray],
-        features: Optional[pd.DataFrame] = None,
-    ) -> int:
+    def _validate_vertex_shape(self, vertex: np.ndarray) -> None:
         if len(vertex) != self.ndim and self.ndim != 0:
             # ndim is 0 when the data is empty
             raise RuntimeError(
                 f'Vertex must match data dimension. Found {len(vertex)}, expected {self._ndim}.'
             )
 
+    @outdate_serialization
+    def add(
+        self,
+        vertex: Union[list, np.ndarray],
+        features: Optional[pd.DataFrame] = None,
+    ) -> int:
+        self._validate_vertex_shape(vertex)
         self._max_node_index += 1
         node = self._add_node(
             index=self._max_node_index, vertex=vertex, features=features
         )
         self._leafs[node.index] = node
         return node.index
+
+    @outdate_serialization
+    def update(
+        self,
+        index: int,
+        vertex: Optional[Union[list, np.ndarray]] = None,
+        features: Optional[Union[Dict, pd.DataFrame]] = None,
+    ):
+        node = self._id_to_nodes[index]
+
+        if vertex is not None:
+            self._validate_vertex_shape(vertex)
+            node.vertex = np.array(vertex)
+
+        if features is not None:
+            if isinstance(features, pd.DataFrame):
+                features = features.to_dict()
+
+            for k, v in features.items():
+                node.features[k] = v
 
     @update_serialization
     def relabel_track_ids(self, mapping: Dict[int, int]) -> None:
