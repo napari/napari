@@ -85,7 +85,6 @@ class TrackManager(BaseTrackManager):
 
         self._track_vertices = None
         self._track_connex = None
-        self._track_colors = None
 
         self._graph = None
         self._graph_vertices = None
@@ -306,20 +305,6 @@ class TrackManager(BaseTrackManager):
             self._graph_vertices = None
             self._graph_connex = None
 
-    def vertex_properties(self, color_by: str) -> np.ndarray:
-        """return the properties of tracks by vertex"""
-
-        if color_by not in self.properties:
-            raise ValueError(
-                trans._(
-                    'Property {color_by} not found',
-                    deferred=True,
-                    color_by=color_by,
-                )
-            )
-
-        return self.properties[color_by]
-
     def get_value(self, coords):
         """use a kd-tree to lookup the ID of the nearest tree"""
         if self._kdtree is None:
@@ -355,12 +340,6 @@ class TrackManager(BaseTrackManager):
     def track_connex(self) -> np.ndarray:
         """vertex connections for drawing track lines"""
         return self._track_connex
-
-    @property
-    def track_colors(self) -> np.ndarray:
-        """return the vertex colors according to the currently selected
-        property"""
-        return self._track_colors
 
     @property
     def graph_vertices(self) -> np.ndarray:

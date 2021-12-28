@@ -171,13 +171,6 @@ class BaseTrackManager(ABC):
         """vertex connections for drawing track lines"""
 
     @property
-    def track_colors(self) -> np.ndarray:
-        """return the vertex colors according to the currently selected
-        property"""
-        # TODO: need to think more about this
-        return self._track_colors
-
-    @property
     @abstractmethod
     def graph_vertices(self) -> np.ndarray:
         """return the graph vertices"""

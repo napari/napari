@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from ....utils.translations import trans
 from ...utils.layer_utils import _validate_features
 from ._base_track_manager import BaseTrackManager
 
@@ -32,7 +31,7 @@ class Node:
 
     index: int
     vertex: np.ndarray
-    features: Optional[pd.DataFrame] = None
+    features: Dict = field(default_factory=dict)
     parents: List['Node'] = field(default_factory=list)
     children: List['Node'] = field(default_factory=list)
 
@@ -122,6 +121,9 @@ class InteractiveTrackManager(BaseTrackManager):
         # store the raw data here
         self._ndim = 0
 
+        # stores if serialization of tracks is up to date
+        self._is_serialized = False
+
         # stores the nodes in each specific time point
         self._time_to_nodes: Dict[int, List[Node]] = {}
 
@@ -138,9 +140,6 @@ class InteractiveTrackManager(BaseTrackManager):
             assert len(graph) == 0 and features is None
         else:
             self.set_data(data, graph, features)
-
-        # stores if serialization of tracks is up to date
-        self._is_serialized = False
 
     @outdate_serialization
     def set_data(
@@ -175,7 +174,7 @@ class InteractiveTrackManager(BaseTrackManager):
             parent_node = None
             track = track.sort_values('T')
             for index, row in track.iterrows():
-                feats = None if features is None else features[index]
+                feats = None if features is None else features.iloc[index]
                 node = self._add_node(index, row[1:].values, feats)
 
                 if parent_node is not None:
@@ -216,7 +215,7 @@ class InteractiveTrackManager(BaseTrackManager):
     def data(self) -> np.ndarray:
         """array (N, D+1): Coordinates for N points in D+1 dimensions."""
         data = np.concatenate(
-            (self._track_ids[:, None], self._vertices), axis=1
+            (self._track_ids[:, None], self._track_vertices), axis=1
         )
         return data
 
@@ -225,6 +224,7 @@ class InteractiveTrackManager(BaseTrackManager):
         raise NotImplementedError
 
     @property
+    @update_serialization
     def features(self):
         """Dataframe-like features table.
 
@@ -240,7 +240,7 @@ class InteractiveTrackManager(BaseTrackManager):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        raise NotImplementedError
+        return self._features
 
     @features.setter
     def features(
@@ -286,6 +286,9 @@ class InteractiveTrackManager(BaseTrackManager):
         vertices = []
         connex = []
         features = []
+        has_features = any(
+            node.features is not None for node in self._id_to_nodes.values()
+        )
 
         queue = list(self._leafs.values())
         seen = set()  # seen track ids
@@ -314,8 +317,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
                 track_ids.append(track_id)
                 vertices.append(node.vertex)
-                if node.features:
-                    features.append(node.features)
+                features.append(node.features)
 
                 if len(node.parents) == 0:
                     # if orphan stop the backtracking
@@ -337,25 +339,10 @@ class InteractiveTrackManager(BaseTrackManager):
                     break
 
         self._track_ids = np.array(track_ids)
-        self._vertices = np.array(vertices)
-        self._connex = np.array(connex)
-        self._features = None if len(features) == 0 else pd.DataFrame(features)
+        self._track_vertices = np.array(vertices)
+        self._track_connex = np.array(connex)
+        self._features = pd.DataFrame(features) if has_features else None
         self._is_serialized = True
-
-    def vertex_properties(self, color_by: str) -> np.ndarray:
-        """return the properties of tracks by vertex"""
-        raise NotImplementedError
-
-        if color_by not in self.properties:
-            raise ValueError(
-                trans._(
-                    'Property {color_by} not found',
-                    deferred=True,
-                    color_by=color_by,
-                )
-            )
-
-        return self.properties[color_by]
 
     def get_value(self, coords: np.ndarray) -> Optional[int]:
         """lookup the index of the nearest node"""
@@ -379,37 +366,37 @@ class InteractiveTrackManager(BaseTrackManager):
         return max(self._time_to_nodes.keys())
 
     @property
+    @update_serialization
     def track_vertices(self) -> np.ndarray:
         """return the track vertices"""
         return self._track_vertices
 
     @property
+    @update_serialization
     def track_connex(self) -> np.ndarray:
         """vertex connections for drawing track lines"""
         return self._track_connex
 
     @property
-    def track_colors(self) -> np.ndarray:
-        """return the vertex colors according to the currently selected
-        property"""
-        return self._track_colors
-
-    @property
+    @update_serialization
     def graph_vertices(self) -> np.ndarray:
         """return the graph vertices"""
         return self._graph_vertices
 
     @property
+    @update_serialization
     def graph_connex(self):
         """vertex connections for drawing the graph"""
         return self._graph_connex
 
     @property
+    @update_serialization
     def track_times(self) -> np.ndarray:
         """time points associated with each track vertex"""
         return self.track_vertices[:, 0]
 
     @property
+    @update_serialization
     def graph_times(self) -> np.ndarray:
         """time points associated with each graph vertex"""
         if self.graph_vertices is not None:
@@ -426,7 +413,7 @@ class InteractiveTrackManager(BaseTrackManager):
             [node.vertex for node in self._time_to_nodes[current_time]]
         )
         labels = [
-            f'ID:{node.index}' for node in self._id_to_nodes[current_time]
+            f'ID:{node.index}' for node in self._time_to_nodes[current_time]
         ]
         return labels, coordinates
 
@@ -462,7 +449,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
         if len(parent.children) == 0:
             # it becomes a leaf it there isn't a child
-            self._leafs[parent.index] == parent
+            self._leafs[parent.index] = parent
 
     @outdate_serialization
     def unlink(
@@ -523,7 +510,7 @@ class InteractiveTrackManager(BaseTrackManager):
             parent.children.remove(node)
             if len(parent.children) == 0:
                 # if no children exists it becomes a leaf
-                self._leafs[parent.track_id] = parent
+                self._leafs[parent.index] = parent
 
     def _add_node(
         self,
@@ -531,7 +518,8 @@ class InteractiveTrackManager(BaseTrackManager):
         vertex: np.ndarray,
         features: Optional[pd.DataFrame] = None,
     ) -> Node:
-        node = Node(index=index, vertex=vertex, features=features)
+        features = {} if features is None else features.to_dict()
+        node = Node(index=index, vertex=np.array(vertex), features=features)
         self._id_to_nodes[index] = node
 
         time = node.time
@@ -559,6 +547,7 @@ class InteractiveTrackManager(BaseTrackManager):
             index=self._max_node_index, vertex=vertex, features=features
         )
         self._leafs[node.index] = node
+        return node.index
 
     @update_serialization
     def relabel_track_ids(self, mapping: Dict[int, int]) -> None:
