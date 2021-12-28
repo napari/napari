@@ -180,3 +180,21 @@ def test_malformed_graph():
     graph = {1: [0], 2: [33]}
     with pytest.raises(ValueError):
         Tracks(data, graph=graph)
+
+
+def test_track_manual_coloring():
+    """Test manual coloring of track vertices"""
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    layer = Tracks(data)
+    print(layer.track_colors.shape)
+
+    layer.track_colors = np.array([1, 0, 0])
+    assert layer.track_colors.shape == (len(data), 4)
+    assert np.allclose(layer.track_colors[0], np.array([1, 0, 0, 1]))
+
+    layer.track_colors = np.ones((len(data), 4))
+    assert layer.track_colors.shape == (len(data), 4)
+
+    with pytest.raises(ValueError):
+        layer.track_colors = np.ones((5, 4))

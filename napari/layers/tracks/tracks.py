@@ -575,15 +575,38 @@ class Tracks(Layer):
         self._track_colors = colormap.map(vertex_properties)
 
     @property
-    def track_connex(self) -> np.ndarray:
-        """vertex connections for drawing track lines"""
-        return self._manager.track_connex
-
-    @property
     def track_colors(self) -> np.ndarray:
         """return the vertex colors according to the currently selected
         property"""
         return self._track_colors
+
+    @track_colors.setter
+    def track_colors(self, colors: np.ndarray) -> None:
+        """update vertex colors given a array of colors or a single colors,
+        colors must be in rgb and between 0 and 1
+        """
+        if colors.ndim != 1 and colors.ndim != 2:
+            raise ValueError(
+                f'`colors` must be 1 or 2-dimensional. Found {colors.ndim} dims.'
+            )
+
+        if colors.ndim == 1:
+            colors = np.tile(colors, (len(self.data), 1))
+
+        if len(colors) != len(self.data):
+            raise ValueError(
+                f'`colors` must match the number of track vertices. Found {len(colors)}, expected {len(self.data)}'
+            )
+
+        if colors.shape[1] == 3:
+            colors = np.append(colors, np.ones((len(colors), 1)), axis=1)
+
+        self._track_colors = colors
+
+    @property
+    def track_connex(self) -> np.ndarray:
+        """vertex connections for drawing track lines"""
+        return self._manager.track_connex
 
     @property
     def graph_connex(self) -> np.ndarray:
