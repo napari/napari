@@ -1,6 +1,7 @@
+import functools
 import warnings
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -45,17 +46,13 @@ class Node:
         return self.index == other.index
 
 
-# FIXME: don't forget to remove this
-def connex(vertices: np.ndarray) -> list:
-    """Connection array to build vertex edges for vispy LineVisual.
+def require_serialization(method):
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        self._is_serialized = False
+        return method(self, *args, **kwargs)
 
-    Notes
-    -----
-    See
-    http://api.vispy.org/en/latest/visuals.html#vispy.visuals.LineVisual
-
-    """
-    return [True] * (vertices.shape[0] - 1) + [False]
+    return wrapper
 
 
 class InteractiveTrackManager(BaseTrackManager):
@@ -109,7 +106,6 @@ class InteractiveTrackManager(BaseTrackManager):
         graph: Dict = {},
         features: Optional[pd.DataFrame] = None,
     ):
-
         # store the raw data here
         self._ndim = 0
 
@@ -128,9 +124,13 @@ class InteractiveTrackManager(BaseTrackManager):
         if data is None:
             assert len(graph) == 0 and features is None
         else:
-            self._build_tracks(data, graph, features)
+            self.set_data(data, graph, features)
 
-    def _build_tracks(
+        # stores if serialization of tracks is up to date
+        self._is_serialized = False
+
+    @require_serialization
+    def set_data(
         self,
         data: Union[list, np.ndarray],
         graph: Dict,
@@ -187,7 +187,7 @@ class InteractiveTrackManager(BaseTrackManager):
                 node.parents.append(parent)
                 parent.children.append(node)
 
-        self._max_node_index = data.shape[0]
+        self._max_node_index = max(self._id_to_nodes.keys())
 
     @property
     def ndim(self) -> int:
@@ -204,7 +204,7 @@ class InteractiveTrackManager(BaseTrackManager):
         raise NotImplementedError
 
     @data.setter
-    def data(self, data: Union[list, np.ndarray]):
+    def data(self, data: Union[list, np.ndarray]) -> None:
         raise NotImplementedError
 
     @property
@@ -230,16 +230,18 @@ class InteractiveTrackManager(BaseTrackManager):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
+        raise NotImplementedError
         features = _validate_features(features, num_data=len(self.data))
         if 'track_id' not in features:
             features['track_id'] = self.track_ids
         self._features = features.iloc[self._order].reset_index(drop=True)
-        raise NotImplementedError
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:
         """dict {int: list}: Graph representing associations between tracks."""
-        raise NotImplementedError
+        if not self._is_serialized:
+            self.serialize()
+        return self._graph
 
     @graph.setter
     def graph(self, graph: Dict[int, Union[int, List[int]]]):
@@ -253,13 +255,68 @@ class InteractiveTrackManager(BaseTrackManager):
 
     def __len__(self):
         """return the number of tracks"""
-        return len(self.unique_track_ids) if self.data is not None else 0
+        return len(self.unique_track_ids)
 
-    def build_tracks(self):
+    def build_tracks(self) -> None:
         pass
 
-    def build_graph(self):
+    def build_graph(self) -> None:
         pass
+
+    def serialize(self) -> None:
+        self._graph: Dict[int, List[int]] = {}
+
+        track_ids = []
+        vertices = []
+        connex = []
+        features = []
+
+        queue = list(self._tracks.values())
+        seen = set()  # seen track ids
+        while queue:
+            node = queue.pop()
+            track_id = node.index
+            seen.add(track_id)
+
+            while True:
+                if node.children > 1 and node.index not in seen:
+                    # if it has multiple children it's split into multiple tracks
+                    # as it's done with the default TrackManager
+                    for child in node.children:
+                        if child.index not in self._graph:
+                            self._graph[child.index] = [node]
+                        else:
+                            self._graph[child.index].append(node)
+
+                    track_id = node.index
+                    seen.add(track_id)
+                    connex[-1] = False
+
+                track_ids.append(track_id)
+                vertices.append(node.vertex)
+                if node.features:
+                    features.append(node.features)
+
+                if len(node.parents) == 0:
+                    # if orphan just break the connection
+                    connex.append(False)
+                    break
+                elif len(node.parents) == 1:
+                    # if a single parent continue as usual
+                    node = node.parents
+                    connex.append(True)
+                else:
+                    # if multiple parents it starts a new connection and append indices to graph
+                    if node.index not in self._graph:
+                        self._graph[node.index] = []
+                    for parent in node.parents:
+                        if parent not in seen:
+                            queue.append(parent.index)
+                        self._graph[node.index].append(parent.index)
+                    connex.append(False)
+                    break
+
+        self._is_serialized = True
 
     def vertex_properties(self, color_by: str) -> np.ndarray:
         """return the properties of tracks by vertex"""
@@ -276,23 +333,21 @@ class InteractiveTrackManager(BaseTrackManager):
 
         return self.properties[color_by]
 
-    def get_value(self, coords: np.ndarray) -> int:
-        """use a kd-tree to lookup the ID of the nearest tree"""
-        raise NotImplementedError
+    def get_value(self, coords: np.ndarray) -> Optional[int]:
+        """lookup the index of the nearest node"""
+        # FIXME: add in the PR that this is not the default behavior, it returned the track id
+        assert len(coords) == self.ndim
 
-        if self._kdtree is None:
-            return
+        time = int(round(coords[0]))
+        nodes = self._time_to_nodes.get(time, [])
+        if len(nodes) == 0:
+            return None
 
-        # query can return indices to points that do not exist, trim that here
-        # then prune to only those in the current frame/time
-        # NOTE(arl): I don't like this!!!
-        d, idx = self._kdtree.query(coords, k=10)
-        idx = [i for i in idx if i >= 0 and i < self._points.shape[0]]
-        pruned = [i for i in idx if self._points[i, 0] == coords[0]]
+        vertices = np.stack([node.vertex for node in nodes])
+        diff = np.linalg.norm(vertices[:, 1:] - coords[None, 1:], axis=1)
+        index = np.argmin(diff)
 
-        # if we have found a point, return it
-        if pruned and self._points_id is not None:
-            return self._points_id[pruned[0]]  # return the track ID
+        return nodes[index].index
 
     @property
     def max_time(self) -> int:
@@ -337,16 +392,19 @@ class InteractiveTrackManager(BaseTrackManager):
             return self.graph_vertices[:, 0]
         return None
 
-    def track_labels(self, current_time: int) -> tuple:
-        """return track labels at the current time"""
-        # this is the slice into the time ordered points array
-        if current_time not in self._points_lookup:
+    def track_labels(self, current_time: int) -> Tuple[List, np.ndarray]:
+        """return node labels at the current time"""
+        # FIXME: add in the PR that this is not the default behavior, it returned the track id
+        if current_time not in self._time_to_nodes:
             return [], []
 
-        lookup = self._points_lookup[current_time]
-        pos = self._points[lookup, ...]
-        lbl = [f'ID:{i}' for i in self._points_id[lookup]]
-        return lbl, pos
+        coordinates = np.stack(
+            [node.vertex for node in self._time_to_nodes[current_time]]
+        )
+        labels = [
+            f'ID:{node.index}' for node in self._id_to_nodes[current_time]
+        ]
+        return labels, coordinates
 
     def _get_node(self, index: int) -> Node:
         try:
@@ -356,6 +414,7 @@ class InteractiveTrackManager(BaseTrackManager):
                 f'Node with index {index} not found in InteractiveTrackManager'
             )
 
+    @require_serialization
     def link(self, child_id: int, parent_id: int) -> None:
         child = self._get_node(child_id)
         parent = self._get_node(parent_id)
@@ -381,6 +440,7 @@ class InteractiveTrackManager(BaseTrackManager):
             # it becomes a leaf it there isn't a child
             self._tracks[parent.index] == parent
 
+    @require_serialization
     def unlink(
         self, child_id: Optional[int] = None, parent_id: Optional[int] = None
     ) -> None:
@@ -408,6 +468,7 @@ class InteractiveTrackManager(BaseTrackManager):
             parent = self._get_node(parent_id)
             self._unlink_pair(child, parent)
 
+    @require_serialization
     def remove(self, node_index: int, keep_link: bool = False) -> None:
         node = self._get_node(node_index)
 
@@ -457,6 +518,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
         return node
 
+    @require_serialization
     def add(
         self,
         vertex: Union[list, np.ndarray],
