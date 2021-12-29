@@ -398,7 +398,7 @@ def main():
     import platform
     from distutils.version import StrictVersion
 
-    from .packaging.bundle import running_as_bundled_app, set_conda_config
+    from .utils.misc import running_as_bundled_app
 
     _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
         platform.release()
@@ -438,8 +438,6 @@ def main():
             warnings.warn(msg)
 
     if running_as_bundled_app():
-        set_conda_config()
-
         # Prevent https://github.com/napari/napari/issues/3415
         if sys.platform == "darwin" and sys.version_info >= (3, 8):
             import multiprocessing
