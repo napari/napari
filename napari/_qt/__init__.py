@@ -1,8 +1,9 @@
 import os
 import sys
-from distutils.version import StrictVersion
 from pathlib import Path
 from warnings import warn
+
+from packaging.version import Version as StrictVersion
 
 from ..utils.translations import trans
 

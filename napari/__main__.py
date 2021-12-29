@@ -396,7 +396,8 @@ def main():
     # https://github.com/napari/napari/issues/380#issuecomment-659656775
     # and https://github.com/ContinuumIO/anaconda-issues/issues/199
     import platform
-    from distutils.version import StrictVersion
+
+    from packaging.version import Version as StrictVersion
 
     _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
         platform.release()
