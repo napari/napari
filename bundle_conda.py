@@ -10,23 +10,13 @@ For more information, see Documentation> Developers> Packaging.
 import os
 import subprocess
 import sys
+from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
-from argparse import ArgumentParser
 
 from ruamel import yaml
 
-from bundle import (
-    APP,
-    ARCH,
-    HERE,
-    LINUX,
-    MACOS,
-    OS,
-    VERSION,
-    WINDOWS,
-    clean,
-)
+from bundle import APP, ARCH, HERE, LINUX, MACOS, OS, VERSION, WINDOWS, clean
 
 if LINUX:
     EXT = "sh"
