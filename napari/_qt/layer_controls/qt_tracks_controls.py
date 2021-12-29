@@ -213,5 +213,5 @@ class QtTracksControls(QtLayerControls):
     def change_colormap(self, colormap: str):
         self.layer.colormap = self.colormap_combobox.currentData()
 
-    def change_interactive_mode(self, state):
-        self.layer.interactive_mode = self.interactive_checkbox.isChecked()
+    def change_interactive_mode(self, state: bool):
+        self.layer.interactive_mode = state

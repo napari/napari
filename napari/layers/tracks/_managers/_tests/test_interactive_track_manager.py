@@ -9,7 +9,7 @@ from napari.layers.tracks._managers._track_manager import connex
 
 
 @pytest.fixture
-def make_data_and_graph() -> Tuple[pd.DataFrame, Dict]:
+def tracks_data_and_graph() -> Tuple[pd.DataFrame, Dict]:
     r"""
     time   | 0 1 2 3 4 5 6 7 8 9
     ----------------------------
@@ -69,10 +69,19 @@ def make_data_and_graph() -> Tuple[pd.DataFrame, Dict]:
     return data, graph
 
 
-def test_interactive_tracks_init(make_data_and_graph) -> None:
+def track_id_mapping(data: pd.DataFrame) -> Dict[int, int]:
+    mapping = {}
+    for track_id, track in data.groupby('TrackID'):
+        track = track.sort_values('T', ascending=False)
+        node_index, _ = next(track.iterrows())
+        mapping[node_index] = int(track_id)
+    return mapping
+
+
+def test_interactive_tracks_init(tracks_data_and_graph) -> None:
     """Tests InteractiveTrackManager data structure construction and serialization."""
-    data: pd.DataFrame = make_data_and_graph[0]
-    graph: Dict = make_data_and_graph[1]
+    data: pd.DataFrame = tracks_data_and_graph[0]
+    graph: Dict = tracks_data_and_graph[1]
     manager = InteractiveTrackManager(data=data.values, graph=graph)
 
     # checking if manager is storing the data as expected
@@ -82,11 +91,7 @@ def test_interactive_tracks_init(make_data_and_graph) -> None:
     assert len(manager._leafs) == 4  # number of leafs
     assert not manager._is_serialized
 
-    mapping = {}
-    for track_id, track in data.groupby('TrackID'):
-        track = track.sort_values('T', ascending=False)
-        node_index, _ = next(track.iterrows())
-        mapping[node_index] = int(track_id)
+    mapping = track_id_mapping(data)
 
     # relabeling tracks to match original graph
     manager.relabel_track_ids(mapping)
@@ -110,14 +115,14 @@ def test_interactive_tracks_init(make_data_and_graph) -> None:
 
 
 def test_interactive_tracks_interactivity(
-    make_napari_viewer, make_data_and_graph
+    make_napari_viewer, tracks_data_and_graph
 ) -> None:
     """Tests InteractiveTrackManager with manipulation of the data:
     add, remove, link, unlink.
     """
 
-    data: pd.DataFrame = make_data_and_graph[0]
-    graph: Dict = make_data_and_graph[1]
+    data: pd.DataFrame = tracks_data_and_graph[0]
+    graph: Dict = tracks_data_and_graph[1]
 
     viewer = make_napari_viewer()
     tracks_layer = viewer.add_tracks(data=data.values, graph=graph)
@@ -170,3 +175,10 @@ def test_interactive_tracks_interactivity(
 
     tracks_layer.interactive_mode = False
     assert tracks_layer.data.shape[0] == data.shape[0] - 2
+
+    # testing its behavior with tracks not present in the original data
+    mapping = track_id_mapping(data)
+    manager.relabel_track_ids(mapping)
+    # assert new track ids were created
+    assert manager._is_serialized
+    assert max(manager._track_ids) > data['TrackID'].max()
