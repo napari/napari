@@ -47,7 +47,14 @@ class Node:
         return f'<Node> id: {self.index} vertex: {self.vertex}'
 
 
+# decorators to mark functions that up(out)dates the serialization
+
+
 def outdate_serialization(method):
+    """Record that the tracks were changed and needs to be serialized
+    before querying the data.
+    """
+
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         self._is_serialized = False
@@ -57,6 +64,8 @@ def outdate_serialization(method):
 
 
 def update_serialization(method):
+    """Serializes the data if necessary."""
+
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         if not self._is_serialized:
@@ -67,8 +76,10 @@ def update_serialization(method):
 
 
 class InteractiveTrackManager(BaseTrackManager):
-    """Manage track data and simplify interactions with the Tracks layer.
-    TODO: update this
+    """Track data manager for faster changes in the track graph topology.
+    It doesn't require to parse the whole graph after each change, like the
+    TrackManager, but it serializes (transverse) the data is required in the
+    default format (a table with track_id, t, z, y, x columns).
 
     Attributes
     ----------
@@ -117,20 +128,22 @@ class InteractiveTrackManager(BaseTrackManager):
         graph: Dict = {},
         features: Optional[pd.DataFrame] = None,
     ):
-        # store the raw data here
+        # store the vertices dimensionality (t, (z), y, x)
         self._ndim = 0
 
         # stores if serialization of tracks is up to date
         self._is_serialized = False
 
-        # stores the nodes in each specific time point
+        # stores the nodes for each specific time point
         self._time_to_nodes: Dict[int, List[Node]] = {}
 
         # maps from the data row indices to their respective node
+        # additional nodes are added sequentially
         self._id_to_nodes: Dict[int, Node] = {}
         self._max_node_index = 0
 
         # stores the last node of tracks, so they can be transversed backwardly
+        # for serialization
         self._leafs: Dict[int, Node] = {}
 
         # attributes computed (and updated) after serialization
@@ -155,6 +168,14 @@ class InteractiveTrackManager(BaseTrackManager):
         graph: Dict,
         features: Optional[pd.DataFrame],
     ) -> None:
+        """Initialize data structures for on-the-fly updates to the tracks topology.
+
+        Args:
+            data (Union[list, np.ndarray]): (N, D+1) dimensional array of tracks data.
+            graph (Dict): Graph indicating by child (key) to parents (value)
+                          relationship given the track ids.
+            features (Optional[pd.DataFrame]): Track layer features, must have length N.
+        """
 
         columns = ['TrackID', 'T', 'Z', 'Y', 'X']
 
@@ -276,15 +297,6 @@ class InteractiveTrackManager(BaseTrackManager):
     def graph(self, graph: Dict[int, Union[int, List[int]]]) -> None:
         self._raise_setter_error('graph')
 
-    @property
-    def unique_track_ids(self) -> np.ndarray:
-        """return the unique track identifiers"""
-        return np.array(list(self._leafs.keys()))
-
-    def __len__(self):
-        """return the number of tracks"""
-        return len(self.unique_track_ids)
-
     @update_serialization
     def build_tracks(self) -> None:
         """tracks building is not necessary, this is done by the serialization."""
@@ -296,6 +308,9 @@ class InteractiveTrackManager(BaseTrackManager):
         pass
 
     def serialize(self) -> None:
+        """Transverse the whole tracks graph backwardly (from leafs) generating the
+        data expected from the Tracks layer and the TracksVisual.
+        """
         self._graph = {}
         track_ids = []
         vertices = []
@@ -372,8 +387,11 @@ class InteractiveTrackManager(BaseTrackManager):
 
     def get_value(self, coords: np.ndarray) -> Optional[int]:
         """lookup the index of the nearest node"""
-        # FIXME: add in the PR that this is not the default behavior, it returned the track id
-        assert len(coords) == self.ndim
+        # NOTE: this is not the default behavior, the default is to return the track id
+        if len(coords) != self.ndim:
+            raise ValueError(
+                f'Value coordinates must match data dimensionality. Found {len(coords)} expected length of {self.ndim}.'
+            )
 
         time = int(round(coords[0]))
         nodes = self._time_to_nodes.get(time, [])
@@ -390,6 +408,12 @@ class InteractiveTrackManager(BaseTrackManager):
     def max_time(self) -> int:
         """Determine the maximum timestamp of the dataset"""
         return max(self._time_to_nodes.keys())
+
+    @property
+    @update_serialization
+    def track_ids(self):
+        """return the track identifiers"""
+        return self._track_ids.astype(int)
 
     @property
     @update_serialization
@@ -431,7 +455,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
     def track_labels(self, current_time: int) -> Tuple[List, np.ndarray]:
         """return node labels at the current time"""
-        # FIXME: add in the PR that this is not the default behavior, it returned the track id
+        # NOTE: this is not the default behavior, the default is to return the track id
         if current_time not in self._time_to_nodes:
             return [], []
 
@@ -451,15 +475,21 @@ class InteractiveTrackManager(BaseTrackManager):
                 f'Node with index {index} not found in InteractiveTrackManager'
             )
 
-    @outdate_serialization
-    def link(self, child_id: int, parent_id: int) -> None:
-        child = self._get_node(child_id)
-        parent = self._get_node(parent_id)
-
+    def _validate_child_parent_ordering(
+        self, child: Node, parent: Node
+    ) -> None:
         if child.vertex[0] < parent.vertex[0]:
             raise ValueError(
                 f'Child time ({child.vertex[0]}) must be greater or equal than parent ({parent.vertex[0]}).'
             )
+
+    @outdate_serialization
+    def link(self, child_id: int, parent_id: int) -> None:
+        """Links two nodes, the parent must be before (in time) than the child."""
+        child = self._get_node(child_id)
+        parent = self._get_node(parent_id)
+
+        self._validate_child_parent_ordering(child, parent)
 
         if child in parent.children:
             warnings.warn(
@@ -475,6 +505,8 @@ class InteractiveTrackManager(BaseTrackManager):
         parent.children.append(child)
 
     def _unlink_pair(self, child: Node, parent: Node) -> None:
+        self._validate_child_parent_ordering(child, parent)
+
         child.parents.remove(parent)
         parent.children.remove(child)
 
@@ -488,7 +520,7 @@ class InteractiveTrackManager(BaseTrackManager):
     ) -> None:
         """
         Disconnects nodes indexed by child_id and parent_id.
-        If one of them is not provided it disconnects every all of its connections.
+        If one of them is not provided it disconnects all of its connections.
         """
         if child_id is None and parent_id is None:
             raise ValueError(
@@ -512,6 +544,15 @@ class InteractiveTrackManager(BaseTrackManager):
 
     @outdate_serialization
     def remove(self, node_index: int, keep_link: bool = False) -> None:
+        """Removes a node from the tracks graph.
+
+        Arguments
+        ---------
+        node_index (int): Node index.
+        keep_link (bool, optional):
+            If `True` the track is not split and this node is skipped (and deleted).
+            If `False` the track is split into two separate tracks.
+        """
         node = self._get_node(node_index)
 
         # removing from storages
@@ -574,6 +615,17 @@ class InteractiveTrackManager(BaseTrackManager):
         vertex: Union[list, np.ndarray],
         features: Optional[pd.DataFrame] = None,
     ) -> int:
+        """Adds a new node to the graph with the `vertex` coordinates.
+
+        Arguments
+        ---------
+            vertex (Union[list, np.ndarray]): D-dimensional array of T, (Z), Y, X coordinates.
+            features (Optional[pd.DataFrame], optional): Optional node features (properties).
+
+        Returns
+        -------
+            int: the ID of the added node.
+        """
         self._validate_vertex_shape(vertex)
         self._max_node_index += 1
         node = self._add_node(
@@ -585,14 +637,30 @@ class InteractiveTrackManager(BaseTrackManager):
     @outdate_serialization
     def update(
         self,
-        index: int,
+        node_index: int,
         vertex: Optional[Union[list, np.ndarray]] = None,
         features: Optional[Union[Dict, pd.DataFrame]] = None,
     ):
-        node = self._id_to_nodes[index]
+        """Updates the position (vertex) or features of a node in the graph.
+        New time value must respect the existing ordering relationship.
+        """
+        node = self._id_to_nodes[node_index]
 
         if vertex is not None:
             self._validate_vertex_shape(vertex)
+
+            for child in node.children:
+                if child.vertex[0] < vertex[0]:
+                    raise ValueError(
+                        f"Update not allowed, new vertex time ({vertex[0]}) is greater than a child's time ({child.vertex[0]})."
+                    )
+
+            for parent in node.parents:
+                if vertex[0] < parent.vertex[0]:
+                    raise ValueError(
+                        f"Update not allowed, new vertex time ({vertex[0]}) is lower than a child's time ({parent.vertex[0]})."
+                    )
+
             node.vertex = np.array(vertex)
 
         if features is not None:
@@ -604,6 +672,13 @@ class InteractiveTrackManager(BaseTrackManager):
 
     @update_serialization
     def relabel_track_ids(self, mapping: Dict[int, int]) -> None:
+        """Relabel serialized track ids given a mapping.
+        Default track id is the last (leaf) of each tracklet.
+        If some track id is not found it gets the largest track id + 1.
+
+        Args:
+            mapping (Dict[int, int]): Mapping from current track ids to a new value.
+        """
         max_out = max(mapping.values()) + 1
 
         def get_value(index: int) -> int:
