@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
+from ....utils.translations import trans
 from ._base_track_manager import BaseTrackManager
 
 
@@ -44,7 +45,11 @@ class Node:
         return self.index == other.index
 
     def __repr__(self) -> str:
-        return f'<Node> id: {self.index} vertex: {self.vertex}'
+        return trans._(
+            '<Node> id: {index} vertex: {vertex}',
+            index=self.index,
+            vertex=self.vertex,
+        )
 
 
 # decorators to mark functions that up(out)dates the serialization
@@ -183,7 +188,10 @@ class InteractiveTrackManager(BaseTrackManager):
             columns.remove('Z')
         elif data.shape[1] != 5:
             raise ValueError(
-                f'Tracks data must have 4 or 5 columns, found {data.shape[1]}.'
+                trans._(
+                    'Tracks data must have 4 or 5 columns, found {ndim}.',
+                    ndim=data.shape[1],
+                )
             )
 
         # naming input_data to avoid confusion with the actual data that needs to be computed from the nodes
@@ -245,7 +253,10 @@ class InteractiveTrackManager(BaseTrackManager):
     @staticmethod
     def _raise_setter_error(variable_name: str) -> None:
         raise RuntimeError(
-            f'Tracks `{variable_name}` cannot be set while in `interactive_mode`.'
+            trans._(
+                'Tracks `{variable_name}` cannot be set while in `interactive_mode`.',
+                variable_name=variable_name,
+            )
         )
 
     @property
@@ -390,7 +401,11 @@ class InteractiveTrackManager(BaseTrackManager):
         # NOTE: this is not the default behavior, the default is to return the track id
         if len(coords) != self.ndim:
             raise ValueError(
-                f'Value coordinates must match data dimensionality. Found {len(coords)} expected length of {self.ndim}.'
+                trans._(
+                    'Value coordinates must match data dimensionality. Found {n_coords} expected length of {ndim}.',
+                    n_coords=len(coords),
+                    ndim=self.ndim,
+                )
             )
 
         time = int(round(coords[0]))
@@ -472,7 +487,10 @@ class InteractiveTrackManager(BaseTrackManager):
             return self._id_to_nodes[index]
         except KeyError:
             raise KeyError(
-                f'Node with index {index} not found in InteractiveTrackManager'
+                trans._(
+                    'Node with index {index} not found in InteractiveTrackManager',
+                    index=index,
+                )
             )
 
     def _validate_child_parent_ordering(
@@ -480,7 +498,11 @@ class InteractiveTrackManager(BaseTrackManager):
     ) -> None:
         if child.vertex[0] < parent.vertex[0]:
             raise ValueError(
-                f'Child time ({child.vertex[0]}) must be greater or equal than parent ({parent.vertex[0]}).'
+                trans._(
+                    'Child time ({child_time}) must be greater or equal than parent ({parent_time}).',
+                    child_time=child.vertex[0],
+                    parent_time=parent.vertex[0],
+                )
             )
 
     @outdate_serialization
@@ -524,7 +546,9 @@ class InteractiveTrackManager(BaseTrackManager):
         """
         if child_id is None and parent_id is None:
             raise ValueError(
-                '`child_id`, `parent_id` or both must be supplified.'
+                trans._(
+                    'One `child_id`, `parent_id`, or both must be supplified.'
+                )
             )
 
         if child_id is None:
@@ -566,8 +590,12 @@ class InteractiveTrackManager(BaseTrackManager):
             if len(node.children) > 1 and len(node.parents) > 1:
                 # this is not allowed since the connection would be arbitrary
                 raise ValueError(
-                    'Removal with linking is not allowed for nodes with multiple'
-                    + f'children ({len(node.children)}) and parents {len(node.parents)}.'
+                    trans._(
+                        'Removal with linking is not allowed for nodes with multiple'
+                        + 'children ({n_children}) and parents {n_parents}.',
+                        n_children=len(node.children),
+                        n_parents=len(node.parents),
+                    )
                 )
 
             for child in node.children:
@@ -606,7 +634,11 @@ class InteractiveTrackManager(BaseTrackManager):
         if len(vertex) != self.ndim and self.ndim != 0:
             # ndim is 0 when the data is empty
             raise ValueError(
-                f'Vertex must match data dimension. Found {len(vertex)}, expected {self._ndim}.'
+                trans._(
+                    'Vertex must match data dimension. Found {vertex_dim}, expected {ndim}.',
+                    vertex_dim=len(vertex),
+                    ndim=self.ndim,
+                )
             )
 
     @outdate_serialization
@@ -652,13 +684,21 @@ class InteractiveTrackManager(BaseTrackManager):
             for child in node.children:
                 if child.vertex[0] < vertex[0]:
                     raise ValueError(
-                        f"Update not allowed, new vertex time ({vertex[0]}) is greater than a child's time ({child.vertex[0]})."
+                        trans._(
+                            "Update not allowed, new vertex time ({vertex_time}) is greater than a child's time ({child_time}).",
+                            vertex_time=vertex[0],
+                            child_time=child.vertex[0],
+                        )
                     )
 
             for parent in node.parents:
                 if vertex[0] < parent.vertex[0]:
                     raise ValueError(
-                        f"Update not allowed, new vertex time ({vertex[0]}) is lower than a child's time ({parent.vertex[0]})."
+                        trans._(
+                            "Update not allowed, new vertex time ({vertex_time}) is lower than a child's time ({parent_time}).",
+                            vertex_time=vertex[0],
+                            parent_time=parent.vertex[0],
+                        )
                     )
 
             node.vertex = np.array(vertex)
