@@ -8,7 +8,7 @@ from napari.layers.tracks._managers import (
 
 class _BaseTrackManagerSuite:
     param_names = ['size', 'sorted', 'n_tracks']
-    params = [np.power(10, np.arange(2, 6)).tolist(), [False, True], [10, 100]]
+    params = [np.power(10, np.arange(2, 7)).tolist(), [False, True], [10, 100]]
 
     def setup(self, size, sorted, n_tracks):
         """
