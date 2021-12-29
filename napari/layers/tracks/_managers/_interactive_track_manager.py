@@ -244,7 +244,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
     @staticmethod
     def _raise_setter_error(variable_name: str) -> None:
-        raise ValueError(
+        raise RuntimeError(
             f'Tracks `{variable_name}` cannot be set while in `interactive_mode`.'
         )
 
@@ -676,7 +676,8 @@ class InteractiveTrackManager(BaseTrackManager):
         Default track id is the last (leaf) of each tracklet.
         If some track id is not found it gets the largest track id + 1.
 
-        Args:
+        Arguments
+        ---------
             mapping (Dict[int, int]): Mapping from current track ids to a new value.
         """
         max_out = max(mapping.values()) + 1

@@ -321,3 +321,36 @@ def test_interactive_tracks_interactivity(
     assert manager.graph.keys() == expected_graph.keys()
     for k, v in manager.graph.items():
         assert sorted(v) == sorted(expected_graph[k]), f'track id {k}'
+
+
+def test_interactive_tracks_errors(tracks_data_and_graph) -> None:
+    """Tests InteractiveTrackManager error handling"""
+    data: pd.DataFrame = tracks_data_and_graph[0]
+    graph: Dict = tracks_data_and_graph[1]
+    manager = InteractiveTrackManager(data=data.values, graph=graph)
+
+    # moving a node that messes with the graph ordering
+    with pytest.raises(ValueError):
+        # time from 0 to 5
+        manager.update(node_index=0, vertex=[5, 1, 1, 1])
+
+    # update with the wrong vertex dimension
+    with pytest.raises(ValueError):
+        manager.update(node_index=0, vertex=[5, 1, 1])
+
+    # addition with the wrong vertex dimension
+    with pytest.raises(ValueError):
+        manager.add(vertex=[5, 1, 1, 1, 1])
+
+    # link that messes with the graph ordering
+    with pytest.raises(ValueError):
+        # t: 8 <- 3
+        manager.link(21, 8)
+
+    # unlink nodes that are not connected
+    with pytest.raises(ValueError):
+        manager.unlink(4, 24)
+
+    # unlink with inverted child-parent relationship
+    with pytest.raises(ValueError):
+        manager.unlink(3, 10)
