@@ -36,7 +36,7 @@ class Node:
 
     @property
     def time(self) -> int:
-        return self.vertex[0]
+        return int(self.vertex[0])
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
@@ -161,7 +161,7 @@ class InteractiveTrackManager(BaseTrackManager):
         if data.shape[1] == 4:
             columns.remove('Z')
         elif data.shape[1] != 5:
-            raise RuntimeError(
+            raise ValueError(
                 f'Tracks data must have 4 or 5 columns, found {data.shape[1]}.'
             )
 
@@ -456,6 +456,11 @@ class InteractiveTrackManager(BaseTrackManager):
         child = self._get_node(child_id)
         parent = self._get_node(parent_id)
 
+        if child.vertex[0] < parent.vertex[0]:
+            raise ValueError(
+                f'Child time ({child.vertex[0]}) must be greater or equal than parent ({parent.vertex[0]}).'
+            )
+
         if child in parent.children:
             warnings.warn(
                 f'Node {parent_id} is already a parent of {child_id}.'
@@ -486,7 +491,7 @@ class InteractiveTrackManager(BaseTrackManager):
         If one of them is not provided it disconnects every all of its connections.
         """
         if child_id is None and parent_id is None:
-            raise RuntimeError(
+            raise ValueError(
                 '`child_id`, `parent_id` or both must be supplified.'
             )
 
@@ -519,7 +524,7 @@ class InteractiveTrackManager(BaseTrackManager):
         if keep_link:
             if len(node.children) > 1 and len(node.parents) > 1:
                 # this is not allowed since the connection would be arbitrary
-                raise RuntimeError(
+                raise ValueError(
                     'Removal with linking is not allowed for nodes with multiple'
                     + f'children ({len(node.children)}) and parents {len(node.parents)}.'
                 )
@@ -559,7 +564,7 @@ class InteractiveTrackManager(BaseTrackManager):
     def _validate_vertex_shape(self, vertex: np.ndarray) -> None:
         if len(vertex) != self.ndim and self.ndim != 0:
             # ndim is 0 when the data is empty
-            raise RuntimeError(
+            raise ValueError(
                 f'Vertex must match data dimension. Found {len(vertex)}, expected {self._ndim}.'
             )
 

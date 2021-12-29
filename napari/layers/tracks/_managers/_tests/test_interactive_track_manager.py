@@ -134,31 +134,84 @@ def test_interactive_tracks_interactivity(
     manager.serialize()
     assert manager._is_serialized
 
+    r"""
+    time   | 0 1 2 3 4 5 6 7 8 9
+    ----------------------------
+    tracks | 1-1-1-1-2-2---2-2-2
+           |       \-3-3-3-4-4-4
+           |             \-5-5-5
+           |   6-6-6-7-7-9-9
+           |       \-8-8-/
+    """
     manager.remove(6, keep_link=True)
     assert not manager._is_serialized
     assert len(manager._id_to_nodes) == data.shape[0] - 1
     assert len(manager._leafs) == 4
     assert 6 not in manager._id_to_nodes
 
+    r"""
+    time   | 0 1 2 3 4 5 6 7 8 9
+    ----------------------------
+    tracks | 1-1-1-1-2-2
+           |       \-3-3-3-4-4-4
+           |             \-5-5-5
+           |   6-6-6-7-7-9-9
+           |       \-8-8-/
+           |                10-10
+    """
     manager.remove(7, keep_link=False)
     assert len(manager._leafs) == 5
     assert len(manager._id_to_nodes) == data.shape[0] - 2
     assert 7 not in manager._id_to_nodes
 
-    new_node_id = manager.add([4, 0.25, 0.25, 0.25])
+    r"""
+    time   | 0 1 2 3 4 5 6 7 8 9
+    ----------------------------
+    tracks | 1-1-1-1-2-2
+           |       \-3-3-3-4-4-4
+           |             \-5-5-5
+           |   6-6-6-7-7-9-9
+           |       \-8-8-/
+           |                10-10
+           |                11
+    """
+    new_node_id = manager.add([8, 0.25, 0.25, 0.25])
     assert new_node_id == data.shape[0]
     assert len(manager._leafs) == 6
     assert len(manager._id_to_nodes) == data.shape[0] - 1
 
-    manager.link(new_node_id, 17)
+    r"""
+    time   | 0 1 2 3 4 5 6 7 8 9
+    ----------------------------
+    tracks | 1-1-1-1-2-2
+           |       \-3-3-3-4-4-4
+           |             \12-5-5   <-- tracklet are split in divisions
+           |               \11
+           |   6-6-6-7-7-9-9
+           |       \-8-8-/
+           |                10-10
+    """
+    manager.link(new_node_id, 16)
     new_node_parents = manager._id_to_nodes[new_node_id].parents
     assert len(manager._leafs) == 6
     assert len(manager._id_to_nodes) == data.shape[0] - 1
-    assert len(new_node_parents) == 1 and new_node_parents[0].index == 17
+    assert len(new_node_parents) == 1 and new_node_parents[0].index == 16
     assert (
-        manager._id_to_nodes[new_node_id] in manager._id_to_nodes[17].children
+        manager._id_to_nodes[new_node_id] in manager._id_to_nodes[16].children
     )
 
+    r"""
+    time   | 0 1 2 3 4 5 6 7 8 9
+    ----------------------------
+    tracks | 1-1-1-1-2-2
+           |       \-3-3-3
+           |               4-4-4
+           |              12-5-5
+           |               \11
+           |   6-6-6-7-7-9-9
+           |       \-8-8-/
+           |                10-10
+    """
     prev_children = manager._id_to_nodes[12].children
     manager.unlink(child_id=None, parent_id=12)
     assert len(manager._leafs) == 7
@@ -166,6 +219,19 @@ def test_interactive_tracks_interactivity(
     assert len(manager._id_to_nodes[12].children) == 0
     assert all(12 not in child.parents for child in prev_children)
 
+    r"""
+    time   | 0 1 2 3 4 5 6 7 8 9
+    ----------------------------
+    tracks | 1-1-1-1-2-2
+           |       \-3-3-3
+           |               4-4-4
+           |              12-5-5
+           |               \11
+           |   6-6-6-7-7-9-9
+           |       \-8-8-/
+           |                10
+    """
+    # leafs should be update with leaf removal
     prev_parent = manager._id_to_nodes[9].parents[0]
     manager.remove(9)
     assert 9 not in manager._leafs
@@ -173,12 +239,85 @@ def test_interactive_tracks_interactivity(
     assert len(manager._leafs) == 7
     assert len(manager._id_to_nodes) == data.shape[0] - 2
 
+    r"""
+    time   | 0 1 2 3  4  5 6 7 8 9
+    ------------------------------
+    tracks | 1-1-1-1--2--2
+           |       \-13-13-3
+           |              -\
+           |   6-6-6--7--7-9-9
+           |       \--8--8-/
+           |                 4-4-4
+           |                12-5-5
+           |                 \11
+           |                  10
+    """
+    # testing a triple merge
+    manager.link(26, 11)  # track id 3 merging (and spliting) to 9
+    assert len(manager._leafs) == 7
+    assert len(manager._id_to_nodes) == data.shape[0] - 2
+    assert len(manager._id_to_nodes[26].parents) == 3
+    assert len(manager._id_to_nodes[11].children) == 2
+    assert manager._id_to_nodes[11] in manager._id_to_nodes[26].parents
+
+    # testing the track layer can return to default TrackManager
+    assert not manager._is_serialized
     tracks_layer.interactive_mode = False
+    assert manager._is_serialized
     assert tracks_layer.data.shape[0] == data.shape[0] - 2
 
-    # testing its behavior with tracks not present in the original data
+    # testing relabel behavior with tracks not present in the original data
     mapping = track_id_mapping(data)
     manager.relabel_track_ids(mapping)
-    # assert new track ids were created
-    assert manager._is_serialized
-    assert max(manager._track_ids) > data['TrackID'].max()
+
+    # track ids not present in the in the original data receives
+    # an **arbitrary id** when relabeling. Hence, it could change
+    # if the InteractiveTrackManager serialization ordering is updated
+    r"""
+    time   | 0 1 2 3  4  5 6 7 8 9
+    ------------------------------
+    tracks | 1-1-1-1-13-13
+           |       \-10-10-3
+           |              -\
+           |   6-6-6--7--7-9-9
+           |       \--8--8-/
+           |                 4-4-4
+           |                11-5-5
+           |                 \12
+           |                  14
+    """
+    # checking final results
+    expected_count = {
+        1: 4,
+        3: 1,
+        4: 3,
+        5: 2,
+        6: 3,
+        7: 2,
+        8: 2,
+        9: 2,
+        10: 2,
+        11: 1,
+        12: 1,
+        13: 2,
+        14: 1,
+    }
+
+    track_ids, counts = np.unique(manager.track_ids, return_counts=True)
+    assert len(track_ids) == 13
+    for i, count in zip(track_ids, counts):
+        assert expected_count[i] == count, f'track id {i}'
+
+    expected_graph = {
+        13: [1],
+        10: [1],
+        3: [10],
+        9: [7, 8, 10],
+        7: [6],
+        8: [6],
+        5: [11],
+        12: [11],
+    }
+    assert manager.graph.keys() == expected_graph.keys()
+    for k, v in manager.graph.items():
+        assert sorted(v) == sorted(expected_graph[k]), f'track id {k}'
