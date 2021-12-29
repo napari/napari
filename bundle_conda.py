@@ -125,7 +125,7 @@ def _constructor(version=VERSION):
         definitions["channels"].insert(0, "local")
     if LINUX:
         definitions["default_prefix"] = os.path.join(
-            '%USERPROFILE%', f"{APP}-{version}"
+            "$HOME", f"{APP}-{version}"
         )
     if MACOS:
         # we change this bc the installer takes the name as the default install location basename
