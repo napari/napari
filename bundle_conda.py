@@ -1,13 +1,10 @@
 """
-Create a Napari bundle using `conda` packages and self-installing
-mechanisms to userspace.
+Create napari installers using `constructor`.
 
-Steps:
+It creates a `construct.yaml` file with the needed settings
+and then runs `constructor`.
 
-1. Parse setup.cfg and obtain a conda-compatible environment.yml.
-2. Use a dry-run in micromamba to obtain the JSON output of the solved environment.
-3. Download the packages and check the MD5 hashes.
-4. Package everything in Briefcase, along with the launcher logic.
+For more information, see Documentation> Developers> Packaging.
 """
 
 import os
@@ -15,12 +12,12 @@ import subprocess
 import sys
 from distutils.spawn import find_executable
 from pathlib import Path
+from argparse import ArgumentParser
 
 from ruamel import yaml
 
 from bundle import (
     APP,
-    APP_DIR,
     ARCH,
     HERE,
     LINUX,
@@ -32,14 +29,11 @@ from bundle import (
 )
 
 if LINUX:
-    CONDA_ROOT = Path(APP_DIR) / "usr" / "conda"
-    EXT = "sh"  # using constructor
+    EXT = "sh"
 elif MACOS:
-    CONDA_ROOT = Path(APP_DIR) / "Contents" / "Resources" / "conda"
-    EXT = "pkg"  # using constructor
+    EXT = "pkg"
 elif WINDOWS:
-    CONDA_ROOT = Path(APP_DIR) / "conda"
-    EXT = "exe"  # using constructor
+    EXT = "exe"
 else:
     raise RuntimeError(f"Unrecognized OS: {sys.platform}")
 
@@ -90,10 +84,37 @@ def _license_file():
     return str(license_out)
 
 
-def _constructor(version=VERSION):
+def _constructor(version=VERSION, extra_specs=None):
+    """
+    Create a temporary `construct.yaml` input file and
+    run `constructor`.
+
+    Parameters
+    ----------
+    version: str
+        Version of `napari` to be built. Defaults to the
+        one detected by `setuptools-scm` and written to
+        `napari/_version.py`. Run `pip install -e .` to
+        generate that file if it can't be found.
+    extra_specs: list of str
+        Additional packages to be included in the installer.
+        A list of conda spec strings (`python`, `python=3`, etc)
+        is expected.
+    """
     constructor = find_executable("constructor")
     if not constructor:
         raise RuntimeError("Constructor must be installed.")
+
+    if extra_specs is None:
+        extra_specs = []
+    specs = [
+        f"napari={version}",
+        f"napari-menu={version}",
+        f"python={sys.version_info.major}.{sys.version_info.minor}.*",
+        "conda",
+        "mamba",
+        "pip",
+    ] + extra_specs
 
     definitions = {
         "name": APP,
@@ -109,14 +130,7 @@ def _constructor(version=VERSION):
         "installer_filename": OUTPUT_FILENAME,
         "initialize_by_default": False,
         "license_file": _license_file(),
-        "specs": [
-            f"napari={version}",
-            f"napari-menu={version}",
-            f"python={sys.version_info.major}.{sys.version_info.minor}.*",
-            "conda",
-            "mamba",
-            "pip",
-        ],
+        "specs": specs,
         "menu_packages": [
             "napari-menu",
         ],
@@ -190,11 +204,11 @@ def _constructor(version=VERSION):
     return OUTPUT_FILENAME
 
 
-def main():
+def main(extra_specs=None):
     print("Cleaning...")
     clean()
     try:
-        _constructor()
+        _constructor(extra_specs=None)
     finally:
         for path in clean_these_files:
             os.unlink(path)
@@ -203,20 +217,55 @@ def main():
     return OUTPUT_FILENAME
 
 
+def cli(argv=None):
+    p = ArgumentParser()
+    p.add_argument(
+        "--clean", action="store_true", help="Clean files and exit."
+    )
+    p.add_argument(
+        "--version",
+        action="store_true",
+        help="Print local napari version and exit.",
+    )
+    p.add_argument(
+        "--arch",
+        action="store_true",
+        help="Print machine architecture tag and exit.",
+    )
+    p.add_argument(
+        "--ext",
+        action="store_true",
+        help="Print installer extension for this platform and exit.",
+    )
+    p.add_argument(
+        "--artifact-name",
+        action="store_true",
+        help="Print computed artifact name and exit.",
+    )
+    p.add_argument(
+        "--extra-specs",
+        nargs="+",
+        help="One or more extra conda specs to add to the installer",
+    )
+    return p.parse_args()
+
+
 if __name__ == "__main__":
-    if '--clean' in sys.argv:
+    args = cli()
+    if args.clean:
         clean()
         sys.exit()
-    if '--version' in sys.argv:
+    if args.version:
         print(VERSION)
         sys.exit()
-    if '--arch' in sys.argv:
+    if args.arch:
         print(ARCH)
         sys.exit()
-    if '--ext' in sys.argv:
+    if args.ext:
         print(EXT)
         sys.exit()
-    if '--artifact-name' in sys.argv:
+    if args.artifact_name:
         print(OUTPUT_FILENAME)
         sys.exit()
-    print('created', main())
+
+    print('created', main(extra_specs=args.extra_specs))
