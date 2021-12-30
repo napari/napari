@@ -1,6 +1,7 @@
 from enum import auto
 
 from ...utils.misc import StringEnum
+from ...utils.translations import trans
 
 
 class Interpolation(StringEnum):
@@ -100,3 +101,11 @@ class VolumeDepiction(StringEnum):
 
     VOLUME = auto()
     PLANE = auto()
+
+
+VOLUME_DEPICTION_TRANSLATION = dict(
+    [
+        (VolumeDepiction.VOLUME, trans._('volume')),
+        (VolumeDepiction.PLANE, trans._('plane')),
+    ]
+)
