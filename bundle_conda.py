@@ -193,8 +193,9 @@ def _constructor(version=VERSION, extra_specs=None):
 
     args = [constructor, "-v", "."]
     target_platform = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
-    if target_platform:
-        args += ["--platform", target_platform]
+    conda_exe = os.environ.get("CONSTRUCTOR_CONDA_EXE")
+    if target_platform and conda_exe:
+            args += ["--platform", target_platform, "--conda-exe", conda_exe]
     subprocess.check_call(args)
 
     return OUTPUT_FILENAME
