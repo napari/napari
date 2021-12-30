@@ -40,8 +40,23 @@ def orient_plane_normal_along_x(layer: Image):
 def orient_plane_normal_along_view_direction(layer: Image):
     if napari.current_viewer().dims.ndisplay != 3:
         return
-    view_direction = napari.current_viewer().camera.view_direction
-    layer.plane.normal = layer._world_to_data_ray(view_direction)
+
+    # define a mouse drag callback to sync plane normal during mouse drag
+    camera = napari.current_viewer().camera
+
+    def sync_plane_normal_with_view_direction(layer, event=None):
+        yield
+        while event.type == 'mouse_move':
+            view_direction = camera.view_direction
+            layer.plane.normal = layer._world_to_data_ray(view_direction)
+            yield
+
+    # update plane normal and add callback to mouse drag
+    layer.plane.normal = layer._world_to_data_ray(camera.view_direction)
+    layer.mouse_drag_callbacks.append(sync_plane_normal_with_view_direction)
+    yield
+    # remove callback on key release
+    layer.mouse_drag_callbacks.remove(sync_plane_normal_with_view_direction)
 
 
 @Image.bind_key('Space')
