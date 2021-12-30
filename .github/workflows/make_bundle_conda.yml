@@ -108,7 +108,7 @@ jobs:
       - name: Export artifact identifier
         id: artifact-id
         run: |
-          name=napari-${{ env.NAPARI_VERSION }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+          name=pkgs-napari-${{ env.NAPARI_VERSION }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
           echo "::set-output name=name::${name}"
 
       - name: Upload packagess as artifacts
@@ -127,7 +127,7 @@ jobs:
             --skip-existing \
             -u napari \
             -l nightly \
-            "${GITHUB_WORKSPACE}${conda_bld_suffix}noarch/*.tar.bz2"
+            ${GITHUB_WORKSPACE}${conda_bld_suffix}noarch/*.tar.bz2
 
   bundle:
     name: Bundle ${{ matrix.platform }}
