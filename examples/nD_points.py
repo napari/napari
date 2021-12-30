@@ -28,7 +28,7 @@ points = np.array(
         [1, 0, 100, 40],
         [2, 10, 110, 100],
         [9, 8, 80, 100],
-    ]
+    ], dtype=float
 )
 viewer.add_points(
     points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True

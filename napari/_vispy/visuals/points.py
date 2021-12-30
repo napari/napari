@@ -1,5 +1,6 @@
 from vispy.scene.visuals import Compound, Line, Markers, Text
 
+from ..filters.points_clamp_size import ClampSizeFilter
 from .clipping_planes_mixin import ClippingPlanesMixin
 
 
@@ -16,7 +17,9 @@ class PointsVisual(ClippingPlanesMixin, Compound):
     """
 
     def __init__(self):
+        self.clamp_filter = ClampSizeFilter()
         super().__init__([Markers(), Markers(), Line(), Text()])
+        self.attach(self.clamp_filter)
         self.scaling = True
 
     @property
@@ -25,8 +28,8 @@ class PointsVisual(ClippingPlanesMixin, Compound):
 
     @symbol.setter
     def symbol(self, value):
-        for subv in self._subvisuals[:2]:
-            subv.symbol = value
+        for marker in self._subvisuals[:2]:
+            marker.symbol = value
 
     @property
     def scaling(self):
