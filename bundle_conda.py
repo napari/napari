@@ -99,8 +99,16 @@ def _constructor(version=VERSION, extra_specs=None):
 
     if extra_specs is None:
         extra_specs = []
+
+    # Temporary while pyside2 is not yet published for arm64
+    target_platform = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
+    ARM64 = target_platform == "osx-arm64"
+    if ARM64:
+        napari = f"napari={version}=*pyqt*"
+    else:
+        napari = f"napari={version}=*pyside*"
     specs = [
-        f"napari={version}=*pyside*",
+        napari,
         f"napari-menu={version}",
         f"python={sys.version_info.major}.{sys.version_info.minor}.*",
         "conda",
@@ -108,16 +116,17 @@ def _constructor(version=VERSION, extra_specs=None):
         "pip",
     ] + extra_specs
 
+    channels = (
+        ["napari/label/nightly"]
+        + (["andfoy"] if ARM64 else [])  # temporary
+        + ["napari/label/bundle_tools", "conda-forge"]
+    )
     definitions = {
         "name": APP,
         "company": "Napari",
         "reverse_domain_identifier": "org.napari",
         "version": version,
-        "channels": [
-            "napari/label/nightly",
-            "napari/label/bundle_tools",
-            "conda-forge",
-        ],
+        "channels": channels,
         "conda_default_channels": ["conda-forge"],
         "installer_filename": OUTPUT_FILENAME,
         "initialize_by_default": False,
@@ -192,11 +201,12 @@ def _constructor(version=VERSION, extra_specs=None):
         yaml.dump(definitions, fin, default_flow_style=False)
 
     args = [constructor, "-v", "."]
-    target_platform = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
     conda_exe = os.environ.get("CONSTRUCTOR_CONDA_EXE")
     if target_platform and conda_exe:
         args += ["--platform", target_platform, "--conda-exe", conda_exe]
-    subprocess.check_call(args)
+    env = os.environ.copy()
+    env["CONDA_CHANNEL_PRIORITY"] = "strict"
+    subprocess.check_call(args, env=env)
 
     return OUTPUT_FILENAME
 

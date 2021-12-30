@@ -22,9 +22,6 @@ jobs:
     if: github.repository == 'napari/napari'
     env:
       conda_bld_suffix: /napari-feedstock/build_artifacts/
-      # name of the .ci_support/linux_64_*.yaml file we want to use for the packages
-      # check the napari-feedstock for other choices
-      napari_variant_config: linux_64_qt_bindingspyside2
     outputs:
       artifact-id: ${{ steps.artifact-id.outputs.name }}
 
@@ -92,17 +89,28 @@ jobs:
 
           conda-smithy rerender
           git diff
+          mv ${GITHUB_WORKSPACE}/napari-source .
 
-      - name: Run build scripts
+      - name: Run build scripts (PyQt)
         shell: bash -l {0}
         working-directory: napari-feedstock
         env:
           DOCKER_IMAGE: quay.io/condaforge/linux-anvil-comp7
-          CONFIG: ${{ env.napari_variant_config }}
+          CONFIG: linux_64_qt_bindingspyqt # filename under feedstock's .ci_support/
           CI: github_actions
         run: |
           export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda_bld_suffix }}"
-          mv ${GITHUB_WORKSPACE}/napari-source .
+          ./.scripts/run_docker_build.sh
+
+      - name: Run build scripts (PySide) # filename under feedstock's .ci_support/
+        shell: bash -l {0}
+        working-directory: napari-feedstock
+        env:
+          DOCKER_IMAGE: quay.io/condaforge/linux-anvil-comp7
+          CONFIG: linux_64_qt_bindingspyside2
+          CI: github_actions
+        run: |
+          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda_bld_suffix }}"
           ./.scripts/run_docker_build.sh
 
       - name: Export artifact identifier
