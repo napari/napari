@@ -37,6 +37,13 @@ plane_layer = viewer.add_image(
 viewer.axes.visible = True
 viewer.camera.angles = (45, 45, 45)
 viewer.camera.zoom = 5
-viewer.text_overlay.text = trans._('shift + click and drag to move the plane')
+viewer.text_overlay.text = trans._(
+    """
+shift + click and drag to move the plane
+press 'x', 'y' or 'z' to orient the plane along that axis around the cursor
+press 'o' to orient the plane normal along the camera view direction
+press and hold 'o' then click and drag to make the plane normal follow the camera 
+"""
+)
 viewer.text_overlay.visible = True
 napari.run()
