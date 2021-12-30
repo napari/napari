@@ -66,7 +66,38 @@ def project_points_onto_plane(
     return projected_points, signed_distance_to_plane
 
 
-def rotation_matrix_from_vectors(vec_1, vec_2):
+def rotation_matrix_from_vectors_2d(
+    vec_1: np.ndarray, vec_2: np.ndarray
+) -> np.ndarray:
+    """Calculate the 2D rotation matrix to rotate vec_1 onto vec_2
+
+    Parameters
+    ----------
+    vec_1 : np.ndarray
+        The (2,) array containing the starting vector.
+    vec_2 : np.ndarray
+        The (2,) array containing the destination vector.
+
+    Returns
+    -------
+    rotation_matrix : np.ndarray
+        The (2, 2) tranformation matrix that rotates vec_1 to vec_2.
+    """
+    # ensure unit vectors
+    vec_1 = vec_1 / np.linalg.norm(vec_1)
+    vec_2 = vec_2 / np.linalg.norm(vec_2)
+
+    # calculate the rotation matrix
+    diagonal_1 = (vec_1[0] * vec_2[0]) + (vec_1[1] * vec_2[1])
+    diagonal_2 = (vec_1[0] * vec_2[1]) - (vec_2[0] * vec_1[0])
+    rotation_matrix = np.array(
+        [[diagonal_1, -1 * diagonal_2], [diagonal_2, diagonal_1]]
+    )
+
+    return rotation_matrix
+
+
+def rotation_matrix_from_vectors_3d(vec_1, vec_2):
     """Calculate the rotation matrix that aligns vec1 to vec2.
 
     Parameters
@@ -134,7 +165,7 @@ def rotate_points(
     rotation_matrix : np.ndarray
         The rotation matrix used for rotating the points.
     """
-    rotation_matrix = rotation_matrix_from_vectors(
+    rotation_matrix = rotation_matrix_from_vectors_3d(
         current_plane_normal, new_plane_normal
     )
     rotated_points = points @ rotation_matrix.T
@@ -613,7 +644,9 @@ def line_in_triangles_3d(
     )
 
     # rotate the plane to make the triangles 2D
-    rotation_matrix = rotation_matrix_from_vectors(line_direction, [0, 0, 1])
+    rotation_matrix = rotation_matrix_from_vectors_3d(
+        line_direction, [0, 0, 1]
+    )
     rotated_vertices = vertices_plane @ rotation_matrix.T
 
     rotated_vertices_2d = rotated_vertices[:, :2]

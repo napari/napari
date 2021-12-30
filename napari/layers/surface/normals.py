@@ -34,7 +34,7 @@ class Normals(EventedModel):
 
     mode: NormalMode = Field(NormalMode.FACE, allow_mutation=False)
     visible: bool = False
-    color: Union[str, Array[float, (3,), Array[float, (4,)]]] = 'white'
+    color: Union[str, Array[float, (3,)], Array[float, (4,)]] = 'black'
     width: float = 1
     length: float = 5
 
