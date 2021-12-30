@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import napari
 
+from ...layers.utils.interactivity_utils import (
+    orient_plane_normal_around_cursor,
+)
 from ...layers.utils.layer_utils import register_layer_action
 from ...utils.translations import trans
 from ._image_constants import Mode
@@ -15,25 +18,19 @@ def register_image_action(description: str):
 @Image.bind_key('z')
 @register_image_action(trans._('Orient plane normal along z-axis'))
 def orient_plane_normal_along_z(layer: Image):
-    if napari.current_viewer().dims.ndisplay != 3:
-        return
-    layer.plane.normal = layer._world_to_data_ray((1, 0, 0))
+    orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
 
 
 @Image.bind_key('y')
 @register_image_action(trans._('orient plane normal along y-axis'))
 def orient_plane_normal_along_y(layer: Image):
-    if napari.current_viewer().dims.ndisplay != 3:
-        return
-    layer.plane.normal = layer._world_to_data_ray((0, 1, 0))
+    orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
 
 
 @Image.bind_key('x')
 @register_image_action(trans._('orient plane normal along x-axis'))
 def orient_plane_normal_along_x(layer: Image):
-    if napari.current_viewer().dims.ndisplay != 3:
-        return
-    layer.plane.normal = layer._world_to_data_ray((0, 0, 1))
+    orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
 @Image.bind_key('o')

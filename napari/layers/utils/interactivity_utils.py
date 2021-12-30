@@ -1,8 +1,13 @@
-from typing import List, Tuple, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List, Tuple, Union
 
 import numpy as np
 
-from ...utils.geometry import project_points_onto_plane
+from ...utils.geometry import point_in_bounding_box, project_points_onto_plane
+
+if TYPE_CHECKING:
+    from ..image.image import Image
 
 
 def displayed_plane_from_nd_line_segment(
@@ -88,3 +93,50 @@ def drag_data_to_projected_distance(
 
     # Project the drag vector onto the specified vector(s), return the distance
     return np.einsum('j, ij -> i', drag_vector_canvas, vector).squeeze()
+
+
+def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
+    """Orient a rendering plane by rotating it around the cursor.
+
+    If the cursor ray does not intersect the plane, the position will remain
+    unchanged.
+
+    Parameters
+    ----------
+    layer: Image
+        The layer on which the rendering plane is to be rotated
+    plane_normal: 3-tuple
+        The target plane normal in scene coordinates.
+    """
+    # avoid circular imports
+    import napari
+
+    from ..image._image_constants import VolumeDepiction
+
+    viewer = napari.current_viewer()
+
+    # early exit
+    if viewer.dims.ndisplay != 3 or layer.depiction != VolumeDepiction.PLANE:
+        return
+
+    # find cursor-plane intersection in data coordinates
+    # layer_dims_displayed = layer._world_to_data_dims_displayed(
+    #     dims_displayed=viewer.dims.displayed, ndim_world=viewer.dims.ndim
+    # )
+    cursor_position = layer._world_to_displayed_data(
+        position=viewer.cursor.position, dims_displayed=layer._dims_displayed
+    )
+    view_direction = layer._world_to_data_ray(viewer.camera.view_direction)
+    intersection = layer.plane.intersect_with_line(
+        line_position=cursor_position, line_direction=view_direction
+    )
+
+    # check if intersection is within data extents for displayed dimensions
+    bounding_box = layer.extent.data[:, layer._dims_displayed]
+
+    # update plane position
+    if point_in_bounding_box(intersection, bounding_box):
+        layer.plane.position = intersection
+
+    # update plane normal
+    layer.plane.normal = layer._world_to_data_ray(plane_normal)
