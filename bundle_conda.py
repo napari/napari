@@ -27,6 +27,8 @@ elif WINDOWS:
 else:
     raise RuntimeError(f"Unrecognized OS: {sys.platform}")
 
+if os.environ.get("CONSTRUCTOR_TARGET_PLATFORM") == "osx-arm64":
+    ARCH = "arm64"
 
 OUTPUT_FILENAME = f"{APP}-{VERSION}-{OS}-{ARCH}.{EXT}"
 clean_these_files = []
@@ -189,7 +191,11 @@ def _constructor(version=VERSION, extra_specs=None):
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
 
-    subprocess.check_call([constructor, "-v", "."])
+    args = [constructor, "-v", "."]
+    target_platform = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
+    if target_platform:
+        args += ["--platform", target_platform]
+    subprocess.check_call(args)
 
     return OUTPUT_FILENAME
 

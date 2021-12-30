@@ -130,24 +130,31 @@ jobs:
             ${GITHUB_WORKSPACE}${conda_bld_suffix}noarch/*.tar.bz2
 
   bundle:
-    name: Bundle ${{ matrix.platform }}
-    runs-on: ${{ matrix.platform }}
+    name: Bundle ${{ matrix.target-platform }}
+    runs-on: ${{ matrix.os }}
     needs: conda-build
     if: github.repository == 'napari/napari'
-    env:
-      GITHUB_TOKEN: ${{ github.token }}
-      DISPLAY: ":99.0"
-      CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: ubuntu-18.04
+          - os: ubuntu-18.04
             python-version: "3.9"
-          - platform: macos-latest
+            target-platform: "linux-64"
+          - os: macos-latest
             python-version: "3.9"
-          - platform: windows-latest
+            target-platform: "osx-64"
+          - os: macos-latest
+            python-version: "3.9"
+            target-platform: "osx-arm64"
+          - os: windows-latest
             python-version: "3.8"
+            target-platform: "win-64"
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      DISPLAY: ":99.0"
+      CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
+      CONSTRUCTOR_TARGET_PLATFORM: ${{ matrix.target-platform }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
