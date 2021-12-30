@@ -17,26 +17,13 @@ name: Conda
 
 jobs:
   conda-build:
-    name: Package ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: Create packages
+    runs-on: ubuntu-latest
     if: github.repository == 'napari/napari'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            conda_bld_suffix: /napari-feedstock/build_artifacts/
-            noarch: true
-
-          - os: macos-latest
-            conda_bld_suffix: /conda-bld/
-
-          - os: windows-latest
-            conda_bld_suffix: "\\conda-bld\\"
-
     env:
-      conda_bld_suffix: ${{ matrix.conda_bld_suffix }}
-      noarch: ${{ matrix.noarch }}
+      conda_bld_suffix: /napari-feedstock/build_artifacts/
+    outputs:
+      artifact-id: ${{ steps.artifact-id.outputs.name }}
 
     steps:
       - name: Checkout napari source
@@ -70,12 +57,6 @@ jobs:
             - anaconda-client
           EOF
 
-          if [[ ${{ runner.os }} == Windows ]]; then
-            echo "  - m2-sed" >> environment.yml
-            echo "  - conda-build" >> environment.yml
-            echo "  - conda-forge-ci-setup 3.*" >> environment.yml
-          fi
-
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -90,53 +71,26 @@ jobs:
           pip install -e . --no-deps -vvv
           version=$(python bundle.py --version)
           arch=$(python bundle.py --arch)
-          if [[ $RUNNER_OS == Windows ]]; then
-            platform="win-64"
-          else
-            platform=$(conda info --json | jq -r .platform)
-          fi
           echo NAPARI_VERSION=${version} >> $GITHUB_ENV
           echo NAPARI_ARCH=${arch} >> $GITHUB_ENV
-          echo NAPARI_PLATFORM=${platform} >> $GITHUB_ENV
 
       - name: Patch and rerender feedstock
         shell: bash -l {0}
         working-directory: napari-feedstock
         run: |
           set -euxo pipefail
-          case ${{ runner.os }} in
-            Linux)
-              # This will be path once mounted in Docker
-              source_path="/home/conda/feedstock_root/napari-source"
-              ;;
-            macOS)
-              source_path="${{ github.workspace }}/napari-source"
-              ;;
-            Windows)
-              source_path="${GITHUB_WORKSPACE//\\//}/napari-source"
-              ;;
-            esac
+          # This is the source path once mounted _inside_ the Docker image!
+          source_path="/home/conda/feedstock_root/napari-source"
 
-          sed -i.bak -e "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" \
-                     -e "s|  git_url:.*|  path: ${source_path}|" \
-                     -e "s|  git_rev:.*||"  \
-                     recipe/meta.yaml
+          sed -i -e "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" \
+                 -e "s|  git_url:.*|  path: ${source_path}|" \
+                 -e "s|  git_rev:.*||"  \
+                 recipe/meta.yaml
 
-          if [[ $RUNNER_OS != Windows ]]; then
-            conda-smithy rerender
-            git diff
-          fi
-
-      - name: Rerender feedstock (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd /C CALL {0}
-        working-directory: napari-feedstock
-        run: |
           conda-smithy rerender
           git diff
 
-      - name: Run build scripts (Linux)
-        if: runner.os == 'Linux'
+      - name: Run build scripts
         shell: bash -l {0}
         working-directory: napari-feedstock
         env:
@@ -148,90 +102,29 @@ jobs:
           mv ${GITHUB_WORKSPACE}/napari-source .
           ./.scripts/run_docker_build.sh
 
-      - name: Run build scripts (MacOS)
-        if: runner.os == 'macOS'
-        shell: bash -l {0}
-        working-directory: napari-feedstock
-        env:
-          CONFIG: osx_64_
-          CI: github_actions
+      - name: Export artifact identifier
+        id: artifact-id
         run: |
-          export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda_bld_suffix }}"
-          export FEEDSTOCK_NAME="$(basename $GITHUB_REPOSITORY)"
-          export GIT_BRANCH="$(basename $GITHUB_REF)"
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            export IS_PR_BUILD="True"
-          else
-            export IS_PR_BUILD="False"
-          fi
-          ./.scripts/run_osx_build.sh
+          name=napari-${{ env.NAPARI_VERSION }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+          echo "::set-output name=name::${name}"
 
-      - name: Run build scripts (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd /C CALL {0}
-        working-directory: napari-feedstock
-        env:
-          CONFIG: win_64_
-          PYTHONUNBUFFERED: 1
-          CI: github_actions
-        run: |
-          set "CONDA_BLD_PATH=${{ github.workspace }}${{ env.conda_bld_suffix }}"
-          if errorlevel 1 exit 1
-          call activate test
-          if errorlevel 1 exit 1
-          setup_conda_rc .\ .\recipe .\.ci_support\%CONFIG%.yaml
-          if errorlevel 1 exit 1
-          conda.exe build .\recipe -m .ci_support\%CONFIG%.yaml
-          if errorlevel 1 exit 1
-          set "FEEDSTOCK_NAME=%GITHUB_REPOSITORY:*/=%"
-          set "GIT_BRANCH=%GITHUB_REF:refs/heads/=%"
-          if /i "%GITHUB_EVENT_NAME%" == "pull_request" (
-            set "IS_PR_BUILD=True"
-          ) else (
-            set "IS_PR_BUILD=False"
-          )
-          validate_recipe_outputs "%FEEDSTOCK_NAME%"
-          if errorlevel 1 exit 1
-
-      - name: Upload Napari Artifact
+      - name: Upload packagess as artifacts
         uses: actions/upload-artifact@v2
-        if: env.noarch
         with:
-          name: napari-${{ env.NAPARI_VERSION }}.tar.bz2
+          name: ${{ steps.artifact-id.outputs.name }}
           path: ${{ github.workspace }}${{ env.conda_bld_suffix }}noarch/*.tar.bz2
-
-      - name: Upload Menu Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: napari-menu-${{ env.NAPARI_VERSION }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
-          path: ${{ github.workspace }}${{ env.conda_bld_suffix }}${{ env.NAPARI_PLATFORM }}/*.tar.bz2
 
       - name: Upload to anaconda.org
         shell: bash -l {0}
         # if: github.event_name == 'schedule'
         run: |
-          conda_bld_path="${GITHUB_WORKSPACE}${conda_bld_suffix}"
-          case ${{ runner.os }} in
-            Linux)
-              pkgs="${conda_bld_path}${NAPARI_PLATFORM}/*.tar.bz2"
-              pkgs+=" ${conda_bld_path}noarch/*.tar.bz2"
-              ;;
-            macOS)
-              pkgs="${conda_bld_path}${NAPARI_PLATFORM}/*.tar.bz2"
-              ;;
-            Windows)
-              conda_bld_path="${GITHUB_WORKSPACE//\\//}${conda_bld_suffix//\\//}"
-              pkgs="${conda_bld_path}${NAPARI_PLATFORM}/*.tar.bz2"
-              ;;
-            esac
-
           anaconda \
             -t ${{ secrets.ANACONDA_TOKEN }} \
             upload \
             --skip-existing \
             -u napari \
             -l nightly \
-            $pkgs
+            "${GITHUB_WORKSPACE}${conda_bld_suffix}noarch/*.tar.bz2"
 
   bundle:
     name: Bundle ${{ matrix.platform }}
@@ -296,32 +189,21 @@ jobs:
           ARTIFACT_NAME=$(python bundle_conda.py --artifact-name)
           echo "artifact-name=${ARTIFACT_NAME}" >> $GITHUB_ENV
           echo "Expected artifact name: ${ARTIFACT_NAME}"
-          NAPARI_PLATFORM=$(conda info --json | jq -r .platform)
-          echo "NAPARI_PLATFORM=${NAPARI_PLATFORM}" >> $GITHUB_ENV
-          echo "Conda platform: ${NAPARI_PLATFORM}"
+
+          mkdir -p ${CONDA_BLD_PATH}/noarch
 
       - name: Download local build artifacts (napari)
         uses: actions/download-artifact@v2
         with:
-          name: napari-${{ env.version }}.tar.bz2
-          path: ${{ env.CONDA_BLD_PATH }}
-
-      - name: Download local build artifacts (napari-menu)
-        uses: actions/download-artifact@v2
-        with:
-          name: napari-menu-${{ env.version }}-${{ env.NAPARI_PLATFORM }}.tar.bz2
-          path: ${{ env.CONDA_BLD_PATH }}
+          name: ${{ needs.conda-build.outputs.artifact-id }}
+          path: ${{ env.CONDA_BLD_PATH }}/noarch
 
       - name: Index local packages (if any)
         shell: bash -l {0}
         run: |
-          cd ${CONDA_BLD_PATH}
-          pkgs=$(shopt -s nullglob dotglob; echo "${CONDA_BLD_PATH}/*.tar.bz2")
+          pkgs=$(shopt -s nullglob dotglob; echo "${CONDA_BLD_PATH}/noarch/*.tar.bz2")
           if (( ${#pkgs} )); then
-            mkdir $NAPARI_PLATFORM noarch
-            mv *napari-menu*.tar.bz2 $NAPARI_PLATFORM
-            mv *napari*.tar.bz2 noarch
-            conda index .
+            conda index ${CONDA_BLD_PATH}/noarch
             conda search -c local --override-channels
             echo CONSTRUCTOR_USE_LOCAL=1 >> $GITHUB_ENV
           else
