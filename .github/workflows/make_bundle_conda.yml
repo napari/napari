@@ -203,7 +203,8 @@ jobs:
           host_platform=$(conda info --json | jq -r .platform)
           if [[ "$host_platform" != "$CONSTRUCTOR_TARGET_PLATFORM" ]]; then
             prefix="${RUNNER_TEMP}/conda-exe"
-            conda create -yq -p "${prefix}" -c napari/label/bundle_tools conda-standalone
+            CONDA_SUBDIR=$CONSTRUCTOR_TARGET_PLATFORM \
+              conda create -yq -p "${prefix}" -c napari/label/bundle_tools conda-standalone
             echo "CONSTRUCTOR_CONDA_EXE=${prefix}/standalone_conda/conda.exe" >> $GITHUB_ENV
           fi
 
