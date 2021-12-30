@@ -120,9 +120,6 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
         return
 
     # find cursor-plane intersection in data coordinates
-    # layer_dims_displayed = layer._world_to_data_dims_displayed(
-    #     dims_displayed=viewer.dims.displayed, ndim_world=viewer.dims.ndim
-    # )
     cursor_position = layer._world_to_displayed_data(
         position=viewer.cursor.position, dims_displayed=layer._dims_displayed
     )
