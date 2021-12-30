@@ -1,4 +1,5 @@
 import itertools
+import time
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import List
@@ -708,9 +709,9 @@ def test_paint_2d():
     assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
-@pytest.mark.timeout(1)  # TODO: see if we can test this more directly
 def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
+    now = time.monotonic()
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
@@ -719,6 +720,8 @@ def test_paint_2d_xarray():
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
     assert layer.data.sum() == 411
+    elapsed = time.monotonic() - now
+    assert elapsed < 1, "test was too slow, computation was likely not lazy"
 
 
 def test_paint_3d():
