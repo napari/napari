@@ -659,6 +659,7 @@ SKIP_WORDS = {
         'new_points',
         'new_shapes',
         'roll',
+        'dim_sorter',
         'transpose',
         'layer',
         'gridStrideBox',

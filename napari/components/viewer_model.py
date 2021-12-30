@@ -344,8 +344,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ndim = len(ranges)
             self.dims.ndim = ndim
             self.dims.set_range(range(ndim), ranges)
-            midpoint = [self.rounded_division(*_range) for _range in ranges]
-            self.dims.set_point(range(ndim), midpoint)
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -468,6 +466,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if len(self.layers) == 1:
             self.reset_view()
+            ranges = self.layers._ranges
+            midpoint = [self.rounded_division(*_range) for _range in ranges]
+            self.dims.set_point(range(len(ranges)), midpoint)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
