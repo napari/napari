@@ -102,7 +102,7 @@ class SlicingPlane(Plane):
     """Defines a draggable plane in 3D with a defined thickness.
 
     A slicing plane is a defined by a position, a normal vector and a thickness
-    value. Associated click and drag behavior can be toggled on or off.
+    value.
 
     Attributes
     ----------
