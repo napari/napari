@@ -254,7 +254,7 @@ class InteractiveTrackManager(BaseTrackManager):
     def _raise_setter_error(variable_name: str) -> None:
         raise RuntimeError(
             trans._(
-                'Tracks `{variable_name}` cannot be set while in `interactive_mode`.',
+                'Tracks `{variable_name}` cannot be set while in `editable`.',
                 variable_name=variable_name,
             )
         )

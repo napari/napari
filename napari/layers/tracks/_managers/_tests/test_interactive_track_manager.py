@@ -127,7 +127,7 @@ def test_interactive_tracks_interactivity(
     viewer = make_napari_viewer()
     tracks_layer = viewer.add_tracks(data=data.values, graph=graph)
 
-    tracks_layer.interactive_mode = True
+    tracks_layer.editable = True
     manager = tracks_layer._manager
     assert isinstance(manager, InteractiveTrackManager)
 
@@ -262,7 +262,7 @@ def test_interactive_tracks_interactivity(
 
     # testing the track layer can return to default TrackManager
     assert not manager._is_serialized
-    tracks_layer.interactive_mode = False
+    tracks_layer.editable = False
     assert manager._is_serialized
     assert tracks_layer.data.shape[0] == data.shape[0] - 2
 

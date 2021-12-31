@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 from warnings import warn
 
 import numpy as np
@@ -162,14 +162,12 @@ class Tracks(Layer):
             properties=Event,
             rebuild_tracks=Event,
             rebuild_graph=Event,
-            interactive_mode=Event,
         )
 
         # track manager deals with data slicing, graph building and properties
         self._manager = TrackManager()
-        self._interactive_mode = (
-            False  # setter cannot be used before setting `data`
-        )
+        self._editable = False
+
         self._track_colors = None
         self._colormaps_dict = colormaps_dict or {}  # additional colormaps
         self._color_by = color_by  # default color by ID
@@ -389,7 +387,6 @@ class Tracks(Layer):
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data(value=self.data)
-        self._set_editable()
 
     @property
     def features(self):
@@ -631,15 +628,15 @@ class Tracks(Layer):
             self._color_by = 'track_id'
             self.events.color_by()
 
-    @property
-    def interactive_mode(self) -> bool:
-        return self._interactive_mode
-
-    @interactive_mode.setter
-    def interactive_mode(self, state: bool) -> None:
+    def _set_editable(self, editable: Optional[bool] = None) -> bool:
         """Switches Tracks' mode, it rebuilds the tracks and the graph."""
+
+        # avoid reloading by default
+        if editable is None:
+            return self.editable
+
         data, graph, features = self.data, self.graph, self.features
-        if state:
+        if editable:
             self._manager = InteractiveTrackManager(
                 data=data, graph=graph, features=features
             )
@@ -649,4 +646,4 @@ class Tracks(Layer):
             self.graph = graph
             self.features = features
 
-        self.events.interactive_mode(state=state)
+        return self.editable
