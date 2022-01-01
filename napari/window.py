@@ -28,6 +28,5 @@ except ImportError as e:
             raise type(err)(
                 trans._(
                     "An error occured when importing Qt dependencies.  Cannot show napari window.  See cause above",
-                    err=err,
                 )
             ) from err
