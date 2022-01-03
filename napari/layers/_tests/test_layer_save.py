@@ -4,14 +4,8 @@ import numpy as np
 
 from napari._tests.utils import assert_layer_state_equal
 
-try:
-    import npe2  # noqa: F401
-
-    BUILTINS = 'napari'
-    SVG = 'napari-svg'
-except ImportError:
-    BUILTINS = 'builtins'
-    SVG = 'svg'
+BUILTINS = 'napari'
+SVG = 'napari-svg'
 
 
 # the layer_writer_and_data fixture is defined in napari/conftest.py

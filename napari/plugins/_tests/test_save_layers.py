@@ -4,14 +4,8 @@ import pytest
 
 from napari.plugins.io import save_layers
 
-try:
-    import npe2  # noqa: F401
-
-    BUILTINS = 'napari'
-    SVG = 'napari-svg'
-except ImportError:
-    BUILTINS = 'builtins'
-    SVG = 'svg'
+BUILTINS = 'napari'
+SVG = 'napari-svg'
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py

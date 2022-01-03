@@ -6,14 +6,8 @@ import pytest
 from napari.components import LayerList
 from napari.layers import Image
 
-try:
-    import npe2  # noqa: F401
-
-    BUILTINS = 'napari'
-    SVG = 'napari-svg'
-except ImportError:
-    BUILTINS = 'builtins'
-    SVG = 'svg'
+BUILTINS = 'napari'
+SVG = 'napari-svg'
 
 
 def test_empty_layers_list():

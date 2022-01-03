@@ -15,12 +15,9 @@ from typing import (
     Union,
 )
 
-try:
-    import npe2
-    from npe2.io_utils import read_get_reader
-    from npe2.manifest.schema import PluginManifest
-except ImportError:
-    npe2 = None
+import npe2
+from npe2.io_utils import read_get_reader
+from npe2.manifest.schema import PluginManifest
 
 if TYPE_CHECKING:
     from npe2._types import LayerData, WidgetCallable
@@ -31,28 +28,11 @@ if TYPE_CHECKING:
     from ..types import SampleDict
 
 
-def npe2_or_return(val=None):
-    def decorator(func):
-        if npe2 is None:
-
-            def noop(*_, **__) -> None:
-                return val
-
-            return noop
-        return func
-
-    return decorator
-
-
-npe2_or_return_none = npe2_or_return(None)
-
-
 class _FakeHookimpl:
     def __init__(self, name):
         self.plugin_name = name
 
 
-@npe2_or_return_none
 def read(
     path: Union[str, Sequence[str]], plugin: Optional[str] = None
 ) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
@@ -63,7 +43,6 @@ def read(
     return None
 
 
-@npe2_or_return([])
 def write_layers(
     path: str,
     layers: List[Layer],
@@ -106,7 +85,6 @@ def write_layers(
     return [res] if isinstance(res, str) else res or []
 
 
-@npe2_or_return_none
 def get_widget_contribution(
     plugin_name: str, widget_name: str
 ) -> Optional[WidgetCallable]:
@@ -119,7 +97,6 @@ def get_widget_contribution(
     return None
 
 
-@npe2_or_return_none
 def populate_qmenu(menu: QMenu, menu_key: str):
     """Populate `menu` from a `menu_key` offering in the manifest."""
     # TODO: declare somewhere what menu_keys are valid.
@@ -135,7 +112,6 @@ def populate_qmenu(menu: QMenu, menu_key: str):
             action.triggered.connect(lambda *args: cmd.exec(args=args))
 
 
-@npe2_or_return((None, []))
 def file_extensions_string_for_layers(
     layers: Sequence[Layer],
 ) -> Tuple[Optional[str], List[WriterContribution]]:
@@ -182,12 +158,10 @@ def file_extensions_string_for_layers(
     )
 
 
-@npe2_or_return(iter([]))
 def iter_manifests() -> Iterator[PluginManifest]:
     yield from npe2.PluginManager.instance()._manifests.values()
 
 
-@npe2_or_return(iter([]))
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
@@ -196,7 +170,6 @@ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     return (('dock', x) for x in wdgs.items())
 
 
-@npe2_or_return(iter([]))
 def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     pm = npe2.PluginManager.instance()
     return (
@@ -211,7 +184,6 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     )
 
 
-@npe2_or_return((None, []))
 def get_sample_data(
     plugin: str, sample: str
 ) -> Tuple[Optional[Callable[[], Iterable[LayerData]]], List[Tuple[str, str]]]:
