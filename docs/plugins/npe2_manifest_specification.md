@@ -359,12 +359,6 @@ writer that is not compatible with that type. For example, a writer declaring:
 would not be selected when trying to write an `image` and a `vector` layer
 because the above only works for cases with 0 `vector` layers.
 
-Note that just because a writer declares compatibility with a layer type does
-not mean it actually writes that type. In the example above, the writer might
-accept a set of layers containing `image`s and `point`s, but the write command
-might just ignore the `point` layers. The writer must return `None` for
-unwritten layers.
-
 ### Calling convention
 
 Currently, two calling conventions are supported for writers: single-layer and
