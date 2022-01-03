@@ -217,17 +217,6 @@ class QContrastLimitsPopup(QRangeSliderPopup):
     def __init__(self, layer: Image, parent=None):
         super().__init__(parent)
 
-        if np.issubdtype(layer.dtype, np.integer):
-            decimals = 0
-        else:
-            # scale precision with the log of the data range order of magnitude
-            # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
-            #       0 - 10  (1 order of mag)  -> 2 decimals
-            #       0 - 100 (2 orders of mag) -> 1 decimal
-            #       ≥ 3 orders of mag -> no decimals
-            # no more than 6 decimals
-            d_range = np.subtract(*layer.contrast_limits_range[::-1])
-            decimals = min(6, max(int(3 - np.log10(d_range)), 0))
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
         self.slider.setRange(*layer.contrast_limits_range)
         self.slider.setDecimals(decimals)
