@@ -447,7 +447,7 @@ class Labels(_ImageBase):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._feature_manager.values()
+        return self._feature_manager.values
 
     @features.setter
     def features(
@@ -468,7 +468,7 @@ class Labels(_ImageBase):
         self.features = properties
 
     def _make_label_index(self) -> Dict[int, int]:
-        features = self._feature_manager.values()
+        features = self._feature_manager.values
         label_index = {}
         if 'index' in features:
             label_index = {i: k for k, i in enumerate(features['index'])}

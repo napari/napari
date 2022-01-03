@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import dask
 import numpy as np
@@ -685,7 +685,7 @@ def features_to_pandas_dataframe(features: Any) -> pd.DataFrame:
 
 
 class _FeatureManager:
-    """Manages feature columns and their default values.
+    """Manages feature values and their defaults.
 
     Parameters
     ----------
@@ -709,14 +709,18 @@ class _FeatureManager:
         self._values = _validate_features(values, num_data=num_data)
         self._defaults = self._make_defaults()
 
+    @property
     def values(self) -> pd.DataFrame:
+        """The feature values table."""
         return self._values
 
     def set_values(self, values, *, num_data=None):
+        """Sets the feature values table."""
         self._values = _validate_features(values, num_data=num_data)
         self._defaults = self._make_defaults()
 
     def _make_defaults(self) -> pd.DataFrame:
+        """Makes the default values table from the feature values."""
         return pd.DataFrame(
             {
                 name: _get_default_column(column)
@@ -726,7 +730,9 @@ class _FeatureManager:
             copy=True,
         )
 
+    @property
     def defaults(self) -> pd.DataFrame:
+        """The default values one-row table."""
         return self._defaults
 
     def properties(self) -> Dict[str, np.ndarray]:
@@ -759,6 +765,7 @@ class _FeatureManager:
         }
 
     def currents(self) -> Dict[str, np.ndarray]:
+        """Converts the defaults table to a deprecated current properties dictionary."""
         return _features_to_properties(self._defaults)
 
     def set_currents(
@@ -767,6 +774,10 @@ class _FeatureManager:
         *,
         update_indices: Optional[List[int]] = None,
     ):
+        """Sets the default values using the deprecated current properties dictionary.
+
+        May also update some of the feature values to be equal to the new default values.
+        """
         currents = coerce_current_properties(currents)
         self._defaults = _validate_features(currents, num_data=1)
         if update_indices is not None:
@@ -819,7 +830,8 @@ class _FeatureManager:
             drop=True
         )
 
-    def reorder(self, order):
+    def reorder(self, order: Sequence[int]):
+        """Reorders the rows of the feature values table."""
         self._values = self._values.iloc[order].reset_index(drop=True)
 
     @classmethod
@@ -898,7 +910,6 @@ def _features_from_properties(
     property_choices: Optional[Dict[str, np.ndarray]] = None,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
-    """Validates and coerces deprecated properties input into a features DataFrame."""
     # Create categorical series for any choices provided.
     if property_choices is not None:
         properties = pd.DataFrame(data=properties)

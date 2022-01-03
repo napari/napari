@@ -344,7 +344,7 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        self._feature_manager = _FeatureManager._from_layer(
+        self._feature_manager = _FeatureManager.from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -506,7 +506,7 @@ class Points(Layer):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._feature_manager.values()
+        return self._feature_manager.values
 
     @features.setter
     def features(
@@ -530,7 +530,7 @@ class Points(Layer):
 
         See `features` for more details on the type of this property.
         """
-        return self._feature_manager.defaults()
+        return self._feature_manager.defaults
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -545,7 +545,7 @@ class Points(Layer):
     def _update_color_manager(color_manager, feature_manager, name):
         if color_manager.color_properties is not None:
             color_name = color_manager.color_properties.name
-            if color_name not in feature_manager.values():
+            if color_name not in feature_manager.values:
                 color_manager.color_mode = ColorMode.DIRECT
                 color_manager.color_properties = None
                 warnings.warn(
@@ -559,8 +559,8 @@ class Points(Layer):
             else:
                 color_manager.color_properties = {
                     'name': color_name,
-                    'values': feature_manager.values()[color_name].to_numpy(),
-                    'current_value': feature_manager.defaults()[color_name][0],
+                    'values': feature_manager.values[color_name].to_numpy(),
+                    'current_value': feature_manager.defaults[color_name][0],
                 }
 
     @properties.setter

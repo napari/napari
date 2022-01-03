@@ -158,7 +158,7 @@ class TrackManager:
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._feature_manager.values()
+        return self._feature_manager.values
 
     @features.setter
     def features(
@@ -166,9 +166,8 @@ class TrackManager:
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_manager.set_values(features, num_data=len(self.data))
-        features = self._feature_manager.values()
-        if 'track_id' not in features:
-            features['track_id'] = self.track_ids
+        if 'track_id' not in self._feature_manager.values:
+            self._feature_manager.values['track_id'] = self.track_ids
         self._feature_manager.reorder(self._order)
 
     @property

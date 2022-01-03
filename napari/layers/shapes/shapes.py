@@ -718,7 +718,7 @@ class Shapes(Layer):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._feature_manager.values()
+        return self._feature_manager.values
 
     @features.setter
     def features(
@@ -760,7 +760,7 @@ class Shapes(Layer):
 
         See `features` for more details on the type of this property.
         """
-        return self._feature_manager.defaults()
+        return self._feature_manager.defaults
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

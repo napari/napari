@@ -264,13 +264,13 @@ def test_dims_displayed_world_to_layer(
 
 def test_feature_manager_from_layer_with_none_then_empty():
     feature_manager = _FeatureManager.from_layer(features=None)
-    assert feature_manager.values().shape == (0, 0)
+    assert feature_manager.values.shape == (0, 0)
 
 
 def test_feature_manager_from_layer_with_num_data_only():
     feature_manager = _FeatureManager.from_layer(num_data=5)
-    assert feature_manager.values().shape == (5, 0)
-    assert feature_manager.defaults().shape == (1, 0)
+    assert feature_manager.values.shape == (5, 0)
+    assert feature_manager.defaults.shape == (1, 0)
 
 
 def test_feature_manager_from_layer_with_properties_and_num_data():
@@ -283,13 +283,13 @@ def test_feature_manager_from_layer_with_properties_and_num_data():
         properties=properties, num_data=4
     )
 
-    features = feature_manager.values()
+    features = feature_manager.values
     assert features.shape == (4, 2)
     np.testing.assert_array_equal(features['class'], properties['class'])
     np.testing.assert_array_equal(
         features['confidence'], properties['confidence']
     )
-    defaults = feature_manager.defaults()
+    defaults = feature_manager.defaults
     assert defaults.shape == (1, 2)
     assert defaults['class'][0] == properties['class'][-1]
     assert defaults['confidence'][0] == properties['confidence'][-1]
@@ -307,7 +307,7 @@ def test_feature_manager_from_layer_with_properties_and_choices():
         properties=properties, property_choices=property_choices, num_data=4
     )
 
-    features = feature_manager.values()
+    features = feature_manager.values
     assert features.shape == (4, 1)
     class_column = features['class']
     np.testing.assert_array_equal(class_column, properties['class'])
@@ -315,7 +315,7 @@ def test_feature_manager_from_layer_with_properties_and_choices():
     np.testing.assert_array_equal(
         class_column.dtype.categories, property_choices['class']
     )
-    defaults = feature_manager.defaults()
+    defaults = feature_manager.defaults
     assert defaults.shape == (1, 1)
     assert defaults['class'][0] == properties['class'][-1]
 
@@ -329,14 +329,14 @@ def test_feature_manager_from_layer_with_choices_only():
         property_choices=property_choices, num_data=0
     )
 
-    features = feature_manager.values()
+    features = feature_manager.values
     assert features.shape == (0, 1)
     class_column = features['class']
     assert isinstance(class_column.dtype, pd.CategoricalDtype)
     np.testing.assert_array_equal(
         class_column.dtype.categories, property_choices['class']
     )
-    defaults = feature_manager.defaults()
+    defaults = feature_manager.defaults
     assert defaults.shape == (1, 1)
     assert defaults['class'][0] == property_choices['class'][0]
 
@@ -353,14 +353,14 @@ def test_feature_manager_from_layer_with_empty_properties_and_choices():
         properties=properties, property_choices=property_choices, num_data=0
     )
 
-    features = feature_manager.values()
+    features = feature_manager.values
     assert features.shape == (0, 1)
     class_column = features['class']
     assert isinstance(class_column.dtype, pd.CategoricalDtype)
     np.testing.assert_array_equal(
         class_column.dtype.categories, property_choices['class']
     )
-    defaults = feature_manager.defaults()
+    defaults = feature_manager.defaults
     assert defaults.shape == (1, 1)
     assert defaults['class'][0] == property_choices['class'][0]
 
@@ -380,7 +380,7 @@ TEST_FEATURES = pd.DataFrame(
 
 def test_feature_manager_from_layer_with_properties_as_dataframe():
     feature_manager = _FeatureManager.from_layer(properties=TEST_FEATURES)
-    pd.testing.assert_frame_equal(feature_manager.values(), TEST_FEATURES)
+    pd.testing.assert_frame_equal(feature_manager.values, TEST_FEATURES)
 
 
 def _make_feature_manager():
@@ -392,7 +392,7 @@ def test_feature_manager_resize_smaller():
 
     feature_manager.resize(2)
 
-    features = feature_manager.values()
+    features = feature_manager.values
     assert features.shape == (2, 2)
     np.testing.assert_array_equal(features['class'], ['sky', 'person'])
     np.testing.assert_array_equal(features['confidence'], [0.2, 0.5])
@@ -403,7 +403,7 @@ def test_feature_manager_resize_larger():
 
     feature_manager.resize(6)
 
-    features = feature_manager.values()
+    features = feature_manager.values
     assert features.shape == (6, 2)
     np.testing.assert_array_equal(
         features['class'],
@@ -426,7 +426,7 @@ def test_feature_manager_append():
 
     feature_manager.append(to_append)
 
-    features = feature_manager.values()
+    features = feature_manager.values
     assert features.shape == (6, 2)
     np.testing.assert_array_equal(
         features['class'],
@@ -443,7 +443,7 @@ def test_feature_manager_remove():
 
     feature_manager.remove([1, 3])
 
-    features = feature_manager.values()
+    features = feature_manager.values
     assert features.shape == (2, 2)
     np.testing.assert_array_equal(features['class'], ['sky', 'building'])
     np.testing.assert_array_equal(features['confidence'], [0.2, 1])
@@ -453,11 +453,11 @@ def test_feature_manager_from_layer_with_custom_index():
     features = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
     feature_manager = _FeatureManager.from_layer(features=features)
     expected = features.reset_index(drop=True)
-    pd.testing.assert_frame_equal(feature_manager.values(), expected)
+    pd.testing.assert_frame_equal(feature_manager.values, expected)
 
 
 def test_feature_manager_from_layer_with_custom_index_and_num_data():
     features = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
     feature_manager = _FeatureManager.from_layer(features=features, num_data=2)
     expected = features.reset_index(drop=True)
-    pd.testing.assert_frame_equal(feature_manager.values(), expected)
+    pd.testing.assert_frame_equal(feature_manager.values, expected)
