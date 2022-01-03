@@ -7,11 +7,7 @@ from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.layer_utils import (
-    _features_from_properties,
-    _features_to_properties,
-    _validate_features,
-)
+from ..utils.layer_utils import _features_to_properties, _validate_features
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -182,10 +178,7 @@ class TrackManager:
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-        self.features = _features_from_properties(
-            properties=properties,
-            num_data=len(self.data),
-        )
+        self.features = properties
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:

@@ -3,11 +3,7 @@ import collections
 import numpy as np
 import pytest
 
-from napari._tests.utils import (
-    skip_local_popups,
-    skip_on_mac_ci,
-    skip_on_win_ci,
-)
+from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -17,7 +13,6 @@ from napari.utils.interactions import (
 
 
 @skip_on_win_ci
-@skip_on_mac_ci
 @skip_local_popups
 def test_z_order_adding_removing_images(make_napari_viewer):
     """Test z order is correct after adding/ removing images."""

@@ -1,5 +1,7 @@
 """VispyCanvas class.
 """
+from weakref import WeakSet
+
 from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas, Widget
 
@@ -20,6 +22,8 @@ class VispyCanvas(SceneCanvas):
 
     """
 
+    _instances = WeakSet()
+
     def __init__(self, *args, **kwargs):
 
         # Since the base class is frozen we must create this attribute
@@ -28,6 +32,7 @@ class VispyCanvas(SceneCanvas):
         self._last_theme_color = None
         self._background_color_override = None
         super().__init__(*args, **kwargs)
+        self._instances.add(self)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
         # now while we know a Canvas exists. Later calls to
