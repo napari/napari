@@ -7,7 +7,7 @@ from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.layer_utils import FeaturesManager
+from ..utils.layer_utils import _FeatureManager
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -70,7 +70,7 @@ class TrackManager:
 
         # store the raw data here
         self._data = None
-        self._feature_manager = FeaturesManager({})
+        self._feature_manager = _FeatureManager()
         self._order = None
 
         # use a kdtree to help with fast lookup of the nearest track

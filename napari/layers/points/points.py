@@ -24,7 +24,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
-from ..utils.layer_utils import FeaturesManager, _features_to_properties
+from ..utils.layer_utils import _FeatureManager, _features_to_properties
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -344,7 +344,7 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        self._feature_manager = FeaturesManager._from_layer(
+        self._feature_manager = _FeatureManager._from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,

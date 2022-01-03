@@ -23,7 +23,7 @@ from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import FeaturesManager
+from ..utils.layer_utils import _FeatureManager
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -291,10 +291,10 @@ class Labels(_ImageBase):
             contour=Event,
         )
 
-        self._feature_manager = FeaturesManager._from_layer(
+        self._feature_manager = _FeatureManager.from_layer(
             features=features, properties=properties
         )
-        self._update_label_index()
+        self._label_index = self._make_label_index()
 
         self._n_edit_dimensions = 2
         self._contiguous = True
@@ -455,16 +455,8 @@ class Labels(_ImageBase):
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
         self._feature_manager.set_values(features)
-        self._update_label_index()
+        self._label_index = self._make_label_index()
         self.events.properties()
-
-    def _update_label_index(self) -> None:
-        features = self._feature_manager.values()
-        self._label_index = {}
-        if 'index' in features:
-            self._label_index = {i: k for k, i in enumerate(features['index'])}
-        elif features.shape[1] > 0:
-            self._label_index = {i: i for i in range(features.shape[0])}
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -474,6 +466,15 @@ class Labels(_ImageBase):
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         self.features = properties
+
+    def _make_label_index(self) -> Dict[int, int]:
+        features = self._feature_manager.values()
+        label_index = {}
+        if 'index' in features:
+            label_index = {i: k for k, i in enumerate(features['index'])}
+        elif features.shape[1] > 0:
+            label_index = {i: i for i in range(features.shape[0])}
+        return label_index
 
     @property
     def color(self):

@@ -6,9 +6,7 @@ import pytest
 from dask import array as da
 
 from napari.layers.utils.layer_utils import (
-    FeaturesManager,
-    _features_from_properties,
-    _validate_features,
+    _FeatureManager,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -264,41 +262,40 @@ def test_dims_displayed_world_to_layer(
     np.testing.assert_array_equal(dims_displayed_layer, expected)
 
 
-def test_validate_features_with_none_then_empty():
-    features = _validate_features(None)
-    assert features.shape == (0, 0)
+def test_feature_manager_from_layer_with_none_then_empty():
+    feature_manager = _FeatureManager.from_layer(features=None)
+    assert feature_manager.values().shape == (0, 0)
 
 
-def test_features_from_layer_with_num_data_only():
+def test_feature_manager_from_layer_with_num_data_only():
+    feature_manager = _FeatureManager.from_layer(num_data=5)
+    assert feature_manager.values().shape == (5, 0)
+    assert feature_manager.defaults().shape == (1, 0)
 
-    features_manager = FeaturesManager._from_layer(num_data=5)
-    assert features_manager.values().shape == (5, 0)
-    assert features_manager.defaults().shape == (1, 0)
 
-
-def test_features_from_layer_with_properties_and_num_data():
+def test_feature_manager_from_layer_with_properties_and_num_data():
     properties = {
         'class': np.array(['sky', 'person', 'building', 'person']),
         'confidence': np.array([0.2, 0.5, 1, 0.8]),
     }
 
-    features_manager = FeaturesManager._from_layer(
+    feature_manager = _FeatureManager.from_layer(
         properties=properties, num_data=4
     )
 
-    features = features_manager.values()
+    features = feature_manager.values()
     assert features.shape == (4, 2)
     np.testing.assert_array_equal(features['class'], properties['class'])
     np.testing.assert_array_equal(
         features['confidence'], properties['confidence']
     )
-    defaults = features_manager.defaults()
+    defaults = feature_manager.defaults()
     assert defaults.shape == (1, 2)
     assert defaults['class'][0] == properties['class'][-1]
     assert defaults['confidence'][0] == properties['confidence'][-1]
 
 
-def test_features_from_layer_with_properties_and_choices():
+def test_feature_manager_from_layer_with_properties_and_choices():
     properties = {
         'class': np.array(['sky', 'person', 'building', 'person']),
     }
@@ -306,11 +303,11 @@ def test_features_from_layer_with_properties_and_choices():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    features_manager = FeaturesManager._from_layer(
+    feature_manager = _FeatureManager.from_layer(
         properties=properties, property_choices=property_choices, num_data=4
     )
 
-    features = features_manager.values()
+    features = feature_manager.values()
     assert features.shape == (4, 1)
     class_column = features['class']
     np.testing.assert_array_equal(class_column, properties['class'])
@@ -318,33 +315,33 @@ def test_features_from_layer_with_properties_and_choices():
     np.testing.assert_array_equal(
         class_column.dtype.categories, property_choices['class']
     )
-    defaults = features_manager.defaults()
+    defaults = feature_manager.defaults()
     assert defaults.shape == (1, 1)
     assert defaults['class'][0] == properties['class'][-1]
 
 
-def test_features_from_layers_with_choices_only():
+def test_feature_manager_from_layer_with_choices_only():
     property_choices = {
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    features_manager = FeaturesManager._from_layer(
+    feature_manager = _FeatureManager.from_layer(
         property_choices=property_choices, num_data=0
     )
 
-    features = features_manager.values()
+    features = feature_manager.values()
     assert features.shape == (0, 1)
     class_column = features['class']
     assert isinstance(class_column.dtype, pd.CategoricalDtype)
     np.testing.assert_array_equal(
         class_column.dtype.categories, property_choices['class']
     )
-    defaults = features_manager.defaults()
+    defaults = feature_manager.defaults()
     assert defaults.shape == (1, 1)
     assert defaults['class'][0] == property_choices['class'][0]
 
 
-def test_features_manager_from_layer_with_empty_properties_and_choices():
+def test_feature_manager_from_layer_with_empty_properties_and_choices():
     properties = {
         'class': np.array([]),
     }
@@ -352,18 +349,18 @@ def test_features_manager_from_layer_with_empty_properties_and_choices():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    features_manager = FeaturesManager._from_layer(
+    feature_manager = _FeatureManager.from_layer(
         properties=properties, property_choices=property_choices, num_data=0
     )
 
-    features = features_manager.values()
+    features = feature_manager.values()
     assert features.shape == (0, 1)
     class_column = features['class']
     assert isinstance(class_column.dtype, pd.CategoricalDtype)
     np.testing.assert_array_equal(
         class_column.dtype.categories, property_choices['class']
     )
-    defaults = features_manager.defaults()
+    defaults = feature_manager.defaults()
     assert defaults.shape == (1, 1)
     assert defaults['class'][0] == property_choices['class'][0]
 
@@ -381,13 +378,13 @@ TEST_FEATURES = pd.DataFrame(
 )
 
 
+def test_feature_manager_from_layer_with_properties_as_dataframe():
+    feature_manager = _FeatureManager.from_layer(properties=TEST_FEATURES)
+    pd.testing.assert_frame_equal(feature_manager.values(), TEST_FEATURES)
+
+
 def _make_feature_manager():
-    return FeaturesManager(TEST_FEATURES.copy(deep=True), num_data=4)
-
-
-def test_features_from_properties_with_dataframe():
-    features = _features_from_properties(properties=TEST_FEATURES)
-    pd.testing.assert_frame_equal(features, TEST_FEATURES)
+    return _FeatureManager(TEST_FEATURES.copy(deep=True), num_data=4)
 
 
 def test_feature_manager_resize_smaller():
@@ -452,15 +449,15 @@ def test_feature_manager_remove():
     np.testing.assert_array_equal(features['confidence'], [0.2, 1])
 
 
-def test_validate_features_with_custom_index_without_num_data():
-    input = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
-    actual = _validate_features(input)
-    expected = input.reset_index(drop=True)
-    pd.testing.assert_frame_equal(actual, expected)
+def test_feature_manager_from_layer_with_custom_index():
+    features = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
+    feature_manager = _FeatureManager.from_layer(features=features)
+    expected = features.reset_index(drop=True)
+    pd.testing.assert_frame_equal(feature_manager.values(), expected)
 
 
-def test_validate_features_with_custom_index_and_num_data():
-    input = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
-    actual = _validate_features(input, num_data=2)
-    expected = input.reset_index(drop=True)
-    pd.testing.assert_frame_equal(actual, expected)
+def test_feature_manager_from_layer_with_custom_index_and_num_data():
+    features = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
+    feature_manager = _FeatureManager.from_layer(features=features, num_data=2)
+    expected = features.reset_index(drop=True)
+    pd.testing.assert_frame_equal(feature_manager.values(), expected)

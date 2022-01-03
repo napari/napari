@@ -13,7 +13,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import FeaturesManager
+from ..utils.layer_utils import _FeatureManager
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
@@ -226,7 +226,7 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._feature_manager = FeaturesManager._from_layer(
+        self._feature_manager = _FeatureManager.from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -335,9 +335,10 @@ class Vectors(Layer):
                 )
             else:
                 edge_color_name = self._edge.color_properties.name
+                property_values = self.features[edge_color_name].to_numpy()
                 self._edge.color_properties = {
                     'name': edge_color_name,
-                    'values': self.features[edge_color_name].to_numpy(),
+                    'values': property_values,
                     'current_value': self.feature_defaults[edge_color_name][0],
                 }
         self.events.properties()

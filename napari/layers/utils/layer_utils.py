@@ -684,8 +684,35 @@ def features_to_pandas_dataframe(features: Any) -> pd.DataFrame:
     return features
 
 
-class FeaturesManager:
-    def __init__(self, values, *, num_data: Optional[int] = None):
+class _FeatureManager:
+    """Manages feature columns and their default values.
+
+    Parameters
+    ----------
+    values : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
+        The features values, which will be passed to the pandas DataFrame initializer.
+        If this is a pandas DataFrame with a non-default index, that index
+        (except its length) will be ignored.
+    num_data : Optional[int]
+        The number of the elements in the layer calling this, such as
+        the number of points, which is used to check that the features
+        table has the expected number of rows. If None, then the default
+        DataFrame index is used.
+    """
+
+    def __init__(
+        self,
+        values: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+        *,
+        num_data: Optional[int] = None,
+    ):
+        self._values = _validate_features(values, num_data=num_data)
+        self._defaults = self._make_defaults()
+
+    def values(self) -> pd.DataFrame:
+        return self._values
+
+    def set_values(self, values, *, num_data=None):
         self._values = _validate_features(values, num_data=num_data)
         self._defaults = self._make_defaults()
 
@@ -698,13 +725,6 @@ class FeaturesManager:
             index=range(1),
             copy=True,
         )
-
-    def values(self) -> pd.DataFrame:
-        return self._values
-
-    def set_values(self, values, *, num_data=None):
-        self._values = _validate_features(values, num_data=num_data)
-        self._defaults = self._make_defaults()
 
     def defaults(self) -> pd.DataFrame:
         return self._defaults
@@ -803,7 +823,7 @@ class FeaturesManager:
         self._values = self._values.iloc[order].reset_index(drop=True)
 
     @classmethod
-    def _from_layer(
+    def from_layer(
         cls,
         *,
         features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
@@ -812,8 +832,32 @@ class FeaturesManager:
         ] = None,
         property_choices: Optional[Dict[str, np.ndarray]] = None,
         num_data: Optional[int] = None,
-    ) -> FeaturesManager:
-        """Coerces a layer's keyword arguments to feature values and defaults tables."""
+    ) -> _FeatureManager:
+        """Coerces a layer's keyword arguments to a feature manager.
+
+        Parameters
+        ----------
+        features : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
+            The features input to a layer.
+        properties : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
+            The properties input to a layer.
+        property_choices : Optional[Dict[str, np.ndarray]]
+            The property choices input to a layer.
+        num_data : Optional[int]
+            The number of the elements in the layer calling this, such as
+            the number of points.
+
+        Returns
+        -------
+        _FeatureManager
+            The feature manager created from the given layer keyword arguments.
+
+        Raises
+        ------
+        ValueError
+            If the input property columns are not all the same length, or if
+            that length is not equal to the given num_data.
+        """
         if properties is not None or property_choices is not None:
             features = _features_from_properties(
                 properties=properties,
@@ -838,37 +882,10 @@ def _get_default_column(column: pd.Series) -> pd.Series:
 
 
 def _validate_features(
-    features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]],
     *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
-    """Validates and coerces a features table into a pandas DataFrame.
-
-    Parameters
-    ----------
-    features : Union[Dict[str, np.ndarray], pd.DataFrame]
-        The features table input, which will be passed to the pandas
-        DataFrame initializer. If this is a pandas DataFrame with a
-        non-default index, that index (except its length) will be
-        ignored.
-    num_data : Optional[int]
-        The number of the elements in the layer calling this, such as
-        the number of points, which is used to check that the features
-        table has the expected number of rows. If None, then the default
-        DataFrame index is used.
-
-    Returns
-    -------
-    pd.DataFrame
-        The pandas DataFrame created from the input features table. This
-        may or may not store a copy of the input data.
-
-    Raises
-    ------
-    ValueError
-        If the input feature columns are not all the same length, or if
-        that length is not equal to the given num_data.
-    """
     if isinstance(features, pd.DataFrame):
         features = features.reset_index(drop=True)
     index = None if num_data is None else range(num_data)
