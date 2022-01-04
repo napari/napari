@@ -396,14 +396,13 @@ def main():
     # https://github.com/napari/napari/issues/380#issuecomment-659656775
     # and https://github.com/ContinuumIO/anaconda-issues/issues/199
     import platform
-    from distutils.version import StrictVersion
 
-    _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
-        platform.release()
-    ) > StrictVersion('19.0.0')
-    _MACOS_AT_LEAST_BIG_SUR = sys.platform == "darwin" and StrictVersion(
-        platform.release()
-    ) > StrictVersion('20.0.0')
+    _MACOS_AT_LEAST_CATALINA = (
+        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 19
+    )
+    _MACOS_AT_LEAST_BIG_SUR = (
+        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 20
+    )
 
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
