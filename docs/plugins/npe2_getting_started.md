@@ -5,7 +5,7 @@
 ```{warning}
 This guide is still a work in progress.
 
-There are inaccuracies and mistakes. If you notice any, feel free to submit
+There are inaccuracies and mistakes. If you notice any, please submit
 issues to the [napari github repository](https://github.com/napari/napari).
 ```
 
@@ -16,7 +16,7 @@ is a re-imagining of how napari interacts with plugins. Plugins targeting
 `napari-plugin-engine` will continue to work, but we recommend migrating to
 `npe2` eventually.
 
-For more on migrating an existing plugins see the [](npe2-migration-guide).
+For more on migrating an existing plugin see the [](npe2-migration-guide).
 ```
 
 This guide will walk you through the steps required to write a napari plugin
@@ -27,24 +27,24 @@ with `pip` and autodetected by napari.
 
 ## Overview
 
-Plugins are special python packages. They include a _plugin manifest_ file
+Plugins are special Python packages. They include a _plugin manifest_ file
 that lists _contributions_ that napari may use when performing tasks.
 
 Creating a new plugin involves the following steps:
 
-1. Configure a python package to use an npe2 manifest (e.g. by [editing
+1. Configure a Python package to use an npe2 manifest (e.g. by [editing
    `setup.cfg`](edit-package-meta)):
    - Create the _entry point group_.
    - Make sure the manifest file is added to `package_data`.
 2. Create the [plugin manifest](manifest) file.
 
 This guide will walk you through the steps using a [cookiecutter] template.
-cookiecutter is a command line utility that generates a python package for you
+cookiecutter is a command line utility that generates a Python package for you
 after asking a few questions. In this case, the package contains all the
 boilerplate needed for building, documenting, testing and deploying your plugin.
 
 ```{note}
-Minimally, a plugin could be just three files: `setup.cfg`, a python file, and
+Minimally, a plugin could be just three files: `setup.cfg`, a Python file, and
 the plugin manifest file.
 ```
 
@@ -75,17 +75,17 @@ include_widget_plugin [y]: n
 ...
 ```
 
-We named our plugin `my-py-reader`. This is the name that will be used for
-the python package. It should conform to the [PEP8] naming convention
+We named our plugin `my-npy-reader`. This is the name that will be used for
+the Python package. It should conform to the [PEP8] naming convention
 (short, all-lowercase names, using dashes instead of underscores).
 
 After answering all the prompts, `cookiecutter` will create a directory called
-`my_npy_reader` in the current directory that holds the generated files. It
+`my-npy-reader` in the current directory that holds the generated files. It
 will look something like this:
 
 ```
 my-npy-reader
-├── .napari                    <-- napari-hub customizations
+├── .napari                    <-- napari hub customizations
 │   └── DESCRIPTION.md
 │   └── config.yml
 ├── LICENSE
@@ -114,7 +114,7 @@ my-npy-reader
 
 The plugin manifest file is specified relative to the top level module path as specified in `setup.cfg` `options.packages.find`. For
 the example it will be loaded from:
-`<path/to/my-npy-reader>/my_npy_reader/src/my_npy_reader/napari.yaml`.
+`<path/to/my-npy-reader>/my-npy-reader/src/my_npy_reader/napari.yml`.
 
 The generated `napari.yml` file looks like this:
 
@@ -194,13 +194,14 @@ napari.manifest =
 
 The manifest file is specified relative to the submodule root path.
 So for the example it will be loaded from:
-`<path/to/npe2-tester>/napari.yaml`.
+`<path/to/npe2-tester>/npe2_tester/napari.yaml`.
 
 The manifest file also needs to be included as _[package data][pd]_ in
-distributable forms for the package. For example:
+distributable forms of the package. For example:
 
 ```toml
 [metadata]
+name=npe2-tester
 ...
 include_package_data=True
 
@@ -212,7 +213,7 @@ npe2_tester =
 A user can install napari and your plugin with:
 
 ```bash
-pip install napari myplugin
+pip install "napari[all]" npe2-tester
 ```
 
 ## 4. Preparing for release
@@ -223,7 +224,7 @@ already been done for you.
 
 Once your package, with its `Framework :: napari` classifier, is listed on
 [PyPI], it will also be visible on the [napari hub][hub], alongside all other
-napari plugins. More about python packing can be found in the [packaging guide].
+napari plugins. More about Python packing can be found in the [packaging guide].
 
 You can customize your plugin’s listing for the hub by following this
 [guide][hubguide]. If you'd like to know what your _napari hub_ plugin page
@@ -240,23 +241,6 @@ You can also include a napari hub specific description file at
 repository’s `README.md` when it’s available. This file allows you to maintain a
 more developer/repository oriented `README.md` while still making sure potential
 users get all the information they need to get started with your plugin.
-
-Finally, once you have curated your package metadata and description, you can
-preview your metadata, and check any missing fields using the `napari-hub-cli`
-tool. Install this tool using
-
-```bash
-pip install napari-hub-cli
-```
-
-and preview your metadata with
-
-```bash
-napari-hub-cli preview-metadata ./my-npy-reader
-```
-
-For more information on the tool see the `napari-hub-cli`
-[README](https://github.com/chanzuckerberg/napari-hub-cli).
 
 If you want your plugin to be available on PyPI, but not visible on the napari
 hub, you can add a `.napari/config.yml` file to the root of your repository

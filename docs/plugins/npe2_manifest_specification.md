@@ -5,7 +5,7 @@
 ```{warning}
 This guide is still a work in progress.
 
-There are inaccuracies and mistakes. If you notice any, feel free to submit
+There are inaccuracies and mistakes. If you notice any, please submit
 issues to the [napari github repository](https://github.com/napari/napari).
 ```
 
@@ -18,7 +18,7 @@ is a re-imagining of how napari interacts with plugins. Plugins targeting
 ```
 
 The **plugin manifest** is a specially formatted text file declaring the
-functionality of a [npe2][] plugin. A **plugin** is a python package that
+functionality of an [npe2][] plugin. A **plugin** is a Python package that
 contains the manifest together with a suitable _[entry point group][epg]_ in
 the package metadata.
 
@@ -49,12 +49,12 @@ napari.manifest =
 ```
 
 The manifest file is specified relative to the submodule root path.
-So for the example it will be loaded from: `<path/to/npe2-tester>/napari.yaml`.
+So for the example it will be loaded from: `<path/to/npe2-tester>/npe2_tester/napari.yaml`.
 
 ### 2. Include the manifest in the package distribution
 
 The manifest file needs to be included as _[package data][pd]_ in
-distributable forms for the package. For example:
+distributable forms of the package. For example:
 
 ```toml
 [metadata]
@@ -92,8 +92,8 @@ contributions:
 ```
 
 Readers, writers, sample data providers and widget providers refer to callable
-python functions that a plugin defines. Each callable is identified with an
-entry in the list of `commands` via a unique id. For more see {ref}`Commands`
+Python functions that a plugin defines. Each callable is identified with an
+entry in the list of `commands` via a unique id. For more detail, see {ref}`Commands`
 below.
 
 ```{note}
@@ -108,14 +108,14 @@ description, and version.
 
 ### Required
 
-- **name** The name of the plugin. Example: `napari-svg`. Should be a
+- **name** The name of the plugin. Example: `napari-svg`. Must be a
   [PEP-8]-compatible package name. If missing, this is populated from the
-  python package [name][setup-name].
+  Python package [name][setup-name].
 
 ### Optional
 
 - **engine**: A SemVer compatible version string matching the versions of the
-  plugin engine that the extension is compatible with. Example: "0.1.0".
+  plugin engine that the plugin is compatible with. Example: "0.1.0".
   See [][compatibility] for details.
 - **display_name**: User-facing text to display as the name of this plugin.
   Example: `napari SVG`. Must be 3-40 characters long, containing
@@ -134,13 +134,13 @@ on deactivation.  These must be defined relative to the `entry_point`.
 
 ### Compatibility
 
-A goal of `npe2` was to make it possible to add or change the plugin interface
+One goal of `npe2` is to make it possible to add or change the plugin interface
 without breaking existing plugins. This is achieved by defining an
 **engine version**. When we want to change the plugin interface, we increment
 this number to indicate there is something new. New plugins can opt-in to the
 new behavior by declaring compatibility with that version.
 
-When authoring a plugin, you will need to describe what is the plugin's
+When authoring a plugin, you will need to describe the plugin's
 compatibility with `npe2`. This can be done via the `engine` field in the
 plugin manifest (see {ref}`top-level-props`).
 
@@ -162,13 +162,13 @@ added.
 
 ## Commands
 
-**command** is a python function associated with an id. The **id** is
+A **command** is a Python function associated with an id. The **id** is
 a unique identifier to which other contributions, like readers, can refer.
 
 When a contribution like a reader refers to a command, it gives the command
 meaning. The command will be expected to conform to a specific _calling
 convention_. The **calling convention** is described by the argument and return
-types of the associated callable, as well as conventions regarding it's
+types of the associated callable, as well as conventions regarding its
 behavior.
 
 ### Required fields
@@ -180,7 +180,7 @@ behavior.
 
 ### Optional fields
 
-- **python_name** Fully qualified name to callable python object implementing
+- **python_name** Fully qualified name to callable Python object implementing
   this command. This usually takes the form of
   `{obj.__module__}:{obj.__qualname__}` (e.g.
   `my_package.a_module:some_function`). For a command to be useful, this
@@ -262,7 +262,7 @@ def reader(path: str) -> List[LayerData]:
 
 ```{note}
 The reader command is compatible with functions used for the `napari_get_reader`
-[hook specification][get-reader-hook] used by plugins based on the
+[hook specification][get-reader-hook] by plugins based on the
 `napari-plugin-engine`. See the [](npe2-migration-guide) for more details.
 ```
 
@@ -287,7 +287,7 @@ layer_data(list of LayerData)
 ### Optional fields
 
 - **display_name** Brief text used to describe this writer when presented.
-  Empty by default. When present this is presented along side the plugin name
+  Empty by default. When present this is shown along side the plugin name
   and may be used to distinguish the kind of writer for the user. E.g. "lossy"
   or "lossless".
 - **filename_extensions** List of filename extensions compatible with this
@@ -332,7 +332,7 @@ contributions:
 
 ### Layer type constraints
 
-Given a set of layers, compatible writer plugins are selected based their
+Given a set of layers, compatible writer plugins are selected based on their
 _layer type constraints_.
 
 A writer plugin can declare that it will write between _m_ and _n_ layers of a
@@ -469,6 +469,7 @@ Sample data uri
 
 ```yaml
 name: my-sample
+# note that uri based sample data contributions do not require an associated command
 contributions:
   sample_data:
     - display_name: Tabueran Kiribati
@@ -504,7 +505,7 @@ should use `autogenerate: true`.  See more details below.
 ### Optional fields
 
 - **autogenerate** If True, the widget will be automatically generated with
-  [magicgui] using the type-signature of the associated command.
+  [magicgui] using the type-signature of the associated command's `python_name`.
 
 ### Examples
 

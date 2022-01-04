@@ -18,7 +18,7 @@ guide](npe2-migration-guide) for details.
 For getting started writing new npe2 plugins see the [](npe2-getting-started).
 ```
 
-napari loves plugins. Plugins allow people to customize and extend to napari.
+napari loves plugins. Plugins allow people to customize and extend napari.
 
 This document describes:
 
@@ -44,7 +44,7 @@ more see {ref}`find-and-install-plugins`.
 
 New plugins should target `npe2`. See the {ref}`npe2-getting-started`.
 
-For a guide on how to create a plugin using `napari-plugin-engine`, see
+For a guide on how to create a plugin using the original `napari-plugin-engine`, see
 {ref}`plugins-for-plugin-developers`. For a complete list of _hook
 specifications_ that developers can implement, see the
 {ref}`hook-specifications-reference`.
@@ -52,7 +52,7 @@ specifications_ that developers can implement, see the
 For special considerations when building a napari plugin, see
 {ref}`best-practices`.
 
-## Looking for help
+## Looking for help?
 
 If you have questions, try asking on the [zulip
 chat](https://napari.zulipchat.com/). Submit issues to the [napari github

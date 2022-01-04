@@ -5,7 +5,7 @@
 ```{warning}
 This guide is still a work in progress.
 
-There are inaccuracies and mistakes. If you notice any, feel free to submit
+There are inaccuracies and mistakes. If you notice any, please submit
 issues to the [napari github repository](https://github.com/napari/napari).
 ```
 
@@ -20,10 +20,10 @@ recommend migrating to `npe2`. This guide will help you learn how!
 
 ## Migrating using the `npe2` command line tool
 
-`npe2` provides a command line interface to help convert a
+`npe2` provides a command line interface to help convert an original
 `napari-plugin-engine`-style plugin.
 
-### 1. Install the `npe2` command
+### 1. Install the `npe2` tool
 
 ```bash
 pip install npe2
@@ -52,7 +52,7 @@ Options:
   --help          Show this message and exit.
 ```
 
-### 2. Install your `napari-plugin-engine` based plugin.
+### 2. Install your `napari-plugin-engine` based plugin
 
 As an example, we'll walk through the process using the `napari-animation`
 plugin.
@@ -67,7 +67,7 @@ pip install -e .
 
 ### 3. Inspect package metadata
 
-The `napari-animation` package defines it's core metadata in `setup.cfg`.
+The `napari-animation` package defines its core metadata in `setup.cfg`.
 Inside, it defines an _entry point group_. That section should initially
 contain:
 
@@ -78,7 +78,7 @@ napari.plugin =
 ```
 
 That metadata gives the name of the plugin: "animation". The name is used in
-the next step. Later we're going to come back and update this section.
+the next step. Later, we're going to come back and update this section.
 
 ### 4. Convert your plugin.
 
@@ -96,8 +96,8 @@ This step uses `napari-plugin-engine` to discover the plugins installed on the
 system. If you have other plugins installed there's a chance they may interfere.
 ```
 
-This generates `napari_animation/napari.yaml` and modifies the package metadta
-(in `setup.cfg` or `setup.py`).
+This generates `napari_animation/napari.yaml` and modifies the package metadata
+(in `setup.cfg` or `setup.py` depending on what setup file the original plugin used).
 
 The plugin manifest contains:
 
@@ -131,7 +131,7 @@ The package metadata will have a new entry point. The old one is removed:
 +    napari-animation = napari_animation:napari.yaml
 ```
 
-the manifest was also added to `options.package_data` so that it will be
+The manifest was also added to `options.package_data` so that it will be
 included with any distribution.
 
 ```diff
@@ -145,13 +145,13 @@ All done! Update the local package metadata by repeating:
 > pip install -e .
 ```
 
-and the next time napari is run `napari-animation` will be discovered as an
+and the next time napari is run, `napari-animation` will be discovered as an
 `npe2` plugin!
 
 ## Migration details
 
 Existing `napari-plugin-engine` plugins expose functionality via _hook
-implementations_. These are functions decorated to indicate they fullfil a
+implementations_. These are functions decorated to indicate they fulfill a
 _hook specification_ described by napari. Though there are some exceptions,
 most _hook implementations_ can be straightforwardly mapped as a
 _contribution_ in the `npe2` manifest. More information can be found in the
@@ -162,7 +162,7 @@ inspecting exposed _hook implementations_. Below, we will walk through the
 kinds of migrations `npe2 convert` helps with.
 
 For each type of _hook specification_ there is a corresponding section below
-with migration tips. Each lists the _hook specifications_ that are relevant to
+with migration tips. Each section lists the _hook specifications_ that are relevant to
 that section and an example manifest. For details, refer to the
 {ref}`npe2-manifest-spec`.
 
@@ -247,7 +247,7 @@ function.
 When migrating, you'll need to fill out the `layer_types` and
 `filename_extensions` used by your writer. `layer_types` is a set of
 constraints describing the combinations of layer types acceptable by this
-writer. More about layer types can be found in the {ref}`npe2-manifest-spec`.
+writer. More detail about layer types can be found in the {ref}`npe2-manifest-spec`.
 
 In the example below, the svg writer accepts a set of layers with 0 or more
 images, and 0 or more label layers, and so on. It will not accept surface
@@ -295,12 +295,12 @@ contributions:
 can be used to instantiate a widget and, optionally, arguments to be passed to
 that function.
 
-In contrast the callable for an `npe2` widget contribution is bound to the
+In contrast, the callable for an `npe2` widget contribution is bound to the
 function actually instantiating the widget. It accepts only one argument: a
 napari `Viewer` proxy instance. The proxy restricts access to some `Viewer`
 functionality like private methods.
 
-Similarly `napari_experimental_provide_function` hooks return ane or more
+Similarly, `napari_experimental_provide_function` hooks return ane or more
 functions to be wrapped with [magicgui]. In `npe2`, each of these functions
 should be added as a `Command` contribution with an associated `Widget`
 contribution. For each of these `Widget` contributions, the manifest
