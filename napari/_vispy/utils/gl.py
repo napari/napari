@@ -105,13 +105,33 @@ def fix_data_dtype(data):
 
 
 BLENDING_MODES = {
-    'opaque': dict(preset='opaque'),
-    'translucent': dict(preset='translucent'),
+    'opaque': dict(depth_test=True, cull_face=False, blend=False),
+    'translucent': dict(
+        depth_test=True,
+        cull_face=False,
+        blend=True,
+        blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        blend_equation=('func_add'),
+    ),
     'translucent_no_depth': dict(
         depth_test=False,
         cull_face=False,
         blend=True,
         blend_func=('src_alpha', 'one_minus_src_alpha', 'zero', 'one'),
+        blend_equation=('func_add'),
     ),
-    'additive': dict(preset='additive'),
+    'additive': dict(
+        depth_test=False,
+        cull_face=False,
+        blend=True,
+        blend_func=('src_alpha', 'one'),
+        blend_equation=('func_add'),
+    ),
+    'subtractive': dict(
+        depth_test=False,
+        cull_face=False,
+        blend=True,
+        blend_func=('src_alpha', 'one'),
+        blend_equation=('func_reverse_subtract'),
+    ),
 }
