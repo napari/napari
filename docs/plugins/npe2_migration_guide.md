@@ -23,7 +23,7 @@ recommend migrating to `npe2`. This guide will help you learn how!
 `npe2` provides a command line interface to help convert an original
 `napari-plugin-engine`-style plugin.
 
-### 1. Install the `npe2` tool
+### 1. Install the `npe2` command-line interface
 
 ```bash
 pip install npe2
