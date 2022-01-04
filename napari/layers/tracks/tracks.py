@@ -9,9 +9,14 @@ import numpy as np
 import pandas as pd
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
+from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.events import Event
 from ...utils.translations import trans
 from ..base import Layer
+from ..utils.color_transformations import (
+    normalize_and_broadcast_colors,
+    transform_color_with_defaults,
+)
 from ._track_utils import TrackManager
 
 
@@ -581,27 +586,24 @@ class Tracks(Layer):
         return self._track_colors
 
     @track_colors.setter
-    def track_colors(self, colors: np.ndarray) -> None:
-        """update vertex colors given a array of colors or a single colors,
-        colors must be in rgb and between 0 and 1
+    def track_colors(self, colors: ColorType) -> None:
+        """sets the tracks' edges colors, default color for missing values is `white`.
+
+        Parameters
+        ----------
+        colors : string and array-like compatible to napari's ColorType.
         """
-        if colors.ndim != 1 and colors.ndim != 2:
-            raise ValueError(
-                f'`colors` must be 1 or 2-dimensional. Found {colors.ndim} dims.'
-            )
-
-        if colors.ndim == 1:
-            colors = np.tile(colors, (len(self.data), 1))
-
-        if len(colors) != len(self.data):
-            raise ValueError(
-                f'`colors` must match the number of track vertices. Found {len(colors)}, expected {len(self.data)}'
-            )
-
-        if colors.shape[1] == 3:
-            colors = np.append(colors, np.ones((len(colors), 1)), axis=1)
-
-        self._track_colors = colors
+        num_entries = len(self.data)
+        standardized_colors = transform_color_with_defaults(
+            num_entries=num_entries,
+            colors=colors,
+            elem_name='track_colors',
+            default='white',
+        )
+        self._track_colors = normalize_and_broadcast_colors(
+            num_entries=num_entries,
+            colors=standardized_colors,
+        )
 
     @property
     def track_connex(self) -> np.ndarray:

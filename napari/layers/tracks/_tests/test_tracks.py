@@ -187,14 +187,30 @@ def test_track_manual_coloring():
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     layer = Tracks(data)
-    print(layer.track_colors.shape)
 
+    # colors from RGB array
     layer.track_colors = np.array([1, 0, 0])
     assert layer.track_colors.shape == (len(data), 4)
-    assert np.allclose(layer.track_colors[0], np.array([1, 0, 0, 1]))
+    assert np.allclose(layer.track_colors, np.array([[1, 0, 0, 1]]))
 
+    # colors from n-dimensional RGBA array
     layer.track_colors = np.ones((len(data), 4))
     assert layer.track_colors.shape == (len(data), 4)
+    assert np.allclose(layer.track_colors, np.ones((1, 4)))
 
-    with pytest.raises(ValueError):
+    # colors from str
+    layer.track_colors = "red"
+    assert layer.track_colors.shape == (len(data), 4)
+    assert np.allclose(layer.track_colors, np.array([[1, 0, 0, 1]]))
+
+    # colors from integer and range different from [0, 1]
+    with pytest.raises(UserWarning):
+        # napari emits warning of colors normalization
+        layer.track_colors = np.array([0, 255, 0, 127])
+        assert layer.track_colors.shape == (len(data), 4)
+        assert np.allclose(
+            layer.track_colors, np.array([[0, 1, 0, 127 / 255]])
+        )
+
+    with pytest.raises(UserWarning):
         layer.track_colors = np.ones((5, 4))
