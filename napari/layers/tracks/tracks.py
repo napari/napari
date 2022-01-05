@@ -9,14 +9,9 @@ import numpy as np
 import pandas as pd
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
-from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.events import Event
 from ...utils.translations import trans
 from ..base import Layer
-from ..utils.color_transformations import (
-    normalize_and_broadcast_colors,
-    transform_color_with_defaults,
-)
 from ._track_utils import TrackManager
 
 
@@ -580,35 +575,15 @@ class Tracks(Layer):
         self._track_colors = colormap.map(vertex_properties)
 
     @property
+    def track_connex(self) -> np.ndarray:
+        """vertex connections for drawing track lines"""
+        return self._manager.track_connex
+
+    @property
     def track_colors(self) -> np.ndarray:
         """return the vertex colors according to the currently selected
         property"""
         return self._track_colors
-
-    @track_colors.setter
-    def track_colors(self, colors: ColorType) -> None:
-        """sets the tracks' edges colors, default color for missing values is `white`.
-
-        Parameters
-        ----------
-        colors : string and array-like compatible to napari's ColorType.
-        """
-        num_entries = len(self.data)
-        standardized_colors = transform_color_with_defaults(
-            num_entries=num_entries,
-            colors=colors,
-            elem_name='track_colors',
-            default='white',
-        )
-        self._track_colors = normalize_and_broadcast_colors(
-            num_entries=num_entries,
-            colors=standardized_colors,
-        )
-
-    @property
-    def track_connex(self) -> np.ndarray:
-        """vertex connections for drawing track lines"""
-        return self._manager.track_connex
 
     @property
     def graph_connex(self) -> np.ndarray:
