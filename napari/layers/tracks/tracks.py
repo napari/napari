@@ -12,6 +12,7 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
 from ...utils.translations import trans
 from ..base import Layer
+from ..utils.layer_utils import _warn_about_deprecated_properties
 from ._track_utils import TrackManager
 
 
@@ -417,6 +418,7 @@ class Tracks(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
+        _warn_about_deprecated_properties()
         return self._manager.properties
 
     @property
@@ -427,6 +429,7 @@ class Tracks(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """set track properties"""
+        _warn_about_deprecated_properties()
         self.features = properties
 
     @property

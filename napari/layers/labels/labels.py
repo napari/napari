@@ -23,7 +23,11 @@ from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import _features_to_properties, _validate_features
+from ..utils.layer_utils import (
+    _features_to_properties,
+    _validate_features,
+    _warn_about_deprecated_properties,
+)
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -292,6 +296,7 @@ class Labels(_ImageBase):
         )
 
         if properties is not None:
+            _warn_about_deprecated_properties()
             self.properties = properties
         else:
             self.features = features
@@ -461,10 +466,12 @@ class Labels(_ImageBase):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
+        _warn_about_deprecated_properties()
         return _features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
+        _warn_about_deprecated_properties()
         self.features = properties
 
     @classmethod

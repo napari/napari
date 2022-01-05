@@ -720,6 +720,10 @@ def _features_from_layer(
         that length is not equal to the given num_data.
     """
     if properties is not None or property_choices is not None:
+        if properties is not None:
+            _warn_about_deprecated_properties()
+        if property_choices is not None:
+            _warn_about_deprecated_property_choices()
         features = _features_from_properties(
             properties=properties,
             property_choices=property_choices,
@@ -921,3 +925,36 @@ def _remove_features(features: pd.DataFrame, indices: Any) -> pd.DataFrame:
         The resulting features table, which contain copies of the existing data.
     """
     return features.drop(labels=indices, axis=0).reset_index(drop=True)
+
+
+def _warn_about_deprecated_properties():
+    warnings.warn(
+        trans._(
+            'Use features instead of properties. '
+            'This warning will become an error in version 0.5'
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_property_choices():
+    warnings.warn(
+        trans._(
+            'Use features with categorical dtypes instead of property_choices. '
+            'This warning will become an error in version 0.5'
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_current_properties():
+    warnings.warn(
+        trans._(
+            'Use feature_defaults instead of current_properties. '
+            'This warning will become an error in version 0.5'
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )

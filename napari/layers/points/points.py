@@ -32,6 +32,9 @@ from ..utils.layer_utils import (
     _remove_features,
     _resize_features,
     _validate_features,
+    _warn_about_deprecated_current_properties,
+    _warn_about_deprecated_properties,
+    _warn_about_deprecated_property_choices,
     coerce_current_properties,
 )
 from ..utils.text_manager import TextManager
@@ -549,11 +552,13 @@ class Points(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
+        _warn_about_deprecated_property_choices()
         return _features_to_choices(self._features)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
+        _warn_about_deprecated_properties()
         return _features_to_properties(self._features)
 
     @staticmethod
@@ -582,15 +587,18 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], pd.DataFrame, None]
     ):
+        _warn_about_deprecated_properties()
         self.features = properties
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
+        _warn_about_deprecated_current_properties()
         return _features_to_properties(self._feature_defaults)
 
     @current_properties.setter
     def current_properties(self, current_properties):
+        _warn_about_deprecated_current_properties()
         current_properties = coerce_current_properties(current_properties)
         self._feature_defaults = _validate_features(
             current_properties, num_data=1

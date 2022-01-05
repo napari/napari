@@ -34,6 +34,8 @@ from ..utils.layer_utils import (
     _remove_features,
     _resize_features,
     _validate_features,
+    _warn_about_deprecated_properties,
+    _warn_about_deprecated_property_choices,
     coerce_current_properties,
 )
 from ..utils.text_manager import TextManager
@@ -777,14 +779,17 @@ class Shapes(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
+        _warn_about_deprecated_properties()
         return _features_to_properties(self._features)
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
+        _warn_about_deprecated_properties()
         self.features = properties
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
+        _warn_about_deprecated_property_choices()
         return _features_to_choices(self._features)
 
     def _get_ndim(self):
