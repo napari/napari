@@ -52,7 +52,7 @@ jobs:
       - name: LFS-warning
         uses: ActionsDesk/lfs-warning@v3.1
         with:
-          filesizelimit: 10MB
+          filesizelimit: 1MB
 
   test:
     name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
