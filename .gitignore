@@ -153,7 +153,4 @@ docs/guides/preferences.md
 napari/settings/napari.schema.json
 
 # come from npe2 docs
-docs/plugins/_*.md
-docs/plugins/contributions.md
-docs/plugins/guides.md
-docs/plugins/manifest.md
+docs/plugins/_npe2_*.md
