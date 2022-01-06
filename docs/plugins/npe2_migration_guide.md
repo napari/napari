@@ -1,6 +1,6 @@
 (npe2-migration-guide)=
 
-# npe2 migration guide
+# Migration guide
 
 ```{warning}
 This guide is still a work in progress.

@@ -1,9 +1,16 @@
 .PHONY: docs typestubs pre watch dist settings-schema
 
 docs:
-	rm -rf docs/_build/
+#	rm -rf docs/_build/
 	find docs/api ! -name 'index.rst' -type f -exec rm -f {} +
 	pip install -qr docs/requirements.txt
+#   npe2 docs live in npe2 for testing purposes
+	git clone https://github.com/napari/npe2
+	rm -rf npe2/_docs/templates/first_plugin.md.jinja
+	rm -rf npe2/_docs/templates/index.md.jinja
+	python npe2/_docs/render.py docs/plugins
+	rm -rf npe2
+
 	python docs/_scripts/update_preference_docs.py
 	python docs/_scripts/update_event_docs.py
 	NAPARI_APPLICATION_IPY_INTERACTIVE=0 jb build docs

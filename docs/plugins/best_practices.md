@@ -1,6 +1,6 @@
 (best-practices)=
 
-# Best practices when developing napari plugins
+# Best practices
 
 There are a number of good and bad practices that may not be immediately obvious
 when developing a plugin.  This page covers some known practices that could

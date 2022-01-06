@@ -39,6 +39,7 @@ sphinx:
     - sphinx_autodoc_typehints
     - sphinx.ext.autosummary
     - sphinx.ext.intersphinx
+    - sphinx_tabs.tabs
 
   config:
     autosummary_generate: True
