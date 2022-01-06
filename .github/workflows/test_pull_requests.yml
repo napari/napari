@@ -44,6 +44,16 @@ jobs:
           semgrep --error --lang python --pattern 'trans._(f"...")' napari
           semgrep --error --lang python --pattern 'trans._($X.format(...))' napari
 
+  # check for big files
+  filesizes:
+    name: Check file sizes
+    runs-on: ubuntu-latest
+    steps:
+      - name: LFS-warning
+        uses: ActionsDesk/lfs-warning@v3.1
+        with:
+          filesizelimit: 10MB
+
   test:
     name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
