@@ -1,37 +1,28 @@
-(plugins-for-plugin-developers)=
+(napari-plugin-engine)=
+#  First generation plugin guide (deprecated)
 
-# Creating a napari plugin
+```{Admonition} DEPRECATED 
+:class: warning
+We introduced a new plugin engine ([`npe2`][npe2]) in December 2021.
 
-```{admonition} Introducing npe2
-:class: tip
-We introduced a new plugin engine in December 2021. The new library [`npe2`][npe2]
-is a re-imagining of how napari interacts with plugins. Plugins targeting
-`napari-plugin-engine` will continue to work, but we recommend migrating to
-`npe2` eventually. See the [](npe2-migration-guide).
-
-To learn more about creating an `npe2` plugin see the [](npe2-getting-started).
-
-The content below describes the original [`napari-plugin-engine`](https://github.com/napari/napari-plugin-engine).
+Plugins targeting the first generation `napari-plugin-engine`
+(described on this page) will continue to work for at least the
+first half of 2022, but we recommend that new plugins use `npe2` and
+existing plugins consider migrating soon. See the 
+[migration guide](npe2-migration-guide) for details.
 ```
 
 This document explains how to extend napari's functionality by writing a plugin
-that can be installed with `pip` and autodetected by napari. For more
-information on how plugins are implemented internally in napari, see
-{ref}`plugins-for-napari-developers`.
+that can be installed with `pip` and autodetected by napari. 
+
 
 ## Overview
 
 `napari` supports plugin development through **hooks**:
-specific places in the napari
-codebase where functionality can be extended.
-For example, when a user tries to open a filepath in napari, we
-might want to enable plugins to extend the file formats that can be handled. A
-_hook_, then, is the place within napari where we
-"promise" to call functions created by external developers & installed by the user.
+specific places in the napari codebase where functionality can be extended.
 
-1. **Hook specifications**: For each supported hook, we have created
-   "_hook specifications_", which are
-   well-documented function signatures that define the API (or
+1. **Hook specifications**: The available hooks are declared as
+   "_hook specifications_": function signatures that define the API (or
    "contract") that a plugin developer must adhere to when writing their function
    that we promise to call somewhere in the napari codebase.
    See {ref}`plugins-hook-spec`.
@@ -49,7 +40,8 @@ _hook_, then, is the place within napari where we
 
 4. **Plugin sharing**: When you are ready to share your plugin, tag your repo
    with `napari-plugin`, push a release to pypi, and announce it on Image.sc.
-   Your plugin will then be available for users on the [napari hub](https://napari-hub.org/). See {ref}`plugin-sharing`.
+   Your plugin will then be available for users on the
+   [napari hub](https://napari-hub.org/). See {ref}`plugin-sharing`.
 
 (plugin-cookiecutter-template)=
 
@@ -69,8 +61,8 @@ plugin.
 Install cookiecutter and use the template as follows:
 
 ```sh
-   pip install cookiecutter
-   cookiecutter https://github.com/napari/cookiecutter-napari-plugin
+pip install cookiecutter
+cookiecutter https://github.com/napari/cookiecutter-napari-plugin
 ```
 
 The cookiecutter template is a great place to start if you want to focus on
@@ -320,17 +312,75 @@ To learn more about the hubâ€™s development process, see the [napari hub GitHubâ
 
 When you are ready for users, announce your plugin on the [Image.sc Forum](https://forum.image.sc/tag/napari).
 
-## Example plugins
 
-For a minimal working plugin example, see the [napari-dv](https://github.com/tlambert03/napari-dv) plugin, which allows `napari` to
-read the [Priism/MRC/Deltavision image file format](https://github.com/tlambert03/mrc).
+(hook-specifications-reference)=
 
-For a more thorough plugin see [napari-aicsimageio](https://github.com/AllenCellModeling/napari-aicsimageio), one of the first
-community plugins developed for napari. This plugin takes advantage of
-{ref}`entry_point discovery <plugin-discovery>` to offer multiple
-readers for both in-memory and lazy-loading of image files.
+# napari hook specification reference
 
-More examples of plugins can be found on the [napari hub](https://napari-hub.org/).
+```{admonition} Introducing npe2
+:class: tip
+We introduced a new plugin engine in December 2021. The new library [`npe2`][npe2]
+is a re-imagining of how napari interacts with plugins. Plugins targeting
+`napari-plugin-engine` will continue to work, but we recommend migrating to
+`npe2` eventually. See the [](npe2-migration-guide).
+
+To learn more about the specification see the [](npe2-manifest-spec).
+
+The content below describes the original [`napari-plugin-engine`](https://github.com/napari/napari-plugin-engine).
+```
+
+```{eval-rst}
+.. automodule:: napari.plugins.hook_specifications
+  :noindex:
+
+.. currentmodule:: napari.plugins.hook_specifications
+```
+
+## IO hooks
+
+```{eval-rst}
+.. autofunction:: napari_provide_sample_data
+.. autofunction:: napari_get_reader
+.. autofunction:: napari_get_writer
+```
+
+(write-single-layer-hookspecs)=
+
+### Single Layers IO
+
+The following hook specifications will be called when a user saves a single
+layer in napari, and should save the layer to the requested format and return
+the save path if the data are successfully written. Otherwise, if nothing was saved, return `None`.
+They each accept a `path`.
+It is up to plugins to inspect and obey the extension of the path (and return
+`False` if it is an unsupported extension). The `data` argument will come
+from `Layer.data`, and a `meta` dict that will correspond to the layer's
+{meth}`~napari.layers.base.base.Layer._get_state` method.
+
+```{eval-rst}
+.. autofunction:: napari_write_image
+.. autofunction:: napari_write_labels
+.. autofunction:: napari_write_points
+.. autofunction:: napari_write_shapes
+.. autofunction:: napari_write_surface
+.. autofunction:: napari_write_vectors
+```
+
+## Analysis hooks
+
+```{eval-rst}
+.. autofunction:: napari_experimental_provide_function
+```
+
+## GUI hooks
+
+```{eval-rst}
+.. autofunction:: napari_experimental_provide_theme
+.. autofunction:: napari_experimental_provide_dock_widget
+```
+
+[npe2]: https://github.com/napari/npe2
+
 
 ## Help
 
