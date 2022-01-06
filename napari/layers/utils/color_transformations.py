@@ -26,7 +26,8 @@ def transform_color_with_defaults(
     colors : ColorType
         The wanted colors for each of the data points
     elem_name : str
-        Whether we're trying to set the face color or edge color of the layer
+        Element we're trying to set the color, for example, `face_color` or `track_colors`.
+        This is used to provide context to user warnings.
     default : str
         The default color for that element in the layer
 
