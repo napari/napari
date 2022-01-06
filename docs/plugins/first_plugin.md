@@ -1,5 +1,13 @@
 # Your First Plugin
 
+Napari plugins are just python packages that meet a few requirements.
+Minimally, they must:
+
+1. Include a static [plugin manifest](./manifest) file that details the
+   contributions[contribution](./contributions) contained in the plugin.
+2. Declare a `napari.manifest` [entry point][entry_points] that allows
+   napari to detect the plugin at runtime.
+
 In this topic, we'll step through the fundamental concepts for building a
 **bare minimum** "hello napari" plugin from scratch. At the end of this
 tutorial, we'll point you to a "cookiecutter" template repository that
@@ -9,6 +17,7 @@ conveniences for testing and deploying your plugin.
 We will assume you've set up a Python virtual environment.  If you are
 new to virtual environments, we recommend [installing miniconda][miniconda]
 and [creating a new environment with python][python_env]
+
 
 ## Create a new directory
 
