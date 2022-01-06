@@ -48,6 +48,7 @@ chapters:
   sections:
   - file: community/mission_and_values
   - file: community/team
+  - file: community/meeting_schedule
   - file: community/code_of_conduct
   - file: community/code_of_conduct_reporting
   - file: community/governance
