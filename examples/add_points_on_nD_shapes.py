@@ -31,13 +31,13 @@ viewer = napari.view_points(ndim=4, size=3)
 points_layer = viewer.layers[0]
 
 # add the shapes layer to the viewer
-properties = {'index': [0, 1, 2]}
+features = {'index': [0, 1, 2]}
 shapes_layer = viewer.add_shapes(
     shapes_data,
     face_color=['magenta', 'green', 'blue'],
     edge_color='white',
     blending='additive',
-    properties=properties,
+    features=features,
     text='index'
 )
 

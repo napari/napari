@@ -13,9 +13,9 @@ viewer = napari.view_image(np.zeros((400, 400)))
 points = np.array([[100, 100], [200, 300], [333, 111]])
 
 # create properties for each point
-properties = {
-    'confidence': np.array([1, 0.5, 0]),
-    'good_point': np.array([True, False, False]),
+features = {
+    'confidence': [1, 0.5, 0],
+    'good_point': [True, False, False],
 }
 
 # define the color cycle for the face_color annotation
@@ -32,7 +32,7 @@ text = {
 # and the edge_color is set via a color map (grayscale) on the confidence property.
 points_layer = viewer.add_points(
     points,
-    properties=properties,
+    features=features,
     text=text,
     size=20,
     edge_width=7,

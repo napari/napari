@@ -47,7 +47,7 @@ def tracks_3d(num_tracks=10):
     tracks = np.concatenate(tracks, axis=0)
     data = tracks[:, :5]  # just the coordinate data
 
-    properties = {
+    features = {
         'time': tracks[:, 1],
         'gradient_z': tracks[:, 5],
         'gradient_y': tracks[:, 6],
@@ -57,14 +57,14 @@ def tracks_3d(num_tracks=10):
     }
 
     graph = {}
-    return data, properties, graph
+    return data, features, graph
 
 
-tracks, properties, graph = tracks_3d(num_tracks=100)
+tracks, features, graph = tracks_3d(num_tracks=100)
 vertices = tracks[:, 1:]
 
 viewer = napari.Viewer()
 viewer.add_points(vertices, size=1, name='points', opacity=0.3)
-viewer.add_tracks(tracks, properties=properties, name='tracks')
+viewer.add_tracks(tracks, features=features, name='tracks')
 
 napari.run()
