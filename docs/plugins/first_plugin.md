@@ -1,6 +1,6 @@
 # Your First Plugin
 
-Napari plugins are just python packages. Minimally, they must:
+Napari plugins are just Python packages. Minimally, they must:
 
 1. Include a static [plugin manifest](./manifest) file that details the
    [contributions](./contributions) contained in the plugin.
@@ -62,8 +62,8 @@ Your project should now look like this:
 ````{admonition} **napari-hello** vs **napari_hello**
 :class: tip
 You might notice that we used a **dash** in our top level folder, and an
-**underscore** in the inner folder. This is the python convention:
-*distribution packages* use dashes, while python *files* and *modules* use
+**underscore** in the inner folder. This is the Python convention:
+*distribution packages* use dashes, while Python *files* and *modules* use
 underscores. Our *package* is named `napari-hello`, and it includes a
 single top-level module, called `napari_hello`.
 
@@ -85,7 +85,7 @@ Next, we will populate `pyproject.toml` and `setup.cfg`
 ```{note}
 `pyproject.toml` is a standard file (introduced in
 [PEP518](https://www.python.org/dev/peps/pep-0518/), May 2016) that tells
-the python package installer [pip](https://pip.pypa.io/en/stable/) how to
+the Python package installer [pip](https://pip.pypa.io/en/stable/) how to
 build your package. For more background, see
 [Clarifying PEP 518](https://snarky.ca/clarifying-pep-518/) and
 [What the heck is pyproject.toml?](https://snarky.ca/what-the-heck-is-pyproject-toml/).
@@ -127,7 +127,7 @@ for more.
 ## Implement the plugin
 
 So far, we've done nothing napari-specific.  Let's create the actual plugin and add
-some python code. We're going to add a
+some Python code. We're going to add a
 [Widget contribution](./contributions.html#contributions-widgets)
 with a single button that shows a "Hello, world!" message when clicked.
 
@@ -202,7 +202,7 @@ Lastly, let's make a few small changes to `setup.cfg`.
    file we added to the `napari_hello` module.
 
     ```{tip}
-    Entry points are a standard python mechanism for an installed distribution to
+    Entry points are a standard Python mechanism for an installed distribution to
     advertise components it provides to be discovered and used by other code.
 
     See the [Entry points specification][entry_points] for details.

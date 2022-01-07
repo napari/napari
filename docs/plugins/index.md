@@ -28,9 +28,7 @@ continue to work for at least the first half of 2022, but we
 recommend migrating to `npe2`.
 See the [migration guide](npe2-migration-guide) for details.
 
-For a guide on how to create a plugin using `napari-plugin-engine`, see
-{ref}`plugins-for-plugin-developers`. For _hook specifications_ reference,
-see the {ref}`hook-specifications-reference`.
+For a guide on how to create a plugin using the original `napari-plugin-engine`, see {ref}`plugins-for-plugin-developers`. For _hook specifications_ reference, see the {ref}`hook-specifications-reference`.
 ```
 
 (how-to-build-a-plugin)=
@@ -46,7 +44,7 @@ see the [Contributions reference](./contributions)
 For special considerations when building a napari plugin, see
 {ref}`best-practices`.
 
-## Looking for help
+## Looking for help?
 
 If you have questions, try asking on the [zulip chat][napari_zulip].
 Submit issues to the [napari github repository][napari_issues].
