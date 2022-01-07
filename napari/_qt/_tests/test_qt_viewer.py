@@ -595,3 +595,26 @@ def test_remove_add_image_3D(make_napari_viewer):
     layer = viewer.add_image(img)
     viewer.layers.remove(layer)
     viewer.layers.append(layer)
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
+    """Test out-of-view multiscale image viewing fix.
+
+    Just verifies that no RuntimeError is raised in this scenario.
+
+    see: https://github.com/napari/napari/issues/3863.
+    """
+    # show=True required to test fix for OpenGL error
+    viewer = make_napari_viewer(ndisplay=2, show=True)
+    viewer.add_shapes(
+        data=[
+            np.array(
+                [[1500, 4500], [4500, 4500], [4500, 1500], [1500, 1500]],
+                dtype=float,
+            )
+        ],
+        shape_type=['polygon'],
+    )
+    viewer.add_image([np.eye(1024), np.eye(512), np.eye(256)])

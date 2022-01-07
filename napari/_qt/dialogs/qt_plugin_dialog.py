@@ -367,7 +367,6 @@ class PluginListItem(QFrame):
         self.v_lay.setContentsMargins(-1, 6, -1, 6)
         self.v_lay.setSpacing(0)
         self.row1 = QHBoxLayout()
-        self.row1.setSpacing(6)
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setChecked(enabled)
         self.enabled_checkbox.stateChanged.connect(self._on_enabled_checkbox)
