@@ -1,13 +1,18 @@
 (plugins-index)=
 # Plugins
 
-Plugins allow developers to customize and extend napari.
+Plugins allow developers to customize and extend napari.  This includes
 
-This document describes:
+- Adding file format support with [readers] and [writers]
+- Adding custom [widgets] and user interface elements
+- Providing [sample data][sample_data]
+- Changing the look of napari with a color [theme]
+
+This section describes:
 
 - How to [build, run and publish a plugin](how-to-build-a-plugin).
 - Where to find [guides](./guides) and code samples to help get you started.
-- [Guidelines](./best-practices) for writing plugins.
+- [Guidelines](./best_practices) for writing plugins.
 
 If you are looking for published plugins, head to the
 [napari hub][napari_hub] or see the
@@ -18,20 +23,15 @@ If you are looking for published plugins, head to the
 :class: important
 We introduced a new plugin engine ([`npe2`][npe2]) in December 2021.
 
-Plugins targeting `napari-plugin-engine` will continue to work for at least the first half of 2022, but we recommend migrating to `npe2`. See the [migration
-guide](npe2-migration-guide) for details.
+Plugins targeting the first generation `napari-plugin-engine` will
+continue to work for at least the first half of 2022, but we
+recommend migrating to `npe2`.
+See the [migration guide](npe2-migration-guide) for details.
 
 For a guide on how to create a plugin using `napari-plugin-engine`, see
 {ref}`plugins-for-plugin-developers`. For _hook specifications_ reference,
 see the {ref}`hook-specifications-reference`.
 ```
-
-## What can plugins do?
-
-- Add file format support with [readers] and [writers]
-- Add custom [widgets] and user interface elements
-- Provide [sample data][sample_data]
-- Change the look of napari with a color [theme]
 
 (how-to-build-a-plugin)=
 
