@@ -84,7 +84,6 @@ class TrackManager:
 
         self._track_vertices = None
         self._track_connex = None
-        self._track_colors = None
 
         self._graph = None
         self._graph_vertices = None
@@ -378,12 +377,6 @@ class TrackManager:
     def track_connex(self) -> np.ndarray:
         """vertex connections for drawing track lines"""
         return self._track_connex
-
-    @property
-    def track_colors(self) -> np.ndarray:
-        """return the vertex colors according to the currently selected
-        property"""
-        return self._track_colors
 
     @property
     def graph_vertices(self) -> np.ndarray:
