@@ -7,9 +7,9 @@ docs:
 
 #   some plugin docs live in npe2 for testing purposes
 	# git clone https://github.com/napari/npe2
+	rm -rf npe2
 	git clone -b move-docs https://github.com/tlambert03/npe2
-	rm -rf npe2/_docs/templates/first_plugin.md.jinja
-	rm -rf npe2/_docs/templates/index.md.jinja
+	pip install -e ./npe2
 	python npe2/_docs/render.py docs/plugins
 	rm -rf npe2
 
