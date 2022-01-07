@@ -1,5 +1,5 @@
 (plugin-test-deploy)=
-# Test and deploy
+# Test and Deploy
 
 (plugin-testing-tips)=
 ## Tips for testing napari plugins

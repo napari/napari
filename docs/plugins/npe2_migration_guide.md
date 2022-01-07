@@ -1,15 +1,16 @@
 (npe2-migration-guide)=
 
-# Migration guide
+# `npe2` migration guide
 
 This document details how to convert a plugin using the first generation
 `napari-plugin-engine`, to the new `npe2` format.  
 
-The primary difference between the two engines relates to how napari discovers
-plugin functionality. In the first generation plugin engine, napari had to
-*import* plugin modules to search for hook implementations decorated with
-`@napari_hook_implementation`. In `npe2`, plugins declare their functionality
-*statically* with a [manifest file](./manifest).
+The primary difference between the first generation and second generation plugin
+system relates to how napari *discovers* plugin functionality. In the first
+generation plugin engine, napari had to *import* plugin modules to search for
+hook implementations decorated with `@napari_hook_implementation`. In `npe2`,
+plugins declare their contributions *statically* with a [manifest
+file](./manifest).
 
 ## Migrating using the `npe2` command line tool
 
@@ -58,6 +59,13 @@ Typically this will look something like:
 conda activate your-env
 cd path/to/your/plugin/repository
 pip install -e .
+```
+
+If `npe2 convert` cannot import your plugin, you will likely get an error
+like:
+
+```pytb
+PackageNotFoundError: We tried hard! but could not detect a plugin named '...'
 ```
 
 ### 3. Convert your plugin with `npe2 convert`
