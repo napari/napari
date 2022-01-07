@@ -33,7 +33,7 @@ For a guide on how to create a plugin using the original `napari-plugin-engine`,
 
 (how-to-build-a-plugin)=
 
-## How to build plugins?
+## How to build plugins
 
 If you're just getting started with napari plugins, try our
 [Your First Plugin](./first_plugin) tutorial.
