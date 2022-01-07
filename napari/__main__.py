@@ -396,6 +396,7 @@ def main():
     # https://github.com/napari/napari/issues/380#issuecomment-659656775
     # and https://github.com/ContinuumIO/anaconda-issues/issues/199
     import platform
+
     from .utils.misc import running_as_bundled_app
 
     _MACOS_AT_LEAST_CATALINA = (

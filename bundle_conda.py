@@ -96,9 +96,7 @@ def _constructor(version=VERSION, extra_specs=None):
         "conda_default_channels": ["conda-forge"],
         "installer_filename": OUTPUT_FILENAME,
         "initialize_by_default": False,
-        "license_file": os.path.join(
-            HERE, "resources", "bundle_license.rtf"
-        ),
+        "license_file": os.path.join(HERE, "resources", "bundle_license.rtf"),
         "specs": specs,
         "menu_packages": [
             "napari-menu",
