@@ -72,8 +72,6 @@ class QtTracksControls(QtLayerControls):
         self.tail_checkbox.setChecked(True)
         self.graph_checkbox = QCheckBox()
         self.graph_checkbox.setChecked(True)
-        self.interactive_checkbox = QCheckBox()
-        self.interactive_checkbox.setChecked(False)
 
         self.tail_width_slider.valueChanged.connect(self.change_tail_width)
         self.tail_length_slider.valueChanged.connect(self.change_tail_length)
@@ -81,7 +79,6 @@ class QtTracksControls(QtLayerControls):
         self.tail_checkbox.stateChanged.connect(self.change_display_tail)
         self.id_checkbox.stateChanged.connect(self.change_display_id)
         self.graph_checkbox.stateChanged.connect(self.change_display_graph)
-        self.interactive_checkbox.stateChanged.connect(self.change_editable)
         self.color_by_combobox.currentTextChanged.connect(self.change_color_by)
         self.colormap_combobox.currentTextChanged.connect(self.change_colormap)
 
@@ -108,9 +105,7 @@ class QtTracksControls(QtLayerControls):
         self.grid_layout.addWidget(self.id_checkbox, 8, 1)
         self.grid_layout.addWidget(QLabel(trans._('graph:')), 9, 0)
         self.grid_layout.addWidget(self.graph_checkbox, 9, 1)
-        self.grid_layout.addWidget(QLabel(trans._('editable:')), 10, 0)
-        self.grid_layout.addWidget(self.interactive_checkbox, 10, 1)
-        self.grid_layout.setRowStretch(10, 1)
+        self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -206,6 +201,3 @@ class QtTracksControls(QtLayerControls):
 
     def change_colormap(self, colormap: str):
         self.layer.colormap = self.colormap_combobox.currentData()
-
-    def change_editable(self, state: bool):
-        self.layer.editable = state
