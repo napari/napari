@@ -7,11 +7,7 @@ from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.layer_utils import (
-    _features_from_properties,
-    _features_to_properties,
-    _validate_features,
-)
+from ..utils.layer_utils import _features_to_properties, _validate_features
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -88,7 +84,6 @@ class TrackManager:
 
         self._track_vertices = None
         self._track_connex = None
-        self._track_colors = None
 
         self._graph = None
         self._graph_vertices = None
@@ -182,10 +177,7 @@ class TrackManager:
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-        self.features = _features_from_properties(
-            properties=properties,
-            num_data=len(self.data),
-        )
+        self.features = properties
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:
@@ -385,12 +377,6 @@ class TrackManager:
     def track_connex(self) -> np.ndarray:
         """vertex connections for drawing track lines"""
         return self._track_connex
-
-    @property
-    def track_colors(self) -> np.ndarray:
-        """return the vertex colors according to the currently selected
-        property"""
-        return self._track_colors
 
     @property
     def graph_vertices(self) -> np.ndarray:

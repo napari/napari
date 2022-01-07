@@ -16,7 +16,8 @@ from napari.utils.geometry import (
     line_in_triangles_3d,
     point_in_quadrilateral_2d,
     project_points_onto_plane,
-    rotation_matrix_from_vectors,
+    rotation_matrix_from_vectors_2d,
+    rotation_matrix_from_vectors_3d,
 )
 
 single_point = np.array([10, 10, 10])
@@ -54,14 +55,34 @@ def test_project_point_to_plane(
 @pytest.mark.parametrize(
     "vec_1, vec_2",
     [
+        (np.array([10, 0]), np.array([0, 5])),
+        (np.array([0, 5]), np.array([0, 5])),
+        (np.array([0, 5]), np.array([0, -5])),
+    ],
+)
+def test_rotation_matrix_from_vectors_2d(vec_1, vec_2):
+
+    rotation_matrix = rotation_matrix_from_vectors_2d(vec_1, vec_2)
+
+    rotated_1 = rotation_matrix.dot(vec_1)
+    unit_rotated_1 = rotated_1 / np.linalg.norm(rotated_1)
+
+    unit_vec_2 = vec_2 / np.linalg.norm(vec_2)
+
+    np.testing.assert_allclose(unit_rotated_1, unit_vec_2)
+
+
+@pytest.mark.parametrize(
+    "vec_1, vec_2",
+    [
         (np.array([10, 0, 0]), np.array([0, 5, 0])),
         (np.array([0, 5, 0]), np.array([0, 5, 0])),
         (np.array([0, 5, 0]), np.array([0, -5, 0])),
     ],
 )
-def test_rotation_matrix_from_vectors(vec_1, vec_2):
+def test_rotation_matrix_from_vectors_3d(vec_1, vec_2):
     """Test that calculated rotation matrices align vec1 to vec2."""
-    rotation_matrix = rotation_matrix_from_vectors(vec_1, vec_2)
+    rotation_matrix = rotation_matrix_from_vectors_3d(vec_1, vec_2)
 
     rotated_1 = rotation_matrix.dot(vec_1)
     unit_rotated_1 = rotated_1 / np.linalg.norm(rotated_1)
