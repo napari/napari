@@ -74,11 +74,11 @@ def _constructor(version=VERSION, extra_specs=None):
     else:
         napari = f"napari={version}=*pyside*"
     specs = [
-        # napari,
-        # f"napari-menu={version}",
-        # f"python={sys.version_info.major}.{sys.version_info.minor}.*",
-        # "conda",
-        # "mamba",
+        napari,
+        f"napari-menu={version}",
+        f"python={sys.version_info.major}.{sys.version_info.minor}.*",
+        "conda",
+        "mamba",
         "pip",
     ] + extra_specs
 
