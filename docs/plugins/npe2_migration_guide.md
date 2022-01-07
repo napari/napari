@@ -3,7 +3,13 @@
 # Migration guide
 
 This document details how to convert a plugin using the first generation
-`napari-plugin-engine`, to the new `npe2` format.
+`napari-plugin-engine`, to the new `npe2` format.  
+
+The primary difference between the two engines relates to how napari discovers
+plugin functionality. In the first generation plugin engine, napari had to
+*import* plugin modules to search for hook implementations decorated with
+`@napari_hook_implementation`. In `npe2`, plugins declare their functionality
+*statically* with a [manifest file](./manifest).
 
 ## Migrating using the `npe2` command line tool
 

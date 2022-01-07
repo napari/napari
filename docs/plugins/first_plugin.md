@@ -10,17 +10,16 @@ Napari plugins are just Python packages. Minimally, they must:
 In this topic, we'll step through the fundamental concepts for building a
 **bare minimum** "hello napari" plugin from scratch. At the end of this
 tutorial, we'll point you to a "cookiecutter" template repository that
-helps automate the creation of a new plugin, and adds a number of
-conveniences for testing and deploying your plugin.
+helps automate the creation of new plugins, and adds a number of
+conveniences for testing, maintaining, and deploying your plugin.
 
 We will assume you've set up a Python virtual environment.  If you are
 new to virtual environments, we recommend [installing miniconda][miniconda]
 and [creating a new environment with python][python_env]
 
-
 ## Create a new directory
 
-Let's create a new folder called `napari-hello` for your plugin,
+Let's create a new folder called `napari-hello` for your plugin files,
 and navigate into it.
 
 ```sh
@@ -131,7 +130,7 @@ some Python code. We're going to add a
 [Widget contribution](./contributions.html#contributions-widgets)
 with a single button that shows a "Hello, world!" message when clicked.
 
-### Add plugin functionality: `napari_hello/__init__.py`
+### Add plugin functionality to `napari_hello/__init__.py`
 
 Copy and paste the following text into the file at `napari_hello/__init__.py`.
 It just uses the napari notifications API to show a message:
@@ -144,15 +143,15 @@ def show_hello_message():
 ```
 
 *(It doesn't look like a widget yet! We're going to use napari's widget
-"autogeneration" capabilities to turn this function into a widget)*
+autogeneration capabilities to turn this function into a widget)*
 
 
-### Add a manifest: `napari.yaml`
+### Add a `napari.yaml` manifest
 
 Create an empty [plugin manifest](./manifest) file at `napari_hello/napari.yaml`
 We will use this file to tell napari:
 
-1. That Our plugin contributes a [**command**](./contributions.html#contributions-commands)
+1. That our plugin contributes a [**command**](./contributions.html#contributions-commands)
    (we give the command an ID of `napari-hello.say_hi`. It must start with our plugin
    name, and be unique).
 2. The location of the function that executes the command (the `python_name`, pointing
@@ -267,6 +266,9 @@ Plugins can do a lot more than just say hi!  You can see the complete list
 of available contributions and their fields in the
 [Contributions Reference](./contributions), and learn more about each
 specific contribution type in the [Guides](./guides).
+
+Review the [Best Practices](./best_practices) when developing plugins and,
+when you're ready to share your plugin, see [Testing and Deployment](./test_deploy).
 
 [miniconda]: https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html
 [python_env]: https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html#managing-python
