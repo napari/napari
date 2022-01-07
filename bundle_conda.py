@@ -42,40 +42,6 @@ def _use_local():
     return os.environ.get("CONSTRUCTOR_USE_LOCAL")
 
 
-def _soft_wrap_text(text: str) -> str:
-    """
-    Join contiguous non-empty lines into a long line.
-    This replaces hard-wrapped text with its soft-wrap
-    equivalent.
-    """
-    lines = []
-    paragraphs = []
-    for line in text.splitlines():
-        line = line.strip()
-        if line:
-            lines.append(line.strip())
-        else:
-            paragraphs.append(" ".join(lines))
-            lines = []
-
-    return "\n\n".join(paragraphs)
-
-
-def _license_file():
-    # collect license(s)
-    license_file = Path(HERE) / "LICENSE"
-    text = license_file.read_text()
-    if MACOS:
-        # PKG installer looks weird if linebreaks are kept
-        text = _soft_wrap_text(text)
-
-    # write to file
-    license_out = Path(HERE) / "processed_license.txt"
-    license_out.write_text(text)
-    clean_these_files.append(license_out)
-    return str(license_out)
-
-
 def _constructor(version=VERSION, extra_specs=None):
     """
     Create a temporary `construct.yaml` input file and
@@ -108,11 +74,11 @@ def _constructor(version=VERSION, extra_specs=None):
     else:
         napari = f"napari={version}=*pyside*"
     specs = [
-        napari,
-        f"napari-menu={version}",
-        f"python={sys.version_info.major}.{sys.version_info.minor}.*",
-        "conda",
-        "mamba",
+        # napari,
+        # f"napari-menu={version}",
+        # f"python={sys.version_info.major}.{sys.version_info.minor}.*",
+        # "conda",
+        # "mamba",
         "pip",
     ] + extra_specs
 
@@ -130,7 +96,9 @@ def _constructor(version=VERSION, extra_specs=None):
         "conda_default_channels": ["conda-forge"],
         "installer_filename": OUTPUT_FILENAME,
         "initialize_by_default": False,
-        "license_file": _license_file(),
+        "license_file": os.path.join(
+            HERE, "resources", "bundle_license.rtf"
+        ),
         "specs": specs,
         "menu_packages": [
             "napari-menu",
@@ -142,6 +110,10 @@ def _constructor(version=VERSION, extra_specs=None):
         definitions["default_prefix"] = os.path.join(
             "$HOME", f"{APP}-{version}"
         )
+        definitions["license_file"] = os.path.join(
+            HERE, "resources", "bundle_license.txt"
+        )
+
     if MACOS:
         # we change this bc the installer takes the name as the default install location basename
         definitions["name"] = f"{APP}-{version}"
