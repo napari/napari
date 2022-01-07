@@ -8,7 +8,7 @@ on:
     
 name: Publish Docs
 
-# jobs:
+jobs:
 #   copy:
 #     name: Copy Doc Sources
 #     runs-on: ubuntu-latest
