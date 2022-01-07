@@ -4,6 +4,7 @@ docs:
 	rm -rf docs/_build/
 	find docs/api ! -name 'index.rst' -type f -exec rm -f {} +
 	pip install -qr docs/requirements.txt
+
 #   some plugin docs live in npe2 for testing purposes
 	# git clone https://github.com/napari/npe2
 	git clone -b move-docs https://github.com/tlambert03/npe2
