@@ -140,7 +140,7 @@ def _constructor(version=_version(), extra_specs=None):
         definitions["channels"].insert(0, "local")
     if LINUX:
         definitions["default_prefix"] = os.path.join(
-            "$HOME", f"{APP}-{version}"
+            "$HOME", ".local", f"{APP}-{version}"
         )
         definitions["license_file"] = os.path.join(
             HERE, "resources", "bundle_license.txt"
@@ -150,6 +150,7 @@ def _constructor(version=_version(), extra_specs=None):
         # we change this bc the installer takes the name
         # as the default install location basename
         definitions["name"] = f"{APP}-{version}"
+        definitions["default_location_pkg"] = "Library"
         definitions["installer_type"] = "pkg"
         definitions["welcome_image"] = os.path.join(
             HERE, "resources", "napari_1227x600.png"
@@ -184,7 +185,7 @@ def _constructor(version=_version(), extra_specs=None):
                 ),
                 "register_python_default": False,
                 "default_prefix": os.path.join(
-                    '%USERPROFILE%', f"{APP}-{version}"
+                    '%LOCALAPPDATA%', f"{APP}-{version}"
                 ),
                 "default_prefix_domain_user": os.path.join(
                     '%LOCALAPPDATA%', f"{APP}-{version}"
