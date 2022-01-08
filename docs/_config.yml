@@ -42,6 +42,7 @@ sphinx:
     - sphinx_tabs.tabs
 
   config:
+    suppress_warnings: ["myst.header"]
     autosummary_generate: True
     autosummary_imported_members: True
     html_theme: furo
