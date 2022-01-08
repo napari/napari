@@ -128,19 +128,19 @@ you need.  If you are still struggling with a specific conversion after using
 [guides](./guides), this section may be of help.*
 
 
-Existing `napari-plugin-engine` plugins expose functionality via _hook
-implementations_. These are functions decorated to indicate they fullfil a
-_hook specification_ described by napari. Though there are some exceptions,
-most _hook implementations_ can be straightforwardly mapped to npe2 [contributions](./contributions)
+Existing `napari-plugin-engine` plugins expose functionality via *hook
+implementations*. These are functions decorated to indicate they fullfil a
+*hook specification* described by napari. Though there are some exceptions,
+most *hook implementations* can be straightforwardly mapped to npe2 [contributions](./contributions)
 
 `npe2` provides a command-line tool that will generate plugin manifests by
-inspecting exposed _hook implementations_. Below, we will walk through the
+inspecting exposed *hook implementations*. Below, we will walk through the
 kinds of migrations `npe2 convert` helps with.
 
-For each type of _hook specification_ there is a corresponding section below
-with migration tips. Each lists the _hook specifications_ that are relevant to
+For each type of *hook specification* there is a corresponding section below
+with migration tips. Each lists the *hook specifications* that are relevant to
 that section and an example manifest. For details, refer to the
-{ref}`npe2-manifest-spec`.
+[Contributions references](./contributions).
 
 ### Readers
 
@@ -223,7 +223,8 @@ function.
 When migrating, you'll need to fill out the `layer_types` and
 `filename_extensions` used by your writer. `layer_types` is a set of
 constraints describing the combinations of layer types acceptable by this
-writer. More about layer types can be found in the {ref}`npe2-manifest-spec`.
+writer. More about layer types can be found in the
+[Writer contribution guide](./guides.html#layer-type-constraints).
 
 In the example below, the svg writer accepts a set of layers with 0 or more
 images, and 0 or more label layers, and so on. It will not accept surface
