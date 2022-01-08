@@ -5,32 +5,66 @@ It creates a `construct.yaml` file with the needed settings
 and then runs `constructor`.
 
 For more information, see Documentation> Developers> Packaging.
+
+Some environment variables we use:
+
+CONSTRUCTOR_APP_NAME:
+    in case you want to build a non-default distribution that is not
+    named `napari`
+CONSTRUCTOR_TARGET_PLATFORM:
+    conda-style platform (as in `platform` in `conda info -a` output)
+CONSTRUCTOR_USE_LOCAL:
+    whether to use the local channel (populated by `conda-build` actions)
+CONSTRUCTOR_CONDA_EXE:
+    when the target platform is not the same as the host, constructor
+    needs a path to a conda-standalone (or micromamba) executable for
+    that platform. needs to be provided in this env var in that case!
+CONSTRUCTOR_SIGNING_IDENTITY:
+    Apple ID Installer Certificate identity (common name) that should
+    be use to sign the resulting PKG (macOS only)
+CONSTRUCTOR_SIGNING_CERTIFICATE:
+    Path to PFX certificate to sign the EXE installer on Windows
 """
 
 import os
 import subprocess
 import sys
+import platform
+import re
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
 
 from ruamel import yaml
 
-from bundle import APP, ARCH, HERE, LINUX, MACOS, OS, VERSION, WINDOWS, clean
 
-if LINUX:
-    EXT = "sh"
+APP = os.environ.get("CONSTRUCTOR_APP_NAME", "napari")
+HERE = os.path.abspath(os.path.dirname(__file__))
+WINDOWS = os.name == 'nt'
+MACOS = sys.platform == 'darwin'
+LINUX = sys.platform.startswith("linux")
+if os.environ.get("CONSTRUCTOR_TARGET_PLATFORM") == "osx-arm64":
+    ARCH = "arm64"
+else:
+    ARCH = (platform.machine() or "generic").lower().replace("amd64", "x86_64")
+if WINDOWS:
+    EXT, OS = 'exe', 'Windows'
+elif LINUX:
+    EXT, OS = 'sh', 'Linux'
 elif MACOS:
-    EXT = "pkg"
-elif WINDOWS:
-    EXT = "exe"
+    EXT, OS = 'pkg', 'macOS'
 else:
     raise RuntimeError(f"Unrecognized OS: {sys.platform}")
 
-if os.environ.get("CONSTRUCTOR_TARGET_PLATFORM") == "osx-arm64":
-    ARCH = "arm64"
 
-OUTPUT_FILENAME = f"{APP}-{VERSION}-{OS}-{ARCH}.{EXT}"
+def _version():
+    with open(os.path.join(HERE, "napari", "_version.py")) as f:
+        match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
+        if match:
+            return match.groups()[0].split('+')[0]
+
+
+OUTPUT_FILENAME = f"{APP}-{_version()}-{OS}-{ARCH}.{EXT}"
 clean_these_files = []
 
 
@@ -42,7 +76,7 @@ def _use_local():
     return os.environ.get("CONSTRUCTOR_USE_LOCAL")
 
 
-def _constructor(version=VERSION, extra_specs=None):
+def _constructor(version=_version(), extra_specs=None):
     """
     Create a temporary `construct.yaml` input file and
     run `constructor`.
@@ -66,7 +100,7 @@ def _constructor(version=VERSION, extra_specs=None):
     if extra_specs is None:
         extra_specs = []
 
-    # Temporary while pyside2 is not yet published for arm64
+    # TODO: Temporary while pyside2 is not yet published for arm64
     target_platform = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
     ARM64 = target_platform == "osx-arm64"
     if ARM64:
@@ -84,7 +118,7 @@ def _constructor(version=VERSION, extra_specs=None):
 
     channels = (
         ["napari/label/nightly"]
-        + (["andfoy"] if ARM64 else [])  # temporary
+        + (["andfoy"] if ARM64 else [])  # TODO: temporary
         + ["napari/label/bundle_tools", "conda-forge"]
     )
     definitions = {
@@ -113,7 +147,8 @@ def _constructor(version=VERSION, extra_specs=None):
         )
 
     if MACOS:
-        # we change this bc the installer takes the name as the default install location basename
+        # we change this bc the installer takes the name
+        # as the default install location basename
         definitions["name"] = f"{APP}-{version}"
         definitions["installer_type"] = "pkg"
         definitions["welcome_image"] = os.path.join(
@@ -182,23 +217,17 @@ def _constructor(version=VERSION, extra_specs=None):
 
 
 def main(extra_specs=None):
-    print("Cleaning...")
-    clean()
     try:
-        _constructor(extra_specs=None)
+        _constructor(extra_specs=extra_specs)
     finally:
         for path in clean_these_files:
             os.unlink(path)
-
     assert Path(OUTPUT_FILENAME).exists()
     return OUTPUT_FILENAME
 
 
 def cli(argv=None):
-    p = ArgumentParser()
-    p.add_argument(
-        "--clean", action="store_true", help="Clean files and exit."
-    )
+    p = ArgumentParser(argv)
     p.add_argument(
         "--version",
         action="store_true",
@@ -229,11 +258,8 @@ def cli(argv=None):
 
 if __name__ == "__main__":
     args = cli()
-    if args.clean:
-        clean()
-        sys.exit()
     if args.version:
-        print(VERSION)
+        print(_version())
         sys.exit()
     if args.arch:
         print(ARCH)
