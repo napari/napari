@@ -27,16 +27,15 @@ CONSTRUCTOR_SIGNING_CERTIFICATE:
 """
 
 import os
-import subprocess
-import sys
 import platform
 import re
+import subprocess
+import sys
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
 
 from ruamel import yaml
-
 
 APP = os.environ.get("CONSTRUCTOR_APP_NAME", "napari")
 HERE = os.path.abspath(os.path.dirname(__file__))
