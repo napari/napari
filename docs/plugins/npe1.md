@@ -206,9 +206,11 @@ functionality by simply installing your package along with napari:
    pip install napari mypackage
 ```
 
+(plugin-sharing)=
 ### Step 4: Deploy your plugin
 
-See [testing and deploying](./test_deploy) your plugin.
+See [testing and deploying](./test_deploy) your plugin.  (This hasn't changed
+significnatly with the secod generation (`npe2`) plugin engine).
 
 
 (plugin-cookiecutter-template)=
