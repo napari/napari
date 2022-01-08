@@ -288,9 +288,6 @@ from `Layer.data`, and a `meta` dict that will correspond to the layer's
 .. autofunction:: napari_experimental_provide_dock_widget
 ```
 
-[npe2]: https://github.com/napari/npe2
-
-
 ## Help
 
 If you run into trouble creating your plugin, please don't hesitate to reach
