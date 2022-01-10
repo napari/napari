@@ -213,13 +213,11 @@ def test_text_constant_then_repeat_values():
 
 
 def test_text_constant_with_no_properties_then_no_values():
-    # TODO: we may generate n_text copies as part of the properties refactor.
     text_manager = TextManager(text='point', n_text=3)
     assert len(text_manager.values) == 0
 
 
 def test_add_with_text_constant_then_ignored():
-    # TODO: we may choose not to ignore add as part of the properties refactor.
     n_text = 3
     properties = {'class': np.array(['A', 'B', 'C'])}
     text_manager = TextManager(
@@ -233,7 +231,6 @@ def test_add_with_text_constant_then_ignored():
 
 
 def test_add_with_text_constant_init_empty_then_ignored():
-    # TODO: we may choose not to ignore add as part of the properties refactor.
     properties = {}
     text_manager = TextManager(text='point', n_text=0, properties=properties)
 
@@ -243,7 +240,6 @@ def test_add_with_text_constant_init_empty_then_ignored():
 
 
 def test_remove_with_text_constant_then_ignored():
-    # TODO: we may choose not to ignore remove as part of the properties refactor.
     n_text = 5
     properties = {'class': np.array(['A', 'B', 'C', 'D', 'E'])}
     text_manager = TextManager(
