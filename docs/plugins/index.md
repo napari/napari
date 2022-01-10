@@ -18,7 +18,7 @@ recommend migrating to `npe2`.
 See the [migration guide](./npe2_migration_guide) for details.
 ```
 
-This section describes:
+Here you can find:
 
 - How to [build, test and publish a plugin](how-to-build-a-plugin).
 - Where to find [guides](./guides) to help get you started.
