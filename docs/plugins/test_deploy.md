@@ -146,7 +146,7 @@ directly installing from conda.
 ````
 
 When you are ready for users, announce your plugin on the [Image.sc
-Forum](https://forum.image.sc/tag/napari).
+forum](https://forum.image.sc/tag/napari).
 
 
 [classifier]: https://pypi.org/classifiers/
