@@ -1,6 +1,6 @@
 # Your First Plugin
 
-In this topic, we'll step through the fundamental concepts for building a
+In this tutorial, we'll step through the fundamental concepts for building a
 **bare minimum** "hello napari" plugin from scratch. 
 
 At the end of this tutorial, we'll point you to a "cookiecutter" template
