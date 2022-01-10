@@ -169,7 +169,7 @@ We will use this file to tell napari:
    (we give the command an ID of `napari-hello.say_hi`. It must start with our plugin
    name, and be unique).
 2. The location of the function that executes the command (the `python_name`, pointing
-   to the `show_hello_message` message in the `napari_hello` module).
+   to the `show_hello_message` function in the `napari_hello` module).
 3. That our plugin contributes a [**widget**](./contributions.html#contributions-widgets),
    and that we'd like napari to **autogenerate** the widget from the command signature
    (so we don't need to deal with any GUI code).
@@ -271,7 +271,7 @@ management, and deployment hooks.
 
 ```sh
 pip install cookiecutter
-cookiecutter https://github.com/napari/cookiecutter-napari-plugin
+cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe2
 ```
 
 ## Next Steps
