@@ -30,7 +30,7 @@ all_thresholds = [
 viewer = napari.Viewer()
 
 # load cells data and take just nuclei
-membrane, cell_nuclei = viewer.open_sample('scikit-image', 'cells3d')
+membrane, cell_nuclei = viewer.open_sample('napari', 'cells3d')
 cell_nuclei = cell_nuclei.data
 
 
