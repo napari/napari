@@ -1149,9 +1149,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @contextmanager
     def block_update_properties(self):
+        previous = self._update_properties
         self._update_properties = False
-        yield
-        self._update_properties = True
+        try:
+            yield
+        finally:
+            self._update_properties = previous
 
     def _set_highlight(self, force=False):
         """Render layer highlights when appropriate.
