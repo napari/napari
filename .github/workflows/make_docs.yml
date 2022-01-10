@@ -4,7 +4,7 @@ on:
       - main
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'  # accept all tags of the format vX.X.X
-    
+
 name: Publish Docs
 
 jobs:

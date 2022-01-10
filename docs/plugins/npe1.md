@@ -210,7 +210,7 @@ functionality by simply installing your package along with napari:
 ### Step 4: Deploy your plugin
 
 See [testing and deploying](./test_deploy) your plugin.  (This hasn't changed
-significnatly with the secod generation (`npe2`) plugin engine).
+significantly with the secod generation (`npe2`) plugin engine).
 
 
 (plugin-cookiecutter-template)=
