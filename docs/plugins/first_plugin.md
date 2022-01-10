@@ -15,8 +15,10 @@ tutorial, we'll point you to a "cookiecutter" template repository that
 helps automate the creation of new plugins, and adds a number of
 conveniences for testing, maintaining, and deploying your plugin.
 
-We will assume you've set up a Python virtual environment.  If you are
-new to virtual environments, we recommend [installing miniconda][miniconda]
+## Before you start
+
+- *(Highly Recommended)* set up a Python virtual environment.  
+    - If you are new to virtual environments, we recommend [installing miniconda][miniconda]
 and [creating a new environment with python][python_env]
 
 ## Create a new directory
