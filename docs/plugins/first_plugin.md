@@ -31,7 +31,7 @@ Napari plugins are just Python packages. *Minimally*, they must:
    napari to detect the plugin at runtime.
 
 
-## Create a new directory
+## 1. Create a new directory
 
 Let's create a new folder called `napari-hello` for your plugin files,
 and navigate into it.
