@@ -3,7 +3,7 @@
 In this tutorial, we'll step through the fundamental concepts for building a
 **bare minimum** "hello napari" plugin from scratch. 
 
-At the end of this tutorial, we'll point you to a "cookiecutter" template
+At the end, we'll point you to a "cookiecutter" template
 repository that helps automate the creation of new plugins, and adds a number
 of conveniences for testing, maintaining, and deploying your plugin.
 
