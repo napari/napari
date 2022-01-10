@@ -386,11 +386,11 @@ class InteractiveTrackManager(BaseTrackManager):
                 graph_vertices += [node.vertex, parent.vertex]
                 graph_connex += [True, False]
 
-        self._graph_vertices = np.array(graph_vertices)
-        self._graph_connex = np.array(graph_connex)
-        self._track_ids = np.array(track_ids)
-        self._track_vertices = np.array(vertices)
-        self._track_connex = np.array(connex)
+        self._graph_vertices = np.asarray(graph_vertices)
+        self._graph_connex = np.asarray(graph_connex)
+        self._track_ids = np.asarray(track_ids)
+        self._track_vertices = np.asarray(vertices)
+        self._track_connex = np.asarray(connex)
         self._features = pd.DataFrame(features) if has_features else None
         self._is_serialized = True
 
@@ -617,7 +617,7 @@ class InteractiveTrackManager(BaseTrackManager):
         features: Optional[pd.DataFrame] = None,
     ) -> Node:
         features = {} if features is None else features.to_dict()
-        node = Node(index=index, vertex=np.array(vertex), features=features)
+        node = Node(index=index, vertex=vertex, features=features)
         self._id_to_nodes[index] = node
 
         time = node.time
@@ -659,7 +659,9 @@ class InteractiveTrackManager(BaseTrackManager):
         self._validate_vertex_shape(vertex)
         self._max_node_index += 1
         node = self._add_node(
-            index=self._max_node_index, vertex=vertex, features=features
+            index=self._max_node_index,
+            vertex=np.asarray(vertex),
+            features=features,
         )
         self._leafs[node.index] = node
         return node.index
@@ -699,7 +701,7 @@ class InteractiveTrackManager(BaseTrackManager):
                         )
                     )
 
-            node.vertex = np.array(vertex)
+            node.vertex = np.asarray(vertex)
 
         if features is not None:
             if isinstance(features, pd.DataFrame):
