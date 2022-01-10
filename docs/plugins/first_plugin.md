@@ -8,7 +8,9 @@ Napari plugins are just Python packages. Minimally, they must:
    napari to detect the plugin at runtime.
 
 In this topic, we'll step through the fundamental concepts for building a
-**bare minimum** "hello napari" plugin from scratch. At the end of this
+**bare minimum** "hello napari" plugin from scratch. 
+
+At the end of this
 tutorial, we'll point you to a "cookiecutter" template repository that
 helps automate the creation of new plugins, and adds a number of
 conveniences for testing, maintaining, and deploying your plugin.
