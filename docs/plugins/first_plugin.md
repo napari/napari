@@ -7,20 +7,29 @@ At the end of this tutorial, we'll point you to a "cookiecutter" template
 repository that helps automate the creation of new plugins, and adds a number
 of conveniences for testing, maintaining, and deploying your plugin.
 
------
+````{admonition} new plugin format!
+:class: important
+This page describes the creation of a plugin targeting `npe2`, the second
+generation plugin engine.
+````
 
-Napari plugins are just Python packages. Minimally, they must:
+## Before you start
+
+We assume you've set up a Python virtual environment (using a virtual
+environment instead of a global python installation is **highly
+recommended**). If you are new to virtual environments, we recommend
+[installing miniconda][miniconda] and [creating a new environment with
+python][python_env]
+
+## What is a plugin?
+
+Napari plugins are just Python packages. *Minimally*, they must:
 
 1. Include a static [plugin manifest](./manifest) file that details the
    [contributions](./contributions) contained in the plugin.
 2. Declare a `napari.manifest` [entry point][entry_points] that allows
    napari to detect the plugin at runtime.
 
-## Before you start
-
-- *(Highly Recommended)* set up a Python virtual environment.  
-    - If you are new to virtual environments, we recommend [installing miniconda][miniconda]
-and [creating a new environment with python][python_env]
 
 ## Create a new directory
 
