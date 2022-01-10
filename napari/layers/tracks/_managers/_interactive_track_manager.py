@@ -227,11 +227,6 @@ class InteractiveTrackManager(BaseTrackManager):
             self._leafs[node.index] = node
             track_to_leafs[track_id] = node
 
-        for time, time_subset in data.groupby('T', sort=False):
-            self._time_to_nodes[int(time)] = [
-                self._id_to_nodes[id] for id in time_subset.index
-            ]
-
         for track_id, parents in graph.items():
             node = track_to_roots[track_id]
             for parent_track_id in parents:
@@ -624,6 +619,12 @@ class InteractiveTrackManager(BaseTrackManager):
         features = {} if features is None else features.to_dict()
         node = Node(index, vertex, features)
         self._id_to_nodes[index] = node
+
+        time = node.time
+        if time not in self._time_to_nodes:
+            self._time_to_nodes[time] = []
+
+        self._time_to_nodes[time].append(node)
         return node
 
     def _validate_vertex_shape(self, vertex: np.ndarray) -> None:
@@ -661,12 +662,6 @@ class InteractiveTrackManager(BaseTrackManager):
             vertex=np.asarray(vertex),
             features=features,
         )
-        time = node.time
-        if time not in self._time_to_nodes:
-            self._time_to_nodes[time] = []
-
-        self._time_to_nodes[time].append(node)
-
         self._leafs[node.index] = node
         return node.index
 
