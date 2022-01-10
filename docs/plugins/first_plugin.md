@@ -21,7 +21,7 @@ conveniences for testing, maintaining, and deploying your plugin.
     - If you are new to virtual environments, we recommend [installing miniconda][miniconda]
 and [creating a new environment with python][python_env]
 
-## Create a new directory
+## 1. Create a new directory
 
 Let's create a new folder called `napari-hello` for your plugin files,
 and navigate into it.
