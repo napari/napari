@@ -41,7 +41,7 @@ mkdir napari-hello
 cd napari-hello
 ```
 
-## Add standard python package metadata files
+## 2. Add standard Python package metadata files
 
 In your root `napari-hello` folder, create a `pyproject.toml` and `setup.cfg` file,
 then create a `napari_hello` directory with a single `__init__.py` file inside of it.
@@ -137,7 +137,7 @@ There is a *lot* more than can go in the package metadata.
 See the [setuptools quickstart](https://setuptools.pypa.io/en/latest/userguide/quickstart.html)
 for more.
 
-## Implement the plugin
+## 3. Implement the plugin
 
 So far, we've done nothing napari-specific.  Let's create the actual plugin and add
 some Python code. We're going to add a
@@ -243,7 +243,7 @@ napari.manifest =
     napari-hello = napari_hello:napari.yaml
 ```
 
-## Install your plugin and try it out!
+## 4. Install your plugin and try it out!
 
 With that, we're ready to go.  Let's install our package in the environment
 and then run napari.  Note: we're using `pip install -e .` here to install our
