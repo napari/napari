@@ -19,7 +19,7 @@ We assume you've set up a Python virtual environment (using a virtual
 environment instead of a global python installation is **highly
 recommended**). If you are new to virtual environments, we recommend
 [installing miniconda][miniconda] and [creating a new environment with
-python][python_env]
+python][python_env].
 
 ## What is a plugin?
 
