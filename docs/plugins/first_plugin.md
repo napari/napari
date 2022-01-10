@@ -16,8 +16,10 @@ Napari plugins are just Python packages. Minimally, they must:
 2. Declare a `napari.manifest` [entry point][entry_points] that allows
    napari to detect the plugin at runtime.
 
-We will assume you've set up a Python virtual environment.  If you are
-new to virtual environments, we recommend [installing miniconda][miniconda]
+## Before you start
+
+- *(Highly Recommended)* set up a Python virtual environment.  
+    - If you are new to virtual environments, we recommend [installing miniconda][miniconda]
 and [creating a new environment with python][python_env]
 
 ## Create a new directory
