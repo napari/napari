@@ -211,11 +211,9 @@ class InteractiveTrackManager(BaseTrackManager):
             track = track.sort_values('T')
             indices = track.index
             values = track.values
-            # iterating with range is much faster than using pandas `.iterrows`.
-            for i in range(len(indices)):
-                index = indices[i]
+            for index, val in zip(indices, values):
                 feats = None if features is None else features.iloc[index]
-                node = self._add_node(index, values[i, 1:], feats)
+                node = self._add_node(index, val[1:], feats)
 
                 if parent_node is not None:
                     parent_node.children.append(node)
