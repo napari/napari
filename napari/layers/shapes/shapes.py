@@ -2029,9 +2029,7 @@ class Shapes(Layer):
                 defaults=self._feature_defaults,
             )
             self._text._features = self._features
-            # TODO: maybe just allow an empty range.
-            if total_shapes < n_prop_values:
-                self.text.remove(range(total_shapes, n_prop_values))
+            self.text.remove(range(total_shapes, n_prop_values))
             self._add_shapes(
                 data,
                 shape_type=shape_type,
