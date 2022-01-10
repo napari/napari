@@ -451,6 +451,7 @@ class Points(Layer):
                         len(data),
                         defaults=self._feature_defaults,
                     )
+                    self._text._features = self._features
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones
@@ -533,7 +534,7 @@ class Points(Layer):
         self._update_color_manager(
             self._edge, self._features, self._feature_defaults, "edge_color"
         )
-        self.refresh_text()
+        self.text.refresh(self._features)
         self.events.properties()
 
     @property
@@ -621,7 +622,7 @@ class Points(Layer):
     def refresh_text(self):
         """Refresh the text values.
 
-        This is generally used if the properties were updated without changing the data
+        This is generally used if the features were updated without changing the data
         """
         self.text.refresh_text(self.properties)
 
@@ -1651,6 +1652,7 @@ class Points(Layer):
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
             self._features = _remove_features(self._features, index)
+            self.text._features = self._features
             self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
@@ -1708,11 +1710,10 @@ class Points(Layer):
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
 
-            for k in self.properties:
-                self.properties[k] = np.concatenate(
-                    (self.properties[k], self._clipboard['properties'][k]),
-                    axis=0,
-                )
+            self._features = _append_features(
+                self._features, self._clipboard['features']
+            )
+            self.text._features = self._features
 
             self.text._paste(
                 self._clipboard['text_strings'],
@@ -1729,10 +1730,6 @@ class Points(Layer):
                 properties=_features_to_properties(
                     self._clipboard['features']
                 ),
-            )
-
-            self._features = _append_features(
-                self._features, self._clipboard['features']
             )
 
             self._selected_view = list(
@@ -1755,7 +1752,7 @@ class Points(Layer):
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
                 'text_strings': self.text.string._get_array(
-                    self.properties, len(self.data), index
+                    self._features, index
                 ),
             }
         else:

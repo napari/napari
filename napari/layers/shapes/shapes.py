@@ -761,7 +761,7 @@ class Shapes(Layer):
                 RuntimeWarning,
             )
 
-        self.refresh_text()
+        self.text.refresh(self._features)
 
         self.events.properties()
 
@@ -1567,9 +1567,7 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.string._get_array(
-            self.properties, len(self.data), self._indices_view
-        )
+        return self.text.string._get_array(self._features, self._indices_view)
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
@@ -2030,8 +2028,9 @@ class Shapes(Layer):
                 total_shapes,
                 defaults=self._feature_defaults,
             )
+            self._text._features = self._features
             # TODO: maybe just allow an empty range.
-            if total_shapes > n_prop_values:
+            if total_shapes < n_prop_values:
                 self.text.remove(range(total_shapes, n_prop_values))
             self._add_shapes(
                 data,
@@ -2578,6 +2577,7 @@ class Shapes(Layer):
 
         if len(index) > 0:
             self._features = _remove_features(self._features, index)
+            self.text._features = self._features
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2887,7 +2887,7 @@ class Shapes(Layer):
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
                 'text_strings': self.text.string._get_array(
-                    self.properties, self.nshapes, index
+                    self._features, index
                 ),
             }
         else:
@@ -2906,6 +2906,7 @@ class Shapes(Layer):
             self._features = _append_features(
                 self._features, self._clipboard['features']
             )
+            self.text._features = self._features
 
             self.text._paste(self._clipboard['text_strings'])
 
