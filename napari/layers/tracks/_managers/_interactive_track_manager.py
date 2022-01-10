@@ -617,7 +617,7 @@ class InteractiveTrackManager(BaseTrackManager):
         features: Optional[pd.DataFrame] = None,
     ) -> Node:
         features = {} if features is None else features.to_dict()
-        node = Node(index=index, vertex=vertex, features=features)
+        node = Node(index, vertex, features)
         self._id_to_nodes[index] = node
 
         time = node.time
