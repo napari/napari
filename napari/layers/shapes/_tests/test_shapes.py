@@ -363,8 +363,7 @@ def test_nd_text():
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
 
-# TODO: add properties = {} as a case.
-@pytest.mark.parametrize("properties", [properties_array, properties_list])
+@pytest.mark.parametrize("properties", [properties_array, properties_list, {}])
 def test_data_setter_with_text(properties):
     """Test layer data on a layer with text via the data setter"""
     shape = (10, 4, 2)
