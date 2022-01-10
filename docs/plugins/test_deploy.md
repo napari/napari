@@ -123,7 +123,7 @@ guide][hub-guide-custom-viz].
 
 Finally, once you have curated your package metadata and description, you can
 preview your metadata, and check any missing fields using the
-[`napari-hub-cli`](https://github.com/chanzuckerberg/napari-hub-cli) tool. 
+napari hub preview page service. Check out [this guide](https://github.com/chanzuckerberg/napari-hub/blob/main/docs/setting-up-preview.md) for instructions on how to set it up. 
 
 ## Deployment
 
