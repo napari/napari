@@ -16,17 +16,14 @@ from ...utils.colormaps import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.geometry import clamp_point_to_bounding_box
+from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.translations import trans
 from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import (
-    _features_from_properties,
-    _features_to_properties,
-    _validate_features,
-)
+from ..utils.layer_utils import _features_to_properties, _validate_features
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -211,8 +208,6 @@ class Labels(_ImageBase):
 
     Notes
     -----
-    _data_raw : array (N, M)
-        2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
         background label `0` is selected.
@@ -245,6 +240,8 @@ class Labels(_ImageBase):
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
     ):
+        if name is None and data is not None:
+            name = magic_name(data)
 
         self._seed = seed
         self._background_label = 0
@@ -459,6 +456,7 @@ class Labels(_ImageBase):
     ) -> None:
         self._features = _validate_features(features)
         self._label_index = self._make_label_index(self._features)
+        self.events.properties()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -467,9 +465,7 @@ class Labels(_ImageBase):
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._features = _features_from_properties(properties=properties)
-        self._label_index = self._make_label_index(self._features)
-        self.events.properties()
+        self.features = properties
 
     @classmethod
     def _make_label_index(cls, features: pd.DataFrame) -> Dict[int, int]:
@@ -1368,6 +1364,12 @@ class Labels(_ImageBase):
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.

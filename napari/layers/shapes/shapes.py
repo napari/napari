@@ -28,14 +28,13 @@ from ..utils.color_transformations import (
 )
 from ..utils.layer_utils import (
     _append_features,
-    _features_from_properties,
+    _features_from_layer,
     _features_to_choices,
     _features_to_properties,
     _remove_features,
     _resize_features,
     _validate_features,
     coerce_current_properties,
-    get_current_properties,
 )
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
@@ -225,6 +224,8 @@ class Shapes(Layer):
     features : Dataframe-like
         Features table where each row corresponds to a shape and each column
         is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -499,16 +500,12 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        if properties is not None or property_choices is not None:
-            self._features = _features_from_properties(
-                properties=properties,
-                property_choices=property_choices,
-                num_data=number_of_shapes(data),
-            )
-        else:
-            self._features = _validate_features(
-                features, num_data=number_of_shapes(data)
-            )
+        self._features, self._feature_defaults = _features_from_layer(
+            features=features,
+            properties=properties,
+            property_choices=property_choices,
+            num_data=number_of_shapes(data),
+        )
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -591,10 +588,6 @@ class Shapes(Layer):
                 elem_name="face_color",
                 default="black",
             )
-
-        self.current_properties = get_current_properties(
-            self.properties, self.property_choices, len(data)
-        )
 
         self._text = TextManager._from_layer(
             text=text,
@@ -740,20 +733,12 @@ class Shapes(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = _validate_features(features, num_data=self.nshapes)
-
-    @property
-    def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return _features_to_properties(self._features)
-
-    @properties.setter
-    def properties(self, properties: Dict[str, Array]):
-        self._features = _features_from_properties(
-            properties=properties, num_data=self.nshapes
+        self._features, self._feature_defaults = _features_from_layer(
+            features=features,
+            num_data=self.nshapes,
         )
         if self._face_color_property and (
-            self._face_color_property not in self.properties
+            self._face_color_property not in self.features
         ):
             self._face_color_property = ''
             warnings.warn(
@@ -765,7 +750,7 @@ class Shapes(Layer):
             )
 
         if self._edge_color_property and (
-            self._edge_color_property not in self.properties
+            self._edge_color_property not in self.features
         ):
             self._edge_color_property = ''
             warnings.warn(
@@ -779,6 +764,23 @@ class Shapes(Layer):
         self.refresh_text()
 
         self.events.properties()
+
+    @property
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._feature_defaults
+
+    @property
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
+        return _features_to_properties(self._features)
+
+    @properties.setter
+    def properties(self, properties: Dict[str, Array]):
+        self.features = properties
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -861,22 +863,23 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return self._current_properties
+        return _features_to_properties(self._feature_defaults)
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = coerce_current_properties(
-            current_properties
+        current_properties = coerce_current_properties(current_properties)
+        self._feature_defaults = _validate_features(
+            current_properties, num_data=1
         )
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         ):
-            for k in current_properties:
+            for k in self._feature_defaults:
                 self.features[k][
                     list(self.selected_data)
-                ] = current_properties[k]
+                ] = self._feature_defaults[k][0]
             self.refresh_colors()
         self.events.current_properties()
 
@@ -2025,7 +2028,7 @@ class Shapes(Layer):
             self._features = _resize_features(
                 self._features,
                 total_shapes,
-                current_values=self._current_properties,
+                defaults=self._feature_defaults,
             )
             # TODO: maybe just allow an empty range.
             if total_shapes > n_prop_values:
@@ -2530,9 +2533,12 @@ class Shapes(Layer):
     @contextmanager
     def block_thumbnail_update(self):
         """Use this context manager to block thumbnail updates"""
+        previous = self._allow_thumbnail_update
         self._allow_thumbnail_update = False
-        yield
-        self._allow_thumbnail_update = True
+        try:
+            yield
+        finally:
+            self._allow_thumbnail_update = previous
 
     def _update_thumbnail(self, event=None):
         """Update thumbnail with current shapes and colors."""

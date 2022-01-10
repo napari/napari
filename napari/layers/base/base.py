@@ -20,7 +20,6 @@ from ...utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
@@ -222,7 +221,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         super().__init__()
 
         if name is None and data is not None:
-            name = magic_name(data, path_prefix=ROOT_DIR)
+            name = magic_name(data)
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
@@ -955,12 +954,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # or -> [1, 0, 2] for a layer with three as that corresponds to
         # the relative order of the last two and three dimensions
         # respectively
-        offset = ndim - self.ndim
-        order = np.array(order)
-        if offset <= 0:
-            order = list(range(-offset)) + list(order - offset)
-        else:
-            order = list(order[order >= offset] - offset)
+        order = self._world_to_data_dims_displayed(order, ndim_world=ndim)
 
         if point is None:
             point = [0] * ndim
@@ -971,6 +965,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             point = list(point)
 
         # If no slide data has changed, then do nothing
+        offset = ndim - self.ndim
         if (
             np.all(order == self._dims_order)
             and ndisplay == self._ndisplay
@@ -1054,7 +1049,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     )
                 position = self.world_to_data(position)
 
-            if dims_displayed is not None:
+            if (dims_displayed is not None) and (view_direction is not None):
                 if len(dims_displayed) == 2 or self.ndim == 2:
                     value = self._get_value(position=tuple(position))
 
@@ -1154,9 +1149,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @contextmanager
     def block_update_properties(self):
+        previous = self._update_properties
         self._update_properties = False
-        yield
-        self._update_properties = True
+        try:
+            yield
+        finally:
+            self._update_properties = previous
 
     def _set_highlight(self, force=False):
         """Render layer highlights when appropriate.
@@ -1295,6 +1293,36 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         vector_data_ndisplay = vector_data_nd[dims_displayed]
         vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
         return vector_data_ndisplay
+
+    def _world_to_data_dims_displayed(
+        self, dims_displayed: List[int], ndim_world: int
+    ) -> List[int]:
+        """Convert indices of displayed dims from world to data coordinates.
+
+        This accounts for differences in dimensionality between the world
+        and the data coordinates. For example a world dims order of
+        [2, 1, 0, 3] would be [0, 1] for a layer that only has two dimensions
+        or [1, 0, 2] for a layer with three as that corresponds to the
+        relative order of the last two and three dimensions respectively
+
+        Parameters
+        ----------
+        dims_displayed : List[int]
+            The world displayed dimensions.
+        ndim_world : int
+            The number of dimensions in the world coordinate system.
+
+        Returns
+        -------
+        dims_displayed_data : List[int]
+            The displayed dimensions in data coordinates.
+        """
+        offset = ndim_world - self.ndim
+        order = np.array(dims_displayed)
+        if offset <= 0:
+            return list(range(-offset)) + list(order - offset)
+        else:
+            return list(order[order >= offset] - offset)
 
     def _display_bounding_box(self, dims_displayed: np.ndarray):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
@@ -1538,6 +1566,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             corners = np.zeros((2, self.ndim))
             corners[:, displayed_axes] = scaled_corners
             corners = corners.astype(int)
+            display_shape = tuple(
+                corners[1, displayed_axes] - corners[0, displayed_axes]
+            )
+            if any(s == 0 for s in display_shape):
+                return
             if self.data_level != level or not np.all(
                 self.corner_pixels == corners
             ):
@@ -1588,7 +1621,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
         return generate_layer_status(self.name, position, value)
 
-    def _get_tooltip_text(self, position, *, world=False):
+    def _get_tooltip_text(
+        self,
+        position,
+        *,
+        view_direction: Optional[np.ndarray] = None,
+        dims_displayed: Optional[List[int]] = None,
+        world: bool = False,
+    ):
         """
         tooltip message of the data at a coordinate position.
 
@@ -1596,6 +1636,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ----------
         position : tuple
             Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
         world : bool
             If True the position is taken to be in world coordinates
             and converted into data coordinates. False by default.

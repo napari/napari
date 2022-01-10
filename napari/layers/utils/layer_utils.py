@@ -684,6 +684,72 @@ def features_to_pandas_dataframe(features: Any) -> pd.DataFrame:
     return features
 
 
+def _features_from_layer(
+    *,
+    features: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    properties: Optional[Union[Dict[str, np.ndarray], pd.DataFrame]] = None,
+    property_choices: Optional[Dict[str, np.ndarray]] = None,
+    num_data: Optional[int] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Coerces a layer's keyword arguments to feature values and defaults tables.
+
+    Parameters
+    ----------
+    features : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
+        The features input to a layer.
+    properties : Optional[Union[Dict[str, np.ndarray], pd.DataFrame]]
+        The properties input to a layer.
+    property_choices : Optional[Dict[str, np.ndarray]]
+        The property choices input to a layer.
+    num_data : Optional[int]
+        The number of the elements in the layer calling this, such as
+        the number of points.
+
+    Returns
+    -------
+    pd.DataFrame
+        The pandas DataFrame created from the input features or properties.
+    pd.DataFrame
+        The pandas DataFrame of default values. The names and dtypes will be
+        the same as the features data, but the table will have exactly one row.
+
+    Raises
+    ------
+    ValueError
+        If the input properties columns are not all the same length, or if
+        that length is not equal to the given num_data.
+    """
+    if properties is not None or property_choices is not None:
+        features = _features_from_properties(
+            properties=properties,
+            property_choices=property_choices,
+            num_data=num_data,
+        )
+    else:
+        features = _validate_features(features, num_data=num_data)
+    defaults = pd.DataFrame(
+        {
+            name: _get_default_column(column)
+            for name, column in features.items()
+        },
+        index=range(1),
+        copy=True,
+    )
+    return features, defaults
+
+
+def _get_default_column(column: pd.Series) -> pd.Series:
+    """Get the default column of length 1 from a data column."""
+    value = None
+    if column.size > 0:
+        value = column.iloc[-1]
+    elif isinstance(column.dtype, pd.CategoricalDtype):
+        choices = column.dtype.categories
+        if choices.size > 0:
+            value = choices[0]
+    return pd.Series(data=value, dtype=column.dtype, index=range(1))
+
+
 def _validate_features(
     features: Union[Dict[str, np.ndarray], pd.DataFrame],
     *,
@@ -695,7 +761,9 @@ def _validate_features(
     ----------
     features : Union[Dict[str, np.ndarray], pd.DataFrame]
         The features table input, which will be passed to the pandas
-        DataFrame initializer.
+        DataFrame initializer. If this is a pandas DataFrame with a
+        non-default index, that index (except its length) will be
+        ignored.
     num_data : Optional[int]
         The number of the elements in the layer calling this, such as
         the number of points, which is used to check that the features
@@ -705,9 +773,8 @@ def _validate_features(
     Returns
     -------
     pd.DataFrame
-        The pandas DataFrame created from the input features table.
-        If the input features are already a DataFrame, the data will not
-        be copied, otherwise they will.
+        The pandas DataFrame created from the input features table. This
+        may or may not store a copy of the input data.
 
     Raises
     ------
@@ -715,6 +782,8 @@ def _validate_features(
         If the input feature columns are not all the same length, or if
         that length is not equal to the given num_data.
     """
+    if isinstance(features, pd.DataFrame):
+        features = features.reset_index(drop=True)
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 
@@ -725,31 +794,7 @@ def _features_from_properties(
     property_choices: Optional[Dict[str, np.ndarray]] = None,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
-    """Validates and coerces deprecated properties input into a features DataFrame.
-
-    Parameters
-    ----------
-    properties : Dict[str, np.ndarray]
-        The properties of a layer.
-    property_choices : Dict[str, np.ndarray]
-        The property choices of a layer.
-    num_data : Optional[int]
-        The number of the elements in the layer calling this, such as
-        the number of points.
-
-    Returns
-    -------
-    pd.DataFrame
-        The pandas DataFrame created from the input features table.
-        If the input features are already a DataFrame, the data will not
-        be copied, otherwise they will.
-
-    Raises
-    ------
-    ValueError
-        If the input properties columns are not all the same length, or if
-        that length is not equal to the given num_data.
-    """
+    """Validates and coerces deprecated properties input into a features DataFrame."""
     # Create categorical series for any choices provided.
     if property_choices is not None:
         properties = pd.DataFrame(data=properties)
@@ -808,7 +853,7 @@ def _resize_features(
     features: pd.DataFrame,
     size: int,
     *,
-    current_values: Dict[str, np.ndarray],
+    defaults: pd.DataFrame,
 ) -> pd.DataFrame:
     """Resize a features DataFrame to a new size, padding with default values if required.
 
@@ -818,11 +863,10 @@ def _resize_features(
         The features of a layer.
     size : int
         The new size (number of rows) of the features table.
-    current_values : Dict[str, np.ndarray]
-        The current or default value for each feature stored in a length-1 array.
-        If the new size is greater than the current, these default
-        values will be repeated for the new rows. If a feature is
-        missing from this dictionary, missing values will be used instead.
+    defaults : pd.DataFrame
+        The default value for each feature stored in a DataFrame with 1 row.
+        If a feature is missing from this or a default cannot be inferred,
+        a missing value will be used instead.
 
     Returns
     -------
@@ -834,14 +878,7 @@ def _resize_features(
     if size < current_size:
         return _remove_features(features, range(size, current_size))
     elif size > current_size:
-        num_append = size - current_size
-        to_append = pd.DataFrame(
-            {
-                name: np.repeat(current_values.get(name), num_append, axis=0)
-                for name in features
-            },
-            index=range(num_append),
-        )
+        to_append = pd.concat([defaults] * (size - current_size))
         return _append_features(features, to_append)
     return features
 

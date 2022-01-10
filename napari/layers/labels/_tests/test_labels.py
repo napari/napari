@@ -1,4 +1,5 @@
 import itertools
+import time
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import List
@@ -13,6 +14,7 @@ from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components import ViewerModel
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
 from napari.utils import Colormap
@@ -563,6 +565,25 @@ def test_contour(input_data, expected_data_view):
     )
 
 
+def test_contour_large_new_labels():
+    """Check that new labels larger than the lookup table work in contour mode.
+
+    References
+    ----------
+    [1]: https://forum.image.sc/t/data-specific-reason-for-indexerror-in-raw-to-displayed/60808
+    [2]: https://github.com/napari/napari/pull/3697
+    """
+    viewer = ViewerModel()
+
+    labels = np.zeros((5, 10, 10), dtype=int)
+    labels[0, 4:6, 4:6] = 1
+    labels[4, 4:6, 4:6] = 1000
+    labels_layer = viewer.add_labels(labels)
+    labels_layer.contour = 1
+    # This used to fail with IndexError
+    viewer.dims.set_point(axis=0, value=4)
+
+
 def test_selecting_label():
     """Test selecting label."""
     np.random.seed(0)
@@ -688,9 +709,9 @@ def test_paint_2d():
     assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
-@pytest.mark.timeout(1)  # TODO: see if we can test this more directly
 def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
+    now = time.monotonic()
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
@@ -699,6 +720,8 @@ def test_paint_2d_xarray():
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
     assert layer.data.sum() == 411
+    elapsed = time.monotonic() - now
+    assert elapsed < 1, "test was too slow, computation was likely not lazy"
 
 
 def test_paint_3d():
@@ -1344,3 +1367,18 @@ def test_negative_label_doesnt_flicker():
     # the label colors. Now -1 is seen so it is taken into account in the
     # indexing calculation, and changes color
     assert tuple(layer.get_color(-1)) == minus_one_color_original
+
+
+def test_get_status_with_custom_index():
+    """See https://github.com/napari/napari/issues/3811"""
+    data = np.zeros((10, 10), dtype=np.uint8)
+    data[2:5, 2:-2] = 1
+    data[5:-2, 2:-2] = 2
+    layer = Labels(data)
+    df = pd.DataFrame(
+        {'text1': [1, 3], 'text2': [7, -2], 'index': [1, 2]}, index=[1, 2]
+    )
+    layer.properties = df
+    assert layer.get_status((0, 0)) == 'Labels [0 0]: 0; [No Properties]'
+    assert layer.get_status((3, 3)) == 'Labels [3 3]: 1; text1: 1, text2: 7'
+    assert layer.get_status((6, 6)) == 'Labels [6 6]: 2; text1: 3, text2: -2'

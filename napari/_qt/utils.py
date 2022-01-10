@@ -122,9 +122,11 @@ def QImg2array(img):
 @contextmanager
 def qt_signals_blocked(obj):
     """Context manager to temporarily block signals from `obj`"""
-    obj.blockSignals(True)
-    yield
-    obj.blockSignals(False)
+    previous = obj.blockSignals(True)
+    try:
+        yield
+    finally:
+        obj.blockSignals(previous)
 
 
 @contextmanager
@@ -395,7 +397,7 @@ def remove_flash_animation(widget_ref: weakref.ref[QWidget]):
         widget.setGraphicsEffect(None)
         del widget._flash_animation
     except RuntimeError:
-        # RuntimeError: wrapped C/C++ object of type QtWidgetOverlay has been deleted
+        # RuntimeError: wrapped C/C++ object of type QtWidgetOverlay deleted
         pass
 
 
