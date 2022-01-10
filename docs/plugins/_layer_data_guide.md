@@ -3,7 +3,7 @@
 
 When transfering data to and from plugins, napari does not pass `Layer` objects
 directly. Instead, it passes (mostly) pure-python and array-like types,
-deconstructed into a {class}`tuple` that we refer to as a `LayerDataTuple`.  This type shows
+deconstructed into a {class}`tuple` that we refer to as a `LayerData` tuple.  This type shows
 up often in plugins and is explained here.
 
 ### Informal description
