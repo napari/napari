@@ -802,7 +802,7 @@ class _FeatureManager:
             to_append = pd.concat([self._defaults] * (size - current_size))
             self.append(to_append)
 
-    def append(self, to_append: pd.DataFrame):
+    def append(self, to_append: pd.DataFrame) -> None:
         """Append new feature rows to this.
 
         Parameters
@@ -812,7 +812,7 @@ class _FeatureManager:
         """
         self._values = self._values.append(to_append, ignore_index=True)
 
-    def remove(self, indices: Any):
+    def remove(self, indices: Any) -> None:
         """Remove rows from this by index.
 
         Parameters
@@ -876,8 +876,6 @@ class _FeatureManager:
                 property_choices=property_choices,
                 num_data=num_data,
             )
-        else:
-            features = _validate_features(features, num_data=num_data)
         return cls(features, num_data=num_data)
 
 
