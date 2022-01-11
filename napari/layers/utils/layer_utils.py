@@ -830,7 +830,7 @@ class _FeatureManager:
             drop=True
         )
 
-    def reorder(self, order: Sequence[int]):
+    def reorder(self, order: Sequence[int]) -> None:
         """Reorders the rows of the feature values table."""
         self._values = self._values.iloc[order].reset_index(drop=True)
 
