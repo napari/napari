@@ -1,7 +1,7 @@
 import warnings
 from abc import abstractmethod
 from enum import auto
-from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Generic, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 from pydantic import ValidationError, parse_obj_as
@@ -60,20 +60,21 @@ class StyleEncoding(Protocol[StyleArray]):
             The numpy array of derived values. This has same length as the given indices
             and in general is read-only.
         """
-        pass
 
     def _apply(
         self,
-        features: Dict[str, np.ndarray],
+        features: Any,
         indices: IndicesType,
     ) -> StyleArray:
-        pass
+        """Applies this encoding to the given features at the given row indices."""
 
-    def _clear(self):
-        """Clears all previously generated values. Call this before _get_array to refresh values."""
-        pass
+    def _clear(self) -> None:
+        """Clears all previously generated values.
 
-    def _append(self, array: StyleArray):
+        Call this before _get_array to refresh values.
+        """
+
+    def _append(self, array: StyleArray) -> None:
         """Appends raw style values to this.
 
         This is useful for supporting the paste operation in layers.
@@ -83,9 +84,8 @@ class StyleEncoding(Protocol[StyleArray]):
         array : StyleArray
             The values to append. The dimensionality of these should match that of the existing style values.
         """
-        pass
 
-    def _delete(self, indices: IndicesType):
+    def _delete(self, indices: IndicesType) -> None:
         """Deletes style values from this by index.
 
         Parameters
@@ -102,6 +102,7 @@ class StyleEncoding(Protocol[StyleArray]):
 
 class StyleEncodingModel(EventedModel, Generic[StyleValue, StyleArray]):
     class Config:
+        # Forbid extra fields to ensure different types of encodings can be properly resolved.
         extra = 'forbid'
 
 
@@ -132,13 +133,13 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     ) -> StyleArray:
         return _broadcast_constant(self.constant, len(indices), indices)
 
-    def _append(self, array: StyleArray):
+    def _append(self, array: StyleArray) -> None:
         pass
 
-    def _delete(self, indices: IndicesType):
+    def _delete(self, indices: IndicesType) -> None:
         pass
 
-    def _clear(self):
+    def _clear(self) -> None:
         pass
 
     def _json_encode(self) -> dict:
@@ -184,13 +185,13 @@ class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     ) -> StyleArray:
         return np.array([self.default] * len(indices))
 
-    def _append(self, array: StyleArray):
+    def _append(self, array: StyleArray) -> None:
         self.array = np.append(self.array, array, axis=0)
 
-    def _delete(self, indices: IndicesType):
+    def _delete(self, indices: IndicesType) -> None:
         self.array = _delete_in_bounds(self.array, indices)
 
-    def _clear(self):
+    def _clear(self) -> None:
         self.array = _empty_array_like(self.default)
 
     def _json_encode(self) -> dict:
@@ -205,7 +206,7 @@ class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._clear()
+        self._array = _empty_array_like(self.fallback)
 
     @abstractmethod
     def _apply(self, features: Any, indices: IndicesType) -> StyleArray:
@@ -237,20 +238,20 @@ class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
             )
         return _broadcast_constant(self.fallback, n_rows, indices)
 
-    def _append(self, array: StyleArray):
+    def _append(self, array: StyleArray) -> None:
         self._array = np.append(self._array, array, axis=0)
 
-    def _delete(self, indices: IndicesType):
+    def _delete(self, indices: IndicesType) -> None:
         self._array = _delete_in_bounds(self._array, indices)
 
-    def _clear(self):
+    def _clear(self) -> None:
         self._array = _empty_array_like(self.fallback)
 
     def _json_encode(self) -> dict:
         return self.dict()
 
 
-def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
+def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs) -> Any:
     """Parses the given kwargs as one of the given encodings.
 
     Parameters
@@ -259,6 +260,12 @@ def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs):
         The supported encoding types, each of which must be a subclass of
         :class:`StyleEncoding`. The first encoding that can be constructed
         from the given kwargs will be returned.
+    kwargs
+        The keyword arguments of the StyleEncoding to created.
+
+    Returns
+    -------
+    The StyleEncoding created from the given kwargs.
 
     Raises
     ------
