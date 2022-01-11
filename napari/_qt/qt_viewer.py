@@ -4,6 +4,7 @@ import logging
 import os
 import warnings
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+from weakref import WeakSet
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
@@ -181,11 +182,14 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
+    _instances = WeakSet()
+
     def __init__(self, viewer: ViewerModel, show_welcome_screen: bool = False):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
+        self._instances.add(self)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         self._show_welcome_screen = show_welcome_screen
@@ -871,6 +875,8 @@ class QtViewer(QSplitter):
             position: the position of the click in world coordinates.
             view_direction: a unit vector giving the direction of the camera in
                 world coordinates.
+            up_direction: a unit vector giving the direction of the camera that is
+                up in world coordinates.
             dims_displayed: a list of the dimensions currently being displayed
                 in the viewer. This comes from viewer.dims.displayed.
             dims_point: the indices for the data in view in world coordinates.
@@ -888,6 +894,9 @@ class QtViewer(QSplitter):
 
         # Add the view ray to the event
         event.view_direction = self.viewer.camera.calculate_nd_view_direction(
+            self.viewer.dims.ndim, self.viewer.dims.displayed
+        )
+        event.up_direction = self.viewer.camera.calculate_nd_up_direction(
             self.viewer.dims.ndim, self.viewer.dims.displayed
         )
 

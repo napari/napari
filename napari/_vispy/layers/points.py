@@ -31,6 +31,9 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.text.events.connect(self._on_text_change)
         self.layer.events.shading.connect(self._on_shading_change)
         self.layer.events._antialias.connect(self._on_antialias_change)
+        self.layer.events.experimental_canvas_size_limits.connect(
+            self._on_canvas_size_limits_change
+        )
 
         self._on_data_change()
 
@@ -87,28 +90,21 @@ class VispyPointsLayer(VispyBaseLayer):
             face_color=transform_color('transparent'),
         )
 
-        # only draw a box in 2D
-        if self.layer._ndisplay == 2:
-            if (
-                self.layer._highlight_box is None
-                or 0 in self.layer._highlight_box.shape
-            ):
-                pos = np.zeros((1, self.layer._ndisplay))
-                width = 0
-            else:
-                pos = self.layer._highlight_box
-                width = settings.appearance.highlight_thickness
-
-            self.node._subvisuals[2].set_data(
-                pos=pos[:, ::-1],
-                color=self._highlight_color,
-                width=width,
-            )
+        if (
+            self.layer._highlight_box is None
+            or 0 in self.layer._highlight_box.shape
+        ):
+            pos = np.zeros((1, self.layer._ndisplay))
+            width = 0
         else:
-            self.node._subvisuals[2].set_data(
-                pos=np.zeros((1, self.layer._ndisplay)),
-                width=0,
-            )
+            pos = self.layer._highlight_box
+            width = settings.appearance.highlight_thickness
+
+        self.node._subvisuals[2].set_data(
+            pos=pos[:, ::-1],
+            color=self._highlight_color,
+            width=width,
+        )
 
         self.node.update()
 
@@ -167,6 +163,11 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_blending_kwargs = BLENDING_MODES[self.layer.text.blending]
         text_node.set_gl_state(**text_blending_kwargs)
+
+        # selection box is always without depth
+        box_blending_kwargs = BLENDING_MODES['translucent_no_depth']
+        self.node._subvisuals[2].set_gl_state(**box_blending_kwargs)
+
         self.node.update()
 
     def _on_antialias_change(self):
@@ -179,6 +180,11 @@ class VispyPointsLayer(VispyBaseLayer):
         else:
             self.node.spherical = False
 
+    def _on_canvas_size_limits_change(self):
+        min_size, max_size = self.layer.experimental_canvas_size_limits
+        self.node.clamp_filter.min_size = min_size
+        self.node.clamp_filter.max_size = max_size
+
     def reset(self):
         super().reset()
         self._update_text(update_node=False)
@@ -187,6 +193,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_matrix_change()
         self._on_antialias_change()
         self._on_shading_change()
+        self._on_canvas_size_limits_change()
 
     def close(self):
         """Vispy visual is closing."""

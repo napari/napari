@@ -14,12 +14,10 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import (
-    _features_from_properties,
+    _features_from_layer,
     _features_to_choices,
     _features_to_properties,
     _resize_features,
-    _validate_features,
-    get_current_properties,
 )
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
@@ -105,6 +103,8 @@ class Vectors(Layer):
     features : Dataframe-like
         Features table where each row corresponds to a vector and each column
         is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
@@ -231,14 +231,12 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        if properties is not None or property_choices is not None:
-            self._features = _features_from_properties(
-                properties=properties,
-                property_choices=property_choices,
-                num_data=len(self.data),
-            )
-        else:
-            self.features = features
+        self._features, self._feature_defaults = _features_from_layer(
+            features=features,
+            properties=properties,
+            property_choices=property_choices,
+            num_data=len(self.data),
+        )
 
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(self.data),
@@ -286,15 +284,10 @@ class Vectors(Layer):
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
-                current_properties = get_current_properties(
-                    self.properties,
-                    self.property_choices,
-                    len(self.data),
-                )
                 self._features = _resize_features(
                     self._features,
                     n_vectors,
-                    current_values=current_properties,
+                    defaults=self._feature_defaults,
                 )
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the
@@ -337,17 +330,8 @@ class Vectors(Layer):
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = _validate_features(features, num_data=len(self.data))
-
-    @property
-    def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return _features_to_properties(self._features)
-
-    @properties.setter
-    def properties(self, properties: Dict[str, Array]):
-        self._features = _features_from_properties(
-            properties=properties,
+        self._features, self._feature_defaults = _features_from_layer(
+            features=features,
             num_data=len(self.data),
         )
 
@@ -368,9 +352,26 @@ class Vectors(Layer):
                 self._edge.color_properties = {
                     'name': edge_color_name,
                     'values': property_values,
-                    'current_value': property_values[-1],
+                    'current_value': self.feature_defaults[edge_color_name][0],
                 }
         self.events.properties()
+
+    @property
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: array (N,)}, DataFrame: Annotations for each point"""
+        return _features_to_properties(self._features)
+
+    @properties.setter
+    def properties(self, properties: Dict[str, Array]):
+        self.features = properties
+
+    @property
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._feature_defaults
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
@@ -474,9 +475,7 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
-        current_properties = get_current_properties(
-            self.properties, self.property_choices, len(self.data)
-        )
+        current_properties = _features_to_properties(self._feature_defaults)
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
@@ -527,17 +526,12 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    current_properties = get_current_properties(
-                        self.properties,
-                        self.property_choices,
-                        len(self.data),
-                    )
                     self._edge.color_properties = {
                         'name': color_property,
                         'values': self.features[color_property].to_numpy(),
-                        'current_value': np.squeeze(
-                            current_properties[color_property]
-                        ),
+                        'current_value': self.feature_defaults[color_property][
+                            0
+                        ],
                     }
                     warnings.warn(
                         trans._(
