@@ -1102,8 +1102,8 @@ class QtViewer(QSplitter):
                         )
                         # we've opened file successfully, so move on to next file
                         return
-                    except Exception:
-                        error_message = f"Tried to open file with {display_name}, but reading failed.\n"
+                    except Exception as e:
+                        error_message = f"Tried to open file with {display_name}, but reading failed ({e}).\n"
                 else:
                     error_message = f"Can't find {display_name} plugin associated with {extension} files.\n"
 
