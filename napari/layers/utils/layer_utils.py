@@ -714,7 +714,7 @@ class _FeatureManager:
         """The feature values table."""
         return self._values
 
-    def set_values(self, values, *, num_data=None):
+    def set_values(self, values, *, num_data=None) -> None:
         """Sets the feature values table."""
         self._values = _validate_features(values, num_data=num_data)
         self._defaults = self._make_defaults()
