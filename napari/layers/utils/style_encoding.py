@@ -261,7 +261,7 @@ def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs) -> Any:
         :class:`StyleEncoding`. The first encoding that can be constructed
         from the given kwargs will be returned.
     kwargs
-        The keyword arguments of the StyleEncoding to created.
+        The keyword arguments of the StyleEncoding to create.
 
     Returns
     -------
