@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from ....utils.events.custom_types import Array
-from ....utils.translations import trans
 from ...utils.layer_utils import _features_to_properties
 
 
@@ -92,20 +91,6 @@ class BaseTrackManager(ABC):
     def build_graph(self):
         """build the track graph"""
 
-    def vertex_properties(self, color_by: str) -> np.ndarray:
-        """return the properties of tracks by vertex"""
-
-        if color_by not in self.properties:
-            raise ValueError(
-                trans._(
-                    'Property {color_by} not found',
-                    deferred=True,
-                    color_by=color_by,
-                )
-            )
-
-        return self.properties[color_by]
-
     @abstractmethod
     def get_value(self, coords):
         """lookup the ID of the nearest track node"""
@@ -186,3 +171,19 @@ class BaseTrackManager(ABC):
 
     def view_features(self, *args, **kwargs) -> np.ndarray:
         return self.features
+
+    @property
+    def extent_vertices(self) -> np.ndarray:
+        """Extent of vertices coordinates.
+
+        Returns
+        -------
+        extent_vertices : array, shape (2, D)
+        """
+        if len(self.data) == 0:
+            extrema = np.full((2, self.ndim), np.nan)
+        else:
+            maxs = np.max(self.data, axis=0)
+            mins = np.min(self.data, axis=0)
+            extrema = np.vstack([mins, maxs])
+        return extrema[:, 1:]

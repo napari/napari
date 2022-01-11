@@ -69,10 +69,11 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node._subvisuals[2].visible = self.layer.display_graph
 
         # set the width of the track tails
+        # FIXME: this needs to update everything like `_on_tracks_change`
+        # self._on_tracks_change()
         self.node._subvisuals[0].set_data(
             width=self.layer.tail_width,
-            # FIXME: implement this
-            # color=self.layer.track_colors,
+            color=self.layer.track_colors,
         )
         self.node._subvisuals[2].set_data(
             width=self.layer.tail_width,
@@ -90,8 +91,7 @@ class VispyTracksLayer(VispyBaseLayer):
             pos=self.layer._view_data,
             connect=self.layer._view_track_connex,
             width=self.layer.tail_width,
-            # FIXME: implement this
-            # color=self.layer.track_colors,
+            color=self.layer.track_colors,
         )
 
         # Call to update order of translation values with new dims:

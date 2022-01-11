@@ -168,7 +168,6 @@ class Tracks(Layer):
         self._manager = TrackManager()
         self._editable = False
 
-        self._track_colors = None
         self._colormaps_dict = colormaps_dict or {}  # additional colormaps
         self._color_by = color_by  # default color by ID
         self._colormap = colormap
@@ -208,13 +207,7 @@ class Tracks(Layer):
         -------
         extent_data : array, shape (2, D)
         """
-        if len(self.data) == 0:
-            extrema = np.full((2, self.ndim), np.nan)
-        else:
-            maxs = np.max(self.data, axis=0)
-            mins = np.min(self.data, axis=0)
-            extrema = np.vstack([mins, maxs])
-        return extrema[:, 1:]
+        return self._manager.extent_vertices
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -308,7 +301,7 @@ class Tracks(Layer):
 
             # modulate track colors as per colormap/current_time
             colors = self.track_colors[thumbnail_indices]
-            times = self.track_times[thumbnail_indices]
+            times = self._view_track_times[thumbnail_indices]
             alpha = (self.head_length + self.current_time - times) / (
                 self.tail_length + self.head_length
             )
@@ -386,9 +379,8 @@ class Tracks(Layer):
         self._manager.data = data
         self._manager.build_tracks()
 
-        # reset the properties and recolor the tracks
+        # reset the properties
         self.features = {}
-        self._recolor_tracks()
 
         # reset the graph
         self._manager.graph = {}
@@ -530,7 +522,6 @@ class Tracks(Layer):
                 )
             )
         self._color_by = color_by
-        self._recolor_tracks()
         self.events.color_by()
 
     @property
@@ -549,7 +540,6 @@ class Tracks(Layer):
                 )
             )
         self._colormap = colormap
-        self._recolor_tracks()
         self.events.colormap()
 
     @property
@@ -560,32 +550,6 @@ class Tracks(Layer):
     def colomaps_dict(self, colormaps_dict: Dict[str, Colormap]):
         # validate the dictionary entries?
         self._colormaps_dict = colormaps_dict
-
-    def _recolor_tracks(self):
-        """recolor the tracks"""
-
-        # this catch prevents a problem coloring the tracks if the data is
-        # updated before the properties are. properties should always contain
-        # a track_id key
-        if self.color_by not in self.properties_to_color_by:
-            self._color_by = 'track_id'
-            self.events.color_by()
-
-        # if we change the coloring, rebuild the vertex colors array
-        vertex_properties = self._manager.vertex_properties(self.color_by)
-
-        def _norm(p):
-            return (p - np.min(p)) / np.max([1e-10, np.ptp(p)])
-
-        if self.color_by in self.colormaps_dict:
-            colormap = self.colormaps_dict[self.color_by]
-        else:
-            # if we don't have a colormap, get one and scale the properties
-            colormap = AVAILABLE_COLORMAPS[self.colormap]
-            vertex_properties = _norm(vertex_properties)
-
-        # actually set the vertex colors
-        self._track_colors = colormap.map(vertex_properties)
 
     @property
     def track_connex(self) -> np.ndarray:
@@ -598,9 +562,31 @@ class Tracks(Layer):
 
     @property
     def track_colors(self) -> np.ndarray:
-        """return the vertex colors according to the currently selected
-        property"""
-        return self._track_colors
+
+        view_features = self._manager.view_features(*self._time_interval)
+        if len(view_features) == 0:
+            return None
+
+        if self.color_by not in view_features.columns:
+            self._color_by = 'track_id'
+            self.events.color_by()
+            return
+
+        # if we change the coloring, rebuild the vertex colors array
+        vertex_properties = view_features[self.color_by].values
+
+        def _norm(p):
+            return (p - np.min(p)) / np.max([1e-10, np.ptp(p)])
+
+        if self.color_by in self.colormaps_dict:
+            colormap = self.colormaps_dict[self.color_by]
+        else:
+            # if we don't have a colormap, get one and scale the properties
+            colormap = AVAILABLE_COLORMAPS[self.colormap]
+            vertex_properties = _norm(vertex_properties)
+
+        # actually set the vertex colors
+        return colormap.map(vertex_properties)
 
     @property
     def graph_connex(self) -> np.ndarray:
@@ -675,3 +661,9 @@ class Tracks(Layer):
             self.features = features
 
         return self.editable
+
+    def set_view_slice(self) -> None:
+        # FIXME: kind of ugly, should be fixed when we decide if we're going to keep both managers
+        if isinstance(self._manager, InteractiveTrackManager):
+            self.events.rebuild_tracks()
+            self.events.rebuild_graph()

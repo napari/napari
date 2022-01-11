@@ -15,5 +15,5 @@ if __name__ == '__main__':
 
     napari.run()
 
-    # type in the napari console: viewer.layer['tracks']._manager._is_serialized = False
+    # type in the napari console: viewer.layers['tracks']._manager._is_serialized = False
     # not working properly because the data extent and slicing is forcing serialization

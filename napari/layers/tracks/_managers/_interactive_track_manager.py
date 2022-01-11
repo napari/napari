@@ -75,6 +75,7 @@ def update_serialization(method):
 
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
+        print(method.__name__)
         if not self._is_serialized:
             self.serialize()
         return method(self, *args, **kwargs)
@@ -90,11 +91,11 @@ def update_view(method):
 
     @functools.wraps(method)
     def wrapper(self, time_start: int, time_end: int):
-        # rounding to int just to be sure
         if self._is_serialized:
             # if serialized just copy serialized to views
             self._copy_serialized_to_view()
         else:
+            # rounding to int just to be sure
             time_start = int(round(time_start))
             time_end = int(round(time_end))
             if self._view_time_slice != (time_start, time_end):
@@ -185,6 +186,9 @@ class InteractiveTrackManager(BaseTrackManager):
         self._track_connex: np.ndarray = ...
         self._features: pd.DataFrame = ...
         self._is_serialized = False
+
+        # it assumes 3D+t data by default
+        self._extent_vertices = np.full((2, 4), np.nan)
 
         if data is None:
             assert len(graph) == 0 and features is None
@@ -365,6 +369,11 @@ class InteractiveTrackManager(BaseTrackManager):
         self._track_connex = connex
         self._features = features
         self._is_serialized = True
+
+        # correct extent_vertices, might be out of date due to removals
+        maxs = np.max(self._track_vertices, axis=0)
+        mins = np.min(self._track_vertices, axis=0)
+        self._extent_vertices = np.vstack([mins, maxs])
 
     def _serialize(
         self, time_start: Optional[int] = None, time_end: Optional[int] = None
@@ -748,6 +757,18 @@ class InteractiveTrackManager(BaseTrackManager):
             features=features,
         )
         self._leafs[node.index] = node
+
+        if np.any(np.isnan(self._extent_vertices)):
+            # the data was empty and this single node is whole extent
+            self._extent_vertices = np.tile(node.vertex, (2, 1))
+        else:
+            self._extent_vertices[0] = np.minimum(
+                node.vertex, self._extent_vertices[0]
+            )
+            self._extent_vertices[1] = np.maximum(
+                node.vertex, self._extent_vertices[1]
+            )
+
         return node.index
 
     @outdate_serialization
@@ -860,7 +881,9 @@ class InteractiveTrackManager(BaseTrackManager):
         return self._view_track_vertices[:, 0]
 
     @update_view
-    def view_features(self, time_start: int, time_end: int) -> np.ndarray:
+    def view_features(
+        self, time_start: int, time_end: int
+    ) -> Optional[pd.DataFrame]:
         return self._view_features
 
     def _build_view(self, time_start: int, time_end: int) -> None:
@@ -894,3 +917,8 @@ class InteractiveTrackManager(BaseTrackManager):
         self._view_track_vertices = self._track_vertices
         self._view_track_connex = self._track_connex
         self._view_features = self._features
+
+    @property
+    def extent_vertices(self) -> np.ndarray:
+        # extent of data doesn't reduce with nodes removal
+        return self._extent_vertices
