@@ -787,7 +787,7 @@ class _FeatureManager:
     def resize(
         self,
         size: int,
-    ):
+    ) -> None:
         """Resize this padding with default values if required.
 
         Parameters
