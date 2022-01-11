@@ -94,7 +94,7 @@ class TextManager(EventedModel):
             # _warn_about_deprecated_text_parameter()
             text = kwargs.pop('text')
             if isinstance(text, str) and text in features:
-                kwargs['string'] = IdentityStringEncoding(property=text)
+                kwargs['string'] = IdentityStringEncoding(feature=text)
             else:
                 kwargs['string'] = text
         super().__init__(**kwargs)
@@ -275,7 +275,7 @@ class TextManager(EventedModel):
         else:
             # TODO: add deprecation warning about this behavior.
             if isinstance(text, str) and text in features:
-                kwargs = {'string': IdentityStringEncoding(property=text)}
+                kwargs = {'string': IdentityStringEncoding(feature=text)}
             else:
                 kwargs = {'string': text}
         kwargs['features'] = features

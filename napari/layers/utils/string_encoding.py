@@ -69,21 +69,21 @@ class DirectStringEncoding(DirectStyleEncoding[StringValue, StringArray]):
 
 
 class IdentityStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
-    """Encodes strings directly from a property column.
+    """Encodes strings directly from a feature column.
 
     Attributes
     ----------
-    property : str
-        The name of the property that contains the desired strings.
+    feature : str
+        The name of the feature that contains the desired strings.
     fallback : StringValue
-        The safe constant fallback string to use if the property column
+        The safe constant fallback string to use if the feature column
         does not contain valid string values.
     """
 
     encoding_type: EncodingType = Field(
         EncodingType.IDENTITY, const=EncodingType.IDENTITY
     )
-    property: str
+    feature: str
     fallback: StringValue = DEFAULT_STRING
 
     def _apply(
@@ -91,20 +91,20 @@ class IdentityStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
         features: Any,
         indices: IndicesType,
     ) -> StringArray:
-        return np.array(features[self.property][indices], dtype=str)
+        return np.array(features[self.feature][indices], dtype=str)
 
 
 class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
-    """Encodes string values by formatting property values.
+    """Encodes string values by formatting feature values.
 
     Attributes
     ----------
     format_string : str
         A format string with the syntax supported by :func:`str.format`,
-        where all format fields should be property names.
+        where all format fields should be feature names.
     fallback : StringValue
         The safe constant fallback string to use if the format string
-        is not valid or contains fields other than property names.
+        is not valid or contains fields other than feature names.
     """
 
     encoding_type: EncodingType = Field(
@@ -121,13 +121,13 @@ class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
         # TODO: maybe exploit pandas API here.
         return np.array(
             [
-                self.format_string.format(**_get_property_row(features, index))
+                self.format_string.format(**_get_feature_row(features, index))
                 for index in indices
             ]
         )
 
 
-def _get_property_row(features: Any, index: int) -> Dict[str, Any]:
+def _get_feature_row(features: Any, index: int) -> Dict[str, Any]:
     return {name: values[index] for name, values in features.items()}
 
 

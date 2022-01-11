@@ -199,7 +199,7 @@ class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
 
 
 class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
-    """Encodes style values by deriving them from property values."""
+    """Encodes style values by deriving them from feature values."""
 
     fallback: StyleValue
     _array: StyleArray

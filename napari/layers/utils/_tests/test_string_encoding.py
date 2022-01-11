@@ -55,7 +55,7 @@ def test_direct_with_more_rows():
 def test_identity():
     features = pd.DataFrame({'class': ['a', 'b', 'c']})
 
-    encoding = IdentityStringEncoding(property='class')
+    encoding = IdentityStringEncoding(feature='class')
     array = encoding._get_array(features)
 
     np.testing.assert_array_equal(array, features['class'])
