@@ -9,14 +9,14 @@ def lissajous(t):
     return (a[i] * np.cos(b[i] * t + c[i]) for i in range(3))
 
 
-def tracks_3d(num_tracks=10):
+def tracks_3d(num_tracks=10, track_length=200):
     """ create 3d+t track data """
     tracks = []
 
     for track_id in range(num_tracks):
 
         # space to store the track data and properties
-        track = np.zeros((200, 10), dtype=np.float32)
+        track = np.zeros((track_length, 10), dtype=np.float32)
 
         # time
         timestamps = np.arange(track.shape[0])
@@ -60,11 +60,12 @@ def tracks_3d(num_tracks=10):
     return data, properties, graph
 
 
-tracks, properties, graph = tracks_3d(num_tracks=100)
-vertices = tracks[:, 1:]
+if __name__ == '__main__':
+    tracks, properties, graph = tracks_3d(num_tracks=100)
+    vertices = tracks[:, 1:]
 
-viewer = napari.Viewer()
-viewer.add_points(vertices, size=1, name='points', opacity=0.3)
-viewer.add_tracks(tracks, properties=properties, name='tracks')
+    viewer = napari.Viewer()
+    viewer.add_points(vertices, size=1, name='points', opacity=0.3)
+    viewer.add_tracks(tracks, properties=properties, name='tracks')
 
-napari.run()
+    napari.run()

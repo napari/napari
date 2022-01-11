@@ -322,11 +322,6 @@ class TrackManager(BaseTrackManager):
             return self._points_id[pruned[0]]  # return the track ID
 
     @property
-    def ndim(self) -> int:
-        """Determine number of spatiotemporal dimensions of the layer."""
-        return self.data.shape[1] - 1
-
-    @property
     def max_time(self) -> int:
         """Determine the maximum timestamp of the dataset"""
         return int(np.max(self.track_times))

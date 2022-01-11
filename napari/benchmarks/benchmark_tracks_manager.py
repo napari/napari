@@ -7,13 +7,17 @@ from napari.layers.tracks._managers import (
 
 
 class _BaseTrackManagerSuite:
-    param_names = ['size', 'sorted', 'n_tracks']
-    params = [np.power(10, np.arange(2, 7)).tolist(), [False, True], [10, 100]]
+    param_names = ['size', 'n_tracks']
+    params = [(5 * np.power(10, np.arange(2, 7))).tolist(), [10, 100, 1000]]
 
-    def setup(self, size, sorted, n_tracks):
+    def setup(self, size, n_tracks):
         """
         Create tracks data
         """
+        if 10 * n_tracks > size:
+            # number of tracks are adjusted if not 10 times larger than size
+            n_tracks = size // 10
+
         rng = np.random.default_rng()
 
         track_ids = rng.integers(1, n_tracks + 1, size=size)
@@ -29,10 +33,6 @@ class _BaseTrackManagerSuite:
             (track_ids[:, None], time[:, None], coordinates),
             axis=1,
         )
-
-        if sorted:
-            order = np.lexsort((time, track_ids))
-            data = data[order]
 
         self.data = data
 
@@ -50,10 +50,17 @@ class TrackManagerSuite(_BaseTrackManagerSuite):
 
 
 class InteractiveTrackManagerSuite(_BaseTrackManagerSuite):
-    def setup(self, size, sorted, n_tracks):
-        super().setup(size=size, sorted=sorted, n_tracks=n_tracks)
+    param_names = ['size', 'time_window']
+    params = [
+        (5 * np.power(10, np.arange(2, 7))).tolist(),
+        [10, 50, 100, 200, 400],
+    ]
+
+    def setup(self, size, time_window):
+        """Time to initialize the data."""
+        super().setup(size=size, n_tracks=100)
         self.manager = InteractiveTrackManager(data=self.data)
 
-    def time_interactive_serialization(self, *args):
+    def time_interactive_serialization(self, size, time_window):
         """Time to serialize data without initialization."""
-        self.manager.serialize()
+        self.manager._serialize(0, 0 + time_window)

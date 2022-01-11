@@ -157,3 +157,32 @@ class BaseTrackManager(ABC):
     @abstractmethod
     def track_labels(self, current_time: int) -> tuple:
         """return track labels at the current time"""
+
+    def view_graph(self, *args, **kwargs) -> np.ndarray:
+        return self.graph
+
+    def view_graph_vertices(self, *args, **kwargs) -> np.ndarray:
+        return self.graph_vertices
+
+    def view_graph_connex(self, *args, **kwargs) -> np.ndarray:
+        return self.graph_connex
+
+    def view_graph_times(self, *args, **kwargs) -> np.ndarray:
+        if self.graph_vertices is not None:
+            return self.graph_vertices[:, 0]
+        return None
+
+    def view_track_vertices(self, *args, **kwargs) -> np.ndarray:
+        return self.track_vertices
+
+    def view_track_ids(self, *args, **kwargs) -> np.ndarray:
+        return self.track_ids
+
+    def view_track_connex(self, *args, **kwargs) -> np.ndarray:
+        return self.track_connex
+
+    def view_track_times(self, *args, **kwargs) -> np.ndarray:
+        return self.track_vertices[:, 0]
+
+    def view_features(self, *args, **kwargs) -> np.ndarray:
+        return self.features

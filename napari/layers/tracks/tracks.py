@@ -2,7 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 from warnings import warn
 
 import numpy as np
@@ -320,14 +320,26 @@ class Tracks(Layer):
         self.thumbnail = colormapped
 
     @property
+    def _time_interval(self) -> Tuple[int, int]:
+        """return current time interal given tail (head) length"""
+        return (
+            self.current_time - self.tail_length,
+            self.current_time + self.head_length,
+        )
+
+    @property
     def _view_data(self):
         """return a view of the data"""
-        return self._pad_display_data(self._manager.track_vertices)
+        return self._pad_display_data(
+            self._manager.view_track_vertices(*self._time_interval)
+        )
 
     @property
     def _view_graph(self):
         """return a view of the graph"""
-        return self._pad_display_data(self._manager.graph_vertices)
+        return self._pad_display_data(
+            self._manager.view_graph_vertices(*self._time_interval)
+        )
 
     def _pad_display_data(self, vertices):
         """pad display data when moving between 2d and 3d"""
@@ -581,6 +593,10 @@ class Tracks(Layer):
         return self._manager.track_connex
 
     @property
+    def _view_track_connex(self) -> np.ndarray:
+        return self._manager.view_track_connex(*self._time_interval)
+
+    @property
     def track_colors(self) -> np.ndarray:
         """return the vertex colors according to the currently selected
         property"""
@@ -592,14 +608,26 @@ class Tracks(Layer):
         return self._manager.graph_connex
 
     @property
+    def _view_graph_connex(self) -> np.ndarray:
+        return self._manager.view_graph_connex(*self._time_interval)
+
+    @property
     def track_times(self) -> np.ndarray:
         """time points associated with each track vertex"""
         return self._manager.track_times
 
     @property
+    def _view_track_times(self) -> np.ndarray:
+        return self._manager.view_track_times(*self._time_interval)
+
+    @property
     def graph_times(self) -> np.ndarray:
         """time points associated with each graph vertex"""
         return self._manager.graph_times
+
+    @property
+    def _view_graph_times(self) -> np.ndarray:
+        return self._manager.view_graph_times(*self._time_interval)
 
     @property
     def track_labels(self) -> tuple:

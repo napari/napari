@@ -1,3 +1,4 @@
+from ...layers.tracks import Tracks
 from ..visuals.tracks import TracksVisual
 from .base import VispyBaseLayer
 
@@ -8,6 +9,8 @@ class VispyTracksLayer(VispyBaseLayer):
     Track layer for visualizing tracks.
 
     """
+
+    layer: Tracks
 
     def __init__(self, layer):
         node = TracksVisual()
@@ -68,7 +71,8 @@ class VispyTracksLayer(VispyBaseLayer):
         # set the width of the track tails
         self.node._subvisuals[0].set_data(
             width=self.layer.tail_width,
-            color=self.layer.track_colors,
+            # FIXME: implement this
+            # color=self.layer.track_colors,
         )
         self.node._subvisuals[2].set_data(
             width=self.layer.tail_width,
@@ -79,14 +83,15 @@ class VispyTracksLayer(VispyBaseLayer):
 
         self.node.tracks_filter.use_fade = self.layer.use_fade
         self.node.tracks_filter.tail_length = self.layer.tail_length
-        self.node.tracks_filter.vertex_time = self.layer.track_times
+        self.node.tracks_filter.vertex_time = self.layer._view_track_times
 
         # change the data to the vispy line visual
         self.node._subvisuals[0].set_data(
             pos=self.layer._view_data,
-            connect=self.layer.track_connex,
+            connect=self.layer._view_track_connex,
             width=self.layer.tail_width,
-            color=self.layer.track_colors,
+            # FIXME: implement this
+            # color=self.layer.track_colors,
         )
 
         # Call to update order of translation values with new dims:
@@ -97,7 +102,7 @@ class VispyTracksLayer(VispyBaseLayer):
 
         self.node.graph_filter.use_fade = self.layer.use_fade
         self.node.graph_filter.tail_length = self.layer.tail_length
-        self.node.graph_filter.vertex_time = self.layer.graph_times
+        self.node.graph_filter.vertex_time = self.layer._view_graph_times
 
         # if the user clears a graph after it has been created, vispy offers
         # no method to clear the data, therefore, we need to set private
@@ -110,7 +115,7 @@ class VispyTracksLayer(VispyBaseLayer):
 
         self.node._subvisuals[2].set_data(
             pos=self.layer._view_graph,
-            connect=self.layer.graph_connex,
+            connect=self.layer._view_graph_connex,
             width=self.layer.tail_width,
             color='white',
         )

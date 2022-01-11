@@ -63,6 +63,8 @@ def outdate_serialization(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         self._is_serialized = False
+        # setting an invalid slice to force view update
+        self._view_time_slice = (0, -1)
         return method(self, *args, **kwargs)
 
     return wrapper
@@ -76,6 +78,29 @@ def update_serialization(method):
         if not self._is_serialized:
             self.serialize()
         return method(self, *args, **kwargs)
+
+    return wrapper
+
+
+# decorators to update views if necessary
+
+
+def update_view(method):
+    """Updates the data view if necessary."""
+
+    @functools.wraps(method)
+    def wrapper(self, time_start: int, time_end: int):
+        # rounding to int just to be sure
+        if self._is_serialized:
+            # if serialized just copy serialized to views
+            self._copy_serialized_to_view()
+        else:
+            time_start = int(round(time_start))
+            time_end = int(round(time_end))
+            if self._view_time_slice != (time_start, time_end):
+                self._build_view(time_start, time_end)
+
+        return method(self, time_start, time_end)
 
     return wrapper
 
@@ -320,7 +345,59 @@ class InteractiveTrackManager(BaseTrackManager):
         """Transverse the whole tracks graph backwardly (from leafs) generating the
         data expected from the Tracks layer and the TracksVisual.
         """
-        self._graph = {}
+        (
+            graph,
+            graph_vertices,
+            graph_connex,
+            track_ids,
+            vertices,
+            connex,
+            features,
+        ) = self._serialize()
+
+        print('FULL SERIALIZE')  # FIXME: remove this
+
+        self._graph = graph
+        self._graph_vertices = graph_vertices
+        self._graph_connex = graph_connex
+        self._track_ids = track_ids
+        self._track_vertices = vertices
+        self._track_connex = connex
+        self._features = features
+        self._is_serialized = True
+
+    def _serialize(
+        self, time_start: Optional[int] = None, time_end: Optional[int] = None
+    ) -> Tuple[Any, ...]:
+        """[summary]
+
+        Parameters
+        ----------
+        time_start : Optional[int], optional
+            [description], by default None
+        time_end : Optional[int], optional
+            [description], by default None
+
+        Returns
+        -------
+        Tuple[Any, ...]
+            [description]
+        """
+
+        if time_start is None:
+            time_start = min(self._time_to_nodes.keys())
+
+        if time_end is None:
+            queue = list(self._leafs.values())
+        else:
+            # fill queue with nodes at the last time point plus any leaf inside the time window
+            queue = self._time_to_nodes.get(time_end, []) + [
+                leaf
+                for leaf in self._leafs.values()
+                if time_start <= leaf.time < time_end
+            ]
+
+        graph = {}
         track_ids = []
         vertices = []
         connex = []
@@ -329,7 +406,6 @@ class InteractiveTrackManager(BaseTrackManager):
             node.features is not None for node in self._id_to_nodes.values()
         )
 
-        queue = list(self._leafs.values())
         seen = set()  # seen track ids
         while queue:
             node = queue.pop()
@@ -337,13 +413,17 @@ class InteractiveTrackManager(BaseTrackManager):
             seen.add(track_id)
 
             while True:
+                if node.time < time_start:
+                    connex[-1] = False
+                    break
+
                 if len(node.children) > 1:
                     # if it has multiple children it's split into multiple tracks
                     # as it's done with the default TrackManager
-                    if track_id not in self._graph:
-                        self._graph[track_id] = [node.index]
+                    if track_id not in graph:
+                        graph[track_id] = [node.index]
                     else:
-                        self._graph[track_id].append(node.index)
+                        graph[track_id].append(node.index)
 
                     connex[-1] = False
                     if node.index in seen:
@@ -368,31 +448,36 @@ class InteractiveTrackManager(BaseTrackManager):
                     connex.append(True)
                 else:
                     # if it has multiple parents it starts a new connection and append indices to graph
-                    if node.index not in self._graph:
-                        self._graph[track_id] = []
+                    if node.index not in graph:
+                        graph[track_id] = []
                     for parent in node.parents:
-                        if parent.index not in seen:
+                        if (
+                            parent.index not in seen
+                            and parent.time >= time_start
+                        ):
                             queue.append(parent)
-                        self._graph[track_id].append(parent.index)
+                        graph[track_id].append(parent.index)
                     connex.append(False)
                     break
 
         graph_vertices = []
         graph_connex = []
-        for node_id, parents in self._graph.items():
+        for node_id, parents in graph.items():
             node = self._id_to_nodes[node_id]
             for parent_id in parents:
                 parent = self._id_to_nodes[parent_id]
                 graph_vertices += [node.vertex, parent.vertex]
                 graph_connex += [True, False]
 
-        self._graph_vertices = np.asarray(graph_vertices)
-        self._graph_connex = np.asarray(graph_connex)
-        self._track_ids = np.asarray(track_ids)
-        self._track_vertices = np.asarray(vertices)
-        self._track_connex = np.asarray(connex)
-        self._features = pd.DataFrame(features) if has_features else None
-        self._is_serialized = True
+        return (
+            graph,
+            np.asarray(graph_vertices) if len(graph_vertices) > 0 else None,
+            np.asarray(graph_connex) if len(graph_connex) > 0 else None,
+            np.asarray(track_ids),
+            np.asarray(vertices),
+            np.asarray(connex),
+            pd.DataFrame(features) if has_features else None,
+        )
 
     def get_value(self, coords: np.ndarray) -> Optional[int]:
         """lookup the index of the nearest node"""
@@ -735,3 +820,77 @@ class InteractiveTrackManager(BaseTrackManager):
 
         vmap = np.vectorize(get_value)
         self._track_ids = vmap(self._track_ids)
+
+    @update_view
+    def view_graph(self, time_start: int, time_end: int) -> np.ndarray:
+        return self._view_graph
+
+    @update_view
+    def view_graph_vertices(
+        self, time_start: int, time_end: int
+    ) -> np.ndarray:
+        return self._view_graph_vertices
+
+    @update_view
+    def view_graph_connex(self, time_start: int, time_end: int) -> np.ndarray:
+        return self._view_graph_connex
+
+    @update_view
+    def view_graph_times(self, time_start: int, time_end: int) -> np.ndarray:
+        if self._view_graph_vertices is not None:
+            return self._view_graph_vertices[:, 0]
+        return None
+
+    @update_view
+    def view_track_vertices(
+        self, time_start: int, time_end: int
+    ) -> np.ndarray:
+        return self._view_track_vertices
+
+    @update_view
+    def view_track_ids(self, time_start: int, time_end: int) -> np.ndarray:
+        return self._view_track_ids
+
+    @update_view
+    def view_track_connex(self, time_start: int, time_end: int) -> np.ndarray:
+        return self._view_track_connex
+
+    @update_view
+    def view_track_times(self, time_start: int, time_end: int) -> np.ndarray:
+        return self._view_track_vertices[:, 0]
+
+    @update_view
+    def view_features(self, time_start: int, time_end: int) -> np.ndarray:
+        return self._view_features
+
+    def _build_view(self, time_start: int, time_end: int) -> None:
+        """Partially serializes the data within the requested time window [time_start, time_end]."""
+        (
+            graph,
+            graph_vertices,
+            graph_connex,
+            track_ids,
+            vertices,
+            connex,
+            features,
+        ) = self._serialize(time_start=time_start, time_end=time_end)
+
+        self._view_time_slice = (time_start, time_end)
+        self._view_graph = graph
+        self._view_graph_vertices = graph_vertices
+        self._view_graph_connex = graph_connex
+        self._view_track_ids = track_ids
+        self._view_track_vertices = vertices
+        self._view_track_connex = connex
+        self._view_features = features
+
+    def _copy_serialized_to_view(self) -> None:
+        """Serializes and copies the data to their respective views."""
+        self._view_time_slice = (0, -1)  # setting an invalid interval
+        self._view_graph = self._graph
+        self._view_graph_vertices = self._graph_vertices
+        self._view_graph_connex = self._graph_connex
+        self._view_track_ids = self._track_ids
+        self._view_track_vertices = self._track_vertices
+        self._view_track_connex = self._track_connex
+        self._view_features = self._features
