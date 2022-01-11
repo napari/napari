@@ -64,7 +64,7 @@ def read_data_with_plugins(
         return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
 
     hook_caller = plugin_manager.hook.napari_get_reader
-    path = abspath_or_url(path)
+    path = abspath_or_url(path, must_exists=True)
     if not plugin and isinstance(path, (str, pathlib.Path)):
         extension = os.path.splitext(path)[-1]
         plugin = plugin_manager.get_reader_for_extension(extension)
