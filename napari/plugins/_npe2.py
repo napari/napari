@@ -200,10 +200,9 @@ def get_readers(path: str) -> Dict[str, str]:
         Dictionary of display_name to plugin_name
     """
     pm = npe2.PluginManager.instance()
-    readers = list(pm.iter_compatible_readers(path))
     reader_plugin_names = {
         pm.get_manifest(reader.command).display_name: reader.plugin_name
-        for reader in readers
+        for reader in pm.iter_compatible_readers(path)
     }
     return reader_plugin_names
 
