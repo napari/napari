@@ -5,7 +5,6 @@ import pathlib
 import warnings
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
-from urllib.parse import urlparse
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
@@ -66,19 +65,6 @@ def read_data_with_plugins(
 
     hook_caller = plugin_manager.hook.napari_get_reader
     path = abspath_or_url(path)
-
-    paths = [path] if isinstance(path, str) else path
-    for p in paths:
-        urlp = urlparse(p)
-        if not (urlp.scheme or urlp.netloc or os.path.exists(p)):
-            raise ValueError(
-                trans._(
-                    "Requested path '{p}' does not exist.",
-                    deferred=True,
-                    p=p,
-                )
-            )
-
     if not plugin and isinstance(path, (str, pathlib.Path)):
         extension = os.path.splitext(path)[-1]
         plugin = plugin_manager.get_reader_for_extension(extension)

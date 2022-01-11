@@ -347,7 +347,17 @@ def abspath_or_url(relpath: T) -> T:
         urlp = urlparse(relpath)
         if urlp.scheme and urlp.netloc:
             return relpath
-        return os_path.abspath(os_path.expanduser(relpath))
+
+        path = os_path.abspath(os_path.expanduser(relpath))
+        if not not (urlp.scheme or urlp.netloc or os.path.exists(path)):
+            raise ValueError(
+                trans._(
+                    "Requested path {path!r} does not exist.",
+                    deferred=True,
+                    path=path,
+                )
+            )
+        return path
 
     raise TypeError(
         trans._(
