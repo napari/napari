@@ -2522,9 +2522,12 @@ class Shapes(Layer):
     @contextmanager
     def block_thumbnail_update(self):
         """Use this context manager to block thumbnail updates"""
+        previous = self._allow_thumbnail_update
         self._allow_thumbnail_update = False
-        yield
-        self._allow_thumbnail_update = True
+        try:
+            yield
+        finally:
+            self._allow_thumbnail_update = previous
 
     def _update_thumbnail(self, event=None):
         """Update thumbnail with current shapes and colors."""

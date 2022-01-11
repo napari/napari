@@ -316,8 +316,10 @@ def synchronous_loading(enabled):
     """
     previous = chunk_loader.force_synchronous
     chunk_loader.force_synchronous = enabled
-    yield
-    chunk_loader.force_synchronous = previous
+    try:
+        yield
+    finally:
+        chunk_loader.force_synchronous = previous
 
 
 def wait_for_async():
