@@ -739,7 +739,7 @@ class _FeatureManager:
         """Converts this to a deprecated properties dictionary.
 
         This will reference the features data when possible, but in general the
-        returned dictionary mary contain copies of those data.
+        returned dictionary may contain copies of those data.
 
         Returns
         -------
@@ -773,10 +773,18 @@ class _FeatureManager:
         currents: Dict[str, np.ndarray],
         *,
         update_indices: Optional[List[int]] = None,
-    ):
+    ) -> None:
         """Sets the default values using the deprecated current properties dictionary.
 
         May also update some of the feature values to be equal to the new default values.
+
+        Parameters
+        ----------
+        currents : Dict[str, np.ndarray]
+            The new current property values.
+        update_indices : Optional[List[int]]
+            If not None, the all features values at the given row indices will be set to
+            the corresponding new current/default feature values.
         """
         currents = coerce_current_properties(currents)
         self._defaults = _validate_features(currents, num_data=1)
