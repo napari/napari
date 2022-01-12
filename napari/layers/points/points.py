@@ -366,7 +366,7 @@ class Points(Layer):
         self._text = TextManager._from_layer(
             text=text,
             n_text=len(self.data),
-            properties=self.properties,
+            properties=_features_to_properties(self._features),
         )
 
         # Save the point style params
@@ -408,7 +408,9 @@ class Points(Layer):
         self._round_index = False
 
         color_properties = (
-            self.properties if self._data.size > 0 else self.property_choices
+            _features_to_properties(self._features)
+            if self._data.size > 0
+            else _features_to_choices(self._features)
         )
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -492,7 +494,10 @@ class Points(Layer):
                             np.arange(cur_npoints, len(data))
                         )
 
-                        self.text.add(self.current_properties, adding)
+                        self.text.add(
+                            _features_to_properties(self._feature_defaults),
+                            adding,
+                        )
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -1108,17 +1113,12 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_size = size
 
-        properties = {}
-        for k, v in self.properties.items():
-            # pandas uses `object` as dtype for strings by default, which
-            # combined with the axis argument breaks np.unique
-            axis = 0 if v.ndim > 1 else None
-            properties[k] = np.unique(v[index], axis=axis)
-
-        n_unique_properties = np.array([len(v) for v in properties.values()])
-        if np.all(n_unique_properties == 1):
-            with self.block_update_properties():
-                self.current_properties = properties
+        unique_features = self._features.apply(
+            lambda col: col.unique(), axis=0
+        )
+        n_unique_features = unique_features.apply(len)
+        if np.all(n_unique_features == 1):
+            self._feature_defaults = unique_features
         self._set_highlight()
 
     def interaction_box(self, index) -> Optional[np.ndarray]:

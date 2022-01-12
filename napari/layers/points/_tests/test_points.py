@@ -39,6 +39,42 @@ def test_empty_points():
     assert pts.data.shape == (0, 2)
 
 
+def test_empty_points_with_features_check_feature_defaults():
+    label_dtype = pd.CategoricalDtype(['label1', 'label2'])
+    features = pd.DataFrame(
+        {
+            'label': pd.Series([], dtype=label_dtype),
+            'cont_prop': pd.Series([], dtype=float),
+        }
+    )
+
+    points = Points(features=features)
+
+    assert points.feature_defaults['label'][0] == 'label1'
+    assert np.isnan(points.feature_defaults['cont_prop'][0])
+
+
+def test_add_to_empty_points_with_features_check_values():
+    label_dtype = pd.CategoricalDtype(['label1', 'label2'])
+    features = pd.DataFrame(
+        {
+            'label': pd.Series([], dtype=label_dtype),
+            'cont_prop': pd.Series([], dtype=float),
+        }
+    )
+    points = Points(features=features)
+
+    points.add([[10, 10], [20, 20]])
+
+    np.testing.assert_array_equal(
+        points.features['label'], ['label1', 'label1']
+    )
+    np.testing.assert_array_equal(
+        points.features['cont_prop'], [np.nan, np.nan]
+    )
+
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_points_with_properties():
     """Test instantiating an empty Points layer with properties
 
@@ -65,6 +101,7 @@ def test_empty_points_with_properties():
     np.testing.assert_equal(pts.properties, props)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_points_with_properties_list():
     """Test instantiating an empty Points layer with properties
     stored in a list
@@ -86,6 +123,23 @@ def test_empty_points_with_properties_list():
     np.testing.assert_equal(pts.properties, props)
 
 
+def test_empty_layer_with_features_and_face_colormap():
+    features = pd.DataFrame({'point_type': np.array([], dtype=float)})
+
+    layer = Points(
+        features=features,
+        face_color='point_type',
+        face_colormap='gray',
+    )
+
+    assert layer.face_color_mode == 'colormap'
+
+    # verify the current_face_color is correct
+    face_color = np.array([1, 1, 1, 1])
+    np.testing.assert_allclose(layer._face.current_color, face_color)
+
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_layer_with_face_colormap():
     """Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
