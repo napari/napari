@@ -269,7 +269,7 @@ def range_to_decimals(range_, dtype):
     int
         Decimals of precision.
     """
- 
+
     if hasattr(dtype, 'numpy_dtype'):
         # retrieve the corresponding numpy.dtype from a tensorstore.dtype
         dtype = dtype.numpy_dtype
