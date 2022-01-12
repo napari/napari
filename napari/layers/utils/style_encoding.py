@@ -23,8 +23,8 @@ class EncodingType(StringEnum):
     """The encoding type, which is a constant field and useful for disambiguation of dict input."""
 
     CONSTANT = auto()
+    MANUAL = auto()
     DIRECT = auto()
-    IDENTITY = auto()
     NOMINAL = auto()
     QUANTITATIVE = auto()
     FORMAT_STRING = auto()
@@ -146,10 +146,10 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
         return self.dict()
 
 
-class DirectStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
-    """Encodes style values directly.
+class ManualStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
+    """Encodes style values manually.
 
-    The style values are encoded directly in the array attribute, so that
+    The style values are encoded manually in the array attribute, so that
     attribute can be written to make persistent updates.
 
     Attributes

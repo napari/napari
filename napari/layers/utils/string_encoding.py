@@ -11,9 +11,9 @@ from napari.utils.translations import trans
 from .style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
-    DirectStyleEncoding,
     EncodingType,
     IndicesType,
+    ManualStyleEncoding,
     StyleEncoding,
     parse_kwargs_as_encoding,
 )
@@ -49,8 +49,8 @@ class ConstantStringEncoding(ConstantStyleEncoding[StringValue, StringArray]):
     constant: StringValue
 
 
-class DirectStringEncoding(DirectStyleEncoding[StringValue, StringArray]):
-    """Encodes string values directly in an array.
+class ManualStringEncoding(ManualStyleEncoding[StringValue, StringArray]):
+    """Encodes string values manually in an array.
 
     Attributes
     ----------
@@ -62,13 +62,13 @@ class DirectStringEncoding(DirectStyleEncoding[StringValue, StringArray]):
     """
 
     encoding_type: EncodingType = Field(
-        EncodingType.DIRECT, const=EncodingType.DIRECT
+        EncodingType.MANUAL, const=EncodingType.MANUAL
     )
     array: StringArray = []
     default: StringValue = DEFAULT_STRING
 
 
-class IdentityStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
+class DirectStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
     """Encodes strings directly from a feature column.
 
     Attributes
@@ -81,7 +81,7 @@ class IdentityStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
     """
 
     encoding_type: EncodingType = Field(
-        EncodingType.IDENTITY, const=EncodingType.IDENTITY
+        EncodingType.DIRECT, const=EncodingType.DIRECT
     )
     feature: str
     fallback: StringValue = DEFAULT_STRING
@@ -137,9 +137,9 @@ def _get_feature_row(features: Any, index: int) -> Dict[str, Any]:
 """The string encodings supported by napari in order of precedence."""
 _STRING_ENCODINGS = (
     FormatStringEncoding,
-    IdentityStringEncoding,
-    ConstantStringEncoding,
     DirectStringEncoding,
+    ConstantStringEncoding,
+    ManualStyleEncoding,
 )
 
 _STRING_ENCODING_NAMES = tuple(enc.__name__ for enc in _STRING_ENCODINGS)
@@ -182,7 +182,7 @@ def validate_string_encoding(
             return FormatStringEncoding(format_string=string)
         return ConstantStringEncoding(constant=string)
     if isinstance(string, Sequence):
-        return DirectStringEncoding(array=string, default='')
+        return ManualStringEncoding(array=string, default='')
     raise TypeError(
         trans._(
             f'string should be one of {_STRING_ENCODING_NAMES}, a dict, str, iterable, or None',

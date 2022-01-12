@@ -17,7 +17,7 @@ from .layer_utils import _validate_features
 from .string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
-    IdentityStringEncoding,
+    ManualStringEncoding,
     StringArray,
     StringEncoding,
     validate_string_encoding,
@@ -94,7 +94,7 @@ class TextManager(EventedModel):
             # _warn_about_deprecated_text_parameter()
             text = kwargs.pop('text')
             if isinstance(text, str) and text in features:
-                kwargs['string'] = IdentityStringEncoding(feature=text)
+                kwargs['string'] = DirectStringEncoding(feature=text)
             else:
                 kwargs['string'] = text
         super().__init__(**kwargs)
@@ -156,7 +156,7 @@ class TextManager(EventedModel):
         # Assumes that the current properties passed have already been appended
         # to the properties table, then calls _get_array to append new values now.
         if isinstance(
-            self.string, (ConstantStringEncoding, DirectStringEncoding)
+            self.string, (ConstantStringEncoding, ManualStringEncoding)
         ):
             return
         new_properties = {
@@ -234,7 +234,7 @@ class TextManager(EventedModel):
         #    DeprecationWarning,
         # )
         if len(indices_view) == 0 or isinstance(
-            self.string, (ConstantStringEncoding, DirectStringEncoding)
+            self.string, (ConstantStringEncoding, ManualStringEncoding)
         ):
             return np.array([''])
         return self.string._get_array(self._features, indices_view)
@@ -275,7 +275,7 @@ class TextManager(EventedModel):
         else:
             # TODO: add deprecation warning about this behavior.
             if isinstance(text, str) and text in features:
-                kwargs = {'string': IdentityStringEncoding(feature=text)}
+                kwargs = {'string': DirectStringEncoding(feature=text)}
             else:
                 kwargs = {'string': text}
         kwargs['features'] = features

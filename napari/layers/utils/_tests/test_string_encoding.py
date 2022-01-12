@@ -5,7 +5,7 @@ from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
     FormatStringEncoding,
-    IdentityStringEncoding,
+    ManualStringEncoding,
 )
 
 
@@ -30,32 +30,32 @@ def test_constant_with_some_rows_and_some_indices():
     np.testing.assert_equal(array, np.array(['text'] * 2))
 
 
-def test_direct_with_same_rows():
+def test_manual_with_same_rows():
     values = ['x', 'y', 'z']
     default = 'w'
     features = pd.DataFrame({}, index=range(3))
 
-    encoding = DirectStringEncoding(array=values, default=default)
+    encoding = ManualStringEncoding(array=values, default=default)
     array = encoding._get_array(features)
 
     np.testing.assert_array_equal(array, values)
 
 
-def test_direct_with_more_rows():
+def test_manual_with_more_rows():
     values = ['x', 'y', 'z']
     default = 'w'
     features = pd.DataFrame({}, index=range(4))
 
-    encoding = DirectStringEncoding(array=values, default=default)
+    encoding = ManualStringEncoding(array=values, default=default)
     array = encoding._get_array(features)
 
     np.testing.assert_array_equal(array, values + [default])
 
 
-def test_identity():
+def test_direct():
     features = pd.DataFrame({'class': ['a', 'b', 'c']})
 
-    encoding = IdentityStringEncoding(feature='class')
+    encoding = DirectStringEncoding(feature='class')
     array = encoding._get_array(features)
 
     np.testing.assert_array_equal(array, features['class'])
