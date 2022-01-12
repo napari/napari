@@ -1,9 +1,9 @@
 # Your First Plugin
 
-In this topic, we'll step through the fundamental concepts for building a
+In this tutorial, we'll step through the fundamental concepts for building a
 **bare minimum** "hello napari" plugin from scratch. 
 
-At the end of this tutorial, we'll point you to a "cookiecutter" template
+At the end, we'll point you to a "cookiecutter" template
 repository that helps automate the creation of new plugins, and adds a number
 of conveniences for testing, maintaining, and deploying your plugin.
 
@@ -19,7 +19,7 @@ We assume you've set up a Python virtual environment (using a virtual
 environment instead of a global python installation is **highly
 recommended**). If you are new to virtual environments, we recommend
 [installing miniconda][miniconda] and [creating a new environment with
-python][python_env]
+python][python_env].
 
 ## What is a plugin?
 
