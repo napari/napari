@@ -17,6 +17,7 @@ from typing import (
     Sequence,
     Tuple,
 )
+from weakref import WeakValueDictionary
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
@@ -408,7 +409,9 @@ class Window:
         get_app()
 
         # Dictionary holding dock widgets
-        self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
+        self._dock_widgets: Dict[
+            str, QtViewerDockWidget
+        ] = WeakValueDictionary()
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
