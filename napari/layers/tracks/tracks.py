@@ -552,6 +552,10 @@ class Tracks(Layer):
         self._colormaps_dict = colormaps_dict
 
     @property
+    def _view_track_vertices(self) -> np.ndarray:
+        return self._manager.view_track_vertices(*self._time_interval)
+
+    @property
     def track_connex(self) -> np.ndarray:
         """vertex connections for drawing track lines"""
         return self._manager.track_connex
@@ -587,6 +591,10 @@ class Tracks(Layer):
 
         # actually set the vertex colors
         return colormap.map(vertex_properties)
+
+    @property
+    def _view_graph_vertices(self) -> np.ndarray:
+        return self._manager.view_graph_vertices(*self._time_interval)
 
     @property
     def graph_connex(self) -> np.ndarray:

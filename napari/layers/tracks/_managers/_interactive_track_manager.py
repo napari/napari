@@ -708,9 +708,15 @@ class InteractiveTrackManager(BaseTrackManager):
         self,
         index: int,
         vertex: np.ndarray,
-        features: Optional[pd.DataFrame] = None,
+        features: Optional[Union[pd.DataFrame, Dict]] = None,
     ) -> Node:
-        features = {} if features is None else features.to_dict()
+
+        if features is None:
+            features = {}
+
+        elif isinstance(features, pd.DataFrame):
+            features = features.to_dict()
+
         node = Node(index, vertex, features)
         self._id_to_nodes[index] = node
 

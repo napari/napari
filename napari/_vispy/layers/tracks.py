@@ -54,6 +54,8 @@ class VispyTracksLayer(VispyBaseLayer):
 
     def _on_appearance_change(self):
         """Change the appearance of the data."""
+        # FIXME: refactor this function, it's very similar to the _on_tracks_change because the track
+        # length changed, thus the data length from InteractiveTrackManager also changed
 
         # update shader properties related to appearance
         self.node.tracks_filter.use_fade = self.layer.use_fade
@@ -69,9 +71,9 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node._subvisuals[2].visible = self.layer.display_graph
 
         # set the width of the track tails
-        # FIXME: this needs to update everything like `_on_tracks_change`
-        # self._on_tracks_change()
         self.node._subvisuals[0].set_data(
+            pos=self.layer._view_data,
+            connect=self.layer._view_track_connex,
             width=self.layer.tail_width,
             color=self.layer.track_colors,
         )
