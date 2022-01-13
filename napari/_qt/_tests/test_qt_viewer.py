@@ -666,7 +666,7 @@ def test_try_reader_from_settings(make_napari_viewer, tmpdir, layers):
         error_message = viewer.window._qt_viewer._try_reader_from_settings(
             readers, extension, im_pth
         )
-        assert error_message == ''
+        assert error_message is None
         assert len(viewer.layers) == 1
         assert viewer.layers[0].source.reader_plugin == BUILTINS_NAME
 
