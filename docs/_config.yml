@@ -39,8 +39,11 @@ sphinx:
     - sphinx_autodoc_typehints
     - sphinx.ext.autosummary
     - sphinx.ext.intersphinx
+    - sphinx_tabs.tabs
 
   config:
+    suppress_warnings: ["myst.header"]
+    exclude_patterns: ['**/_*.md']  # includes
     autosummary_generate: True
     autosummary_imported_members: True
     html_theme: furo
