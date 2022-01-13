@@ -1,10 +1,9 @@
-from contextlib import contextmanager
-
 import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QPushButton
 
 from napari._qt.widgets.qt_extension2reader import Extension2ReaderTable
+from napari._tests.utils import restore_settings_on_exit
 from napari.settings import get_settings
 
 
@@ -18,14 +17,6 @@ def extension2reader_widget(qtbot):
         return widget
 
     return _extension2reader_widget
-
-
-@contextmanager
-def restore_settings_on_exit():
-    """Context manager checks that progress bar is added on construction"""
-    original_settings = get_settings().plugins.extension2reader
-    yield
-    get_settings().plugins.extension2reader = original_settings
 
 
 def test_extension2reader_defaults(

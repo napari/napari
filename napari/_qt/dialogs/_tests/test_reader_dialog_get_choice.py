@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Tuple
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
-from napari._qt.qt_viewer import _get_reader_choice_for_file
+from napari._qt.dialogs.qt_reader_dialog import get_reader_choice_for_file
 
 
 class MockQtReaderDialog:
@@ -15,10 +15,12 @@ class MockQtReaderDialog:
         parent: 'QWidget' = None,
         readers: Dict[str, str] = {},
         error_message: str = '',
+        extension: str = '',
     ):
         self._current_file = pth
         self.readers = readers
         self.error_message = error_message
+        self._extension = extension
         self._plugin_choice = None
         self._persist_choice = True
         self._cancelled = False
@@ -50,7 +52,7 @@ def test_get_reader_choice_single_reader():
     filename = './my_file.abc'
     readers = {'disp-name': 'plugin_name'}
     dialog = MockQtReaderDialog(filename, None, readers)
-    choice = _get_reader_choice_for_file(dialog, readers, False)
+    choice = get_reader_choice_for_file(dialog, readers, False)
 
     assert choice[0] == 'disp-name'
     assert choice[1] is False
@@ -62,7 +64,7 @@ def test_get_reader_choice_cancel():
     dialog = MockQtReaderDialog(filename, None, readers)
     dialog._set_user_cancelled()
 
-    choice = _get_reader_choice_for_file(dialog, readers, False)
+    choice = get_reader_choice_for_file(dialog, readers, False)
     assert choice is None
 
 
@@ -72,7 +74,7 @@ def test_get_reader_choice_many_persist():
     dialog = MockQtReaderDialog(filename, None, readers)
     dialog._set_plugin_choice('p1')
 
-    choice = _get_reader_choice_for_file(dialog, readers, False)
+    choice = get_reader_choice_for_file(dialog, readers, False)
     assert choice[0] == 'p1'
     assert choice[1] is True
 
@@ -84,6 +86,6 @@ def test_get_reader_choice_no_persist():
     dialog._set_plugin_choice('p1')
     dialog._set_persist_choice(False)
 
-    choice = _get_reader_choice_for_file(dialog, readers, False)
+    choice = get_reader_choice_for_file(dialog, readers, False)
     assert choice[0] == 'p1'
     assert choice[1] is False
