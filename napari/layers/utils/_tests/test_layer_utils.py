@@ -6,7 +6,7 @@ import pytest
 from dask import array as da
 
 from napari.layers.utils.layer_utils import (
-    _FeatureManager,
+    _FeatureTable,
     calc_data_range,
     coerce_current_properties,
     dataframe_to_properties,
@@ -263,12 +263,12 @@ def test_dims_displayed_world_to_layer(
 
 
 def test_feature_manager_from_layer_with_none_then_empty():
-    feature_manager = _FeatureManager.from_layer(features=None)
+    feature_manager = _FeatureTable.from_layer(features=None)
     assert feature_manager.values.shape == (0, 0)
 
 
 def test_feature_manager_from_layer_with_num_data_only():
-    feature_manager = _FeatureManager.from_layer(num_data=5)
+    feature_manager = _FeatureTable.from_layer(num_data=5)
     assert feature_manager.values.shape == (5, 0)
     assert feature_manager.defaults.shape == (1, 0)
 
@@ -279,7 +279,7 @@ def test_feature_manager_from_layer_with_properties_and_num_data():
         'confidence': np.array([0.2, 0.5, 1, 0.8]),
     }
 
-    feature_manager = _FeatureManager.from_layer(
+    feature_manager = _FeatureTable.from_layer(
         properties=properties, num_data=4
     )
 
@@ -303,7 +303,7 @@ def test_feature_manager_from_layer_with_properties_and_choices():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    feature_manager = _FeatureManager.from_layer(
+    feature_manager = _FeatureTable.from_layer(
         properties=properties, property_choices=property_choices, num_data=4
     )
 
@@ -325,7 +325,7 @@ def test_feature_manager_from_layer_with_choices_only():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    feature_manager = _FeatureManager.from_layer(
+    feature_manager = _FeatureTable.from_layer(
         property_choices=property_choices, num_data=0
     )
 
@@ -349,7 +349,7 @@ def test_feature_manager_from_layer_with_empty_properties_and_choices():
         'class': np.array(['building', 'person', 'sky']),
     }
 
-    feature_manager = _FeatureManager.from_layer(
+    feature_manager = _FeatureTable.from_layer(
         properties=properties, property_choices=property_choices, num_data=0
     )
 
@@ -379,12 +379,12 @@ TEST_FEATURES = pd.DataFrame(
 
 
 def test_feature_manager_from_layer_with_properties_as_dataframe():
-    feature_manager = _FeatureManager.from_layer(properties=TEST_FEATURES)
+    feature_manager = _FeatureTable.from_layer(properties=TEST_FEATURES)
     pd.testing.assert_frame_equal(feature_manager.values, TEST_FEATURES)
 
 
 def _make_feature_manager():
-    return _FeatureManager(TEST_FEATURES.copy(deep=True), num_data=4)
+    return _FeatureTable(TEST_FEATURES.copy(deep=True), num_data=4)
 
 
 def test_feature_manager_resize_smaller():
@@ -451,13 +451,13 @@ def test_feature_manager_remove():
 
 def test_feature_manager_from_layer_with_custom_index():
     features = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
-    feature_manager = _FeatureManager.from_layer(features=features)
+    feature_manager = _FeatureTable.from_layer(features=features)
     expected = features.reset_index(drop=True)
     pd.testing.assert_frame_equal(feature_manager.values, expected)
 
 
 def test_feature_manager_from_layer_with_custom_index_and_num_data():
     features = pd.DataFrame({'a': [1, 3], 'b': [7.5, -2.1]}, index=[1, 2])
-    feature_manager = _FeatureManager.from_layer(features=features, num_data=2)
+    feature_manager = _FeatureTable.from_layer(features=features, num_data=2)
     expected = features.reset_index(drop=True)
     pd.testing.assert_frame_equal(feature_manager.values, expected)

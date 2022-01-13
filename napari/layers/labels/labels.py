@@ -23,7 +23,7 @@ from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import _FeatureManager
+from ..utils.layer_utils import _FeatureTable
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -291,7 +291,7 @@ class Labels(_ImageBase):
             contour=Event,
         )
 
-        self._feature_manager = _FeatureManager.from_layer(
+        self._feature_manager = _FeatureTable.from_layer(
             features=features, properties=properties
         )
         self._label_index = self._make_label_index()

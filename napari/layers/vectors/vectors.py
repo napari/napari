@@ -13,7 +13,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import _FeatureManager
+from ..utils.layer_utils import _FeatureTable
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
@@ -226,7 +226,7 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._feature_manager = _FeatureManager.from_layer(
+        self._feature_manager = _FeatureTable.from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,

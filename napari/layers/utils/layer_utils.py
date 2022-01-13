@@ -684,8 +684,8 @@ def features_to_pandas_dataframe(features: Any) -> pd.DataFrame:
     return features
 
 
-class _FeatureManager:
-    """Manages feature values and their defaults.
+class _FeatureTable:
+    """Stores feature values and their defaults.
 
     Parameters
     ----------
@@ -852,7 +852,7 @@ class _FeatureManager:
         ] = None,
         property_choices: Optional[Dict[str, np.ndarray]] = None,
         num_data: Optional[int] = None,
-    ) -> _FeatureManager:
+    ) -> _FeatureTable:
         """Coerces a layer's keyword arguments to a feature manager.
 
         Parameters
@@ -869,7 +869,7 @@ class _FeatureManager:
 
         Returns
         -------
-        _FeatureManager
+        _FeatureTable
             The feature manager created from the given layer keyword arguments.
 
         Raises

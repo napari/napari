@@ -26,7 +26,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import _FeatureManager
+from ..utils.layer_utils import _FeatureTable
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -491,7 +491,7 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        self._feature_manager = _FeatureManager.from_layer(
+        self._feature_manager = _FeatureTable.from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
