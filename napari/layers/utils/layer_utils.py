@@ -904,6 +904,12 @@ def _validate_features(
     *,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
+    """Validates and coerces a features table into a pandas DataFrame.
+
+    See Also
+    --------
+    :class:`_FeatureTable` : See initialization for parameter descriptions.
+    """
     if isinstance(features, pd.DataFrame):
         features = features.reset_index(drop=True)
     index = None if num_data is None else range(num_data)
@@ -916,6 +922,12 @@ def _features_from_properties(
     property_choices: Optional[Dict[str, np.ndarray]] = None,
     num_data: Optional[int] = None,
 ) -> pd.DataFrame:
+    """Validates and coerces deprecated properties input into a features DataFrame.
+
+    See Also
+    --------
+    :meth:`_FeatureTable.from_layer`
+    """
     # Create categorical series for any choices provided.
     if property_choices is not None:
         properties = pd.DataFrame(data=properties)
@@ -930,4 +942,10 @@ def _features_from_properties(
 
 
 def _features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
+    """Converts a features DataFrame to a deprecated properties dictionary.
+
+    See Also
+    --------
+    :meth:`_FeatureTable.properties`
+    """
     return {name: series.to_numpy() for name, series in features.items()}
