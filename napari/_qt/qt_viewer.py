@@ -1110,6 +1110,25 @@ class QtViewer(QSplitter):
             )
 
     def _try_reader_from_settings(self, readers, extension, filename):
+        """Read settings and try to open file with preferred reader
+
+        Returns None when file was successfully opened with preferred reader,
+        otherwise returns appropriate error message.
+
+        Parameters
+        ----------
+        readers : Dict[str, str]
+            dictionary of display_name:plugin_name for potential readers
+        extension : str
+            file extension of the given filename
+        filename : str
+            path to file trying to open
+
+        Returns
+        -------
+        Optional[str]
+            return None when file was successfully opened, otherwise error message
+        """
         reader_associations = get_settings().plugins.extension2reader
         error_message = ''
         # if we have an existing setting for this extension
@@ -1134,6 +1153,17 @@ class QtViewer(QSplitter):
     def _get_and_try_preferred_reader(
         self, readerDialog, readers, error_message
     ):
+        """Get preferred reader from user through dialog and try to open file
+
+        Parameters
+        ----------
+        readerDialog : QtReaderDialog
+            dialog for user to select their preferences
+        readers : Dict[str, str]
+            dictionary of display_name:plugin_name of available readers
+        error_message : str
+            error message to show to user about failed reading attempts
+        """
         # get plugin choice from user
         # choice is None if file was opened or user chose cancel
         choice = get_reader_choice_for_file(

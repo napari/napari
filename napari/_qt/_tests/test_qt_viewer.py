@@ -693,6 +693,7 @@ def test_try_reader_from_settings(make_napari_viewer, tmpdir, layers):
 
 
 def test_get_and_try_preferred_reader(make_napari_viewer, tmpdir, layers):
+    """Test opening file with user preference and persisting preference"""
     viewer = make_napari_viewer()
     im_pth = os.path.join(tmpdir, 'layer.png')
     layers[0].save(im_pth, plugin=BUILTINS_DISP)
