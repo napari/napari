@@ -1080,13 +1080,14 @@ class QtViewer(QSplitter):
             # get available readers for this file from all registered plugins
             readers = get_potential_readers(filename)
             if not readers:
-                raise ValueError(
+                warnings.warn(
                     trans._(
-                        'No plugin found capable of reading {filename}.',
+                        'No readers found to try reading {filename}.',
                         deferred=True,
                         filename=filename,
                     )
                 )
+                continue
 
             # see whether an existing setting can be used
             _, extension = os.path.splitext(filename)
