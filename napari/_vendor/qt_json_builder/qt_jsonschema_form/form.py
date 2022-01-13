@@ -27,6 +27,7 @@ class WidgetBuilder:
             "enum": widgets.EnumSchemaWidget,
             "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,
+            "extension2reader": widgets.Extension2ReaderWidget,
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
