@@ -123,7 +123,7 @@ class TrackManager:
         # here to make sure that we align with the napari dims index which
         # will be an integer - however, the time index does not necessarily
         # need to be an int, and the shader will render correctly.
-        time = self._points[:, 0].astype(np.uint)
+        time = np.round(self._points[:, 0]).astype(np.uint)
         frames = list(set(time.tolist()))
         self._points_lookup = {}
         for f in frames:
