@@ -164,14 +164,6 @@ def test_malformed_id():
         Tracks(data)
 
 
-def test_malformed_timestamps():
-    """Test for malformed track timestamps."""
-    data = np.random.random((100, 4))
-    data[:, 0] = 0
-    with pytest.raises(ValueError):
-        Tracks(data)
-
-
 def test_malformed_graph():
     """Test for malformed graph."""
     data = np.zeros((100, 4))
