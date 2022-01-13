@@ -22,5 +22,7 @@ def temporary_file(suffix=''):
     tempfile_stream = NamedTemporaryFile(suffix=suffix, delete=False)
     tempfile = tempfile_stream.name
     tempfile_stream.close()
-    yield tempfile
-    os.remove(tempfile)
+    try:
+        yield tempfile
+    finally:
+        os.remove(tempfile)
