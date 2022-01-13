@@ -3,10 +3,10 @@
 
 Plugins allow developers to customize and extend napari.  This includes
 
-- Adding file format support with [readers] and [writers]
-- Adding custom [widgets] and user interface elements
-- Providing [sample data][sample_data]
-- Changing the look of napari with a color [theme]
+- Adding file format support with [readers](contributions-readers) and [writers](contributions-writers)
+- Adding custom [widgets](contributions-widgets) and user interface elements
+- Providing [sample data][contributions-sample_data]
+- Changing the look of napari with a color [theme](contributions-themes)
 
 ```{admonition} Introducing npe2
 :class: important
@@ -15,17 +15,17 @@ We introduced a new plugin engine ([`npe2`][npe2]) in December 2021.
 Plugins targeting the first generation `napari-plugin-engine` will
 continue to work for at least the first half of 2022, but we
 recommend migrating to `npe2`.
-See the [migration guide](./npe2_migration_guide) for details.
+See the [migration guide](npe2-migration-guide) for details.
 ```
 
 Here you can find:
 
 - How to [build, test and publish a plugin](how-to-build-a-plugin).
 - Where to find [guides](./guides) to help get you started.
-- [Best practices](./best_practices) when developing plugins.
+- [Best practices](best-practices) when developing plugins.
 
 If you are looking to use published plugins, see the [guide on installing
-plugins](./find_and_install_plugin), or head to the [napari hub][napari_hub] to
+plugins](find-and-install-plugins), or head to the [napari hub][napari_hub] to
 search for plugins.
 
 
@@ -54,8 +54,3 @@ Submit issues to the [napari github repository][napari_issues].
 [napari_issues]: https://github.com/napari/napari/issues/new/choose
 [napari_zulip]: https://napari.zulipchat.com/
 [napari_hub]: https://napari-hub.org
-[readers]: ./contributions.html#contributions-readers
-[writers]: ./contributions.html#contributions-writers
-[widgets]: ./contributions.html#contributions-widgets
-[sample_data]: ./contributions.html#contributions-sample-data
-[theme]: ./contributions.html#contributions-themes
