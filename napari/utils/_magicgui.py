@@ -279,7 +279,9 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
     else:
         parent = widget.parent()
     while parent:
-        if isinstance(parent, QtViewerDockWidget):
+        if hasattr(parent, '_qt_viewer'):  # QMainWindow
+            return parent._qt_viewer.viewer
+        if isinstance(parent, QtViewerDockWidget):  # DockWidget
             qt_viewer = parent._ref_qt_viewer()
             if qt_viewer is not None:
                 return qt_viewer.viewer
