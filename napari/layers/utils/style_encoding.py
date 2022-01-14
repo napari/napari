@@ -34,9 +34,10 @@ class EncodingType(StringEnum):
 class StyleEncoding(Protocol[StyleArray]):
     """Defines a way to encode style values, like colors and strings."""
 
-    def _get_array(
+    def __call__(
         self,
         features: Any,
+        *,
         indices: Optional[IndicesType] = None,
     ) -> StyleArray:
         """Get the array of values generated from this and the given features.
@@ -119,9 +120,10 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
 
     constant: StyleValue
 
-    def _get_array(
+    def __call__(
         self,
         features: Any,
+        *,
         indices: Optional[IndicesType] = None,
     ) -> StyleArray:
         return _broadcast_constant(self.constant, features.shape[0], indices)
@@ -166,9 +168,10 @@ class ManualStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     array: StyleArray
     default: StyleValue
 
-    def _get_array(
+    def __call__(
         self,
         features: Any,
+        *,
         indices: Optional[IndicesType] = None,
     ) -> StyleArray:
         current_length = self.array.shape[0]
@@ -212,9 +215,10 @@ class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     def _apply(self, features: Any, indices: IndicesType) -> StyleArray:
         pass
 
-    def _get_array(
+    def __call__(
         self,
         features: Any,
+        *,
         indices: Optional[IndicesType] = None,
     ) -> StyleArray:
         current_length = self._array.shape[0]

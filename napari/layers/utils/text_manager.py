@@ -98,12 +98,12 @@ class TextManager(EventedModel):
             else:
                 kwargs['string'] = text
         super().__init__(**kwargs)
-        self.string._get_array(self._features)
+        self.string(self._features)
 
     @property
     def values(self):
         # _warn_about_deprecated_values_field()
-        return self.string._get_array(self._features)
+        return self.string(self._features)
 
     def __setattr__(self, key, value):
         if key == 'values':
@@ -149,7 +149,7 @@ class TextManager(EventedModel):
         # warnings.warn(
         #    trans._(
         #        'TextManager.add is a deprecated method. '
-        #        'Use TextManager.string._get_array(...) instead.'
+        #        'Use TextManager.string(...) instead.'
         #    ),
         #    DeprecationWarning,
         # )
@@ -229,7 +229,7 @@ class TextManager(EventedModel):
         # warnings.warn(
         #    trans._(
         #        'TextManager.view_text() is a deprecated method. '
-        #        'Use TextManager.string._get_array(...) instead.'
+        #        'Use TextManager.string(...) instead.'
         #    ),
         #    DeprecationWarning,
         # )
@@ -237,7 +237,7 @@ class TextManager(EventedModel):
             self.string, (ConstantStringEncoding, ManualStringEncoding)
         ):
             return np.array([''])
-        return self.string._get_array(self._features, indices_view)
+        return self.string(self._features, indices=indices_view)
 
     @validator('string', pre=True, always=True)
     def _check_string(

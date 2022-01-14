@@ -1198,7 +1198,7 @@ class Points(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.string._get_array(self.features, self._indices_view)
+        return self.text.string(self.features, indices=self._indices_view)
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
@@ -1729,9 +1729,7 @@ class Points(Layer):
                 'size': deepcopy(self.size[index]),
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
-                'text_strings': self.text.string._get_array(
-                    self.features, index
-                ),
+                'text_strings': self.text.string(self.features, indices=index),
             }
         else:
             self._clipboard = {}
