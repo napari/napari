@@ -137,6 +137,9 @@ def _constructor(version=_version(), extra_specs=None):
         "menu_packages": [
             "napari-menu",
         ],
+        "extra_files": {
+            "resources/bundle_readme.md": "README.txt"
+        }
     }
     if _use_local():
         definitions["channels"].insert(0, "local")
