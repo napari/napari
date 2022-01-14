@@ -70,7 +70,7 @@ class TrackManager:
 
         # store the raw data here
         self._data = None
-        self._feature_manager = _FeatureTable()
+        self._feature_table = _FeatureTable()
         self._order = None
 
         # use a kdtree to help with fast lookup of the nearest track
@@ -123,10 +123,11 @@ class TrackManager:
         # here to make sure that we align with the napari dims index which
         # will be an integer - however, the time index does not necessarily
         # need to be an int, and the shader will render correctly.
-        frames = list(set(self._points[:, 0].astype(np.uint).tolist()))
+        time = np.round(self._points[:, 0]).astype(np.uint)
+        frames = list(set(time.tolist()))
         self._points_lookup = {}
         for f in frames:
-            idx = np.where(self._points[:, 0] == f)[0]
+            idx = np.where(time == f)[0]
             self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
 
         # make a second lookup table using a sparse matrix to convert track id
@@ -157,22 +158,22 @@ class TrackManager:
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._feature_manager.values
+        return self._feature_table.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._feature_manager.set_values(features, num_data=len(self.data))
-        if 'track_id' not in self._feature_manager.values:
-            self._feature_manager.values['track_id'] = self.track_ids
-        self._feature_manager.reorder(self._order)
+        self._feature_table.set_values(features, num_data=len(self.data))
+        if 'track_id' not in self._feature_table.values:
+            self._feature_table.values['track_id'] = self.track_ids
+        self._feature_table.reorder(self._order)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return self._feature_manager.properties()
+        return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
