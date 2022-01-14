@@ -112,6 +112,7 @@ https://github.com/napari/napari
 - Better error message on failed window import (#3901)
 - Update typing test on CI (#3903)
 - Features implementation refactor (#3904)
+- Rename feature manager attribute to table (#3931)
 
 
 ## Bug Fixes
@@ -148,7 +149,6 @@ https://github.com/napari/napari
 - Fix contrast limit slider for small range (#3895)
 - Fix tracks instantiation with floating point time values (#3909)
 - Fix cleaning of resources in function contextmanagers (#3918)
-
 
 ## API Changes
 
