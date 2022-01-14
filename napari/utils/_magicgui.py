@@ -270,6 +270,8 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
     viewer : napari.Viewer or None
         Viewer instance if one exists, else None.
     """
+    from .._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
+
     # magicgui v0.2.0 widgets are no longer QWidget subclasses, but the native
     # widget is available at widget.native
     if hasattr(widget, 'native') and hasattr(widget.native, 'parent'):
@@ -277,8 +279,11 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
     else:
         parent = widget.parent()
     while parent:
-        if hasattr(parent, '_qt_viewer'):
-            return parent._qt_viewer.viewer
+        if isinstance(parent, QtViewerDockWidget):
+            qt_viewer = parent._ref_qt_viewer()
+            if qt_viewer is not None:
+                return qt_viewer.viewer
+            return None
         parent = parent.parent()
     return None
 
