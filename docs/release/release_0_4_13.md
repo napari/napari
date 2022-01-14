@@ -168,6 +168,7 @@ Complete list of changes below:
 - Fix contrast limit slider for small range (#3895)
 - Fix tracks instantiation with floating point time values (#3909)
 - Fix cleaning of resources in function contextmanagers (#3918)
+- Fix magicgui layer combobox not populated when adding to viewer (#3938)
 
 ## API Changes
 
