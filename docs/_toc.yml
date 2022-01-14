@@ -61,6 +61,7 @@ chapters:
 
 - file: release/index
   sections:
+  - file: release/release_0_4_13
   - file: release/release_0_4_12
   - file: release/release_0_4_11
   - file: release/release_0_4_10
