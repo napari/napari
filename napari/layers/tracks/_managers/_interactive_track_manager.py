@@ -714,7 +714,7 @@ class InteractiveTrackManager(BaseTrackManager):
         if features is None:
             features = {}
 
-        elif isinstance(features, pd.DataFrame):
+        elif isinstance(features, (pd.DataFrame, pd.Series)):
             features = features.to_dict()
 
         node = Node(index, vertex, features)

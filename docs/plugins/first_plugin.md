@@ -141,7 +141,7 @@ for more.
 
 So far, we've done nothing napari-specific.  Let's create the actual plugin and add
 some Python code. We're going to add a
-[Widget contribution](./contributions.html#contributions-widgets)
+[Widget contribution](contributions-widgets)
 with a single button that shows a "Hello, world!" message when clicked.
 
 ### Add plugin functionality to `napari_hello/__init__.py`
@@ -165,12 +165,12 @@ autogeneration capabilities to turn this function into a widget)*
 Create an empty [plugin manifest](./manifest) file at `napari_hello/napari.yaml`
 We will use this file to tell napari:
 
-1. That our plugin contributes a [**command**](./contributions.html#contributions-commands)
+1. That our plugin contributes a [**command**](contributions-commands)
    (we give the command an ID of `napari-hello.say_hi`. It must start with our plugin
    name, and be unique).
 2. The location of the function that executes the command (the `python_name`, pointing
    to the `show_hello_message` function in the `napari_hello` module).
-3. That our plugin contributes a [**widget**](./contributions.html#contributions-widgets),
+3. That our plugin contributes a [**widget**](contributions-widgets),
    and that we'd like napari to **autogenerate** the widget from the command signature
    (so we don't need to deal with any GUI code).
 
