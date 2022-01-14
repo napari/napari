@@ -145,6 +145,7 @@ https://github.com/napari/napari
 - Fix surface wireframe (#3879)
 - Fix get_value() when called before canvas has been interacted with (#3881)
 - Fix surface layer control layout (#3883)
+- Fix contrast limit slider for small range (#3895)
 - Fix tracks instantiation with floating point time values (#3909)
 - Fix cleaning of resources in function contextmanagers (#3918)
 
