@@ -131,6 +131,7 @@ Complete list of changes below:
 - Better error message on failed window import (#3901)
 - Update typing test on CI (#3903)
 - Features implementation refactor (#3904)
+- Rename feature manager attribute to table (#3931)
 
 
 ## Bug Fixes
@@ -164,9 +165,9 @@ Complete list of changes below:
 - Fix surface wireframe (#3879)
 - Fix get_value() when called before canvas has been interacted with (#3881)
 - Fix surface layer control layout (#3883)
+- Fix contrast limit slider for small range (#3895)
 - Fix tracks instantiation with floating point time values (#3909)
 - Fix cleaning of resources in function contextmanagers (#3918)
-
 
 ## API Changes
 
