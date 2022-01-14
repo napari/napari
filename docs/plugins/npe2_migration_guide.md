@@ -102,7 +102,7 @@ plugin.  Notable cases include:
 
 - multi-layer writers using the `napari_get_writer` hook specification
 - *locally* scoped functions returned from `napari_experimental_provide_function`.
-  All [command contributions](./contributions.html#contributions-commands)
+  All [command contributions](contributions-commands)
   must have global `python_paths`.
   
 Feel free to contact us on zulip or github if you need help converting!.
