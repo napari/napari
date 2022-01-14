@@ -6,9 +6,28 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
+This is a major release with many new features, so don't hesitate to raise any
+issues at https://github.com/napari/napari/issues! Thank you to the 27 authors
+and 30 reviewers who contributed to this release!
+
+This release contains a new "spherical shading" mode for points (#3430), which
+allows napari to be used for molecular visualizations, among other use cases.
+This is currently only available via the API using the keyword argument
+`shading='spherical'`.
+
+3D interactivity is further improved with a new 3D click-and-drag API (#3205)
+and box selection of points in 3D (#3840).
+
+This is the first release supporting npe2, the second iteration of napari
+plugin engine, which will soon enable more powerful actions from plugins.
+New plugin authors should start using npe2, while existing authors can migrate
+their plugins using our
+[migration guide](https://napari.org/plugins/stable/npe2_migration_guide.html).
 
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
+
+Complete list of changes below:
 
 ## Highlights
 - Spherical Points (#3430)
