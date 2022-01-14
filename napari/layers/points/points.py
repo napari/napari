@@ -24,16 +24,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
-from ..utils.layer_utils import (
-    _append_features,
-    _features_from_layer,
-    _features_to_choices,
-    _features_to_properties,
-    _remove_features,
-    _resize_features,
-    _validate_features,
-    coerce_current_properties,
-)
+from ..utils.layer_utils import _features_to_properties, _FeatureTable
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -353,7 +344,7 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        self._features, self._feature_defaults = _features_from_layer(
+        self._feature_manager = _FeatureTable.from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -362,7 +353,7 @@ class Points(Layer):
 
         self._text = TextManager._from_layer(
             text=text,
-            features=self._features,
+            features=self._feature_manager.values,
         )
 
         # Save the point style params
@@ -446,12 +437,8 @@ class Points(Layer):
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
-                    self._features = _resize_features(
-                        self._features,
-                        len(data),
-                        defaults=self._feature_defaults,
-                    )
-                    self._text._features = self._features
+                    self._feature_manager.resize(len(data))
+                    self._text._features = self.features
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones
@@ -518,23 +505,21 @@ class Points(Layer):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        return self._feature_manager.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features, self._feature_defaults = _features_from_layer(
-            features=features, num_data=len(self.data)
+        self._feature_manager.set_values(features, num_data=len(self.data))
+        self._update_color_manager(
+            self._face, self._feature_manager, "face_color"
         )
         self._update_color_manager(
-            self._face, self._features, self._feature_defaults, "face_color"
+            self._edge, self._feature_manager, "edge_color"
         )
-        self._update_color_manager(
-            self._edge, self._features, self._feature_defaults, "edge_color"
-        )
-        self.text.refresh(self._features)
+        self.text.refresh(self.features)
         self.events.properties()
 
     @property
@@ -543,22 +528,22 @@ class Points(Layer):
 
         See `features` for more details on the type of this property.
         """
-        return self._feature_defaults
+        return self._feature_manager.defaults
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return _features_to_choices(self._features)
+        return self._feature_manager.choices()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
-        return _features_to_properties(self._features)
+        return self._feature_manager.properties()
 
     @staticmethod
-    def _update_color_manager(color_manager, features, feature_defaults, name):
+    def _update_color_manager(color_manager, feature_manager, name):
         if color_manager.color_properties is not None:
             color_name = color_manager.color_properties.name
-            if color_name not in features:
+            if color_name not in feature_manager.values:
                 color_manager.color_mode = ColorMode.DIRECT
                 color_manager.color_properties = None
                 warnings.warn(
@@ -572,8 +557,8 @@ class Points(Layer):
             else:
                 color_manager.color_properties = {
                     'name': color_name,
-                    'values': features[color_name].to_numpy(),
-                    'current_value': feature_defaults[color_name][0],
+                    'values': feature_manager.values[color_name].to_numpy(),
+                    'current_value': feature_manager.defaults[color_name][0],
                 }
 
     @properties.setter
@@ -585,23 +570,20 @@ class Points(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        return _features_to_properties(self._feature_defaults)
+        return self._feature_manager.currents()
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        current_properties = coerce_current_properties(current_properties)
-        self._feature_defaults = _validate_features(
-            current_properties, num_data=1
-        )
+        update_indices = None
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode != Mode.ADD
         ):
-            for k in self._feature_defaults:
-                self.features[k][
-                    list(self.selected_data)
-                ] = self._feature_defaults[k][0]
+            update_indices = list(self.selected_data)
+        self._feature_manager.set_currents(
+            current_properties, update_indices=update_indices
+        )
         current_properties = self.current_properties
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
@@ -616,7 +598,7 @@ class Points(Layer):
     def text(self, text):
         self._text._update_from_layer(
             text=text,
-            features=self._features,
+            features=self.features,
         )
 
     def refresh_text(self):
@@ -1216,7 +1198,7 @@ class Points(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.string._get_array(self._features, self._indices_view)
+        return self.text.string._get_array(self.features, self._indices_view)
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
@@ -1649,8 +1631,8 @@ class Points(Layer):
                 self._edge._remove(indices_to_remove=index)
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
-            self._features = _remove_features(self._features, index)
-            self.text._features = self._features
+            self._feature_manager.remove(index)
+            self.text._features = self.features
             self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
@@ -1708,10 +1690,8 @@ class Points(Layer):
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
 
-            self._features = _append_features(
-                self._features, self._clipboard['features']
-            )
-            self.text._features = self._features
+            self._feature_manager.append(self._clipboard['features'])
+            self.text._features = self.features
 
             self.text._paste(
                 self._clipboard['text_strings'],
@@ -1750,7 +1730,7 @@ class Points(Layer):
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
                 'text_strings': self.text.string._get_array(
-                    self._features, index
+                    self.features, index
                 ),
             }
         else:
