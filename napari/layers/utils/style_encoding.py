@@ -20,14 +20,14 @@ StyleArray = TypeVar('StyleArray', bound=np.ndarray)
 
 
 class EncodingType(StringEnum):
-    """The encoding type, which is a constant field and useful for disambiguation of dict input."""
+    """The encoding type, which is useful for disambiguation of dict input."""
 
     CONSTANT = auto()
     MANUAL = auto()
     DIRECT = auto()
     NOMINAL = auto()
     QUANTITATIVE = auto()
-    FORMAT_STRING = auto()
+    FORMAT = auto()
 
 
 @runtime_checkable
@@ -40,7 +40,7 @@ class StyleEncoding(Protocol[StyleArray]):
         *,
         indices: Optional[IndicesType] = None,
     ) -> StyleArray:
-        """Get the array of values generated from this and the given features.
+        """Apply this encoding with the given features to generate style values.
 
         If generating values from the given features fails, this will fall back
         to returning some safe/default value.

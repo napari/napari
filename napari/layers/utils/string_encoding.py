@@ -108,7 +108,7 @@ class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
     """
 
     encoding_type: EncodingType = Field(
-        EncodingType.FORMAT_STRING, const=EncodingType.FORMAT_STRING
+        EncodingType.FORMAT, const=EncodingType.FORMAT
     )
     format_string: str
     fallback: StringValue = DEFAULT_STRING

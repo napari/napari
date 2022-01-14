@@ -147,14 +147,12 @@ class TextManager(EventedModel):
             The number of text elements to add
         """
         # warnings.warn(
-        #    trans._(
-        #        'TextManager.add is a deprecated method. '
-        #        'Use TextManager.string(...) instead.'
-        #    ),
-        #    DeprecationWarning,
+        #     trans._(
+        #         'TextManager.add is deprecated. '
+        #         'Call TextManager.string instead.'
+        #     ),
+        #     DeprecationWarning,
         # )
-        # Assumes that the current properties passed have already been appended
-        # to the properties table, then calls _get_array to append new values now.
         if isinstance(
             self.string, (ConstantStringEncoding, ManualStringEncoding)
         ):
@@ -228,8 +226,8 @@ class TextManager(EventedModel):
         """
         # warnings.warn(
         #    trans._(
-        #        'TextManager.view_text() is a deprecated method. '
-        #        'Use TextManager.string(...) instead.'
+        #        'TextManager.view_text is deprecated. '
+        #        'Call TextManager.string instead.'
         #    ),
         #    DeprecationWarning,
         # )
@@ -338,7 +336,8 @@ class TextManager(EventedModel):
 def _warn_about_deprecated_values_field():
     warnings.warn(
         trans._(
-            '`TextManager.values` is a deprecated field. Use `TextManager.string` instead.'
+            'TextManager.values is deprecated. '
+            'Call TextManager.string instead.'
         ),
         DeprecationWarning,
     )
@@ -346,6 +345,6 @@ def _warn_about_deprecated_values_field():
 
 def _warn_about_deprecated_text_parameter():
     warnings.warn(
-        trans._('`text` is a deprecated parameter. Use `string` instead.'),
+        trans._('text is a deprecated. Use string instead.'),
         DeprecationWarning,
     )
