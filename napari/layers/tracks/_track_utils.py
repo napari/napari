@@ -7,7 +7,7 @@ from scipy.spatial import cKDTree
 
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..utils.layer_utils import _features_to_properties, _validate_features
+from ..utils.layer_utils import _FeatureTable
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -70,7 +70,7 @@ class TrackManager:
 
         # store the raw data here
         self._data = None
-        self._features = None
+        self._feature_table = _FeatureTable()
         self._order = None
 
         # use a kdtree to help with fast lookup of the nearest track
@@ -123,10 +123,11 @@ class TrackManager:
         # here to make sure that we align with the napari dims index which
         # will be an integer - however, the time index does not necessarily
         # need to be an int, and the shader will render correctly.
-        frames = list(set(self._points[:, 0].astype(np.uint).tolist()))
+        time = np.round(self._points[:, 0]).astype(np.uint)
+        frames = list(set(time.tolist()))
         self._points_lookup = {}
         for f in frames:
-            idx = np.where(self._points[:, 0] == f)[0]
+            idx = np.where(time == f)[0]
             self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
 
         # make a second lookup table using a sparse matrix to convert track id
@@ -157,22 +158,22 @@ class TrackManager:
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        return self._feature_table.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        features = _validate_features(features, num_data=len(self.data))
-        if 'track_id' not in features:
-            features['track_id'] = self.track_ids
-        self._features = features.iloc[self._order].reset_index(drop=True)
+        self._feature_table.set_values(features, num_data=len(self.data))
+        if 'track_id' not in self._feature_table.values:
+            self._feature_table.values['track_id'] = self.track_ids
+        self._feature_table.reorder(self._order)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
-        return _features_to_properties(self._features)
+        return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):

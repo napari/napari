@@ -24,14 +24,14 @@ chapters:
 
 - file: plugins/index
   sections:
-  - file: plugins/find-and-install-plugin
-  - file: plugins/npe2_getting_started
-  - file: plugins/npe2_manifest_specification
-  - file: plugins/npe2_migration_guide
+  - file: plugins/first_plugin
+  - file: plugins/manifest
+  - file: plugins/contributions
+  - file: plugins/guides
+  - file: plugins/test_deploy
   - file: plugins/best_practices
-  - file: plugins/for_plugin_developers
-  - file: plugins/hook_specifications
-  - file: plugins/for_napari_developers
+  - file: plugins/npe2_migration_guide
+  - file: plugins/npe1
 
 - file: developers/index
   sections:
@@ -62,6 +62,7 @@ chapters:
 
 - file: release/index
   sections:
+  - file: release/release_0_4_13
   - file: release/release_0_4_12
   - file: release/release_0_4_11
   - file: release/release_0_4_10

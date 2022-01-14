@@ -108,14 +108,13 @@ def write_layers(
 
 @npe2_or_return_none
 def get_widget_contribution(
-    plugin_name: str, widget_name: str
-) -> Optional[WidgetCallable]:
+    plugin_name: str, widget_name: Optional[str] = None
+) -> Optional[Tuple[WidgetCallable, str]]:
     for contrib in npe2.PluginManager.instance().iter_widgets():
-        if (
-            contrib.plugin_name == plugin_name
-            and contrib.display_name == widget_name
+        if contrib.plugin_name == plugin_name and (
+            not widget_name or contrib.display_name == widget_name
         ):
-            return contrib.get_callable()
+            return contrib.get_callable(), contrib.display_name
     return None
 
 
@@ -180,6 +179,31 @@ def file_extensions_string_for_layers(
         ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
         writers,
     )
+
+
+@npe2_or_return({})
+def get_readers(path: str) -> Dict[str, str]:
+    """Get valid reader display_name: plugin_name mapping given path.
+
+    Iterate through compatible readers for the given path and return
+    dictionary of display_name to plugin_name for each reader
+
+    Parameters
+    ----------
+    path : str
+        path for which to find compatible readers
+
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary of display_name to plugin_name
+    """
+    pm = npe2.PluginManager.instance()
+    reader_plugin_names = {
+        pm.get_manifest(reader.command).display_name: reader.plugin_name
+        for reader in pm.iter_compatible_readers(path)
+    }
+    return reader_plugin_names
 
 
 @npe2_or_return(iter([]))
