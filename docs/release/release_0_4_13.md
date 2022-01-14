@@ -132,7 +132,7 @@ Complete list of changes below:
 - Update typing test on CI (#3903)
 - Features implementation refactor (#3904)
 - Rename feature manager attribute to table (#3931)
-
+- Fix ndisplay button highlight (#3935)
 
 ## Bug Fixes
 - Fix removing selected points with derived text (#3505)
