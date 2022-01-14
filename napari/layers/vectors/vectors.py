@@ -226,7 +226,7 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._feature_manager = _FeatureTable.from_layer(
+        self._feature_table = _FeatureTable.from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -279,7 +279,7 @@ class Vectors(Layer):
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
-                self._feature_manager.resize(n_vectors)
+                self._feature_table.resize(n_vectors)
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the
                     # extra ones
@@ -314,14 +314,14 @@ class Vectors(Layer):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._feature_manager.values
+        return self._feature_table.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._feature_manager.set_values(features, num_data=len(self.data))
+        self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
             if self._edge.color_properties.name not in self.features:
                 self._edge.color_mode = ColorMode.DIRECT
@@ -346,7 +346,7 @@ class Vectors(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return self._feature_manager.properties()
+        return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -358,11 +358,11 @@ class Vectors(Layer):
 
         See `features` for more details on the type of this property.
         """
-        return self._feature_manager.defaults
+        return self._feature_table.defaults
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._feature_manager.choices()
+        return self._feature_table.choices()
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -466,7 +466,7 @@ class Vectors(Layer):
             color=edge_color,
             n_colors=len(self.data),
             properties=self.properties,
-            current_properties=self._feature_manager.currents(),
+            current_properties=self._feature_table.currents(),
         )
         self.events.edge_color()
 

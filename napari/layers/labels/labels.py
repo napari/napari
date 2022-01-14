@@ -291,7 +291,7 @@ class Labels(_ImageBase):
             contour=Event,
         )
 
-        self._feature_manager = _FeatureTable.from_layer(
+        self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
         )
         self._label_index = self._make_label_index()
@@ -447,28 +447,28 @@ class Labels(_ImageBase):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._feature_manager.values
+        return self._feature_table.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._feature_manager.set_values(features)
+        self._feature_table.set_values(features)
         self._label_index = self._make_label_index()
         self.events.properties()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return self._feature_manager.properties()
+        return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         self.features = properties
 
     def _make_label_index(self) -> Dict[int, int]:
-        features = self._feature_manager.values
+        features = self._feature_table.values
         label_index = {}
         if 'index' in features:
             label_index = {i: k for k, i in enumerate(features['index'])}

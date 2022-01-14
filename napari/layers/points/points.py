@@ -344,7 +344,7 @@ class Points(Layer):
         # Save the point coordinates
         self._data = np.asarray(data)
 
-        self._feature_manager = _FeatureTable.from_layer(
+        self._feature_table = _FeatureTable.from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -438,7 +438,7 @@ class Points(Layer):
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
-                    self._feature_manager.resize(len(data))
+                    self._feature_table.resize(len(data))
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones
@@ -506,19 +506,19 @@ class Points(Layer):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._feature_manager.values
+        return self._feature_table.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._feature_manager.set_values(features, num_data=len(self.data))
+        self._feature_table.set_values(features, num_data=len(self.data))
         self._update_color_manager(
-            self._face, self._feature_manager, "face_color"
+            self._face, self._feature_table, "face_color"
         )
         self._update_color_manager(
-            self._edge, self._feature_manager, "edge_color"
+            self._edge, self._feature_table, "edge_color"
         )
         if self.text.values is not None:
             self.refresh_text()
@@ -530,22 +530,22 @@ class Points(Layer):
 
         See `features` for more details on the type of this property.
         """
-        return self._feature_manager.defaults
+        return self._feature_table.defaults
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._feature_manager.choices()
+        return self._feature_table.choices()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
-        return self._feature_manager.properties()
+        return self._feature_table.properties()
 
     @staticmethod
-    def _update_color_manager(color_manager, feature_manager, name):
+    def _update_color_manager(color_manager, feature_table, name):
         if color_manager.color_properties is not None:
             color_name = color_manager.color_properties.name
-            if color_name not in feature_manager.values:
+            if color_name not in feature_table.values:
                 color_manager.color_mode = ColorMode.DIRECT
                 color_manager.color_properties = None
                 warnings.warn(
@@ -559,8 +559,8 @@ class Points(Layer):
             else:
                 color_manager.color_properties = {
                     'name': color_name,
-                    'values': feature_manager.values[color_name].to_numpy(),
-                    'current_value': feature_manager.defaults[color_name][0],
+                    'values': feature_table.values[color_name].to_numpy(),
+                    'current_value': feature_table.defaults[color_name][0],
                 }
 
     @properties.setter
@@ -572,7 +572,7 @@ class Points(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
-        return self._feature_manager.currents()
+        return self._feature_table.currents()
 
     @current_properties.setter
     def current_properties(self, current_properties):
@@ -583,7 +583,7 @@ class Points(Layer):
             and self._mode != Mode.ADD
         ):
             update_indices = list(self.selected_data)
-        self._feature_manager.set_currents(
+        self._feature_table.set_currents(
             current_properties, update_indices=update_indices
         )
         current_properties = self.current_properties
@@ -1634,7 +1634,7 @@ class Points(Layer):
                 self._edge._remove(indices_to_remove=index)
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
-            self._feature_manager.remove(index)
+            self._feature_table.remove(index)
             with self.text.events.blocker_all():
                 self.text.remove(index)
             if self._value in self.selected_data:
@@ -1705,7 +1705,7 @@ class Points(Layer):
                 ),
             )
 
-            self._feature_manager.append(self._clipboard['features'])
+            self._feature_table.append(self._clipboard['features'])
 
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
