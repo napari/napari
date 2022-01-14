@@ -72,7 +72,7 @@ class StyleEncoding(Protocol[StyleArray]):
     def _clear(self) -> None:
         """Clears all previously generated values.
 
-        Call this before _get_array to refresh values.
+        Call this before applying this to refresh values.
         """
 
     def _append(self, array: StyleArray) -> None:
@@ -109,8 +109,6 @@ class StyleEncodingModel(EventedModel, Generic[StyleValue, StyleArray]):
 
 class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     """Encodes a constant style value.
-
-    The _get_array method returns the constant broadcast to the required length.
 
     Attributes
     ----------
