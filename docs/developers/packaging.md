@@ -170,12 +170,13 @@ screen on macOS.
 
 In order to avoid security warnings on the target platform, we need to sign the generated installer.
 
-On macOS, once Apple's _Installer Certificate_ has been installed to a keychain and unlocked for its
-use, you can have `constructor` handle the signing via `productsign` automatically. However, this
-is not enough for a warning-free installation, since its contents need to be _notarized_ and
-_stapled_ too.
-
-> Note: PKG notarization is not yet implemented.
+On macOS, once Apple's _Installer Certificate_ has been installed to a keychain and unlocked
+for its use, you can have `constructor` handle the signing via `productsign` automatically.
+However, this is not enough for a warning-free installation, since its contents need to be
+_notarized_ and _stapled_ too. For this reason, `constructor` has been modified to also
+`codesign` the bundled `_conda.exe` (the binary provided by conda-standalone, see below) with
+the _Application Certificate_. Otherwise, notarization fails. After that, two actions take care
+of notarizing and stapling the resulting PKG.
 
 On Windows, any Microsoft-blessed certificate will do. Our `constructor` fork allows us to specify
 a path to a PFX certificate and then have the Windows SDK `signtool` add the signature. Note that
@@ -276,6 +277,7 @@ a high-level list of the main changes introduced in the stack.
 * Always leave `_conda.exe` in the install location
 * Do not offer options for conda init or PATH manipulations (these should be Anaconda specific)
 * Add signing for Windows
+* Add notarization for macOS PKG
 
 <!-- hyperlinks -->
 

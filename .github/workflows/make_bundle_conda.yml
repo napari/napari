@@ -240,16 +240,19 @@ jobs:
         shell: bash -l {0}
         if: runner.os == 'macOS'
         env:
+          APPLE_APPLICATION_CERTIFICATE_BASE64: ${{ secrets.APPLE_APPLICATION_CERTIFICATE_BASE64 }}
           APPLE_INSTALLER_CERTIFICATE_BASE64: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_BASE64 }}
           APPLE_INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}
           TEMP_KEYCHAIN_PASSWORD: ${{ secrets.TEMP_KEYCHAIN_PASSWORD }}
         run: |
           # create variables
-          CERTIFICATE_PATH="$RUNNER_TEMP/developer_cert.p12"
+          INSTALLER_CERTIFICATE_PATH="$RUNNER_TEMP/installer_developer_cert.p12"
+          APPLICATION_CERTIFICATE_PATH="$RUNNER_TEMP/application_developer_cert.p12"
           KEYCHAIN_PATH="$RUNNER_TEMP/installer-signing.keychain-db"
 
           # import certificate and provisioning profile from secrets
-          echo -n "$APPLE_INSTALLER_CERTIFICATE_BASE64" | base64 --decode --output $CERTIFICATE_PATH
+          echo -n "$APPLE_INSTALLER_CERTIFICATE_BASE64" | base64 --decode --output $INSTALLER_CERTIFICATE_PATH
+          echo -n "$APPLE_APPLICATION_CERTIFICATE_BASE64" | base64 --decode --output $APPLICATION_CERTIFICATE_PATH
 
           # create temporary keychain
           security create-keychain -p "$TEMP_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -257,13 +260,16 @@ jobs:
           security unlock-keychain -p "$TEMP_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
           # import certificate to keychain
-          security import $CERTIFICATE_PATH -P $APPLE_INSTALLER_CERTIFICATE_PASSWORD -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $INSTALLER_CERTIFICATE_PATH -P $APPLE_INSTALLER_CERTIFICATE_PASSWORD -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $APPLICATION_CERTIFICATE_PATH -P $APPLE_INSTALLER_CERTIFICATE_PASSWORD -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
           # export identity name
-          identity=$(security find-identity $KEYCHAIN_PATH | grep -m 1 -o '"Developer ID Installer.*"' | tr -d '"')
+          signing_identity=$(security find-identity $KEYCHAIN_PATH | grep -m 1 -o '"Developer ID Installer.*"' | tr -d '"')
+          notarization_identity=$(security find-identity $KEYCHAIN_PATH | grep -m 1 -o '"Developer ID Application.*"' | tr -d '"')
 
-          echo "CONSTRUCTOR_SIGNING_IDENTITY=${identity}" >> $GITHUB_ENV
+          echo "CONSTRUCTOR_SIGNING_IDENTITY=${signing_identity}" >> $GITHUB_ENV
+          echo "CONSTRUCTOR_NOTARIZATION_IDENTITY=${notarization_identity}" >> $GITHUB_ENV
 
       - name: Load signing certificate (Windows)
         if: runner.os == 'Windows'
@@ -292,6 +298,20 @@ jobs:
           CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
           CONSTRUCTOR_SIGNTOOL_PATH: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
         run: python bundle_conda.py
+
+      - name: Notarize Bundle (macOS)
+        if: runner.os == 'macOS'
+        uses: devbotsxyz/xcode-notarize@v1
+        with:
+          product-path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
+          appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
+          appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+
+      - name: Staple Bundle (macOS)
+        if: runner.os == 'macOS'
+        uses: devbotsxyz/xcode-staple@v1
+        with:
+          product-path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2

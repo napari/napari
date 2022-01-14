@@ -21,7 +21,10 @@ CONSTRUCTOR_CONDA_EXE:
     that platform. needs to be provided in this env var in that case!
 CONSTRUCTOR_SIGNING_IDENTITY:
     Apple ID Installer Certificate identity (common name) that should
-    be use to sign the resulting PKG (macOS only)
+    be use to productsign the resulting PKG (macOS only)
+CONSTRUCTOR_NOTARIZATION_IDENTITY:
+    Apple ID Developer Certificate identity (common name) that should
+    be use to codesign some binaries bundled in the pkg (macOS only)
 CONSTRUCTOR_SIGNING_CERTIFICATE:
     Path to PFX certificate to sign the EXE installer on Windows
 """
@@ -168,6 +171,9 @@ def _constructor(version=_version(), extra_specs=None):
         signing_identity = os.environ.get("CONSTRUCTOR_SIGNING_IDENTITY")
         if signing_identity:
             definitions["signing_identity_name"] = signing_identity
+        notarization_identity = os.environ.get("CONSTRUCTOR_NOTARIZATION_IDENTITY")
+        if notarization_identity:
+            definitions["notarization_identity_name"] = notarization_identity
 
     if WINDOWS:
         definitions["conda_default_channels"].append("defaults")
