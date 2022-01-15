@@ -172,6 +172,8 @@ Complete list of changes below:
 - Fix tracks instantiation with floating point time values (#3909)
 - Fix cleaning of resources in function contextmanagers (#3918)
 - Fix magicgui layer combobox not populated when adding to viewer (#3938)
+- Fix setting attribute to None for single slices of image stacks on stack creation (#3941)
+
 
 ## API Changes
 
