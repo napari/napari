@@ -166,6 +166,10 @@ def create_preferences_docs():
     (GUIDES_PATH / "preferences.md").write_text(text)
 
 
-if __name__ == "__main__":
+def main():
     generate_images()
     create_preferences_docs()
+
+
+if __name__ == "__main__":
+    main()
