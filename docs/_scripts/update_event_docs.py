@@ -161,8 +161,7 @@ def iter_layer_events() -> Iterator[Ev]:
             yield Ev(name, lay.__class__, description=docs.get(name))
 
 
-if __name__ == '__main__':
-
+def main():
     HEADER = [
         'Event',
         'Description',
@@ -182,3 +181,7 @@ if __name__ == '__main__':
     rows = [ev.layer_row()[2:] for ev in iter_layer_events()]
     table2 = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
     (DOCS / 'guides' / '_layer_events.md').write_text(table2)
+
+
+if __name__ == '__main__':
+    main()
