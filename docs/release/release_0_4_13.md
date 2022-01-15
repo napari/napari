@@ -128,6 +128,7 @@ Complete list of changes below:
 - Replace timeout in test by duration assertion. (#3887)
 - Do not leak QtViewer between tests. (#3890)
 - `_track_colors`  cleanup (#3891)
+- Add error message if local file doesn't exist. (#3900)
 - Better error message on failed window import (#3901)
 - Update typing test on CI (#3903)
 - Features implementation refactor (#3904)
@@ -180,6 +181,7 @@ Complete list of changes below:
 - Deprecate `qt_viewer.screenshot` & `clipboard` (#3765)
 - Restrict PublicOnlyProxy to napari namespace, allow napari-internal private usage (#3777)
 - Change PublicOnlyProxy deprecation expiry to 0.5.0 (#3788)
+- Remove deprecation of sceenshot in qt_viewer (#3937)
 
 
 ## Build Tools and Docs
@@ -240,7 +242,7 @@ Complete list of changes below:
 - Fix plugin docs, ToC and links (#3929)
 
 
-## 27 authors added to this release (alphabetical)
+## 28 authors added to this release (alphabetical)
 
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
@@ -254,6 +256,7 @@ Complete list of changes below:
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Guillaume Witz](https://github.com/napari/napari/commits?author=guiwitz) - @guiwitz
 - [Isabela Presedo-Floyd](https://github.com/napari/napari/commits?author=isabela-pf) - @isabela-pf
+- [Jacob Czech](https://github.com/napari/napari/commits?author=jczech) - @jczech
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Jeremy Asuncion](https://github.com/napari/napari/commits?author=codemonkey800) - @codemonkey800
 - [Johannes Elferich](https://github.com/napari/napari/commits?author=jojoelfe) - @jojoelfe
