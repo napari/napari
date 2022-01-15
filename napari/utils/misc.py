@@ -188,7 +188,7 @@ def ensure_sequence_of_iterables(
     In [2]: ensure_sequence_of_iterables([(1, 2), (3, 4)])
     Out[2]: [(1, 2), (3, 4)]
 
-    In [3]: ensure_sequence_of_iterables([(1, 2), None])
+    In [3]: ensure_sequence_of_iterables([(1, 2), None], allow_none=True)
     Out[3]: [(1, 2), None]
 
     In [4]: ensure_sequence_of_iterables({'a':1})
