@@ -6,8 +6,17 @@ import pytest
 from napari.components import LayerList
 from napari.layers import Image
 
+try:
+    from importlib.metadata import metadata
+except ImportError:
+    from importlib_metadata import metadata
+
 BUILTINS = 'napari'
-SVG = 'napari-svg'
+
+if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+    SVG = 'svg'
+else:
+    SVG = 'napari-svg'
 
 
 def test_empty_layers_list():
@@ -330,6 +339,7 @@ def test_toggle_visibility():
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
+@pytest.mark.filterwarnings('ignore:distutils Version classes are deprecated')
 def test_layers_save(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
@@ -413,6 +423,7 @@ def test_layers_save_selected(tmpdir, layer_data_and_types):
 
 
 # the layers fixture is defined in napari/conftest.py
+@pytest.mark.filterwarnings('ignore:`np.int` is a deprecated alias for')
 def test_layers_save_svg(tmpdir, layers):
     """Test saving all layer data to an svg."""
     path = os.path.join(tmpdir, 'layers_file.svg')
