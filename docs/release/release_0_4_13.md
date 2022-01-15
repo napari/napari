@@ -132,6 +132,7 @@ Complete list of changes below:
 - Better error message on failed window import (#3901)
 - Update typing test on CI (#3903)
 - Features implementation refactor (#3904)
+- Add npe2 to install requires (#3906)
 - Rename feature manager attribute to table (#3931)
 - Better Notification __str__ method (#3933)
 - Fix ndisplay button highlight (#3935)
@@ -173,6 +174,7 @@ Complete list of changes below:
 - Fix cleaning of resources in function contextmanagers (#3918)
 - Fix magicgui layer combobox not populated when adding to viewer (#3938)
 - Fix setting attribute to None for single slices of image stacks on stack creation (#3941)
+- Fix too many entries in available plugins list (#3943)
 
 
 ## API Changes
@@ -249,7 +251,7 @@ Complete list of changes below:
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
-- [chili-chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
+- [Chi-li Chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
@@ -281,7 +283,7 @@ Complete list of changes below:
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
-- [chili-chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
+- [Chi-li Chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
 - [David Hoese](https://github.com/napari/napari/commits?author=djhoese) - @djhoese
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
