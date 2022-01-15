@@ -111,6 +111,9 @@ class Notification(Event):
     def from_warning(cls, warning: Warning, **kwargs) -> Notification:
         return WarningNotification(warning, **kwargs)
 
+    def __str__(self):
+        return f'{str(self.severity).upper()}: {self.message}'
+
 
 class ErrorNotification(Notification):
     exception: BaseException

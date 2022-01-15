@@ -320,7 +320,7 @@ def camel_to_spaces(val):
 T = TypeVar('T', str, Sequence[str])
 
 
-def abspath_or_url(relpath: T) -> T:
+def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     """Utility function that normalizes paths or a sequence thereof.
 
     Expands user directory and converts relpaths to abspaths... but ignores
@@ -330,6 +330,8 @@ def abspath_or_url(relpath: T) -> T:
     ----------
     relpath : str or list or tuple
         A path, or list or tuple of paths.
+    must_exist : bool, default True
+        Raise ValueError if `relpath` is not a URL and does not exist.
 
     Returns
     -------
@@ -340,14 +342,28 @@ def abspath_or_url(relpath: T) -> T:
     from urllib.parse import urlparse
 
     if isinstance(relpath, (tuple, list)):
-        return type(relpath)(abspath_or_url(p) for p in relpath)
+        return type(relpath)(
+            abspath_or_url(p, must_exist=must_exist) for p in relpath
+        )
 
     if isinstance(relpath, (str, PathLike)):
         relpath = fspath(relpath)
         urlp = urlparse(relpath)
         if urlp.scheme and urlp.netloc:
             return relpath
-        return os_path.abspath(os_path.expanduser(relpath))
+
+        path = os_path.abspath(os_path.expanduser(relpath))
+        if must_exist and not (
+            urlp.scheme or urlp.netloc or os.path.exists(path)
+        ):
+            raise ValueError(
+                trans._(
+                    "Requested path {path!r} does not exist.",
+                    deferred=True,
+                    path=path,
+                )
+            )
+        return path
 
     raise TypeError(
         trans._(
