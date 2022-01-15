@@ -244,6 +244,7 @@ Complete list of changes below:
 - Try to fix OpenGL errors installing in CI (github deprecated git://) (#3920)
 - FIX: git:// is deprecated (#3921)
 - Fix plugin docs, ToC and links (#3929)
+- Fix docs build on CI (#3946)
 
 
 ## 28 authors added to this release (alphabetical)
