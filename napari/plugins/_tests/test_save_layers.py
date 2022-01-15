@@ -5,7 +5,6 @@ import pytest
 from napari.plugins.io import save_layers
 
 BUILTINS = 'napari'
-SVG = 'napari-svg'
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
