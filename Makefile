@@ -8,8 +8,6 @@ docs:
 #   some plugin docs live in npe2 for testing purposes
 	rm -rf npe2
 	git clone https://github.com/napari/npe2
-#	remove next line after 3906	
-	pip install -e ./npe2
 	python npe2/_docs/render.py docs/plugins
 	rm -rf npe2
 
