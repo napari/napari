@@ -12,11 +12,17 @@ from .base import VispyBaseLayer
 
 
 class ImageLayerNode:
-    def __init__(self, custom_node: Node = None):
+    def __init__(self, custom_node: Node = None, texture_format=None):
         self._custom_node = custom_node
-        self._image_node = ImageNode(None, method='auto')
+        self._image_node = ImageNode(
+            None,
+            method='auto',
+            texture_format=texture_format,
+        )
         self._volume_node = VolumeNode(
-            np.zeros((1, 1, 1), dtype=np.float32), clim=[0, 1]
+            np.zeros((1, 1, 1), dtype=np.float32),
+            clim=[0, 1],
+            texture_format=texture_format,
         )
 
     def get_node(self, ndisplay: int) -> Node:
@@ -32,10 +38,10 @@ class ImageLayerNode:
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, node=None):
+    def __init__(self, layer, node=None, texture_format='auto'):
 
         # Use custom node from caller, or our standard image/volume nodes.
-        self._layer_node = ImageLayerNode(node)
+        self._layer_node = ImageLayerNode(node, texture_format=texture_format)
 
         # Default to 2D (image) node.
         super().__init__(layer, self._layer_node.get_node(2))
@@ -64,18 +70,21 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_experimental_slicing_plane_normal_change
         )
 
+        # display_change is special (like data_change) because it requires a self.reset()
+        # this means that we have to call it manually. Also, it must be called before reset
+        # in order to set the appropriate node first
+        self._on_display_change()
         self.reset()
         self._on_data_change()
 
     def _on_display_change(self, data=None):
-
         parent = self.node.parent
         self.node.parent = None
 
         self.node = self._layer_node.get_node(self.layer._ndisplay)
 
         if data is None:
-            data = np.zeros((1,) * self.layer._ndisplay)
+            data = np.zeros((1,) * self.layer._ndisplay, dtype=np.float32)
 
         if self.layer._empty:
             self.node.visible = False
@@ -89,7 +98,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.order = self.order
         self.reset()
 
-    def _on_data_change(self, event=None):
+    def _on_data_change(self):
         if not self.layer.loaded:
             # Do nothing if we are not yet loaded. Calling astype below could
             # be very expensive. Lets not do it until our data has been loaded.
@@ -130,34 +139,34 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_matrix_change()
         node.update()
 
-    def _on_interpolation_change(self, event=None):
+    def _on_interpolation_change(self):
         self.node.interpolation = self.layer.interpolation
 
-    def _on_rendering_change(self, event=None):
+    def _on_rendering_change(self):
         if isinstance(self.node, VolumeNode):
             self.node.method = self.layer.rendering
             self._on_attenuation_change()
             self._on_iso_threshold_change()
 
-    def _on_colormap_change(self, event=None):
+    def _on_colormap_change(self):
         self.node.cmap = VispyColormap(*self.layer.colormap)
 
-    def _on_contrast_limits_change(self, event=None):
+    def _on_contrast_limits_change(self):
         self.node.clim = self.layer.contrast_limits
 
-    def _on_gamma_change(self, event=None):
+    def _on_gamma_change(self):
         if len(self.node.shared_program.frag._set_items) > 0:
             self.node.gamma = self.layer.gamma
 
-    def _on_iso_threshold_change(self, event=None):
+    def _on_iso_threshold_change(self):
         if isinstance(self.node, VolumeNode):
             self.node.threshold = self.layer.iso_threshold
 
-    def _on_attenuation_change(self, event=None):
+    def _on_attenuation_change(self):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
 
-    def _on_experimental_slicing_plane_enabled_change(self, event=None):
+    def _on_experimental_slicing_plane_enabled_change(self):
         if isinstance(self.node, VolumeNode):
             if self.layer.experimental_slicing_plane.enabled is True:
                 raycasting_mode = 'plane'
@@ -165,19 +174,19 @@ class VispyImageLayer(VispyBaseLayer):
                 raycasting_mode = 'volume'
             self.node.raycasting_mode = raycasting_mode
 
-    def _on_experimental_slicing_plane_thickness_change(self, event=None):
+    def _on_experimental_slicing_plane_thickness_change(self):
         if isinstance(self.node, VolumeNode):
             self.node.plane_thickness = (
                 self.layer.experimental_slicing_plane.thickness
             )
 
-    def _on_experimental_slicing_plane_position_change(self, event=None):
+    def _on_experimental_slicing_plane_position_change(self):
         if isinstance(self.node, VolumeNode):
             self.node.plane_position = (
                 self.layer.experimental_slicing_plane.position
             )
 
-    def _on_experimental_slicing_plane_normal_change(self, event=None):
+    def _on_experimental_slicing_plane_normal_change(self):
         if isinstance(self.node, VolumeNode):
             self.node.plane_normal = (
                 self.layer.experimental_slicing_plane.normal

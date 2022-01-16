@@ -2,8 +2,8 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from napari.layers import Labels
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,

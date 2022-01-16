@@ -1,15 +1,11 @@
-import inspect
 from typing import Iterable, Optional
 
 from tqdm import tqdm
 
-from ..utils.translations import trans
+from napari.utils.events.event import EmitterGroup, Event
 
-_tqdm_kwargs = {
-    p.name
-    for p in inspect.signature(tqdm.__init__).parameters.values()
-    if p.kind is not inspect.Parameter.VAR_KEYWORD and p.name != "self"
-}
+from ..utils.events.containers import EventedSet
+from ..utils.translations import trans
 
 
 class progress(tqdm):
@@ -18,11 +14,13 @@ class progress(tqdm):
     directly by wrapping an iterable or by providing a total number
     of expected updates.
 
+    While this interface is primarily designed to be displayed in
+    the viewer, it can also be used without a viewer open, in which
+    case it behaves identically to tqdm and produces the progress
+    bar in the terminal.
+
     See tqdm.tqdm API for valid args and kwargs:
     https://tqdm.github.io/docs/tqdm/
-
-    Also, any keyword arguments to the :class:`ProgressBar` `QWidget`
-    are also accepted and will be passed to the ``ProgressBar``.
 
     Examples
     --------
@@ -39,9 +37,12 @@ class progress(tqdm):
     ...             sleep(delay)
 
     or equivalently, using the `progrange` shorthand
-    ...     with progrange(steps) as pbr:
-    ...         for i in pbr:
-    ...             sleep(delay)
+
+    .. code-block:: python
+
+        with progrange(steps) as pbr:
+            for i in pbr:
+                sleep(delay)
 
     For manual updates:
 
@@ -57,6 +58,12 @@ class progress(tqdm):
     """
 
     monitor_interval = 0  # set to 0 to disable the thread
+    # to give us a way to hook into the creation and update of progress objects
+    # without progress knowing anything about a Viewer, we track all instances in
+    # this evented *class* attribute, accessed through `progress._all_instances`
+    # this allows the ActivityDialog to find out about new progress objects and
+    # hook up GUI progress bars to its update events
+    _all_instances: EventedSet['progress'] = EventedSet()
 
     def __init__(
         self,
@@ -67,99 +74,62 @@ class progress(tqdm):
         *args,
         **kwargs,
     ) -> None:
-        kwargs = kwargs.copy()
-        pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
-        self._group_token = None
-
-        # get progress bar added to viewer
-        try:
-            from .._qt.dialogs.activity_dialog import get_pbar
-
-            pbar = get_pbar(self, nest_under=nest_under, **pbar_kwargs)
-        except ImportError:
-            pbar = None
-
-        if pbar is not None:
-            kwargs['gui'] = True
-
-        self._pbar = pbar
+        self.events = EmitterGroup(
+            value=Event, description=Event, overflow=Event, eta=Event
+        )
+        self.nest_under = nest_under
+        self.is_init = True
         super().__init__(iterable, desc, total, *args, **kwargs)
-        if not self._pbar:
-            return
 
-        if self.total is not None:
-            self._pbar.setRange(self.n, self.total)
-            self._pbar._set_value(self.n)
-        else:
-            self._pbar.setRange(0, 0)
-            self.total = 0
-
-        if desc:
-            self.set_description(desc)
-        else:
+        if not self.desc:
             self.set_description(trans._("progress"))
+        progress._all_instances.add(self)
+        self.is_init = False
+
+    def __repr__(self) -> str:
+        return self.desc
 
     def display(self, msg: str = None, pos: int = None) -> None:
-        """Update the display."""
-        if not self._pbar:
-            return super().display(msg=msg, pos=pos)
-
+        """Update the display and emit eta event."""
+        # just plain tqdm if we don't have gui
+        if not self.gui and not self.is_init:
+            super().display(msg, pos)
+            return
+        # TODO: This could break if user is formatting their own terminal tqdm
+        etas = ""
         if self.total != 0:
             etas = str(self).split('|')[-1]
-            try:
-                self._pbar._set_value(self.n)
-                self._pbar._set_eta(etas)
-            except AttributeError:
-                pass
+
+        self.events.eta(value=etas)
+
+    def update(self, n):
+        """Update progress value by n and emit value event"""
+        super().update(n)
+        self.events.value(value=self.n)
 
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
         if self.n == self.total:
             self.total = 0
-            if self._pbar:
-                self._pbar.setRange(0, 0)
+            self.events.overflow()
         else:
             self.update(1)
 
     def set_description(self, desc):
-        """Update progress bar description"""
+        """Update progress description and emit description event."""
         super().set_description(desc, refresh=True)
-        if self._pbar:
-            self._pbar._set_description(self.desc)
+        self.events.description(value=desc)
 
     def close(self):
-        """Closes and deletes the progress bar widget"""
+        """Close progress object and emit event."""
         if self.disable:
             return
-        if self._pbar:
-            self.close_pbar()
+        progress._all_instances.remove(self)
         super().close()
-
-    def close_pbar(self):
-        if self.disable or not self._pbar:
-            return
-
-        from napari._qt.widgets.qt_progress_bar import (
-            ProgressBar,
-            ProgressBarGroup,
-        )
-
-        parent_widget = self._pbar.parent()
-        self._pbar.close()
-        self._pbar.deleteLater()
-        if isinstance(parent_widget, ProgressBarGroup):
-            pbar_children = [
-                child
-                for child in parent_widget.children()
-                if isinstance(child, ProgressBar)
-            ]
-            if not any(child.isVisible() for child in pbar_children):
-                parent_widget.close()
-        self._pbar = None
 
 
 def progrange(*args, **kwargs):
-    """Shorthand for `progress(range(*args), **kwargs)`.
+    """Shorthand for ``progress(range(*args), **kwargs)``.
 
     Adds tqdm based progress bar to napari viewer, if it
     exists, and returns the wrapped range object.
@@ -168,5 +138,6 @@ def progrange(*args, **kwargs):
     -------
     progress
         wrapped range object
+
     """
     return progress(range(*args), **kwargs)

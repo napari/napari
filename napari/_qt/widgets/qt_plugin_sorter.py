@@ -328,9 +328,6 @@ class QtPluginSorter(QWidget):
         self.hook_list.order_changed.connect(self._change_settings_plugins)
         self.hook_list.on_changed.connect(self._change_settings_plugins)
 
-        title = QLabel(trans._('Plugin Sorter'))
-        title.setObjectName("h3")
-
         instructions = QLabel(
             trans._(
                 'Select a hook to rearrange, then drag and drop plugins into the desired call order.\n\nDisable plugins for a specific hook by unchecking their checkbox.'
@@ -352,7 +349,6 @@ class QtPluginSorter(QWidget):
         self.docstring.hide()
 
         layout = QVBoxLayout(self)
-        layout.addWidget(title)
         layout.addWidget(instructions)
         layout.addWidget(self.hook_combo_box)
         layout.addLayout(doc_lay)
@@ -395,7 +391,7 @@ class QtPluginSorter(QWidget):
             self.info.hide()
             self.docstring.setToolTip('')
 
-    def refresh(self, event=None):
+    def refresh(self):
         self._on_hook_change(self.hook_combo_box.currentIndex())
 
     def _on_disabled(self, event):

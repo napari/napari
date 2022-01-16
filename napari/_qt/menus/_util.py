@@ -105,25 +105,6 @@ def populate_menu(menu: QMenu, actions: List['MenuItem']):
         action.setData(ax)
 
 
-def populate_qmenu_from_manifest(menu: QMenu, menu_key: str):
-    """Populate `menu` from a `menu_key` offering in the manifest."""
-    # TODO: declare somewhere what menu_keys are valid.
-    try:
-        from npe2 import execute_command, plugin_manager
-    except ImportError:
-        return
-
-    for item in plugin_manager.iter_menu(menu_key):
-        if hasattr(item, 'submenu'):
-            subm_contrib = plugin_manager.get_submenu(item.submenu)
-            subm = menu.addMenu(subm_contrib.label)
-            populate_qmenu_from_manifest(subm, subm_contrib.id)
-        else:
-            cmd = plugin_manager.get_command(item.command)
-            action = menu.addAction(cmd.title)
-            action.triggered.connect(lambda *_: execute_command(cmd.command))
-
-
 class NapariMenu(QMenu):
     """
     Base napari menu class that provides action handling and clean up on

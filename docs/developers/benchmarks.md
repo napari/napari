@@ -1,3 +1,4 @@
+(napari-benchmarks)=
 # Benchmarks
 
 While not mandatory for most pull requests, we ask that performance related
@@ -134,7 +135,7 @@ BENCHMARKS NOT SIGNIFICANTLY CHANGED.
 In this case, the differences between HEAD on your-current-branch and main are not significant
 enough for airspeed velocity to report.
 
-## profiling
+## Profiling
 
 The airspeed velocity tool also supports code profiling using [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile). For detailed instructions on how to use the profiling functionality see the
 [asv profiling documentation](https://asv.readthedocs.io/en/stable/using.html#running-a-benchmark-in-the-profiler).

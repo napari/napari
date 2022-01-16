@@ -30,25 +30,25 @@ class VispyTextOverlay:
         )
         self._viewer.camera.events.zoom.connect(self._on_position_change)
 
-        self._on_visible_change(None)
-        self._on_data_change(None)
-        self._on_text_change(None)
-        self._on_position_change(None)
+        self._on_visible_change()
+        self._on_data_change()
+        self._on_text_change()
+        self._on_position_change()
 
-    def _on_visible_change(self, event):
+    def _on_visible_change(self):
         """Change text visibility."""
         self.node.visible = self._viewer.text_overlay.visible
 
-    def _on_data_change(self, event):
+    def _on_data_change(self):
         """Change text value."""
         self.node.text = self._viewer.text_overlay.text
 
-    def _on_text_change(self, event):
+    def _on_text_change(self):
         """Update text size and color."""
         self.node.font_size = self._viewer.text_overlay.font_size
         self.node.color = self._viewer.text_overlay.color
 
-    def _on_position_change(self, event):
+    def _on_position_change(self, _event=None):
         """Change position of text visual."""
         position = self._viewer.text_overlay.position
         x_offset, y_offset = 10, 5

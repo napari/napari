@@ -1,4 +1,5 @@
 import itertools
+import time
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 from typing import List
@@ -6,7 +7,6 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
-import tensorstore as ts
 import xarray as xr
 import zarr
 from numpy.core.numerictypes import issubdtype
@@ -14,8 +14,9 @@ from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components import ViewerModel
 from napari.layers import Labels
-from napari.layers.image._image_constants import Rendering
+from napari.layers.labels._labels_constants import LabelsRendering
 from napari.utils import Colormap
 from napari.utils.colormaps import low_discrepancy_image
 
@@ -277,12 +278,12 @@ def test_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
     layer = Labels(data)
     layer.properties = properties
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))
@@ -343,7 +344,7 @@ def test_multiscale_properties():
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))[1]
@@ -401,7 +402,7 @@ def test_add_colors():
     """Test adding new colors"""
     data = np.random.randint(20, size=(40, 40))
     layer = Labels(data)
-    assert len(layer._all_vals) == layer.num_colors
+    assert len(layer._all_vals) == np.max(data) + 1
 
     layer.selected_label = 51
     assert len(layer._all_vals) == 52
@@ -564,6 +565,25 @@ def test_contour(input_data, expected_data_view):
     )
 
 
+def test_contour_large_new_labels():
+    """Check that new labels larger than the lookup table work in contour mode.
+
+    References
+    ----------
+    [1]: https://forum.image.sc/t/data-specific-reason-for-indexerror-in-raw-to-displayed/60808
+    [2]: https://github.com/napari/napari/pull/3697
+    """
+    viewer = ViewerModel()
+
+    labels = np.zeros((5, 10, 10), dtype=int)
+    labels[0, 4:6, 4:6] = 1
+    labels[4, 4:6, 4:6] = 1000
+    labels_layer = viewer.add_labels(labels)
+    labels_layer.contour = 1
+    # This used to fail with IndexError
+    viewer.dims.set_point(axis=0, value=4)
+
+
 def test_selecting_label():
     """Test selecting label."""
     np.random.seed(0)
@@ -689,9 +709,9 @@ def test_paint_2d():
     assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
-@pytest.mark.timeout(1)
 def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
+    now = time.monotonic()
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
@@ -700,6 +720,8 @@ def test_paint_2d_xarray():
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
     assert layer.data.sum() == 411
+    elapsed = time.monotonic() - now
+    assert elapsed < 1, "test was too slow, computation was likely not lazy"
 
 
 def test_paint_3d():
@@ -923,7 +945,7 @@ def test_add_large_colors():
     label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
     label_array[0, :, :] = [[0, 1], [2, 3]]
     layer = Labels(label_array)
-    assert len(layer._all_vals) == layer.num_colors
+    assert len(layer._all_vals) == 4
 
     layer.show_selected_label = True
     layer.selected_label = int(5e6)
@@ -931,6 +953,8 @@ def test_add_large_colors():
 
 
 def test_fill_tensorstore():
+    ts = pytest.importorskip('tensorstore')
+
     labels = np.zeros((5, 7, 8, 9), dtype=int)
     labels[1, 2:4, 4:6, 4:6] = 1
     labels[1, 3:5, 5:7, 6:8] = 2
@@ -984,7 +1008,7 @@ def test_rendering_init():
     data = np.random.randint(20, size=shape)
     layer = Labels(data, rendering='iso_categorical')
 
-    assert layer.rendering == Rendering.ISO_CATEGORICAL.value
+    assert layer.rendering == LabelsRendering.ISO_CATEGORICAL.value
 
 
 def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
@@ -1292,3 +1316,69 @@ def test_is_default_color():
     # setting the color with non-default colors updates color mode
     layer.color = new_color
     assert layer.color_mode == 'direct'
+
+
+def test_negative_label():
+    """Test negative label values are supported."""
+    data = np.random.randint(low=-1, high=20, size=(10, 10))
+    original_data = np.copy(data)
+    layer = Labels(data)
+    layer.selected_label = -1
+    layer.brush_size = 3
+    layer.paint((5, 5), -1)
+    assert np.count_nonzero(layer.data == -1) > np.count_nonzero(
+        original_data == -1
+    )
+
+
+def test_negative_label_slicing():
+    """Test negative label color doesn't change during slicing."""
+    data = np.array([[[0, 1], [-1, -1]], [[100, 100], [-1, -2]]])
+    layer = Labels(data)
+    assert tuple(layer.get_color(1)) != tuple(layer.get_color(-1))
+    layer._dims_point = (1, 0, 0)
+    layer._set_view_slice()
+    assert tuple(layer.get_color(-1)) != tuple(layer.get_color(100))
+    assert tuple(layer.get_color(-2)) != tuple(layer.get_color(100))
+
+
+@pytest.mark.xfail(
+    reason='This is a known bug with the current label color implementation'
+)
+def test_negative_label_doesnt_flicker():
+    data = np.array(
+        [
+            [[0, 5], [0, 5]],
+            [[-1, 5], [-1, 5]],
+            [[-1, 6], [-1, 6]],
+        ]
+    )
+    layer = Labels(data)
+    layer._dims_point = (1, 0, 0)
+    layer._set_view_slice()
+    # this is expected to fail: -1 doesn't trigger an index error in
+    # layer._all_vals, it instead just wraps to 5, the previous max label.
+    assert tuple(layer.get_color(-1)) != tuple(layer.get_color(5))
+    minus_one_color_original = tuple(layer.get_color(-1))
+    layer.dims_point = (2, 0, 0)
+    layer._set_view_slice()
+    # this is also expected to fail: when we switch layers, we see the 6
+    # label, which causes an index error, which triggers a recalculation of
+    # the label colors. Now -1 is seen so it is taken into account in the
+    # indexing calculation, and changes color
+    assert tuple(layer.get_color(-1)) == minus_one_color_original
+
+
+def test_get_status_with_custom_index():
+    """See https://github.com/napari/napari/issues/3811"""
+    data = np.zeros((10, 10), dtype=np.uint8)
+    data[2:5, 2:-2] = 1
+    data[5:-2, 2:-2] = 2
+    layer = Labels(data)
+    df = pd.DataFrame(
+        {'text1': [1, 3], 'text2': [7, -2], 'index': [1, 2]}, index=[1, 2]
+    )
+    layer.properties = df
+    assert layer.get_status((0, 0)) == 'Labels [0 0]: 0; [No Properties]'
+    assert layer.get_status((3, 3)) == 'Labels [3 3]: 1; text1: 1, text2: 7'
+    assert layer.get_status((6, 6)) == 'Labels [6 6]: 2; text1: 3, text2: -2'

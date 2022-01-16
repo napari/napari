@@ -3,7 +3,7 @@ import inspect
 import numpy as np
 import pytest
 
-from napari._tests.utils import layer_test_data
+from napari._tests.utils import are_objects_equal, layer_test_data
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -19,6 +19,7 @@ def test_attrs_arrays(Layer, data, ndim):
     # Check every property is in call signature
     signature = inspect.signature(Layer)
 
+    # Check every property is also a parameter.
     for prop in properties.keys():
         assert prop in signature.parameters
 
@@ -31,30 +32,14 @@ def test_attrs_arrays(Layer, data, ndim):
 
     # Check that new layer matches old on all properties:
     for prop in properties.keys():
-        # If lists check equality of all elements with np.all
-        if isinstance(getattr(layer, prop), list):
-            assert np.all(
-                [
-                    np.all(ol == nl)
-                    for ol, nl in zip(
-                        getattr(layer, prop), getattr(new_layer, prop)
-                    )
-                ]
-            )
-        elif isinstance(getattr(layer, prop), dict):
-            assert np.all(
-                [
-                    np.all(value == getattr(new_layer, prop)[key])
-                    for key, value in getattr(layer, prop).items()
-                ]
-            )
-        else:
-            assert np.all(getattr(layer, prop) == getattr(new_layer, prop))
+        assert are_objects_equal(
+            getattr(layer, prop), getattr(new_layer, prop)
+        )
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
 def test_no_callbacks(Layer, data, ndim):
-    """Test no internal callbacks for layer emmitters."""
+    """Test no internal callbacks for layer emitters."""
     layer = Layer(data)
     # Check layer has been correctly created
     assert layer.ndim == ndim

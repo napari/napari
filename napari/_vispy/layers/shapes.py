@@ -16,20 +16,22 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
-        self.layer.text._connect_update_events(
-            self._on_text_change, self._on_blending_change
-        )
         self.layer.events.highlight.connect(self._on_highlight_change)
+        self.layer.text.events.connect(self._on_text_change)
+
+        # TODO: move to overlays
+        self.node._subvisuals[3].symbol = 'square'
+        self.node._subvisuals[3].scaling = False
 
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self, event=None):
+    def _on_data_change(self):
         faces = self.layer._data_view._mesh.displayed_triangles
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
 
-        # Note that the indices of the vertices need to be resversed to
+        # Note that the indices of the vertices need to be reversed to
         # go from numpy style to xyz
         if vertices is not None:
             vertices = vertices[:, ::-1]
@@ -48,10 +50,10 @@ class VispyShapesLayer(VispyBaseLayer):
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
-        self._on_text_change(update_node=False)
+        self._update_text(update_node=False)
         self.node.update()
 
-    def _on_highlight_change(self, event=None):
+    def _on_highlight_change(self):
         settings = get_settings()
         self.layer._highlight_width = settings.appearance.highlight_thickness
 
@@ -92,8 +94,6 @@ class VispyShapesLayer(VispyBaseLayer):
             face_color=face_color,
             edge_color=edge_color,
             edge_width=width,
-            symbol='square',
-            scaling=False,
         )
 
         if pos is None or len(pos) == 0:
@@ -104,7 +104,7 @@ class VispyShapesLayer(VispyBaseLayer):
             pos=pos, color=edge_color, width=width
         )
 
-    def _on_text_change(self, update_node=True):
+    def _update_text(self, *, update_node=True):
         """Function to update the text node properties
 
         Parameters
@@ -144,7 +144,13 @@ class VispyShapesLayer(VispyBaseLayer):
         text_node = self.node._subvisuals[-1]
         return text_node
 
-    def _on_blending_change(self, event=None):
+    def _on_text_change(self, event=None):
+        if event is not None and event.type == 'blending':
+            self._on_blending_change(event)
+        else:
+            self._update_text()
+
+    def _on_blending_change(self):
         """Function to set the blending mode"""
         shapes_blending_kwargs = BLENDING_MODES[self.layer.blending]
         self.node.set_gl_state(**shapes_blending_kwargs)

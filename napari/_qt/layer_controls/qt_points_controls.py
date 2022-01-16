@@ -224,6 +224,8 @@ class QtPointsControls(QtLayerControls):
             self.select_button.setChecked(True)
         elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
+        elif mode == Mode.TRANSFORM:
+            pass
         else:
             raise ValueError(trans._("Mode not recognized {mode}", mode=mode))
 
@@ -258,7 +260,7 @@ class QtPointsControls(QtLayerControls):
         self.layer.n_dimensional = state == Qt.Checked
 
     def change_text_visibility(self, state):
-        """Toggle the visibiltiy of the text.
+        """Toggle the visibility of the text.
 
         Parameters
         ----------
@@ -267,49 +269,25 @@ class QtPointsControls(QtLayerControls):
         """
         self.layer.text.visible = state == Qt.Checked
 
-    def _on_text_visibility_change(self, event):
-        """Receive layer model text visibiltiy change change event and update checkbox.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
+    def _on_text_visibility_change(self):
+        """Receive layer model text visibiltiy change change event and update checkbox."""
         with self.layer.text.events.visible.blocker():
             self.textDispCheckBox.setChecked(self.layer.text.visible)
 
-    def _on_n_dimensional_change(self, event):
-        """Receive layer model n-dimensional change event and update checkbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_n_dimensional_change(self):
+        """Receive layer model n-dimensional change event and update checkbox."""
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
-    def _on_symbol_change(self, event):
-        """Receive marker symbol change event and update the dropdown menu.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_symbol_change(self):
+        """Receive marker symbol change event and update the dropdown menu."""
         with self.layer.events.symbol.blocker():
             self.symbolComboBox.setCurrentIndex(
                 self.symbolComboBox.findData(self.layer.symbol)
             )
 
-    def _on_size_change(self, event=None):
-        """Receive layer model size change event and update point size slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_size_change(self):
+        """Receive layer model size change event and update point size slider."""
         with self.layer.events.size.blocker():
             value = self.layer.current_size
             self.sizeSlider.setValue(int(value))
@@ -326,24 +304,18 @@ class QtPointsControls(QtLayerControls):
         with self.layer.events.current_edge_color.blocker():
             self.layer.current_edge_color = color
 
-    def _on_current_face_color_change(self, event=None):
+    def _on_current_face_color_change(self):
         """Receive layer.current_face_color() change event and update view."""
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_current_edge_color_change(self, event=None):
+    def _on_current_edge_color_change(self):
         """Receive layer.current_edge_color() change event and update view."""
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
-    def _on_editable_change(self, event=None):
-        """Receive layer model editable change event & enable/disable buttons.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_editable_change(self):
+        """Receive layer model editable change event & enable/disable buttons."""
         disable_with_opacity(
             self,
             ['select_button', 'addition_button', 'delete_button'],

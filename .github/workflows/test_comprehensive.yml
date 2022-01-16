@@ -12,29 +12,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  code:
-    name: Code
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [flake8, black, isort]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install tox
-      - name: Run task
-        run: tox -e ${{ matrix.task }}
 
   manifest:
     name: Check Manifest
-    needs: code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -50,18 +30,17 @@ jobs:
         run: check-manifest
 
   test:
-    needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
+        platform: [ubuntu-latest, windows-latest]
         python: [3.7, 3.8, 3.9]
         include:
           # test big sur on 3.9.0
           - python: 3.9
-            platform: macos-11.0
+            platform: macos-11
             toxenv: py39-macos-pyqt
           # test with minimum specified requirements
           - python: 3.7
@@ -75,6 +54,9 @@ jobs:
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
+          - python: '3.10'
+            platform: ubuntu-latest
+            toxenv: py310-linux-pyside
 
     steps:
       - uses: actions/checkout@v2
@@ -97,7 +79,7 @@ jobs:
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
-          git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
           if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
@@ -163,7 +145,7 @@ jobs:
         run: |
           # pip install this git sha directly from github
           pip install --upgrade pip
-          pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
+          pip install git+https://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
 
       - name: Test
         uses: GabrielBB/xvfb-action@v1

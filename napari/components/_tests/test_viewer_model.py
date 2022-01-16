@@ -119,6 +119,15 @@ def test_add_points():
     assert viewer.dims.ndim == 2
 
 
+def test_single_point_dims():
+    """Test dims of a Points layer with a single 3D point."""
+    viewer = ViewerModel()
+    shape = (1, 3)
+    data = np.zeros(shape)
+    viewer.add_points(data)
+    assert all(r == (0.0, 1.0, 1.0) for r in viewer.dims.range)
+
+
 def test_add_empty_points_to_empty_viewer():
     viewer = ViewerModel()
     layer = viewer.add_points(name='empty points')
@@ -278,6 +287,28 @@ def test_new_points():
     assert viewer.dims.ndim == 2
 
 
+def test_view_centering_with_points_add():
+    """Test if the viewer is only centered when the first
+    points were added
+    Regression test for issue  #3803
+    """
+    image = np.zeros((5, 10, 10))
+
+    viewer = ViewerModel()
+    viewer.add_image(image)
+    assert tuple(viewer.dims.point) == (2, 5, 5)
+
+    viewer.dims.set_point(0, 0)
+    # viewer point shouldn't change after this
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+    pts_layer = viewer.add_points(ndim=3)
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+    pts_layer.add([(0, 8, 8)])
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+
 def test_new_shapes():
     """Test adding new shapes layer."""
     # Add labels to empty viewer
@@ -305,7 +336,7 @@ def test_swappable_dims():
     image_data = np.random.random((7, 12, 10, 15))
     image_name = viewer.add_image(image_data).name
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[0, 0, :, :]
+        viewer.layers[image_name]._data_view == image_data[3, 6, :, :]
     )
 
     points_data = np.random.randint(6, size=(10, 4))
@@ -316,18 +347,20 @@ def test_swappable_dims():
 
     labels_data = np.random.randint(20, size=(7, 12, 10, 15))
     labels_name = viewer.add_labels(labels_data).name
+    # midpoints indices into the data below depend on the data range.
+    # This depends on the values in vectors_data and thus the random seed.
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[0, 0, :, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 6, :, :]
     )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == (0, 2, 1, 3)
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[0, :, 0, :]
+        viewer.layers[image_name]._data_view == image_data[3, :, 5, :]
     )
     assert np.all(
-        viewer.layers[labels_name]._data_raw == labels_data[0, :, 0, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 5, :]
     )
 
 
@@ -685,7 +718,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert layer.ndim == ndim
 
     # Connect a custom callback
-    def my_custom_callback(event):
+    def my_custom_callback():
         return
 
     layer.events.connect(my_custom_callback)
@@ -733,3 +766,13 @@ def test_not_mutable_fields(field):
     assert 'has allow_mutation set to False and cannot be assigned' in str(
         err.value
     )
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_status_tooltip(Layer, data, ndim):
+    viewer = ViewerModel()
+    viewer.tooltip.visible = True
+    layer = Layer(data)
+    viewer.layers.append(layer)
+    viewer.cursor.position = (1,) * ndim
+    viewer._on_cursor_position_change()

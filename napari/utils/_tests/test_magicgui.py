@@ -10,6 +10,7 @@ from magicgui import magicgui
 from napari import Viewer, layers, types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
+from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.misc import all_subclasses
 
 try:
@@ -72,11 +73,7 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
 )
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
 def test_magicgui_add_future_data(make_napari_viewer, LayerType, data, ndim):
-    """Test that annotating with napari.types.<layer_type>Data works.
-
-    It expects a raw data format (like a numpy array) and will add a layer
-    of the corresponding type to the viewer.
-    """
+    """Test that annotating with Future[] works."""
     from concurrent.futures import Future
     from functools import partial
 
@@ -104,6 +101,38 @@ def test_magicgui_add_future_data(make_napari_viewer, LayerType, data, ndim):
     assert len(viewer.layers) == 0
     QTimer.singleShot(50, _assert_stuff)
     time.sleep(0.1)
+
+
+@pytest.mark.sync_only
+def test_magicgui_add_threadworker(qtbot, make_napari_viewer):
+    """Test that annotating with FunctionWorker works."""
+    from napari.qt.threading import FunctionWorker, thread_worker
+
+    viewer = make_napari_viewer()
+    DATA = np.random.rand(10, 10)
+
+    @magicgui
+    def add_data(x: int) -> FunctionWorker[types.ImageData]:
+        @thread_worker(start_thread=False)
+        def _slow():
+            time.sleep(0.1)
+            return DATA
+
+        return _slow()
+
+    viewer.window.add_dock_widget(add_data)
+
+    assert len(viewer.layers) == 0
+    worker = add_data()
+    # normally you wouldn't start the worker outside of the mgui function
+    # this is just to make testing with threads easier
+    with qtbot.waitSignal(worker.finished):
+        worker.start()
+
+    assert len(viewer.layers) == 1
+    assert isinstance(viewer.layers[0], Image)
+    assert viewer.layers[0].source.widget == add_data
+    assert np.array_equal(viewer.layers[0].data, DATA)
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
@@ -219,7 +248,9 @@ def test_magicgui_get_viewer(make_napari_viewer):
 
     assert func() is None
     viewer.window.add_dock_widget(func)
-    assert func() is viewer
+    v = func()
+    assert isinstance(v, PublicOnlyProxy)
+    assert v.__wrapped__ is viewer
     # no widget should be shown
     assert not func.v.visible
 
@@ -253,3 +284,15 @@ def test_mgui_forward_refs(tmp_path, name):
     script_path = tmp_path / 'script.py'
     script_path.write_text(textwrap.dedent(script.format(name)))
     subprocess.run([sys.executable, str(script_path)], check=True)
+
+
+def test_layers_populate_immediately(make_napari_viewer):
+    """make sure that the layers dropdown is populated upon adding to viewer"""
+    from magicgui.widgets import create_widget
+
+    labels_layer = create_widget(annotation=Labels, label="ROI")
+    viewer = make_napari_viewer()
+    viewer.add_labels(np.zeros((10, 10), dtype=int))
+    assert not len(labels_layer.choices)
+    viewer.window.add_dock_widget(labels_layer)
+    assert len(labels_layer.choices) == 1

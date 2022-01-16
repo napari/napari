@@ -202,7 +202,7 @@ class Monitor:
 
         self._running = False
 
-    def on_poll(self, event=None) -> None:
+    def on_poll(self, event) -> None:
         """The QtPoll object polls us.
 
         Probably we could get rid of polling by creating a thread that

@@ -12,9 +12,7 @@ from vispy.gloo.context import get_current_canvas
 from ...utils.translations import trans
 
 texture_dtypes = [
-    np.dtype(np.int8),
     np.dtype(np.uint8),
-    np.dtype(np.int16),
     np.dtype(np.uint16),
     np.dtype(np.float32),
 ]
@@ -91,7 +89,7 @@ def fix_data_dtype(data):
         return data
     else:
         try:
-            dtype = dict(i=np.int16, f=np.float32, u=np.uint16, b=np.uint8)[
+            dtype = dict(i=np.float32, f=np.float32, u=np.uint16, b=np.uint8)[
                 dtype.kind
             ]
         except KeyError:  # not an int or float

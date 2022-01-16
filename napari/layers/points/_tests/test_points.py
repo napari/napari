@@ -246,6 +246,16 @@ def test_3D_points():
     assert len(layer.data) == 10
 
 
+def test_single_point_extent():
+    """Test extent of a single 3D point at the origin."""
+    shape = (1, 3)
+    data = np.zeros(shape)
+    layer = Points(data)
+    assert np.all(layer.extent.data == 0)
+    assert np.all(layer.extent.world == 0)
+    assert np.all(layer.extent.step == 1)
+
+
 def test_4D_points():
     """Test instantiating Points layer with random 4D data."""
     shape = (10, 4)
@@ -393,6 +403,25 @@ def test_deleting_selected_value_changes():
     assert layer._value == 3
 
 
+def test_remove_selected_updates_value():
+    """Test that removing a point that is not layer._value
+    updates the index to account for the removed data.
+    """
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # set the value
+    layer._value = 3
+    layer._value_stored = 3
+
+    layer.selected_data = {0, 5, 6, 7}
+    layer.remove_selected()
+
+    assert layer._value == 2
+
+
 def test_move():
     """Test moving points."""
     shape = (10, 2)
@@ -452,7 +481,7 @@ def test_name():
     assert layer.name == 'pts'
 
 
-def test_visiblity():
+def test_visibility():
     """Test setting layer visibility."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
@@ -554,11 +583,14 @@ def test_properties(properties):
     # test copy/paste
     layer.selected_data = {0, 1}
     layer._copy_data()
-    assert np.all(layer._clipboard['properties']['point_type'] == ['A', 'B'])
+    assert np.all(layer._clipboard['features']['point_type'] == ['A', 'B'])
 
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     assert np.all(layer.properties['point_type'] == paste_annotations)
+
+    assert layer.get_status(data[0]).endswith("point_type: B")
+    assert layer.get_status(data[1]).endswith("point_type: A")
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1035,7 +1067,8 @@ def test_color_cycle(attribute, color_cycle):
     }
     layer = Points(data, **points_kwargs)
 
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
+
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
     )
@@ -1187,7 +1220,9 @@ def test_color_colormap(attribute):
         f'{attribute}_colormap': 'gray',
     }
     layer = Points(data, **points_kwargs)
-    assert layer.properties == properties
+
+    np.testing.assert_equal(layer.properties, properties)
+
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
@@ -1473,26 +1508,35 @@ def test_value():
 
 
 @pytest.mark.parametrize(
-    'position,view_direction,dims_displayed,world',
+    'position,view_direction,dims_displayed,world,scale,expected',
     [
-        ((0, 0, 0), [1, 0, 0], [0, 1, 2], False),
-        ((0, 0, 0), [1, 0, 0], [0, 1, 2], True),
-        ((0, 0, 0, 0), [0, 1, 0, 0], [1, 2, 3], True),
+        ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 2),
+        ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), 0),
+        ((0, 5, 0, 0), [0, 1, 0, 0], [1, 2, 3], False, (1, 1, 1, 1), None),
+        ((0, 5, 15, 15), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
+        ((0, 5, 15, 15), [0, -1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
+        ((0, 5, 30, 15), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), 2),
+        ((0, 5, 30, 15), [0, -1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), 0),
+        ((0, 5, 0, 0), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
     ],
 )
-def test_value_3d(position, view_direction, dims_displayed, world):
-    """Currently get_value should return None in 3D"""
-    np.random.seed(0)
-    data = np.random.random((10, 3))
-    layer = Points(data)
-    layer._slice_dims([0, 0, 0], ndisplay=3)
+def test_value_3d(
+    position, view_direction, dims_displayed, world, scale, expected
+):
+    """Test get_value in 3D with and without scale"""
+    data = np.array([[0, 10, 15, 15], [0, 10, 5, 5], [0, 5, 15, 15]])
+    layer = Points(data, size=5, scale=scale)
+    layer._slice_dims([0, 0, 0, 0], ndisplay=3)
     value = layer.get_value(
         position,
         view_direction=view_direction,
         dims_displayed=dims_displayed,
         world=world,
     )
-    assert value is None
+    if expected is None:
+        assert value is None
+    else:
+        assert value == expected
 
 
 def test_message():
@@ -2104,3 +2148,65 @@ def test_to_mask_3d_with_size_2():
         dtype=bool,
     )
     np.testing.assert_array_equal(mask, expected_mask)
+
+
+def test_set_properties_updates_text_values():
+    points = np.random.rand(3, 2)
+    properties = {'class': np.array(['A', 'B', 'C'])}
+    layer = Points(points, properties=properties, text='class')
+
+    layer.properties = {'class': np.array(['D', 'E', 'F'])}
+
+    np.testing.assert_array_equal(layer.text.values, ['D', 'E', 'F'])
+
+
+def test_set_properties_with_invalid_shape_errors_safely():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    np.testing.assert_equal(points.properties, properties)
+    np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
+
+    with pytest.raises(ValueError):
+        points.properties = {'class': np.array(['D', 'E'])}
+
+    np.testing.assert_equal(points.properties, properties)
+    np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
+
+
+def test_set_properties_with_missing_text_property_text_becomes_constant():
+    properties = {
+        'class': np.array(['A', 'B', 'C']),
+    }
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    np.testing.assert_equal(points.properties, properties)
+    np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
+
+    points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+
+    np.testing.assert_array_equal(
+        points.text.values, ['class', 'class', 'class']
+    )
+
+
+def test_text_param_and_setter_are_consistent():
+    """See https://github.com/napari/napari/issues/1833"""
+    data = np.random.rand(5, 3) * 100
+    properties = {
+        'accepted': np.random.choice([True, False], (5,)),
+    }
+    text = {'text': 'accepted', 'color': 'black'}
+
+    points_init = Points(data, properties=properties, text=text)
+
+    points_set = Points(data, properties=properties)
+    points_set.text = text
+
+    np.testing.assert_array_equal(
+        points_init.text.values,
+        points_set.text.values,
+    )
+    np.testing.assert_array_equal(
+        points_init.text.color, points_set.text.color
+    )

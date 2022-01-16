@@ -1,3 +1,4 @@
+(rendering-explanation)=
 # Rendering in napari
 
 ## Status
@@ -38,10 +39,10 @@ leads to something called [jank](http://jankfree.org/). For the best user
 experience we want a framerate that's fast, but also one that's
 consistently fast.
 
-## Array-like Interface
+## Array-like interface
 
 Napari renders data out of an array-like interface. The data can be owned
-by any object that supports `numpy`'s slicing syntax. One common such
+by any object that supports `NumPy`'s slicing syntax. One common such
 object is a [Dask](https://dask.org/) array. The fact that napari can
 render out of any array-like data is flexible and powerful, but it means
 that simple array accesses can result in the execution of arbitrary code.
@@ -49,7 +50,7 @@ For example, an array access might result disk IO or network IO, or even a
 complex machine learning computation. This means array accesses can take an
 arbitrary long time to complete.
 
-## Asynchronous Rendering
+## Asynchronous rendering
 
 Since we don't know how long an array access will take, and we never want
 the GUI thread to block, we cannot access array-like objects in the GUI
@@ -106,7 +107,7 @@ Napari's chunks play a similar role as do packets on a network or blocks on
 a disk. In all cases the goal is to break down large data into digestible
 pieces of that can be processed smoothly one at a time.
 
-## Renderer Requirements
+## Renderer requirements
 
 The above discussion leads to two rigid requirements for rendering:
 
@@ -114,7 +115,7 @@ The above discussion leads to two rigid requirements for rendering:
    what it will do or how long it will take.
 2. Always break data into chunks. The exact maximum chunk size is TBD.
 
-## Render Algorithm
+## Render algorithm
 
 The renderer computes a **working set** of chunks based on the current
 view. The working set is the set of chunks that we want to draw in order to
@@ -131,7 +132,7 @@ The important thing about this algorithm is that it never blocks. It draws
 what it can draw without blocking, and then it loads more data so that it
 can draw more in the future.
 
-### Chunked File Formats
+### Chunked file formats
 
 Napari's rendering chunks will often correspond to blocks of contiguous
 memory inside a chunked file format like
@@ -151,7 +152,7 @@ whether you are viewing the data in XY, XZ or YZ orientations. It's also
 nice because you can scroll through slices quickly since on average 32
 slices above and below your current location are already in RAM.
 
-### Render Chunks
+### Render chunks
 
 If a chunked file format is available, and those chunks are reasonably
 sized, then Napari can use those chunks for rendering. If chunks are not
@@ -167,7 +168,7 @@ In general we can get creative with chunks, they can be spatial or
 non-spatial subdivisions. As long as something can be loaded and drawn
 independently it can be a chunk.
 
-## Example: Computed Layers
+## Example: Computed layers
 
 In [#1320](https://github.com/napari/napari/issues/1320) the images are not
 chunked since they are very small, but there are 3 layers per slice. These
@@ -223,7 +224,7 @@ millions of chunks. No matter how little data we stored per chunk, it would
 be slow and wasteful to create an octree that contains all of the data. So
 we only create the Octree where the camera is actively looking.
 
-## Beyond Images
+## Beyond images
 
 Images are the marquee data type for napari, but napari can also display
 geometry such as points, shapes and meshes. The `ChunkLoader` and Octree
@@ -245,7 +246,7 @@ to make things work with non-image layers:
 
 ## Appendix
 
-### A. Threads and Processes
+### A. Threads and processes
 
 By default the `ChunkLoader` uses a `concurrent.futures` thread pool.
 Threads are fast and simple and well understood. All threads in a process
@@ -278,7 +279,7 @@ should use napari with Dask. Basically, we might outsource multi-processing
 to Dask. How exactly napari will interoperate with Dask is to be
 determined.
 
-### B. Number of Workers
+### B. Number of workers
 
 How many worker threads or processes should we use? The optimal number will
 obviously depend on the hardware, but it also might depend on the workload.

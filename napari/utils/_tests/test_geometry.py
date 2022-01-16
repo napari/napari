@@ -15,31 +15,61 @@ from napari.utils.geometry import (
     line_in_quadrilateral_3d,
     line_in_triangles_3d,
     point_in_quadrilateral_2d,
-    project_point_onto_plane,
-    rotation_matrix_from_vectors,
+    project_points_onto_plane,
+    rotation_matrix_from_vectors_2d,
+    rotation_matrix_from_vectors_3d,
 )
 
 single_point = np.array([10, 10, 10])
 expected_point_single = np.array([[10, 0, 10]])
-multiple_point = np.array([[10, 10, 10], [20, 10, 30], [20, 40, 20]])
-expected_multiple_point = np.array([[10, 0, 10], [20, 0, 30], [20, 0, 20]])
+expected_distance_single = np.array([10])
+multiple_point = np.array(
+    [[10, 10, 10], [20, 10, 30], [20, 40, 20], [10, -5, 30]]
+)
+expected_multiple_point = np.array(
+    [[10, 0, 10], [20, 0, 30], [20, 0, 20], [10, 0, 30]]
+)
+expected_distance_multiple = np.array([10, 10, 40, -5])
 
 
 @pytest.mark.parametrize(
-    "point,expected_projected_point",
+    "point,expected_projected_point,expected_distances",
     [
-        (single_point, expected_point_single),
-        (multiple_point, expected_multiple_point),
+        (single_point, expected_point_single, expected_distance_single),
+        (multiple_point, expected_multiple_point, expected_distance_multiple),
     ],
 )
-def test_project_point_to_plane(point, expected_projected_point):
+def test_project_point_to_plane(
+    point, expected_projected_point, expected_distances
+):
     plane_point = np.array([20, 0, 0])
     plane_normal = np.array([0, 1, 0])
-    projected_point = project_point_onto_plane(
+    projected_point, distance_to_plane = project_points_onto_plane(
         point, plane_point, plane_normal
     )
 
     np.testing.assert_allclose(projected_point, expected_projected_point)
+    np.testing.assert_allclose(distance_to_plane, expected_distances)
+
+
+@pytest.mark.parametrize(
+    "vec_1, vec_2",
+    [
+        (np.array([10, 0]), np.array([0, 5])),
+        (np.array([0, 5]), np.array([0, 5])),
+        (np.array([0, 5]), np.array([0, -5])),
+    ],
+)
+def test_rotation_matrix_from_vectors_2d(vec_1, vec_2):
+
+    rotation_matrix = rotation_matrix_from_vectors_2d(vec_1, vec_2)
+
+    rotated_1 = rotation_matrix.dot(vec_1)
+    unit_rotated_1 = rotated_1 / np.linalg.norm(rotated_1)
+
+    unit_vec_2 = vec_2 / np.linalg.norm(vec_2)
+
+    np.testing.assert_allclose(unit_rotated_1, unit_vec_2)
 
 
 @pytest.mark.parametrize(
@@ -50,9 +80,9 @@ def test_project_point_to_plane(point, expected_projected_point):
         (np.array([0, 5, 0]), np.array([0, -5, 0])),
     ],
 )
-def test_rotation_matrix_from_vectors(vec_1, vec_2):
+def test_rotation_matrix_from_vectors_3d(vec_1, vec_2):
     """Test that calculated rotation matrices align vec1 to vec2."""
-    rotation_matrix = rotation_matrix_from_vectors(vec_1, vec_2)
+    rotation_matrix = rotation_matrix_from_vectors_3d(vec_1, vec_2)
 
     rotated_1 = rotation_matrix.dot(vec_1)
     unit_rotated_1 = rotated_1 / np.linalg.norm(rotated_1)

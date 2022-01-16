@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
@@ -19,21 +20,21 @@ class FileMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&File'), window._qt_window)
-        self.open_sample_menu = NapariMenu('Open Sample', self)
+        self.open_sample_menu = NapariMenu(trans._('Open Sample'), self)
         ACTIONS = [
             {
                 'text': trans._('Open File(s)...'),
-                'slot': window.qt_viewer._open_files_dialog,
+                'slot': window._qt_viewer._open_files_dialog,
                 'shortcut': 'Ctrl+O',
             },
             {
                 'text': trans._('Open Files as Stack...'),
-                'slot': window.qt_viewer._open_files_dialog_as_stack_dialog,
+                'slot': window._qt_viewer._open_files_dialog_as_stack_dialog,
                 'shortcut': 'Ctrl+Alt+O',
             },
             {
                 'text': trans._('Open Folder...'),
-                'slot': window.qt_viewer._open_folder_dialog,
+                'slot': window._qt_viewer._open_folder_dialog,
                 'shortcut': 'Ctrl+Shift+O',
             },
             {'menu': self.open_sample_menu},
@@ -48,7 +49,7 @@ class FileMenu(NapariMenu):
             {},
             {
                 'text': trans._('Save Selected Layer(s)...'),
-                'slot': lambda: window.qt_viewer._save_layers_dialog(
+                'slot': lambda: window._qt_viewer._save_layers_dialog(
                     selected=True
                 ),
                 'shortcut': 'Ctrl+S',
@@ -56,7 +57,7 @@ class FileMenu(NapariMenu):
             },
             {
                 'text': trans._('Save All Layers...'),
-                'slot': lambda: window.qt_viewer._save_layers_dialog(
+                'slot': lambda: window._qt_viewer._save_layers_dialog(
                     selected=False
                 ),
                 'shortcut': 'Ctrl+Shift+S',
@@ -64,21 +65,27 @@ class FileMenu(NapariMenu):
             },
             {
                 'text': trans._('Save Screenshot...'),
-                'slot': window.qt_viewer._screenshot_dialog,
+                'slot': window._qt_viewer._screenshot_dialog,
                 'shortcut': 'Alt+S',
-                'statusTip': 'Save screenshot of current display, default .png',
+                'statusTip': trans._(
+                    'Save screenshot of current display, default .png'
+                ),
             },
             {
                 'text': trans._('Save Screenshot with Viewer...'),
                 'slot': self._screenshot_dialog,
                 'shortcut': 'Alt+Shift+S',
-                'statusTip': 'Save screenshot of current display with the viewer, default .png',
+                'statusTip': trans._(
+                    'Save screenshot of current display with the viewer, default .png'
+                ),
             },
             {
                 'text': trans._('Copy Screenshot to Clipboard'),
-                'slot': window.qt_viewer.clipboard,
+                'slot': window._qt_viewer.clipboard,
                 'shortcut': 'Alt+Shift+S',
-                'statusTip': 'Copy screenshot of current display to the clipboard',
+                'statusTip': trans._(
+                    'Copy screenshot of current display to the clipboard'
+                ),
             },
             {
                 'text': trans._('Copy Screenshot with Viewer to Clipboard'),
@@ -122,13 +129,13 @@ class FileMenu(NapariMenu):
         self.update()
 
     def _layer_count(self, event=None):
-        return len(self._win.qt_viewer.viewer.layers)
+        return len(self._win._qt_viewer.viewer.layers)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
         hist = get_save_history()
         dial = ScreenshotDialog(
-            self._win.screenshot, self._win.qt_viewer, hist[0], hist
+            self._win.screenshot, self._win._qt_viewer, hist[0], hist
         )
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
@@ -155,12 +162,14 @@ class FileMenu(NapariMenu):
     def _clean_pref_dialog(self):
         self._pref_dialog = None
 
-    def _rebuild_samples_menu(self, event=None):
-        from ...plugins import menu_item_template, plugin_manager
+    def _rebuild_samples_menu(self):
+        from ...plugins import _npe2, menu_item_template, plugin_manager
 
         self.open_sample_menu.clear()
 
-        for plugin_name, samples in plugin_manager._sample_data.items():
+        for plugin_name, samples in chain(
+            _npe2.sample_iterator(), plugin_manager._sample_data.items()
+        ):
             multiprovider = len(samples) > 1
             if multiprovider:
                 menu = self.open_sample_menu.addMenu(plugin_name)
@@ -178,7 +187,7 @@ class FileMenu(NapariMenu):
                     action = QAction(full_name, parent=self)
 
                 def _add_sample(*args, plg=plugin_name, smp=samp_name):
-                    self._win.qt_viewer.viewer.open_sample(plg, smp)
+                    self._win._qt_viewer.viewer.open_sample(plg, smp)
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)

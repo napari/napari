@@ -28,7 +28,7 @@ def _get_all_keybinding_methods(type_):
 
 
 viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 12
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 13
 
 
 def test_len_methods_viewer(make_napari_viewer):
@@ -66,7 +66,7 @@ def test_viewer_methods(make_napari_viewer, func):
 def test_viewer(make_napari_viewer):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
@@ -86,7 +86,7 @@ def test_viewer(make_napari_viewer):
 
 
 EXPECTED_NUMBER_OF_LAYER_METHODS = {
-    'Image': 0,
+    'Image': 3,
     'Vectors': 0,
     'Surface': 0,
     'Tracks': 0,
@@ -120,7 +120,7 @@ def test_add_layer(
 ):
     viewer = make_napari_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
-    check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
+    check_viewer_functioning(viewer, viewer.window._qt_viewer, data, ndim)
 
     func(layer)
 
@@ -180,10 +180,10 @@ def test_screenshot(make_napari_viewer):
 def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
     viewer = make_napari_viewer(show=False)
-    viewer.window.qt_viewer.set_welcome_visible(False)
+    viewer.window._qt_viewer.set_welcome_visible(False)
     viewer.add_points(data=None)
-    size = viewer.window.qt_viewer.size()
-    viewer.window.qt_viewer.setFixedSize(size)
+    size = viewer.window._qt_viewer.size()
+    viewer.window._qt_viewer.setFixedSize(size)
 
     assert viewer.theme == 'dark'
     screenshot_dark = viewer.screenshot(canvas_only=False, flash=False)
@@ -201,6 +201,9 @@ def test_changing_theme(make_napari_viewer):
         viewer.theme = 'nonexistent_theme'
 
 
+# TODO: revisit the need for sync_only here.
+# An async failure was observed here on CI, but was not reproduced locally
+@pytest.mark.sync_only
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""

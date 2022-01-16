@@ -23,8 +23,6 @@ Things that are *NOT* supported:
 - comprehensions (list, set, dict, generator)
 - statements & assignments (e.g. 'a = b')
 """
-
-
 from __future__ import annotations
 
 import ast
@@ -35,6 +33,7 @@ from typing import (
     Generic,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Type,
@@ -43,6 +42,8 @@ from typing import (
     overload,
 )
 
+from ..translations import trans
+
 ConstType = Union[None, str, bytes, bool, int, float]
 PassedType = TypeVar(
     "PassedType",
@@ -50,7 +51,6 @@ PassedType = TypeVar(
         ast.cmpop, ast.operator, ast.boolop, ast.unaryop, ast.expr_context
     ],
 )
-Context = Dict[str, Any]
 T = TypeVar('T')
 T2 = TypeVar('T2', bound=Union[ConstType, 'Expr'])
 V = TypeVar('V', bound=ConstType)
@@ -85,11 +85,16 @@ def parse_expression(expr: str) -> Expr:
         return ExprTranformer().visit(tree.body)
     except SyntaxError as e:
         raise SyntaxError(
-            f"{expr!r} is not a valid expression: ({e})."
+            trans._(
+                "{expr} is not a valid expression: ({error}).",
+                deferred=True,
+                expr=f"{expr!r}",
+                error=e,
+            )
         ) from None
 
 
-def safe_eval(expr: str, context: Context = {}) -> Any:
+def safe_eval(expr: str, context: Mapping = {}) -> Any:
     """Safely evaluate `expr` string given `context` dict.
 
     This lets you evaluate a string expression with broader expression
@@ -166,19 +171,27 @@ class Expr(ast.AST, Generic[T]):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if type(self).__name__ == 'Expr':
-            raise RuntimeError("Don't instantiate Expr.  Use `Expr.parse`")
+            raise RuntimeError(
+                trans._(
+                    "Don't instantiate Expr. Use `Expr.parse`", deferred=True
+                )
+            )
         super().__init__(*args, **kwargs)
         ast.fix_missing_locations(self)
 
-    def eval(self, context: Context = {}) -> T:
+    def eval(self, context: Mapping = {}) -> T:
         """Evaluate this expression with names in `context`"""
         code = compile(ast.Expression(body=self), '<Expr>', 'eval')
         try:
-            return eval(code, context)
+            return eval(code, {}, context)
         except NameError:
             miss = {k for k in _iter_names(self) if k not in context}
             raise NameError(
-                f'Names required to eval this expression are missing: {miss}'
+                trans._(
+                    'Names required to eval this expression are missing: {miss}',
+                    deferred=True,
+                    miss=miss,
+                )
             )
 
     @classmethod
@@ -313,7 +326,7 @@ class Name(Expr[T], ast.Name):
         kwargs['ctx'] = ast.Load()
         super().__init__(id, **kwargs)
 
-    def eval(self, context: Context = {}) -> T:
+    def eval(self, context: Mapping = {}) -> T:
         return super().eval(context=context)
 
 
@@ -329,7 +342,13 @@ class Constant(Expr[V], ast.Constant):
     def __init__(self, value: V, **kwargs: Any) -> None:
         _valid_type = (type(None), str, bytes, bool, int, float)
         if not isinstance(value, _valid_type):
-            raise TypeError(f"Constants must be type: {_valid_type!r}")
+            raise TypeError(
+                trans._(
+                    "Constants must be type: {_valid_type!r}",
+                    deferred=True,
+                    _valid_type=_valid_type,
+                )
+            )
         super().__init__(value, **kwargs)
 
 
@@ -458,7 +477,11 @@ class ExprTranformer(ast.NodeTransformer):
             if sys.version_info < (3, 8) and type_ in self._PY37_CONSTS:
                 val = getattr(node, self._PY37_CONSTS[type_])
                 return Constant(val, lineno=1, col_offset=0)
-            raise SyntaxError(f"Type {type_!r} not supported")
+            raise SyntaxError(
+                trans._(
+                    "Type {type_!r} not supported", deferred=True, type_=type_
+                )
+            )
 
         # providing fake lineno and col_offset here rather than using
         # ast.fill_missing_locations for typing purposes

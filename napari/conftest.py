@@ -1,9 +1,17 @@
+try:
+    __import__('dotenv').load_dotenv()
+except ImportError:
+    pass
+
 import os
+import sys
 from functools import partial
 
+import dask.threaded
 import numpy as np
 import pooch
 import pytest
+from IPython.core.history import HistoryManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -350,3 +358,49 @@ def fresh_settings(monkeypatch):
     # this makes sure that we start with fresh settings for every test.
     settings._SETTINGS = None
     yield
+
+
+if sys.version_info > (
+    3,
+    8,
+):
+    # There seem to be on issue on 3.7 where ThreadPool has not shutdown method.
+    # just do nothing. No need to define it on 3.7 as we are not requesting the
+    # fixture explicitely ever.
+    @pytest.fixture(autouse=True)
+    def auto_shutdown_dask_threadworkers():
+        """
+        This automatically shutdown dask thread workers.
+
+        We don't assert the number of threads in unchanged as other things
+        modify the number of threads.
+        """
+        assert dask.threaded.default_pool is None
+        try:
+            yield
+        finally:
+            if dask.threaded.default_pool is not None:
+                dask.threaded.default_pool.shutdown()
+                dask.threaded.default_pool = None
+
+
+# this is not the proper way to configure IPython, but it's an easy one.
+# This will prevent IPython to try to write history on its sql file and do
+# everything in memory.
+# 1) it saves a thread and
+# 2) it can prevent issues with slow or read-only file systems in CI.
+HistoryManager.enabled = False
+
+
+@pytest.fixture
+def napari_svg_name():
+    """the plugin name changes with npe2 to `napari-svg` from `svg`."""
+    try:
+        from importlib.metadata import metadata
+    except ImportError:
+        from importlib_metadata import metadata
+
+    if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+        return 'svg'
+    else:
+        return 'napari-svg'

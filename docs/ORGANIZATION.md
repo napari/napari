@@ -5,7 +5,7 @@ the [`napari/napari`] repo which houses the source code for napari, the [`napari
 
 ## Location of documentation sources
 
-API docs, guides, plugins, roadmaps, releases, developer guides, developer resources, and community resources live in the [`napari/napari`] repo under the `docs` directory. For backwards compatibility with the previous structure as used in [`napari/docs`], some files are "duplicated" by using the [MyST `include` directive](https://myst-parser.readthedocs.io/en/latest/using/howto.html#include-a-file-from-outside-the-docs-folder-like-readme-md).
+API docs, guides, plugins, roadmaps, releases, developer guides, developer resources, and community resources live in the [`napari/napari`] repo under the `docs` directory. For backwards compatibility with the previous structure as used in [`napari/docs`], some files are "duplicated" by using the [MyST `include` directive](https://myst-parser.readthedocs.io/en/latest/sphinx/use.html#include-a-file-from-outside-the-docs-folder-like-readme-md).
 
 Tutorials, the main index page, and the WIP sphinx theme are in the [`napari/napari.github.io`] repo.
 

@@ -3,7 +3,6 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
-import pytest
 
 from napari import utils
 from napari.components import ViewerModel
@@ -17,7 +16,7 @@ def test_builtin_reader_plugin():
         data = np.random.rand(20, 20)
         utils.io.imsave(tmp.name, data)
         tmp.seek(0)
-        layer_data, _ = io.read_data_with_plugins(tmp.name)
+        layer_data, _ = io.read_data_with_plugins(tmp.name, 'builtins')
 
         assert layer_data is not None
         assert isinstance(layer_data, list)
@@ -38,7 +37,7 @@ def test_builtin_reader_plugin_npy():
         data = np.random.rand(20, 20)
         np.save(tmp.name, data)
         tmp.seek(0)
-        layer_data, _ = io.read_data_with_plugins(tmp.name)
+        layer_data, _ = io.read_data_with_plugins(tmp.name, 'builtins')
 
         assert layer_data is not None
         assert isinstance(layer_data, list)
@@ -60,7 +59,7 @@ def test_builtin_reader_plugin_csv(tmpdir):
     data = table[:, 1:]
     # Write csv file
     utils.io.write_csv(tmp, table, column_names=column_names)
-    layer_data, _ = io.read_data_with_plugins(tmp)
+    layer_data, _ = io.read_data_with_plugins(tmp, 'builtins')
 
     assert layer_data is not None
     assert isinstance(layer_data, list)
@@ -101,10 +100,6 @@ def test_reader_plugin_can_return_null_layer_sentinel(
     napari_plugin_manager, monkeypatch
 ):
     from napari_plugin_engine import napari_hook_implementation
-
-    with pytest.raises(ValueError) as e:
-        io.read_data_with_plugins('/')
-    assert 'No plugin found capable of reading' in str(e)
 
     class sample_plugin:
         @napari_hook_implementation(tryfirst=True)

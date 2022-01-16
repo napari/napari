@@ -17,6 +17,7 @@ from typing import (
     Sequence,
     Tuple,
 )
+from weakref import WeakValueDictionary
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
@@ -27,6 +28,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QMainWindow,
     QShortcut,
+    QToolTip,
     QWidget,
 )
 
@@ -34,13 +36,14 @@ from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
 from ..utils import perf
+from ..utils._proxies import PublicOnlyProxy
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
 from . import menus
-from .dialogs.activity_dialog import ActivityDialog
+from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet, register_napari_themes
@@ -55,6 +58,8 @@ from .widgets.qt_viewer_status_bar import ViewerStatusBar
 _sentinel = object()
 
 if TYPE_CHECKING:
+    from qtpy.QtGui import QImage
+
     from ..viewer import Viewer
 
 
@@ -73,7 +78,7 @@ class _QtMainWindow(QMainWindow):
     def __init__(self, viewer: 'Viewer', parent=None) -> None:
         super().__init__(parent)
         self._ev = None
-        self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
+        self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
 
         self.setWindowIcon(QIcon(self._window_icon))
@@ -81,11 +86,11 @@ class _QtMainWindow(QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
-        center.layout().addWidget(self.qt_viewer)
+        center.layout().addWidget(self._qt_viewer)
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
 
-        self.setWindowTitle(self.qt_viewer.viewer.title)
+        self.setWindowTitle(self._qt_viewer.viewer.title)
 
         self._maximized_flag = False
         self._window_size = None
@@ -93,8 +98,8 @@ class _QtMainWindow(QMainWindow):
         self._old_size = None
         self._positions = []
 
-        act_dlg = ActivityDialog(self.qt_viewer._canvas_overlay)
-        self.qt_viewer._canvas_overlay.resized.connect(
+        act_dlg = QtActivityDialog(self._qt_viewer._canvas_overlay)
+        self._qt_viewer._canvas_overlay.resized.connect(
             act_dlg.move_to_bottom_right
         )
         act_dlg.hide()
@@ -112,32 +117,17 @@ class _QtMainWindow(QMainWindow):
             plugin_manager.set_call_order(settings.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
-        self.qt_viewer.viewer.tooltip.events.text.connect(self.update_tooltip)
 
         # since we initialize canvas before window,
         # we need to manually connect them again.
         handle = self.windowHandle()
         if handle is not None:
             handle.screenChanged.connect(
-                self.qt_viewer.canvas._backend.screen_changed
+                self._qt_viewer.canvas._backend.screen_changed
             )
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
-
-    def update_tooltip(self, event):
-        if self.qt_viewer.viewer.tooltip.visible:
-            self.qt_viewer.setToolTip(event.value)
-        else:
-            self.qt_viewer.setToolTip("")
-
-        # Connect the notification dispacther to correctly propagate
-        # notifications from threads. See: `napari._qt.qt_event_loop::get_app`
-        application_instance = QApplication.instance()
-        if application_instance:
-            application_instance._dispatcher.sig_notified.connect(
-                self.show_notification
-            )
 
     @classmethod
     def current(cls):
@@ -146,9 +136,16 @@ class _QtMainWindow(QMainWindow):
     @classmethod
     def current_viewer(cls):
         window = cls.current()
-        return window.qt_viewer.viewer if window else None
+        return window._qt_viewer.viewer if window else None
 
     def event(self, e):
+        if (
+            e.type() == QEvent.ToolTip
+            and self._qt_viewer.viewer.tooltip.visible
+        ):
+            QToolTip.showText(
+                e.globalPos(), self._qt_viewer.viewer.tooltip.text, self
+            )
         if e.type() == QEvent.Close:
             # when we close the MainWindow, remove it from the instances list
             try:
@@ -412,7 +409,9 @@ class Window:
         get_app()
 
         # Dictionary holding dock widgets
-        self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
+        self._dock_widgets: Dict[
+            str, QtViewerDockWidget
+        ] = WeakValueDictionary()
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
@@ -433,19 +432,19 @@ class Window:
         get_settings().appearance.events.theme.connect(self._update_theme)
 
         self._add_viewer_dock_widget(
-            self.qt_viewer.dockConsole, tabify=False, menu=self.window_menu
+            self._qt_viewer.dockConsole, tabify=False, menu=self.window_menu
         )
         self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerControls,
+            self._qt_viewer.dockLayerControls,
             tabify=False,
             menu=self.window_menu,
         )
         self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
+            self._qt_viewer.dockLayerList, tabify=False, menu=self.window_menu
         )
         if perf.USE_PERFMON:
             self._add_viewer_dock_widget(
-                self.qt_viewer.dockPerformance, menu=self.window_menu
+                self._qt_viewer.dockPerformance, menu=self.window_menu
             )
 
         viewer.events.status.connect(self._status_changed)
@@ -475,52 +474,52 @@ class Window:
     def _connect_theme(self, theme):
         # connect events to update theme. Here, we don't want to pass the event
         # since it won't have the right `value` attribute.
-        theme.events.background.connect(lambda _: self._update_theme())
-        theme.events.foreground.connect(lambda _: self._update_theme())
-        theme.events.primary.connect(lambda _: self._update_theme())
-        theme.events.secondary.connect(lambda _: self._update_theme())
-        theme.events.highlight.connect(lambda _: self._update_theme())
-        theme.events.text.connect(lambda _: self._update_theme())
-        theme.events.warning.connect(lambda _: self._update_theme())
-        theme.events.current.connect(lambda _: self._update_theme())
+        theme.events.background.connect(self._update_theme_no_event)
+        theme.events.foreground.connect(self._update_theme_no_event)
+        theme.events.primary.connect(self._update_theme_no_event)
+        theme.events.secondary.connect(self._update_theme_no_event)
+        theme.events.highlight.connect(self._update_theme_no_event)
+        theme.events.text.connect(self._update_theme_no_event)
+        theme.events.warning.connect(self._update_theme_no_event)
+        theme.events.current.connect(self._update_theme_no_event)
         theme.events.icon.connect(self._theme_icon_changed)
         theme.events.canvas.connect(
-            lambda _: self.qt_viewer.canvas._set_theme_change(
+            lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
             )
         )
         # connect console-specific attributes only if QtConsole
         # is present. The `console` is called which might slow
         # things down a little.
-        if self.qt_viewer._console:
-            theme.events.console.connect(self.qt_viewer.console._update_theme)
+        if self._qt_viewer._console:
+            theme.events.console.connect(self._qt_viewer.console._update_theme)
             theme.events.syntax_style.connect(
-                self.qt_viewer.console._update_theme
+                self._qt_viewer.console._update_theme
             )
 
     def _disconnect_theme(self, theme):
-        theme.events.background.disconnect(lambda _: self._update_theme())
-        theme.events.foreground.disconnect(lambda _: self._update_theme())
-        theme.events.primary.disconnect(lambda _: self._update_theme())
-        theme.events.secondary.disconnect(lambda _: self._update_theme())
-        theme.events.highlight.disconnect(lambda _: self._update_theme())
-        theme.events.text.disconnect(lambda _: self._update_theme())
-        theme.events.warning.disconnect(lambda _: self._update_theme())
-        theme.events.current.disconnect(lambda _: self._update_theme())
+        theme.events.background.disconnect(self._update_theme_no_event)
+        theme.events.foreground.disconnect(self._update_theme_no_event)
+        theme.events.primary.disconnect(self._update_theme_no_event)
+        theme.events.secondary.disconnect(self._update_theme_no_event)
+        theme.events.highlight.disconnect(self._update_theme_no_event)
+        theme.events.text.disconnect(self._update_theme_no_event)
+        theme.events.warning.disconnect(self._update_theme_no_event)
+        theme.events.current.disconnect(self._update_theme_no_event)
         theme.events.icon.disconnect(self._theme_icon_changed)
         theme.events.canvas.disconnect(
-            lambda _: self.qt_viewer.canvas._set_theme_change(
+            lambda _: self._qt_viewer.canvas._set_theme_change(
                 get_settings().appearance.theme
             )
         )
         # disconnect console-specific attributes only if QtConsole
         # is present and they were previously connected
-        if self.qt_viewer._console:
+        if self._qt_viewer._console:
             theme.events.console.disconnect(
-                self.qt_viewer.console._update_theme
+                self._qt_viewer.console._update_theme
             )
             theme.events.syntax_style.disconnect(
-                self.qt_viewer.console._update_theme
+                self._qt_viewer.console._update_theme
             )
 
     def _add_theme(self, event):
@@ -533,7 +532,7 @@ class Window:
         theme = event.value
         self._disconnect_theme(theme)
 
-    def _theme_icon_changed(self, event=None):
+    def _theme_icon_changed(self):
         """Trigger rebuild of theme and all resources.
 
         This is really only required whenever there are changes to the `icon`
@@ -551,10 +550,20 @@ class Window:
 
     @property
     def qt_viewer(self):
-        # we should eventually choose what we'd like to be "public" here
-        # and provide a "window API" that gives access to it... rather than
-        # just giving the qt_viewer.
-        return self._qt_window.qt_viewer
+        warnings.warn(
+            trans._(
+                'Public access to Window.qt_viewer is deprecated and will be removed in\nv0.5.0. It is considered an "implementation detail" of the napari\napplication, not part of the napari viewer model. If your use case\nrequires access to qt_viewer, please open an issue to discuss.',
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self._qt_window._qt_viewer
+
+    @property
+    def _qt_viewer(self):
+        # this is starting to be "vestigial"... this property could be removed
+        return self._qt_window._qt_viewer
 
     @property
     def _status_bar(self):
@@ -621,11 +630,11 @@ class Window:
 
     def _toggle_play(self, state=None):
         """Toggle play."""
-        if self.qt_viewer.dims.is_playing:
-            self.qt_viewer.dims.stop()
+        if self._qt_viewer.dims.is_playing:
+            self._qt_viewer.dims.stop()
         else:
-            axis = self.qt_viewer.viewer.dims.last_used or 0
-            self.qt_viewer.dims.play(axis)
+            axis = self._qt_viewer.viewer.dims.last_used or 0
+            self._qt_viewer.dims.play(axis)
 
     def add_plugin_dock_widget(
         self, plugin_name: str, widget_name: str = None
@@ -647,11 +656,19 @@ class Window:
             A 2-tuple containing (the DockWidget instance, the plugin widget
             instance).
         """
-        from ..viewer import Viewer
+        from ..plugins import _npe2
 
-        Widget, dock_kwargs = plugin_manager.get_widget(
-            plugin_name, widget_name
-        )
+        Widget = None
+        dock_kwargs = {}
+
+        result = _npe2.get_widget_contribution(plugin_name, widget_name)
+        if result:
+            Widget, widget_name = result
+
+        if Widget is None:
+            Widget, dock_kwargs = plugin_manager.get_widget(
+                plugin_name, widget_name
+            )
         if not widget_name:
             # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
@@ -665,20 +682,7 @@ class Window:
                 wdg = wdg._magic_widget
             return dock_widget, wdg
 
-        # if the signature is looking a for a napari viewer, pass it.
-        kwargs = {}
-        for param in inspect.signature(Widget.__init__).parameters.values():
-            if param.name == 'napari_viewer':
-                kwargs['napari_viewer'] = self.qt_viewer.viewer
-                break
-            if param.annotation in ('napari.viewer.Viewer', Viewer):
-                kwargs[param.name] = self.qt_viewer.viewer
-                break
-            # cannot look for param.kind == param.VAR_KEYWORD because
-            # QWidget allows **kwargs but errs on unknown keyword arguments
-
-        # instantiate the widget
-        wdg = Widget(**kwargs)
+        wdg = _instantiate_dock_widget(Widget, self._qt_viewer.viewer)
 
         # Add dock widget
         dock_kwargs.pop('name', None)
@@ -704,7 +708,7 @@ class Window:
         func = plugin_manager._function_widgets[plugin_name][widget_name]
 
         # Add function widget
-        self.add_function_widget(
+        return self.add_function_widget(
             func, name=full_name, area=None, allowed_areas=None
         )
 
@@ -775,7 +779,7 @@ class Window:
                 stacklevel=2,
             )
             dock_widget = QtViewerDockWidget(
-                self.qt_viewer,
+                self._qt_viewer,
                 widget,
                 name=name,
                 area=area,
@@ -785,7 +789,7 @@ class Window:
             )
         else:
             dock_widget = QtViewerDockWidget(
-                self.qt_viewer,
+                self._qt_viewer,
                 widget,
                 name=name,
                 area=area,
@@ -799,7 +803,7 @@ class Window:
             # Keep the dropdown menus in the widget in sync with the layer model
             # if widget has a `reset_choices`, which is true for all magicgui
             # `CategoricalWidget`s
-            layers_events = self.qt_viewer.viewer.layers.events
+            layers_events = self._qt_viewer.viewer.layers.events
             layers_events.inserted.connect(widget.reset_choices)
             layers_events.removed.connect(widget.reset_choices)
             layers_events.reordered.connect(widget.reset_choices)
@@ -1048,7 +1052,7 @@ class Window:
                 )
 
         # Resize axis labels now that window is shown
-        self.qt_viewer.dims._resize_axis_labels()
+        self._qt_viewer.dims._resize_axis_labels()
 
         # We want to bring the viewer to the front when
         # A) it is our own event loop OR we are running in jupyter
@@ -1069,19 +1073,22 @@ class Window:
         self._qt_window.raise_()  # for macOS
         self._qt_window.activateWindow()  # for Windows
 
+    def _update_theme_no_event(self):
+        self._update_theme()
+
     def _update_theme(self, event=None):
         """Update widget color theme."""
         settings = get_settings()
         try:
             if event:
                 value = event.value
-                self.qt_viewer.viewer.theme = value
+                self._qt_viewer.viewer.theme = value
                 settings.appearance.theme = value
             else:
                 if settings.appearance.theme == "system":
                     value = get_system_theme()
                 else:
-                    value = self.qt_viewer.viewer.theme
+                    value = self._qt_viewer.viewer.theme
 
             self._qt_window.setStyleSheet(get_stylesheet(value))
         except (AttributeError, RuntimeError):
@@ -1122,7 +1129,7 @@ class Window:
         """Restart the napari application."""
         self._qt_window.restart()
 
-    def _screenshot(self, flash=True):
+    def _screenshot(self, flash=True, canvas_only=False) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1130,15 +1137,28 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
-        """
-        img = self._qt_window.grab().toImage()
-        if flash:
-            from .utils import add_flash_animation
+        canvas_only : bool
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
 
-            add_flash_animation(self._qt_window)
+        Returns
+        ----------
+        img : QImage
+        """
+        from .utils import add_flash_animation
+
+        if canvas_only:
+            img = self._qt_viewer.canvas.native.grabFramebuffer()
+            if flash:
+                add_flash_animation(self._qt_viewer._canvas_overlay)
+        else:
+            img = self._qt_window.grab().toImage()
+            if flash:
+                add_flash_animation(self._qt_window)
         return img
 
-    def screenshot(self, path=None, flash=True):
+    def screenshot(self, path=None, flash=True, canvas_only=False):
         """Take currently displayed viewer and convert to an image array.
 
         Parameters
@@ -1148,6 +1168,10 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
+        canvas_only : bool
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
 
         Returns
         -------
@@ -1155,21 +1179,26 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self._screenshot(flash)
+        img = QImg2array(self._screenshot(flash, canvas_only))
         if path is not None:
-            imsave(path, QImg2array(img))  # scikit-image imsave method
-        return QImg2array(img)
+            imsave(path, img)  # scikit-image imsave method
+        return img
 
-    def clipboard(self, flash=True):
-        """Take a screenshot of the currently displayed viewer and copy the image to the clipboard.
+    def clipboard(self, flash=True, canvas_only=False):
+        """Copy screenshot of current viewer to the clipboard.
 
         Parameters
         ----------
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
+        canvas_only : bool
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
         """
-        QApplication.clipboard().setImage(self._screenshot(flash))
+        img = self._screenshot(flash=flash, canvas_only=canvas_only)
+        QApplication.clipboard().setImage(img)
 
     def _teardown(self):
         """Carry out various teardown tasks such as event disconnection."""
@@ -1177,7 +1206,7 @@ class Window:
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.added.disconnect(register_napari_themes)
         _themes.events.removed.disconnect(self._remove_theme)
-        self.qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
+        self._qt_viewer.viewer.layers.events.disconnect(self.file_menu.update)
         for menu in self.file_menu._INSTANCES:
             try:
                 menu._destroy()
@@ -1190,6 +1219,30 @@ class Window:
         # if we still have one.
         if hasattr(self, '_qt_window'):
             self._teardown()
-            self.qt_viewer.close()
+            self._qt_viewer.close()
             self._qt_window.close()
             del self._qt_window
+
+
+def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
+    # if the signature is looking a for a napari viewer, pass it.
+    from ..viewer import Viewer
+
+    kwargs = {}
+    try:
+        sig = inspect.signature(wdg_cls.__init__)
+    except ValueError:
+        pass
+    else:
+        for param in sig.parameters.values():
+            if param.name == 'napari_viewer':
+                kwargs['napari_viewer'] = PublicOnlyProxy(viewer)
+                break
+            if param.annotation in ('napari.viewer.Viewer', Viewer):
+                kwargs[param.name] = PublicOnlyProxy(viewer)
+                break
+            # cannot look for param.kind == param.VAR_KEYWORD because
+            # QWidget allows **kwargs but errs on unknown keyword arguments
+
+    # instantiate the widget
+    return wdg_cls(**kwargs)

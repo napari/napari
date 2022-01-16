@@ -1,45 +1,10 @@
 from copy import copy
+from typing import Optional, Tuple
 
 import numpy as np
 
 from ...utils.translations import trans
 from ..utils.layer_utils import segment_normal
-
-
-def vectors_to_coordinates(vectors):
-    """Validate and convert vector data to a coordinate representation
-
-    Parameters
-    ----------
-    vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
-        A (N, 2, D) array is interpreted as "coordinate-like" data and a list
-        of N vectors with start point and projections of the vector in D
-        dimensions. A (N1, N2, ..., ND, D) array is interpreted as
-        "image-like" data where there is a length D vector of the
-        projections at each pixel.
-
-    Returns
-    -------
-    coords : (N, 2, D) array
-        A list of N vectors with start point and projections of the vector
-        in D dimensions.
-    """
-    if vectors.shape[-2] == 2 and vectors.ndim == 3:
-        # an (N, 2, D) array that is coordinate-like
-        coords = vectors
-    elif vectors.shape[-1] == vectors.ndim - 1:
-        # an (N1, N2, ..., ND, D) array that is image-like
-        coords = convert_image_to_coordinates(vectors)
-    else:
-        raise TypeError(
-            trans._(
-                "Vector data of shape {shape} is not supported",
-                deferred=True,
-                shape=vectors.shape,
-            )
-        )
-
-    return coords
 
 
 def convert_image_to_coordinates(vectors):
@@ -155,3 +120,74 @@ def generate_vector_meshes_2D(vectors, width, length, p=(0, 0, 1)):
     ).astype(np.uint32)
 
     return vertices, triangles
+
+
+def fix_data_vectors(
+    vectors: Optional[np.ndarray], ndim: Optional[int]
+) -> Tuple[np.ndarray, int]:
+    """
+    Ensure that vectors array is 3d and have second dimension of size 2
+    and third dimension of size ndim (default 2 for empty arrays)
+
+    Parameters
+    ----------
+    vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
+        A (N, 2, D) array is interpreted as "coordinate-like" data and a list
+        of N vectors with start point and projections of the vector in D
+        dimensions. A (N1, N2, ..., ND, D) array is interpreted as
+        "image-like" data where there is a length D vector of the
+        projections at each pixel.
+    ndim : int or None
+        number of expected dimensions
+
+    Returns
+    -------
+    vectors : (N, 2, D) array
+        Vectors array
+    ndim : int
+        number of dimensions
+
+    Raises
+    ------
+    ValueError
+        if ndim does not match with third dimensions of vectors
+    """
+    if vectors is None:
+        vectors = []
+    vectors = np.asarray(vectors)
+
+    if vectors.ndim == 3 and vectors.shape[1] == 2:
+        # an (N, 2, D) array that is coordinate-like, we're good to go
+        pass
+    elif vectors.size == 0:
+        if ndim is None:
+            ndim = 2
+        vectors = np.empty((0, 2, ndim))
+    elif vectors.shape[-1] == vectors.ndim - 1:
+        # an (N1, N2, ..., ND, D) array that is image-like
+        vectors = convert_image_to_coordinates(vectors)
+    else:
+        # np.atleast_3d does not reshape (2, 3) to (1, 2, 3) as one would expect
+        # when passing a single vector
+        if vectors.ndim == 2:
+            vectors = vectors[np.newaxis]
+        if vectors.ndim != 3 or vectors.shape[1] != 2:
+            raise ValueError(
+                trans._(
+                    "could not reshape Vector data from {vectors_shape} to (N, 2, {dimensions})",
+                    deferred=True,
+                    vectors_shape=vectors.shape,
+                    dimensions=ndim or 'D',
+                )
+            )
+
+    data_ndim = vectors.shape[2]
+    if ndim is not None and ndim != data_ndim:
+        raise ValueError(
+            trans._(
+                "Vectors dimensions must be equal to ndim",
+                deferred=True,
+            )
+        )
+    ndim = data_ndim
+    return vectors, ndim
