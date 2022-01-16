@@ -2,8 +2,10 @@
 A generic lock class to be used as a locking mechanism.
 """
 from enum import Enum
-from typing import Dict, Optional, Any, List
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, validator
+
 from napari.utils.translations import trans
 
 
@@ -51,20 +53,27 @@ class Lock(BaseModel):
 
     @validator("value_lock_mode")
     def value_lock_mode_lock_mode_valid(cls, value):
+        """Validate value lock mode"""
         return value
 
     @validator("value")
     def value_lock_mode_valid(cls, value, values, **kwargs):
+        """Validate value"""
         value_lock_mode = values["value_lock_mode"]
 
-        is_numeric = lambda x: type(x) in (int, float)
+        def is_numeric(x):
+            """Quick checking if it is numeric type"""
+            return type(x) in (int, float)
 
         if (
             value_lock_mode in (LockMode.LARGER_THAN, LockMode.SMALLER_THAN)
         ) and not is_numeric(value):
             raise ValueNotCompatibleWithLockMode(
                 value=value,
-                message=trans._("Value should be numeric for lock modes: LARGER_THAN and SMALLER_THAN",  deferred=True),
+                message=trans._(
+                    "Value should be numeric for lock modes: LARGER_THAN and SMALLER_THAN",
+                    deferred=True,
+                ),
             )
 
         if value_lock_mode == LockMode.IN_LIST and type(value) not in (
@@ -73,7 +82,10 @@ class Lock(BaseModel):
         ):
             raise ValueNotCompatibleWithLockMode(
                 value=value,
-                message=trans._("Value should be list or tuple for lock mode: IN_LIST",  deferred=True),
+                message=trans._(
+                    "Value should be list or tuple for lock mode: IN_LIST",
+                    deferred=True,
+                ),
             )
 
         if value_lock_mode == LockMode.IN_RANGE and (
@@ -81,7 +93,10 @@ class Lock(BaseModel):
         ):
             raise ValueNotCompatibleWithLockMode(
                 value=value,
-                message=trans._("Value should be list or tuple of 2 elements for lock mode: IN_RANGE",  deferred=True),
+                message=trans._(
+                    "Value should be list or tuple of 2 elements for lock mode: IN_RANGE",
+                    deferred=True,
+                ),
             )
 
         return value
