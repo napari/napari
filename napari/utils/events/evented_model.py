@@ -8,7 +8,6 @@ import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
-from ...utils.lock import Locker
 from ..translations import trans
 from .event import EmitterGroup, Event
 
@@ -168,7 +167,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     __field_dependents__: ClassVar[Dict[str, Set[str]]]
     __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
     __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
-
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
