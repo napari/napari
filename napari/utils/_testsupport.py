@@ -149,6 +149,8 @@ def make_napari_viewer(
     from napari._qt.qt_viewer import QtViewer
     from napari.settings import get_settings
 
+    gc.collect()
+
     _do_not_inline_below = len(QtViewer._instances)
     # # do not inline to avoid pytest trying to compute repr of expression.
     # # it fails if C++ object gone but not Python object.
