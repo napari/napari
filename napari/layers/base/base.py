@@ -15,12 +15,12 @@ from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
-from ...utils.lock import Locker
 from ...utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
+from ...utils.lock import Locker
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
@@ -199,7 +199,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         * `_set_view_slice()`: called to set currently viewed slice
         * `_basename()`: base/default name of the layer
     """
-    locker:Locker=Locker()
+
+    locker: Locker = Locker()
+
     def __init__(
         self,
         data,
@@ -216,7 +218,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         blending='translucent',
         visible=True,
         multiscale=False,
-        locker:Locker=Locker(),
+        locker: Locker = Locker(),
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
     ):
@@ -346,11 +348,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Checks locks before changing value"""
         if self.locker.is_locked(__name, hard_lock=True):
             warnings.warn(
-                    trans._(
-                        f'Attribute ({__name}) is locked is locked',
-                        deferred=True,
-                    ),
-                    category=UserWarning,
+                trans._(
+                    f'Attribute ({__name}) is locked is locked',
+                    deferred=True,
+                ),
+                category=UserWarning,
             )
             return None
         else:
