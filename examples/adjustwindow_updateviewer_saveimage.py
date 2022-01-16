@@ -14,13 +14,16 @@ def make_screenshot(viewer):
     plt.show()
 
 
-get_settings().application.save_window_state = False
-get_settings().application.window_size = (500, 500)  # h, w
-get_settings().application.window_position = (900, 300)  # h, w
+#get_settings().application.window_size = (600, 600) # I will delete this line before merge
+get_settings().application.window_position = (900, 300) # hopefully better option to do this
 viewer = napari.Viewer()
+viewer.window.resize(600, 600) 
+#viewer.window.position(600, 600) # is it possible that this will replace get_settings().application.window_position = (900, 300)?
+
 viewer.window.qt_viewer.dockLayerControls.toggleViewAction().trigger()
 # in napari 0.4.13 it will become private:
 # viewer.window._qt_viewer.dockLayerControls.toggleViewAction().trigger()
+# but maybe a better public method will come for this
 
 viewer.theme = "light"
 viewer.dims.ndisplay = 3
