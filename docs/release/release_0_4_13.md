@@ -245,6 +245,8 @@ Complete list of changes below:
 - FIX: git:// is deprecated (#3921)
 - Fix plugin docs, ToC and links (#3929)
 - Fix docs build on CI (#3946)
+- Trying to fix published docs (#3949)
+- Fix path to prep_docs in make_docs workflow (#3950)
 
 
 ## 28 authors added to this release (alphabetical)
