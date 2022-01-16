@@ -8,6 +8,7 @@ import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
+from ...utils.lock import Locker
 from ..translations import trans
 from .event import EmitterGroup, Event
 
@@ -167,6 +168,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     __field_dependents__: ClassVar[Dict[str, Set[str]]]
     __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
     __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
+    locker:Locker=Locker()
+
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
@@ -210,6 +213,15 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             super().__setattr__(name, value)
 
     def __setattr__(self, name: str, value: Any) -> None:
+        if self.locker.is_locked(name, hard_lock=True):
+            warnings.warn(
+                    trans._(
+                        f'Event ({name}) is locked is locked',
+                        deferred=True,
+                    ),
+                    category=UserWarning,
+            )
+            return None
         if name not in getattr(self, 'events', {}):
             # fallback to default behavior
             self._super_setattr_(name, value)
