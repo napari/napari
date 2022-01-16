@@ -4,6 +4,7 @@ A generic lock class to be used as a locking mechanism.
 from enum import Enum
 from typing import Dict, Optional, Any, List
 from pydantic import BaseModel, validator
+from napari.utils.translations import trans
 
 
 class LockMode(Enum):
@@ -63,7 +64,7 @@ class Lock(BaseModel):
         ) and not is_numeric(value):
             raise ValueNotCompatibleWithLockMode(
                 value=value,
-                message="Value should be numeric for lock modes: LARGER_THAN and SMALLER_THAN",
+                message=trans._("Value should be numeric for lock modes: LARGER_THAN and SMALLER_THAN",  deferred=True),
             )
 
         if value_lock_mode == LockMode.IN_LIST and type(value) not in (
@@ -72,7 +73,7 @@ class Lock(BaseModel):
         ):
             raise ValueNotCompatibleWithLockMode(
                 value=value,
-                message="Value should be list or tuple for lock mode: IN_LIST",
+                message=trans._("Value should be list or tuple for lock mode: IN_LIST",  deferred=True),
             )
 
         if value_lock_mode == LockMode.IN_RANGE and (
@@ -80,7 +81,7 @@ class Lock(BaseModel):
         ):
             raise ValueNotCompatibleWithLockMode(
                 value=value,
-                message="Value should be list or tuple of 2 elements for lock mode: IN_RANGE",
+                message=trans._("Value should be list or tuple of 2 elements for lock mode: IN_RANGE",  deferred=True),
             )
 
         return value
