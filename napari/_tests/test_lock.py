@@ -96,13 +96,13 @@ def test_locks_dictionary_update():
     locker_data['attribute1']= {"value":3, "locked":False}
 
     locker.update_locks(locker_data)
-    assert locker._get_lock('attribute1').value==3
-    assert locker._get_lock('attribute1').locked==False
+    assert locker.get_lock('attribute1').value==3
+    assert locker.get_lock('attribute1').locked==False
 
     locker_data['attribute1']= {"value":4}
     locker_data['attribute2']= {"value":6}
     locker.update_locks(locker_data)
-    assert locker._get_lock('attribute1').value==4
-    assert locker._get_lock('attribute1').locked==False
-    assert locker._get_lock('attribute2').value==6
-    assert locker._get_lock('attribute2').locked==True
+    assert locker.get_lock('attribute1').value==4
+    assert locker.get_lock('attribute1').locked==False
+    assert locker.get_lock('attribute2').value==6
+    assert locker.get_lock('attribute2').locked==True
