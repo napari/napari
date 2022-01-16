@@ -45,6 +45,7 @@ def test_locking():
     assert locker.is_locked("attribute1", hard_lock=False) is True
 
     assert locker.is_locked("attribute2") is False
+
     with pytest.raises(AttributeNotFound):
         locker.unlock("attribute2")
 
