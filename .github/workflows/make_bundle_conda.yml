@@ -304,8 +304,8 @@ jobs:
         uses: devbotsxyz/xcode-notarize@v1
         with:
           product-path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
-          appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
-          appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          appstore-connect-username: ${{ secrets.APPLE_NOTARIZATION_USERNAME }}
+          appstore-connect-password: ${{ secrets.APPLE_NOTARIZATION_PASSWORD }}
 
       - name: Staple Bundle (macOS)
         if: runner.os == 'macOS'
