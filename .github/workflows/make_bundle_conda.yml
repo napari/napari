@@ -306,6 +306,8 @@ jobs:
           product-path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
           appstore-connect-username: ${{ secrets.APPLE_NOTARIZATION_USERNAME }}
           appstore-connect-password: ${{ secrets.APPLE_NOTARIZATION_PASSWORD }}
+          primary-bundle-id: org.napari.pkg
+          verbose: true
 
       - name: Staple Bundle (macOS)
         if: runner.os == 'macOS'
