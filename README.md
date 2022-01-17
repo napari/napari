@@ -22,15 +22,6 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 
 ## installation
 
-### containers:
-Docker
-```
-docker pull ghcr.io/truatpasteurdotfr/napari:main
-```
-Singularity
-```
-singularity exec -B /run oras://ghcr.io/truatpasteurdotfr/napari:latest napari -h
-```
 ### which distribution to install
 If you want to contribute back to napari codebase, you need to install from source code: see the [from source](#from-source) section.
 
@@ -77,6 +68,16 @@ pip install -e ".[all]"
 # or, to install in editable mode AND grab all of the developer tools
 # (this is required if you want to contribute code back to napari)
 pip install -r requirements.txt
+```
+
+### containers:
+Docker
+```sh
+docker pull ghcr.io/truatpasteurdotfr/napari:main
+```
+Singularity
+```sh
+singularity exec -B /run oras://ghcr.io/truatpasteurdotfr/napari:latest napari -h
 ```
 
 For more information or troubleshooting see our [installation tutorial](https://napari.org/tutorials/fundamentals/installation)
