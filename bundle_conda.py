@@ -137,9 +137,7 @@ def _constructor(version=_version(), extra_specs=None):
         "menu_packages": [
             "napari-menu",
         ],
-        "extra_files": {
-            "resources/bundle_readme.md": "README.txt"
-        }
+        "extra_files": {"resources/bundle_readme.md": "README.txt"},
     }
     if _use_local():
         definitions["channels"].insert(0, "local")
@@ -174,7 +172,9 @@ def _constructor(version=_version(), extra_specs=None):
         signing_identity = os.environ.get("CONSTRUCTOR_SIGNING_IDENTITY")
         if signing_identity:
             definitions["signing_identity_name"] = signing_identity
-        notarization_identity = os.environ.get("CONSTRUCTOR_NOTARIZATION_IDENTITY")
+        notarization_identity = os.environ.get(
+            "CONSTRUCTOR_NOTARIZATION_IDENTITY"
+        )
         if notarization_identity:
             definitions["notarization_identity_name"] = notarization_identity
 
