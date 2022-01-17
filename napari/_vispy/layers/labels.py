@@ -75,7 +75,7 @@ class LabelColormap(VispyColormap):
 
 class VispyLabelsLayer(VispyImageLayer):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, texture_format=None, **kwargs)
+        super().__init__(*args, texture_format='r32f', **kwargs)
 
     def _on_colormap_change(self, event=None):
         # self.layer.colormap is a labels_colormap, which is an evented model
