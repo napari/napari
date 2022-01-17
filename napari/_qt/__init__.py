@@ -1,6 +1,5 @@
 import os
 import sys
-from distutils.version import StrictVersion
 from pathlib import Path
 from warnings import warn
 
@@ -30,7 +29,7 @@ if API_NAME == 'PySide2':
 
 
 # When QT is not the specific version, we raise a warning:
-if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
+if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
     if sys.version_info >= (3, 8):
         from importlib import metadata as importlib_metadata
     else:

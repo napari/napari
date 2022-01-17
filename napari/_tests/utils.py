@@ -1,6 +1,7 @@
 import os
 import sys
 from collections import abc
+from contextlib import contextmanager
 from typing import Any, Dict
 
 import numpy as np
@@ -17,20 +18,17 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.settings import get_settings
 
 skip_on_win_ci = pytest.mark.skipif(
     sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
     reason='Screenshot tests are not supported on windows CI.',
 )
 
-skip_on_mac_ci = pytest.mark.skipif(
-    sys.platform.startswith('darwin') and os.getenv('CI', '0') != '0',
-    reason='This test seem to be problematic on mac.',
-)
-
 skip_local_popups = pytest.mark.skipif(
     not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
-    reason='Tests requiring GUI windows are skipped locally by default.',
+    reason='Tests requiring GUI windows are skipped locally by default.'
+    ' Set NAPARI_POPUP_TESTS=1 environment variable to enable.',
 )
 
 
@@ -263,3 +261,11 @@ def assert_layer_state_equal(
             pd.testing.assert_frame_equal(actual_value, expected_value)
         else:
             np.testing.assert_equal(actual_value, expected_value)
+
+
+@contextmanager
+def restore_settings_on_exit():
+    """Context manager restores settings on exit"""
+    original_settings = get_settings().plugins.extension2reader
+    yield
+    get_settings().plugins.extension2reader = original_settings

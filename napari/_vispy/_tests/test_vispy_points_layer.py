@@ -83,3 +83,16 @@ def test_update_property_value_then_refresh_text_updates_node_strings():
     layer.refresh_text()
 
     np.testing.assert_array_equal(text_node.text, ['A', 'D', 'C'])
+
+
+def test_change_canvas_size_limits():
+    points = np.random.rand(3, 2)
+    layer = Points(points)
+    vispy_layer = VispyPointsLayer(layer)
+
+    filter = vispy_layer.node.clamp_filter
+    assert filter.min_size == 0
+    assert filter.max_size == 10000
+    layer.experimental_canvas_size_limits = (20, 80)
+    assert filter.min_size == 20
+    assert filter.max_size == 80
