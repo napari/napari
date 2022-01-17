@@ -123,7 +123,9 @@ class BaseEmitterVisitor(ast.NodeVisitor):
 
 
 def base_event_names() -> List[str]:
-    root = ast.parse(Path('napari/layers/base/base.py').read_text())
+    from napari.layers.base import base
+
+    root = ast.parse(Path(base.__file__).read_text())
     visitor = BaseEmitterVisitor()
     visitor.visit(root)
     return visitor._emitters
