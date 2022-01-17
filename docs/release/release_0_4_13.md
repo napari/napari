@@ -128,9 +128,11 @@ Complete list of changes below:
 - Replace timeout in test by duration assertion. (#3887)
 - Do not leak QtViewer between tests. (#3890)
 - `_track_colors`  cleanup (#3891)
+- Add error message if local file doesn't exist. (#3900)
 - Better error message on failed window import (#3901)
 - Update typing test on CI (#3903)
 - Features implementation refactor (#3904)
+- Add npe2 to install requires (#3906)
 - Rename feature manager attribute to table (#3931)
 - Better Notification __str__ method (#3933)
 - Fix ndisplay button highlight (#3935)
@@ -171,6 +173,11 @@ Complete list of changes below:
 - Fix tracks instantiation with floating point time values (#3909)
 - Fix cleaning of resources in function contextmanagers (#3918)
 - Fix magicgui layer combobox not populated when adding to viewer (#3938)
+- Fix setting attribute to None for single slices of image stacks on stack creation (#3941)
+- Fix too many entries in available plugins list (#3943)
+- Block some duplications in Plugins menu (#3957)
+- Fix close_progress_bar with no current_pbar (#3961)
+
 
 ## API Changes
 
@@ -180,6 +187,7 @@ Complete list of changes below:
 - Deprecate `qt_viewer.screenshot` & `clipboard` (#3765)
 - Restrict PublicOnlyProxy to napari namespace, allow napari-internal private usage (#3777)
 - Change PublicOnlyProxy deprecation expiry to 0.5.0 (#3788)
+- Remove deprecation of sceenshot in qt_viewer (#3937)
 
 
 ## Build Tools and Docs
@@ -238,14 +246,18 @@ Complete list of changes below:
 - Try to fix OpenGL errors installing in CI (github deprecated git://) (#3920)
 - FIX: git:// is deprecated (#3921)
 - Fix plugin docs, ToC and links (#3929)
+- Fix docs build on CI (#3946)
+- Trying to fix published docs (#3949)
+- Fix path to prep_docs in make_docs workflow (#3950)
+- Add descriptive information to assertion checking if QtViewer is cleaned properly (#3960)
 
 
-## 27 authors added to this release (alphabetical)
+## 28 authors added to this release (alphabetical)
 
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
-- [chili-chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
+- [Chi-li Chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
@@ -254,6 +266,7 @@ Complete list of changes below:
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Guillaume Witz](https://github.com/napari/napari/commits?author=guiwitz) - @guiwitz
 - [Isabela Presedo-Floyd](https://github.com/napari/napari/commits?author=isabela-pf) - @isabela-pf
+- [Jacob Czech](https://github.com/napari/napari/commits?author=jczech) - @jczech
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Jeremy Asuncion](https://github.com/napari/napari/commits?author=codemonkey800) - @codemonkey800
 - [Johannes Elferich](https://github.com/napari/napari/commits?author=jojoelfe) - @jojoelfe
@@ -276,7 +289,7 @@ Complete list of changes below:
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
-- [chili-chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
+- [Chi-li Chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
 - [David Hoese](https://github.com/napari/napari/commits?author=djhoese) - @djhoese
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
