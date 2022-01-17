@@ -175,6 +175,8 @@ Complete list of changes below:
 - Fix magicgui layer combobox not populated when adding to viewer (#3938)
 - Fix setting attribute to None for single slices of image stacks on stack creation (#3941)
 - Fix too many entries in available plugins list (#3943)
+- Block some duplications in Plugins menu (#3957)
+- Fix close_progress_bar with no current_pbar (#3961)
 
 
 ## API Changes
