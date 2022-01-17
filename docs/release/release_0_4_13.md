@@ -177,6 +177,8 @@ Complete list of changes below:
 - Fix too many entries in available plugins list (#3943)
 - Block some duplications in Plugins menu (#3957)
 - Fix close_progress_bar with no current_pbar (#3961)
+- Switch append to concat (#3963)
+- Update plugin docs index (#3964)
 
 
 ## API Changes
