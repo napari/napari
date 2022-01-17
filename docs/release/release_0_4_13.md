@@ -252,6 +252,7 @@ Complete list of changes below:
 - Trying to fix published docs (#3949)
 - Fix path to prep_docs in make_docs workflow (#3950)
 - Add descriptive information to assertion checking if QtViewer is cleaned properly (#3960)
+- Fix preference docs (#3967)
 
 
 ## 28 authors added to this release (alphabetical)
