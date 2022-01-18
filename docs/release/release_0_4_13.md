@@ -177,6 +177,8 @@ Complete list of changes below:
 - Fix too many entries in available plugins list (#3943)
 - Block some duplications in Plugins menu (#3957)
 - Fix close_progress_bar with no current_pbar (#3961)
+- Switch append to concat (#3963)
+- Update plugin docs index (#3964)
 
 
 ## API Changes
@@ -250,6 +252,7 @@ Complete list of changes below:
 - Trying to fix published docs (#3949)
 - Fix path to prep_docs in make_docs workflow (#3950)
 - Add descriptive information to assertion checking if QtViewer is cleaned properly (#3960)
+- Fix preference docs (#3967)
 
 
 ## 28 authors added to this release (alphabetical)

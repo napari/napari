@@ -818,7 +818,7 @@ class _FeatureTable:
         to_append : pd.DataFrame
             The features to append.
         """
-        self._values = self._values.append(to_append, ignore_index=True)
+        self._values = pd.concat([self._values, to_append], ignore_index=True)
 
     def remove(self, indices: Any) -> None:
         """Remove rows from this by index.
