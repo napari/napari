@@ -53,12 +53,14 @@ def test_guess_multiscale():
     assert guess_multiscale(data)[0]
 
     data = tuple(
-        pyramid_gaussian(np.random.random((10, 15)), channel_axis=None)
+        pyramid_gaussian(np.random.random((10, 15)), multichannel=False)
     )
     assert guess_multiscale(data)[0]
 
     data = np.asarray(
-        tuple(pyramid_gaussian(np.random.random((10, 15)), channel_axis=None)),
+        tuple(
+            pyramid_gaussian(np.random.random((10, 15)), multichannel=False)
+        ),
         dtype=object,
     )
     assert guess_multiscale(data)[0]
