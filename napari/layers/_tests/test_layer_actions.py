@@ -89,16 +89,22 @@ def test_convert_dtype(mode):
     assert ll[-1].data.flatten().sum() == 1000
 
 
-@pytest.mark.parametrize('order', [(0, 1, 2), (1, 2, 0), (2, 1, 0)])
+@pytest.mark.parametrize('order', [(0, 1, 2, 3), (3, 1, 2, 0), (2, 1, 0, 3)])
 def test_split_stack(make_napari_viewer, order) -> None:
+    axis = 0
+    larger_data = np.zeros((2, 3, 4, 5), dtype=np.uint8)
     data = np.zeros((4, 6, 8), dtype=np.uint8)
 
     viewer = make_napari_viewer()
-    viewer.add_image(data, rgb=False)
+
+    viewer.add_image(larger_data)
+    viewer.add_image(data)
     viewer.dims.order = order
 
     menu = QtActionContextMenu(_LAYER_ACTIONS)
     split_action = menu._get_action("napari:split_stack").data()["action"]
-    split_action(viewer.layers)
+    split_action(viewer.layers, axis=axis)
 
-    assert len(viewer.layers) == data.shape[order[0]]
+    # removing extra dimension from `larger_data`
+    order = [index for index in order if index < data.ndim]
+    assert len(viewer.layers) == data.shape[order[axis]] + 1
