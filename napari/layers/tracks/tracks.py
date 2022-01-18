@@ -578,6 +578,9 @@ class Tracks(Layer):
 
         # if we change the coloring, rebuild the vertex colors array
         vertex_properties = view_features[self.color_by].values
+        vertex_properties = np.nan_to_num(
+            vertex_properties
+        )  # there might be some empty features (nans)
 
         def _norm(p):
             return (p - np.min(p)) / np.max([1e-10, np.ptp(p)])

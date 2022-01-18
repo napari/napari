@@ -235,13 +235,17 @@ class InteractiveTrackManager(BaseTrackManager):
         track_to_roots: Dict[int, Node] = {}
         track_to_leafs: Dict[int, Node] = {}
 
+        # convert features dataframe to dict
+        if features is not None:
+            features = features.to_dict('index')
+
         for track_id, track in data.groupby('TrackID', sort=False):
             parent_node = None
             track = track.sort_values('T')
             indices = track.index
             values = track.values
             for index, val in zip(indices, values):
-                feats = None if features is None else features.iloc[index]
+                feats = {} if features is None else features[index]
                 node = self._add_node(index, val[1:], feats)
 
                 if parent_node is not None:
@@ -426,9 +430,10 @@ class InteractiveTrackManager(BaseTrackManager):
                     connex[-1] = False
                     break
 
-                if len(node.children) > 1:
+                if len(node.children) > 1 and track_id != node.index:
                     # if it has multiple children it's split into multiple tracks
                     # as it's done with the default TrackManager
+                    # track_id == node.index could happen with division in the window boundary
                     if track_id not in graph:
                         graph[track_id] = [node.index]
                     else:
@@ -442,6 +447,8 @@ class InteractiveTrackManager(BaseTrackManager):
                         # start a new tracklet
                         track_id = node.index
                         seen.add(track_id)
+
+                node.features['track_id'] = track_id
 
                 track_ids.append(track_id)
                 vertices.append(node.vertex)
@@ -469,14 +476,24 @@ class InteractiveTrackManager(BaseTrackManager):
                     connex.append(False)
                     break
 
+        r"""
+        since we transverse the graph backwardly the parents (p) are indexed by their track_id
+        and the children (c) are indexed by the sliced node (s). Thus, p is at the track split / merge
+
+                              |  time window   |
+                              |     _c_________|_s__
+                       _______|__p_/           |
+                              |    \_c_________|_s__
+        indexed by their leaf |                | not indexed by their leaf
+        """
         graph_vertices = []
         graph_connex = []
-        for node_id, parents in graph.items():
-            node = self._id_to_nodes[node_id]
+        for parents in graph.values():
             for parent_id in parents:
                 parent = self._id_to_nodes[parent_id]
-                graph_vertices += [node.vertex, parent.vertex]
-                graph_connex += [True, False]
+                for child in parent.children:
+                    graph_vertices += [parent.vertex, child.vertex]
+                    graph_connex += [True, False]
 
         return (
             graph,
@@ -708,15 +725,8 @@ class InteractiveTrackManager(BaseTrackManager):
         self,
         index: int,
         vertex: np.ndarray,
-        features: Optional[Union[pd.DataFrame, Dict]] = None,
+        features: Dict,
     ) -> Node:
-
-        if features is None:
-            features = {}
-
-        elif isinstance(features, (pd.DataFrame, pd.Series)):
-            features = features.to_dict()
-
         node = Node(index, vertex, features)
         self._id_to_nodes[index] = node
 
@@ -755,6 +765,12 @@ class InteractiveTrackManager(BaseTrackManager):
         -------
             int: the ID of the added node.
         """
+        if features is None:
+            features = {}
+
+        elif isinstance(features, (pd.Series, pd.DataFrame)):
+            features = features.to_dict()
+
         self._validate_vertex_shape(vertex)
         self._max_node_index += 1
         node = self._add_node(
