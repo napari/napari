@@ -3,6 +3,7 @@ import ast
 import numpy as np
 import pytest
 
+from napari._qt.widgets.qt_action_context_menu import QtActionContextMenu
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels
 from napari.layers._layer_actions import (
@@ -86,3 +87,18 @@ def test_convert_dtype(mode):
 
     assert ll[-1].data[5, 5] == 1000
     assert ll[-1].data.flatten().sum() == 1000
+
+
+@pytest.mark.parametrize('order', [(0, 1, 2), (1, 2, 0), (2, 1, 0)])
+def test_split_stack(make_napari_viewer, order) -> None:
+    data = np.zeros((4, 6, 8), dtype=np.uint8)
+
+    viewer = make_napari_viewer()
+    viewer.add_image(data, rgb=False)
+    viewer.dims.order = order
+
+    menu = QtActionContextMenu(_LAYER_ACTIONS)
+    split_action = menu._get_action("napari:split_stack").data()["action"]
+    split_action(viewer.layers)
+
+    assert len(viewer.layers) == data.shape[order[0]]
