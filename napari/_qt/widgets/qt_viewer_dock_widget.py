@@ -2,8 +2,8 @@ import warnings
 from functools import reduce
 from itertools import count
 from operator import ior
-from typing import List, Optional
-from weakref import ref
+from typing import TYPE_CHECKING, List, Optional
+from weakref import ReferenceType, ref
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -19,6 +19,9 @@ from qtpy.QtWidgets import (
 
 from ...utils.translations import trans
 from ..utils import combine_widgets, qt_signals_blocked
+
+if TYPE_CHECKING:
+    from ..qt_viewer import QtViewer
 
 counter = count()
 _sentinel = object()
@@ -72,7 +75,7 @@ class QtViewerDockWidget(QDockWidget):
         object_name: str = '',
         add_vertical_stretch=True,
     ):
-        self._ref_qt_viewer = ref(qt_viewer)
+        self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name

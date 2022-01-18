@@ -390,3 +390,17 @@ if sys.version_info > (
 # 1) it saves a thread and
 # 2) it can prevent issues with slow or read-only file systems in CI.
 HistoryManager.enabled = False
+
+
+@pytest.fixture
+def napari_svg_name():
+    """the plugin name changes with npe2 to `napari-svg` from `svg`."""
+    try:
+        from importlib.metadata import metadata
+    except ImportError:
+        from importlib_metadata import metadata
+
+    if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+        return 'svg'
+    else:
+        return 'napari-svg'
