@@ -68,8 +68,8 @@ class QtAbout(QDialog):
 
         self.infoTextBox.setText(sys_info(as_html=True))
         self.infoTextBox.setMinimumSize(
-            self.infoTextBox.document().size().width() + 19,
-            min(self.infoTextBox.document().size().height() + 10, 500),
+            int(self.infoTextBox.document().size().width() + 19),
+            int(min(self.infoTextBox.document().size().height() + 10, 500)),
         )
 
         self.layout.addWidget(QLabel(trans._('<b>citation information:</b>')))
@@ -84,13 +84,11 @@ class QtAbout(QDialog):
         self.setLayout(self.layout)
 
     @staticmethod
-    def showAbout(qt_viewer, parent=None):
+    def showAbout(parent=None):
         """Display the 'About napari' dialog box.
 
         Parameters
         ----------
-        qt_viewer : QtViewer
-            QtViewer instance that the `About napari` dialog box belongs to.
         parent : QWidget, optional
             Parent of the dialog, to correctly inherit and apply theme.
             Default is None.
