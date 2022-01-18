@@ -21,6 +21,7 @@ from typing_extensions import TypedDict
 
 from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
+from ..viewer import current_viewer
 from .base.base import Layer
 from .utils import stack_utils
 from .utils._link_layers import get_linked_layers
@@ -47,7 +48,9 @@ def _split_stack(ll: LayerList, axis: int = 0):
     if layer.rgb:
         images = stack_utils.split_rgb(layer)
     else:
-        images = stack_utils.stack_to_images(layer, axis)
+        viewer = current_viewer()
+        reodered_axis = viewer.dims.order[axis]
+        images = stack_utils.stack_to_images(layer, reodered_axis)
     ll.remove(layer)
     ll.extend(images)
     ll.selection = set(images)  # type: ignore
