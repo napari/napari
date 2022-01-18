@@ -127,7 +127,7 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
     only_shapes_selected = ContextKey(
         False,
         trans._(
-            "True when there is at least one selected layer and all selected layers are labels"
+            "True when there is at least one selected layer and all selected layers are shapes"
         ),
         _only_shapes,
     )
