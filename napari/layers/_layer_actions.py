@@ -48,9 +48,10 @@ def _split_stack(ll: LayerList, axis: int = 0):
     if layer.rgb:
         images = stack_utils.split_rgb(layer)
     else:
-        viewer = current_viewer()
-        reodered_axis = viewer.dims.order[axis]
-        images = stack_utils.stack_to_images(layer, reodered_axis)
+        order = current_viewer().dims.order
+        # dims.order dimensions might be greater than layer.dnim
+        order = [index for index in order if index < layer.ndim]
+        images = stack_utils.stack_to_images(layer, order[axis])
     ll.remove(layer)
     ll.extend(images)
     ll.selection = set(images)  # type: ignore
