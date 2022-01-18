@@ -23,7 +23,7 @@ from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import _features_to_properties, _validate_features
+from ..utils.layer_utils import _FeatureTable
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -295,10 +295,10 @@ class Labels(_ImageBase):
             contour=Event,
         )
 
-        if properties is not None:
-            self.properties = properties
-        else:
-            self.features = features
+        self._feature_table = _FeatureTable.from_layer(
+            features=features, properties=properties
+        )
+        self._label_index = self._make_label_index()
 
         self._n_edit_dimensions = 2
         self._contiguous = True
@@ -451,28 +451,28 @@ class Labels(_ImageBase):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        return self._feature_table.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = _validate_features(features)
-        self._label_index = self._make_label_index(self._features)
+        self._feature_table.set_values(features)
+        self._label_index = self._make_label_index()
         self.events.properties()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return _features_to_properties(self._features)
+        return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         self.features = properties
 
-    @classmethod
-    def _make_label_index(cls, features: pd.DataFrame) -> Dict[int, int]:
+    def _make_label_index(self) -> Dict[int, int]:
+        features = self._feature_table.values
         label_index = {}
         if 'index' in features:
             label_index = {i: k for k, i in enumerate(features['index'])}

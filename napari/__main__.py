@@ -12,6 +12,8 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
+import napari.plugins._npe2 as _npe2
+
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
@@ -290,9 +292,13 @@ def _run():
             pname, *wnames = args.with_
             if wnames:
                 for wname in wnames:
-                    plugin_manager.get_widget(pname, wname)
+                    _npe2.get_widget_contribution(
+                        pname, wname
+                    ) or plugin_manager.get_widget(pname, wname)
             else:
-                plugin_manager.get_widget(pname)
+                _npe2.get_widget_contribution(
+                    pname
+                ) or plugin_manager.get_widget(pname)
 
         from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
@@ -396,14 +402,13 @@ def main():
     # https://github.com/napari/napari/issues/380#issuecomment-659656775
     # and https://github.com/ContinuumIO/anaconda-issues/issues/199
     import platform
-    from distutils.version import StrictVersion
 
-    _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
-        platform.release()
-    ) > StrictVersion('19.0.0')
-    _MACOS_AT_LEAST_BIG_SUR = sys.platform == "darwin" and StrictVersion(
-        platform.release()
-    ) > StrictVersion('20.0.0')
+    _MACOS_AT_LEAST_CATALINA = (
+        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 19
+    )
+    _MACOS_AT_LEAST_BIG_SUR = (
+        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 20
+    )
 
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ

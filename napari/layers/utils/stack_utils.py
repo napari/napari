@@ -113,7 +113,10 @@ def split_channels(
         ):
             kwargs[key] = iter(
                 ensure_sequence_of_iterables(
-                    val, n_channels, repeat_empty=True
+                    val,
+                    n_channels,
+                    repeat_empty=True,
+                    allow_none=True,
                 )
             )
         else:

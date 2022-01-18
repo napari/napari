@@ -427,7 +427,7 @@ def config_file_settings_source(
     return data
 
 
-def _remove_bad_keys(data: dict, keys: List[Tuple[str, ...]]):
+def _remove_bad_keys(data: dict, keys: List[Tuple[Union[int, str], ...]]):
     """Remove list of keys (as string tuples) from dict (in place).
 
     Parameters

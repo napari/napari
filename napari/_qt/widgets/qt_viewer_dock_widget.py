@@ -2,7 +2,8 @@ import warnings
 from functools import reduce
 from itertools import count
 from operator import ior
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
+from weakref import ReferenceType, ref
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -18,6 +19,9 @@ from qtpy.QtWidgets import (
 
 from ...utils.translations import trans
 from ..utils import combine_widgets, qt_signals_blocked
+
+if TYPE_CHECKING:
+    from ..qt_viewer import QtViewer
 
 counter = count()
 _sentinel = object()
@@ -71,7 +75,7 @@ class QtViewerDockWidget(QDockWidget):
         object_name: str = '',
         add_vertical_stretch=True,
     ):
-        self._qt_viewer = qt_viewer
+        self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name
@@ -142,9 +146,23 @@ class QtViewerDockWidget(QDockWidget):
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
 
+    @property
+    def _parent(self):
+        """
+        Let's make sure parent always a weakref:
+
+            1) parent is likely to always exists after child
+            2) even if not strictly necessary it make it easier to view reference cycles.
+        """
+        return self._ref_parent()
+
+    @_parent.setter
+    def _parent(self, obj):
+        self._ref_parent = ref(obj)
+
     def destroyOnClose(self):
         """Destroys dock plugin dock widget when 'x' is clicked."""
-        self._qt_viewer.viewer.window.remove_dock_widget(self)
+        self._ref_qt_viewer().viewer.window.remove_dock_widget(self)
 
     def _maybe_add_vertical_stretch(self, widget):
         """Add vertical stretch to the bottom of a vertical layout only
@@ -198,7 +216,7 @@ class QtViewerDockWidget(QDockWidget):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
         # method, be sure to call super().keyPressEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
-        return self._qt_viewer.keyPressEvent(event)
+        return self._ref_qt_viewer().keyPressEvent(event)
 
     def _set_title_orientation(self, area):
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
@@ -224,12 +242,12 @@ class QtViewerDockWidget(QDockWidget):
         try:
             actions = [
                 action.text()
-                for action in self._qt_viewer.viewer.window.plugins_menu.actions()
+                for action in self._ref_qt_viewer().viewer.window.plugins_menu.actions()
             ]
             idx = actions.index(self.name)
 
             current_action = (
-                self._qt_viewer.viewer.window.plugins_menu.actions()[idx]
+                self._ref_qt_viewer().viewer.window.plugins_menu.actions()[idx]
             )
             current_action.setChecked(visible)
             self.setVisible(visible)

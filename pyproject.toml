@@ -104,6 +104,7 @@ filterwarnings = [
   "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
   "ignore:.*Themes were changed to use evented model",  # specifying the full is not working here so glob pattern is used instead
+  "ignore:.*distutils Version classes are deprecated::napari._vendor.darkdetect",  # vendor darkdetect still use distutils
 ]
 markers = [
     "sync_only: Test should only be run synchronously",

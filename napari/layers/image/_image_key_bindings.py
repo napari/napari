@@ -73,10 +73,6 @@ def hold_to_pan_zoom(layer):
         layer.mode = prev_mode
 
 
-def register_image_action(description):
-    return register_layer_action(Image, description)
-
-
 @register_image_action(trans._('Transform'))
 def activate_image_select_mode(layer):
     layer.mode = Mode.TRANSFORM

@@ -1,3 +1,5 @@
+import time
+
 import dask.array as da
 import pytest
 import zarr
@@ -10,7 +12,6 @@ data_dask = da.random.random(
 data_zarr = zarr.zeros((100_000, 1000, 1000))
 
 
-@pytest.mark.timeout(2)
 @pytest.mark.parametrize(
     'kwargs',
     [
@@ -23,7 +24,12 @@ data_zarr = zarr.zeros((100_000, 1000, 1000))
 )
 @pytest.mark.parametrize('data', [data_dask, data_zarr], ids=('dask', 'zarrs'))
 def test_timing_fast_big_dask(data, kwargs):
+    now = time.monotonic()
     assert Image(data, **kwargs).data.shape == data.shape
+    elapsed = time.monotonic() - now
+    assert (
+        elapsed < 2
+    ), "Test took to long some computation are likely not lazy"
 
 
 def test_non_visible_images():
