@@ -3,7 +3,6 @@ import ast
 import numpy as np
 import pytest
 
-from napari._qt.widgets.qt_action_context_menu import QtActionContextMenu
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels
 from napari.layers._layer_actions import (
@@ -101,8 +100,12 @@ def test_split_stack(make_napari_viewer, order) -> None:
     viewer.add_image(data)
     viewer.dims.order = order
 
-    menu = QtActionContextMenu(_LAYER_ACTIONS)
-    split_action = menu._get_action("napari:split_stack").data()["action"]
+    for actions in _LAYER_ACTIONS:
+        action = actions.get("napari:split_stack")
+        if action is not None:
+            break
+
+    split_action = action["action"]
     split_action(viewer.layers, axis=axis)
 
     # removing extra dimension from `larger_data`
