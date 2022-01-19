@@ -121,8 +121,7 @@ To use napari from inside a script, use `napari.run()`:
 from skimage import data
 import napari
 
-viewer = napari.Viewer()
-viewer.open_sample('scikit-image', 'cells3d')
+viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 napari.run()  # start the "event loop" and show the viewer
 ```
 
