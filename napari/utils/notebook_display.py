@@ -86,7 +86,7 @@ class NotebookScreenshot:
     def _repr_html_(self):
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
-        html = f'<img src="{url}" alt="{self.alt_text}"></img>'
+        html = f'<img src="{url}" alt="{html.escape(self.alt_text)}"></img>'
         return html
 
 
