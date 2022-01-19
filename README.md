@@ -106,11 +106,7 @@ From inside an IPython shell, you can open up an interactive viewer by calling
 from skimage import data
 import napari
 
-viewer = napari.Viewer()
-viewer.open_sample('scikit-image', 'cells3d')
-# viewer.open_image('my/image/filename.zarr')  # or look at your own data
-
-viewer.dims.ndisplay = 3  # selects 3D mode
+viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 ```
 
 ![image](resources/screenshot-add-image.png)
