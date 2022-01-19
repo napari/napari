@@ -201,6 +201,7 @@ def _constructor(version=_version(), extra_specs=None):
                 "default_prefix_all_users": os.path.join(
                     '%ALLUSERSPROFILE%', f"{APP}-{version}"
                 ),
+                "check_path_length": False,
             }
         )
         signing_certificate = os.environ.get("CONSTRUCTOR_SIGNING_CERTIFICATE")
