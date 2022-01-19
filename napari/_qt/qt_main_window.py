@@ -1143,7 +1143,7 @@ class Window:
             By default, True.
 
         Returns
-        ----------
+        -------
         img : QImage
         """
         from .utils import add_flash_animation
