@@ -150,13 +150,13 @@ class QtViewerButtons(QFrame):
         )
         self.ndisplayButton = ndb
         ndb.setCheckable(True)
-        ndb.setChecked(self.viewer.dims.ndisplay == 2)
+        ndb.setChecked(self.viewer.dims.ndisplay == 3)
         ndb.setContextMenuPolicy(Qt.CustomContextMenu)
         ndb.customContextMenuRequested.connect(self.open_perspective_popup)
 
         @self.viewer.dims.events.ndisplay.connect
         def _set_ndisplay_mode_checkstate(event):
-            ndb.setChecked(event.value == 2)
+            ndb.setChecked(event.value == 3)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

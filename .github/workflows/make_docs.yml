@@ -20,11 +20,18 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
+      - uses: tlambert03/setup-qt-libs@v1
       - name: Install Dependencies
+        working-directory: main
         run: |
           pip install --upgrade pip
-          pip install pyyaml
+          pip install -e .[all]
+          pip install -r docs/requirements.txt
+      - name: Prep docs
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: python main/docs/_scripts/prep_docs.py
       - name: Clone napari.github.io repository
         uses: actions/checkout@main
         with:
@@ -33,8 +40,8 @@ jobs:
           path: 'napari.github.io'
           token: ${{ secrets.DOCS_GITHUB_TOKEN }}
       - name: copy doc sources
-        run: python -m copy-docs
         working-directory: main/docs
+        run: python -m copy-docs
       - name: update repo
         uses: EndBug/add-and-commit@v4
         with:

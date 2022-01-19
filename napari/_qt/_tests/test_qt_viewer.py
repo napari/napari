@@ -238,7 +238,7 @@ def test_screenshot(make_napari_viewer):
 
     # Take screenshot
     with pytest.warns(FutureWarning):
-        screenshot = viewer.window._qt_viewer.screenshot(flash=False)
+        screenshot = viewer.window.qt_viewer.screenshot(flash=False)
     screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
     assert screenshot.ndim == 3
 
@@ -346,7 +346,7 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
 
     # capture screenshot
     with pytest.warns(FutureWarning):
-        viewer.window._qt_viewer.clipboard(flash=True)
+        viewer.window.qt_viewer.clipboard(flash=True)
 
     viewer.window.clipboard(flash=False, canvas_only=True)
 
@@ -393,7 +393,7 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
 
     # capture screenshot
     with pytest.warns(FutureWarning):
-        viewer.window._qt_viewer.clipboard(flash=False)
+        viewer.window.qt_viewer.clipboard(flash=False)
 
     viewer.window.clipboard(flash=False, canvas_only=True)
 
