@@ -1,9 +1,13 @@
+from unittest.mock import patch
+
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
 
 import napari
 from napari import Viewer
+from napari._qt.qt_main_window import _instantiate_dock_widget
+from napari.utils._proxies import PublicOnlyProxy
 
 
 class Widg1(QWidget):
@@ -20,6 +24,10 @@ class Widg3(QWidget):
     def __init__(self, v: Viewer):
         self.viewer = v
         super().__init__()
+
+    def fail(self):
+        """private attr not allowed"""
+        self.viewer.window._qt_window
 
 
 def magicfunc(viewer: 'napari.Viewer'):
@@ -137,6 +145,14 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     assert isinstance(dw.widget().viewer, napari.Viewer)
     # Add twice is ok, only does a show
     action.trigger()
+    # Check that widget is still there when closed.
+    widg = dw.widget()
+    dw.title.hide_button.click()
+    assert widg
+    # Check that widget is destroyed when closed.
+    dw.destroyOnClose()
+    assert action not in viewer.window.plugins_menu.actions()
+    assert not widg.parent()
 
 
 def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
@@ -172,23 +188,13 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     actions[2].trigger()
 
 
-def test_clear_all_plugin_widgets(test_plugin_widgets, make_napari_viewer):
-    """Test the the 'Remove Dock Widgets' menu item clears added widgets."""
+def test_inject_viewer_proxy(make_napari_viewer):
+    """Test that the injected viewer is a public-only proxy"""
     viewer = make_napari_viewer()
-    # only take the plugin actions
-    actions = viewer.window.plugins_menu.actions()
-    for cnt, action in enumerate(actions):
-        if action.text() == "":
-            # this is the separator
-            break
-    actions = actions[cnt + 1 :]
-    actions[1].trigger()
-    actions[0].menu().actions()[1].trigger()
-    assert len(viewer.window._dock_widgets) == 2
-    clear_action = next(
-        a
-        for a in viewer.window.window_menu.actions()
-        if a.text().startswith("Remove Dock Widgets")
-    )
-    clear_action.trigger()
-    assert len(viewer.window._dock_widgets) == 0
+    wdg = _instantiate_dock_widget(Widg3, viewer)
+    assert isinstance(wdg.viewer, PublicOnlyProxy)
+
+    # simulate access from outside napari
+    with patch('napari.utils.misc.ROOT_DIR', new='/some/other/package'):
+        with pytest.warns(FutureWarning):
+            wdg.fail()

@@ -1,10 +1,28 @@
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSlider
+import warnings
+from functools import wraps
+from typing import TYPE_CHECKING
+
+from qtpy.QtCore import QPoint, Qt
+from qtpy.QtWidgets import (
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QVBoxLayout,
+)
 
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
+from .qt_dims_sorter import QtDimsSorter
+from .qt_spinbox import QtSpinBox
+from .qt_tooltip import QtToolTipLabel
+
+if TYPE_CHECKING:
+    from ...viewer import Viewer
 
 
 class QtLayerButtons(QFrame):
@@ -29,13 +47,12 @@ class QtLayerButtons(QFrame):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer: 'Viewer'):
         super().__init__()
 
         self.viewer = viewer
         self.deleteButton = QtDeleteButton(self.viewer)
         self.newPointsButton = QtViewerPushButton(
-            self.viewer,
             'new_points',
             trans._('New points layer'),
             lambda: self.viewer.add_points(
@@ -45,7 +62,6 @@ class QtLayerButtons(QFrame):
         )
 
         self.newShapesButton = QtViewerPushButton(
-            self.viewer,
             'new_shapes',
             trans._('New shapes layer'),
             lambda: self.viewer.add_shapes(
@@ -54,7 +70,6 @@ class QtLayerButtons(QFrame):
             ),
         )
         self.newLabelsButton = QtViewerPushButton(
-            self.viewer,
             'new_labels',
             trans._('New labels layer'),
             lambda: self.viewer._new_labels(),
@@ -88,78 +103,60 @@ class QtViewerButtons(QFrame):
         Button to transpose dimensions in the napari viewer.
     resetViewButton : QtViewerPushButton
         Button resetting the view of the rendered scene.
-    gridViewButton : QtStateButton
+    gridViewButton : QtViewerPushButton
         Button to toggle grid view mode of layers on and off.
-    ndisplayButton : QtStateButton
+    ndisplayButton : QtViewerPushButton
         Button to toggle number of displayed dimensions.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer: 'Viewer'):
         super().__init__()
 
         self.viewer = viewer
-        action_manager.context['viewer'] = viewer
-
-        def active_layer():
-            if len(self.viewer.layers.selection) == 1:
-                return next(iter(self.viewer.layers.selection))
-            else:
-                return None
-
-        action_manager.context['layer'] = active_layer
 
         self.consoleButton = QtViewerPushButton(
-            self.viewer,
-            'console',
-            trans._(
-                "Open IPython terminal",
-            ),
+            'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        self.rollDimsButton = QtViewerPushButton(
-            self.viewer,
-            'roll',
-        )
 
-        action_manager.bind_button('napari:roll_axes', self.rollDimsButton)
+        rdb = QtViewerPushButton('roll', action='napari:roll_axes')
+        self.rollDimsButton = rdb
+        rdb.setContextMenuPolicy(Qt.CustomContextMenu)
+        rdb.customContextMenuRequested.connect(self._open_roll_popup)
 
         self.transposeDimsButton = QtViewerPushButton(
-            self.viewer,
-            'transpose',
+            'transpose', action='napari:transpose_axes'
         )
+        self.resetViewButton = QtViewerPushButton(
+            'home', action='napari:reset_view'
+        )
+        gvb = QtViewerPushButton(
+            'grid_view_button', action='napari:toggle_grid'
+        )
+        self.gridViewButton = gvb
+        gvb.setCheckable(True)
+        gvb.setChecked(viewer.grid.enabled)
+        gvb.setContextMenuPolicy(Qt.CustomContextMenu)
+        gvb.customContextMenuRequested.connect(self._open_grid_popup)
 
-        action_manager.bind_button(
-            'napari:transpose_axes', self.transposeDimsButton
-        )
+        @self.viewer.grid.events.enabled.connect
+        def _set_grid_mode_checkstate(event):
+            gvb.setChecked(event.value)
 
-        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
-        action_manager.bind_button('napari:reset_view', self.resetViewButton)
+        ndb = QtViewerPushButton(
+            'ndisplay_button', action='napari:toggle_ndisplay'
+        )
+        self.ndisplayButton = ndb
+        ndb.setCheckable(True)
+        ndb.setChecked(self.viewer.dims.ndisplay == 3)
+        ndb.setContextMenuPolicy(Qt.CustomContextMenu)
+        ndb.customContextMenuRequested.connect(self.open_perspective_popup)
 
-        self.gridViewButton = QtStateButton(
-            'grid_view_button',
-            self.viewer.grid,
-            'enabled',
-            self.viewer.grid.events,
-        )
-        action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
-
-        self.ndisplayButton = QtStateButton(
-            "ndisplay_button",
-            self.viewer.dims,
-            'ndisplay',
-            self.viewer.dims.events.ndisplay,
-            2,
-            3,
-        )
-        self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ndisplayButton.customContextMenuRequested.connect(
-            self.open_perspective_popup
-        )
-        action_manager.bind_button(
-            'napari:toggle_ndisplay', self.ndisplayButton
-        )
+        @self.viewer.dims.events.ndisplay.connect
+        def _set_ndisplay_mode_checkstate(event):
+            ndb.setChecked(event.value == 3)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -194,6 +191,147 @@ class QtViewerButtons(QFrame):
         pop = QtPopup(self)
         pop.frame.setLayout(layout)
         pop.show_above_mouse()
+
+    def _open_roll_popup(self):
+        """Open a grid popup to manually order the dimensions"""
+        if self.viewer.dims.ndisplay != 2:
+            return
+
+        dim_sorter = QtDimsSorter(self.viewer, self)
+        dim_sorter.setObjectName('dim_sorter')
+
+        # make layout
+        layout = QHBoxLayout()
+        layout.addWidget(dim_sorter)
+
+        # popup and show
+        pop = QtPopup(self)
+        pop.frame.setLayout(layout)
+        pop.show_above_mouse()
+
+    def _open_grid_popup(self):
+        """Open grid options pop up widget."""
+
+        # widgets
+        popup = QtPopup(self)
+        grid_stride = QtSpinBox(popup)
+        grid_width = QtSpinBox(popup)
+        grid_height = QtSpinBox(popup)
+        shape_help_symbol = QtToolTipLabel(self)
+        stride_help_symbol = QtToolTipLabel(self)
+        blank = QLabel(self)  # helps with placing help symbols.
+
+        shape_help_msg = trans._(
+            'Number of rows and columns in the grid. A value of -1 for either or both of width and height will trigger an auto calculation of the necessary grid shape to appropriately fill all the layers at the appropriate stride. 0 is not a valid entry.'
+        )
+
+        stride_help_msg = trans._(
+            'Number of layers to place in each grid square before moving on to the next square. The default ordering is to place the most visible layer in the top left corner of the grid. A negative stride will cause the order in which the layers are placed in the grid to be reversed. 0 is not a valid entry.'
+        )
+
+        # set up
+        stride_min = self.viewer.grid.__fields__['stride'].type_.ge
+        stride_max = self.viewer.grid.__fields__['stride'].type_.le
+        stride_not = self.viewer.grid.__fields__['stride'].type_.ne
+        grid_stride.setObjectName("gridStrideBox")
+        grid_stride.setAlignment(Qt.AlignCenter)
+        grid_stride.setRange(stride_min, stride_max)
+        grid_stride.setProhibitValue(stride_not)
+        grid_stride.setValue(self.viewer.grid.stride)
+        grid_stride.valueChanged.connect(self._update_grid_stride)
+        self.grid_stride_box = grid_stride
+
+        width_min = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ge
+        width_not = self.viewer.grid.__fields__['shape'].sub_fields[1].type_.ne
+        grid_width.setObjectName("gridWidthBox")
+        grid_width.setAlignment(Qt.AlignCenter)
+        grid_width.setMinimum(width_min)
+        grid_width.setProhibitValue(width_not)
+        grid_width.setValue(self.viewer.grid.shape[1])
+        grid_width.valueChanged.connect(self._update_grid_width)
+        self.grid_width_box = grid_width
+
+        height_min = (
+            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ge
+        )
+        height_not = (
+            self.viewer.grid.__fields__['shape'].sub_fields[0].type_.ne
+        )
+        grid_height.setObjectName("gridStrideBox")
+        grid_height.setAlignment(Qt.AlignCenter)
+        grid_height.setMinimum(height_min)
+        grid_height.setProhibitValue(height_not)
+        grid_height.setValue(self.viewer.grid.shape[0])
+        grid_height.valueChanged.connect(self._update_grid_height)
+        self.grid_height_box = grid_height
+
+        shape_help_symbol.setObjectName("help_label")
+        shape_help_symbol.setToolTip(shape_help_msg)
+
+        stride_help_symbol.setObjectName("help_label")
+        stride_help_symbol.setToolTip(stride_help_msg)
+
+        # layout
+        form_layout = QFormLayout()
+        form_layout.insertRow(0, QLabel(trans._('Grid stride:')), grid_stride)
+        form_layout.insertRow(1, QLabel(trans._('Grid width:')), grid_width)
+        form_layout.insertRow(2, QLabel(trans._('Grid height:')), grid_height)
+
+        help_layout = QVBoxLayout()
+        help_layout.addWidget(stride_help_symbol)
+        help_layout.addWidget(blank)
+        help_layout.addWidget(shape_help_symbol)
+
+        layout = QHBoxLayout()
+        layout.addLayout(form_layout)
+        layout.addLayout(help_layout)
+
+        popup.frame.setLayout(layout)
+
+        popup.show_above_mouse()
+
+        # adjust placement of shape help symbol.  Must be done last
+        # in order for this movement to happen.
+        delta_x = 0
+        delta_y = -15
+        shape_pos = (
+            shape_help_symbol.x() + delta_x,
+            shape_help_symbol.y() + delta_y,
+        )
+        shape_help_symbol.move(QPoint(*shape_pos))
+
+    def _update_grid_width(self, value):
+        """Update the width value in grid shape.
+
+        Parameters
+        ----------
+        value : int
+            New grid width value.
+        """
+
+        self.viewer.grid.shape = (self.viewer.grid.shape[0], value)
+
+    def _update_grid_stride(self, value):
+        """Update stride in grid settings.
+
+        Parameters
+        ----------
+        value : int
+            New grid stride value.
+        """
+
+        self.viewer.grid.stride = value
+
+    def _update_grid_height(self, value):
+        """Update height value in grid shape.
+
+        Parameters
+        ----------
+        value : int
+            New grid height value.
+        """
+
+        self.viewer.grid.shape = (value, self.viewer.grid.shape[1])
 
 
 class QtDeleteButton(QPushButton):
@@ -270,13 +408,41 @@ class QtDeleteButton(QPushButton):
             self.viewer.layers.remove_selected()
 
 
+def _omit_viewer_args(constructor):
+    @wraps(constructor)
+    def _func(*args, **kwargs):
+        if len(args) > 1 and not isinstance(args[1], str):
+            warnings.warn(
+                "viewer argument is deprecated and should not be used",
+                category=FutureWarning,
+                stacklevel=2,
+            )
+            args = args[:1] + args[2:]
+        if "viewer" in kwargs:
+            warnings.warn(
+                "viewer argument is deprecated and should not be used",
+                category=FutureWarning,
+                stacklevel=2,
+            )
+            del kwargs["viewer"]
+        return constructor(*args, **kwargs)
+
+    return _func
+
+
 class QtViewerPushButton(QPushButton):
     """Push button.
 
     Parameters
     ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
+    button_name : str
+        Name of button.
+    tooltip : str
+        Tooltip for button. If empty then `button_name` is used
+    slot : Callable, optional
+        callable to be triggered on button click
+    action : str
+        action name to be triggered on button click
 
     Attributes
     ----------
@@ -284,19 +450,22 @@ class QtViewerPushButton(QPushButton):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    def __init__(self, viewer, button_name, tooltip=None, slot=None):
+    @_omit_viewer_args
+    def __init__(
+        self, button_name: str, tooltip: str = '', slot=None, action: str = ''
+    ):
         super().__init__()
 
-        self.viewer = viewer
         self.setToolTip(tooltip or button_name)
         self.setProperty('mode', button_name)
         if slot is not None:
             self.clicked.connect(slot)
+        if action:
+            action_manager.bind_button(action, self)
 
 
 class QtStateButton(QtViewerPushButton):
     """Button to toggle between two states.
-
     Parameters
     ----------
     button_name : str
@@ -325,7 +494,12 @@ class QtStateButton(QtViewerPushButton):
         onstate=True,
         offstate=False,
     ):
-        super().__init__(target, button_name)
+        warnings.warn(
+            "QtStateButton is deprecated and will be removed in 0.4.14",
+            stacklevel=2,
+            category=FutureWarning,
+        )
+        super().__init__(button_name)
         self.setCheckable(True)
 
         self._target = target
@@ -347,7 +521,6 @@ class QtStateButton(QtViewerPushButton):
 
     def _on_change(self, event=None):
         """Called wen mirrored value changes
-
         Parameters
         ----------
         event : qtpy.QtCore.QEvent

@@ -6,7 +6,7 @@ import numpy as np
 import napari
 
 from time import sleep
-from napari.qt import progress
+from napari.utils import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from skimage.filters import (
@@ -30,7 +30,7 @@ all_thresholds = [
 viewer = napari.Viewer()
 
 # load cells data and take just nuclei
-membrane, cell_nuclei = viewer.open_sample('scikit-image', 'cells3d')
+membrane, cell_nuclei = viewer.open_sample('napari', 'cells3d')
 cell_nuclei = cell_nuclei.data
 
 
@@ -49,7 +49,7 @@ def try_thresholds():
         thresholded_nuclei.append(binarised_im)
 
         # uncomment if processing is too fast
-        sleep(0.5)
+        # sleep(0.5)
 
     # working with a wrapped iterable, the progress bar will be closed
     # as soon as the iteration is complete
@@ -94,7 +94,7 @@ def segment_binarised_ims():
             segmented_nuclei.append(labelled_im)
 
             # uncomment if processing is too fast
-            sleep(0.5)
+            # sleep(0.5)
 
     # progress bar is still automatically closed
 
@@ -134,7 +134,7 @@ def process_ims():
         pbar.update(1)
 
         # uncomment this line to see the 100% progress bar
-        sleep(0.5)
+        # sleep(0.5)
 
 button_layout = QVBoxLayout()
 process_btn = QPushButton("Full Process")
@@ -151,8 +151,10 @@ button_layout.addWidget(segment_btn)
 
 action_widget = QWidget()
 action_widget.setLayout(button_layout)
+action_widget.setObjectName("Segmentation")
 viewer.window.add_dock_widget(action_widget)
+
 # showing the activity dock so we can see the progress bars
-viewer.window.qt_viewer.activityDock.show()
+viewer.window._status_bar._toggle_activity_dock(True)
 
 napari.run()

@@ -6,25 +6,25 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from warnings import warn
 
+from qtpy import PYQT5
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
+from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.notifications import (
     notification_manager,
     show_console_notification,
 )
 from ..utils.perf import perf_config
-from ..utils.settings import get_settings
 from ..utils.translations import trans
-from .dialogs.qt_notification import (
-    NapariQtNotification,
-    NotificationDispatcher,
-)
+from .dialogs.qt_notification import NapariQtNotification
+from .qt_event_filters import QtToolTipEventFilter
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
+from .utils import _maybe_allow_interrupt
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
@@ -54,6 +54,7 @@ _defaults = {
 
 # store reference to QApplication to prevent garbage collection
 _app_ref = None
+_IPYTHON_WAS_HERE_FIRST = "IPython" in sys.modules
 
 
 def get_app(
@@ -104,11 +105,6 @@ def get_app(
     Substitutes QApplicationWithTracing when the NAPARI_PERFMON env variable
     is set.
 
-    If the QApplication already exists, we call convert_app_for_tracing() which
-    deletes the QApplication and creates a new one. However here with get_app
-    we need to create the correct QApplication up front, or we will crash
-    because we'd be deleting the QApplication after we created QWidgets with
-    it, such as we do for the splash screen.
     """
     # napari defaults are all-or nothing.  If any of the keywords are used
     # then they are all used.
@@ -129,21 +125,33 @@ def get_app(
                 )
             )
         if perf_config and perf_config.trace_qt_events:
-            from .perf.qt_event_tracing import convert_app_for_tracing
+            warn(
+                trans._(
+                    "Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.",
+                    deferred=True,
+                )
+            )
 
-            # no-op if app is already a QApplicationWithTracing
-            app = convert_app_for_tracing(app)
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+        if PYQT5:
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+            QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
+        argv = sys.argv.copy()
+        if sys.platform == "darwin" and not argv[0].endswith("napari"):
+            # Make sure the app name in the Application menu is `napari`
+            # which is taken from the basename of sys.argv[0]; we use
+            # a copy so the original value is still available at sys.argv
+            argv[0] = "napari"
 
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import QApplicationWithTracing
 
-            app = QApplicationWithTracing(sys.argv)
+            app = QApplicationWithTracing(argv)
         else:
-            app = QApplication(sys.argv)
+            app = QApplication(argv)
 
         # if this is the first time the Qt app is being instantiated, we set
         # the name and metadata
@@ -153,6 +161,18 @@ def get_app(
         app.setOrganizationDomain(kwargs.get('org_domain'))
         set_app_id(kwargs.get('app_id'))
 
+        # Intercept tooltip events in order to convert all text to rich text
+        # to allow for text wrapping of tooltips
+        app.installEventFilter(QtToolTipEventFilter())
+
+    if app.windowIcon().isNull():
+        app.setWindowIcon(QIcon(kwargs.get('icon')))
+
+    if ipy_interactive is None:
+        ipy_interactive = get_settings().application.ipy_interactive
+    if _IPYTHON_WAS_HERE_FIRST:
+        _try_enable_ipython_gui('qt' if ipy_interactive else None)
+
     if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
@@ -160,13 +180,6 @@ def get_app(
         notification_manager.notification_ready.connect(
             show_console_notification
         )
-
-    if app.windowIcon().isNull():
-        app.setWindowIcon(QIcon(kwargs.get('icon')))
-
-    if ipy_interactive is None:
-        ipy_interactive = get_settings().application.ipy_interactive
-    _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -185,9 +198,6 @@ def get_app(
 
     # Add the dispatcher attribute to the application to be able to dispatch
     # notifications coming from threads
-    dispatcher = getattr(app, "_dispatcher", None)
-    if dispatcher is None:
-        app._dispatcher = NotificationDispatcher()
 
     return app
 
@@ -293,6 +303,18 @@ def _ipython_has_eventloop() -> bool:
     return shell.active_eventloop == 'qt'
 
 
+def _pycharm_has_eventloop(app: QApplication) -> bool:
+    """Return true if running in PyCharm and eventloop is active.
+
+    Explicit checking is necessary because PyCharm runs a custom interactive
+    shell which overrides `InteractiveShell.enable_gui()`, breaking some
+    superclass behaviour.
+    """
+    in_pycharm = 'PYCHARM_HOSTED' in os.environ
+    in_event_loop = getattr(app, '_in_event_loop', False)
+    return in_pycharm and in_event_loop
+
+
 def _try_enable_ipython_gui(gui='qt'):
     """Start %gui qt the eventloop."""
     ipy_module = sys.modules.get("IPython")
@@ -341,6 +363,11 @@ def run(
         return
 
     app = QApplication.instance()
+
+    if _pycharm_has_eventloop(app):
+        # explicit check for PyCharm pydev console
+        return
+
     if not app:
         raise RuntimeError(
             trans._(
@@ -371,6 +398,5 @@ def run(
             )
         )
         return
-
-    with notification_manager:
+    with notification_manager, _maybe_allow_interrupt(app):
         app.exec_()

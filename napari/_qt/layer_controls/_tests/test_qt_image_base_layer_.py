@@ -7,9 +7,10 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
 
 from napari._qt.layer_controls.qt_image_controls_base import (
+    QContrastLimitsPopup,
     QRangeSliderPopup,
     QtBaseImageControls,
-    create_range_popup,
+    range_to_decimals,
 )
 from napari.layers import Image, Surface
 
@@ -27,7 +28,7 @@ def test_base_controls_creation(qtbot, layer):
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     original_clims = tuple(layer.contrast_limits)
-    slider_clims = qtctrl.contrastLimitsSlider.values()
+    slider_clims = qtctrl.contrastLimitsSlider.value()
     assert slider_clims[0] == 0
     assert slider_clims[1] == 99
     assert tuple(slider_clims) == original_clims
@@ -40,7 +41,7 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
-    assert hasattr(qtctrl, 'clim_pop')
+    assert hasattr(qtctrl, 'clim_popup')
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
     if not (os.name == 'nt' and os.getenv("CI")):
@@ -54,7 +55,7 @@ def test_changing_model_updates_view(qtbot, layer):
     qtbot.addWidget(qtctrl)
     new_clims = (20, 40)
     layer.contrast_limits = new_clims
-    assert tuple(qtctrl.contrastLimitsSlider.values()) == new_clims
+    assert tuple(qtctrl.contrastLimitsSlider.value()) == new_clims
 
 
 @patch.object(QRangeSliderPopup, 'show')
@@ -68,37 +69,56 @@ def test_range_popup_clim_buttons(mock_show, qtbot, layer):
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
 
     # pressing the reset button returns the clims to the default values
-    reset_button = qtctrl.clim_pop.findChild(QPushButton, "reset_clims_button")
+    reset_button = qtctrl.clim_popup.findChild(
+        QPushButton, "reset_clims_button"
+    )
     reset_button.click()
     qtbot.wait(20)
-    assert tuple(qtctrl.contrastLimitsSlider.values()) == original_clims
+    assert tuple(qtctrl.contrastLimitsSlider.value()) == original_clims
 
-    rangebtn = qtctrl.clim_pop.findChild(QPushButton, "full_clim_range_button")
+    rangebtn = qtctrl.clim_popup.findChild(
+        QPushButton, "full_clim_range_button"
+    )
     # the data we created above was uint16 for Image, and float for Surface
     # Surface will not have a "full range button"
     if np.issubdtype(layer.dtype, np.integer):
         rangebtn.click()
         qtbot.wait(20)
         assert tuple(layer.contrast_limits_range) == (0, 2 ** 16 - 1)
-        assert tuple(qtctrl.contrastLimitsSlider.range()) == (0, 2 ** 16 - 1)
+        min_ = qtctrl.contrastLimitsSlider.minimum()
+        max_ = qtctrl.contrastLimitsSlider.maximum()
+        assert (min_, max_) == (0, 2 ** 16 - 1)
     else:
         assert rangebtn is None
 
 
-@pytest.mark.parametrize('mag', [-12, -9, -3, 0, 2, 4, 6])
+@pytest.mark.parametrize('mag', list(range(-16, 16, 4)))
 def test_clim_slider_step_size_and_precision(qtbot, mag):
     """Make sure the slider has a reasonable step size and precision.
 
     ...across a broad range of orders of magnitude.
     """
-    layer = Image(np.random.rand(20, 20) / 10 ** mag)
-    popup = create_range_popup(layer, 'contrast_limits')
+    layer = Image(np.random.rand(20, 20) * 10 ** mag)
+    popup = QContrastLimitsPopup(layer)
     qtbot.addWidget(popup)
-    # the range slider popup labels should have a number of decimal points that
-    # is inversely proportional to the order of magnitude of the range of data,
-    # but should never be greater than 5 or less than 0
-    assert popup.precision == max(min(mag + 3, 5), 0)
+
+    # scale precision with the log of the data range order of magnitude
+    # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
+    #       0 - 10  (1 order of mag)  -> 2 decimals
+    #       0 - 100 (2 orders of mag) -> 1 decimal
+    #       ≥ 3 orders of mag -> no decimals
+    # no more than 64 decimals
+    decimals = range_to_decimals(layer.contrast_limits, layer.dtype)
+    assert popup.slider.decimals() == decimals
 
     # the slider step size should also be inversely proportional to the data
     # range, with 1000 steps across the data range
-    assert np.ceil(popup.slider._step * 10 ** (mag + 4)) == 10
+    assert popup.slider.singleStep() == 10 ** -decimals
+
+
+def test_qt_image_controls_change_contrast(qtbot):
+    layer = Image(np.random.rand(8, 8))
+    qtctrl = QtBaseImageControls(layer)
+    qtbot.addWidget(qtctrl)
+    qtctrl.contrastLimitsSlider.setValue((0.1, 0.8))
+    assert tuple(layer.contrast_limits) == (0.1, 0.8)

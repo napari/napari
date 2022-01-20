@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from ..utils.settings import get_settings
+from ..settings import get_settings
 
 
 def update_open_history(filename):

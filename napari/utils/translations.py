@@ -166,6 +166,19 @@ class TranslationString(str):
     A class that allows to create a deferred translations.
     """
 
+    def __deepcopy__(self, memo):
+        from copy import deepcopy
+
+        return TranslationString(
+            domain=self._domain,
+            msgctxt=self._msgctxt,
+            msgid=self._msgid,
+            msgid_plural=self._msgid_plural,
+            n=self._n,
+            deferred=self._deferred,
+            kwargs=deepcopy(self._kwargs),
+        )
+
     def __new__(
         cls,
         domain: Optional[str] = None,

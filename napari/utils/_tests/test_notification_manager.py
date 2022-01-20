@@ -34,13 +34,19 @@ def test_notification_repr_has_message():
     )
 
 
-def test_notification_manager_no_gui():
+def test_notification_manager_no_gui(monkeypatch):
     """
     Direct test of the notification manager.
 
     This does not test the integration with the gui, but test that the
     notification manager itself can receive a info, warning or error.
     """
+    try:
+        from napari._qt.dialogs.qt_notification import NapariQtNotification
+
+        monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
+    except ImportError:
+        pass
     previous_exhook = sys.excepthook
     with notification_manager:
         notification_manager.records.clear()

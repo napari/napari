@@ -8,33 +8,6 @@ from ...utils.translations import trans
 from ..utils.layer_utils import segment_normal
 
 
-def inside_triangles(triangles):
-    """Checks which triangles contain the origin
-
-    Parameters
-    ----------
-    triangles : (N, 3, 2) array
-        Array of N triangles that should be checked
-
-    Returns
-    -------
-    inside : (N,) array of bool
-        Array with `True` values for trinagles containing the origin
-    """
-
-    AB = triangles[:, 1, :] - triangles[:, 0, :]
-    AC = triangles[:, 2, :] - triangles[:, 0, :]
-    BC = triangles[:, 2, :] - triangles[:, 1, :]
-
-    s_AB = -AB[:, 0] * triangles[:, 0, 1] + AB[:, 1] * triangles[:, 0, 0] >= 0
-    s_AC = -AC[:, 0] * triangles[:, 0, 1] + AC[:, 1] * triangles[:, 0, 0] >= 0
-    s_BC = -BC[:, 0] * triangles[:, 1, 1] + BC[:, 1] * triangles[:, 1, 0] >= 0
-
-    inside = np.all(np.array([s_AB != s_AC, s_AB == s_BC]), axis=0)
-
-    return inside
-
-
 def inside_boxes(boxes):
     """Checks which boxes contain the origin. Boxes need not be axis aligned
 
@@ -433,7 +406,7 @@ def find_corners(data):
     Returns
     -------
     corners : np.ndarray
-        4x2 array of corners of the boudning box
+        4x2 array of corners of the bounding box
     """
     min_val = data.min(axis=0)
     max_val = data.max(axis=0)
@@ -458,7 +431,7 @@ def center_radii_to_corners(center, radii):
     Returns
     -------
     corners : np.ndarray
-        4x2 array of corners of the boudning box
+        4x2 array of corners of the bounding box
     """
     data = np.array([center + radii, center - radii])
     corners = find_corners(data)
@@ -555,7 +528,7 @@ def triangulate_face(data):
     Returns
     -------
     vertices : np.ndarray
-        Mx2 array vertices of the trinagles.
+        Mx2 array vertices of the triangles.
     triangles : np.ndarray
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
@@ -584,7 +557,7 @@ def triangulate_edge(path, closed=False):
     Returns
     -------
     centers : np.ndarray
-        Mx2 or Mx3 array central coordinates of path trinagles.
+        Mx2 or Mx3 array central coordinates of path triangles.
     offsets : np.ndarray
         Mx2 or Mx3 array of the offsets to the central coordinates that need to
         be scaled by the line width and then added to the centers to
@@ -643,7 +616,7 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     Returns
     -------
     centers : np.ndarray
-        Mx2 or Mx3 array central coordinates of path trinagles.
+        Mx2 or Mx3 array central coordinates of path triangles.
     offsets : np.ndarray
         Mx2 or Mx3 array of the offsets to the central coordinates that need to
         be scaled by the line width and then added to the centers to
@@ -789,7 +762,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     """Generates list of mesh vertices and triangles from a path
 
     Adapted from vispy.visuals.TubeVisual
-    https://github.com/vispy/vispy/blob/master/vispy/visuals/tube.py
+    https://github.com/vispy/vispy/blob/main/vispy/visuals/tube.py
 
     Parameters
     ----------
@@ -1015,7 +988,9 @@ def extract_shape_type(data, shape_type=None):
 
 
 def get_default_shape_type(current_type):
-    """Returns current shape type if current_type is one shape, else "polygon".
+    """If all shapes in current_type are of identical shape type,
+       return this shape type, else "polygon" as lowest common
+       denominator type.
 
     Parameters
     ----------
@@ -1023,14 +998,17 @@ def get_default_shape_type(current_type):
         list of current shape types
 
     Returns
-    ----------
+    -------
     default_type : str
         default shape type
     """
+    default = "polygon"
+    if not current_type:
+        return default
     first_type = current_type[0]
     if all(shape_type == first_type for shape_type in current_type):
         return first_type
-    return "rectangle"
+    return default
 
 
 def get_shape_ndim(data):
@@ -1084,3 +1062,56 @@ def number_of_shapes(data):
         n_shapes = len(data)
 
     return n_shapes
+
+
+def validate_num_vertices(
+    data, shape_type, min_vertices=None, valid_vertices=None
+):
+    """Raises error if a shape in data has invalid number of vertices.
+
+    Checks whether all shapes in data have a valid number of vertices
+    for the given shape type and vertex information. Rectangles and
+    ellipses can have either 2 or 4 vertices per shape,
+    lines can have only 2, while paths and polygons have a minimum
+    number of vertices, but no maximum.
+
+    One of valid_vertices or min_vertices must be passed to the
+    function.
+
+    Parameters
+    ----------
+    data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+        List of shape data, where each element is either an (N, D) array of the
+        N vertices of a shape in D dimensions or a tuple containing an array of
+        the N vertices and the shape_type string. Can be an 3-dimensional array
+        if each shape has the same number of vertices.
+    shape_type : str
+        Type of shape being validated (for detailed error message)
+    min_vertices : int or None
+        Minimum number of vertices for the shape type, by default None
+    valid_vertices : Tuple(int) or None
+        Valid number of vertices for the shape type in data, by default None
+
+    Raises
+    ------
+    ValueError
+        Raised if a shape is found with invalid number of vertices
+    """
+    n_shapes = number_of_shapes(data)
+    # single array of vertices
+    if n_shapes == 1 and len(np.array(data).shape) == 2:
+        # wrap in extra dimension so we can iterate through shape not vertices
+        data = [data]
+    for shape in data:
+        if (valid_vertices and len(shape) not in valid_vertices) or (
+            min_vertices and len(shape) < min_vertices
+        ):
+            raise ValueError(
+                trans._(
+                    "{shape_type} {shape} has invalid number of vertices: {shape_length}.",
+                    deferred=True,
+                    shape_type=shape_type,
+                    shape=shape,
+                    shape_length=len(shape),
+                )
+            )

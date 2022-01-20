@@ -51,6 +51,12 @@ class NotificationSeverity(StringEnum):
     def __ge__(self, other):
         return name2num[str(self)] >= name2num[str(other)]
 
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return hash(self.value)
+
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
@@ -104,6 +110,9 @@ class Notification(Event):
     @classmethod
     def from_warning(cls, warning: Warning, **kwargs) -> Notification:
         return WarningNotification(warning, **kwargs)
+
+    def __str__(self):
+        return f'{str(self.severity).upper()}: {self.message}'
 
 
 class ErrorNotification(Notification):
@@ -183,6 +192,10 @@ class NotificationManager:
     def __init__(self) -> None:
         self.records: List[Notification] = []
         self.exit_on_error = os.getenv('NAPARI_EXIT_ON_ERROR') in ('1', 'True')
+        self.catch_error = os.getenv("NAPARI_CATCH_ERRORS") not in (
+            '0',
+            'False',
+        )
         self.notification_ready = self.changed = EventEmitter(
             source=self, event_class=Notification
         )
@@ -247,7 +260,9 @@ class NotificationManager:
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)
             sys.exit("Exit on error")
-
+        if not self.catch_error:
+            sys.__excepthook__(exctype, value, traceback)
+            return
         try:
             self.dispatch(Notification.from_exception(value))
         except Exception:
@@ -280,15 +295,24 @@ def show_info(message: str):
 
 
 def show_console_notification(notification: Notification):
-    from .settings import get_settings
+    try:
+        from ..settings import get_settings
 
-    if (
-        notification.severity
-        < get_settings().application.console_notification_level
-    ):
-        return
+        if (
+            notification.severity
+            < get_settings().application.console_notification_level
+        ):
+            return
 
-    print(notification)
+        print(notification)
+    except Exception:
+        print(
+            "An error occurred while trying to format an error and show it in console.\n"
+            "You can try to uninstall IPython to disable rich traceback formatting\n"
+            "And/or report a bug to napari"
+        )
+        # this will likely get silenced by QT.
+        raise
 
 
 def _setup_thread_excepthook():

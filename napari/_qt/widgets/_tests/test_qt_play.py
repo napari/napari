@@ -1,12 +1,13 @@
 from contextlib import contextmanager
+from weakref import ref
 
 import numpy as np
 import pytest
 
-from napari._qt._constants import LoopMode
 from napari._qt.widgets.qt_dims import QtDims
 from napari._qt.widgets.qt_dims_slider import AnimationWorker
 from napari.components import Dims
+from napari.settings._constants import LoopMode
 
 
 @contextmanager
@@ -18,9 +19,8 @@ def make_worker(
     qtdims = QtDims(dims)
     qtbot.addWidget(qtdims)
     nz = 8
-    max_index = nz - 1
     step = 1
-    dims.set_range(0, (0, max_index, step))
+    dims.set_range(0, (0, nz, step))
     slider_widget = qtdims.slider_widgets[0]
     slider_widget.loop_mode = loop_mode
     slider_widget.fps = fps
@@ -98,18 +98,27 @@ def test_animation_thread_once(qtbot):
 
 
 @pytest.fixture()
-def view(make_napari_viewer):
-    """basic viewer with data that we will use a few times"""
+def ref_view(make_napari_viewer):
+    """basic viewer with data that we will use a few times
+
+    It is problematic to yield the qt_viewer directly as it will stick
+    around in the generator frames and causes issues if we want to make sure
+    there is only a single instance of QtViewer instantiated at all times during
+    the test suite. Thus we yield a weak reference that we resolve immediately
+    in the test suite.
+    """
+
     viewer = make_napari_viewer()
 
     np.random.seed(0)
     data = np.random.random((10, 10, 15))
     viewer.add_image(data)
+    yield ref(viewer.window._qt_viewer)
+    viewer.close()
 
-    return viewer.window.qt_viewer
 
-
-def test_play_raises_index_errors(qtbot, view):
+def test_play_raises_index_errors(qtbot, ref_view):
+    view = ref_view()
     # play axis is out of range
     with pytest.raises(IndexError):
         view.dims.play(4, 20)
@@ -123,7 +132,8 @@ def test_play_raises_index_errors(qtbot, view):
         view.dims.stop()
 
 
-def test_play_raises_value_errors(qtbot, view):
+def test_play_raises_value_errors(qtbot, ref_view):
+    view = ref_view()
     # frame_range[1] not > frame_range[0]
     with pytest.raises(ValueError):
         view.dims.play(0, 20, frame_range=[2, 2])
@@ -138,11 +148,12 @@ def test_play_raises_value_errors(qtbot, view):
 
 
 @pytest.mark.skip(reason="fails too often... tested indirectly elsewhere")
-def test_play_api(qtbot, view):
+def test_play_api(qtbot, ref_view):
     """Test that the QtDims.play() function advances a few frames"""
+    view = ref_view()
     view.dims._frame = 0
 
-    def increment(e):
+    def increment():
         view.dims._frame += 1
         # if we don't "enable play" again, view.dims won't request a new frame
         view.dims._play_ready = True
@@ -163,8 +174,10 @@ def test_play_api(qtbot, view):
     assert A == view.dims._frame
 
 
-def test_playing_hidden_slider_does_nothing(view):
+def test_playing_hidden_slider_does_nothing(ref_view):
     """Make sure playing a dimension without a slider does nothing"""
+
+    view = ref_view()
 
     def increment(e):
         view.dims._frame = e.value  # this is provided by the step event
@@ -175,4 +188,5 @@ def test_playing_hidden_slider_does_nothing(view):
 
     with pytest.warns(UserWarning):
         view.dims.play(2, 20)
+    view.dims.dims.events.current_step.disconnect(increment)
     assert not view.dims.is_playing

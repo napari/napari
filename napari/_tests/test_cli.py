@@ -102,9 +102,9 @@ def test_cli_passes_kwargs(view_path, mock_run, monkeypatch):
     mock_run.assert_called_once_with(gui_exceptions=True)
 
 
-def test_cli_retains_viewer_ref(mock_run, monkeypatch):
+def test_cli_retains_viewer_ref(mock_run, monkeypatch, make_napari_viewer):
     """Test that napari.__main__ is retaining a reference to the viewer."""
-    v = napari.Viewer(show=False)  # our mock view_path will return this object
+    v = make_napari_viewer()  # our mock view_path will return this object
     ref_count = None  # counter that will be updated before __main__._run()
 
     def _check_refs(**kwargs):
@@ -112,7 +112,7 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch):
         # it forces garbage collection, and then makes sure that at least one
         # additional reference to our viewer exists.
         gc.collect()
-        if not sys.getrefcount(v) > ref_count:
+        if sys.getrefcount(v) <= ref_count:
             raise AssertionError(
                 "Reference to napari.viewer has been lost by "
                 "the time the event loop started in napari.__main__"

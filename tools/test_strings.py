@@ -445,7 +445,7 @@ def test_missing_translations(checks):
 
         if fpath in SKIP_WORDS:
             print(
-                "List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
+                f"List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
             )
             for value in sorted(unique_values):
                 print(f"        {repr(value)},")

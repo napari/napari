@@ -1,7 +1,7 @@
 # See "Writing benchmarks" in the asv docs for more information.
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
-# https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
+# https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import collections
 
 import numpy as np
@@ -31,8 +31,8 @@ class QtViewerSingleLabelsSuite:
 
     def time_zoom(self):
         """Time to zoom in and zoom out."""
-        self.viewer.window.qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
-        self.viewer.window.qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
+        self.viewer.window._qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
 
     def time_set_view_slice(self):
         """Time to set view slice."""
@@ -52,7 +52,7 @@ class QtViewerSingleLabelsSuite:
 
     def time_raw_to_displayed(self):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint(self):
         """Time to paint."""

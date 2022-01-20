@@ -1,78 +1,52 @@
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
-import numpy as np
-import pytest
-import qtpy
-from qtpy.QtWidgets import QApplication
+from napari._tests.utils import skip_local_popups, skip_on_win_ci
 
-from napari._qt.perf import qt_event_tracing
-from napari._qt.utils import delete_qapp
-from napari.utils import perf
+# NOTE:
+# for some reason, running this test fails in a subprocess with a segfault
+# if you don't show the viewer...
+PERFMON_SCRIPT = """
+import napari
+from qtpy.QtCore import QTimer
 
-if os.getenv('CI', '0') != '0' and (
-    sys.version_info >= (3, 9)
-    or (
-        (sys.platform.startswith('linux') or sys.platform.startswith('win'))
-        and qtpy.API_NAME == "PySide2"
-    )
-):
-    # this test is covered by other platforms, and also seems to work locally
-    # on linux
-    pytest.skip(
-        "Perfmon segfaults on linux or windows CI with pyside2, or with python 3.9",
-        allow_module_level=True,
-    )
+v = napari.view_points()
+QTimer.singleShot(100, napari._qt.qt_event_loop.quit_app)
+napari.run()
+"""
 
-
-@pytest.fixture(scope="module")
-def qapp():
-    """A modified QApplicationWithTracing just for this test module.
-
-    Note: Because of the difficulty in destroying a QApplication that overrides
-    .notify() like QApplicationWithTracing does, this test must be run last
-    (globally).  So in napari/conftest.py::pytest_collection_modifyitems,
-    we ensure that this test is always last.
-    """
-
-    # before creating QApplicationWithTracing, we need to monkeypatch
-    # the `perf.perf_timer` context manager that gets used in the
-    # qt_event_tracing module
-
-    original_perf_timer = qt_event_tracing.perf.perf_timer
-    _, perf_timer, _, _ = perf._timers._create_timer()
-    qt_event_tracing.perf.perf_timer = perf_timer
-
-    try:
-        if qtpy.API_NAME == 'PySide2' and QApplication.instance():
-            delete_qapp(QApplication.instance())
-        yield qt_event_tracing.QApplicationWithTracing([])
-    finally:
-        qt_event_tracing.perf.perf_timer = original_perf_timer
+CONFIG = {
+    "trace_qt_events": True,
+    "trace_file_on_start": '',
+    "trace_callables": ["chunk_loader"],
+    "callable_lists": {
+        "chunk_loader": [
+            "napari.components.experimental.chunk._loader.ChunkLoader.load_request",
+            "napari.components.experimental.chunk._loader.ChunkLoader._on_done",
+        ]
+    },
+}
 
 
-def test_trace_on_start(tmp_path, monkeypatch, make_napari_viewer):
+@skip_on_win_ci
+@skip_local_popups
+def test_trace_on_start(tmp_path: Path):
     """Make sure napari can write a perfmon trace file."""
-
-    timers, _, _, _ = perf._timers._create_timer()
-    monkeypatch.setattr(perf._timers, 'timers', timers)
-
-    # Check perfmon is enabled
     trace_path = tmp_path / "trace.json"
-    timers.start_trace_file(trace_path)
+    config_path = tmp_path / "perfmon.json"
+    CONFIG['trace_file_on_start'] = str(trace_path)
+    config_path.write_text(json.dumps(CONFIG))
 
-    viewer = make_napari_viewer()
-    data = np.random.random((10, 15))
-    viewer.add_image(data)
-    viewer.close()
-
-    timers.stop_trace_file()
+    env = os.environ.copy()
+    env.update({'NAPARI_PERFMON': str(config_path), 'NAPARI_CONFIG': ''})
+    subprocess.run([sys.executable, '-c', PERFMON_SCRIPT], env=env, check=True)
 
     # Make sure file exists and is not empty.
-    assert Path(trace_path).exists(), "Trace file not written"
-    assert Path(trace_path).stat().st_size > 0, "Trace file is empty"
+    assert trace_path.exists(), "Trace file not written"
+    assert trace_path.stat().st_size > 0, "Trace file is empty"
 
     # Assert every event contains every important field.
     with open(trace_path) as infile:

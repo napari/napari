@@ -1,6 +1,6 @@
 (rendering)=
 
-# Asynchronous Rendering
+# Asynchronous rendering
 
 As discussed in the explanations document on rendering, asynchronous
 rendering is a feature that allows napari to stay usable and responsive
@@ -27,7 +27,7 @@ it will call {meth}`~napari.layers.Image.on_chunk_loaded` with
 the loaded data. The next frame {class}`~napari.layers.Image`
 can display the new data.
 
-### Time-series Data
+### Time-series data
 
 Without `NAPARI_ASYNC` napari will block when switching slices. Napari
 will hang until the new slice has loaded. If the slice loads slowly enough
@@ -38,7 +38,7 @@ Asynchronous rendering allows the user to interrupt the loading of a slice
 at any time. The user can freely move the slice slider. This is especially
 nice for remote or slow-loading data.
 
-### Multi-scale Images
+### Multi-scale images
 
 With today's {class}`~napari.layers.Image` class there are no
 tiles or chunks. Instead, whenever the camera is panned or zoomed napari
@@ -73,9 +73,15 @@ class will use the same
 instead of the Vispy `ImageVisual` class that napari's
 {class}`~napari.layers.Image` class uses.
 
+```{note}
+The current `OCTREE` implementation only fully supports a single 2D image and
+may not function with 3D images or multiple images. Improving support
+for 3D and multiple images is part of future work on the `OCTREE`.
+```
+
 See {ref}`octree-config` for Octree configuration options.
 
-### Octree Visuals
+### Octree visuals
 
 The visual portion of Octree rendering is implemented by three classes:
 {class}`~napari._vispy.experimental.vispy_tiled_image_layer.VispyTiledImageLayer`,
@@ -114,8 +120,7 @@ changes were causing crashes with `PyQt5`, but the atlas approach is better
 for multiple reasons, so even if that crash were fixed the atlas is a
 better solution.
 
-
-### Octree Rendering
+### Octree rendering
 
 The interface between the visuals and the Octree is the
 {class}`~napari.layers.image.experimental.octree_image.OctreeImage` method
@@ -163,7 +168,7 @@ The loader will load lower resolution chunks in some cases. Although this
 can slightly delay when the ideal chunks are loaded, it's a very quick way
 to get reasonable looking "coverage" of the area of interest. Often data
 from one or two levels up isn't even that noticeably degraded. This table
-shows how many ideal chunks are "covered" a chunk at a higher level:
+shows how many ideal chunks are "covered" by a chunk at a higher level:
 
 | Levels Above Ideal | Coverage |
 | -----------------: | -------: |
@@ -176,7 +181,7 @@ can load one chunk and it will cover 64 ideal chunks. This is the heart of
 the power of Octrees, Quadtrees or image pyramids.
 
 (octree-config)=
-### Octree Configuration File
+### Octree configuration file
 
 Setting `NAPARI_OCTREE=1` enables Octree rendering with the default
 configuration. To customize the configuration set `NAPARI_OCTREE` to be
@@ -240,7 +245,7 @@ Each loader uses the `loader_defaults` but you can override the
 `num_workers`, `auto_sync_ms` and `delay_queue_ms` values in
 each loader defined in `loaders`.
 
-### Multiple Loaders
+### Multiple loaders
 
 We allow multiple loaders to improve loading performance. There are a lot
 of different strategies one could use when loading chunks. For example,
@@ -254,7 +259,7 @@ of view. The
 {class}`~napari.components.experimental.chunk._delay_queue.DelayQueue` was
 created to help with this problem.
 
-While we can't cancel a load if a worker as started working on it, we can
+While we can't cancel a load if a worker has started working on it, we can
 trivially cancel loads that are still in our delay queue. If the chunk goes
 out of view, we cancel the load. If the user pauses for a bit, we initiate
 the loads.
@@ -272,7 +277,7 @@ to experiment to figure out the best configuration. And figure out how that
 configuration needs to vary based on the latency of the data or other
 considerations.
 
-### Future Work: Compatibility with the existing Image class
+### Future work: Compatibility with the existing Image class
 
 The focus for initial Octree development was Octree-specific behaviors and
 infrastructure. Loading chunks asynchronously and rendering them as
@@ -300,7 +305,7 @@ duplicating that functionality somehow in the derived class.
 Some {class}`~napari.layers.Image` functionality that needs to
 be duplicated in Octree code:
 
-#### Contrast Limits and Color Transforms
+#### Contrast limits and color transforms
 
 The contrast limit code in Vispy's `ImageVisual` needs to be moved into
 the tiled visual's
@@ -308,7 +313,7 @@ the tiled visual's
 Instead operating on `self.data` it needs to transform tile's which are newly
 being added to the visual. The color transform similarly needs to be per-tile.
 
-#### Blending and Opacity
+#### Blending and opacity
 
 It might be hard to get opacity working correctly for tiles where loads are
 in progress. The way
@@ -318,7 +323,7 @@ works today is the
 potentially passes the visual tiles of various sizes, from different levels
 of the Octree. The tiles are rendered on top of each other from largest
 (coarsest level) to smallest (finest level). This is a nice trick so that
-bigger tiles to provide "coverage" for an area, while the smaller tiles add
+bigger tiles provide "coverage" for an area, while the smaller tiles add
 detail only where that data has been loaded.
 
 However, this breaks blending and opacity. We draw multiple tiles on top of
@@ -331,14 +336,14 @@ larger tiles to make sure we do not render anything on top of anything
 else.
 
 Until we do that, we could punt on making things look correct while loads
-are in progress. We could even highly the fact that a tile has not been
-fully loaded. Purposely make them look different until the data is fully
-loaded. Aside from blending this would address a common complaint with
+are in progress. We could even highlight the fact that a tile has not been
+fully loaded (purposely making it look different until the data is fully
+loaded). Aside from blending, this would address a common complaint with
 tiled image viewers: you often can't tell if the data is still being
 loaded. This could be a big issue for scientific uses, you don't want
 people drawing the wrong conclusions from the data.
 
-#### Time-series Multiscale
+#### Time-series multiscale
 
 To make time-series multiscale work should not be too hard. We just need to
 correctly create a new
@@ -352,7 +357,7 @@ previous slices are canceled and everything is cleaned up.
 
 
 (future-work-atlas-2D)=
-### Future Work: Extending TextureAtlas2D
+### Future work: Extending TextureAtlas2D
 
 We could improve our
 {class}`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` class in
@@ -391,7 +396,7 @@ Octree rendering to worsen cases which work well today. To keep today's
 performance for smaller images we probably need to add support for variable
 size tiles.
 
-### Future Work: Level Zero Only Octrees
+### Future work: Level-zero-only Octrees
 
 In issue [#1300](https://github.com/napari/napari/issues/1300) it takes
 1500ms to switch slices. There we are rendering a (16384, 16384) image that
@@ -404,7 +409,7 @@ layers is slow. So the question is how can we draw this large image without
 hanging? One idea is we could create an Octree that only has a level zero
 and no downsampled levels.
 
-This is an option because chopping up a `numpy` array into tiles is very
+This is an option because chopping up a `NumPy` array into tiles is very
 fast. This chopping up phase is really just creating a bunch of "views"
 into the single existing array. So creating a level zero Octree should be
 very fast. For there we can use our existing Octree code and our existing
@@ -418,14 +423,14 @@ switching slices would be similar to panning and zooming a multiscale
 Octree image, you'd see the new tiles loading in over time, but the
 framerate would not tank, and you could switch slices at any time.
 
-### Future Work: Caching
+### Future work: Caching
 
-Basically no work as gone into caching or memory management for Octree
+Basically no work has gone into caching or memory management for Octree
 data. It's very likely there are leaks and extended usage will run out of
 memory. This hasn't been addressed because using Octree for long periods of
 time is just now becoming possible.
 
-One caching issue is figuring how to combine the `ChunkCache` with
+One caching issue is figuring out how to combine the `ChunkCache` with
 Dasks's built-in caching. We probably want to keep the `ChunkCache` for
 rendering non-Dask arrays? But when using Dask, we defer to its cache? We
 certainly don't want to cache the data in both places.

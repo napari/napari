@@ -36,7 +36,7 @@ For more general background on the plugin hook calling mechanism, see the
 from __future__ import annotations
 
 from types import FunctionType
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from napari_plugin_engine import napari_hook_specification
 
@@ -77,9 +77,9 @@ def napari_provide_sample_data() -> Dict[str, Union[SampleData, SampleDict]]:
         1. random data from numpy
         2. a random image pulled from the internet
         3. random data from numpy, provided as a dict with the keys:
-            'display_name': a string that will show in the menu (by default,
+            * 'display_name': a string that will show in the menu (by default,
                 the `sample_key` will be shown)
-            'data': a string or callable, as in 1/2.
+            * 'data': a string or callable, as in 1/2.
 
     .. code-block:: python
 
@@ -495,4 +495,55 @@ def napari_experimental_provide_dock_widget() -> Union[
     >>> @napari_hook_implementation
     >>> def napari_experimental_provide_dock_widget():
     ...     return threshold
+    """
+
+
+@napari_hook_specification(historic=True)
+def napari_experimental_provide_theme() -> Dict[
+    str, Dict[str, Union[str, Tuple, List]]
+]:
+    """Provide GUI with a set of colors used through napari. This hook allows you to
+    provide additional color schemes so you can accomplish your desired styling.
+
+    Themes are provided as `dict` with several required fields and correctly formatted
+    color values. Colors can be specified using color names (e.g. ``white``), hex color
+    (e.g. ``#ff5733``), rgb color in 0-255 range (e.g. ``rgb(255, 0, 127)`` or as
+    3- or 4-element tuples or lists (e.g. ``(255, 0, 127)``. The `Theme` model will
+    automatically handle the conversion.
+
+    See :class:`~napari.utils.theme.Theme` for more detail of what are the required keys.
+
+    Returns
+    -------
+    themes : Dict[str, Dict[str, Union[str, Tuple, List]]
+        Sequence of dictionaries containing new color schemes to be used by napari.
+        You can replace existing themes by using the same names.
+
+    Examples
+    --------
+    >>> def get_new_theme() -> Dict[str, Dict[str, Union[str, Tuple, List]]:
+    ...     # specify theme(s) that should be added to napari
+    ...     themes = {
+    ...         "super_dark": {
+    ...             "name": "super_dark",
+    ...             "background": "rgb(12, 12, 12)",
+    ...             "foreground": "rgb(65, 72, 81)",
+    ...             "primary": "rgb(90, 98, 108)",
+    ...             "secondary": "rgb(134, 142, 147)",
+    ...             "highlight": "rgb(106, 115, 128)",
+    ...             "text": "rgb(240, 241, 242)",
+    ...             "icon": "rgb(209, 210, 212)",
+    ...             "warning": "rgb(153, 18, 31)",
+    ...             "current": "rgb(0, 122, 204)",
+    ...             "syntax_style": "native",
+    ...             "console": "rgb(0, 0, 0)",
+    ...             "canvas": "black",
+    ...         }
+    ...     }
+    ...     return themes
+    >>>
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_theme():
+    ...     return get_new_theme()
+
     """

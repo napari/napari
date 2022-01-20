@@ -17,7 +17,7 @@
     "install_command": ["in-dir={env_dir} python -m pip install {conf_dir}[all]"],
 
     // List of branches to benchmark
-    "branches": ["master"],
+    "branches": ["main"],
 
     // The tool to use to create environments.
     "environment_type": "virtualenv",

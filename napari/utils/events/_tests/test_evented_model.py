@@ -1,5 +1,6 @@
 import inspect
-from typing import ClassVar
+from enum import auto
+from typing import ClassVar, List, Sequence
 from unittest.mock import Mock
 
 import dask.array as da
@@ -11,6 +12,7 @@ from pydantic import Field
 
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
+from napari.utils.misc import StringEnum
 
 
 def test_creating_empty_evented_model():
@@ -318,3 +320,114 @@ def test_evented_model_dask_delayed():
 
     # check that equality checking works as expected
     assert o1 == o1
+
+
+# The following tests ensure that StringEnum field values can be
+# compared against the enum constants and not their string value.
+# For more context see the GitHub issue:
+# https://github.com/napari/napari/issues/3062
+class SomeStringEnum(StringEnum):
+    NONE = auto()
+    SOME_VALUE = auto()
+    ANOTHER_VALUE = auto()
+
+
+class ModelWithStringEnum(EventedModel):
+    enum_field: SomeStringEnum = SomeStringEnum.NONE
+
+
+def test_evented_model_with_string_enum_default():
+    model = ModelWithStringEnum()
+    assert model.enum_field == SomeStringEnum.NONE
+
+
+def test_evented_model_with_string_enum_parameter():
+    model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
+    assert model.enum_field == SomeStringEnum.SOME_VALUE
+
+
+def test_evented_model_with_string_enum_parameter_as_str():
+    model = ModelWithStringEnum(enum_field='some_value')
+    assert model.enum_field == SomeStringEnum.SOME_VALUE
+
+
+def test_evented_model_with_string_enum_setter():
+    model = ModelWithStringEnum()
+    model.enum_field = SomeStringEnum.SOME_VALUE
+    assert model.enum_field == SomeStringEnum.SOME_VALUE
+
+
+def test_evented_model_with_string_enum_setter_as_str():
+    model = ModelWithStringEnum()
+    model.enum_field = 'some_value'
+    assert model.enum_field == SomeStringEnum.SOME_VALUE
+
+
+def test_evented_model_with_string_enum_parse_raw():
+    model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
+    deserialized_model = ModelWithStringEnum.parse_raw(model.json())
+    assert deserialized_model.enum_field == model.enum_field
+
+
+def test_evented_model_with_string_enum_parse_obj():
+    model = ModelWithStringEnum(enum_field=SomeStringEnum.SOME_VALUE)
+    deserialized_model = ModelWithStringEnum.parse_obj(model.dict())
+    assert deserialized_model.enum_field == model.enum_field
+
+
+class T(EventedModel):
+    a: int = 1
+    b: int = 1
+
+    @property
+    def c(self) -> List[int]:
+        return [self.a, self.b]
+
+    @c.setter
+    def c(self, val: Sequence[int]):
+        self.a, self.b = val
+
+
+def test_evented_model_with_property_setters():
+    t = T()
+
+    assert list(T.__property_setters__) == ['c']
+    # the metaclass should have figured out that both a and b affect c
+    assert T.__field_dependents__ == {'a': {'c'}, 'b': {'c'}}
+
+    # all the fields and properties behave as expected
+    assert t.c == [1, 1]
+    t.a = 4
+    assert t.c == [4, 1]
+    t.c = [2, 3]
+    assert t.c == [2, 3]
+    assert t.a == 2
+    assert t.b == 3
+
+
+def test_evented_model_with_property_setters_events():
+    t = T()
+    assert 'c' in t.events  # the setter has an event
+    t.events.a = Mock(t.events.a)
+    t.events.b = Mock(t.events.b)
+    t.events.c = Mock(t.events.c)
+
+    # setting t.c emits events for all three a, b, and c
+    t.c = [10, 20]
+    t.events.a.assert_called_with(value=10)
+    t.events.b.assert_called_with(value=20)
+    t.events.c.assert_called_with(value=[10, 20])
+    assert t.a == 10
+    assert t.b == 20
+
+    t.events.a.reset_mock()
+    t.events.b.reset_mock()
+    t.events.c.reset_mock()
+
+    # setting t.a emits events for a and c, but not b
+    # this is because we declared c to be dependent on ['a', 'b']
+    t.a = 5
+    t.events.a.assert_called_with(value=5)
+    t.events.c.assert_called_with(value=[5, 20])
+    t.events.b.assert_not_called()
+    assert t.c == [5, 20]

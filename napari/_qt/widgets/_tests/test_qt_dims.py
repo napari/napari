@@ -173,7 +173,7 @@ def test_singleton_dims(qtbot):
     """
     ndim = 4
     dims = Dims(ndim=ndim)
-    dims.set_range(0, (0, 0, 1))
+    dims.set_range(0, (0, 1, 1))
     view = QtDims(dims)
     qtbot.addWidget(view)
 
@@ -282,12 +282,11 @@ def test_play_button(qtbot):
     button = view.slider_widgets[0].play_button
     qtbot.mouseClick(button, Qt.LeftButton)
     qtbot.waitSignal(view._animation_thread.started, timeout=5000)
-    qtbot.wait(200)
-    assert view.is_playing
+
     with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
         qtbot.mouseClick(button, Qt.LeftButton)
 
-    qtbot.wait(200)
+    qtbot.wait(100)
     assert not view.is_playing
 
     with patch.object(button.popup, 'show_above_mouse') as mock_popup:
@@ -298,7 +297,7 @@ def test_play_button(qtbot):
 def test_slice_labels(qtbot):
     ndim = 4
     dims = Dims(ndim=ndim)
-    dims.set_range(0, (0, 19, 1))
+    dims.set_range(0, (0, 20, 1))
     view = QtDims(dims)
     qtbot.addWidget(view)
 

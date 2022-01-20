@@ -105,8 +105,8 @@ def test_track_layer_properties_flipped(properties):
 
 
 @pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
-def test_track_layer_colorby_nonexistant():
-    """Test error handling for non-existant properties with color_by"""
+def test_track_layer_colorby_nonexistent():
+    """Test error handling for non-existent properties with color_by"""
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
     non_existant_property = 'not_a_valid_key'
@@ -164,14 +164,6 @@ def test_malformed_id():
         Tracks(data)
 
 
-def test_malformed_timestamps():
-    """Test for malformed track timestamps."""
-    data = np.random.random((100, 4))
-    data[:, 0] = 0
-    with pytest.raises(ValueError):
-        Tracks(data)
-
-
 def test_malformed_graph():
     """Test for malformed graph."""
     data = np.zeros((100, 4))
@@ -180,3 +172,13 @@ def test_malformed_graph():
     graph = {1: [0], 2: [33]}
     with pytest.raises(ValueError):
         Tracks(data, graph=graph)
+
+
+def test_tracks_float_time_index():
+    """Test Tracks layer instantiation with floating point time values"""
+    coords = np.random.normal(loc=50, size=(100, 2))
+    time = np.random.normal(loc=50, size=(100, 1))
+    track_id = np.zeros((100, 1))
+    track_id[50:] = 1
+    data = np.concatenate((track_id, time, coords), axis=1)
+    Tracks(data)

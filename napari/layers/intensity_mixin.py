@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from ..utils.colormaps import ensure_colormap
@@ -7,13 +9,16 @@ from ..utils.validators import validate_n_seq
 
 validate_2_tuple = validate_n_seq(2)
 
+if TYPE_CHECKING:
+    from .image.image import Image
+
 
 class IntensityVisualizationMixin:
     """A mixin that adds gamma, colormap, and contrast limits logic to Layers.
 
     When used, this should come before the Layer in the inheritance, e.g.:
 
-        class Image(ImageSurfaceMixin, Layer):
+        class Image(IntensityVisualizationMixin, Layer):
             def __init__(self):
                 ...
     """
@@ -27,11 +32,13 @@ class IntensityVisualizationMixin:
         self._contrast_limits_msg = ''
         self._contrast_limits = [None, None]
         self._contrast_limits_range = [None, None]
+        self._auto_contrast_source = 'slice'
+        self._keep_auto_contrast = False
 
-    def reset_contrast_limits(self):
+    def reset_contrast_limits(self: 'Image', mode=None):
         """Scale contrast limits to data range"""
-        data_range = self._calc_data_range()
-        self.contrast_limits = data_range
+        mode = mode or self._auto_contrast_source
+        self.contrast_limits = self._calc_data_range(mode)
 
     def reset_contrast_limits_range(self):
         """Scale contrast limits range to data type.

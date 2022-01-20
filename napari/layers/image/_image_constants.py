@@ -9,7 +9,7 @@ class Interpolation(StringEnum):
     The spatial filters used for interpolation are from vispy's
     spatial filters. The filters are built in the file below:
 
-    https://github.com/vispy/vispy/blob/master/vispy/glsl/build-spatial-filters.py
+    https://github.com/vispy/vispy/blob/main/vispy/glsl/build-spatial-filters.py
     """
 
     BESSEL = auto()
@@ -46,27 +46,39 @@ class Interpolation3D(StringEnum):
     NEAREST = auto()
 
 
-class Rendering(StringEnum):
+class Mode(StringEnum):
+    """
+    Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
+    allows for normal interactivity with the canvas.
+
+    TRANSFORM allows for manipulation of the layer transform.
+    """
+
+    TRANSFORM = auto()
+    PAN_ZOOM = auto()
+
+
+class ImageRendering(StringEnum):
     """Rendering: Rendering mode for the layer.
 
     Selects a preset rendering mode in vispy
-            * translucent: voxel colors are blended along the view ray until
-              the result is opaque.
-            * mip: maximum intensity projection. Cast a ray and display the
-              maximum value that was encountered.
-            * minip: minimum intensity projection. Cast a ray and display the
-              minimum value that was encountered.
-            * attenuated_mip: attenuated maximum intensity projection. Cast a
-              ray and attenuate values based on integral of encountered values,
-              display the maximum value that was encountered after attenuation.
-              This will make nearer objects appear more prominent.
-            * additive: voxel colors are added along the view ray until
-              the result is saturated.
-            * iso: isosurface. Cast a ray until a certain threshold is
-              encountered. At that location, lighning calculations are
-              performed to give the visual appearance of a surface.
-            * average: average intensity projection. Cast a ray and display the
-              average of values that were encountered.
+        * translucent: voxel colors are blended along the view ray until
+          the result is opaque.
+        * mip: maximum intensity projection. Cast a ray and display the
+          maximum value that was encountered.
+        * minip: minimum intensity projection. Cast a ray and display the
+          minimum value that was encountered.
+        * attenuated_mip: attenuated maximum intensity projection. Cast a
+          ray and attenuate values based on integral of encountered values,
+          display the maximum value that was encountered after attenuation.
+          This will make nearer objects appear more prominent.
+        * additive: voxel colors are added along the view ray until
+          the result is saturated.
+        * iso: isosurface. Cast a ray until a certain threshold is
+          encountered. At that location, lighning calculations are
+          performed to give the visual appearance of a surface.
+        * average: average intensity projection. Cast a ray and display the
+          average of values that were encountered.
     """
 
     TRANSLUCENT = auto()

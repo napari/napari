@@ -1,4 +1,6 @@
-# Guides
+# In-depth explanations
+
+To learn about using `magicgui` in napari, see the {ref}`magicgui` guide.
 
 If you'd like to start customizing the behavior of napari, it pays to
 familiarize yourself with the concept of an Event Loop. For an introduction to
@@ -10,14 +12,13 @@ computations, and would like to avoid having the viewer become unresponsive
 while you wait for a computation to finish, you may benefit from reading about
 {ref}`multithreading-in-napari`.
 
-Performance is a core feature of napari. To learn how to monitor
-performance and diagnose and fix performance problems, see {ref}`perfmon`.
+See {ref}`rendering-explanation` for two experimental features than can optionally be enabled to add non-blocking rendering to napari. You can also check out the {ref}`dedicated guide on asynchronous rendering in napari <rendering>`.
 
-See {ref}`rendering` for two experimental features than can optionally
-be enabled to add non-blocking rendering to napari.
+To understand how to test and measure performance in napari, see {ref}`napari-performance`.
 
-See {ref}`preferences` for the list of preferences that can be set via the
+If you are interested in using napari to explore 3D objects, see {ref}`3d-interactivity`.
+
+See {ref}`napari-preferences` for the list of preferences that can be set via the
 preferences dialog.
 
-Finally, see {ref}`translations` to learn more about how to make strings
-within the napari codebase localizable.
+You can also read about the concept of {ref}`context-expressions`.

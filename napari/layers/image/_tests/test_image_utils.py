@@ -1,3 +1,5 @@
+import time
+
 import dask.array as da
 import numpy as np
 import pytest
@@ -91,6 +93,8 @@ def test_guess_multiscale_incorrect_order():
         _, _ = guess_multiscale(data)
 
 
-@pytest.mark.timeout(2)
 def test_timing_multiscale_big():
+    now = time.monotonic()
     assert not guess_multiscale(data_dask)[0]
+    elapsed = time.monotonic() - now
+    assert elapsed < 2, "test was too slow, computation was likely not lazy"

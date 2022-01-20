@@ -244,56 +244,32 @@ class QtVectorsControls(QtLayerControls):
         -------
         property_values : np.ndarray
             array of all of the union of the property names (keys)
-            in Vectors.properties and Vectors._property_choices
+            in Vectors.properties and Vectors.property_choices
 
         """
-        property_choices = [*self.layer._property_choices]
+        property_choices = [*self.layer.property_choices]
         properties = [*self.layer.properties]
         property_values = np.union1d(property_choices, properties)
 
         return property_values
 
-    def _on_length_change(self, event=None):
-        """Change length of vectors.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_length_change(self):
+        """Change length of vectors."""
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
 
     def _on_n_dimensional_change(self, event):
-        """Receive layer model n-dimensional change event and update checkbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+        """Receive layer model n-dimensional change event and update checkbox."""
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
-    def _on_edge_width_change(self, event=None):
-        """Receive layer model width change event and update width spinbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_edge_width_change(self):
+        """Receive layer model width change event and update width spinbox."""
         with self.layer.events.edge_width.blocker():
             self.widthSpinBox.setValue(self.layer.edge_width)
 
-    def _on_edge_color_mode_change(self, event=None):
-        """Receive layer model edge color mode change event & update dropdown.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_edge_color_mode_change(self):
+        """Receive layer model edge color mode change event & update dropdown."""
         with qt_signals_blocked(self.color_mode_comboBox):
             mode = self.layer._edge.color_mode
             index = self.color_mode_comboBox.findText(
@@ -303,15 +279,12 @@ class QtVectorsControls(QtLayerControls):
 
             self._update_edge_color_gui(mode)
 
-    def _on_edge_color_change(self, event=None):
-        """Receive layer model edge color  change event & update dropdown.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
-        if self.layer._edge.color_mode == ColorMode.DIRECT:
+    def _on_edge_color_change(self):
+        """Receive layer model edge color  change event & update dropdown."""
+        if (
+            self.layer._edge.color_mode == ColorMode.DIRECT
+            and len(self.layer.data) > 0
+        ):
             with qt_signals_blocked(self.edgeColorEdit):
                 self.edgeColorEdit.setColor(self.layer.edge_color[0])
         elif self.layer._edge.color_mode in (

@@ -22,6 +22,10 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
     coords : np.array, Nx2
         List of coordinates to ensure painting is continuous
     """
+    if old_coord is None:
+        old_coord = new_coord
+    if new_coord is None:
+        new_coord = old_coord
     num_step = round(
         max(abs(np.array(new_coord) - np.array(old_coord))) / brush_size * 4
     )
@@ -37,28 +41,33 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
 
 
 @lru_cache(maxsize=64)
-def sphere_indices(radius, sphere_dims):
-    """Generate centered indices within circle or n-dim sphere.
+def sphere_indices(radius, scale):
+    """Generate centered indices within circle or n-dim ellipsoid.
 
     Parameters
     -------
     radius : float
         Radius of circle/sphere
-    sphere_dims : int
-        Number of circle/sphere dimensions
+    scale : tuple of float
+        The scaling to apply to the sphere along each axis
 
     Returns
     -------
     mask_indices : array
         Centered indices within circle/sphere
     """
+    ndim = len(scale)
+    abs_scale = np.abs(scale)
+    scale_normalized = np.asarray(abs_scale, dtype=float) / np.min(abs_scale)
     # Create multi-dimensional grid to check for
     # circle/membership around center
-    vol_radius = radius + 0.5
+    r_normalized = radius / scale_normalized + 0.5
+    slices = [
+        slice(-int(np.ceil(r)), int(np.floor(r)) + 1) for r in r_normalized
+    ]
 
-    indices_slice = [slice(-vol_radius, vol_radius + 1)] * sphere_dims
-    indices = np.mgrid[indices_slice].T.reshape(-1, sphere_dims)
-    distances_sq = np.sum(indices ** 2, axis=1)
+    indices = np.mgrid[slices].T.reshape(-1, ndim)
+    distances_sq = np.sum((indices * scale_normalized) ** 2, axis=1)
     # Use distances within desired radius to mask indices in grid
     mask_indices = indices[distances_sq <= radius ** 2].astype(int)
 
@@ -128,3 +137,70 @@ def get_dtype(layer):
         layer_dtype = type(layer_data_level)
 
     return layer_dtype
+
+
+def first_nonzero_coordinate(data, start_point, end_point):
+    """Coordinate of the first nonzero element between start and end points.
+
+    Parameters
+    ----------
+    data : nD array, shape (N1, N2, ..., ND)
+        A data volume.
+    start_point : array, shape (D,)
+        The start coordinate to check.
+    end_point : array, shape (D,)
+        The end coordinate to check.
+
+    Returns
+    -------
+    coordinates : array of int, shape (D,)
+        The coordinates of the first nonzero element along the ray, or None.
+    """
+    shape = np.asarray(data.shape)
+    length = np.linalg.norm(end_point - start_point)
+    length_int = np.round(length).astype(int)
+    coords = np.linspace(start_point, end_point, length_int + 1, endpoint=True)
+    clipped_coords = np.clip(np.round(coords), 0, shape - 1).astype(int)
+    nonzero = np.flatnonzero(data[tuple(clipped_coords.T)])
+    if len(nonzero) == 0:
+        return None
+    else:
+        return clipped_coords[nonzero[0]]
+
+
+def mouse_event_to_labels_coordinate(layer, event):
+    """Return the data coordinate of a Labels layer mouse event in 2D or 3D.
+
+    In 2D, this is just the event's position transformed by the layer's
+    world_to_data transform.
+
+    In 3D, a ray is cast in data coordinates, and the coordinate of the first
+    nonzero value along that ray is returned. If the ray only contains zeros,
+    None is returned.
+
+    Parameters
+    ----------
+    layer : napari.layers.Labels
+        The Labels layer.
+    event : vispy MouseEvent
+        The mouse event, containing position and view direction attributes.
+
+    Returns
+    -------
+    coordinates : array of int or None
+        The data coordinates for the mouse event.
+    """
+    ndim = len(layer._dims_displayed)
+    if ndim == 2:
+        coordinates = layer.world_to_data(event.position)
+    else:  # 3d
+        start, end = layer.get_ray_intersections(
+            position=event.position,
+            view_direction=event.view_direction,
+            dims_displayed=layer._dims_displayed,
+            world=True,
+        )
+        if start is None and end is None:
+            return None
+        coordinates = first_nonzero_coordinate(layer.data, start, end)
+    return coordinates

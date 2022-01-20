@@ -10,7 +10,7 @@ def test_data_change_ndisplay_image(make_napari_viewer):
     np.random.seed(0)
     data = np.random.random((10, 15, 8))
     layer = viewer.add_image(data)
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -30,7 +30,7 @@ def test_data_change_ndisplay_labels(make_napari_viewer):
     data = np.random.randint(20, size=(10, 15, 8))
     layer = viewer.add_labels(data)
 
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -49,7 +49,7 @@ def test_data_change_ndisplay_points(make_napari_viewer):
     np.random.seed(0)
     data = 20 * np.random.random((10, 3))
     layer = viewer.add_points(data)
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -68,7 +68,7 @@ def test_data_change_ndisplay_vectors(make_napari_viewer):
     np.random.seed(0)
     data = 20 * np.random.random((10, 2, 3))
     layer = viewer.add_vectors(data)
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -88,7 +88,7 @@ def test_data_change_ndisplay_shapes(make_napari_viewer):
     data = 20 * np.random.random((10, 4, 3))
     layer = viewer.add_shapes(data)
 
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -111,7 +111,7 @@ def test_data_change_ndisplay_surface(make_napari_viewer):
     data = (vertices, faces, values)
     layer = viewer.add_surface(data)
 
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):

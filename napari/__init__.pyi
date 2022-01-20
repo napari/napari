@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Callable
 
 import napari._qt.qt_event_loop
 import napari.plugins.io
@@ -9,7 +9,8 @@ import napari.viewer
 __version__: str
 
 notification_manager: napari.utils.notifications.NotificationManager
-Viewer: Type[napari.viewer.Viewer]
+Viewer = napari.viewer.Viewer
+current_viewer: Callable[[], Viewer]
 
 gui_qt = napari._qt.qt_event_loop.gui_qt
 run = napari._qt.qt_event_loop.run

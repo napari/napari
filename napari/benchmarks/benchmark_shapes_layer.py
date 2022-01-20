@@ -1,14 +1,14 @@
 # See "Writing benchmarks" in the asv docs for more information.
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
-# https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
+# https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import collections
 
 import numpy as np
 
 from napari.layers import Shapes
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,

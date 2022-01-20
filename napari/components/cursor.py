@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 from ..utils.events import EventedModel
 from ._viewer_constants import CursorStyle
@@ -27,6 +27,10 @@ class Cursor(EventedModel):
             * forbidden: A forbidden symbol
             * pointing: A finger for pointing
             * standard: The standard cursor
+            # crosshair: A crosshair
+    _view_direction : Optional[Tuple[float, ...]]
+        The vector describing the direction of the camera in the scene.
+        This is None when viewing in 2D.
     """
 
     # fields
@@ -34,3 +38,4 @@ class Cursor(EventedModel):
     scaled: bool = True
     size: int = 1
     style: CursorStyle = CursorStyle.STANDARD
+    _view_direction: Optional[Tuple[float, ...]] = None

@@ -4,7 +4,7 @@ the napari viewer.
 
 import napari
 from time import sleep
-from napari.qt import progress
+from napari.utils import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 import numpy as np
 from random import choice
@@ -25,7 +25,7 @@ def iterable():
 def iterable_w_context():
     """using progress with a context manager
     """
-    my_stacked_volume = np.random.random((5, 4, 500, 500))    
+    my_stacked_volume = np.random.random((5, 4, 500, 500))
     # progress provides a context manager we can use for automatic
     # teardown of our widget once iteration is complete. Wherever
     # possible, we should *always* use progress within a context
@@ -95,8 +95,10 @@ button_layout.addWidget(steps_btn)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
+pbar_widget.setObjectName("Progress Examples")
 
 viewer.window.add_dock_widget(pbar_widget)
 # showing the activity dock so we can see the progress bars
-viewer.window.qt_viewer.activityDock.show()
+viewer.window._status_bar._toggle_activity_dock(True)
+
 napari.run()
