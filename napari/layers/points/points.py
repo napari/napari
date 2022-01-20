@@ -1668,6 +1668,7 @@ class Points(Layer):
         index = list(self.selected_data)
         index.sort()
         if len(index):
+            self._shown = np.delete(self._shown, index, axis=0)
             self._size = np.delete(self._size, index, axis=0)
             with self._edge.events.blocker_all():
                 self._edge._remove(indices_to_remove=index)
