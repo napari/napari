@@ -126,6 +126,7 @@ def rotate_points(
         The normal vector for the plane the points currently reside on.
     new_plane_normal : np.ndarray
         The normal vector for the plane the points will be rotated to.
+
     Returns
     -------
     rotated_points : np.ndarray
@@ -451,7 +452,7 @@ def intersect_line_with_triangles(
 
     Parameters
     ----------
-    line_point: np.ndarray
+    line_point : np.ndarray
         The (3,) array containing the starting point of the ray.
     line_direction : np.ndarray
         The (3,) array containing the unit vector in the direction of the ray.

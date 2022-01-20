@@ -24,6 +24,31 @@ if TYPE_CHECKING:
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
 
+try:
+    from numpy.typing import DTypeLike  # requires numpy 1.20
+except ImportError:
+    # Anything that can be coerced into numpy.dtype.
+    # Reference: https://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
+    from typing import TypeVar
+
+    from typing_extensions import Protocol
+
+    _DType_co = TypeVar("_DType_co", covariant=True, bound=np.dtype)
+
+    # A protocol for anything with the dtype attribute
+    class _SupportsDType(Protocol[_DType_co]):
+        @property
+        def dtype(self) -> _DType_co:
+            ...
+
+    DTypeLike = Union[  # type: ignore
+        np.dtype,  # default data type (float64)
+        None,
+        type,  # array-scalar types and generic types
+        _SupportsDType[np.dtype],  # anything with a dtype attribute
+        str,  # character codes, type strings, e.g. 'float64'
+    ]
+
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -40,7 +65,7 @@ FullLayerData = Tuple[Any, Dict, str]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, Path]
-PathOrPaths = Union[PathLike, Sequence[PathLike]]
+PathOrPaths = Union[str, Sequence[str]]
 ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
 WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 
@@ -78,8 +103,7 @@ if tuple(np.__version__.split('.')) < ('1', '20'):
     # https://github.com/python/mypy/issues/6701#issuecomment-609638202
     class ArrayBase(np.ndarray):
         def __getattr__(self, name: str) -> Any:
-            return super().__getattr__(name)
-
+            return object.__getattribute__(self, name)
 
 else:
     ArrayBase = np.ndarray  # type: ignore
@@ -112,6 +136,7 @@ def image_reader_to_layerdata_reader(
     reader_function : Callable[[PathLike], List[LayerData]]
         A function that accepts a string or list of strings, and returns data
         as a list of LayerData: List[Tuple[ArrayLike]]
+
     """
 
     @wraps(func)
@@ -123,7 +148,7 @@ def image_reader_to_layerdata_reader(
 
 
 def _register_types_with_magicgui():
-    """Register napari.types objects with magicgui."""
+    """Register ``napari.types`` objects with magicgui."""
     import sys
     from concurrent.futures import Future
 
@@ -138,7 +163,8 @@ def _register_types_with_magicgui():
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
         if sys.version_info >= (3, 9):
-            register_type(Future[_type], return_callback=_mgui.add_future_data)
+            future_type = Future[_type]  # type: ignore
+            register_type(future_type, return_callback=_mgui.add_future_data)
 
     for layer_name in layers.NAMES:
         data_type = globals().get(f'{layer_name.title()}Data')

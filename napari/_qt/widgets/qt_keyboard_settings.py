@@ -6,7 +6,6 @@ from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
-    QDialog,
     QHBoxLayout,
     QItemDelegate,
     QKeySequenceEdit,
@@ -25,7 +24,7 @@ from ...settings import get_settings
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
-from ..qt_resources import get_stylesheet
+from ..widgets.qt_message_popup import WarnPopup
 
 # Dict used to format strings returned from converted key press events.
 # For example, the ShortcutTranslator returns 'Ctrl' instead of 'Control'.
@@ -95,7 +94,7 @@ class ShortcutEditor(QWidget):
         self.layer_combo_box.activated[str].connect(self._set_table)
         self.layer_combo_box.setCurrentText(self.VIEWER_KEYBINDINGS)
         self._set_table()
-        self._label.setText("Group")
+        self._label.setText(trans._("Group"))
         self._restore_button.clicked.connect(self.restore_defaults)
 
         # layout
@@ -246,7 +245,7 @@ class ShortcutEditor(QWidget):
             self._table.verticalHeader().setVisible(False)
 
             self._table.setColumnHidden(self._action_col, True)
-            item = QTableWidgetItem('No key bindings')
+            item = QTableWidgetItem(trans._('No key bindings'))
             item.setFlags(Qt.NoItemFlags)
             self._table.setItem(0, 0, item)
 
@@ -311,9 +310,7 @@ class ShortcutEditor(QWidget):
 
                         # show warning message
                         message = trans._(
-                            "The keybinding <b>{new_shortcut}</b>  "
-                            + "is already assigned to <b>{action_description}</b>; change or clear "
-                            + "that shortcut before assigning <b>{new_shortcut}</b> to this one.",
+                            "The keybinding <b>{new_shortcut}</b>  is already assigned to <b>{action_description}</b>; change or clear that shortcut before assigning <b>{new_shortcut}</b> to this one.",
                             new_shortcut=new_shortcut,
                             action_description=action.description,
                         )
@@ -470,7 +467,7 @@ class ShortcutEditor(QWidget):
         )
 
         # Create warning pop up and move it to desired position.
-        self._warn_dialog = KeyBindWarnPopup(
+        self._warn_dialog = WarnPopup(
             text=message,
         )
         self._warn_dialog.move(global_point)
@@ -502,41 +499,6 @@ class ShortcutEditor(QWidget):
             value[action_name] = list(shortcuts)
 
         return value
-
-
-class KeyBindWarnPopup(QDialog):
-    """Dialog to inform user that shortcut is already assigned."""
-
-    def __init__(
-        self,
-        parent=None,
-        text: str = "",
-    ):
-        super().__init__(parent)
-
-        self.setWindowFlags(Qt.FramelessWindowHint)
-
-        # Widgets
-        self._message = QLabel()
-        self._xbutton = QPushButton('x', self)
-        self._xbutton.setFixedSize(20, 20)
-
-        # Widget set up
-        self._message.setText(text)
-        self._message.setWordWrap(True)
-        self._xbutton.clicked.connect(self._close)
-        self._xbutton.setStyleSheet("background-color: rgba(0, 0, 0, 0);")
-
-        # Layout
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(self._message)
-
-        self.setLayout(main_layout)
-
-        self.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
-
-    def _close(self):
-        self.close()
 
 
 class ShortcutDelegate(QItemDelegate):

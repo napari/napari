@@ -6,6 +6,7 @@ from typing import Dict, List, Union
 from warnings import warn
 
 import numpy as np
+import pandas as pd
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
@@ -23,6 +24,9 @@ class Tracks(Layer):
         Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
         axis is the integer ID of the track. D is either 3 or 4 for planar
         or volumetric timeseries respectively.
+    features : Dataframe-like
+        Features table where each row corresponds to a point and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -96,6 +100,7 @@ class Tracks(Layer):
         self,
         data,
         *,
+        features=None,
         properties=None,
         graph=None,
         tail_width=2,
@@ -124,10 +129,6 @@ class Tracks(Layer):
         else:
             # convert data to a numpy array if it is not already one
             data = np.asarray(data)
-
-        # in absence of properties make the default an empty dict
-        if properties is None:
-            properties = {}
 
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
@@ -181,9 +182,12 @@ class Tracks(Layer):
         self.display_tail = True
         self.display_graph = True
 
-        # set the data, properties and graph
+        # set the data, features, and graph
         self.data = data
-        self.properties = properties
+        if properties is not None:
+            self.properties = properties
+        else:
+            self.features = features
         self.graph = graph or {}
 
         self.color_by = color_by
@@ -234,6 +238,7 @@ class Tracks(Layer):
                 'tail_width': self.tail_width,
                 'tail_length': self.tail_length,
                 'head_length': self.head_length,
+                'features': self.features,
             }
         )
         return state
@@ -368,7 +373,7 @@ class Tracks(Layer):
         self._manager.build_tracks()
 
         # reset the properties and recolor the tracks
-        self.properties = {}
+        self.features = {}
         self._recolor_tracks()
 
         # reset the graph
@@ -383,6 +388,32 @@ class Tracks(Layer):
         self._set_editable()
 
     @property
+    def features(self):
+        """Dataframe-like features table.
+
+        It is an implementation detail that this is a `pandas.DataFrame`. In the future,
+        we will target the currently-in-development Data API dataframe protocol [1].
+        This will enable us to use alternate libraries such as xarray or cuDF for
+        additional features without breaking existing usage of this.
+
+        If you need to specifically rely on the pandas API, please coerce this to a
+        `pandas.DataFrame` using `features_to_pandas_dataframe`.
+
+        References
+        ----------
+        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        """
+        return self._manager.features
+
+    @features.setter
+    def features(
+        self,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    ) -> None:
+        self._manager.features = features
+        self._check_color_by_in_features()
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._manager.properties
@@ -395,21 +426,9 @@ class Tracks(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """set track properties"""
-        if self._color_by not in [*properties.keys(), 'track_id']:
-            warn(
-                (
-                    trans._(
-                        "Previous color_by key {key!r} not present in new properties. Falling back to track_id",
-                        deferred=True,
-                        key=self._color_by,
-                    )
-                ),
-                UserWarning,
-            )
-            self._color_by = 'track_id'
         self._manager.properties = properties
         self.events.properties()
-        self.events.color_by()
+        self._check_color_by_in_features()
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:
@@ -593,3 +612,18 @@ class Tracks(Layer):
 
         padded_positions = self._pad_display_data(positions)
         return labels, padded_positions
+
+    def _check_color_by_in_features(self):
+        if self._color_by not in self.features.columns:
+            warn(
+                (
+                    trans._(
+                        "Previous color_by key {key!r} not present in features. Falling back to track_id",
+                        deferred=True,
+                        key=self._color_by,
+                    )
+                ),
+                UserWarning,
+            )
+            self._color_by = 'track_id'
+            self.events.color_by()

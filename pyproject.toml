@@ -72,6 +72,7 @@ ignore = [
   "binder/postBuild",
   "binder/xfce4-panel.xml",
   "binder/xsettings.xml",
+  ".env_sample",
 ]
 
 [tool.isort]
@@ -94,6 +95,7 @@ filterwarnings = [
   "ignore:Restart required for this change:UserWarning:napari",  # triggered by a lot of async tests
   "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
+  "ignore::DeprecationWarning:tensorstore",
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
   "ignore:pythonw executable not found:UserWarning:",
   "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
@@ -101,10 +103,9 @@ filterwarnings = [
   "ignore:numpy.ufunc size changed:RuntimeWarning",
   "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
-  "ignore:.*Themes were changed to use evented model"  # specifying the full is not working here so glob pattern is used instead
+  "ignore:.*Themes were changed to use evented model",  # specifying the full is not working here so glob pattern is used instead
 ]
 markers = [
     "sync_only: Test should only be run synchronously",
     "async_only: Test should only be run asynchronously",
-    "slow: Slow test you can skip with `-m 'not slow'`, or adjust with the env variable NAPARI_TESTING_TIMEOUT_SCALING"
 ]

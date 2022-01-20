@@ -49,10 +49,11 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 import inspect
+import os
 import warnings
 import weakref
-from collections import Counter
 from collections.abc import Sequence
+from functools import partial
 from typing import (
     Any,
     Callable,
@@ -105,6 +106,7 @@ class Event:
         # Store args
         self._type = type
         self._native = native
+        self._kwargs = kwargs
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -209,6 +211,30 @@ CallbackStr = Tuple[
 ]  # dereferenced method
 
 
+class _WeakCounter:
+    """
+    Similar to collection counter but has weak keys.
+
+    It will only implement the methods we use here.
+    """
+
+    def __init__(self):
+        self._counter = weakref.WeakKeyDictionary()
+        self._nonecount = 0
+
+    def update(self, iterable):
+        for it in iterable:
+            if it is None:
+                self._nonecount += 1
+            else:
+                self._counter[it] = self.get(it, 0) + 1
+
+    def get(self, key, default):
+        if key is None:
+            return self._nonecount
+        return self._counter.get(key, default)
+
+
 class EventEmitter:
 
     """Encapsulates a list of event callbacks.
@@ -261,7 +287,7 @@ class EventEmitter:
 
         # count number of times this emitter is blocked for each callback.
         self._blocked: Dict[Optional[Callback], int] = {None: 0}
-        self._block_counter: Counter[Optional[Callback]] = Counter()
+        self._block_counter: _WeakCounter[Optional[Callback]] = _WeakCounter()
 
         # used to detect emitter loops
         self._emitting = False
@@ -345,11 +371,12 @@ class EventEmitter:
 
     def connect(
         self,
-        callback: Union[Callback, CallbackRef, CallbackStr, 'EmitterGroup'],
+        callback: Union[Callback, CallbackRef, CallbackStr, 'EventEmitter'],
         ref: Union[bool, str] = False,
         position: Union[Literal['first'], Literal['last']] = 'first',
         before: Union[str, Callback, List[Union[str, Callback]], None] = None,
         after: Union[str, Callback, List[Union[str, Callback]], None] = None,
+        until: Optional['EventEmitter'] = None,
     ):
         """Connect this emitter to a new callback.
 
@@ -376,6 +403,9 @@ class EventEmitter:
         after : str | callback | list of str or callback | None
             List of callbacks that the current callback should follow.
             Can be None if no after-criteria should be used.
+        until : optional eventEmitter
+            if provided, when the event `until` is emitted, `callback`
+            will be disconnected from this emitter.
 
         Notes
         -----
@@ -492,6 +522,10 @@ class EventEmitter:
         self._callbacks.insert(idx, callback)
         self._callback_refs.insert(idx, _ref)
         self._callback_pass_event.insert(idx, pass_event)
+
+        if until is not None:
+            until.connect(partial(self.disconnect, callback))
+
         return old_callback  # allows connect to be used as a decorator
 
     def disconnect(
@@ -547,7 +581,12 @@ class EventEmitter:
                 if inspect.ismethod(meth) and meth == callback:
                     return obj, name
             raise RuntimeError(
-                f"During bind method {callback} of object {obj} an error happen"
+                trans._(
+                    "During bind method {callback} of object {obj} an error happen",
+                    deferred=True,
+                    callback=callback,
+                    obj=obj,
+                )
             )
         return obj, callback.__name__
 
@@ -561,7 +600,10 @@ class EventEmitter:
 
         if sum(map(_is_pos_arg, parameters_list)) > 1:
             raise RuntimeError(
-                "Binning function cannot have more than one positional argument"
+                trans._(
+                    "Binning function cannot have more than one positional argument",
+                    deferred=True,
+                )
             )
 
         return any(
@@ -638,6 +680,8 @@ class EventEmitter:
                 self._block_counter.update([None])
                 return event
 
+            _log_event_stack(event)
+
             rem: List[CallbackRef] = []
             for cb, pass_event in zip(
                 self._callbacks[:], self._callback_pass_event[:]
@@ -651,7 +695,13 @@ class EventEmitter:
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
                         warnings.warn(
-                            f"Problem with function {old_cb[1]} of {obj} connected to event {self}",
+                            trans._(
+                                "Problem with function {old_cb} of {obj} connected to event {self_}",
+                                deferred=True,
+                                old_cb=old_cb[1],
+                                obj=obj,
+                                self_=self,
+                            ),
                             stacklevel=2,
                             category=RuntimeWarning,
                         )
@@ -1118,3 +1168,34 @@ def _is_pos_arg(param: inspect.Parameter):
         ]
         and param.default == inspect.Parameter.empty
     )
+
+
+try:
+    # this could move somewhere higher up in napari imports ... but where?
+    __import__('dotenv').load_dotenv()
+except ImportError:
+    pass
+
+
+def _noop(*a, **k):
+    pass
+
+
+_log_event_stack = _noop
+
+
+def set_event_tracing_enabled(enabled=True, cfg=None):
+    global _log_event_stack
+    if enabled:
+        from .debugging import log_event_stack
+
+        if cfg is not None:
+            _log_event_stack = partial(log_event_stack, cfg=cfg)
+        else:
+            _log_event_stack = log_event_stack
+    else:
+        _log_event_stack = _noop
+
+
+if os.getenv("NAPARI_DEBUG_EVENTS", '').lower() in ('1', 'true'):
+    set_event_tracing_enabled(True)

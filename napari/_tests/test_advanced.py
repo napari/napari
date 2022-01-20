@@ -10,7 +10,7 @@ def test_4D_5D_images(make_napari_viewer):
     """
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     # add 4D image data
     data = np.random.random((2, 6, 30, 40))
@@ -35,7 +35,7 @@ def test_5D_image_3D_rendering(make_napari_viewer):
     """Test 3D rendering of a 5D image."""
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     # add 4D image data
     data = np.random.random((2, 10, 12, 13, 14))
@@ -61,7 +61,7 @@ def test_change_image_dims(make_napari_viewer):
     """
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     # add 3D image data
     data = np.random.random((10, 30, 40))
@@ -105,7 +105,7 @@ def test_range_one_image(make_napari_viewer):
     """
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
@@ -135,7 +135,7 @@ def test_range_one_images_and_points(make_napari_viewer):
     """
     np.random.seed(0)
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
@@ -161,7 +161,7 @@ def test_range_one_images_and_points(make_napari_viewer):
 def test_update_console(make_napari_viewer):
     """Test updating the console with local variables."""
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     # Check viewer in console
     assert view.console.kernel_client is not None
@@ -170,17 +170,20 @@ def test_update_console(make_napari_viewer):
 
     a = 4
     b = 5
-    viewer.update_console(locals())
+    locs = locals()
+    viewer.update_console(locs)
     assert 'a' in view.console.shell.user_ns
     assert view.console.shell.user_ns['a'] == a
     assert 'b' in view.console.shell.user_ns
     assert view.console.shell.user_ns['b'] == b
+    for k in locs.keys():
+        del viewer.window._qt_viewer.console.shell.user_ns[k]
 
 
 def test_changing_display_surface(make_napari_viewer):
     """Test adding 3D surface and changing its display."""
     viewer = make_napari_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     np.random.seed(0)
     vertices = 20 * np.random.random((10, 3))
