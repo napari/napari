@@ -648,8 +648,9 @@ class Vectors(Layer):
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
-            if self.n_dimensional is True and self.ndim > 2:
-                distances = abs(self.data[:, 0, not_disp] - indices[not_disp])
+            data = self.data[:, 0, not_disp]
+            distances = abs(data - indices[not_disp])
+            if self.n_dimensional is True:
                 projected_lengths = abs(
                     self.data[:, 1, not_disp] * self.length
                 )
@@ -661,14 +662,12 @@ class Vectors(Layer):
                 ) / alpha_match
                 alpha_per_dim[alpha_match == 0] = 1
                 alpha = np.prod(alpha_per_dim, axis=1).astype(float)
-                slice_indices = np.where(matches)[0].astype(int)
-                return slice_indices, alpha
             else:
-                data = self.data[:, 0, not_disp]
-                distances = np.abs(data - indices[not_disp])
-                matches = np.all(distances < 1e-5, axis=1)
-                slice_indices = np.where(matches)[0].astype(int)
-                return slice_indices, 1.0
+                matches = np.all(distances <= 1e-5, axis=1)
+                alpha = 1.0
+
+            slice_indices = np.where(matches)[0].astype(int)
+            return slice_indices, alpha
         else:
             return [], np.empty(0)
 
