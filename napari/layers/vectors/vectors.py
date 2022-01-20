@@ -650,7 +650,9 @@ class Vectors(Layer):
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(self.data[:, 0, not_disp] - indices[not_disp])
-                projected_lengths = self.data[:, 1, not_disp] * self.length
+                projected_lengths = abs(
+                    self.data[:, 1, not_disp] * self.length
+                )
                 matches = np.all(distances <= projected_lengths, axis=1)
                 alpha_match = projected_lengths[matches]
                 alpha_match[alpha_match == 0] = 1
@@ -668,7 +670,7 @@ class Vectors(Layer):
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, 1.0
         else:
-            return [], np.empty(0.0)
+            return [], np.empty(0)
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
