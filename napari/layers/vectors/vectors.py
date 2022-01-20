@@ -641,9 +641,11 @@ class Vectors(Layer):
         slice_indices : list
             Indices of vectors in the currently viewed slice.
         alpha : float, (N, ) array
-            If in `n_dimensional` mode then the opacity of vectors, where
-            values of 1 corresponds to vectors located in the slice, and values
-            less than 1 correspond to vectors located in neighboring slices.
+            The computed, relative opacity of vectors in the current slice.
+            If `n_dimensional` is mode is off, this is always 1.
+            Otherwise, vectors originating in the current slice are assigned a value of 1,
+            while vectors passing through the current slice are assigned progressively lower
+            values, based on how far from the current slice they originate.
         """
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
