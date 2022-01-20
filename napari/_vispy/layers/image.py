@@ -4,9 +4,8 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
-from ...utils.info import supports_float
 from ...utils.translations import trans
-from ..utils.gl import fix_data_dtype
+from ..utils.gl import fix_data_dtype, get_gl_extensions
 from ..visuals.image import Image as ImageNode
 from ..visuals.volume import Volume as VolumeNode
 from .base import VispyBaseLayer
@@ -14,7 +13,10 @@ from .base import VispyBaseLayer
 
 class ImageLayerNode:
     def __init__(self, custom_node: Node = None, texture_format=None):
-        if texture_format == 'auto' and not supports_float():
+        if (
+            texture_format == 'auto'
+            and 'texture_float' not in get_gl_extensions()
+        ):
             # if the GPU doesn't support float textures, texture_format auto
             # WILL fail on float dtypes
             # https://github.com/napari/napari/issues/3988

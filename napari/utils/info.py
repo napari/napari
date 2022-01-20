@@ -2,8 +2,6 @@ import os
 import platform
 import subprocess
 import sys
-from functools import lru_cache
-from typing import NamedTuple
 
 import napari
 
@@ -69,31 +67,6 @@ def _sys_name():
     except Exception:
         pass
     return ""
-
-
-class GlInfo(NamedTuple):
-    version: str
-    max_texture: int
-    extensions: str
-
-
-@lru_cache(maxsize=1)
-def gl_info() -> GlInfo:
-    """Get basic info about the Gl capabilities of this machine"""
-    from vispy.app import Canvas, use_app
-    from vispy.gloo import gl
-
-    canvas = Canvas('Test', (10, 10), show=False, app=use_app())
-    version = gl.glGetParameter(gl.GL_VERSION)
-    max_tex = gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
-    extensions = gl.glGetParameter(gl.GL_EXTENSIONS)
-    canvas.close()
-
-    return GlInfo(version, max_tex, extensions)
-
-
-def supports_float() -> bool:
-    return 'texture_float' in gl_info()[2]
 
 
 def sys_info(as_html=False):
