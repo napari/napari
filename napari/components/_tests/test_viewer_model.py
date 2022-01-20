@@ -287,6 +287,28 @@ def test_new_points():
     assert viewer.dims.ndim == 2
 
 
+def test_view_centering_with_points_add():
+    """Test if the viewer is only centered when the first
+    points were added
+    Regression test for issue  #3803
+    """
+    image = np.zeros((5, 10, 10))
+
+    viewer = ViewerModel()
+    viewer.add_image(image)
+    assert tuple(viewer.dims.point) == (2, 5, 5)
+
+    viewer.dims.set_point(0, 0)
+    # viewer point shouldn't change after this
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+    pts_layer = viewer.add_points(ndim=3)
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+    pts_layer.add([(0, 8, 8)])
+    assert tuple(viewer.dims.point) == (0, 5, 5)
+
+
 def test_new_shapes():
     """Test adding new shapes layer."""
     # Add labels to empty viewer
@@ -328,17 +350,17 @@ def test_swappable_dims():
     # midpoints indices into the data below depend on the data range.
     # This depends on the values in vectors_data and thus the random seed.
     assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[4, 6, :, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, 6, :, :]
     )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == (0, 2, 1, 3)
     assert np.all(
-        viewer.layers[image_name]._data_view == image_data[4, :, 5, :]
+        viewer.layers[image_name]._data_view == image_data[3, :, 5, :]
     )
     assert np.all(
-        viewer.layers[labels_name]._slice.image.raw == labels_data[4, :, 5, :]
+        viewer.layers[labels_name]._slice.image.raw == labels_data[3, :, 5, :]
     )
 
 
@@ -354,7 +376,7 @@ def test_grid():
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
@@ -363,7 +385,7 @@ def test_grid():
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
         [0, 15],
@@ -379,7 +401,7 @@ def test_grid():
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
@@ -389,7 +411,7 @@ def test_grid():
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 2)
     assert viewer.grid.stride == -2
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [layer._translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
         [0, 0],

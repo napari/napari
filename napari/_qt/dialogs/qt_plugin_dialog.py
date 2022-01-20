@@ -46,6 +46,7 @@ from ...plugins.pypi import (
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
+from ..qt_resources import QColoredSVGIcon
 from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
 
@@ -325,7 +326,7 @@ class PluginListItem(QFrame):
         self.help_button.setText(trans._("Website"))
         self.help_button.setObjectName("help_button")
         if npe_version != 1:
-            self.enabled_checkbox.setEnabled(False)
+            self._handle_npe2_plugin()
 
         if installed:
             self.enabled_checkbox.show()
@@ -335,6 +336,17 @@ class PluginListItem(QFrame):
             self.enabled_checkbox.hide()
             self.action_button.setText(trans._("install"))
             self.action_button.setObjectName("install_button")
+
+    def _handle_npe2_plugin(self):
+        npe2_icon = QLabel(self)
+        icon = QColoredSVGIcon.from_resources('logo_silhouette')
+        npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
+        self.row1.insertWidget(2, QLabel('npe2'))
+        self.row1.insertWidget(2, npe2_icon)
+        self.enabled_checkbox.setEnabled(False)
+        self.enabled_checkbox.setToolTip(
+            'This is a npe2 plugin and cannot be enabled/disabled at this time.'
+        )
 
     def _get_dialog(self) -> QDialog:
         p = self.parent()
@@ -355,7 +367,6 @@ class PluginListItem(QFrame):
         self.v_lay.setContentsMargins(-1, 6, -1, 6)
         self.v_lay.setSpacing(0)
         self.row1 = QHBoxLayout()
-        self.row1.setSpacing(6)
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setChecked(enabled)
         self.enabled_checkbox.stateChanged.connect(self._on_enabled_checkbox)
@@ -632,16 +643,15 @@ class QtPluginDialog(QDialog):
 
         plugin_manager.discover()  # since they might not be loaded yet
 
-        already_installed = set()
+        self.already_installed = set()
 
         def _add_to_installed(distname, enabled, npe_version=1):
-
             if distname:
                 meta = standard_metadata(distname)
                 if len(meta) == 0:
                     # will not add builtins.
                     return
-                already_installed.add(distname)
+                self.already_installed.add(distname)
             else:
                 meta = {}
 
@@ -661,7 +671,7 @@ class QtPluginDialog(QDialog):
 
         for manifest in _npe2.iter_manifests():
             distname = normalized_name(manifest.name or '')
-            if distname in already_installed:
+            if distname in self.already_installed or distname == 'napari':
                 continue
             _add_to_installed(distname, True, npe_version=2)
 
@@ -669,7 +679,7 @@ class QtPluginDialog(QDialog):
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
-            if distname in already_installed:
+            if distname in self.already_installed:
                 continue
             _add_to_installed(
                 distname, not plugin_manager.is_blocked(plugin_name)

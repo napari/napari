@@ -284,3 +284,15 @@ def test_mgui_forward_refs(tmp_path, name):
     script_path = tmp_path / 'script.py'
     script_path.write_text(textwrap.dedent(script.format(name)))
     subprocess.run([sys.executable, str(script_path)], check=True)
+
+
+def test_layers_populate_immediately(make_napari_viewer):
+    """make sure that the layers dropdown is populated upon adding to viewer"""
+    from magicgui.widgets import create_widget
+
+    labels_layer = create_widget(annotation=Labels, label="ROI")
+    viewer = make_napari_viewer()
+    viewer.add_labels(np.zeros((10, 10), dtype=int))
+    assert not len(labels_layer.choices)
+    viewer.window.add_dock_widget(labels_layer)
+    assert len(labels_layer.choices) == 1

@@ -21,5 +21,5 @@ class SurfaceWireframe(EventedModel):
     """
 
     visible: bool = False
-    color: Union[str, Array[float, (3,), Array[float, (4,)]]] = 'black'
+    color: Union[str, Array[float, (3,)], Array[float, (4,)]] = 'black'
     width: float = 1
