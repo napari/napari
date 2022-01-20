@@ -715,6 +715,7 @@ class Vectors(Layer):
             faces = self._mesh_triangles
             self._view_data = self.data[:, :, disp]
             self._view_indices = np.arange(self.data.shape[0])
+            self._view_alphas = 1.0
 
         if len(faces) == 0:
             self._view_vertices = []
