@@ -98,12 +98,15 @@ class TextManager(EventedModel):
             else:
                 kwargs['string'] = text
         super().__init__(**kwargs)
-        self.string(self._features)
+        self.string._update(self._features)
 
     @property
     def values(self):
         # _warn_about_deprecated_values_field()
-        return self.string(self._features)
+        values = self.string._update(self._features)
+        if isinstance(self.string, ConstantStringEncoding):
+            return np.broadcast_to(values, (self._features.shape[0],))
+        return values
 
     def __setattr__(self, key, value):
         if key == 'values':
@@ -157,12 +160,14 @@ class TextManager(EventedModel):
             self.string, (ConstantStringEncoding, ManualStringEncoding)
         ):
             return
-        new_properties = {
-            name: np.repeat(value, n_text, axis=0)
-            for name, value in properties.items()
-        }
-        new_values = self.string._apply(new_properties, range(n_text))
-        self.string._append(new_values)
+        features = pd.DataFrame(
+            {
+                name: np.repeat(value, n_text, axis=0)
+                for name, value in properties.items()
+            }
+        )
+        values = self.string(features)
+        self.string._append(values)
 
     def _paste(self, strings: StringArray):
         self.string._append(strings)
@@ -235,7 +240,7 @@ class TextManager(EventedModel):
             self.string, (ConstantStringEncoding, ManualStringEncoding)
         ):
             return np.array([''])
-        return self.string(self._features, indices=indices_view)
+        return self.string._update(self._features, indices=indices_view)
 
     @validator('string', pre=True, always=True)
     def _check_string(

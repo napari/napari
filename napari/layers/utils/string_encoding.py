@@ -1,5 +1,5 @@
 from string import Formatter
-from typing import Any, Dict, Sequence, Union
+from typing import Any, Sequence, Union
 
 import numpy as np
 from pydantic import Field
@@ -12,7 +12,6 @@ from .style_encoding import (
     ConstantStyleEncoding,
     DerivedStyleEncoding,
     EncodingType,
-    IndicesType,
     ManualStyleEncoding,
     StyleEncoding,
     parse_kwargs_as_encoding,
@@ -86,12 +85,8 @@ class DirectStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
     feature: str
     fallback: StringValue = DEFAULT_STRING
 
-    def _apply(
-        self,
-        features: Any,
-        indices: IndicesType,
-    ) -> StringArray:
-        return np.array(features[self.feature][indices], dtype=str)
+    def __call__(self, features: Any) -> StringArray:
+        return np.array(features[self.feature], dtype=str)
 
 
 class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
@@ -113,22 +108,11 @@ class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
     format_string: str
     fallback: StringValue = DEFAULT_STRING
 
-    def _apply(
-        self,
-        features: Any,
-        indices: IndicesType,
-    ) -> StringArray:
-        # TODO: maybe exploit pandas API here.
-        return np.array(
-            [
-                self.format_string.format(**_get_feature_row(features, index))
-                for index in indices
-            ]
+    def __call__(self, features: Any) -> StringArray:
+        values = features.apply(
+            lambda row: self.format_string.format(**row), axis='columns'
         )
-
-
-def _get_feature_row(features: Any, index: int) -> Dict[str, Any]:
-    return {name: values[index] for name, values in features.items()}
+        return np.array(values, dtype=str)
 
 
 # Define supported encodings as tuples instead of Union, so that they can be used with
@@ -156,7 +140,8 @@ def validate_string_encoding(
         The input or RHS of an assignment to a StringEncoding field. If this
         is already a StringEncoding, it is returned as is. If this is a dict,
         then we try to parse that as one of the built-in StringEncodings. If
-        this is a valid
+        this is a valid format string, then a FormatStringEncoding is returned.
+        If this is just a string, then a ConstantStringEncoding is returned.
         Otherwise we try to parse the input as a direct encoding of multiple
         strings.
 

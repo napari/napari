@@ -1,5 +1,5 @@
 import warnings
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from enum import auto
 from typing import Any, Generic, List, Optional, Tuple, TypeVar, Union
 
@@ -34,49 +34,51 @@ class EncodingType(StringEnum):
 class StyleEncoding(Protocol[StyleArray]):
     """Defines a way to encode style values, like colors and strings."""
 
-    def __call__(
-        self,
-        features: Any,
-        *,
-        indices: Optional[IndicesType] = None,
-    ) -> StyleArray:
+    def __call__(self, features: Any) -> StyleArray:
         """Apply this encoding with the given features to generate style values.
-
-        If generating values from the given features fails, this will fall back
-        to returning some safe/default value.
-
-        In general the returned value will be a read-only numpy array, as it may
-        be a result from np.broadcast.
 
         Parameters
         ----------
         features : Dataframe-like
-            The features from which to derive the output values.
+            The layer features table from which to derive the output values.
+
+        Returns
+        -------
+        StyleArray
+            The numpy array of encoded values should either have a length of 1 or
+            have the same length as the given features.
+
+        Raises
+        ------
+        KeyError, ValueError
+            If generating values from the given features fails.
+        """
+
+    def _update(
+        self, features: Any, *, indices: Optional[IndicesType] = None
+    ) -> StyleArray:
+        """Updates cached values by applying this to the tail of the given features.
+
+        If the cached values have the same length as the given features, this will
+        return the existing cached value array.
+
+        If generating values from the given features fails, this will fall back
+        to returning some safe or default value.
+
+        Parameters
+        ----------
+        features : Dataframe-like
+            The layer features table from which to derive the output values.
         indices : Optional[IndicesType]
             The row indices for which to return values. If None, return all of them.
 
         Returns
         -------
-        StyleArray
-            The numpy array of derived values. This has same length as the given indices
-            and in general is read-only.
-        """
-
-    def _apply(
-        self,
-        features: Any,
-        indices: IndicesType,
-    ) -> StyleArray:
-        """Applies this encoding to the given features at the given row indices."""
-
-    def _clear(self) -> None:
-        """Clears all previously generated values.
-
-        Call this before applying this to refresh values.
+            The updated array of cached values, possibly indexed by the given indices.
         """
 
     def _append(self, array: StyleArray) -> None:
-        """Appends raw style values to this.
+        """Appends raw style values to cached values.
 
         This is useful for supporting the paste operation in layers.
 
@@ -87,18 +89,22 @@ class StyleEncoding(Protocol[StyleArray]):
         """
 
     def _delete(self, indices: IndicesType) -> None:
-        """Deletes style values from this by index.
+        """Deletes cached style values by index.
 
         Parameters
         ----------
         indices
             The indices of the style values to remove.
         """
-        pass
+
+    def _clear(self) -> None:
+        """Clears all previously generated and cached values.
+
+        Call this before calling _update this to refresh all cached values.
+        """
 
     def _json_encode(self) -> dict:
         """Converts the encoding to a dict that should be convertible to JSON."""
-        pass
 
 
 class StyleEncodingModel(EventedModel, Generic[StyleValue, StyleArray]):
@@ -117,21 +123,21 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     """
 
     constant: StyleValue
+    _cached: StyleArray
 
-    def __call__(
-        self,
-        features: Any,
-        *,
-        indices: Optional[IndicesType] = None,
-    ) -> StyleArray:
-        return _broadcast_constant(self.constant, features.shape[0], indices)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._cached = _empty_array_like(self.constant)
 
-    def _apply(
-        self,
-        features: Any,
-        indices: IndicesType,
+    def __call__(self, features: Any) -> StyleArray:
+        return np.array([self.constant])
+
+    def _update(
+        self, features: Any, *, indices: Optional[IndicesType] = None
     ) -> StyleArray:
-        return _broadcast_constant(self.constant, len(indices), indices)
+        if len(self._cached) == 0:
+            self._cached = self(features)
+        return self._cached
 
     def _append(self, array: StyleArray) -> None:
         pass
@@ -140,7 +146,7 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
         pass
 
     def _clear(self) -> None:
-        pass
+        self._cached = _empty_array_like(self.constant)
 
     def _json_encode(self) -> dict:
         return self.dict()
@@ -166,25 +172,20 @@ class ManualStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     array: StyleArray
     default: StyleValue
 
-    def __call__(
-        self,
-        features: Any,
-        *,
-        indices: Optional[IndicesType] = None,
-    ) -> StyleArray:
-        current_length = self.array.shape[0]
+    def __call__(self, features: Any) -> StyleArray:
+        n_values = self.array.shape[0]
         n_rows = features.shape[0]
-        if n_rows > current_length:
-            tail_array = np.array([self.default] * (n_rows - current_length))
-            self._append(tail_array)
-        return _maybe_index_array(self.array, indices)
+        if n_rows > n_values:
+            tail_array = np.array([self.default] * (n_rows - n_values))
+            return np.append(self.array, tail_array, axis=0)
+        return np.array(self.array[:n_rows])
 
-    def _apply(
-        self,
-        features: Any,
-        indices: IndicesType,
+    def _update(
+        self, features: Any, *, indices: Optional[IndicesType] = None
     ) -> StyleArray:
-        return np.array([self.default] * len(indices))
+        if len(self.array) < features.shape[0]:
+            self.array = self(features)
+        return _maybe_index_array(self.array, indices)
 
     def _append(self, array: StyleArray) -> None:
         self.array = np.append(self.array, array, axis=0)
@@ -199,39 +200,42 @@ class ManualStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
         return self.dict()
 
 
-class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
-    """Encodes style values by deriving them from feature values."""
+class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray], ABC):
+    """Encodes style values by deriving them from feature values.
+
+    Attributes
+    ----------
+    fallback : StyleValue
+        The fallback style value.
+    """
 
     fallback: StyleValue
-    _array: StyleArray
+    _cached: StyleArray
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._array = _empty_array_like(self.fallback)
+        self._cached = _empty_array_like(self.fallback)
 
     @abstractmethod
-    def _apply(self, features: Any, indices: IndicesType) -> StyleArray:
+    def __call__(self, features: Any) -> StyleArray:
         pass
 
-    def __call__(
-        self,
-        features: Any,
-        *,
-        indices: Optional[IndicesType] = None,
+    def _update(
+        self, features: Any, *, indices: Optional[IndicesType] = None
     ) -> StyleArray:
-        current_length = self._array.shape[0]
+        n_values = self._cached.shape[0]
         n_rows = features.shape[0]
-        tail_indices = range(current_length, n_rows)
+        tail_indices = range(n_values, n_rows)
         try:
             if len(tail_indices) > 0:
-                tail_array = self._apply(features, tail_indices)
+                tail_array = self(features.iloc[tail_indices])
                 self._append(tail_array)
-            return _maybe_index_array(self._array, indices)
+            return _maybe_index_array(self._cached, indices)
         except (KeyError, ValueError) as error:
             self_str = repr(self)
             warnings.warn(
                 '\n'
-                'Applying the following derived encoding:\n'
+                'Applying the encoding:\n'
                 f'{self_str}\n'
                 'failed with error:\n'
                 f'{error}\n'
@@ -241,13 +245,13 @@ class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
         return _broadcast_constant(self.fallback, n_rows, indices)
 
     def _append(self, array: StyleArray) -> None:
-        self._array = np.append(self._array, array, axis=0)
+        self._cached = np.append(self._cached, array, axis=0)
 
     def _delete(self, indices: IndicesType) -> None:
-        self._array = _delete_in_bounds(self._array, indices)
+        self._cached = _delete_in_bounds(self._cached, indices)
 
     def _clear(self) -> None:
-        self._array = _empty_array_like(self.fallback)
+        self._cached = _empty_array_like(self.fallback)
 
     def _json_encode(self) -> dict:
         return self.dict()
@@ -302,7 +306,7 @@ def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
 
 
 def _broadcast_constant(
-    constant: np.ndarray, n_rows: int, indices: Optional[IndicesType]
+    constant: np.ndarray, n_rows: int, indices: Optional[IndicesType] = None
 ) -> np.ndarray:
     output_length = n_rows if indices is None else len(indices)
     output_shape = (output_length,) + constant.shape
