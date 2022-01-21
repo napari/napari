@@ -21,6 +21,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.edge_width.connect(self._on_data_change)
+        self.layer.events.edge_width_rel.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer._edge.events.colors.connect(self._on_data_change)
         self.layer._edge.events.color_properties.connect(self._on_data_change)
@@ -51,16 +52,29 @@ class VispyPointsLayer(VispyBaseLayer):
         if len(self.layer._indices_view) == 0:
             data = np.zeros((1, self.layer._ndisplay))
             size = [0]
+            edge_width = [0]
         else:
             data = self.layer._view_data
             size = self.layer._view_size
+            edge_width = self.layer._view_edge_width
 
         set_data = self.node._subvisuals[0].set_data
+
+        if self.layer.edge_width_rel:
+            edge_kw = {
+                'edge_width': None,
+                'edge_width_rel': edge_width,
+            }
+        else:
+            edge_kw = {
+                'edge_width': edge_width,
+                'edge_width_rel': None,
+            }
 
         set_data(
             data[:, ::-1],
             size=size,
-            edge_width=self.layer.edge_width,
+            **edge_kw,
             edge_color=edge_color,
             face_color=face_color,
         )
