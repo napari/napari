@@ -420,6 +420,7 @@ class Points(Layer):
             properties=color_properties,
         )
 
+        self._shown = np.empty(0).astype(bool)
         self.size = size
         self.shown = shown
         self.experimental_canvas_size_limits = experimental_canvas_size_limits
@@ -1206,11 +1207,8 @@ class Points(Layer):
 
     @_indices_view.setter
     def _indices_view(self, value):
-        if not hasattr(self, '_shown'):
-            # TODO: find a better solution for this. Needed to avoid race condition on layer instantiation
-            # if n_dimensional is True, both `shown` and `size` are needed to define _indices_view,
-            # and they rely on each other to initialize. See napari#3625 test failures.
-            self.__indices_view = value
+        if len(self._shown) == 0:
+            self.__indices_view = np.empty(0, int)
         else:
             self.__indices_view = value[self.shown[value]]
 
