@@ -111,8 +111,8 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
     for a computed property when a model field that it depends on changes
     e.g.  (@property 'c' depends on model fields 'a' and 'b')
 
-    Example
-    -------
+    Examples
+    --------
         class MyModel(EventedModel):
             a: int = 1
             b: int = 1
