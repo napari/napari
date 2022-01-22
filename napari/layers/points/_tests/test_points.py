@@ -6,7 +6,10 @@ import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
-from napari._tests.utils import check_layer_world_data_extent
+from napari._tests.utils import (
+    assert_layer_state_equal,
+    check_layer_world_data_extent,
+)
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._text_constants import Anchor
@@ -420,6 +423,46 @@ def test_remove_selected_updates_value():
     layer.remove_selected()
 
     assert layer._value == 2
+
+
+def test_remove_selected_removes_corresponding_attributes():
+    """Test that removing points at specific indices also removes any per-point
+    attribute at the same index"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    size = np.random.rand(shape[0])
+    color = np.random.rand(shape[0], 4)
+    feature = np.random.rand(shape[0])
+    text = 'feature'
+
+    layer = Points(
+        data,
+        size=size,
+        # edge_width=size,  # TODO: this should be added when arrays are accepted
+        features={'feature': feature},
+        face_color=color,
+        edge_color=color,
+        text=text,
+    )
+
+    layer_expected = Points(
+        data[1:],
+        size=size[1:],
+        # edge_width=size[1:],
+        features={'feature': feature[1:]},
+        face_color=color[1:],
+        edge_color=color[1:],
+        text=text,  # computed from feature
+    )
+
+    layer.selected_data = {0}
+    layer.remove_selected()
+
+    state_layer = layer._get_state()
+    state_expected = layer_expected._get_state()
+
+    assert_layer_state_equal(state_layer, state_expected)
 
 
 def test_move():
