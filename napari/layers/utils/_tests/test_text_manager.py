@@ -50,7 +50,6 @@ def test_empty_text_manager_format():
     np.testing.assert_equal(text_manager.values, ['confidence: 0.50'])
 
 
-@pytest.mark.xfail(reason='To be fixed with properties refactor.')
 def test_add_many_text_formatted():
     properties = {'confidence': np.empty(0, dtype=float)}
     text_manager = TextManager(
