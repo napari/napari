@@ -20,7 +20,6 @@ from .string_encoding import (
     ManualStringEncoding,
     StringArray,
     StringEncoding,
-    validate_string_encoding,
 )
 
 
@@ -43,8 +42,7 @@ class TextManager(EventedModel):
     Attributes
     ----------
     string : StringEncoding
-        Defines the string for each text element. See ``validate_string_encoding``
-        for accepted inputs.
+        Defines the string for each text element.
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
@@ -241,13 +239,6 @@ class TextManager(EventedModel):
         ):
             return np.array([''])
         return self.string._update(self._features, indices=indices_view)
-
-    @validator('string', pre=True, always=True)
-    def _check_string(
-        cls,
-        string: Union[StringEncoding, dict, str, Sequence[str], None],
-    ) -> StringEncoding:
-        return validate_string_encoding(string)
 
     @classmethod
     def _from_layer(

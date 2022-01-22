@@ -109,7 +109,7 @@ class StyleEncoding(Protocol[StyleArray]):
 
 class StyleEncodingModel(EventedModel, Generic[StyleValue, StyleArray]):
     class Config:
-        # Forbid extra fields to ensure different types of encodings can be properly resolved.
+        # Ensure different types of encodings can be properly resolved.
         extra = 'forbid'
 
 

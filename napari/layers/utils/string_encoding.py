@@ -26,7 +26,62 @@ StringArray = Array[str, (-1,)]
 
 @runtime_checkable
 class StringEncoding(StyleEncoding[StringArray], Protocol):
-    """Encodes strings from features."""
+    """Encodes strings from features.
+
+    See ``validate`` for a description of the supported types that can be
+    used when assigning a value to a StringEncoding field.
+    """
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(
+        cls,
+        string: Union['StringEncoding', dict, str, Sequence[str], None],
+    ) -> 'StringEncoding':
+        """Validates and coerces an input to a StringEncoding.
+
+        Parameters
+        ----------
+        string : Union[StringEncoding, dict, str, Sequence[str], None]
+            The value being assigned to a StringEncoding field.
+            If this is already a StringEncoding, it is returned as is.
+            If this is a dict, then it should represent one of the built-in StringEncodings.
+            If this a string, then a FormatStringEncoding is returned if it's also
+            a valid format string, otherwise a ConstantStringEncoding is returned.
+            Otherwise this should be a sequence of strings to be used in a ManualStringEncoding.
+
+        Returns
+        -------
+        StringEncoding
+
+        Raises
+        ------
+        TypeError
+            If the input is not a supported type.
+        ValidationError
+            If the input cannot be parsed into a StringEncoding.
+        """
+        if isinstance(string, StringEncoding):
+            return string
+        if isinstance(string, dict):
+            return parse_kwargs_as_encoding(_STRING_ENCODINGS, **string)
+        if isinstance(string, str):
+            if _is_format_string(string):
+                return FormatStringEncoding(format_string=string)
+            return ConstantStringEncoding(constant=string)
+        if isinstance(string, Sequence):
+            return ManualStringEncoding(array=string, default='')
+        if string is None:
+            return ConstantStringEncoding(constant=DEFAULT_STRING)
+        raise TypeError(
+            trans._(
+                'string should be a StringEncoding, dict, str, Sequence[str], or None',
+                deferred=True,
+            )
+        )
 
 
 """The default string to use, which may also be used a safe fallback string."""
@@ -125,55 +180,6 @@ _STRING_ENCODINGS = (
     ConstantStringEncoding,
     ManualStyleEncoding,
 )
-
-_STRING_ENCODING_NAMES = tuple(enc.__name__ for enc in _STRING_ENCODINGS)
-
-
-def validate_string_encoding(
-    string: Union[StringEncoding, dict, str, Sequence[str], None],
-) -> StringEncoding:
-    """Validates and coerces an input to a StringEncoding.
-
-    Parameters
-    ----------
-    string : Union[StringEncoding, dict, str, Sequence[str], None]
-        The input or RHS of an assignment to a StringEncoding field. If this
-        is already a StringEncoding, it is returned as is. If this is a dict,
-        then we try to parse that as one of the built-in StringEncodings. If
-        this is a valid format string, then a FormatStringEncoding is returned.
-        If this is just a string, then a ConstantStringEncoding is returned.
-        Otherwise we try to parse the input as a direct encoding of multiple
-        strings.
-
-    Returns
-    -------
-    StringEncoding
-
-    Raises
-    ------
-    TypeError
-        If the input is not a supported type.
-    ValidationError
-        If the input cannot be parsed into a string encoding.
-    """
-    if string is None:
-        return ConstantStringEncoding(constant=DEFAULT_STRING)
-    if isinstance(string, StringEncoding):
-        return string
-    if isinstance(string, dict):
-        return parse_kwargs_as_encoding(_STRING_ENCODINGS, **string)
-    if isinstance(string, str):
-        if _is_format_string(string):
-            return FormatStringEncoding(format_string=string)
-        return ConstantStringEncoding(constant=string)
-    if isinstance(string, Sequence):
-        return ManualStringEncoding(array=string, default='')
-    raise TypeError(
-        trans._(
-            f'string should be one of {_STRING_ENCODING_NAMES}, a dict, str, iterable, or None',
-            deferred=True,
-        )
-    )
 
 
 def _is_format_string(string: str) -> bool:
