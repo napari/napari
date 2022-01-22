@@ -439,7 +439,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer = Points(
         data,
         size=size,
-        # edge_width=size,  # TODO: this should be added when arrays are accepted
+        edge_width=size,
         features={'feature': feature},
         face_color=color,
         edge_color=color,
@@ -449,7 +449,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer_expected = Points(
         data[1:],
         size=size[1:],
-        # edge_width=size[1:],
+        edge_width=size[1:],
         features={'feature': feature[1:]},
         face_color=color[1:],
         edge_color=color[1:],
