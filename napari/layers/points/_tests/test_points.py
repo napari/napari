@@ -434,26 +434,27 @@ def test_remove_selected_removes_corresponding_attributes():
     size = np.random.rand(shape[0])
     color = np.random.rand(shape[0], 4)
     feature = np.random.rand(shape[0])
+    shown = np.random.randint(2, size=shape[0]).astype(bool)
     text = 'feature'
 
     layer = Points(
         data,
         size=size,
-        # edge_width=size,  # TODO: this should be added when arrays are accepted
         features={'feature': feature},
         face_color=color,
         edge_color=color,
         text=text,
+        shown=shown,
     )
 
     layer_expected = Points(
         data[1:],
         size=size[1:],
-        # edge_width=size[1:],
         features={'feature': feature[1:]},
         face_color=color[1:],
         edge_color=color[1:],
         text=text,  # computed from feature
+        shown=shown[1:],
     )
 
     layer.selected_data = {0}
