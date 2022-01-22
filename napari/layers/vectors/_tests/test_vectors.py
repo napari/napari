@@ -637,3 +637,29 @@ def test_world_data_extent():
     layer = Vectors(np.array(data))
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+
+
+def test_n_dimensional():
+    """Test setting n_dimensional flag for 2D and 4D data."""
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Vectors(data)
+    assert layer.n_dimensional is False
+
+    layer.n_dimensional = True
+    assert layer.n_dimensional is True
+
+    layer = Vectors(data, n_dimensional=True)
+    assert layer.n_dimensional is True
+
+    shape = (10, 2, 4)
+    data = 20 * np.random.random(shape)
+    layer = Vectors(data)
+    assert layer.n_dimensional is False
+
+    layer.n_dimensional = True
+    assert layer.n_dimensional is True
+
+    layer = Vectors(data, n_dimensional=True)
+    assert layer.n_dimensional is True
