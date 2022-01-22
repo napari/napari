@@ -1772,12 +1772,12 @@ def test_slice_data():
     ]
     layer = Points(data)
     assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
-    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 3
+    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
     assert (
         len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
-        == 3
+        == 4
     )
-    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 1
+    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
 
 
 def test_scale_init():
