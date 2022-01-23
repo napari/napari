@@ -24,12 +24,20 @@ class ValueNotCompatibleWithLockMode(Exception):
 
     def __init__(self, value, message: str) -> None:
         self.value = value
-        self.message = f"value: {value}. " + message
+        self.message = message
         super().__init__(message)
 
 
 class AttributeNotFound(Exception):
     """Custom error that is raised when the attribute is not found in the locker"""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class AttributeAlreadyAdded(Exception):
+    """Custom error that is raised when the atribute is already found in the locker"""
 
     def __init__(self, message: str) -> None:
         self.message = message
@@ -157,6 +165,13 @@ class Locker:
         comments: Optional[str] = None,
     ) -> None:
         """Adds a lock to the locker"""
+        if self.has_attribute(attribute):
+            raise AttributeAlreadyAdded(
+                trans._(
+                    "Attribute is already added to the locker", deferred=True
+                )
+            )
+
         self._lock_dictionary[attribute] = Lock(
             value=value,
             hard_lock=hard_lock,
@@ -182,13 +197,17 @@ class Locker:
     def lock(self, attribute: str) -> None:
         """Locks a specifc attribute"""
         if not self.has_attribute(attribute):
-            raise AttributeNotFound("Attribute not found in the locker")
+            raise AttributeNotFound(
+                trans._("Attribute not found in the locker", deferred=True)
+            )
         self.get_lock(attribute).lock()
 
     def unlock(self, attribute: str) -> None:
         """Unlocks a specific attribute"""
         if not self.has_attribute(attribute):
-            raise AttributeNotFound("Attribute not found in the locker")
+            raise AttributeNotFound(
+                trans._("Attribute not found in the locker", deferred=True)
+            )
         self.get_lock(attribute).unlock()
 
     def list_locks(self) -> List[str]:
