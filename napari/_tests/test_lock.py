@@ -2,6 +2,7 @@
 import pytest
 
 from napari.utils.lock import (
+    AttributeAlreadyAdded,
     AttributeNotFound,
     Lock,
     Locker,
@@ -29,6 +30,8 @@ def test_adding_locks():
     locker.add_lock("attribute2", [3, 4], False)
     assert locker.has_attribute("attribute1")
     assert len(locker.list_locks()) == 2
+    with pytest.raises(AttributeAlreadyAdded):
+        locker.add_lock("attribute1")
 
 
 def test_locking():
