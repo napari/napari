@@ -1,8 +1,52 @@
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 
+from ...utils.geometry import project_points_onto_plane
 from ...utils.translations import trans
+
+
+def _create_box_from_corners_3d(
+    box_corners: np.ndarray, box_normal: np.ndarray, up_vector: np.ndarray
+) -> np.ndarray:
+    """Get front corners for 3D box from opposing corners and edge directions.
+
+    The resulting box will include the two corners passed in as box_corners,
+    lie in a plane with normal box_normal, and have one of its axes aligned
+    with the up_vector.
+
+    Parameters
+    ----------
+    box_corners : np.ndarray
+        The (2 x 3) array containing the two 3D points that are opposing corners
+        of the bounding box.
+    box_normal : np.ndarray
+        The (3,) array containing the normal vector for the plane in which
+        the box lies in.
+    up_vector : np.ndarray
+        The (3,) array containing the vector describing the up direction
+        of the box.
+
+    Returns
+    -------
+    box : np.ndarray
+        The (4, 3) array containing the 3D coordinate of each corner of
+        the box.
+    """
+    horizontal_vector = np.cross(box_normal, up_vector)
+
+    diagonal_vector = box_corners[1] - box_corners[0]
+
+    up_displacement = np.dot(diagonal_vector, up_vector) * up_vector
+    horizontal_displacement = (
+        np.dot(diagonal_vector, horizontal_vector) * horizontal_vector
+    )
+
+    corner_1 = box_corners[0] + horizontal_displacement
+    corner_3 = box_corners[0] + up_displacement
+
+    box = np.array([box_corners[0], corner_1, box_corners[1], corner_3])
+    return box
 
 
 def create_box(data):
@@ -45,21 +89,102 @@ def points_to_squares(points, sizes):
     """
     rect = np.concatenate(
         [
-            points + np.sqrt(2) / 2 * np.array([sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([sizes, -sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, -sizes]).T,
+            points + 0.5 * np.array([sizes, sizes]).T,
+            points + 0.5 * np.array([sizes, -sizes]).T,
+            points + 0.5 * np.array([-sizes, sizes]).T,
+            points + 0.5 * np.array([-sizes, -sizes]).T,
         ],
         axis=0,
     )
     return rect
 
 
-def points_in_box(corners, points, sizes):
-    """Determine which points are in an axis aligned box defined by the corners
+def _points_in_box_3d(
+    box_corners: np.ndarray,
+    points: np.ndarray,
+    sizes: np.ndarray,
+    box_normal: np.ndarray,
+    up_direction: np.ndarray,
+) -> List[int]:
+    """Determine which points are inside of 2D bounding box.
+
+    The 2D bounding box extends infinitely in both directions along its normal
+    vector.
+
+    Point selection algorithm:
+        1. Project the points in view and drag box corners on to a plane
+        parallel to the canvas (i.e., normal direction is the view direction).
+        2. Rotate the points/bbox corners to a new basis comprising
+        the bbox normal, the camera up direction, and the
+        "horizontal direction" (i.e., vector orthogonal to bbox normal
+        and camera up direction). This makes it such that the bounding box
+        is axis aligned (i.e., the major and minor axes of the bounding
+        box are aligned with the new 0 and 1 axes).
+        3. Determine which points are in the bounding box in 2D. We can
+        simplify to 2D since the points and bounding box now lie in the same
+        plane.
 
     Parameters
     ----------
+    box_corners : np.ndarray
+        The (2 x 3) array containing the two 3D points that are opposing corners
+        of the bounding box.
+    points : np.ndarray
+        The (n x3) array containing the n 3D points that are to be tested for
+        being inside of the bounding box.
+    sizes : np.ndarray
+        The (n,) array containing the diameters of the points.
+    box_normal : np.ndarray
+        The (3,) array containing the normal vector for the plane in which
+        the box lies in.
+    up_direction : np.ndarray
+        The (3,) array containing the vector describing the up direction
+        of the box.
+
+    Returns
+    -------
+    inside : list
+        Indices of points inside the box.
+    """
+    # the the corners for a bounding box that is has one axis aligned
+    # with the camera up direction and is normal to the view direction.
+    bbox_corners = _create_box_from_corners_3d(
+        box_corners, box_normal, up_direction
+    )
+
+    # project points onto the same plane as the box
+    projected_points, _ = project_points_onto_plane(
+        points=points,
+        plane_point=bbox_corners[0],
+        plane_normal=box_normal,
+    )
+
+    # create a new basis in which the bounding box is
+    # axis aligned
+    horz_direction = np.cross(box_normal, up_direction)
+    plane_basis = np.column_stack([up_direction, horz_direction, box_normal])
+
+    # transform the points and bounding box into a new basis
+    # such that tha boudning box is axis aligned
+    bbox_corners_axis_aligned = bbox_corners @ plane_basis
+    bbox_corners_axis_aligned = bbox_corners_axis_aligned[:, :2]
+    points_axis_aligned = projected_points @ plane_basis
+    points_axis_aligned = points_axis_aligned[:, :2]
+
+    # determine which points are in the box using the
+    # axis-aligned basis
+    return points_in_box(bbox_corners_axis_aligned, points_axis_aligned, sizes)
+
+
+def points_in_box(
+    corners: np.ndarray, points: np.ndarray, sizes: np.ndarray
+) -> List[int]:
+    """Find which points are in an axis aligned box defined by its corners.
+
+    Parameters
+    ----------
+    corners : (2, 2) array
+        The top-left and bottom-right corners of the box.
     points : (N, 2) array
         Points to be checked
     sizes : (N,) array

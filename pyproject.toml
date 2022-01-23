@@ -83,7 +83,7 @@ skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = "--maxfail=5 --durations=10"
+addopts = "--maxfail=5 --durations=10 -rXxs"
 
 # NOTE: only put things that will never change in here.
 # napari deprecation and future warnings should NOT go in here.
@@ -91,6 +91,7 @@ addopts = "--maxfail=5 --durations=10"
 # That way we can clean them up when no longer necessary
 filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
+  "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
   "ignore:Restart required for this change:UserWarning:napari",  # triggered by a lot of async tests
   "ignore::DeprecationWarning:shibokensupport",
@@ -104,6 +105,7 @@ filterwarnings = [
   "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
   "ignore:.*Themes were changed to use evented model",  # specifying the full is not working here so glob pattern is used instead
+  "ignore:distutils Version classes are deprecated::",
 ]
 markers = [
     "sync_only: Test should only be run synchronously",

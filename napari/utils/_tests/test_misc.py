@@ -45,6 +45,11 @@ def test_sequence_of_iterables(input, expected):
         assert result == expectation
 
 
+def test_sequence_of_iterables_allow_none():
+    input = [(1, 2), None]
+    assert ensure_sequence_of_iterables(input, allow_none=True) == input
+
+
 def test_sequence_of_iterables_no_repeat_empty():
     assert ensure_sequence_of_iterables([], repeat_empty=False) == []
     with pytest.raises(ValueError):

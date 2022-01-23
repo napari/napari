@@ -107,12 +107,17 @@ def _convert_dtype(ll: LayerList, mode='int64'):
 
 
 def _convert(ll: LayerList, type_: str):
+    from ..layers import Shapes
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
-        data = lay.data.astype(int) if type_ == 'labels' else lay.data
         ll.pop(idx)
-        ll.insert(idx, Layer.create(data, {'name': lay.name}, type_))
+        if isinstance(lay, Shapes) and type_ == 'labels':
+            data = lay.to_labels()
+        else:
+            data = lay.data.astype(int) if type_ == 'labels' else lay.data
+        new_layer = Layer.create(data, {'name': lay.name}, type_)
+        ll.insert(idx, new_layer)
 
 
 def _merge_stack(ll: LayerList, rgb=False):
@@ -224,7 +229,9 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:convert_to_labels': {
             'description': trans._('Convert to Labels'),
             'action': partial(_convert, type_='labels'),
-            'enable_when': LLCK.only_images_selected,
+            'enable_when': (
+                LLCK.only_images_selected | LLCK.only_shapes_selected
+            ),
             'show_when': True,
         },
         'napari:convert_to_image': {

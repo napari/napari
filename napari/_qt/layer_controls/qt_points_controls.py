@@ -250,12 +250,12 @@ class QtPointsControls(QtLayerControls):
         self.layer.current_size = value
 
     def change_ndim(self, state):
-        """Toggle n-dimensional state of label layer.
+        """Toggle n-dimensional state of points layer.
 
         Parameters
         ----------
         state : QCheckBox
-            Checkbox indicating if label layer is n-dimensional.
+            Checkbox indicating if points layer is n-dimensional.
         """
         self.layer.n_dimensional = state == Qt.Checked
 

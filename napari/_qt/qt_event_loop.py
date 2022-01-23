@@ -138,12 +138,19 @@ def get_app(
             QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
             QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
+        argv = sys.argv.copy()
+        if sys.platform == "darwin" and not argv[0].endswith("napari"):
+            # Make sure the app name in the Application menu is `napari`
+            # which is taken from the basename of sys.argv[0]; we use
+            # a copy so the original value is still available at sys.argv
+            argv[0] = "napari"
+
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import QApplicationWithTracing
 
-            app = QApplicationWithTracing(sys.argv)
+            app = QApplicationWithTracing(argv)
         else:
-            app = QApplication(sys.argv)
+            app = QApplication(argv)
 
         # if this is the first time the Qt app is being instantiated, we set
         # the name and metadata
@@ -157,14 +164,6 @@ def get_app(
         # to allow for text wrapping of tooltips
         app.installEventFilter(QtToolTipEventFilter())
 
-    if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(
-            NapariQtNotification.show_notification
-        )
-        notification_manager.notification_ready.connect(
-            show_console_notification
-        )
-
     if app.windowIcon().isNull():
         app.setWindowIcon(QIcon(kwargs.get('icon')))
 
@@ -172,6 +171,14 @@ def get_app(
         ipy_interactive = get_settings().application.ipy_interactive
     if _IPYTHON_WAS_HERE_FIRST:
         _try_enable_ipython_gui('qt' if ipy_interactive else None)
+
+    if not _ipython_has_eventloop():
+        notification_manager.notification_ready.connect(
+            NapariQtNotification.show_notification
+        )
+        notification_manager.notification_ready.connect(
+            show_console_notification
+        )
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -351,6 +358,7 @@ def run(
         return
 
     app = QApplication.instance()
+
     if _pycharm_has_eventloop(app):
         # explicit check for PyCharm pydev console
         return

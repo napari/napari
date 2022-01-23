@@ -325,10 +325,8 @@ register_theme('light', LIGHT)
 
 # this function here instead of plugins._npe2 to avoid circular import
 def _install_npe2_themes(_themes):
-    try:
-        import npe2
-    except ImportError:
-        return
+    import npe2
+
     for theme in npe2.PluginManager.instance().iter_themes():
         # `theme.type` is dark/light and supplies defaults for keys that
         # are not provided by the plugin

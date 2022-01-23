@@ -11,6 +11,7 @@ import dask.threaded
 import numpy as np
 import pooch
 import pytest
+from IPython.core.history import HistoryManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -381,3 +382,25 @@ if sys.version_info > (
             if dask.threaded.default_pool is not None:
                 dask.threaded.default_pool.shutdown()
                 dask.threaded.default_pool = None
+
+
+# this is not the proper way to configure IPython, but it's an easy one.
+# This will prevent IPython to try to write history on its sql file and do
+# everything in memory.
+# 1) it saves a thread and
+# 2) it can prevent issues with slow or read-only file systems in CI.
+HistoryManager.enabled = False
+
+
+@pytest.fixture
+def napari_svg_name():
+    """the plugin name changes with npe2 to `napari-svg` from `svg`."""
+    try:
+        from importlib.metadata import metadata
+    except ImportError:
+        from importlib_metadata import metadata
+
+    if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
+        return 'svg'
+    else:
+        return 'napari-svg'
