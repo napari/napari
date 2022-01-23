@@ -41,7 +41,11 @@ class VispyShapesLayer(VispyBaseLayer):
             faces = np.array([[0, 1, 2]])
             colors = np.array([[0, 0, 0, 0]])
 
-        if self.layer._ndisplay == 3 and self.layer.ndim == 2:
+        if (
+            len(self.layer.data)
+            and self.layer._ndisplay == 3
+            and self.layer.ndim == 2
+        ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
 
         self.node._subvisuals[0].set_data(
