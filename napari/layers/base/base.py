@@ -353,6 +353,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     deferred=True,
                 ),
                 category=UserWarning,
+                stacklevel=2,
             )
             return None
         else:
