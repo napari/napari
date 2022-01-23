@@ -61,13 +61,9 @@ class Lock(BaseModel):
         """Validate value"""
         value_lock_mode = values["value_lock_mode"]
 
-        def is_numeric(x):
-            """Quick checking if it is numeric type"""
-            return type(x) in (int, float)
-
         if (
             value_lock_mode in (LockMode.LARGER_THAN, LockMode.SMALLER_THAN)
-        ) and not is_numeric(value):
+        ) and not type(value) in (int, float):
             raise ValueNotCompatibleWithLockMode(
                 value=value,
                 message=trans._(
