@@ -27,6 +27,9 @@ CONSTRUCTOR_NOTARIZATION_IDENTITY:
     be use to codesign some binaries bundled in the pkg (macOS only)
 CONSTRUCTOR_SIGNING_CERTIFICATE:
     Path to PFX certificate to sign the EXE installer on Windows
+CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD:
+    Password to unlock the PFX certificate. This is not used here but
+    it might be needed by constructor.
 """
 
 import os
@@ -211,6 +214,12 @@ def _constructor(version=_version(), extra_specs=None):
     print("Calling `constructor` with these definitions:")
     print(yaml.dump(definitions, default_flow_style=False))
     clean_these_files.append("construct.yaml")
+
+    # temporarily patching password - remove block when the secret has been fixed
+    # (I think it contains an ending newline or something like that, copypaste artifact?)
+    pfx_password = os.environ.get("CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD")
+    if pfx_password:
+        os.environ["CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD"] = pfx_password.strip()
 
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
