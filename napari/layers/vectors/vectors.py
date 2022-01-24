@@ -207,6 +207,7 @@ class Vectors(Layer):
             edge_color_mode=Event,
             properties=Event,
             n_dimensional=Event,
+            fixed_canvas_size=Event,
         )
 
         # Save the vector style params
@@ -425,6 +426,15 @@ class Vectors(Layer):
         self._length = float(length)
         self.events.length()
         self.refresh()
+
+    @property
+    def fixed_canvas_size(self):
+        return self._fixed_canvas_size
+
+    @fixed_canvas_size.setter
+    def fixed_canvas_size(self, value):
+        self._fixed_canvas_size = bool(value)
+        self.events.fixed_canvas_size()
 
     @property
     def edge_color(self) -> np.ndarray:
