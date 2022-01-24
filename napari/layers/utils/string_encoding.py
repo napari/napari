@@ -64,6 +64,8 @@ class StringEncoding(StyleEncoding[StringArray], Protocol):
         ValidationError
             If the input cannot be parsed into a StringEncoding.
         """
+        if string is None:
+            return ConstantStringEncoding(constant=DEFAULT_STRING)
         if isinstance(string, StringEncoding):
             return string
         if isinstance(string, dict):
@@ -74,8 +76,6 @@ class StringEncoding(StyleEncoding[StringArray], Protocol):
             return ConstantStringEncoding(constant=string)
         if isinstance(string, Sequence):
             return ManualStringEncoding(array=string, default='')
-        if string is None:
-            return ConstantStringEncoding(constant=DEFAULT_STRING)
         raise TypeError(
             trans._(
                 'string should be a StringEncoding, dict, str, Sequence[str], or None',

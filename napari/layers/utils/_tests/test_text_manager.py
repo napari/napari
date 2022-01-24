@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
+from napari.layers.utils.string_encoding import ConstantStringEncoding
 from napari.layers.utils.text_manager import TextManager
 
 
@@ -348,3 +349,11 @@ def test_update_from_layer_with_warning_only_one_emitted():
         )
 
     assert len(record) == 1
+
+
+@pytest.mark.xfail(
+    reason='either make this pass or document that None is not allowed'
+)
+def test_init_with_string_none():
+    text_manager = TextManager(string=None)
+    assert text_manager.string == ConstantStringEncoding('')
