@@ -303,7 +303,9 @@ class QtCustomTitleBar(QLabel):
             # dock widget.  If it is, then add the close button option to the title bar.
             actions = [
                 action.text()
-                for action in self.parent()._qt_viewer.viewer.window.plugins_menu.actions()
+                for action in self.parent()
+                .parent()
+                ._qt_viewer.viewer.window.plugins_menu.actions()
             ]
             if self.parent().name in actions:
                 add_close = True
