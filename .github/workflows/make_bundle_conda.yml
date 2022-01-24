@@ -274,7 +274,7 @@ jobs:
       - name: Load signing certificate (Windows)
         if: runner.os == 'Windows'
         run: |
-          Set-Content -Path "${{ runner.temp }}/certificate.b64.txt" -Value '${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}'
+          Set-Content -Path "${{ runner.temp }}/certificate.b64.txt" -Value '${{ secrets.APPLE_APPLICATION_CERTIFICATE_BASE64 }}'
           certutil -decode "${{ runner.temp }}/certificate.b64.txt" "${{ runner.temp }}/certificate.pfx"
 
       - name: Make Bundle (Linux)
@@ -293,9 +293,11 @@ jobs:
         shell: bash -l {0}
         if: runner.os != 'Linux'
         env:
-          # uncomment this line to enable windows signing
-          # CONSTRUCTOR_SIGNING_CERTIFICATE: "${{ runner.temp }}/certificate.pfx"
-          CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          # We are signing with Apple's certificate to provide _something_
+          # This is not trusted by Windows so the warnings are still there, but curious users
+          # will be able to check it's actually us if necessary
+          CONSTRUCTOR_SIGNING_CERTIFICATE: "${{ runner.temp }}/certificate.pfx"
+          CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}
           CONSTRUCTOR_SIGNTOOL_PATH: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
         run: python bundle_conda.py
 
