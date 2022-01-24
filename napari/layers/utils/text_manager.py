@@ -20,6 +20,7 @@ from .string_encoding import (
     ManualStringEncoding,
     StringArray,
     StringEncoding,
+    validate_string_encoding,
 )
 
 
@@ -327,6 +328,10 @@ class TextManager(EventedModel):
             )
 
         return blending_mode
+
+    @validator('string', pre=True, always=True)
+    def _check_string(cls, string):
+        return validate_string_encoding(string)
 
 
 def _warn_about_deprecated_values_field():
