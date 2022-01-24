@@ -14,7 +14,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import _FeatureTable
-from ._vector_utils import vectors_to_coordinates
+from ._vector_utils import fix_data_vectors
 
 
 class Vectors(Layer):
@@ -237,8 +237,8 @@ class Vectors(Layer):
 
         # Data containing vectors in the currently viewed slice
         self._view_data = np.empty((0, 2, 2))
-        self._view_indices = []
-        self._view_alphas = []
+        self._view_indices = np.empty(0).astype(int)
+        self._view_alphas = 1.0
 
         # now that everything is set up, make the layer visible (if set to visible)
         self._update_dims()
@@ -253,7 +253,7 @@ class Vectors(Layer):
     def data(self, vectors: np.ndarray):
         previous_n_vectors = len(self.data)
 
-        self._data, _ = vectors_to_coordinates(vectors, self.ndim)
+        self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
 
         # Adjust the props/color arrays when the number of vectors has changed
@@ -564,7 +564,10 @@ class Vectors(Layer):
     @property
     def _view_color(self) -> np.ndarray:
         """(Mx4) np.ndarray : colors for the M in view vectors"""
-        return self.edge_color[self._view_indices]
+        color = self.edge_color[self._view_indices]
+        color[:, -1] *= self._view_alphas
+
+        return color
 
     def _slice_data(
         self, dims_indices
@@ -615,25 +618,12 @@ class Vectors(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-        not_disp = list(self._dims_not_displayed)
+        indices, alphas = self._slice_data(self._slice_indices)
+        self._view_indices = indices
+        self._view_alphas = alphas
         disp = list(self._dims_displayed)
-        indices = np.array(self._slice_indices)
-
-        if len(self.data) == 0:
-            self._view_data = np.empty((0, 2, 2))
-            self._view_indices = []
-        elif self.ndim > 2:
-            indices, alphas = self._slice_data(self._slice_indices)
-            data = self.data[:, 0, not_disp].astype('int')
-            matches = np.all(data == indices[not_disp], axis=1)
-            matches = np.where(matches)[0]
-            self._view_indices = matches
-            self._view_alphas = alphas
-            self._view_data = self.data[np.ix_(matches, [0, 1], disp)]
-        else:
-            self._view_data = self.data[:, :, disp]
-            self._view_indices = np.arange(self.data.shape[0])
-            self._view_alphas = 1.0
+        # This indexing had to be split in two or we would lose dimensionality... why?
+        self._view_data = self.data[self._view_indices][..., disp]
 
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
@@ -652,7 +642,6 @@ class Vectors(Layer):
         ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 
-        # vectors = copy(self._data_view[:, :, -2:])
         if self._view_data.shape[0] > self._max_vectors_thumbnail:
             thumbnail_indices = np.random.randint(
                 0, self._view_data.shape[0], self._max_vectors_thumbnail

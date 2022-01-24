@@ -6,7 +6,7 @@ from .base import VispyBaseLayer
 
 class VispyVectorsLayer(VispyBaseLayer):
     def __init__(self, layer):
-        node = VectorsVisual(connect='segments', antialias=False)
+        node = VectorsVisual()
         super().__init__(layer, node)
 
         self.layer.events.edge_color.connect(self._on_data_change)
@@ -16,10 +16,10 @@ class VispyVectorsLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self, event=None):
-        if len(self.layer._view_data) == 0:
-            pos = np.zeros((1, 2, self.layer._ndisplay))
-            color = np.zeros((0, 4))
+    def _on_data_change(self):
+        if len(self.layer._view_indices) == 0:
+            pos = np.zeros((1, self.layer._ndisplay))
+            color = np.zeros((1, 4))
         else:
             # reverse to draw most recent last and swap xy for vispy
             pos = self.layer._view_data[::-1, :, ::-1].copy()
@@ -44,9 +44,9 @@ class VispyVectorsLayer(VispyBaseLayer):
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
 
-    def _on_edge_width_change(self, event=None):
-        self.node.set_data(width=self.layer.edge_width)
+    def _on_edge_width_change(self):
+        self.node.width = self.layer.edge_width
 
     def reset(self):
-        self._reset_base()
-        self._on_data_change()
+        super().reset()
+        self._on_edge_width_change()
