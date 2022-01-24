@@ -134,7 +134,13 @@ class TextManager(EventedModel):
         properties : Dict[str, np.ndarray]
             The new properties from the layer
         """
-        # TODO: warn about deprecated
+        # warnings.warn(
+        #     trans._(
+        #         'TextManager.refresh_text is deprecated. '
+        #         'Use TextManager.refresh instead.'
+        #     ),
+        #     DeprecationWarning,
+        # )
         features = _validate_features(properties)
         self.refresh(features)
 
@@ -300,6 +306,8 @@ class TextManager(EventedModel):
         # before actually making the update. This does not need to be a
         # deep copy because update will only try to reassign fields and
         # should not mutate any existing fields in-place.
+        # Avoid recursion because some fields are also models that may
+        # not share field names/types (e.g. string).
         current_manager = self.copy()
         current_manager.update(new_manager, recurse=False)
 

@@ -606,7 +606,7 @@ class Points(Layer):
 
         This is generally used if the features were updated without changing the data
         """
-        self.text.refresh_text(self.properties)
+        self.text.refresh(self.features)
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
