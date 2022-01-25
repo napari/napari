@@ -97,7 +97,7 @@ class Points(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    n_dimensional : bool
+    out_of_slice_rendering : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
     name : str
@@ -202,7 +202,7 @@ class Points(Layer):
     current_face_color : str
         Size of the marker edge for the next point to be added or the currently
         selected point.
-    n_dimensional : bool
+    out_of_slice_rendering : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
     selected_data : set
@@ -286,7 +286,7 @@ class Points(Layer):
         face_color_cycle=None,
         face_colormap='viridis',
         face_contrast_limits=None,
-        n_dimensional=False,
+        out_of_slice_rendering=False,
         name=None,
         metadata=None,
         scale=None,
@@ -337,7 +337,7 @@ class Points(Layer):
             properties=Event,
             current_properties=Event,
             symbol=Event,
-            n_dimensional=Event,
+            out_of_slice_rendering=Event,
             highlight=Event,
             shading=Event,
             _antialias=Event,
@@ -364,7 +364,7 @@ class Points(Layer):
 
         # Save the point style params
         self.symbol = symbol
-        self._n_dimensional = n_dimensional
+        self._out_of_slice_rendering = out_of_slice_rendering
         self.edge_width = edge_width
 
         # The following point properties are for the new points that will
@@ -645,14 +645,14 @@ class Points(Layer):
         return extrema
 
     @property
-    def n_dimensional(self) -> bool:
+    def out_of_slice_rendering(self) -> bool:
         """bool: renders points as n-dimensional."""
-        return self._n_dimensional
+        return self._out_of_slice_rendering
 
-    @n_dimensional.setter
-    def n_dimensional(self, n_dimensional: bool) -> None:
-        self._n_dimensional = n_dimensional
-        self.events.n_dimensional()
+    @out_of_slice_rendering.setter
+    def out_of_slice_rendering(self, out_of_slice_rendering: bool) -> None:
+        self._out_of_slice_rendering = out_of_slice_rendering
+        self.events.out_of_slice_rendering()
         self.refresh()
 
     @property
@@ -1057,7 +1057,7 @@ class Points(Layer):
                 'properties': self.properties,
                 'property_choices': self.property_choices,
                 'text': self.text.dict(),
-                'n_dimensional': self.n_dimensional,
+                'out_of_slice_rendering': self.out_of_slice_rendering,
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
@@ -1324,7 +1324,7 @@ class Points(Layer):
         slice_indices : list
             Indices of points in the currently viewed slice.
         scale : float, (N, ) array
-            If in `n_dimensional` mode then the scale factor of points, where
+            If in `out_of_slice_rendering` mode then the scale factor of points, where
             values of 1 corresponds to points located in the slice, and values
             less than 1 correspond to points located in neighboring slices.
         """
@@ -1332,7 +1332,7 @@ class Points(Layer):
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
-            if self.n_dimensional is True and self.ndim > 2:
+            if self.out_of_slice_rendering is True and self.ndim > 2:
                 distances = abs(self.data[:, not_disp] - indices[not_disp])
                 sizes = self.size[:, not_disp] / 2
                 matches = np.all(distances <= sizes, axis=1)

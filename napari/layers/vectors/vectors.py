@@ -56,7 +56,7 @@ class Vectors(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    n_dimensional : bool
+    out_of_slice_rendering : bool
         If True, renders vectors not just in central plane but also in all
         n-dimensions according to vectors lengths.
     name : str
@@ -122,7 +122,7 @@ class Vectors(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    n_dimensional : bool
+    out_of_slice_rendering : bool
         If True, renders vectors not just in central plane but also in all
         n-dimensions according to vectors lengths.
 
@@ -173,7 +173,7 @@ class Vectors(Layer):
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
-        n_dimensional=False,
+        out_of_slice_rendering=False,
         length=1,
         name=None,
         metadata=None,
@@ -217,12 +217,12 @@ class Vectors(Layer):
             edge_color=Event,
             edge_color_mode=Event,
             properties=Event,
-            n_dimensional=Event,
+            out_of_slice_rendering=Event,
         )
 
         # Save the vector style params
         self._edge_width = edge_width
-        self._n_dimensional = n_dimensional
+        self._out_of_slice_rendering = out_of_slice_rendering
 
         self._length = float(length)
 
@@ -398,7 +398,7 @@ class Vectors(Layer):
                 'property_choices': self.property_choices,
                 'ndim': self.ndim,
                 'features': self.features,
-                'n_dimensional': self.n_dimensional,
+                'out_of_slice_rendering': self.out_of_slice_rendering,
             }
         )
         return state
@@ -427,14 +427,14 @@ class Vectors(Layer):
         return extrema
 
     @property
-    def n_dimensional(self) -> bool:
+    def out_of_slice_rendering(self) -> bool:
         """bool: renders points as n-dimensionsal."""
-        return self._n_dimensional
+        return self._out_of_slice_rendering
 
-    @n_dimensional.setter
-    def n_dimensional(self, n_dimensional: bool) -> None:
-        self._n_dimensional = n_dimensional
-        self.events.n_dimensional()
+    @out_of_slice_rendering.setter
+    def out_of_slice_rendering(self, out_of_slice_rendering: bool) -> None:
+        self._out_of_slice_rendering = out_of_slice_rendering
+        self.events.out_of_slice_rendering()
         self.refresh()
 
     @property
@@ -642,7 +642,7 @@ class Vectors(Layer):
             Indices of vectors in the currently viewed slice.
         alpha : float, (N, ) array
             The computed, relative opacity of vectors in the current slice.
-            If `n_dimensional` is mode is off, this is always 1.
+            If `out_of_slice_rendering` is mode is off, this is always 1.
             Otherwise, vectors originating in the current slice are assigned a value of 1,
             while vectors passing through the current slice are assigned progressively lower
             values, based on how far from the current slice they originate.
@@ -652,7 +652,7 @@ class Vectors(Layer):
         if len(self.data) > 0:
             data = self.data[:, 0, not_disp]
             distances = abs(data - indices[not_disp])
-            if self.n_dimensional is True:
+            if self.out_of_slice_rendering is True:
                 projected_lengths = abs(
                     self.data[:, 1, not_disp] * self.length
                 )
