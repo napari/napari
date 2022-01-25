@@ -301,10 +301,9 @@ class QtCustomTitleBar(QLabel):
         try:
             # if the plugins menu is already created, check to see if this is a plugin
             # dock widget.  If it is, then add the close button option to the title bar.
-            actions = [
-                action.text()
-                for action in self.parent()._qt_viewer.viewer.window.plugins_menu.actions()
-            ]
+            win = self.parent().parent()._qt_viewer.viewer.window
+            actions = [action.text() for action in win.plugins_menu.actions()]
+
             if self.parent().name in actions:
                 add_close = True
                 self.close_button = QPushButton(self)
