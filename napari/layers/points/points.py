@@ -73,7 +73,7 @@ class Points(Layer):
         to the same shape as the data.
     edge_width : float, array
         Width of the symbol edge in pixels.
-    edge_width_rel : bool
+    edge_width_is_relative : bool
         If enabled, edge_width is interpreted as a fraction of the point size.
     edge_color : str, array-like, dict
         Color of the point marker border. Numeric color values should be RGB(A).
@@ -287,7 +287,7 @@ class Points(Layer):
         symbol='o',
         size=10,
         edge_width=0.1,
-        edge_width_rel=True,
+        edge_width_is_relative=True,
         edge_color='black',
         edge_color_cycle=None,
         edge_colormap='viridis',
@@ -340,7 +340,7 @@ class Points(Layer):
             mode=Event,
             size=Event,
             edge_width=Event,
-            edge_width_rel=Event,
+            edge_width_is_relative=Event,
             face_color=Event,
             current_face_color=Event,
             edge_color=Event,
@@ -437,9 +437,9 @@ class Points(Layer):
         self.size = size
         self.shown = shown
 
-        self._edge_width_rel = False
+        self._edge_width_is_relative = False
         self.edge_width = edge_width
-        self.edge_width_rel = edge_width_rel
+        self.edge_width_is_relative = edge_width_is_relative
 
         self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.shading = shading
@@ -777,6 +777,7 @@ class Points(Layer):
         )
         self.events.experimental_canvas_size_limits()
 
+    @property
     def shown(self):
         """
         Boolean array determining which points to show
@@ -798,10 +799,12 @@ class Points(Layer):
         self, edge_width: Union[int, float, np.ndarray, list]
     ) -> None:
         edge_width = np.broadcast_to(edge_width, self.data.shape[0]).copy()
-        if self.edge_width_rel and np.any((edge_width > 1) | (edge_width < 0)):
+        if self.edge_width_is_relative and np.any(
+            (edge_width > 1) | (edge_width < 0)
+        ):
             raise ValueError(
                 trans._(
-                    'edge_width must be between 0 and 1 if edge_width_rel is enabled',
+                    'edge_width must be between 0 and 1 if edge_width_is_relative is enabled',
                     deferred=True,
                 )
             )
@@ -809,23 +812,23 @@ class Points(Layer):
         self.refresh()
 
     @property
-    def edge_width_rel(self) -> bool:
+    def edge_width_is_relative(self) -> bool:
         """bool: treat edge_width as a fraction of point size."""
-        return self._edge_width_rel
+        return self._edge_width_is_relative
 
-    @edge_width_rel.setter
-    def edge_width_rel(self, edge_width_rel: bool) -> None:
-        if edge_width_rel and np.any(
+    @edge_width_is_relative.setter
+    def edge_width_is_relative(self, edge_width_is_relative: bool) -> None:
+        if edge_width_is_relative and np.any(
             (self.edge_width > 1) | (self.edge_width < 0)
         ):
             raise ValueError(
                 trans._(
-                    'edge_width_rel can only be enabled if edge_width is between 0 and 1',
+                    'edge_width_is_relative can only be enabled if edge_width is between 0 and 1',
                     deferred=True,
                 )
             )
-        self._edge_width_rel = edge_width_rel
-        self.events.edge_width_rel()
+        self._edge_width_is_relative = edge_width_is_relative
+        self.events.edge_width_is_relative()
 
     @property
     def current_edge_width(self) -> Union[int, float]:
@@ -1122,7 +1125,7 @@ class Points(Layer):
             {
                 'symbol': self.symbol,
                 'edge_width': self.edge_width,
-                'edge_width_rel': self.edge_width_rel,
+                'edge_width_is_relative': self.edge_width_is_relative,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.name,
