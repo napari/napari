@@ -37,7 +37,6 @@ from typing_extensions import Literal
 
 import napari.resources
 
-from ...plugins import plugin_manager
 from ...plugins.pypi import (
     ProjectInfo,
     iter_napari_plugin_info,
@@ -151,10 +150,10 @@ class Installer(QObject):
             self._processes[pkg_list] = process
 
         if not self._processes:
-            from ...plugins import plugin_manager
+            # from ...plugins import plugin_manager
 
             # plugin_manager.discover()
-            plugin_manager.prune()
+            # plugin_manager.prune()
             self.finished.emit(self._exit_code)
 
     def install(
@@ -250,8 +249,8 @@ class Installer(QObject):
 
         process.start()
 
-        for pkg in pkg_list:
-            plugin_manager.unregister(pkg)
+        # for pkg in pkg_list:
+        #     plugin_manager.unregister(pkg)
 
         return process
 
@@ -462,11 +461,11 @@ class PluginListItem(QFrame):
 
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
-        enabled = bool(state)
-        current_distname = self.plugin_name.text()
-        for plugin_name, _, distname in plugin_manager.iter_available():
-            if distname and distname == current_distname:
-                plugin_manager.set_blocked(plugin_name, not enabled)
+        # enabled = bool(state)
+        # current_distname = self.plugin_name.text()
+        # for plugin_name, _, distname in plugin_manager.iter_available():
+        #     if distname and distname == current_distname:
+        #         plugin_manager.set_blocked(plugin_name, not enabled)
 
 
 class QPluginList(QListWidget):
@@ -639,7 +638,7 @@ class QtPluginDialog(QDialog):
         self.available_list.clear()
 
         # fetch installed
-        from ...plugins import _npe2, plugin_manager
+        from ...plugins import _npe2
 
         # plugin_manager.discover()  # since they might not be loaded yet
 
@@ -675,15 +674,15 @@ class QtPluginDialog(QDialog):
                 continue
             _add_to_installed(distname, True, npe_version=2)
 
-        for plugin_name, mod_name, distname in plugin_manager.iter_available():
-            # not showing these in the plugin dialog
-            if plugin_name in ('napari_plugin_engine',):
-                continue
-            if distname in self.already_installed:
-                continue
-            _add_to_installed(
-                distname, not plugin_manager.is_blocked(plugin_name)
-            )
+        # for plugin_name, mod_name, distname in plugin_manager.iter_available():
+        #     # not showing these in the plugin dialog
+        #     if plugin_name in ('napari_plugin_engine',):
+        #         continue
+        #     if distname in self.already_installed:
+        #         continue
+        #     _add_to_installed(
+        #         distname, not plugin_manager.is_blocked(plugin_name)
+        #     )
 
         self.installed_label.setText(
             trans._(

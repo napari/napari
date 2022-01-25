@@ -423,7 +423,10 @@ class Window:
         _themes.events.removed.connect(self._remove_theme)
 
         # discover any themes provided by plugins
-        plugin_manager.discover_themes()
+        # plugin_manager.discover_themes()
+        from npe2 import PluginManager
+
+        PluginManager.instance()._import_shims()
         self._setup_existing_themes()
 
         self._add_menus()

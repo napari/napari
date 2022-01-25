@@ -18,16 +18,16 @@ class PluginsMenu(NapariMenu):
         self._win = window
         super().__init__(trans._('&Plugins'), window._qt_window)
 
-        from ...plugins import plugin_manager
+        # from ...plugins import plugin_manager
 
         # plugin_manager.discover_widgets()
-        plugin_manager.events.disabled.connect(
-            self._remove_unregistered_widget
-        )
-        plugin_manager.events.registered.connect(self._add_registered_widget)
-        plugin_manager.events.unregistered.connect(
-            self._remove_unregistered_widget
-        )
+        # plugin_manager.events.disabled.connect(
+        #     self._remove_unregistered_widget
+        # )
+        # plugin_manager.events.registered.connect(self._add_registered_widget)
+        # plugin_manager.events.unregistered.connect(
+        #     self._remove_unregistered_widget
+        # )
         self._build()
 
     def _build(self, event=None):
@@ -54,11 +54,12 @@ class PluginsMenu(NapariMenu):
                 self._win._remove_dock_widget(event=event)
 
     def _add_registered_widget(self, event=None, call_all=False):
-        from ...plugins import plugin_manager
+        # from ...plugins import plugin_manager
 
         # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
         for hook_type, (plugin_name, widgets) in chain(
-            _npe2.widget_iterator(), plugin_manager.iter_widgets()
+            _npe2.widget_iterator(),
+            # plugin_manager.iter_widgets()
         ):
             if call_all or event.value == plugin_name:
                 self._add_plugin_actions(hook_type, plugin_name, widgets)

@@ -22,8 +22,8 @@ if 'napari' not in _npe2pm._manifests:
     _npe2pm.register(mf)
 
 # the main plugin manager instance for the `napari` plugin namespace.
-plugin_manager = NapariPluginManager()
-plugin_manager._initialize()
+plugin_manager = None
+# plugin_manager._initialize()
 
 # Disable plugins listed as disabled in settings, or detected in npe2
 # _from_npe2 = {m.package_metadata.name for m in _npe2pm._manifests.values()}
