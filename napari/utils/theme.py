@@ -3,7 +3,7 @@
 import re
 import warnings
 from ast import literal_eval
-from typing import Union
+from typing import Mapping, Union
 
 from pydantic import validator
 from pydantic.color import Color
@@ -321,17 +321,17 @@ _themes: EventedDict[str, Theme] = EventedDict(
 
 
 # this function here instead of plugins._npe2 to avoid circular import
-def _install_npe2_themes(_themes):
+def _install_npe2_themes(theme_dict: Mapping[str, Theme] = _themes):
     import npe2
 
     for theme in npe2.PluginManager.instance().iter_themes():
         # `theme.type` is dark/light and supplies defaults for keys that
         # are not provided by the plugin
-        d = _themes[theme.type].dict()
-        d.update(theme.colors.dict(exclude_unset=True))
-        _themes[theme.id] = Theme(**d)
+        if theme.id not in theme_dict:
+            d = theme_dict[theme.type].dict()
+            d.update(theme.colors.dict(exclude_unset=True))
+            theme_dict[theme.id] = Theme(**d)
 
 
-_install_npe2_themes(_themes)
 _themes.events.added.connect(rebuild_theme_settings)
 _themes.events.removed.connect(rebuild_theme_settings)

@@ -28,7 +28,12 @@ from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
 from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
-from ..utils.theme import Theme, register_theme, unregister_theme
+from ..utils.theme import (
+    Theme,
+    _install_npe2_themes,
+    register_theme,
+    unregister_theme,
+)
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -391,6 +396,7 @@ class NapariPluginManager(PluginManager):
         """
         if self._theme_data:
             return
+        _install_npe2_themes()
         self.hook.napari_experimental_provide_theme.call_historic(
             result_callback=partial(self.register_theme_colors), with_impl=True
         )
