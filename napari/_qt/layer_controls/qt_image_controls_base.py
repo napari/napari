@@ -258,7 +258,7 @@ def range_to_decimals(range_, dtype):
 
     Parameters
     ----------
-    range : tuple
+    range_ : tuple
         Slider range, min and then max values.
     dtype : np.dtype
         Data type of the layer. Integers layers are given integer.

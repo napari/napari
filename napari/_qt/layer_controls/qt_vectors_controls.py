@@ -1,6 +1,6 @@
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QDoubleSpinBox, QLabel
+from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
 
 from ...layers.utils._color_manager_constants import ColorMode
 from ...utils.translations import trans
@@ -35,6 +35,8 @@ class QtVectorsControls(QtLayerControls):
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Vectors
         An instance of a napari Vectors layer.
+    ndimCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether layer is n-dimensional.
     lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling line length of vectors.
         Multiplicative factor on projections for length of all vectors.
@@ -47,6 +49,7 @@ class QtVectorsControls(QtLayerControls):
 
         self.layer.events.edge_width.connect(self._on_edge_width_change)
         self.layer.events.length.connect(self._on_length_change)
+        self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
         self.layer.events.edge_color_mode.connect(
             self._on_edge_color_mode_change
         )
@@ -97,6 +100,12 @@ class QtVectorsControls(QtLayerControls):
         self.lengthSpinBox.setMaximum(np.inf)
         self.lengthSpinBox.valueChanged.connect(self.change_length)
 
+        ndim_cb = QCheckBox()
+        ndim_cb.setToolTip(trans._('N-dimensional points'))
+        ndim_cb.setChecked(self.layer.n_dimensional)
+        ndim_cb.stateChanged.connect(self.change_ndim)
+        self.ndimCheckBox = ndim_cb
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
@@ -113,7 +122,9 @@ class QtVectorsControls(QtLayerControls):
         self.grid_layout.addWidget(self.edgeColorEdit, 5, 1, 1, 2)
         self.grid_layout.addWidget(self.edge_prop_label, 6, 0)
         self.grid_layout.addWidget(self.color_prop_box, 6, 1, 1, 2)
-        self.grid_layout.setRowStretch(7, 1)
+        self.grid_layout.addWidget(QLabel(trans._('n-dim:')), 7, 0)
+        self.grid_layout.addWidget(self.ndimCheckBox, 7, 1)
+        self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -191,6 +202,19 @@ class QtVectorsControls(QtLayerControls):
         self.lengthSpinBox.clearFocus()
         self.setFocus()
 
+    def change_ndim(self, state):
+        """Toggle n-dimensional state of vectors layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if vectors layer is n-dimensional.
+        """
+        if state == Qt.Checked:
+            self.layer.n_dimensional = True
+        else:
+            self.layer.n_dimensional = False
+
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.
         This is typically used when edge_color_mode changes
@@ -233,6 +257,11 @@ class QtVectorsControls(QtLayerControls):
         """Change length of vectors."""
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
+
+    def _on_n_dimensional_change(self, event):
+        """Receive layer model n-dimensional change event and update checkbox."""
+        with self.layer.events.n_dimensional.blocker():
+            self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_edge_width_change(self):
         """Receive layer model width change event and update width spinbox."""

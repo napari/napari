@@ -115,9 +115,9 @@ def get_reader_choice_for_file(
     ----------
     readerDialog : QtReaderDialog or MockQtReaderDialog
         reader dialog to use for choices from the user
-    readers: str
+    readers : str
         Dictionary of display-name:plugin-name of potential readers for file
-    has_errored: bool
+    has_errored : bool
         True when we've tried to read this file and failed, otherwise False
 
     Returns

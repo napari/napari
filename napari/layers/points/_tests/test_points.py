@@ -6,7 +6,10 @@ import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
-from napari._tests.utils import check_layer_world_data_extent
+from napari._tests.utils import (
+    assert_layer_state_equal,
+    check_layer_world_data_extent,
+)
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._text_constants import Anchor
@@ -420,6 +423,47 @@ def test_remove_selected_updates_value():
     layer.remove_selected()
 
     assert layer._value == 2
+
+
+def test_remove_selected_removes_corresponding_attributes():
+    """Test that removing points at specific indices also removes any per-point
+    attribute at the same index"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    size = np.random.rand(shape[0])
+    color = np.random.rand(shape[0], 4)
+    feature = np.random.rand(shape[0])
+    shown = np.random.randint(2, size=shape[0]).astype(bool)
+    text = 'feature'
+
+    layer = Points(
+        data,
+        size=size,
+        features={'feature': feature},
+        face_color=color,
+        edge_color=color,
+        text=text,
+        shown=shown,
+    )
+
+    layer_expected = Points(
+        data[1:],
+        size=size[1:],
+        features={'feature': feature[1:]},
+        face_color=color[1:],
+        edge_color=color[1:],
+        text=text,  # computed from feature
+        shown=shown[1:],
+    )
+
+    layer.selected_data = {0}
+    layer.remove_selected()
+
+    state_layer = layer._get_state()
+    state_expected = layer_expected._get_state()
+
+    assert_layer_state_equal(state_layer, state_expected)
 
 
 def test_move():
@@ -1729,12 +1773,12 @@ def test_slice_data():
     ]
     layer = Points(data)
     assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
-    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 3
+    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
     assert (
         len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
-        == 3
+        == 4
     )
-    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 1
+    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
 
 
 def test_scale_init():
@@ -2210,3 +2254,26 @@ def test_text_param_and_setter_are_consistent():
     np.testing.assert_array_equal(
         points_init.text.color, points_set.text.color
     )
+
+
+def test_shown():
+    """Test setting shown property"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert len(layer.shown) == shape[0]
+    assert np.all(layer.shown == True)  # noqa
+
+    # Hide the last point
+    layer.shown[-1] = False
+    assert np.all(layer.shown[:-1] == True)  # noqa
+    assert layer.shown[-1] == False  # noqa
+
+    # Add a new point, it should be shown but not affect the others
+    coord = [17, 17]
+    layer.add(coord)
+    assert len(layer.shown) == shape[0] + 1
+    assert np.all(layer.shown[:-2] == True)  # noqa
+    assert layer.shown[-2] == False  # noqa
+    assert layer.shown[-1] == True  # noqa
