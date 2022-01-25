@@ -60,7 +60,7 @@ class StyleEncoding(Protocol[StyleArray]):
         """Updates cached values by applying this to the tail of the given features.
 
         If the cached values have the same length as the given features, this will
-        return the existing cached value array.
+        only return the existing cached value array.
 
         If generating values from the given features fails, this will fall back
         to returning some safe or default value.

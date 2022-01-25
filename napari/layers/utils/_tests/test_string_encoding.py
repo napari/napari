@@ -14,6 +14,15 @@ def make_features_with_no_columns(*, num_rows):
     return pd.DataFrame({}, index=range(num_rows))
 
 
+def make_features_with_class_confidence_columns():
+    return pd.DataFrame(
+        {
+            'class': ['a', 'b', 'c'],
+            'confidence': [0.5, 1, 0.25],
+        }
+    )
+
+
 def test_constant_call_with_no_rows():
     features = make_features_with_no_columns(num_rows=0)
     encoding = ConstantStringEncoding(constant='text')
@@ -74,15 +83,6 @@ def test_manual_with_more_rows():
     values = encoding(features)
 
     np.testing.assert_array_equal(values, ['a', 'b', 'c', 'd'])
-
-
-def make_features_with_class_confidence_columns():
-    return pd.DataFrame(
-        {
-            'class': ['a', 'b', 'c'],
-            'confidence': [0.5, 1, 0.25],
-        }
-    )
 
 
 def test_direct():

@@ -44,9 +44,9 @@ def validate_string_encoding(
         The value being assigned to a StringEncoding field.
         If this is already a StringEncoding, it is returned as is.
         If this is a dict, then it should represent one of the built-in StringEncodings.
-        If this a string, then a FormatStringEncoding is returned if it's also
-        a valid format string, otherwise a ConstantStringEncoding is returned.
-        Otherwise this should be a sequence of strings to be used in a ManualStringEncoding.
+        If this a valid format string, then a FormatStringEncoding is returned.
+        If this is any other string, a ConstantStringEncoding is returned.
+        If this is a sequence of strings, a ManualStringEncoding is returned.
 
     Returns
     -------
