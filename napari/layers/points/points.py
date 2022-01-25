@@ -144,6 +144,8 @@ class Points(Layer):
                 Shading and depth buffer are changed to give a 3D spherical look to the points
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
+    shown : 1-D array of bool
+        Whether to show each point.
 
     Attributes
     ----------
@@ -241,6 +243,8 @@ class Points(Layer):
         Shading mode.
     experimental_canvas_size_limits : tuple of float
         Lower and upper limits for the size of points in canvas pixels.
+    shown : 1-D array of bool
+        Whether each point is shown.
 
     Notes
     -----
@@ -251,7 +255,7 @@ class Points(Layer):
     _view_edge_width : array (M, )
         Edge width of the point markers in the currently viewed slice.
     _indices_view : array (M, )
-        Integer indices of the points in the currently viewed slice.
+        Integer indices of the points in the currently viewed slice and are shown.
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
         the `_view_data` array.
@@ -308,6 +312,7 @@ class Points(Layer):
         experimental_clipping_planes=None,
         shading='none',
         experimental_canvas_size_limits=(0, 10000),
+        shown=True,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -399,7 +404,7 @@ class Points(Layer):
         self._drag_up = None
 
         # initialize view data
-        self._indices_view = np.empty(0)
+        self.__indices_view = np.empty(0, int)
         self._view_size_scale = []
 
         self._drag_box = None
@@ -428,11 +433,15 @@ class Points(Layer):
             properties=color_properties,
         )
 
-        self.experimental_canvas_size_limits = experimental_canvas_size_limits
+        self._shown = np.empty(0).astype(bool)
         self.size = size
+        self.shown = shown
+
         self._edge_width_rel = False
         self.edge_width = edge_width
         self.edge_width_rel = edge_width_rel
+
+        self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.shading = shading
         self._antialias = True
 
@@ -466,6 +475,7 @@ class Points(Layer):
                             self._face._remove(
                                 np.arange(len(data), len(self._face.colors))
                             )
+                        self._shown = self._shown[: len(data)]
                         self._size = self._size[: len(data)]
                         self._edge_width = self._edge_width[: len(data)]
 
@@ -495,6 +505,11 @@ class Points(Layer):
                         # add new colors
                         self._edge._add(n_colors=adding)
                         self._face._add(n_colors=adding)
+
+                        shown = np.repeat([True], adding, axis=0)
+                        self._shown = np.concatenate(
+                            (self._shown, shown), axis=0
+                        )
 
                         self.size = np.concatenate((self._size, size), axis=0)
                         self.edge_width = np.concatenate(
@@ -761,6 +776,17 @@ class Points(Layer):
             value[1]
         )
         self.events.experimental_canvas_size_limits()
+
+    def shown(self):
+        """
+        Boolean array determining which points to show
+        """
+        return self._shown
+
+    @shown.setter
+    def shown(self, shown):
+        self._shown = np.broadcast_to(shown, self.data.shape[0]).astype(bool)
+        self.refresh()
 
     @property
     def edge_width(self) -> np.ndarray:
@@ -1115,6 +1141,7 @@ class Points(Layer):
                 'features': self.features,
                 'shading': self.shading,
                 'experimental_canvas_size_limits': self.experimental_canvas_size_limits,
+                'shown': self.shown,
             }
         )
         return state
@@ -1256,6 +1283,17 @@ class Points(Layer):
 
         self._set_highlight()
         self.events.mode(mode=mode)
+
+    @property
+    def _indices_view(self):
+        return self.__indices_view
+
+    @_indices_view.setter
+    def _indices_view(self, value):
+        if len(self._shown) == 0:
+            self.__indices_view = np.empty(0, int)
+        else:
+            self.__indices_view = value[self.shown[value]]
 
     @property
     def _view_data(self) -> np.ndarray:
@@ -1402,7 +1440,7 @@ class Points(Layer):
             else:
                 data = self.data[:, not_disp]
                 distances = np.abs(data - indices[not_disp])
-                matches = np.all(distances < 1e-5, axis=1)
+                matches = np.all(distances <= 0.5, axis=1)
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, 1
         else:
@@ -1585,7 +1623,7 @@ class Points(Layer):
         # get the indices of points in view
         indices, scale = self._slice_data(self._slice_indices)
         self._view_size_scale = scale
-        self._indices_view = np.array(indices)
+        self._indices_view = np.array(indices, dtype=int)
         # get the selected points that are in view
         self._selected_view = list(
             np.intersect1d(
@@ -1722,6 +1760,7 @@ class Points(Layer):
         index = list(self.selected_data)
         index.sort()
         if len(index):
+            self._shown = np.delete(self._shown, index, axis=0)
             self._size = np.delete(self._size, index, axis=0)
             self._edge_width = np.delete(self._edge_width, index, axis=0)
             with self._edge.events.blocker_all():
@@ -1783,6 +1822,9 @@ class Points(Layer):
             ]
             data[:, not_disp] = data[:, not_disp] + np.array(offset)
             self._data = np.append(self.data, data, axis=0)
+            self._shown = np.append(
+                self.shown, deepcopy(self._clipboard['shown']), axis=0
+            )
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
@@ -1828,6 +1870,7 @@ class Points(Layer):
                 'data': deepcopy(self.data[index]),
                 'edge_color': deepcopy(self.edge_color[index]),
                 'face_color': deepcopy(self.face_color[index]),
+                'shown': deepcopy(self.shown[index]),
                 'size': deepcopy(self.size[index]),
                 'edge_width': deepcopy(self.edge_width[index]),
                 'features': deepcopy(self.features.iloc[index]),
