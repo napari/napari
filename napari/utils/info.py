@@ -152,7 +152,7 @@ def sys_info(as_html=False):
     except Exception as e:
         text += f"  - failed to load screen information {e}"
 
-    plugin_manager.discover()
+    # plugin_manager.discover()
     plugin_strings = []
     for meta in plugin_manager.list_plugin_metadata():
         plugin_name = meta.get('plugin_name')

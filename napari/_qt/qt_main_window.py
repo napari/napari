@@ -107,14 +107,13 @@ class _QtMainWindow(QMainWindow):
 
         self.setStatusBar(ViewerStatusBar(self))
 
-        settings = get_settings()
-
         # TODO:
+        # settings = get_settings()
         # settings.plugins.defaults.call_order = plugin_manager.call_order()
 
         # set the values in plugins to match the ones saved in settings
-        if settings.plugins.call_order is not None:
-            plugin_manager.set_call_order(settings.plugins.call_order)
+        # if settings.plugins.call_order is not None:
+        # plugin_manager.set_call_order(settings.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
 

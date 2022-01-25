@@ -24,7 +24,7 @@ class InfoAction(argparse.Action):
         print(sys_info())
         from .plugins import plugin_manager
 
-        plugin_manager.discover_widgets()
+        # plugin_manager.discover_widgets()
         errors = plugin_manager.get_errors()
         if errors:
             names = {e.plugin_name for e in errors}
@@ -40,7 +40,7 @@ class PluginInfoAction(argparse.Action):
         logging.basicConfig(level=logging.WARNING)
         from .plugins import plugin_manager
 
-        plugin_manager.discover_widgets()
+        # plugin_manager.discover_widgets()
         print(plugin_manager)
 
         errors = plugin_manager.get_errors()
@@ -288,7 +288,7 @@ def _run():
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
-            plugin_manager.discover_widgets()
+            # plugin_manager.discover_widgets()
             pname, *wnames = args.with_
             if wnames:
                 for wname in wnames:

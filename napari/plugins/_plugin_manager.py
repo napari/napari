@@ -397,9 +397,9 @@ class NapariPluginManager(PluginManager):
         if self._theme_data:
             return
         _install_npe2_themes()
-        self.hook.napari_experimental_provide_theme.call_historic(
-            result_callback=partial(self.register_theme_colors), with_impl=True
-        )
+        # self.hook.napari_experimental_provide_theme.call_historic(
+        #     result_callback=partial(self.register_theme_colors), with_impl=True
+        # )
 
     # FUNCTION & DOCK WIDGETS -----------------------
 

@@ -153,7 +153,7 @@ class Installer(QObject):
         if not self._processes:
             from ...plugins import plugin_manager
 
-            plugin_manager.discover()
+            # plugin_manager.discover()
             plugin_manager.prune()
             self.finished.emit(self._exit_code)
 
@@ -641,7 +641,7 @@ class QtPluginDialog(QDialog):
         # fetch installed
         from ...plugins import _npe2, plugin_manager
 
-        plugin_manager.discover()  # since they might not be loaded yet
+        # plugin_manager.discover()  # since they might not be loaded yet
 
         self.already_installed = set()
 

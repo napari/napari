@@ -121,7 +121,7 @@ class FileMenu(NapariMenu):
 
         from ...plugins import plugin_manager
 
-        plugin_manager.discover_sample_data()
+        # plugin_manager.discover_sample_data()
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
