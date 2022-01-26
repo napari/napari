@@ -69,7 +69,9 @@ class QtPointsControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
+        self.layer.events.out_of_slice_display.connect(
+            self._on_out_of_slice_display_change
+        )
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.size.connect(self._on_size_change)
         self.layer.events.current_edge_color.connect(
@@ -123,7 +125,7 @@ class QtPointsControls(QtLayerControls):
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip(trans._('N-dimensional points'))
-        ndim_cb.setChecked(self.layer.n_dimensional)
+        ndim_cb.setChecked(self.layer.out_of_slice_display)
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
 
@@ -257,7 +259,7 @@ class QtPointsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if points layer is n-dimensional.
         """
-        self.layer.n_dimensional = state == Qt.Checked
+        self.layer.out_of_slice_display = state == Qt.Checked
 
     def change_text_visibility(self, state):
         """Toggle the visibility of the text.
@@ -274,10 +276,10 @@ class QtPointsControls(QtLayerControls):
         with self.layer.text.events.visible.blocker():
             self.textDispCheckBox.setChecked(self.layer.text.visible)
 
-    def _on_n_dimensional_change(self):
+    def _on_out_of_slice_display_change(self):
         """Receive layer model n-dimensional change event and update checkbox."""
-        with self.layer.events.n_dimensional.blocker():
-            self.ndimCheckBox.setChecked(self.layer.n_dimensional)
+        with self.layer.events.out_of_slice_display.blocker():
+            self.ndimCheckBox.setChecked(self.layer.out_of_slice_display)
 
     def _on_symbol_change(self):
         """Receive marker symbol change event and update the dropdown menu."""

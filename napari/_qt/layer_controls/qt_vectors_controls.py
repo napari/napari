@@ -49,7 +49,9 @@ class QtVectorsControls(QtLayerControls):
 
         self.layer.events.edge_width.connect(self._on_edge_width_change)
         self.layer.events.length.connect(self._on_length_change)
-        self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
+        self.layer.events.out_of_slice_display.connect(
+            self._on_out_of_slice_display_change
+        )
         self.layer.events.edge_color_mode.connect(
             self._on_edge_color_mode_change
         )
@@ -102,7 +104,7 @@ class QtVectorsControls(QtLayerControls):
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip(trans._('N-dimensional points'))
-        ndim_cb.setChecked(self.layer.n_dimensional)
+        ndim_cb.setChecked(self.layer.out_of_slice_display)
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
 
@@ -211,9 +213,9 @@ class QtVectorsControls(QtLayerControls):
             Checkbox indicating if vectors layer is n-dimensional.
         """
         if state == Qt.Checked:
-            self.layer.n_dimensional = True
+            self.layer.out_of_slice_display = True
         else:
-            self.layer.n_dimensional = False
+            self.layer.out_of_slice_display = False
 
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.
@@ -258,10 +260,10 @@ class QtVectorsControls(QtLayerControls):
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
 
-    def _on_n_dimensional_change(self, event):
+    def _on_out_of_slice_display_change(self, event):
         """Receive layer model n-dimensional change event and update checkbox."""
-        with self.layer.events.n_dimensional.blocker():
-            self.ndimCheckBox.setChecked(self.layer.n_dimensional)
+        with self.layer.events.out_of_slice_display.blocker():
+            self.ndimCheckBox.setChecked(self.layer.out_of_slice_display)
 
     def _on_edge_width_change(self):
         """Receive layer model width change event and update width spinbox."""
