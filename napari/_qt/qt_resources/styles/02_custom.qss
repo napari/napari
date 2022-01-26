@@ -429,35 +429,6 @@ ShortcutEditor QHeaderView::section {
   border: None;
 }
 
-
-/* ------------ Plugin Sorter ------------ */
-
-ImplementationListItem {
-  background-color: {{ background }};
-  border-radius: 2px;
-}
-
-QtHookImplementationListWidget::item {
-  background: transparent;
-}
-
-QtHookImplementationListWidget {
-  background-color: {{ console }};
-}
-
-/* for the error reporter */
-#pluginInfo {
-  color: text;
-}
-
-QtPluginErrReporter > QTextEdit {
-  background-color: {{ console }};
-  background-clip: padding;
-  color: {{ text }};
-  selection-background-color: {{ highlight }};
-  margin: 10px;
-}
-
 /* ------------ Notifications ------------ */
 
 NapariQtNotification > QWidget {
@@ -650,11 +621,6 @@ QPushButton#close_button:disabled {
 
 QtPluginDialog QSplitter{
   padding-right: 2;
-}
-
-
-QtPluginSorter {
-  padding: 20px;
 }
 
 

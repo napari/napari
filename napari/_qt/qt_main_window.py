@@ -33,7 +33,6 @@ from qtpy.QtWidgets import (
 )
 
 from ..plugins import menu_item_template as plugin_menu_item_template
-from ..plugins import plugin_manager
 from ..settings import get_settings
 from ..utils import perf
 from ..utils._proxies import PublicOnlyProxy
@@ -106,14 +105,6 @@ class _QtMainWindow(QMainWindow):
         self._activity_dialog = act_dlg
 
         self.setStatusBar(ViewerStatusBar(self))
-
-        # TODO:
-        # settings = get_settings()
-        # settings.plugins.defaults.call_order = plugin_manager.call_order()
-
-        # set the values in plugins to match the ones saved in settings
-        # if settings.plugins.call_order is not None:
-        # plugin_manager.set_call_order(settings.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
 
@@ -423,7 +414,6 @@ class Window:
         _themes.events.removed.connect(self._remove_theme)
 
         # discover any themes provided by plugins
-        # plugin_manager.discover_themes()
         from npe2 import PluginManager
 
         PluginManager.instance()._import_shims()
@@ -667,15 +657,6 @@ class Window:
         if result:
             Widget, widget_name = result
 
-        if Widget is None:
-            Widget, dock_kwargs = plugin_manager.get_widget(
-                plugin_name, widget_name
-            )
-        if not widget_name:
-            # if widget_name wasn't provided, `get_widget` will have
-            # ensured that there is a single widget available.
-            widget_name = list(plugin_manager._dock_widgets[plugin_name])[0]
-
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             dock_widget = self._dock_widgets[full_name]
@@ -690,29 +671,6 @@ class Window:
         dock_kwargs.pop('name', None)
         dock_widget = self.add_dock_widget(wdg, name=full_name, **dock_kwargs)
         return dock_widget, wdg
-
-    def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
-        """Add plugin function widget if not already added.
-
-        Parameters
-        ----------
-        plugin_name : str
-            Name of a plugin providing a widget
-        widget_name : str, optional
-            Name of a widget provided by `plugin_name`. If `None`, and the
-            specified plugin provides only a single widget, that widget will be
-            returned, otherwise a ValueError will be raised, by default None
-        """
-        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
-        if full_name in self._dock_widgets:
-            return
-
-        func = plugin_manager._function_widgets[plugin_name][widget_name]
-
-        # Add function widget
-        return self.add_function_widget(
-            func, name=full_name, area=None, allowed_areas=None
-        )
 
     def add_dock_widget(
         self,

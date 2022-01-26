@@ -1,4 +1,3 @@
-from itertools import chain
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize
@@ -166,10 +165,7 @@ class FileMenu(NapariMenu):
 
         self.open_sample_menu.clear()
 
-        for plugin_name, samples in chain(
-            _npe2.sample_iterator(),
-            # plugin_manager._sample_data.items()
-        ):
+        for plugin_name, samples in _npe2.sample_iterator():
             multiprovider = len(samples) > 1
             if multiprovider:
                 menu = self.open_sample_menu.addMenu(plugin_name)

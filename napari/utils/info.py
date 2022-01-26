@@ -77,7 +77,6 @@ def sys_info(as_html=False):
     as_html : bool
         if True, info will be returned as HTML, suitable for a QTextEdit widget
     """
-    from napari.plugins import plugin_manager
 
     sys_version = sys.version.replace('\n', ' ')
     text = (
@@ -152,15 +151,15 @@ def sys_info(as_html=False):
     except Exception as e:
         text += f"  - failed to load screen information {e}"
 
-    # plugin_manager.discover()
+    from ..plugins import _npe2
+
     plugin_strings = []
-    for meta in plugin_manager.list_plugin_metadata():
-        plugin_name = meta.get('plugin_name')
-        if plugin_name == 'builtins':
-            continue
-        version = meta.get('version')
-        version_string = f": {version}" if version else ""
-        plugin_strings.append(f"  - {plugin_name}{version_string}")
+    for mf in _npe2.iter_manifests():
+        if mf.name != 'napari':
+            s = f"  - {mf.name}: {mf.package_version}"
+            if 'shim' in type(mf).__name__.lower():
+                s += ' (npe1)'
+            plugin_strings.append(s)
     text += '<br><b>Plugins</b>:'
     text += (
         ("<br>" + "<br>".join(sorted(plugin_strings)))

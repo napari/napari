@@ -18,7 +18,6 @@ from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..layers.base.base import Layer
 from ..plugins import _npe2
-from ..plugins.utils import get_potential_readers
 from ..utils import config, perf
 from ..utils._proxies import ReadOnlyWrapper
 from ..utils.action_manager import action_manager
@@ -1060,7 +1059,7 @@ class QtViewer(QSplitter):
 
         for filename in filenames:
             # get available readers for this file from all registered plugins
-            readers = get_potential_readers(filename)
+            readers = _npe2.get_readers(filename)
             if not readers:
                 warnings.warn(
                     trans._(

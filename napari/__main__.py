@@ -22,15 +22,6 @@ class InfoAction(argparse.Action):
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
-        from .plugins import plugin_manager
-
-        # plugin_manager.discover_widgets()
-        errors = plugin_manager.get_errors()
-        if errors:
-            names = {e.plugin_name for e in errors}
-            print("\n‼️  Errors were detected in the following plugins:")
-            print("(Run 'napari --plugin-info -v' for more details)")
-            print("\n".join(f"  - {n}" for n in names))
         sys.exit()
 
 

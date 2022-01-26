@@ -25,7 +25,6 @@ class WidgetBuilder:
         "object": {
             "object": widgets.ObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
-            "plugins": widgets.PluginWidget,
             "shortcuts": widgets.ShortcutsWidget,
             "extension2reader": widgets.Extension2ReaderWidget,
         },

@@ -1,4 +1,3 @@
-from itertools import chain
 from typing import TYPE_CHECKING, Sequence
 
 from qtpy.QtWidgets import QAction
@@ -6,7 +5,6 @@ from qtpy.QtWidgets import QAction
 from ...plugins import _npe2
 from ...utils.translations import trans
 from ..dialogs.qt_plugin_dialog import QtPluginDialog
-from ..dialogs.qt_plugin_report import QtPluginErrReporter
 from ._util import NapariMenu
 
 if TYPE_CHECKING:
@@ -34,33 +32,21 @@ class PluginsMenu(NapariMenu):
         self.clear()
         action = self.addAction(trans._("Install/Uninstall Plugins..."))
         action.triggered.connect(self._show_plugin_install_dialog)
-        action = self.addAction(trans._("Plugin Errors..."))
-        action.setStatusTip(
-            trans._(
-                'Review stack traces for plugin exceptions and notify developers'
-            )
-        )
-        action.triggered.connect(self._show_plugin_err_reporter)
         self.addSeparator()
 
         # Add a menu item (QAction) for each available plugin widget
         self._add_registered_widget(call_all=True)
 
     def _remove_unregistered_widget(self, event):
-
-        for idx, action in enumerate(self.actions()):
+        for action in self.actions():
             if event.value in action.text():
                 self.removeAction(action)
                 self._win._remove_dock_widget(event=event)
 
     def _add_registered_widget(self, event=None, call_all=False):
-        # from ...plugins import plugin_manager
 
         # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
-        for hook_type, (plugin_name, widgets) in chain(
-            _npe2.widget_iterator(),
-            # plugin_manager.iter_widgets()
-        ):
+        for hook_type, (plugin_name, widgets) in _npe2.widget_iterator():
             if call_all or event.value == plugin_name:
                 self._add_plugin_actions(hook_type, plugin_name, widgets)
 
@@ -113,7 +99,3 @@ class PluginsMenu(NapariMenu):
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
         QtPluginDialog(self._win._qt_window).exec_()
-
-    def _show_plugin_err_reporter(self):
-        """Show dialog that allows users to review and report plugin errors."""
-        QtPluginErrReporter(parent=self._win._qt_window).exec_()

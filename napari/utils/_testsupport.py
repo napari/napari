@@ -64,6 +64,7 @@ def fail_obj_graph(Klass):
         assert False, len(Klass._instances)
 
 
+# TODO: can be removed
 @pytest.fixture
 def napari_plugin_manager(monkeypatch):
     """A napari plugin manager that blocks discovery by default.
