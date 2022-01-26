@@ -765,6 +765,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(indices)
 
+    def _thickness_slices_data(self):
+        """(D, ) array: Thickness of slices in data coordinates"""
+        scale = self._data_to_world.inverse.scale
+        thickness_slices = ...  # how do I get this?
+        return tuple(th * sc for th, sc in zip(thickness_slices, scale))
+
     @abstractmethod
     def _get_ndim(self):
         raise NotImplementedError()

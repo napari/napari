@@ -1273,7 +1273,7 @@ class Points(Layer):
             self.mode = Mode.PAN_ZOOM
 
     def _slice_data(
-        self, dims_indices
+        self, dims_indices, thickness_slices
     ) -> Tuple[List[int], Union[float, np.ndarray]]:
         """Determines the slice of points given the indices.
 
@@ -1294,6 +1294,7 @@ class Points(Layer):
         # Get a list of the data for the points in this slice
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
+        # this whole if/else can be replaced with the thickness_slices usage
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(self.data[:, not_disp] - indices[not_disp])
@@ -1490,7 +1491,9 @@ class Points(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
-        indices, scale = self._slice_data(self._slice_indices)
+        indices, scale = self._slice_data(
+            self._slice_indices, self._thickness_slices_data
+        )
         self._view_size_scale = scale
         self._indices_view = np.array(indices)
         # get the selected points that are in view

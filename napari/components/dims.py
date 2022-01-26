@@ -30,6 +30,8 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    thickness_slices : tuple of float
+        Thickness of the slice in each dimension.
 
     Attributes
     ----------
@@ -65,6 +67,8 @@ class Dims(EventedModel):
     displayed_order : tuple of int
         Order of only displayed dimensions. These are calculated from the
         ``displayed`` dimensions.
+    thickness_slices : tuple of float
+        Thickness of the slice in each dimension.
     """
 
     # fields
@@ -75,6 +79,7 @@ class Dims(EventedModel):
     current_step: Tuple[int, ...] = ()
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
+    thickness_slices: Tuple[float, ...] = ()
 
     # private vars
     _scroll_progress: int = 0
@@ -148,6 +153,14 @@ class Dims(EventedModel):
                 )
         elif len(values['axis_labels']) > ndim:
             values['axis_labels'] = values['axis_labels'][-ndim:]
+
+        # Check the thickness tuple has same number of elements as ndim
+        if len(values['thickness_slices']) < ndim:
+            values['thickness_slices'] = (1,) * (
+                ndim - len(values['thickness_slices'])
+            ) + values['thickness_slices']
+        elif len(values['thickness_slices']) > ndim:
+            values['thickness_slices'] = values['thickness_slices'][-ndim:]
 
         return values
 
