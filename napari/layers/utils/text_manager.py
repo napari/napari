@@ -75,27 +75,28 @@ class TextManager(EventedModel):
     translation: Array[float] = 0
     rotation: float = 0
 
-    # Should be the same features as the layer that owns this.
+    # Only needed for deprecated behavior.
     _features: pd.DataFrame
 
     def __init__(self, features=None, properties=None, n_text=0, **kwargs):
         if properties is not None:
-            # TODO: deprecation warning about using properties.
-            features = _validate_features(properties, num_data=n_text)
-        elif features is None:
-            features = pd.DataFrame()
-        self._features = features
-
-        if 'values' in kwargs and 'string' not in kwargs:
-            # _warn_about_deprecated_values_field()
-            kwargs['string'] = kwargs.pop('values')
-        if 'text' in kwargs and 'string' not in kwargs:
-            # _warn_about_deprecated_text_parameter()
+            _warn_about_deprecated_properties_parameter()
+            self._features = _validate_features(properties, num_data=n_text)
+        else:
+            self._features = _validate_features(features)
+        if 'values' in kwargs:
+            _warn_about_deprecated_values_field()
+            values = kwargs.pop('values')
+            if 'string' not in kwargs:
+                kwargs['string'] = values
+        if 'text' in kwargs:
+            _warn_about_deprecated_text_parameter()
             text = kwargs.pop('text')
-            if isinstance(text, str) and text in features:
-                kwargs['string'] = DirectStringEncoding(feature=text)
-            else:
-                kwargs['string'] = text
+            if 'string' not in kwargs:
+                if isinstance(text, str) and text in self._features:
+                    kwargs['string'] = DirectStringEncoding(feature=text)
+                else:
+                    kwargs['string'] = text
         super().__init__(**kwargs)
         self.string._update(self._features)
 
@@ -109,22 +110,10 @@ class TextManager(EventedModel):
 
     def __setattr__(self, key, value):
         if key == 'values':
-            # _warn_about_deprecated_values_field()
+            _warn_about_deprecated_values_field()
             self.string = value
         else:
             super().__setattr__(key, value)
-
-    def refresh(self, features: pd.DataFrame):
-        """Refresh all of the current text elements using a new features table.
-
-        Parameters
-        ----------
-        features : pd.DataFrame
-            The new features table from the layer.
-        """
-        self._features = features
-        self.string._clear()
-        self.events.string()
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
@@ -137,12 +126,13 @@ class TextManager(EventedModel):
         # warnings.warn(
         #     trans._(
         #         'TextManager.refresh_text is deprecated. '
-        #         'Use TextManager.refresh instead.'
+        #         'Call TextManager.string instead.'
         #     ),
         #     DeprecationWarning,
         # )
-        features = _validate_features(properties)
-        self.refresh(features)
+        self._features = _validate_features(properties)
+        self.string._clear()
+        self.string._update(self._features)
 
     def add(self, properties: dict, n_text: int):
         """Adds a number of a new text elements.
@@ -176,6 +166,10 @@ class TextManager(EventedModel):
 
     def _paste(self, strings: StringArray):
         self.string._append(strings)
+
+    def _clear(self):
+        self.string._clear()
+        self.events.string()
 
     def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
         """Remove the indicated text elements
@@ -315,6 +309,10 @@ class TextManager(EventedModel):
         # Connected callbacks may raise errors, but those are bugs.
         self.update(new_manager, recurse=False)
 
+    @validator('string', pre=True, always=True)
+    def _check_string(cls, string):
+        return validate_string_encoding(string)
+
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
         return transform_color(color)[0]
@@ -337,23 +335,29 @@ class TextManager(EventedModel):
 
         return blending_mode
 
-    @validator('string', pre=True, always=True)
-    def _check_string(cls, string):
-        return validate_string_encoding(string)
-
 
 def _warn_about_deprecated_values_field():
-    warnings.warn(
-        trans._(
-            'TextManager.values is deprecated. '
-            'Call TextManager.string instead.'
-        ),
-        DeprecationWarning,
-    )
+    # warnings.warn(
+    #    trans._(
+    #        'TextManager.values is deprecated. '
+    #        'Call TextManager.string instead.'
+    #    ),
+    #    DeprecationWarning,
+    # )
+    pass
 
 
 def _warn_about_deprecated_text_parameter():
-    warnings.warn(
-        trans._('text is a deprecated. Use string instead.'),
-        DeprecationWarning,
-    )
+    # warnings.warn(
+    #    trans._('text is a deprecated parameter. Use string instead.'),
+    #    DeprecationWarning,
+    # )
+    pass
+
+
+def _warn_about_deprecated_properties_parameter():
+    # warnings.warn(
+    #    trans._('properties is a deprecated parameter. Call string instead.'),
+    #    DeprecationWarning,
+    # )
+    pass

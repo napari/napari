@@ -519,7 +519,8 @@ class Points(Layer):
         self._update_color_manager(
             self._edge, self._feature_table, "edge_color"
         )
-        self.text.refresh(self.features)
+        self.text._features = self.features
+        self.text._clear()
         self.events.properties()
 
     @property
@@ -606,7 +607,7 @@ class Points(Layer):
 
         This is generally used if the features were updated without changing the data
         """
-        self.text.refresh(self.features)
+        self.text._clear()
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
