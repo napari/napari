@@ -618,7 +618,7 @@ class Vectors(Layer):
                 alpha_per_dim[alpha_match == 0] = 1
                 alpha = np.prod(alpha_per_dim, axis=1).astype(float)
             else:
-                matches = np.all(distances <= 1e-5, axis=1)
+                matches = np.all(distances <= 0.5, axis=1)
                 alpha = 1.0
 
             slice_indices = np.where(matches)[0].astype(int)
