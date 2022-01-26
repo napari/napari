@@ -47,8 +47,8 @@ class QtPointsControls(QtLayerControls):
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Points
         An instance of a napari Points layer.
-    ndimCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to indicate whether layer is n-dimensional.
+    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether to render out of slice.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
         Button for pan/zoom mode.
     select_button : qtpy.QtWidgets.QtModeRadioButton
@@ -123,11 +123,11 @@ class QtPointsControls(QtLayerControls):
         symbol_comboBox.activated[str].connect(self.changeSymbol)
         self.symbolComboBox = symbol_comboBox
 
-        ndim_cb = QCheckBox()
-        ndim_cb.setToolTip(trans._('N-dimensional points'))
-        ndim_cb.setChecked(self.layer.out_of_slice_display)
-        ndim_cb.stateChanged.connect(self.change_ndim)
-        self.ndimCheckBox = ndim_cb
+        out_of_slice_cb = QCheckBox()
+        out_of_slice_cb.setToolTip(trans._('Out of slice display'))
+        out_of_slice_cb.setChecked(self.layer.out_of_slice_display)
+        out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
+        self.outOfSliceCheckBox = out_of_slice_cb
 
         self.select_button = QtModeRadioButton(
             layer,
@@ -195,8 +195,8 @@ class QtPointsControls(QtLayerControls):
         self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
         self.grid_layout.addWidget(QLabel(trans._('display text:')), 7, 0)
         self.grid_layout.addWidget(self.textDispCheckBox, 7, 1)
-        self.grid_layout.addWidget(QLabel(trans._('n-dim:')), 8, 0)
-        self.grid_layout.addWidget(self.ndimCheckBox, 8, 1)
+        self.grid_layout.addWidget(QLabel(trans._('out of slice:')), 8, 0)
+        self.grid_layout.addWidget(self.outOfSliceCheckBox, 8, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -251,13 +251,13 @@ class QtPointsControls(QtLayerControls):
         """
         self.layer.current_size = value
 
-    def change_ndim(self, state):
-        """Toggle n-dimensional state of points layer.
+    def change_out_of_slice(self, state):
+        """Toggleout of slice display of points layer.
 
         Parameters
         ----------
         state : QCheckBox
-            Checkbox indicating if points layer is n-dimensional.
+            Checkbox indicating whether to render out of slice.
         """
         self.layer.out_of_slice_display = state == Qt.Checked
 
@@ -277,9 +277,9 @@ class QtPointsControls(QtLayerControls):
             self.textDispCheckBox.setChecked(self.layer.text.visible)
 
     def _on_out_of_slice_display_change(self):
-        """Receive layer model n-dimensional change event and update checkbox."""
+        """Receive layer model out_of_slice_display change event and update checkbox."""
         with self.layer.events.out_of_slice_display.blocker():
-            self.ndimCheckBox.setChecked(self.layer.out_of_slice_display)
+            self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
 
     def _on_symbol_change(self):
         """Receive marker symbol change event and update the dropdown menu."""

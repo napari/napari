@@ -98,8 +98,8 @@ class Points(Layer):
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
     out_of_slice_display : bool
-        If True, renders points not just in central plane but also in all
-        n-dimensions according to specified point marker size.
+        If True, renders points not just in central plane but also slightly out of slice
+        according to specified point marker size.
     name : str
         Name of the layer.
     metadata : dict
@@ -203,8 +203,8 @@ class Points(Layer):
         Size of the marker edge for the next point to be added or the currently
         selected point.
     out_of_slice_display : bool
-        If True, renders points not just in central plane but also in all
-        n-dimensions according to specified point marker size.
+        If True, renders points not just in central plane but also slightly out of slice
+        according to specified point marker size.
     selected_data : set
         Integer indices of any selected points.
     mode : str
@@ -646,7 +646,7 @@ class Points(Layer):
 
     @property
     def out_of_slice_display(self) -> bool:
-        """bool: renders points as n-dimensional."""
+        """bool: renders points slightly out of slice."""
         return self._out_of_slice_display
 
     @out_of_slice_display.setter

@@ -57,8 +57,8 @@ class Vectors(Layer):
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
     out_of_slice_display : bool
-        If True, renders vectors not just in central plane but also in all
-        n-dimensions according to vectors lengths.
+        If True, renders vectors not just in central plane but also slightly out of slice
+        according to specified point marker size.
     name : str
         Name of the layer.
     metadata : dict
@@ -123,8 +123,8 @@ class Vectors(Layer):
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
     out_of_slice_display : bool
-        If True, renders vectors not just in central plane but also in all
-        n-dimensions according to vectors lengths.
+        If True, renders vectors not just in central plane but also slightly out of slice
+        according to specified point marker size.
 
     Notes
     -----
@@ -428,7 +428,7 @@ class Vectors(Layer):
 
     @property
     def out_of_slice_display(self) -> bool:
-        """bool: renders points as n-dimensionsal."""
+        """bool: renders vectors slightly out of slice."""
         return self._out_of_slice_display
 
     @out_of_slice_display.setter

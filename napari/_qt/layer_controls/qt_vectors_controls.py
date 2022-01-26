@@ -35,8 +35,8 @@ class QtVectorsControls(QtLayerControls):
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Vectors
         An instance of a napari Vectors layer.
-    ndimCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to indicate whether layer is n-dimensional.
+    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether to render out of slice.
     lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling line length of vectors.
         Multiplicative factor on projections for length of all vectors.
@@ -102,11 +102,11 @@ class QtVectorsControls(QtLayerControls):
         self.lengthSpinBox.setMaximum(np.inf)
         self.lengthSpinBox.valueChanged.connect(self.change_length)
 
-        ndim_cb = QCheckBox()
-        ndim_cb.setToolTip(trans._('N-dimensional points'))
-        ndim_cb.setChecked(self.layer.out_of_slice_display)
-        ndim_cb.stateChanged.connect(self.change_ndim)
-        self.ndimCheckBox = ndim_cb
+        out_of_slice_cb = QCheckBox()
+        out_of_slice_cb.setToolTip(trans._('Out of slice display'))
+        out_of_slice_cb.setChecked(self.layer.out_of_slice_display)
+        out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
+        self.outOfSliceCheckBox = out_of_slice_cb
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
@@ -124,8 +124,8 @@ class QtVectorsControls(QtLayerControls):
         self.grid_layout.addWidget(self.edgeColorEdit, 5, 1, 1, 2)
         self.grid_layout.addWidget(self.edge_prop_label, 6, 0)
         self.grid_layout.addWidget(self.color_prop_box, 6, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel(trans._('n-dim:')), 7, 0)
-        self.grid_layout.addWidget(self.ndimCheckBox, 7, 1)
+        self.grid_layout.addWidget(QLabel(trans._('out of slice:')), 7, 0)
+        self.grid_layout.addWidget(self.outOfSliceCheckBox, 7, 1)
         self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -204,13 +204,13 @@ class QtVectorsControls(QtLayerControls):
         self.lengthSpinBox.clearFocus()
         self.setFocus()
 
-    def change_ndim(self, state):
-        """Toggle n-dimensional state of vectors layer.
+    def change_out_of_slice(self, state):
+        """Toggle out of slice display of vectors layer.
 
         Parameters
         ----------
         state : QCheckBox
-            Checkbox indicating if vectors layer is n-dimensional.
+            Checkbox to indicate whether to render out of slice.
         """
         if state == Qt.Checked:
             self.layer.out_of_slice_display = True
@@ -261,9 +261,9 @@ class QtVectorsControls(QtLayerControls):
             self.lengthSpinBox.setValue(self.layer.length)
 
     def _on_out_of_slice_display_change(self, event):
-        """Receive layer model n-dimensional change event and update checkbox."""
+        """Receive layer model out_of_slice_display change event and update checkbox."""
         with self.layer.events.out_of_slice_display.blocker():
-            self.ndimCheckBox.setChecked(self.layer.out_of_slice_display)
+            self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
 
     def _on_edge_width_change(self):
         """Receive layer model width change event and update width spinbox."""
