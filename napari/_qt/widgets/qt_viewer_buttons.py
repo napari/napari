@@ -87,7 +87,7 @@ class QtLayerButtons(QFrame):
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
-        layout.addWidget(self.newGroupButton)
+        # layout.addWidget(self.newGroupButton)
 
         layout.addStretch(0)
         layout.addWidget(self.deleteButton)
