@@ -77,6 +77,13 @@ class LayerGroup(Group[Layer], Layer):
 
     def insert(self, index: int, value: Layer):
         """Insert ``value`` before index."""
+        # temporarily disabled while we work on selection bug and
+        # group vispy nodes.
+        # once removed, uncomment "add group" button in qt_viewer_buttons
+        if isinstance(value, (LayerGroup, list)):
+            warnings.warn("The nesting is a lie! (not quite ready)")
+            return
+
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         super().insert(index, new_layer)

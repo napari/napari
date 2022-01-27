@@ -24,7 +24,7 @@ root = LayerGroup(
     name="root",
 )
 root.events.reordered.connect(lambda e: print(e.value))
-root.selection.active = lg1
+root.selection.active = root[0]
 
 tree = QtLayerTreeView(root)
 
