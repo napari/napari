@@ -13,7 +13,7 @@ import numpy as np
 from ..._vendor.cpython.functools import cached_property
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
-from ...utils.events import EmitterGroup, Event
+from ...utils.events.event import EmitterGroup, Event, WarningEmitter
 from ...utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
@@ -316,6 +316,21 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
                 '_ndisplay',
             )
         )
+        _events['select'] = WarningEmitter(
+            trans._(
+                "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
+                deferred=True,
+            ),
+            type='select',
+        )
+        _events['deselect'] = WarningEmitter(
+            trans._(
+                "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
+                deferred=True,
+            ),
+            type='deselect',
+        )
+
         # For inheritance: If the mro already provides an EmitterGroup, add...
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)

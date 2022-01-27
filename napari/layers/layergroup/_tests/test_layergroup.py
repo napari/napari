@@ -8,7 +8,7 @@ from napari.layers.layergroup import LayerGroup
 
 
 @pytest.fixture
-def layergroup_tree():
+def layergroup_tree(monkeypatch):
     """Build a layergroup to use for testing.
 
     tree
@@ -26,7 +26,7 @@ def layergroup_tree():
       │  └──image1_on_branch3
       └──single_img
     """
-
+    monkeypatch.setenv('ALLOW_LAYERGROUPS', "1")
     data = np.random.random((100, 100))
     branch1 = LayerGroup(name='branch1')
     branch1.append(Image(data, name='image1_on_branch1'))
