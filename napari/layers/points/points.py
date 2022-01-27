@@ -428,13 +428,6 @@ class Points(Layer):
             properties=color_properties,
         )
 
-        self._shown = np.empty(0).astype(bool)
-        self.size = size
-        self.shown = shown
-        self.experimental_canvas_size_limits = experimental_canvas_size_limits
-        self.shading = shading
-        self._antialias = True
-
         if n_dimensional is not None:
             warnings.warn(
                 trans._(
@@ -447,6 +440,13 @@ class Points(Layer):
             self._n_dimensional = n_dimensional
         else:
             self._out_of_slice_display = out_of_slice_display
+
+        self._shown = np.empty(0).astype(bool)
+        self.size = size
+        self.shown = shown
+        self.experimental_canvas_size_limits = experimental_canvas_size_limits
+        self.shading = shading
+        self._antialias = True
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
