@@ -15,6 +15,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
+from ...utils.events.event import WarningEmitter
 from ...utils.geometry import project_points_onto_plane, rotate_points
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine
@@ -287,6 +288,7 @@ class Points(Layer):
         face_colormap='viridis',
         face_contrast_limits=None,
         out_of_slice_display=False,
+        n_dimensional=None,
         name=None,
         metadata=None,
         scale=None,
@@ -338,6 +340,13 @@ class Points(Layer):
             current_properties=Event,
             symbol=Event,
             out_of_slice_display=Event,
+            n_dimensional=WarningEmitter(
+                trans._(
+                    "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
+                    "use 'out_of_slice_display' instead."
+                ),
+                type='n_dimensional',
+            ),
             highlight=Event,
             shading=Event,
             _antialias=Event,
@@ -364,7 +373,6 @@ class Points(Layer):
 
         # Save the point style params
         self.symbol = symbol
-        self._out_of_slice_display = out_of_slice_display
         self.edge_width = edge_width
 
         # The following point properties are for the new points that will
@@ -426,6 +434,19 @@ class Points(Layer):
         self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.shading = shading
         self._antialias = True
+
+        if n_dimensional is not None:
+            warnings.warn(
+                trans._(
+                    "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
+                    "use 'out_of_slice_display' instead."
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self._n_dimensional = n_dimensional
+        else:
+            self._out_of_slice_display = out_of_slice_display
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -651,9 +672,34 @@ class Points(Layer):
 
     @out_of_slice_display.setter
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
-        self._out_of_slice_display = out_of_slice_display
+        self._out_of_slice_display = bool(out_of_slice_display)
         self.events.out_of_slice_display()
         self.refresh()
+
+    @property
+    def n_dimensional(self) -> bool:
+        warnings.warn(
+            trans._(
+                "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
+                "use 'out_of_slice_display' instead."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._out_of_slice_display
+
+    @n_dimensional.setter
+    def n_dimensional(self, value: bool) -> None:
+        warnings.warn(
+            trans._(
+                "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
+                "use 'out_of_slice_display' instead."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.out_of_slice_display = value
+        self.events.n_dimensional()
 
     @property
     def symbol(self) -> str:
