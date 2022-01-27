@@ -112,9 +112,29 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         if (
             not index.isValid()
-            or index.row() >= len(self._root)
+            # or index.row() >= len(self._root)
             or index.model() is not self
         ):
+            # we allow drops outside the items
+            return Qt.ItemIsDropEnabled
+
+        # TODO: h/t Grzegorz for this fix.  double check to see if we
+        # already have an existing method for this.
+        s_index = index.parent()
+        coord = (index.row(),)
+        while s_index.isValid():
+            coord = (s_index.row(),) + coord
+            s_index = s_index.parent()
+
+        layer_group = self._root
+        outside = False
+        for index_num in coord:
+            if index_num >= len(layer_group):
+                outside = True
+                break
+            layer_group = layer_group[index_num]
+
+        if outside:
             # we allow drops outside the items
             return Qt.ItemIsDropEnabled
 
