@@ -26,7 +26,7 @@ Complete list of changes below:
 
 ## Improvements
 - Update tests to remove warnings (#3974)
-- add test to check that things are removed properly (#3996)
+- Add test to check that things are removed properly (#3996)
 - Change base point slice thickness to half a unit (#3997)
 - Change base vector slice thickness to half a unit (#4001)
 
