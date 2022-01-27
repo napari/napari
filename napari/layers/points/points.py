@@ -1104,6 +1104,7 @@ class Points(Layer):
                 'property_choices': self.property_choices,
                 'text': self.text.dict(),
                 'out_of_slice_display': self.out_of_slice_display,
+                'n_dimensional': self.out_of_slice_display,
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,

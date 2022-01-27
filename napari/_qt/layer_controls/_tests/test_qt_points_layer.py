@@ -9,7 +9,7 @@ def test_out_of_slice_display_checkbox(qtbot):
     layer = Points(np.random.rand(10, 2))
     qtctrl = QtPointsControls(layer)
     qtbot.addWidget(qtctrl)
-    combo = qtctrl.ndimCheckBox
+    combo = qtctrl.outOfSliceCheckBox
 
     assert layer.out_of_slice_display is False
     combo.setChecked(True)
