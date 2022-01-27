@@ -78,7 +78,9 @@ class TextManager(EventedModel):
     # Only needed for deprecated behavior.
     _features: pd.DataFrame
 
-    def __init__(self, features=None, properties=None, n_text=0, **kwargs):
+    def __init__(self, features=None, properties=None, n_text=None, **kwargs):
+        if n_text is not None:
+            _warn_about_deprecated_n_text_parameter()
         if properties is not None:
             _warn_about_deprecated_properties_parameter()
             self._features = _validate_features(properties, num_data=n_text)
@@ -98,11 +100,10 @@ class TextManager(EventedModel):
                 else:
                     kwargs['string'] = text
         super().__init__(**kwargs)
-        self.string._update(self._features)
 
     @property
     def values(self):
-        # _warn_about_deprecated_values_field()
+        _warn_about_deprecated_values_field()
         values = self.string._update(self._features)
         if isinstance(self.string, ConstantStringEncoding):
             return np.broadcast_to(values, (self._features.shape[0],))
@@ -255,7 +256,7 @@ class TextManager(EventedModel):
         text : Union[TextManager, dict, str, Sequence[str], None]
             An instance of TextManager, a dict that contains some of its state,
             a string that may be a format string, a constant string, or sequence
-            of strings specified directly.
+            of strings specified manually.
         features : pd.DataFrame
             The features table of a layer.
 
@@ -357,7 +358,15 @@ def _warn_about_deprecated_text_parameter():
 
 def _warn_about_deprecated_properties_parameter():
     # warnings.warn(
-    #    trans._('properties is a deprecated parameter. Call string instead.'),
+    #    trans._('properties is a deprecated parameter. Call string with features instead.'),
+    #    DeprecationWarning,
+    # )
+    pass
+
+
+def _warn_about_deprecated_n_text_parameter():
+    # warnings.warn(
+    #    trans._('n_text is a deprecated parameter. Call string with features instead.'),
     #    DeprecationWarning,
     # )
     pass
