@@ -77,8 +77,12 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         for i in list(self.selection):
             idx = self.index(i)
             self.remove(i)
-        new = max(0, (idx - 1))
-        if len(self) > new:
+        if isinstance(idx, int):
+            new = (max(0, (idx - 1)),)
+        else:
+            *root, _idx = idx
+            new = tuple(root) + (_idx - 1,) if _idx >= 1 else tuple(root)
+        if len(self) > new[0]:
             self.selection.add(self[new])
 
     def select_next(self, step=1, shift=False):

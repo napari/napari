@@ -437,8 +437,8 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(e, list):
             return self.__newlike__(e)
         if self._basetypes:
-            _types = set(self._basetypes) | {NestableEventedList}
-            if not any(isinstance(e, t) for t in _types):
+            _types = tuple(self._basetypes) + (NestableEventedList,)
+            if not isinstance(e, _types):
                 raise TypeError(
                     trans._(
                         'Cannot add object with type {dtype!r} to TypedList expecting type {types_!r}',
@@ -454,16 +454,8 @@ class NestableEventedList(EventedList[_T]):
 
         Depth first traversal of the tree
         """
-        if deep:
-            for i in range(start, len(self) if stop is None else stop):
-                if isinstance(self[i], NestableEventedList):
-                    yield from self[i]._iter_indices(  # type: ignore
-                        root=root + (i,), deep=deep
-                    )
-                else:
-                    if root:
-                        yield root + (i,)
-                    else:
-                        yield i
-        else:
-            yield from super()._iter_indices(start, stop)
+        for i in range(start, len(self) if stop is None else stop):
+            yield root + (i,) if root else i
+            item = self[i]
+            if isinstance(item, NestableEventedList):
+                yield from item._iter_indices(root=root + (i,))
