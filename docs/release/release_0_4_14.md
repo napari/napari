@@ -19,7 +19,7 @@ Complete list of changes below:
 
 ## Highlights
 - Enable shapes layer (right click) > convert to labels (#3978)
-- out-of-slice rendering for Vectors (#2902)
+- Out-of-slice rendering for Vectors (#2902)
 - Hide points individually (#3625)
 
 ## New Features
