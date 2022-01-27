@@ -77,12 +77,18 @@ class LayerGroup(Group[Layer], Layer):
 
     def insert(self, index: int, value: Layer):
         """Insert ``value`` before index."""
-        # temporarily disabled while we work on selection bug and
+        # temporarily disabled while we work on nested selection bug and
         # group vispy nodes.
         # once removed, uncomment "add group" button in qt_viewer_buttons
         if isinstance(value, (LayerGroup, list)):
-            warnings.warn("The nesting is a lie! (not quite ready)")
-            return
+            import os
+
+            if not os.getenv("ALLOW_NESTED_LAYERS"):
+                warnings.warn(
+                    "Nested layergroups not quite ready. "
+                    "Enabled with env var ALLOW_NESTED_LAYERS=1."
+                )
+                return
 
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
