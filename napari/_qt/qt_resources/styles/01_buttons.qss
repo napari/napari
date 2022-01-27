@@ -66,6 +66,9 @@ QtViewerPushButton[mode="grid_view_button"]:checked {
 QtViewerPushButton[mode="grid_view_button"] {
   image: url(":/themes/{{ name }}/grid.svg");
 }
+QtViewerPushButton[mode="new_group"] {
+  image: url(":/themes/{{ name }}/folder.svg");
+}
 
 QtModeRadioButton {
   min-height : 28px;
