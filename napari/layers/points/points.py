@@ -437,7 +437,7 @@ class Points(Layer):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            self._n_dimensional = n_dimensional
+            self._out_of_slice_display = n_dimensional
         else:
             self._out_of_slice_display = out_of_slice_display
 
