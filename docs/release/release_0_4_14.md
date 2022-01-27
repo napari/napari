@@ -31,7 +31,7 @@ Complete list of changes below:
 - Change base vector slice thickness to half a unit (#4001)
 
 ## Bug Fixes
-- fix about on python 3.10 (#3972)
+- Fix about on python 3.10 (#3972)
 - Revert changes to scikit-image test API (#3979)
 - Fix missing builtins in bundle (#3982)
 - don't use texture_format auto if float textures not available on machine (#3990)
