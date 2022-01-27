@@ -259,11 +259,10 @@ def test_from_layer():
     }
     features = pd.DataFrame(
         {
-            'class': ['A', 'B', 'C'],
-            'confidence': [1, 0.5, 0],
+            'class': np.array(['A', 'B', 'C']),
+            'confidence': np.array([1, 0.5, 0]),
         }
     )
-
     text_manager = TextManager._from_layer(
         text=text,
         features=features,
