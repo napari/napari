@@ -2,24 +2,22 @@ from __future__ import annotations
 
 import itertools
 import warnings
-from collections import namedtuple
-from typing import Iterable, List, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Optional
 
 import numpy as np
 
-from ...utils.context import create_context
-from ...utils.context._layerlist_context import LayerListContextKeys
+from ...components.layerlist import Extent, _LayerListMixin
 from ...utils.naming import inc_name_count
 from ...utils.translations import trans
 from ...utils.tree import Group
 from ..base import Layer
-from ..image.image import _ImageBase
 from ..utils.layer_utils import combine_extents
 
-Extent = namedtuple('Extent', 'data world step')
+if TYPE_CHECKING:
+    from npe2.manifest.io import WriterContribution
 
 
-class LayerGroup(Group[Layer], Layer):
+class LayerGroup(Group[Layer], Layer, _LayerListMixin):
     def __init__(
         self, children: Iterable[Layer] = (), name: str = 'LayerGroup'
     ) -> None:
@@ -27,11 +25,6 @@ class LayerGroup(Group[Layer], Layer):
         Layer.__init__(self, None, 2, name=name)
         self.refresh(None)  # TODO: why...
         self.events.connect(self._handle_child_events)
-        self._ctx = create_context(self)
-        if self._ctx is not None:  # happens during Viewer type creation
-            self._ctx_keys = LayerListContextKeys(self._ctx)
-
-            self.selection.events.changed.connect(self._ctx_keys.update)
 
     def add_group(self, index=-1):
         lg = LayerGroup()
@@ -255,102 +248,33 @@ class LayerGroup(Group[Layer], Layer):
     def data(self):
         return None
 
-    def save(self):
-        raise NotImplementedError()
-
     def _update_draw(self, *a, **k):
         return
 
-    # TODO .... need to recheck stuff below here.
+    def save(
+        self,
+        path: str,
+        *,
+        selected: bool = False,
+        plugin: Optional[str] = None,
+        _writer: Optional[WriterContribution] = None,
+    ) -> List[str]:
 
-    @property
-    def _ranges(self) -> List[Tuple[float, float, float]]:
-        """Get ranges for Dims.range in world coordinates.
+        from ...plugins.io import save_layers
 
-        This shares some code in common with the `extent` property, but
-        determines Dims.range settings for each dimension such that each
-        range is aligned to pixel centers at the finest scale.
-        """
-        if len(self) == 0:
-            return [(0, 1, 1)] * self.ndim
-        # Determine minimum step size across all layers
-        layer_extent_list = [layer.extent for layer in self]
-        scales = [extent.step for extent in layer_extent_list]
-        min_steps = self._step_size_from_scales(scales)
-
-        # Pixel-based layers need to be offset by 0.5 * min_steps to align
-        # Dims.range with pixel centers in world coordinates
-        pixel_offsets = [
-            0.5 * min_steps
-            if isinstance(layer, _ImageBase)
-            else [0] * len(min_steps)
-            for layer in self
-        ]
-
-        # Non-pixel layers need an offset of the range stop by min_steps since the upper
-        # limit of Dims.range is non-inclusive.
-        point_offsets = [
-            [0] * len(min_steps)
-            if isinstance(layer, _ImageBase)
-            else min_steps
-            for layer in self
-        ]
-
-        # Determine world coordinate extents similarly to
-        # `_get_extent_world`, but including offsets calculated above.
-        extrema = [extent.world for extent in layer_extent_list]
-        mins = [
-            e[0] + o1[: len(e[0])] for e, o1 in zip(extrema, pixel_offsets)
-        ]
-        maxs = [
-            e[1] + o1[: len(e[0])] + o2[: len(e[0])]
-            for e, o1, o2 in zip(extrema, pixel_offsets, point_offsets)
-        ]
-        min_v, max_v = self._get_min_and_max(mins, maxs)
-
-        # form range tuples, switching back to original dimension order
-        return list(zip(min_v, max_v, min_steps))
-
-    def _step_size_from_scales(self, scales):
-        # Reverse order so last axes of scale with different ndim are aligned
-        scales = [scale[::-1] for scale in scales]
-        full_scales = list(
-            np.array(list(itertools.zip_longest(*scales, fillvalue=np.nan)))
+        layers = (
+            list(self.selection)
+            if selected
+            else list(self.traverse(leaves_only=True))
         )
-        # restore original order
-        return np.nanmin(full_scales, axis=1)[::-1]
 
-    def _get_min_and_max(self, mins_list, maxes_list):
+        if selected:
+            msg = trans._("No layers selected", deferred=True)
+        else:
+            msg = trans._("No layers to save", deferred=True)
 
-        # Reverse dimensions since it is the last dimensions that are
-        # displayed.
-        mins_list = [mins[::-1] for mins in mins_list]
-        maxes_list = [maxes[::-1] for maxes in maxes_list]
+        if not layers:
+            warnings.warn(msg)
+            return []
 
-        with warnings.catch_warnings():
-            # Taking the nanmin and nanmax of an axis of all nan
-            # raises a warning and returns nan for that axis
-            # as we have do an explicit nan_to_num below this
-            # behaviour is acceptable and we can filter the
-            # warning
-            warnings.filterwarnings(
-                'ignore',
-                message=str(
-                    trans._('All-NaN axis encountered', deferred=True)
-                ),
-            )
-            min_v = np.nanmin(
-                list(itertools.zip_longest(*mins_list, fillvalue=np.nan)),
-                axis=1,
-            )
-            max_v = np.nanmax(
-                list(itertools.zip_longest(*maxes_list, fillvalue=np.nan)),
-                axis=1,
-            )
-
-        # 512 element default extent as documented in `_get_extent_world`
-        min_v = np.nan_to_num(min_v, nan=-0.5)
-        max_v = np.nan_to_num(max_v, nan=511.5)
-
-        # switch back to original order
-        return min_v[::-1], max_v[::-1]
+        return save_layers(path, layers, plugin=plugin, _writer=_writer)

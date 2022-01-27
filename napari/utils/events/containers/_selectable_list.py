@@ -1,5 +1,7 @@
 from typing import TypeVar
 
+from async_timeout import warnings
+
 from ...translations import trans
 from ._evented_list import EventedList
 from ._nested_list import NestableEventedList
@@ -86,6 +88,37 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
             do_add = len(self) > new[0]
         if do_add:
             self.selection.add(self[new])
+
+    def move_selected(self, index: int, insert: int):
+        """Reorder list by moving the item at index and inserting it
+        at the insert index. If additional items are selected these will
+        get inserted at the insert index too. This allows for rearranging
+        the list based on dragging and dropping a selection of items, where
+        index is the index of the primary item being dragged, and insert is
+        the index of the drop location, and the selection indicates if
+        multiple items are being dragged. If the moved layer is not selected
+        select it.
+
+        Parameters
+        ----------
+        index : int
+            Index of primary item to be moved
+        insert : int
+            Index that item(s) will be inserted at
+        """
+        warnings.warn(
+            "move_selected is deprecated.  Please use layers.move_multiple "
+            "with layers.selection instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        if self[index] not in self.selection:
+            self.selection.select_only(self[index])
+            moving = [index]
+        else:
+            moving = [i for i, x in enumerate(self) if x in self.selection]
+        offset = insert >= index
+        self.move_multiple(moving, insert + offset)
 
     def select_next(self, step=1, shift=False):
         """Selects next item from list."""

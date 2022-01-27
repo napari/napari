@@ -15,6 +15,7 @@ from IPython.core.history import HistoryManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
+from napari.layers.layergroup import LayerGroup
 from napari.plugins._builtins import (
     napari_write_image,
     napari_write_labels,
@@ -225,8 +226,8 @@ def layer(request):
         return None
 
 
-@pytest.fixture()
-def layers():
+@pytest.fixture(params=[LayerList, LayerGroup])
+def layers(request):
     """Fixture that supplies a layers list for testing.
 
     Returns
@@ -242,7 +243,7 @@ def layers():
         Shapes(np.random.rand(10, 2, 2)),
         Vectors(np.random.rand(10, 2, 2)),
     ]
-    return LayerList(list_of_layers)
+    return request.param(list_of_layers)
 
 
 @pytest.fixture

@@ -1,3 +1,4 @@
+import os
 import warnings
 from functools import wraps
 from typing import TYPE_CHECKING
@@ -75,23 +76,23 @@ class QtLayerButtons(QFrame):
             lambda: self.viewer._new_labels(),
         )
 
-        # # Uncomment this once `LayerGroup.insert` allows nesting again.
-        # self.newGroupButton = QtViewerPushButton(
-        #     'new_group',
-        #     trans._('New layer group'),
-        #     self.viewer.layers.add_group,
-        # )
-
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
-        # layout.addWidget(self.newGroupButton)
-
         layout.addStretch(0)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
+
+        # This can be always added after layergroups are fully capable
+        if os.getenv("ALLOW_LAYERGROUPS"):
+            self.newGroupButton = QtViewerPushButton(
+                'new_group',
+                trans._('New layer group'),
+                self.viewer.layers.add_group,
+            )
+            layout.insertWidget(3, self.newGroupButton)
 
 
 class QtViewerButtons(QFrame):

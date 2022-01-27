@@ -258,7 +258,7 @@ class NestableEventedList(EventedList[_T]):
         return dest_index
 
     def _move_plan(
-        self, sources: Iterable[NestedIndex], dest_index: NestedIndex
+        self, sources: Iterable[MaybeNestedIndex], dest_index: NestedIndex
     ) -> Generator[tuple[NestedIndex, NestedIndex], None, None]:
         """Prepared indices for a complicated nested multi-move.
 
@@ -311,6 +311,8 @@ class NestableEventedList(EventedList[_T]):
 
         # we iterate indices from the end first, so pop() always works
         for idx in sorted(sources, reverse=True):
+            if isinstance(idx, (int, slice)):
+                idx = (idx,)
             if idx == ():
                 raise IndexError(
                     trans._(
