@@ -249,8 +249,13 @@ class LayerGroup(Group[Layer], Layer):
             # layer is not finished initializing
             return
         leaves = list(self.traverse(leaves_only=True))
-        if leaves:
-            thumb = np.clip(np.sum(leaf.thumbnail for leaf in leaves), 0, 255)
+        if len(leaves) > 1:
+            # TODO: this doesn't take blending into account...
+            thumb = np.clip(
+                np.sum([leaf.thumbnail for leaf in leaves], axis=0), 0, 255
+            )
+        elif leaves:
+            thumb = leaves[0].thumbnail
         else:
             thumb = np.zeros(self._thumbnail_shape)
             thumb[..., 3] = 255

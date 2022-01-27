@@ -40,7 +40,10 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
     ):
         Node.__init__(self, name=name)
         SelectableNestableEventedList.__init__(
-            self, data=children, basetype=basetype
+            self,
+            data=children,
+            basetype=basetype,
+            lookup={str: lambda e: e.name},
         )
 
     def __getitem__(self, key) -> Union[NodeType, Group[NodeType]]:
