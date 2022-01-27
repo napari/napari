@@ -34,7 +34,7 @@ Complete list of changes below:
 - Fix about on python 3.10 (#3972)
 - Revert changes to scikit-image test API (#3979)
 - Fix missing builtins in bundle (#3982)
-- don't use texture_format auto if float textures not available on machine (#3990)
+- Don't use texture_format auto if float textures not available on machine (#3990)
 - Fix error when setting ndisplay=3 with empty shapes layer in viewer (#4003)
 - Fix bug preventing close button on dock widgets (#4006)
 
