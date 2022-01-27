@@ -225,7 +225,7 @@ def test_nested_custom_lookup(tree: Group):
     g1 = tree[1]
     assert g1.name == 'g1'  # index with integer as usual
     assert tree.index("g1") == 1
-    assert tree['c1'] == g1  # index with string also works
+    assert tree['g1'] == g1  # index with string also works
 
     # second level
     g1_2 = g1[2]
