@@ -224,13 +224,8 @@ class TypedMutableSequence(MutableSequence[_T]):
             stop += len(self)
 
         convert = self._lookup.get(type(value), _noop)
-        special_lookup = type(value) in self._lookup
-        # A "special lookup" means that they type of the value being searched
-        # is in the `self._lookups` dict.  The most common internal use of this
-        # pattern is `layers['name']`.  So we do a "deep" traversal in that
-        # case, which will let the nestable variant search throughout.
-        # we may or may not want that behavior?
-        for i in self._iter_indices(start, stop, deep=special_lookup):
+
+        for i in self._iter_indices(start, stop):
             v = convert(self[i])
             if v is value or v == value:
                 return i
@@ -243,7 +238,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         )
 
-    def _iter_indices(self, start=0, stop=None, deep=False):
+    def _iter_indices(self, start=0, stop=None):
         """Iter indices from start to stop.
 
         While this is trivial for this basic sequence type, this method lets

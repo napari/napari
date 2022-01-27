@@ -10,6 +10,7 @@ from typing import (
     DefaultDict,
     Generator,
     Iterable,
+    MutableSequence,
     NewType,
     Tuple,
     TypeVar,
@@ -184,7 +185,9 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(key, tuple):
             item: NestableEventedList[_T] = self
             for idx in key:
-                item = item[idx]  # type: ignore
+                if not isinstance(item, MutableSequence):
+                    raise IndexError(f'index out of range: {key}')
+                item = item[idx]
             return item
         return super().__getitem__(key)
 
@@ -250,9 +253,8 @@ class NestableEventedList(EventedList[_T]):
         """Make sure dest_index is a positive index inside parent_index."""
         destination_group = self[parent_index]
         # not handling slice indexes
-        if isinstance(dest_index, int):
-            if dest_index < 0:
-                dest_index += len(destination_group) + 1
+        if isinstance(dest_index, int) and dest_index < 0:
+            dest_index += len(destination_group) + 1
         return dest_index
 
     def _move_plan(
@@ -416,12 +418,11 @@ class NestableEventedList(EventedList[_T]):
                 )
             )
 
-        if src_par_i == dest_par_i:
-            if isinstance(dest_i, int):
-                if dest_i > src_i:
-                    dest_i -= 1
-                if src_i == dest_i:
-                    return False
+        if src_par_i == dest_par_i and isinstance(dest_i, int):
+            if dest_i > src_i:
+                dest_i -= 1
+            if src_i == dest_i:
+                return False
 
         self.events.moving(index=src_index, new_index=dest_index)
         with self.events.blocker_all():
@@ -449,7 +450,7 @@ class NestableEventedList(EventedList[_T]):
                 )
         return e
 
-    def _iter_indices(self, start=0, stop=None, root=(), deep=False):
+    def _iter_indices(self, start=0, stop=None, root=()):
         """Iter indices from start to stop.
 
         Depth first traversal of the tree
@@ -459,3 +460,15 @@ class NestableEventedList(EventedList[_T]):
             item = self[i]
             if isinstance(item, NestableEventedList):
                 yield from item._iter_indices(root=root + (i,))
+
+    def has_index(self, index: Union[int, Tuple[int, ...]]) -> bool:
+        """Return true if `index` is valid for this nestable list."""
+        if isinstance(index, int):
+            return -len(self) <= index < len(self)
+        if isinstance(index, tuple):
+            try:
+                self[index]
+                return True
+            except IndexError:
+                return False
+        return False

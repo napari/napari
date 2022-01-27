@@ -306,8 +306,8 @@ def test_nested_events(meth, group_index):
 
     method_name, args, expected_events = meth
     method = getattr(ne_list[group_index], method_name)
-    if method_name == 'index' and group_index != (1, 1):
-        # the expected value only occurs in index (1, 1)
+    if method_name == 'index' and group_index == (1, 1, 1):
+        # (110) exists in all but the deepest nested item
         with pytest.raises(ValueError):
             method(*args)
     else:
