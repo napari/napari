@@ -42,7 +42,7 @@ void main (void) {
 """
 
 geom = """
-#version 450
+#version 150
 layout (lines) in;
 layout (triangle_strip, max_vertices=4) out;
 
