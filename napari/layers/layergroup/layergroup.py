@@ -83,10 +83,10 @@ class LayerGroup(Group[Layer], Layer):
         if isinstance(value, (LayerGroup, list)):
             import os
 
-            if not os.getenv("ALLOW_NESTED_LAYERS"):
+            if not os.getenv("ALLOW_LAYERGROUPS"):
                 warnings.warn(
                     "Nested layergroups not quite ready. "
-                    "Enabled with env var ALLOW_NESTED_LAYERS=1."
+                    "Enabled with env var ALLOW_LAYERGROUPS=1."
                 )
                 return
 
