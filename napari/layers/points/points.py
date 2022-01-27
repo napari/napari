@@ -674,6 +674,7 @@ class Points(Layer):
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
         self._out_of_slice_display = bool(out_of_slice_display)
         self.events.out_of_slice_display()
+        self.events.n_dimensional()
         self.refresh()
 
     @property
@@ -699,7 +700,6 @@ class Points(Layer):
             stacklevel=2,
         )
         self.out_of_slice_display = value
-        self.events.n_dimensional()
 
     @property
     def symbol(self) -> str:
