@@ -7,6 +7,8 @@ from typing import Iterable, List, Tuple
 
 import numpy as np
 
+from ...utils.context import create_context
+from ...utils.context._layerlist_context import LayerListContextKeys
 from ...utils.naming import inc_name_count
 from ...utils.translations import trans
 from ...utils.tree import Group
@@ -25,6 +27,11 @@ class LayerGroup(Group[Layer], Layer):
         Layer.__init__(self, None, 2, name=name)
         self.refresh(None)  # TODO: why...
         self.events.connect(self._handle_child_events)
+        self._ctx = create_context(self)
+        if self._ctx is not None:  # happens during Viewer type creation
+            self._ctx_keys = LayerListContextKeys(self._ctx)
+
+            self.selection.events.changed.connect(self._ctx_keys.update)
 
     def add_group(self, index=-1):
         lg = LayerGroup()
@@ -124,46 +131,23 @@ class LayerGroup(Group[Layer], Layer):
     def _get_extent_world(self, layer_extent_list):
         """Extent of layers in world coordinates.
 
-        Default to 2D with (0, 512) min/ max values if no data is present.
+        Default to 2D with (-0.5, 511.5) min/ max values if no data is present.
+        Corresponds to pixels centered at [0, ..., 511].
 
         Returns
         -------
         extent_world : array, shape (2, D)
         """
         if len(self) == 0:
-            min_v = [np.nan] * self.ndim
-            max_v = [np.nan] * self.ndim
+            min_v = np.asarray([-0.5] * self.ndim)
+            max_v = np.asarray([511.5] * self.ndim)
         else:
             extrema = [extent.world for extent in layer_extent_list]
-            mins = [e[0][::-1] for e in extrema]
-            maxs = [e[1][::-1] for e in extrema]
+            mins = [e[0] for e in extrema]
+            maxs = [e[1] for e in extrema]
+            min_v, max_v = self._get_min_and_max(mins, maxs)
 
-            with warnings.catch_warnings():
-                # Taking the nanmin and nanmax of an axis of all nan
-                # raises a warning and returns nan for that axis
-                # as we have do an explict nan_to_num below this
-                # behaviour is acceptable and we can filter the
-                # warning
-                warnings.filterwarnings(
-                    'ignore',
-                    message=str(
-                        trans._('All-NaN axis encountered', deferred=True)
-                    ),
-                )
-                min_v = np.nanmin(
-                    list(itertools.zip_longest(*mins, fillvalue=np.nan)),
-                    axis=1,
-                )
-                max_v = np.nanmax(
-                    list(itertools.zip_longest(*maxs, fillvalue=np.nan)),
-                    axis=1,
-                )
-
-        min_vals = np.nan_to_num(min_v[::-1])
-        max_vals = np.copy(max_v[::-1])
-        max_vals[np.isnan(max_vals)] = 511
-
-        return np.vstack([min_vals, max_vals])
+        return np.vstack([min_v, max_v])
 
     @property
     def _step_size(self) -> np.ndarray:
@@ -200,12 +184,12 @@ class LayerGroup(Group[Layer], Layer):
             step=self._get_step_size(extent_list),
         )
 
+    @property
+    def ndim(self) -> int:
+        return self._get_ndim()
+
     def _get_ndim(self):
-        try:
-            self._ndim = max(c._get_ndim() for c in self)
-        except ValueError:
-            self._ndim = 2
-        return self._ndim
+        return max((c._get_ndim() for c in self), default=2)
 
     def _get_state(self):
         """LayerGroup state as a list of state dictionaries.

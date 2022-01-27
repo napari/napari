@@ -49,9 +49,7 @@ class Node:
 
     def index_in_parent(self) -> Optional[int]:
         """Return index of this Node in its parent, or None if no parent."""
-        if self.parent is not None:
-            return self.parent.index(self)
-        return None
+        return self.parent.index(self) if self.parent is not None else None
 
     def index_from_root(self) -> Tuple[int, ...]:
         """Return index of this Node relative to root.

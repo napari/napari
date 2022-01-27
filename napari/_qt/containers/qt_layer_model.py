@@ -2,15 +2,16 @@ from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
 from ...layers import Layer
+from ._base_item_model import ItemRole, ThumbnailRole
 from .qt_list_model import QtListModel
-
-ThumbnailRole = Qt.UserRole + 2
 
 
 class QtLayerListModel(QtListModel[Layer]):
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``."""
         layer = self.getItem(index)
+        if role == ItemRole:  # custom role: return the layer
+            return layer
         if role == Qt.DisplayRole:  # used for item text
             return layer.name
         if role == Qt.TextAlignmentRole:  # alignment of the text
@@ -59,7 +60,7 @@ class QtLayerListModel(QtListModel[Layer]):
             'thumbnail': ThumbnailRole,
             'visible': Qt.CheckStateRole,
             'name': Qt.DisplayRole,
-        }.get(event.type, None)
+        }.get(event.type)
         roles = [role] if role is not None else []
         row = self.index(event.index)
         self.dataChanged.emit(row, row, roles)

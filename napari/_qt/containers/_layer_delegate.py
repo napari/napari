@@ -46,8 +46,7 @@ from ...layers._layer_actions import _LAYER_ACTIONS
 from ...utils.context import get_context
 from ..qt_resources import QColoredSVGIcon
 from ..widgets.qt_action_context_menu import QtActionContextMenu
-from ._base_item_model import ItemRole
-from .qt_layer_model import ThumbnailRole
+from ._base_item_model import ItemRole, ThumbnailRole
 
 if TYPE_CHECKING:
     from qtpy import QtCore
@@ -83,13 +82,13 @@ class LayerDelegate(QStyledItemDelegate):
         """Paint the item in the model at `index`."""
         # update the icon based on layer type
 
-        self.get_layer_icon(option, index)
+        self._get_layer_icon(option, index)
         # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
         # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
 
-    def get_layer_icon(self, option, index):
+    def _get_layer_icon(self, option, index):
         """Add the appropriate QIcon to the item based on the layer type."""
         layer = index.data(ItemRole)
         if hasattr(layer, 'is_group') and layer.is_group():  # for layer trees
