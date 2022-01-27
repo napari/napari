@@ -25,6 +25,7 @@ from .. import layers
 from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
+from ..layers.layergroup import LayerGroup
 from ..layers.utils.stack_utils import split_channels
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
@@ -43,7 +44,6 @@ from .camera import Camera
 from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
-from .layerlist import LayerList
 from .overlays import Overlays
 from .scale_bar import ScaleBar
 from .text_overlay import TextOverlay
@@ -96,7 +96,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ----------
     window : Window
         Parent window.
-    layers : LayerList
+    layers : LayerGroup
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
@@ -109,8 +109,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
     dims: Dims = Field(default_factory=Dims, allow_mutation=False)
     grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
-    layers: LayerList = Field(
-        default_factory=LayerList, allow_mutation=False
+    layers: LayerGroup = Field(
+        default_factory=LayerGroup, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
     scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
     text_overlay: TextOverlay = Field(

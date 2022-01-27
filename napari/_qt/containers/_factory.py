@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Union
 
 from ...components.layerlist import LayerList
+from ...layers.layergroup import LayerGroup
 from ...utils.events import SelectableEventedList
 from ...utils.translations import trans
 from ...utils.tree import Group
@@ -62,10 +63,17 @@ def create_model(
     Union[QtListModel, QtNodeTreeModel]
         A model instance appropriate for `obj`.
     """
-    from . import QtLayerListModel, QtListModel, QtNodeTreeModel
+    from . import (
+        QtLayerListModel,
+        QtLayerTreeModel,
+        QtListModel,
+        QtNodeTreeModel,
+    )
 
     if isinstance(obj, LayerList):
         return QtLayerListModel(obj, parent=parent)
+    if isinstance(obj, LayerGroup):
+        return QtLayerTreeModel(obj, parent=parent)
     if isinstance(obj, Group):
         return QtNodeTreeModel(obj, parent=parent)
     if isinstance(obj, SelectableEventedList):

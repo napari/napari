@@ -14,7 +14,6 @@ from ..._vendor.cpython.functools import cached_property
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
-from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
@@ -25,6 +24,7 @@ from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
+from ...utils.tree import Node
 from .._source import current_source
 from ..utils.interactivity_utils import drag_data_to_projected_distance
 from ..utils.layer_utils import (
@@ -63,7 +63,7 @@ def no_op(layer: Layer, event: Event) -> None:
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
-class Layer(KeymapProvider, MousemapProvider, ABC):
+class Layer(KeymapProvider, MousemapProvider, Node, ABC):
     """Base layer class.
 
     Parameters
@@ -291,44 +291,40 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._name = ''
         self.experimental_clipping_planes = experimental_clipping_planes
 
-        self.events = EmitterGroup(
-            source=self,
-            refresh=Event,
-            set_data=Event,
-            blending=Event,
-            opacity=Event,
-            visible=Event,
-            scale=Event,
-            translate=Event,
-            rotate=Event,
-            shear=Event,
-            affine=Event,
-            data=Event,
-            name=Event,
-            thumbnail=Event,
-            status=Event,
-            help=Event,
-            interactive=Event,
-            cursor=Event,
-            cursor_size=Event,
-            editable=Event,
-            loaded=Event,
-            _ndisplay=Event,
-            select=WarningEmitter(
-                trans._(
-                    "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
-                    deferred=True,
-                ),
-                type='select',
-            ),
-            deselect=WarningEmitter(
-                trans._(
-                    "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
-                    deferred=True,
-                ),
-                type='deselect',
-            ),
+        _events = dict.fromkeys(
+            (
+                'refresh',
+                'set_data',
+                'blending',
+                'opacity',
+                'visible',
+                'scale',
+                'translate',
+                'rotate',
+                'shear',
+                'affine',
+                'data',
+                'name',
+                'thumbnail',
+                'status',
+                'help',
+                'interactive',
+                'cursor',
+                'cursor_size',
+                'editable',
+                'loaded',
+                '_ndisplay',
+            )
         )
+        # For inheritance: If the mro already provides an EmitterGroup, add...
+        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
+            self.events.add(**_events)
+        else:
+            # otherwise create a new one
+            self.events = EmitterGroup(
+                source=self, auto_connect=False, **_events
+            )
+
         self.name = name
 
     def __str__(self):
@@ -397,7 +393,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return f'{cls.__name__}'
 
     @property
-    def name(self):
+    def name(self) -> str:
         """str: Unique name of the layer."""
         return self._name
 

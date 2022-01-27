@@ -63,11 +63,14 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         """Return true if ``other`` appears anywhere under this group."""
         return any(item is other for item in self.traverse())
 
-    def traverse(self, leaves_only=False) -> Generator[NodeType, None, None]:
+    def traverse(
+        self, leaves_only=False, with_ancestors=False
+    ) -> Generator[NodeType, None, None]:
         """Recursive all nodes and leaves of the Group tree."""
+        obj = self.root() if with_ancestors else self
         if not leaves_only:
-            yield self
-        for child in self:
+            yield obj
+        for child in obj:
             yield from child.traverse(leaves_only)
 
     def _render(self) -> List[str]:

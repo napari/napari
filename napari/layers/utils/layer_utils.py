@@ -949,3 +949,28 @@ def _features_to_properties(features: pd.DataFrame) -> Dict[str, np.ndarray]:
     :meth:`_FeatureTable.properties`
     """
     return {name: series.to_numpy() for name, series in features.items()}
+
+
+def combine_extents(extents):
+    """Combine extents into a single extent that bounds all individual ones.
+    Each extent can be cast to an ndim x 2 (min, max) array, but ndim
+    could be different for each extent because of broadcasting. In that case,
+    we need to *prepend* the row (0, 0) to each array so that they match in
+    size.
+    """
+    if len(extents) == 0:
+        return []
+    extent_arrays = [np.array(ex) for ex in extents]
+    ndims = [arr.shape[0] for arr in extent_arrays]
+    required_ndims = max(ndims)
+    dims_to_prepend = [required_ndims - d for d in ndims]
+    padded_arrays = [
+        np.concatenate((np.zeros((d, 2)), ex), axis=0)
+        for d, ex in zip(dims_to_prepend, extent_arrays)
+    ]
+    big_array = np.stack(padded_arrays, axis=0)
+    result = np.stack(
+        [np.min(big_array, axis=0)[:, 0], np.max(big_array, axis=0)[:, 1]],
+        axis=1,
+    )
+    return list(map(tuple, result))

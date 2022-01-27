@@ -41,7 +41,7 @@ from ..utils.key_bindings import KeymapHandler
 from ..utils.misc import in_ipython
 from ..utils.theme import get_theme
 from ..utils.translations import trans
-from .containers import QtLayerList
+from .containers import QtLayerTreeView
 from .dialogs.qt_reader_dialog import (
     QtReaderDialog,
     get_reader_choice_for_file,
@@ -203,7 +203,7 @@ class QtViewer(QSplitter):
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
         self.controls = QtLayerControlsContainer(self.viewer)
-        self.layers = QtLayerList(self.viewer.layers)
+        self.layers = QtLayerTreeView(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._key_map_handler = KeymapHandler()
