@@ -6,7 +6,7 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
-This is a small release containing some new features and fixing a few issues that have come up since `0.4.13` was released.
+This is a small release containing some new features and fixing a few issues that have come up since 0.4.13 was released.
 
 This release adds the ability to convert shapes layers to labels layers in a context menu available on right clicking the layer (#3978). Our vectors layer has gained the 
 ability to render vectors in 2D across multiple slices (#2902) and points in the points
