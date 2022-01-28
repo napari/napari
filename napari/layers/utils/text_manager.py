@@ -101,6 +101,9 @@ class TextManager(EventedModel):
                 else:
                     kwargs['string'] = text
         super().__init__(**kwargs)
+        # Update strings on initialization to support deprecated use of
+        # add and remove immediately.
+        self.string._update(self._features)
 
     @property
     def values(self):
