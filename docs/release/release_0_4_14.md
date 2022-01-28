@@ -50,6 +50,7 @@ Complete list of changes below:
 
 ## 5 authors added to this release (alphabetical)
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
+- [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
