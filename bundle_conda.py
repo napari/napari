@@ -219,7 +219,9 @@ def _constructor(version=_version(), extra_specs=None):
     # (I think it contains an ending newline or something like that, copypaste artifact?)
     pfx_password = os.environ.get("CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD")
     if pfx_password:
-        os.environ["CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD"] = pfx_password.strip()
+        os.environ[
+            "CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD"
+        ] = pfx_password.strip()
 
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
