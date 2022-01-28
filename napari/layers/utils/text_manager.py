@@ -78,7 +78,9 @@ class TextManager(EventedModel):
     # Only needed for deprecated behavior.
     _features: pd.DataFrame
 
-    def __init__(self, features=None, properties=None, n_text=None, **kwargs):
+    def __init__(
+        self, text=None, properties=None, n_text=None, features=None, **kwargs
+    ):
         if n_text is not None:
             _warn_about_deprecated_n_text_parameter()
         if properties is not None:
@@ -91,9 +93,8 @@ class TextManager(EventedModel):
             values = kwargs.pop('values')
             if 'string' not in kwargs:
                 kwargs['string'] = values
-        if 'text' in kwargs:
+        if text is not None:
             _warn_about_deprecated_text_parameter()
-            text = kwargs.pop('text')
             if 'string' not in kwargs:
                 if isinstance(text, str) and text in self._features:
                     kwargs['string'] = DirectStringEncoding(feature=text)
