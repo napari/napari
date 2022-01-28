@@ -138,14 +138,18 @@ def test_validate_from_format_string():
 def test_validate_from_non_format_string():
     argument = 'test'
     expected = ConstantStringEncoding(constant=argument)
+
     actual = validate_string_encoding(argument)
+
     assert actual == expected
 
 
 def test_validate_from_sequence():
     argument = ['a', 'b', 'c']
     expected = ManualStringEncoding(array=argument)
+
     actual = validate_string_encoding(argument)
+
     assert actual == expected
 
 
@@ -153,7 +157,9 @@ def test_validate_from_constant_dict():
     constant = 'test'
     argument = {'constant': constant}
     expected = ConstantStringEncoding(constant=constant)
+
     actual = validate_string_encoding(argument)
+
     assert actual == expected
 
 
@@ -162,7 +168,9 @@ def test_validate_from_manual_dict():
     default = 'd'
     argument = {'array': array, 'default': default}
     expected = ManualStringEncoding(array=array, default=default)
+
     actual = validate_string_encoding(argument)
+
     assert actual == expected
 
 
@@ -170,7 +178,9 @@ def test_validate_from_direct_dict():
     feature = 'class'
     argument = {'feature': feature}
     expected = DirectStringEncoding(feature=feature)
+
     actual = validate_string_encoding(argument)
+
     assert actual == expected
 
 
@@ -178,5 +188,7 @@ def test_validate_from_format_dict():
     format_string = '{class}: {score:.2f}'
     argument = {'format_string': format_string}
     expected = FormatStringEncoding(format_string=format_string)
+
     actual = validate_string_encoding(argument)
+
     assert actual == expected
