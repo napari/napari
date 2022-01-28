@@ -107,13 +107,16 @@ class StyleEncoding(Protocol[StyleArray]):
         """Converts the encoding to a dict that should be convertible to JSON."""
 
 
-class StyleEncodingModel(EventedModel, Generic[StyleValue, StyleArray]):
+class _StyleEncodingModel(EventedModel, Generic[StyleValue, StyleArray]):
     class Config:
         # Ensure different types of encodings can be properly resolved.
         extra = 'forbid'
 
+    def _json_encode(self) -> dict:
+        return self.dict()
 
-class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
+
+class _ConstantStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
     """Encodes a constant style value.
 
     Attributes
@@ -148,11 +151,8 @@ class ConstantStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     def _clear(self) -> None:
         self._cached = _empty_array_like(self.constant)
 
-    def _json_encode(self) -> dict:
-        return self.dict()
 
-
-class ManualStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
+class _ManualStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
     """Encodes style values manually.
 
     The style values are encoded manually in the array attribute, so that
@@ -196,11 +196,8 @@ class ManualStyleEncoding(StyleEncodingModel[StyleValue, StyleArray]):
     def _clear(self) -> None:
         self.array = _empty_array_like(self.default)
 
-    def _json_encode(self) -> dict:
-        return self.dict()
 
-
-class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray], ABC):
+class _DerivedStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray], ABC):
     """Encodes style values by deriving them from feature values.
 
     Attributes
@@ -252,9 +249,6 @@ class DerivedStyleEncoding(StyleEncodingModel[StyleValue, StyleArray], ABC):
 
     def _clear(self) -> None:
         self._cached = _empty_array_like(self.fallback)
-
-    def _json_encode(self) -> dict:
-        return self.dict()
 
 
 def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs) -> Any:

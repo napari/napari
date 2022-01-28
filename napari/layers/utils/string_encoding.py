@@ -9,11 +9,11 @@ from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 from .style_encoding import (
-    ConstantStyleEncoding,
-    DerivedStyleEncoding,
     EncodingType,
-    ManualStyleEncoding,
     StyleEncoding,
+    _ConstantStyleEncoding,
+    _DerivedStyleEncoding,
+    _ManualStyleEncoding,
     parse_kwargs_as_encoding,
 )
 
@@ -83,7 +83,7 @@ def validate_string_encoding(
 DEFAULT_STRING = ''
 
 
-class ConstantStringEncoding(ConstantStyleEncoding[StringValue, StringArray]):
+class ConstantStringEncoding(_ConstantStyleEncoding[StringValue, StringArray]):
     """Encodes color values from a single constant color.
 
     Attributes
@@ -98,7 +98,7 @@ class ConstantStringEncoding(ConstantStyleEncoding[StringValue, StringArray]):
     constant: StringValue
 
 
-class ManualStringEncoding(ManualStyleEncoding[StringValue, StringArray]):
+class ManualStringEncoding(_ManualStyleEncoding[StringValue, StringArray]):
     """Encodes string values manually in an array.
 
     Attributes
@@ -117,7 +117,7 @@ class ManualStringEncoding(ManualStyleEncoding[StringValue, StringArray]):
     default: StringValue = DEFAULT_STRING
 
 
-class DirectStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
+class DirectStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     """Encodes strings directly from a feature column.
 
     Attributes
@@ -139,7 +139,7 @@ class DirectStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
         return np.array(features[self.feature], dtype=str)
 
 
-class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
+class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     """Encodes string values by formatting feature values.
 
     Attributes
@@ -173,7 +173,7 @@ _STRING_ENCODINGS = (
     FormatStringEncoding,
     DirectStringEncoding,
     ConstantStringEncoding,
-    ManualStyleEncoding,
+    ManualStringEncoding,
 )
 
 
