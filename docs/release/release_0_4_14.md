@@ -45,7 +45,7 @@ Complete list of changes below:
 
 ## Build Tools and Docs
 - DOC: Misc doc syntax. (#3985)
-
+- Fix include_package_data inclusion in the "your first plugin" docs page (#4022)
 
 ## 5 authors added to this release (alphabetical)
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
