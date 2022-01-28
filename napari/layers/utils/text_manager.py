@@ -79,7 +79,7 @@ class TextManager(EventedModel):
     _features: pd.DataFrame
 
     def __init__(
-        self, text=None, properties=None, n_text=None, features=None, **kwargs
+        self, text=None, properties=None, n_text=None, _features=None, **kwargs
     ):
         if n_text is not None:
             _warn_about_deprecated_n_text_parameter()
@@ -87,7 +87,7 @@ class TextManager(EventedModel):
             _warn_about_deprecated_properties_parameter()
             self._features = _validate_features(properties, num_data=n_text)
         else:
-            self._features = _validate_features(features)
+            self._features = _validate_features(_features)
         if 'values' in kwargs:
             _warn_about_deprecated_values_field()
             values = kwargs.pop('values')
@@ -275,7 +275,7 @@ class TextManager(EventedModel):
                 kwargs = {'string': DirectStringEncoding(feature=text)}
             else:
                 kwargs = {'string': text}
-        kwargs['features'] = features
+        kwargs['_features'] = features
         return cls(**kwargs)
 
     def _update_from_layer(
