@@ -193,6 +193,8 @@ def test_text_with_format_string_missing_property_then_constant_empty_with_warni
     text = 'score: {score:.2f}'
     properties = {'confidence': np.array([0.5, 0.3, 1])}
 
+    # Both init and .values warn because when a derived encoding fails
+    # it returns a fallback, but does not update cached values.
     with pytest.warns(RuntimeWarning):
         text_manager = TextManager(
             text=text, n_text=n_text, properties=properties
