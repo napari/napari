@@ -1,6 +1,5 @@
+import warnings
 from typing import TypeVar
-
-from async_timeout import warnings
 
 from ...translations import trans
 from ._evented_list import EventedList
