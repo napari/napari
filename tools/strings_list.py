@@ -1741,6 +1741,17 @@ SKIP_WORDS = {
         'green',
         'red',
     ],
+    'napari/layers/utils/text.py': [
+        'center',
+        'color',
+        'cyan',
+        'rotation',
+        'size',
+        'text',
+        'translation',
+        'translucent',
+        'visible',
+    ],
     'napari/layers/utils/text_manager.py': [
         'TextManager',
         'blending',
