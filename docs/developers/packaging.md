@@ -18,10 +18,11 @@ is handled in the [`.github/workflows/make_release.yml`][2] workflow. Creation i
 handled with `make dist` (as specified in our [`Makefile`][3]) and submission is done using the
 [official PyPA GitHub Action][4]. This workflow will also create a GitHub Release.
 
-Once the Python package makes it to PyPI, it will be picked by the `conda-forge` bots, which will
-automatically submit a PR to the [`napari-feedstock`][1] repository. This is all automated by the
-`conda-forge` infrastructure, so we only need to check that the metadata in the recipe has been
-adjusted for the new release. Pay special attention to the runtime dependencies and version strings!
+Once the Python package makes it to PyPI, it will be picked by the `conda-forge` bots, which
+will automatically submit a PR to the [`napari-feedstock`][1] repository. This is all automated
+by the `conda-forge` infrastructure (see [previous examples][16]), so we only need to check that
+the metadata in the recipe has been adjusted for the new release. Pay special attention to the
+runtime dependencies and version strings!
 
 Once the conda-forge CI is passing and the PR is approved and merged, the final packages will be
 built on the default branch and uploaded to the `conda-forge` channel. Due to the staging steps and
@@ -37,7 +38,7 @@ To do it in a `conda-forge` compatible way, we actually _clone_ `napari-feedstoc
 source instructions so the code is retrieved from the repository branch directly. The version is
 also patched to match the `setuptools-scm` string. After [rerendering][8] the feedstock, we run
 `conda-build` in the same way `conda-forge` would do and upload the resulting tarballs to our
-Anaconda.org channel.
+[Anaconda.org channel][17].
 
 Additionally, the tarballs are also passed as artifacts to the next stage in the pipeline: building
 the `constructor` installers (more below).
@@ -296,3 +297,5 @@ a high-level list of the main changes introduced in the stack.
 [13]: https://github.com/conda-forge/conda-standalone-feedstock
 [14]: https://github.com/jaimergp-forge/conda-feedstock
 [15]: https://github.com/jaimergp-forge/menuinst-feedstock
+[16]: https://github.com/conda-forge/napari-feedstock/pulls?q=is%3Apr+sort%3Aupdated-desc+is%3Aclosed
+[17]: https://anaconda.org/napari

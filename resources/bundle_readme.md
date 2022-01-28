@@ -49,7 +49,7 @@ in that case.
 ## What is `_conda.exe`?
 
 This executable is a full `conda` installation, condensed in a single file. It allows us to handle
-the installation in a more robust way. It also provides way to restore destructive changes without
+the installation in a more robust way. It also provides a way to restore destructive changes without
 reinstalling anything. Again, consider this an advanced tool only meant for expert debugging.
 
 ## More information
