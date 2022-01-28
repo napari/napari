@@ -20,16 +20,6 @@ if TYPE_CHECKING:
 
 
 class _LayerListMixin:
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._ctx = create_context(self)
-        if self._ctx is not None:  # happens during Viewer type creation
-            self._ctx_keys = LayerListContextKeys(self._ctx)
-
-            self.selection.events.changed.connect(self._ctx_keys.update)
-        # temporary: see note in _on_selection_event
-        self.selection.events.changed.connect(self._on_selection_changed)
-
     def __newlike__(self, data):
         return type(self)(data)
 
@@ -190,6 +180,14 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+
+        self._ctx = create_context(self)
+        if self._ctx is not None:  # happens during Viewer type creation
+            self._ctx_keys = LayerListContextKeys(self._ctx)
+
+            self.selection.events.changed.connect(self._ctx_keys.update)
+        # temporary: see note in _on_selection_event
+        self.selection.events.changed.connect(self._on_selection_changed)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.

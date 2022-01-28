@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Iterable, List, Optional
 import numpy as np
 
 from ...components.layerlist import Extent, _LayerListMixin
+from ...utils.context import create_context
+from ...utils.context._layerlist_context import LayerListContextKeys
 from ...utils.naming import inc_name_count
 from ...utils.translations import trans
 from ...utils.tree import Group
@@ -25,6 +27,13 @@ class LayerGroup(Group[Layer], Layer, _LayerListMixin):
         Layer.__init__(self, None, 2, name=name)
         self.refresh(None)  # TODO: why...
         self.events.connect(self._handle_child_events)
+        self._ctx = create_context(self)
+        if self._ctx is not None:  # happens during Viewer type creation
+            self._ctx_keys = LayerListContextKeys(self._ctx)
+
+            self.selection.events.changed.connect(self._ctx_keys.update)
+        # temporary: see note in _on_selection_event
+        self.selection.events.changed.connect(self._on_selection_changed)
 
     def add_group(self, index=-1):
         lg = LayerGroup()
