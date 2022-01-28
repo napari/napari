@@ -29,6 +29,7 @@ Complete list of changes below:
 - Add test to check that things are removed properly (#3996)
 - Change base point slice thickness to half a unit (#3997)
 - Change base vector slice thickness to half a unit (#4001)
+- Use scikit-image[data] in the bundle (#4024)
 
 ## Bug Fixes
 - Fix about on python 3.10 (#3972)
