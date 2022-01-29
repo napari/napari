@@ -115,11 +115,11 @@ def _constructor(version=_version(), extra_specs=None):
     else:
         napari = f"napari={version}=*pyside*"
     specs = [
-        # napari,
-        # f"napari-menu={version}",
-        # f"python={sys.version_info.major}.{sys.version_info.minor}.*",
-        # "conda",
-        # "mamba",
+        napari,
+        f"napari-menu={version}",
+        f"python={sys.version_info.major}.{sys.version_info.minor}.*",
+        "conda",
+        "mamba",
         "pip",
     ] + extra_specs
 
@@ -213,11 +213,10 @@ def _constructor(version=_version(), extra_specs=None):
         if signing_certificate:
             definitions["signing_certificate"] = signing_certificate
 
-    print("Calling `constructor` with these definitions:")
-    print(yaml.dump(definitions, default_flow_style=False))
+
     clean_these_files.append("construct.yaml")
 
-    # temporarily patching password - remove block when the secret has been fixed
+    # TODO: temporarily patching password - remove block when the secret has been fixed
     # (I think it contains an ending newline or something like that, copypaste artifact?)
     pfx_password = os.environ.get("CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD")
     if pfx_password:
@@ -234,18 +233,21 @@ def _constructor(version=_version(), extra_specs=None):
         args += ["--platform", target_platform, "--conda-exe", conda_exe]
     env = os.environ.copy()
     env["CONDA_CHANNEL_PRIORITY"] = "strict"
+
+    print(f"Calling {args} with these definitions:")
+    print(yaml.dump(definitions, default_flow_style=False))
     subprocess.check_call(args, env=env)
 
     return OUTPUT_FILENAME
 
 
 def licenses():
-    try:
-        with open("info.json") as f:
-            info = json.load(f)
-    except FileNotFoundError:
-        print("!! Use `constructor --debug` to generate info.json and obtain licenses")
-        return
+    with open("info.json") as f:
+        info = json.load(f)
+    # try:
+    # except FileNotFoundError:
+    #     print("!! Use `constructor --debug` to generate info.json and obtain licenses")
+    #     return
 
     for package_id, license_info in info["_licenses"].items():
         print("\n+++++++++++++++++++++\n")

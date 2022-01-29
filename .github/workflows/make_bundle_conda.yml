@@ -306,7 +306,9 @@ jobs:
 
       - name: Collect licenses
         shell: bash -l {0}
-        run: python bundle_conda.py --licenses
+        run: |
+          ls -alh
+          python bundle_conda.py --licenses
 
       - name: Notarize Bundle (macOS)
         if: runner.os == 'macOS'
