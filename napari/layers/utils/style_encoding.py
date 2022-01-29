@@ -59,8 +59,8 @@ class StyleEncoding(Protocol[StyleArray]):
     ) -> StyleArray:
         """Updates cached values by applying this to the tail of the given features.
 
-        If the cached values have the same length as the given features, this will
-        only return the existing cached value array.
+        If the cached values have the same length as the given features, this may
+        return the existing cached value array.
 
         If generating values from the given features fails, this will fall back
         to returning some safe or default value.
@@ -187,7 +187,7 @@ class _ManualStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
         self.array = _delete_in_bounds(self.array, indices)
 
     def _clear(self) -> None:
-        self.array = _empty_array_like(self.default)
+        pass
 
 
 class _DerivedStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray], ABC):
