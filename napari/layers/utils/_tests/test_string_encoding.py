@@ -131,7 +131,9 @@ def test_format_with_missing_field():
 def test_validate_from_format():
     argument = '{class}: {score:.2f}'
     expected = FormatStringEncoding(format=argument)
+
     actual = validate_string_encoding(argument)
+
     assert actual == expected
 
 
