@@ -206,8 +206,8 @@ Lastly, let's make a few small changes to `setup.cfg`.
    here.  Assume nothing about your user's environment!  Not even napari.)
 
 2. We need to instruct setuptools to *include* that `napari.yaml` file
-   when it bundles our package for distribution, by adding it to the
-   **`[options.package_data]`**
+   when it bundles our package for distribution, by adding
+   **`include_package_data = True`** to the `[options]` section.
 
 3. In order for napari to find our plugin when it's installed in
    the environment, we need to add a `napari.manifest` entry to our
@@ -232,11 +232,9 @@ classifiers =
 
 [options]
 packages = find:
+include_package_data = True
 install_requires =
     napari
-
-[options.package_data]
-napari-hello = napari.yaml
 
 [options.entry_points]
 napari.manifest =
