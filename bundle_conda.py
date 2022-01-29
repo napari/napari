@@ -32,6 +32,7 @@ CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD:
     it might be needed by constructor.
 """
 
+import json
 import os
 import platform
 import re
@@ -40,7 +41,6 @@ import sys
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
-import json
 from textwrap import indent
 
 from ruamel import yaml
@@ -246,7 +246,7 @@ def licenses():
         info = json.load(f)
     # try:
     # except FileNotFoundError:
-    #     print("!! Use `constructor --debug` to generate info.json and obtain licenses")
+    #     print("!! Use `constructor --debug` to write info.json and get licenses")
     #     return
 
     for package_id, license_info in info["_licenses"].items():
@@ -299,7 +299,7 @@ def cli(argv=None):
         "--licenses",
         action="store_true",
         help="Post-process licenses AFTER having built the installer. "
-        "This must be run as a separate step."
+        "This must be run as a separate step.",
     )
     return p.parse_args()
 
