@@ -242,12 +242,12 @@ def _constructor(version=_version(), extra_specs=None):
 
 
 def licenses():
-    with open("info.json") as f:
-        info = json.load(f)
-    # try:
-    # except FileNotFoundError:
-    #     print("!! Use `constructor --debug` to write info.json and get licenses")
-    #     return
+    try:
+        with open("info.json") as f:
+            info = json.load(f)
+    except FileNotFoundError:
+        print("!! Use `constructor --debug` to write info.json and get licenses")
+        return
 
     for package_id, license_info in info["_licenses"].items():
         print("\n+++++++++++++++++++++\n")

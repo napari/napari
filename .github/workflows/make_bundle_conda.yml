@@ -307,6 +307,7 @@ jobs:
       - name: Collect licenses
         shell: bash -l {0}
         run: |
+          # TODO: Remove this ls call
           ls -alh
           python bundle_conda.py --licenses
 
