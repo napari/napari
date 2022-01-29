@@ -73,7 +73,7 @@ def validate_string_encoding(
 
     Coerce a format string to a FormatStringEncoding.
     >>> validate_string_encoding('{class}: {score:.2f}')
-    FormatStringEncoding(fallback=array('', dtype='<U1'), format_string='{class}: {score:.2f}', encoding_type=<EncodingType.FORMAT: 'format'>)
+    FormatStringEncoding(fallback=array('', dtype='<U1'), format='{class}: {score:.2f}', encoding_type=<EncodingType.FORMAT: 'format'>)
 
     Coerce a non-format string to a ConstantStringEncoding.
     >>> validate_string_encoding('abc')
@@ -90,8 +90,8 @@ def validate_string_encoding(
     if isinstance(string, dict):
         return parse_kwargs_as_encoding(_STRING_ENCODINGS, **string)
     if isinstance(string, str):
-        if _is_format_string(string):
-            return FormatStringEncoding(format_string=string)
+        if _is_format(string):
+            return FormatStringEncoding(format=string)
         return ConstantStringEncoding(constant=string)
     if isinstance(string, Sequence):
         return ManualStringEncoding(array=string, default='')
@@ -171,7 +171,7 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
 
     Attributes
     ----------
-    format_string : str
+    format : str
         A format string with the syntax supported by :func:`str.format`,
         where all format fields should be feature names.
     fallback : StringValue
@@ -182,13 +182,13 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
         this from other encodings when passing this as a dictionary.
     """
 
-    format_string: str
+    format: str
     fallback: StringValue = DEFAULT_STRING
     encoding_type: Literal[EncodingType.FORMAT] = 'format'
 
     def __call__(self, features: Any) -> StringArray:
         values = features.apply(
-            lambda row: self.format_string.format(**row), axis='columns'
+            lambda row: self.format.format(**row), axis='columns'
         )
         return np.array(values, dtype=str)
 
@@ -205,7 +205,7 @@ _STRING_ENCODINGS = (
 )
 
 
-def _is_format_string(string: str) -> bool:
+def _is_format(string: str) -> bool:
     """Checks if a string is a valid format string with at least one field.
 
     Parameters
@@ -215,7 +215,7 @@ def _is_format_string(string: str) -> bool:
 
     Returns
     -------
-    True if format_string contains at least one field, False otherwise.
+    True if format contains at least one field, False otherwise.
     """
     try:
         fields = tuple(

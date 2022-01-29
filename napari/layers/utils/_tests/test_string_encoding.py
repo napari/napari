@@ -105,7 +105,7 @@ def test_direct_with_a_missing_feature():
 
 def test_format():
     features = make_features_with_class_confidence_columns()
-    encoding = FormatStringEncoding(format_string='{class}: {confidence:.2f}')
+    encoding = FormatStringEncoding(format='{class}: {confidence:.2f}')
 
     values = encoding(features)
 
@@ -114,7 +114,7 @@ def test_format():
 
 def test_format_with_bad_string():
     features = make_features_with_class_confidence_columns()
-    encoding = FormatStringEncoding(format_string='{class}: {confidence:.2f')
+    encoding = FormatStringEncoding(format='{class}: {confidence:.2f')
 
     with pytest.raises(ValueError):
         encoding(features)
@@ -122,20 +122,20 @@ def test_format_with_bad_string():
 
 def test_format_with_missing_field():
     features = make_features_with_class_confidence_columns()
-    encoding = FormatStringEncoding(format_string='{class}: {score:.2f}')
+    encoding = FormatStringEncoding(format='{class}: {score:.2f}')
 
     with pytest.raises(KeyError):
         encoding(features)
 
 
-def test_validate_from_format_string():
+def test_validate_from_format():
     argument = '{class}: {score:.2f}'
-    expected = FormatStringEncoding(format_string=argument)
+    expected = FormatStringEncoding(format=argument)
     actual = validate_string_encoding(argument)
     assert actual == expected
 
 
-def test_validate_from_non_format_string():
+def test_validate_from_non_format():
     argument = 'test'
     expected = ConstantStringEncoding(constant=argument)
 
@@ -185,9 +185,9 @@ def test_validate_from_direct_dict():
 
 
 def test_validate_from_format_dict():
-    format_string = '{class}: {score:.2f}'
-    argument = {'format_string': format_string}
-    expected = FormatStringEncoding(format_string=format_string)
+    format = '{class}: {score:.2f}'
+    argument = {'format': format}
+    expected = FormatStringEncoding(format=format)
 
     actual = validate_string_encoding(argument)
 
