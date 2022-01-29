@@ -40,6 +40,8 @@ import sys
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
+import json
+from textwrap import indent
 
 from ruamel import yaml
 
@@ -113,11 +115,11 @@ def _constructor(version=_version(), extra_specs=None):
     else:
         napari = f"napari={version}=*pyside*"
     specs = [
-        napari,
-        f"napari-menu={version}",
-        f"python={sys.version_info.major}.{sys.version_info.minor}.*",
-        "conda",
-        "mamba",
+        # napari,
+        # f"napari-menu={version}",
+        # f"python={sys.version_info.major}.{sys.version_info.minor}.*",
+        # "conda",
+        # "mamba",
         "pip",
     ] + extra_specs
 
@@ -226,7 +228,7 @@ def _constructor(version=_version(), extra_specs=None):
     with open("construct.yaml", "w") as fin:
         yaml.dump(definitions, fin, default_flow_style=False)
 
-    args = [constructor, "-v", "."]
+    args = [constructor, "-v", "--debug", "."]
     conda_exe = os.environ.get("CONSTRUCTOR_CONDA_EXE")
     if target_platform and conda_exe:
         args += ["--platform", target_platform, "--conda-exe", conda_exe]
@@ -235,6 +237,23 @@ def _constructor(version=_version(), extra_specs=None):
     subprocess.check_call(args, env=env)
 
     return OUTPUT_FILENAME
+
+
+def licenses():
+    try:
+        with open("info.json") as f:
+            info = json.load(f)
+    except FileNotFoundError:
+        print("!! Use `constructor --debug` to generate info.json and obtain licenses")
+        return
+
+    for package_id, license_info in info["_licenses"].items():
+        print("\n+++++++++++++++++++++\n")
+        for license_type, license_files in license_info.items():
+            print(package_id, "=", license_type, "\n")
+            for license_file in license_files:
+                with open(license_file) as f:
+                    print(indent(f.read(), "    "))
 
 
 def main(extra_specs=None):
@@ -274,6 +293,12 @@ def cli(argv=None):
         nargs="+",
         help="One or more extra conda specs to add to the installer",
     )
+    p.add_argument(
+        "--licenses",
+        action="store_true",
+        help="Post-process licenses AFTER having built the installer. "
+        "This must be run as a separate step."
+    )
     return p.parse_args()
 
 
@@ -290,6 +315,9 @@ if __name__ == "__main__":
         sys.exit()
     if args.artifact_name:
         print(OUTPUT_FILENAME)
+        sys.exit()
+    if args.licenses:
+        licenses()
         sys.exit()
 
     print('created', main(extra_specs=args.extra_specs))
