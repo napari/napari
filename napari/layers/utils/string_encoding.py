@@ -2,8 +2,7 @@ from string import Formatter
 from typing import Any, Sequence, Union
 
 import numpy as np
-from pydantic import Field
-from typing_extensions import Protocol, runtime_checkable
+from typing_extensions import Literal, Protocol, runtime_checkable
 
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
@@ -41,12 +40,13 @@ def validate_string_encoding(
     Parameters
     ----------
     string : Union[StringEncoding, dict, str, Sequence[str], None]
-        The value being assigned to a StringEncoding field.
+        The value to validate and/or coerce.
         If this is already a StringEncoding, it is returned as is.
         If this is a dict, then it should represent one of the built-in StringEncodings.
         If this a valid format string, then a FormatStringEncoding is returned.
         If this is any other string, a ConstantStringEncoding is returned.
         If this is a sequence of strings, a ManualStringEncoding is returned.
+        See the examples for some expected usage.
 
     Returns
     -------
@@ -58,6 +58,30 @@ def validate_string_encoding(
         If the input is not a supported type.
     ValidationError
         If the input cannot be parsed into a StringEncoding.
+
+    Examples
+    --------
+    Leave an existing StringEncoding alone.
+    >>> original = ConstantStringEncoding(constant='abc')
+    >>> validated = validate_string_encoding(original)
+    >>> id(original) == id(validated)
+    True
+
+    Coerce a dict to a DirectStringEncoding.
+    >>> validate_string_encoding({'feature': 'class'})
+    DirectStringEncoding(fallback=array('', dtype='<U1'), feature='class', encoding_type=<EncodingType.DIRECT: 'direct'>)
+
+    Coerce a format string to a FormatStringEncoding.
+    >>> validate_string_encoding('{class}: {score:.2f}')
+    FormatStringEncoding(fallback=array('', dtype='<U1'), format_string='{class}: {score:.2f}', encoding_type=<EncodingType.FORMAT: 'format'>)
+
+    Coerce a non-format string to a ConstantStringEncoding.
+    >>> validate_string_encoding('abc')
+    ConstantStringEncoding(constant=array('abc', dtype='<U3'), encoding_type=<EncodingType.CONSTANT: 'constant'>)
+
+    Coerce a sequence of strings to a ManualStringEncoding.
+    >>> validate_string_encoding(a', 'b', 'c'])
+    ManualStringEncoding(array=array(['a', 'b', 'c'], dtype='<U1'), default=array('', dtype='<U1'), encoding_type=<EncodingType.MANUAL: 'manual'>)
     """
     if string is None:
         return ConstantStringEncoding(constant=DEFAULT_STRING)
@@ -90,12 +114,13 @@ class ConstantStringEncoding(_ConstantStyleEncoding[StringValue, StringArray]):
     ----------
     constant : StringValue
         The constant string value.
+    encoding_type : Literal['constant']
+        The type of encoding this specifies, which is useful for distinguishing
+        this from other encodings when passing this as a dictionary.
     """
 
-    encoding_type: EncodingType = Field(
-        EncodingType.CONSTANT, const=EncodingType.CONSTANT
-    )
     constant: StringValue
+    encoding_type: Literal[EncodingType.CONSTANT] = 'constant'
 
 
 class ManualStringEncoding(_ManualStyleEncoding[StringValue, StringArray]):
@@ -108,13 +133,14 @@ class ManualStringEncoding(_ManualStyleEncoding[StringValue, StringArray]):
     default : StringValue
         The default string value that is used when requesting a value that
         is out of bounds in the array attribute.
+    encoding_type : Literal['manual']
+        The type of encoding this specifies, which is useful for distinguishing
+        this from other encodings when passing this as a dictionary.
     """
 
-    encoding_type: EncodingType = Field(
-        EncodingType.MANUAL, const=EncodingType.MANUAL
-    )
     array: StringArray = []
     default: StringValue = DEFAULT_STRING
+    encoding_type: Literal[EncodingType.MANUAL] = 'manual'
 
 
 class DirectStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
@@ -127,13 +153,14 @@ class DirectStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     fallback : StringValue
         The safe constant fallback string to use if the feature column
         does not contain valid string values.
+    encoding_type : Literal['direct']
+        The type of encoding this specifies, which is useful for distinguishing
+        this from other encodings when passing this as a dictionary.
     """
 
-    encoding_type: EncodingType = Field(
-        EncodingType.DIRECT, const=EncodingType.DIRECT
-    )
     feature: str
     fallback: StringValue = DEFAULT_STRING
+    encoding_type: Literal[EncodingType.DIRECT] = 'direct'
 
     def __call__(self, features: Any) -> StringArray:
         return np.array(features[self.feature], dtype=str)
@@ -150,13 +177,14 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     fallback : StringValue
         The safe constant fallback string to use if the format string
         is not valid or contains fields other than feature names.
+    encoding_type : Literal['format']
+        The type of encoding this specifies, which is useful for distinguishing
+        this from other encodings when passing this as a dictionary.
     """
 
-    encoding_type: EncodingType = Field(
-        EncodingType.FORMAT, const=EncodingType.FORMAT
-    )
     format_string: str
     fallback: StringValue = DEFAULT_STRING
+    encoding_type: Literal[EncodingType.FORMAT] = 'format'
 
     def __call__(self, features: Any) -> StringArray:
         values = features.apply(
