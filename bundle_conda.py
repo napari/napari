@@ -213,7 +213,6 @@ def _constructor(version=_version(), extra_specs=None):
         if signing_certificate:
             definitions["signing_certificate"] = signing_certificate
 
-
     clean_these_files.append("construct.yaml")
 
     # TODO: temporarily patching password - remove block when the secret has been fixed
