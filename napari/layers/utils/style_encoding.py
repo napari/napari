@@ -126,11 +126,6 @@ class _ConstantStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
     """
 
     constant: StyleValue
-    _cached: StyleArray
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._cached = _empty_array_like(self.constant)
 
     def __call__(self, features: Any) -> StyleArray:
         return np.array([self.constant])
@@ -138,9 +133,7 @@ class _ConstantStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
     ) -> StyleArray:
-        if len(self._cached) == 0:
-            self._cached = self(features)
-        return self._cached
+        return self(features)
 
     def _append(self, array: StyleArray) -> None:
         pass
@@ -149,7 +142,7 @@ class _ConstantStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
         pass
 
     def _clear(self) -> None:
-        self._cached = _empty_array_like(self.constant)
+        pass
 
 
 class _ManualStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
