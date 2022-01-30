@@ -28,16 +28,6 @@ def test_attrs_arrays(Layer, data, ndim):
     # excluding affine transform and `cache` which is not yet in `_get_state`
     assert len(properties) == len(signature.parameters) - 2
 
-    # remove deprecated properties. We do it here cause we want them to still exist and match
-    # the signature, but we don't want to access or set them, or they would trigger warnings
-    layer_deprecations = {
-        Points: ('n_dimensional',),
-    }
-
-    deprecated = layer_deprecations.get(Layer, ())
-    for dep in deprecated:
-        properties.pop(dep)
-
     # Check new layer can be created
     new_layer = Layer(**properties)
 
