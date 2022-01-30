@@ -12,6 +12,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ...utils.translations import trans
+
 
 class QtReaderDialog(QDialog):
     """Dialog for user to select a reader plugin for a given file extension or folder"""
@@ -26,7 +28,7 @@ class QtReaderDialog(QDialog):
     ):
         super().__init__(parent)
         self.setObjectName('Choose reader')
-        self.setWindowTitle('Choose reader')
+        self.setWindowTitle(trans._('Choose reader'))
         self._current_file = pth
         self._extension = extension
         self._reader_buttons = []
@@ -38,7 +40,7 @@ class QtReaderDialog(QDialog):
         # add instruction label
         layout = QVBoxLayout()
         label = QLabel(
-            f"{error_message}Choose reader for {self._current_file}:"
+            trans._(f"{error_message}Choose reader for {self._current_file}:")
         )
         layout.addWidget(label)
 
@@ -58,7 +60,9 @@ class QtReaderDialog(QDialog):
         extension = os.path.splitext(self._current_file)[1]
         if extension:
             self.persist_checkbox = QCheckBox(
-                f'Remember this choice for files with a {extension} extension'
+                trans._(
+                    f'Remember this choice for files with a {extension} extension'
+                )
             )
             self.persist_checkbox.toggle()
             layout.addWidget(self.persist_checkbox)
