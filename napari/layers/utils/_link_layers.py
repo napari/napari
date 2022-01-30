@@ -224,16 +224,13 @@ def _get_common_evented_attributes(
             )
         )
 
-    layer_events = []
-    for lay in layers:
-        # skip deprecated events
-        layer_events.append(
-            {
-                ev
-                for ev in lay.events
-                if not isinstance(lay.events[ev], WarningEmitter)
-            }
-        )
+    layer_events = [
+        {
+            e for e in lay.events
+            if not isinstance(lay.events[e], WarningEmitter)
+        }
+        for lay in layers
+    ]
     common_events = set.intersection(*layer_events)
     common_attrs = set.intersection(*(set(dir(lay)) for lay in layers))
     if not with_private:
