@@ -85,6 +85,8 @@ SKIP_WORDS = {
         'Choose reader',
         'persist_checkbox',
         '{display_name}',
+        'Remember this choice for files with a {extension} extension',
+        '{error_message}Choose reader for {self._current_file}:',
     ],
     'napari/_qt/dialogs/preferences_dialog.py': [
         '0',
@@ -515,6 +517,8 @@ SKIP_WORDS = {
         'crosshair',
         'ignore',
         'selected_filter: {selected_filter or None}',
+        "Can't find {display_name} plugin associated with {extension} files.\n",
+        'Tried to open file with {display_name}, but reading failed ({e}).\n',
     ],
     'napari/_qt/widgets/qt_dims_sorter.py': [
         'Viewer',
