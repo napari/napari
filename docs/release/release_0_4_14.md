@@ -59,6 +59,7 @@ Complete list of changes below:
 
 ## 8 reviewers added to this release (alphabetical)
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
+- [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [Chi-li Chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
 - [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
