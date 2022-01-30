@@ -255,7 +255,7 @@ def licenses():
         for license_type, license_files in license_info.items():
             print(package_id, "=", license_type, "\n")
             for license_file in license_files:
-                with open(license_file, "rb", encoding="utf-8") as f:
+                with open(license_file, "rb") as f:
                     print(indent(f.read().decode(errors="ignore"), "    "))
 
 
