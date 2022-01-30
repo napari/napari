@@ -1128,13 +1128,9 @@ class QtViewer(QSplitter):
                     # we've opened file successfully, return
                     return None
                 except Exception as e:
-                    error_message = trans._(
-                        f"Tried to open file with {display_name}, but reading failed ({e}).\n"
-                    )
+                    error_message = f"Tried to open file with {display_name}, but reading failed ({e}).\n"
             else:
-                error_message = trans._(
-                    f"Can't find {display_name} plugin associated with {extension} files.\n"
-                )
+                error_message = f"Can't find {display_name} plugin associated with {extension} files.\n"
         return error_message
 
     def _get_and_try_preferred_reader(

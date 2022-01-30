@@ -40,7 +40,7 @@ class QtReaderDialog(QDialog):
         # add instruction label
         layout = QVBoxLayout()
         label = QLabel(
-            trans._(f"{error_message}Choose reader for {self._current_file}:")
+            f"{error_message}Choose reader for {self._current_file}:"
         )
         layout.addWidget(label)
 
@@ -60,9 +60,7 @@ class QtReaderDialog(QDialog):
         extension = os.path.splitext(self._current_file)[1]
         if extension:
             self.persist_checkbox = QCheckBox(
-                trans._(
-                    f'Remember this choice for files with a {extension} extension'
-                )
+                f'Remember this choice for files with a {extension} extension'
             )
             self.persist_checkbox.toggle()
             layout.addWidget(self.persist_checkbox)
