@@ -259,7 +259,11 @@ def licenses():
                     try:
                         print(indent(f.read().decode(errors="ignore"), "    "))
                     except UnicodeEncodeError:
-                        print(indent(repr(f.read().decode(errors="ignore")), "    "))
+                        print(
+                            indent(
+                                repr(f.read().decode(errors="ignore")), "    "
+                            )
+                        )
 
 
 def main(extra_specs=None):
