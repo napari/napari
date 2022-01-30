@@ -432,14 +432,6 @@ class Points(Layer):
         )
 
         if n_dimensional is not None:
-            # warnings.warn(
-            # trans._(
-            # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
-            # "use 'out_of_slice_display' instead."
-            # ),
-            # DeprecationWarning,
-            # stacklevel=2,
-            # )
             self._out_of_slice_display = n_dimensional
         else:
             self._out_of_slice_display = out_of_slice_display
