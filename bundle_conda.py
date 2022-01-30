@@ -256,7 +256,10 @@ def licenses():
             print(package_id, "=", license_type, "\n")
             for license_file in license_files:
                 with open(license_file, "rb") as f:
-                    print(indent(f.read().decode(errors="ignore"), "    "))
+                    try:
+                        print(indent(f.read().decode(errors="ignore"), "    "))
+                    except UnicodeEncodeError:
+                        print(indent(repr(f.read().decode(errors="ignore")), "    "))
 
 
 def main(extra_specs=None):
