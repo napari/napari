@@ -226,7 +226,8 @@ def _get_common_evented_attributes(
 
     layer_events = [
         {
-            e for e in lay.events
+            e
+            for e in lay.events
             if not isinstance(lay.events[e], WarningEmitter)
         }
         for lay in layers
