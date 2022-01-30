@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from napari._tests.utils import are_objects_equal, layer_test_data
-from napari.layers import Points
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
