@@ -815,7 +815,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             color_range = high - low
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
-            downsampled = downsampled ** self.gamma
+            downsampled = downsampled**self.gamma
             color_array = self.colormap.map(downsampled.ravel())
             colormapped = color_array.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
