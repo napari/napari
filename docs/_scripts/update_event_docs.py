@@ -133,6 +133,9 @@ def iter_evented_container_events(
             if hasattr(kls_instance, 'selection'):
                 selection = kls_instance.selection
                 for name, emitter in selection.events._emitters.items():
+                    if name.startswith('_'):
+                        # skip private emitters
+                        continue
                     name = 'selection.' + name
                     descr = docs.get(name)
                     yield Ev(name, kls, descr, type_=None)
