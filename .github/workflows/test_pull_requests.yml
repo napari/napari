@@ -149,8 +149,19 @@ jobs:
       # see tox.ini for more
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
+        if: runner.os == 'Linux'
         with:
           run: tox
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          BACKEND: ${{ matrix.backend }}
+          TOXENV: ${{ matrix.toxenv }}
+          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
+          PYVISTA_OFF_SCREEN: True
+          MIN_REQ: ${{ matrix.MIN_REQ }}
+      - name: Test with tox
+        if: runner.os != 'Linux'
+        run: tox
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
