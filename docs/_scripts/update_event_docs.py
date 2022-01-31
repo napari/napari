@@ -124,9 +124,15 @@ def iter_evented_container_events(
             if not issubclass(kls, container_class):
                 continue
             docs = class_doc_attrs(kls)
-            for name, emitter in kls().events._emitters.items():
+            kls_instance = kls()
+            for name, emitter in kls_instance.events._emitters.items():
                 descr = docs.get(name)
-                yield Ev(name, kls, descr, None)
+                yield Ev(name, kls, descr, type_=None)
+            if hasattr(kls_instance, 'selection'):
+                selection = kls_instance.selection
+                for name, emitter in selection.events._emitters.items():
+                    descr = docs.get(name)
+                    yield Ev(name, kls, descr, type_=None)
 
 
 class BaseEmitterVisitor(ast.NodeVisitor):
@@ -181,20 +187,36 @@ def iter_layer_events() -> Iterator[Ev]:
 
 
 def merge_image_and_label_rows(rows: List[List[str]]):
-    """Merge rows corresponding to _ImageBase events."""
-    # find events that are common across both Image and Labels layers
+    """Merge events common to _ImageBase or IntensityVisualizationMixin."""
+    # find events that are common across both Image, Labels and Surface layers.
     image_events = {r[1] for r in rows if r[0] == '`Image`'}
     labels_events = {r[1] for r in rows if r[0] == '`Labels`'}
-    common_events = image_events & labels_events
+    surface_events = {r[1] for r in rows if r[0] == '`Surface`'}
+    common_events = image_events & labels_events & surface_events
+    # common only to Image and Labels
+    imagebase_events = (image_events & labels_events) - common_events
 
-    # drop the duplicate Labels entry
+    # drop duplicate Labels and/or Surface entries
     rows = [
-        r for r in rows if not (r[0] == '`Labels`' and r[1] in common_events)
+        r
+        for r in rows
+        if not (r[0] in ['`Labels`', '`Surface`'] and r[1] in common_events)
+    ]
+    rows = [
+        r
+        for r in rows
+        if not (r[0] in ['`Labels`', '`Surface`'] and r[1] in imagebase_events)
     ]
 
-    # modify the class name of the Image entries to also mention Labels
+    # modify the class name of the Image entries to mention Labels, Surface
     rows = [
         ['`Image`, `Labels`'] + r[1:]
+        if r[0] == '`Image`' and r[1] in imagebase_events
+        else r
+        for r in rows
+    ]
+    rows = [
+        ['`Image`, `Labels`, `Surface`'] + r[1:]
         if r[0] == '`Image`' and r[1] in common_events
         else r
         for r in rows
@@ -220,7 +242,7 @@ def main():
 
     # Do LayerList events
     rows = [
-        ev.ev_model_row()[2:]
+        ev.layer_row()[2:]
         for ev in iter_evented_container_events(
             napari, container_class=LayerList
         )
