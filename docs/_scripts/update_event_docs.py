@@ -11,6 +11,7 @@ from numpydoc.docscrape import ClassDoc, Parameter
 import napari
 from docs._scripts._table_maker import table_repr
 from napari import layers
+from napari.components.layerlist import LayerList
 from napari.components.viewer_model import ViewerModel
 from napari.utils.events import EventedModel
 
@@ -112,6 +113,19 @@ def iter_evented_model_events(module: ModuleType = napari) -> Iterator[Ev]:
                     yield Ev(name, kls, descr, field_.type_)
 
 
+def iter_evented_container_events(
+    module: ModuleType = napari, container_class=LayerList
+) -> Iterator[Ev]:
+    for mod in walk_modules(module):
+        for kls in iter_classes(mod):
+            if not issubclass(kls, container_class):
+                continue
+            docs = class_doc_attrs(kls)
+            for name, emitter in kls().events._emitters.items():
+                descr = docs.get(name)
+                yield Ev(name, kls, descr, None)
+
+
 class BaseEmitterVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         super().__init__()
@@ -201,6 +215,17 @@ def main():
     table1 = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
     (DOCS / 'guides' / '_viewer_events.md').write_text(table1)
 
+    # Do LayerList events
+    rows = [
+        ev.ev_model_row()[2:]
+        for ev in iter_evented_container_events(
+            napari, container_class=LayerList
+        )
+        if ev.access_at()
+    ]
+    table2 = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
+    (DOCS / 'guides' / '_layerlist_events.md').write_text(table2)
+
     # Do layer events
     HEADER = [
         'Class',
@@ -212,8 +237,8 @@ def main():
         [ev.layer_row()[0]] + ev.layer_row()[2:] for ev in iter_layer_events()
     ]
     rows = merge_image_and_label_rows(rows)
-    table2 = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
-    (DOCS / 'guides' / '_layer_events.md').write_text(table2)
+    table3 = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
+    (DOCS / 'guides' / '_layer_events.md').write_text(table3)
 
 
 if __name__ == '__main__':
