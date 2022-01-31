@@ -95,7 +95,7 @@ def class_doc_attrs(kls: Type) -> Dict[str, Parameter]:
     return docs
 
 
-def iter_evented_model_events(module=napari) -> Iterator[Ev]:
+def iter_evented_model_events(module: ModuleType = napari) -> Iterator[Ev]:
     for mod in walk_modules(module):
         for kls in iter_classes(mod):
             if not issubclass(kls, EventedModel):
@@ -163,6 +163,28 @@ def iter_layer_events() -> Iterator[Ev]:
             yield Ev(name, lay.__class__, description=docs.get(name))
 
 
+def merge_image_and_label_rows(rows: List[List[str]]):
+    """Merge rows corresponding to _ImageBase events."""
+    # find events that are common across both Image and Labels layers
+    image_events = {r[1] for r in rows if r[0] == '`Image`'}
+    labels_events = {r[1] for r in rows if r[0] == '`Labels`'}
+    common_events = image_events & labels_events
+
+    # drop the duplicate Labels entry
+    rows = [
+        r for r in rows if not (r[0] == '`Labels`' and r[1] in common_events)
+    ]
+
+    # modify the class name of the Image entries to also mention Labels
+    rows = [
+        ['`Image`, `Labels`'] + r[1:]
+        if r[0] == '`Image`' and r[1] in common_events
+        else r
+        for r in rows
+    ]
+    return rows
+
+
 def main():
     HEADER = [
         'Event',
@@ -180,7 +202,16 @@ def main():
     (DOCS / 'guides' / '_viewer_events.md').write_text(table1)
 
     # Do layer events
-    rows = [ev.layer_row()[2:] for ev in iter_layer_events()]
+    HEADER = [
+        'Class',
+        'Event',
+        'Description',
+        'Event.value type',
+    ]
+    rows = [
+        [ev.layer_row()[0]] + ev.layer_row()[2:] for ev in iter_layer_events()
+    ]
+    rows = merge_image_and_label_rows(rows)
     table2 = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
     (DOCS / 'guides' / '_layer_events.md').write_text(table2)
 
