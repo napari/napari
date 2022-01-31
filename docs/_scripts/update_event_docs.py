@@ -31,6 +31,8 @@ class Ev:
             return f'layer.events.{self.name}'
 
         if issubclass(self.model, LayerList):
+            if self.name.startswith('selection.'):
+                return f'layers.selection.events.{self.name[10:]}'
             return f'layers.events.{self.name}'
 
         if issubclass(self.model, ViewerModel):
@@ -131,6 +133,7 @@ def iter_evented_container_events(
             if hasattr(kls_instance, 'selection'):
                 selection = kls_instance.selection
                 for name, emitter in selection.events._emitters.items():
+                    name = 'selection.' + name
                     descr = docs.get(name)
                     yield Ev(name, kls, descr, type_=None)
 
