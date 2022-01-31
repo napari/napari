@@ -50,9 +50,19 @@ jobs:
 
       - name: Test with tox
         # run tests using pip install --pre
+        if: runner.os == 'Linux'
         uses: GabrielBB/xvfb-action@v1
         with:
           run: tox -v --pre
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          BACKEND: ${{ matrix.backend }}
+          PYVISTA_OFF_SCREEN: True  # required for opengl on windows
+
+      - name: Test with tox
+        # run tests using pip install --pre
+        if: runner.os != 'Linux'
+        run: tox -v --pre
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
