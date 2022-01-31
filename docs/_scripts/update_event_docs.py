@@ -30,6 +30,9 @@ class Ev:
         if issubclass(self.model, layers.Layer):
             return f'layer.events.{self.name}'
 
+        if issubclass(self.model, LayerList):
+            return f'layers.events.{self.name}'
+
         if issubclass(self.model, ViewerModel):
             return f'viewer.events.{self.name}'
         for name, field_ in napari.Viewer.__fields__.items():
