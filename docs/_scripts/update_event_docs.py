@@ -22,7 +22,7 @@ DOCS = Path(__file__).parent.parent
 class Ev:
     name: str
     model: Type
-    description: str = ''
+    description: Optional[str] = None
     type_: Optional[Type] = None
 
     def access_at(self):
@@ -77,7 +77,7 @@ def walk_modules(
         attr = getattr(module, name)
         if (
             inspect.ismodule(attr)
-            and attr.__package__.startswith(pkg)
+            and attr.__package__.startswith(pkg)  # type: ignore
             and attr not in _walked
         ):
             yield from walk_modules(attr, pkg, _walked=_walked)
@@ -136,7 +136,7 @@ class BaseEmitterVisitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.Call):
         if getattr(node.func, 'id', None) == 'EmitterGroup':
-            self._emitters.extend([name.arg for name in node.keywords])
+            self._emitters.extend([name.arg for name in node.keywords])  # type: ignore
 
 
 def base_event_names() -> List[str]:
