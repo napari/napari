@@ -6,7 +6,6 @@ name: Docker and Singularity build
 # documentation.
 
 on:
-on:
   workflow_dispatch:
 
 #  schedule:
