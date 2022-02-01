@@ -1,7 +1,7 @@
 # See "Writing benchmarks" in the asv docs for more information.
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
-# https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
+# https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
 import numpy as np
 
 from napari.layers import Labels
@@ -39,7 +39,7 @@ class Labels2DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):
         """Time to paint circle."""
@@ -94,7 +94,7 @@ class Labels3DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):
         """Time to paint circle."""

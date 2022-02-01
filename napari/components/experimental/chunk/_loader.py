@@ -47,10 +47,7 @@ class ChunkLoader:
         self.layer_map: Dict[int, LayerInfo] = {}
         self.cache: ChunkCache = ChunkCache()
 
-        self.events = EmitterGroup(
-            source=self, auto_connect=True, chunk_loaded=None
-        )
-
+        self.events = EmitterGroup(source=self, chunk_loaded=None)
         self._loaders = LoaderPoolGroup(octree_config, self._on_done)
 
     def get_info(self, layer_id: int) -> Optional[LayerInfo]:
@@ -319,8 +316,10 @@ def synchronous_loading(enabled):
     """
     previous = chunk_loader.force_synchronous
     chunk_loader.force_synchronous = enabled
-    yield
-    chunk_loader.force_synchronous = previous
+    try:
+        yield
+    finally:
+        chunk_loader.force_synchronous = previous
 
 
 def wait_for_async():

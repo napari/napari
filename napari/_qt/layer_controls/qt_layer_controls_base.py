@@ -1,9 +1,9 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout
-from superqt import QLabeledDoubleSlider
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
+from ..widgets._slider_compat import QDoubleSlider
 
 
 class QtLayerControls(QFrame):
@@ -35,8 +35,6 @@ class QtLayerControls(QFrame):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
 
-        self.setAttribute(Qt.WA_DeleteOnClose)
-
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
@@ -47,7 +45,7 @@ class QtLayerControls(QFrame):
         self.grid_layout.setColumnStretch(1, 1)
         self.setLayout(self.grid_layout)
 
-        sld = QLabeledDoubleSlider(Qt.Horizontal, parent=self)
+        sld = QDoubleSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(1)
@@ -88,29 +86,21 @@ class QtLayerControls(QFrame):
         """
         self.layer.blending = self.blendComboBox.currentData()
 
-    def _on_opacity_change(self, event=None):
-        """Receive layer model opacity change event and update opacity slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_opacity_change(self):
+        """Receive layer model opacity change event and update opacity slider."""
         with self.layer.events.opacity.blocker():
             self.opacitySlider.setValue(self.layer.opacity)
 
-    def _on_blending_change(self, event=None):
-        """Receive layer model blending mode change event and update slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, by default None.
-        """
+    def _on_blending_change(self):
+        """Receive layer model blending mode change event and update slider."""
         with self.layer.events.blending.blocker():
             self.blendComboBox.setCurrentIndex(
                 self.blendComboBox.findData(self.layer.blending)
             )
+
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self)
+        super().deleteLater()
 
     def close(self):
         """Disconnect events when widget is closing."""
@@ -119,4 +109,4 @@ class QtLayerControls(QFrame):
             close_method = getattr(child, 'close', None)
             if close_method is not None:
                 close_method()
-        super().close()
+        return super().close()

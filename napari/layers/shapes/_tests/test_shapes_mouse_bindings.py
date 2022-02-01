@@ -5,8 +5,9 @@ import pytest
 
 from napari.layers import Shapes
 from napari.layers.shapes.shapes import Mode
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
+    mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
@@ -176,10 +177,20 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer, Event):
         mouse_release_callbacks(layer, event)
 
     # finish drawing
-    layer._finish_drawing()
+    end_click = ReadOnlyWrapper(
+        Event(
+            type='mouse_double_click',
+            is_dragging=False,
+            modifiers=[],
+            position=coord,
+        )
+    )
+    assert layer.mouse_double_click_callbacks
+    mouse_double_click_callbacks(layer, end_click)
 
     # Check new shape added at coordinates
     assert len(layer.data) == n_shapes + 1
+    assert layer.data[-1].shape, desired_shape.shape
     np.testing.assert_allclose(layer.data[-1], desired_shape)
     assert layer.shape_type[-1] == shape_type
 

@@ -25,7 +25,7 @@ viewer.add_image(image)
 In order to avoid freezing the viewer during a long-running blocking function,
 you must run your function in another thread or process.
 
-## Processes, Threads, and `asyncio`
+## Processes, threads, and `asyncio`
 
 There are multiple ways to achieve "concurrency" (multiple things happening at
 the same time) in python, each with their own advantages and disadvantages.
@@ -57,9 +57,9 @@ methods in another thread.
 ## Threading in napari with `@thread_worker`
 
 The simplest way to run a function in another thread in napari is to decorate
-your function with the {func}`@thread_worker
-<napari.qt.threading.thread_worker>` decorator. Continuing with the example
-above:
+your function with the
+{func}`@thread_worker <napari.qt.threading.thread_worker>` decorator.
+Continuing with the example above:
 
 ```{code-block} python
 ---
@@ -119,7 +119,7 @@ be manually started by calling
 {meth}`worker.start() <napari.qt.threading.WorkerBase.start>`.
 ```
 
-## Responding to Feedback from Threads
+## Responding to feedback from threads
 
 As shown above, the `worker` object returned by a function decorated with
 {func}`@thread_worker <napari.qt.threading.thread_worker>` has a number of
@@ -132,7 +132,7 @@ provided by the `worker` are:
 * `errored` [*exception*] - emitted with an `Exception` object if an
   exception is raised in the thread.
 
-### Example: Custom Exception Handler
+### Example: Custom exception handler
 
 Because debugging issues in multithreaded applications can be tricky, the
 default behavior of a `@thread_worker` - decorated function is to re-raise
@@ -152,7 +152,7 @@ def error_prone_function():
     ...
 ```
 
-## Generators for the Win!
+## Generators for the win!
 
 ````{admonition} quick reminder
 
@@ -167,7 +167,6 @@ def my_generator():
         yield i
 ```
 ````
-
 
 **Use a generator!** By writing our decorated function as a generator that
 `yields` results instead of a function that `returns` a single result at
@@ -187,8 +186,7 @@ Additionally, generator `workers` will also have a few additional methods:
 * `toggle_pause` - send a request to toggle the running state of the worker
 * `quit` - send a request to abort the worker
 
-
-### Retrieving Intermediate Results
+### Retrieving intermediate results
 
 The most obvious benefit of using a generator is that you can monitor
 intermediate results back in the main thread.  Continuing with our example of
@@ -232,26 +230,25 @@ napari.run()
 
 Note how we periodically (every 16 iterations) `yield` the image result in
 the `large_random_images` function.  We also connected the
-`yielded` event in the {func}`@thread_worker
-<napari.qt.threading.thread_worker>` decorator to the previously-defined
-`update_layer` function.  The result is that the image in the viewer
-is updated every time a new image is yielded.
+`yielded` event in the
+{func}`@thread_worker <napari.qt.threading.thread_worker>`
+decorator to the previously-defined `update_layer` function.  The result is
+that the image in the viewer is updated every time a new image is yielded.
 
 Any time you can break up a long-running function into a stream of
 shorter-running yield statements like this, you not only benefit from the
 increased responsiveness in the viewer, you can often save on precious memory
 resources.
 
-
-#### Flow Control and Escape Hatches
+#### Flow control and escape hatches
 
 A perhaps even more useful aspect of yielding periodically in our long running
 function is that we provide a "hook" for the main thread to control the flow of
-our long running function.  When you use the {func}`@thread_worker
-<napari.qt.threading.thread_worker>` decorator on a generator function, the
-ability to stop, start, and quit a thread comes for free.  In the example below
-we decorate what would normally be an infinitely yielding generator, but add a
-button that aborts the worker when clicked:
+our long running function.  When you use the
+{func}`@thread_worker <napari.qt.threading.thread_worker>` decorator on a
+generator function, the ability to stop, start, and quit a thread comes for
+free.  In the example below we decorate what would normally be an infinitely
+yielding generator, but add a button that aborts the worker when clicked:
 
 ```{code-block} python
 ---
@@ -283,7 +280,7 @@ def yield_random_images_forever():
 worker = yield_random_images_forever()
 worker.yielded.connect(update_layer)
 
-# add a button to the viewew that, when clicked, stops the worker
+# add a button to the viewer that, when clicked, stops the worker
 button = QPushButton("STOP!")
 button.clicked.connect(worker.quit)
 worker.finished.connect(button.clicked.disconnect)
@@ -293,7 +290,7 @@ worker.start()
 napari.run()
 ```
 
-#### Graceful Exit
+#### Graceful exit
 
 A side-effect of this added flow control is that `napari` can gracefully
 shutdown any still-running workers when you try to quit the program.  Try the
@@ -304,13 +301,13 @@ and then closes without leaving any orphaned threads.
 Now go back to the first example with the pure (non-generator) function, and
 try quitting before the function has returned (i.e. before the image appears).
 You'll notice that it takes a while to quit: it has to wait for the background
-thread to finish because there is no good way to communicate equest that it
-quit!  If you had a *very* long function, you'd be left with no choice but to
-force quit your program.
+thread to finish because there is no good way to communicate the request that
+it quit!  If you had a *very* long function, you'd be left with no choice but
+to force quit your program.
 
 So whenever possible, sprinkle your long-running functions with `yield`.
 
-## Full Two-way Communication
+## Full two-way communication
 
 So far we've mostly been *receiving* results from the threaded function, but we
 can send values *into* a generator-based thread as well using
@@ -386,9 +383,9 @@ napari.run()
 
 Let's break it down:
 
-1. As usual, we decorate our generator function with {func}`@thread_worker
-   <napari.qt.threading.thread_worker>` and instantiate it to create a
-   `worker`.
+1. As usual, we decorate our generator function with
+   {func}`@thread_worker <napari.qt.threading.thread_worker>` and instantiate
+   it to create a `worker`.
 
 2. The most interesting line in this example is where we both
    `yield` the current ``total`` to the main thread (`yield total`), *and*
@@ -403,8 +400,7 @@ Let's break it down:
 
 5. However, before that `resume()` command gets sent, we use
    `worker.send()` to send the current value of the `line_edit` widget
-   into the thread which the thread will multiple by the existing
-   total.
+   into the thread for multiplication by the existing total.
 
 6. Lastly, if the thread total ever goes to "0", we stop the thread by
    returning the string ``"Game Over"``.  In the main thread, the
@@ -416,7 +412,7 @@ computation in another thread.  But it demonstrates some of the power and
 features provided when decorating a generator function with the
 {func}`@thread_worker <napari.qt.threading.thread_worker>` decorator.
 
-## Syntactic Sugar
+## Syntactic sugar
 
 The {func}`@thread_worker <napari.qt.threading.thread_worker>` decorator is
 just syntactic sugar for calling {func}`~napari.qt.threading.create_worker` on
@@ -463,7 +459,7 @@ the `FunctionWorker` class is that `create_worker` will automatically
 dispatch the appropriate type of `Worker` class depending on whether the
 function is a generator or not).
 
-## Using a Custom Worker Class
+## Using a custom worker class
 
 If you need even more control over the worker – such as the ability to define
 custom methods or signals that the worker can emit, then you can subclass the
@@ -474,11 +470,11 @@ keep in mind the following guidelines:
    {meth}`~napari.qt.threading.WorkerBase.work` method (preferred), or in
    extreme cases, may directly reimplement the
    {meth}`~napari.qt.threading.WorkerBase.run` method.  (When a worker "start"
-   is started with :meth:`~napari.qt.threading.WorkerBase.start`, the call
-   order is always :meth:`worker.start()
-   <napari.qt.threading.WorkerBase.start>` → {meth}`worker.run()
-   <napari.qt.threading.WorkerBase.run>` → {meth}`worker.work()
-   <napari.qt.threading.WorkerBase.work>`.
+   is started with {meth}`~napari.qt.threading.WorkerBase.start`, the call
+   order is always
+   {meth}`worker.start() <napari.qt.threading.WorkerBase.start>` →
+   {meth}`worker.run() <napari.qt.threading.WorkerBase.run>` →
+   {meth}`worker.work() <napari.qt.threading.WorkerBase.work>`.
 
 2. When implementing the {meth}`~napari.qt.threading.WorkerBase.work` method,
    it is important that you periodically check `self.abort_requested` in your
@@ -488,10 +484,10 @@ keep in mind the following guidelines:
    def work(self):
        i = 0
        while True:
-       if self.abort_requested:
-           self.aborted.emit()
-           break
-           time.sleep(0.5)
+           if self.abort_requested:
+               self.aborted.emit()
+               break
+               time.sleep(0.5)
     ```
 
 3. It is also important to be mindful of the fact that the
@@ -510,7 +506,7 @@ look at the two main concrete subclasses in napari:
 {class}`~napari.qt.threading.GeneratorWorker`.  You may also wish to simply
 subclass one of those two classes.
 
-#### Adding custom signals
+### Adding custom signals
 
 In order to emit signals, an object must inherit from `QObject`.  However,
 due to challenges with multiple inheritance in Qt, the signals for

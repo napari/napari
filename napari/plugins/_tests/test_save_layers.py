@@ -4,6 +4,8 @@ import pytest
 
 from napari.plugins.io import save_layers
 
+BUILTINS = 'napari'
+
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
 def test_save_layer_single_named_plugin(tmpdir, layer_data_and_types):
@@ -17,7 +19,7 @@ def test_save_layer_single_named_plugin(tmpdir, layer_data_and_types):
         assert not os.path.isfile(path)
 
         # Write data
-        save_layers(path, [layer], plugin='builtins')
+        save_layers(path, [layer], plugin=BUILTINS)
 
         # Check file now exists
         assert os.path.isfile(path)
@@ -28,7 +30,7 @@ def test_save_layer_no_results(tmpdir):
     """Test no layers is not an error, and warns on no results."""
 
     with pytest.warns(UserWarning):
-        result = save_layers('no_layers', [], plugin='builtins')
+        result = save_layers('no_layers', [], plugin=BUILTINS)
         assert result == []
 
 
@@ -67,7 +69,7 @@ def test_save_layer_multiple_named_plugin(tmpdir, layer_data_and_types):
     assert not os.path.isdir(path)
 
     # Write data
-    save_layers(path, layers, plugin='builtins')
+    save_layers(path, layers, plugin=BUILTINS)
 
     # Check folder now exists
     assert os.path.isdir(path)
@@ -97,7 +99,7 @@ def test_save_layer_multiple_no_named_plugin(tmpdir, layer_data_and_types):
     assert not os.path.isdir(path)
 
     # Write data
-    save_layers(path, layers, plugin='builtins')
+    save_layers(path, layers, plugin=BUILTINS)
 
     # Check folder now exists
     assert os.path.isdir(path)

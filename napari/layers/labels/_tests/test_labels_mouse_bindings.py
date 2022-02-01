@@ -1,8 +1,9 @@
 import numpy as np
+from scipy import ndimage as ndi
 
 from napari.layers import Labels
+from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.interactions import (
-    ReadOnlyWrapper,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
@@ -431,3 +432,116 @@ def test_paint_3d(MouseEvent):
 
     new_num_filled = np.bincount(layer.data.ravel())[4]
     assert new_num_filled < num_filled
+
+
+def test_erase_3d_undo(MouseEvent):
+    """Test erasing labels in 3D then undoing the erase.
+
+    Specifically, this test checks that undo is correctly filled even
+    when a click and drag starts outside of the data volume.
+    """
+    data = np.zeros((20, 20, 20), dtype=np.int32)
+    data[10, :, :] = 1
+    layer = Labels(data)
+    layer.brush_size = 5
+    layer.mode = 'erase'
+    layer._slice_dims(point=(0, 0, 0), ndisplay=3)
+    layer.n_edit_dimensions = 3
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=False,
+            position=(-1, -1, -1),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate drag. Note: we need to include top left and bottom right in the
+    # drag or there are no coordinates to interpolate
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_move',
+            is_dragging=True,
+            position=(-1, 0.1, 0.1),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_move_callbacks(layer, event)
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_move',
+            is_dragging=True,
+            position=(-1, 18.9, 18.9),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_release',
+            is_dragging=False,
+            position=(-1, 21, 21),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Erasing goes from (-1, -1, -1) to (-1, 21, 21), should split the labels
+    # into two sections. Undoing should work and reunite the labels to one
+    # square
+    assert ndi.label(layer.data)[1] == 2
+    layer.undo()
+    assert ndi.label(layer.data)[1] == 1
+
+
+def test_erase_3d_undo_empty(MouseEvent):
+    """Nothing should be added to undo queue when clicks fall outside data."""
+    data = np.zeros((20, 20, 20), dtype=np.int32)
+    data[10, :, :] = 1
+    layer = Labels(data)
+    layer.brush_size = 5
+    layer.mode = 'erase'
+    layer._slice_dims(point=(0, 0, 0), ndisplay=3)
+    layer.n_edit_dimensions = 3
+
+    # Simulate click, outside data
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=False,
+            position=(-1, -1, -1),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_press_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_release',
+            is_dragging=False,
+            position=(-1, -1, -1),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(0, 0, 0),
+        )
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Undo queue should be empty
+    assert len(layer._undo_history) == 0

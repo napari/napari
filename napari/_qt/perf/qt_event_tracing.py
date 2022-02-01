@@ -1,44 +1,16 @@
 """A special QApplication for perfmon that traces events.
 
-This file defines QApplicationWithTracing and convert_app_for_tracing(), both of
-which we use when perfmon is enabled to time Qt Events.
+This file defines QApplicationWithTracing which we use when perfmon is
+enabled to time Qt Events.
 
 When using perfmon there is a debug menu "Start Tracing" command as well as a
 dockable QtPerformance widget.
 """
-import sys
-
 from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QWidget
 
 from ...utils import perf
 from ...utils.translations import trans
-from ..utils import delete_qapp
-
-
-def convert_app_for_tracing(app: QApplication) -> QApplication:
-    """If necessary replace existing app with our special tracing one.
-
-    Parameters
-    ----------
-    app : QApplication
-        The existing application if any.
-    """
-    if isinstance(app, QApplicationWithTracing):
-        # We're already using QApplicationWithTracing so there is nothing
-        # to do. This happens when napari is launched from the command
-        # line because we create a QApplicationWithTracing in get_app.
-        return app
-
-    if app is not None:
-
-        # We can't monkey patch QApplication.notify, since it's a SIP
-        # wrapped C++ method. So we delete the current app and create a new
-        # one. This must be done very early before any Qt objects are
-        # created or we will crash!
-        delete_qapp(app)
-
-    return QApplicationWithTracing(sys.argv)
 
 
 class QApplicationWithTracing(QApplication):

@@ -4,7 +4,7 @@ the napari viewer.
 
 import napari
 from time import sleep
-from napari.qt import progress
+from napari.utils import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 import numpy as np
 from random import choice
@@ -99,6 +99,6 @@ pbar_widget.setObjectName("Progress Examples")
 
 viewer.window.add_dock_widget(pbar_widget)
 # showing the activity dock so we can see the progress bars
-viewer.window._toggle_activity_dock(True)
+viewer.window._status_bar._toggle_activity_dock(True)
 
 napari.run()

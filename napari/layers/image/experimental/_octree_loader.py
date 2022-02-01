@@ -138,7 +138,7 @@ class OctreeLoader:
 
         Parameters
         ----------
-        drawn_chunk_set : Set[OctreeChunk]
+        drawn_set : Set[OctreeChunk]
             The chunks which the visual is currently drawing.
         ideal_chunks : List[OctreeChunk]
             The chunks which are visible to the current view.

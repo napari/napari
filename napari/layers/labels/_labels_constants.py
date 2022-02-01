@@ -35,6 +35,7 @@ class Mode(StringEnum):
     PAINT = auto()
     FILL = auto()
     ERASE = auto()
+    TRANSFORM = auto()
 
 
 class LabelColorMode(StringEnum):
@@ -60,3 +61,19 @@ LABEL_COLOR_MODE_TRANSLATIONS = OrderedDict(
         (LabelColorMode.DIRECT, trans._("direct")),
     ]
 )
+
+
+class LabelsRendering(StringEnum):
+    """Rendering: Rendering mode for the Labels layer.
+
+    Selects a preset rendering mode in vispy
+        * translucent: voxel colors are blended along the view ray until
+          the result is opaque.
+        * iso_categorical: isosurface for categorical data.
+          Cast a ray until a non-background value is encountered. At that
+          location, lighning calculations are performed to give the visual
+          appearance of a surface.
+    """
+
+    TRANSLUCENT = auto()
+    ISO_CATEGORICAL = auto()

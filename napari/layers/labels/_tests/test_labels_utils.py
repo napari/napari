@@ -7,7 +7,7 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
     mouse_event_to_labels_coordinate,
 )
-from napari.utils.interactions import ReadOnlyWrapper
+from napari.utils._proxies import ReadOnlyWrapper
 
 
 def test_interpolate_coordinates():
@@ -137,3 +137,18 @@ def test_mouse_event_to_labels_coordinate_3d(MouseEvent):
     )
     coord = mouse_event_to_labels_coordinate(layer, event)
     np.testing.assert_array_equal(coord, [4, 4, 4])
+
+    # drag starts inside volume but ends up outside volume
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=True,
+            position=(-100, -100, -100),
+            view_direction=(1, 0, 0),
+            dims_displayed=(0, 1, 2),
+            dims_point=(10, 10, 10),
+        )
+    )
+
+    coord = mouse_event_to_labels_coordinate(layer, event)
+    assert coord is None

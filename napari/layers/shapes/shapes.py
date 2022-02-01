@@ -2,12 +2,14 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from vispy.color import get_color_names
 
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from ...utils.colormaps.colormap_utils import ColorType
 from ...utils.colormaps.standardize_color import (
     hex_to_name,
     rgb_to_hex,
@@ -20,16 +22,11 @@ from ...utils.translations import trans
 from ..base import Layer, no_op
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
-    ColorType,
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    coerce_current_properties,
-    get_current_properties,
-    prepare_properties,
-)
+from ..utils.layer_utils import _FeatureTable
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -46,6 +43,7 @@ from ._shapes_mouse_bindings import (
     add_path_polygon,
     add_path_polygon_creating,
     add_rectangle,
+    finish_drawing_shape,
     highlight,
     select,
     vertex_insert,
@@ -70,8 +68,11 @@ _REV_SHAPE_HELP = {
         Mode.ADD_RECTANGLE,
         Mode.ADD_ELLIPSE,
         Mode.ADD_LINE,
+        Mode.TRANSFORM,
     },
-    trans._('hold <space> to pan/zoom, press <esc> to finish drawing'): {
+    trans._(
+        'hold <space> to pan/zoom, press <esc>, or double click to finish drawing'
+    ): {
         Mode.ADD_PATH,
         Mode.ADD_POLYGON,
     },
@@ -107,6 +108,9 @@ class Shapes(Layer):
     ndim : int
         Number of dimensions for shapes. When data is not None, ndim must be D.
         An empty shapes layer can be instantiated with arbitrary ndim.
+    features : dict[str, array-like] or Dataframe-like
+        Features table where each row corresponds to a shape and each column
+        is a feature.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -189,8 +193,8 @@ class Shapes(Layer):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a length N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        `Affine` transform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -199,12 +203,20 @@ class Shapes(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
 
     Attributes
     ----------
     data : (N, ) list of array
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
+    features : Dataframe-like
+        Features table where each row corresponds to a shape and each column
+        is a feature.
+    feature_defaults : DataFrame-like
+        Stores the default value of each feature in a table with one row.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -323,8 +335,6 @@ class Shapes(Layer):
     _thumbnail_update_thresh : int
         If there are more than this number of shapes, the thumbnail
         won't update during interactive events
-    _property_choices : dict {str: array (N,)}
-        Possible values for the properties in Shapes.properties.
     """
 
     _colors = get_color_names()
@@ -348,6 +358,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: add_line,
         Mode.ADD_PATH: add_path_polygon,
         Mode.ADD_POLYGON: add_path_polygon,
+        Mode.TRANSFORM: no_op,
     }
 
     _move_modes = {
@@ -361,7 +372,23 @@ class Shapes(Layer):
         Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
+        Mode.TRANSFORM: no_op,
     }
+
+    _double_click_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.SELECT: no_op,
+        Mode.DIRECT: no_op,
+        Mode.VERTEX_INSERT: no_op,
+        Mode.VERTEX_REMOVE: no_op,
+        Mode.ADD_RECTANGLE: no_op,
+        Mode.ADD_ELLIPSE: no_op,
+        Mode.ADD_LINE: no_op,
+        Mode.ADD_PATH: finish_drawing_shape,
+        Mode.ADD_POLYGON: finish_drawing_shape,
+        Mode.TRANSFORM: no_op,
+    }
+
     _cursor_modes = {
         Mode.PAN_ZOOM: 'standard',
         Mode.SELECT: 'pointing',
@@ -373,6 +400,7 @@ class Shapes(Layer):
         Mode.ADD_LINE: 'cross',
         Mode.ADD_PATH: 'cross',
         Mode.ADD_POLYGON: 'cross',
+        Mode.TRANSFORM: 'standard',
     }
 
     _interactive_modes = {
@@ -384,6 +412,7 @@ class Shapes(Layer):
         data=None,
         *,
         ndim=None,
+        features=None,
         properties=None,
         property_choices=None,
         text=None,
@@ -408,6 +437,8 @@ class Shapes(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        cache=True,
+        experimental_clipping_planes=None,
     ):
         if data is None:
             if ndim is None:
@@ -438,6 +469,8 @@ class Shapes(Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            cache=cache,
+            experimental_clipping_planes=experimental_clipping_planes,
         )
 
         self.events.add(
@@ -458,25 +491,12 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        self._properties, self._property_choices = prepare_properties(
-            properties, property_choices, num_data=len(data)
+        self._feature_table = _FeatureTable.from_layer(
+            features=features,
+            properties=properties,
+            property_choices=property_choices,
+            num_data=number_of_shapes(data),
         )
-
-        # make the text
-        if text is None or isinstance(text, (list, np.ndarray, str)):
-            self._text = TextManager(text, len(data), self.properties)
-        elif isinstance(text, dict):
-            copied_text = deepcopy(text)
-            copied_text['properties'] = self.properties
-            copied_text['n_text'] = len(data)
-            self._text = TextManager(**copied_text)
-        else:
-            raise TypeError(
-                trans._(
-                    'text should be a string, array, or dict',
-                    deferred=True,
-                )
-            )
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -504,9 +524,13 @@ class Shapes(Layer):
         self._fixed_aspect = False
         self._aspect_ratio = 1
         self._is_moving = False
+
         # _moving_coordinates are needed for fixing aspect ratio during
-        # a resize
+        # a resize, it stores the last pointer coordinate value that happened
+        # during a mouse move to that pressing/releasing shift
+        # can trigger a redraw of the shape with a fixed aspect ratio.
         self._moving_coordinates = None
+
         self._fixed_index = 0
         self._is_selecting = False
         self._drag_box = None
@@ -555,8 +579,11 @@ class Shapes(Layer):
                 elem_name="face_color",
                 default="black",
             )
-        self.current_properties = get_current_properties(
-            self._properties, self._property_choices, len(data)
+
+        self._text = TextManager._from_layer(
+            text=text,
+            n_text=self.nshapes,
+            properties=self.properties,
         )
 
         # Trigger generation of view slice and thumbnail
@@ -590,14 +617,14 @@ class Shapes(Layer):
 
             # add the new color cycle mapping
             color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self._property_choices[color_property][0]
+            prop_value = self.property_choices[color_property][0]
             color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
             color_cycle_map[prop_value] = np.squeeze(curr_color)
             setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
         elif color_mode == ColorMode.COLORMAP:
             color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self._property_choices[color_property][0]
+            prop_value = self.property_choices[color_property][0]
             colormap = getattr(self, f'{attribute}_colormap')
             contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
             curr_color, _ = map_property(
@@ -676,17 +703,31 @@ class Shapes(Layer):
             self._finish_drawing()
 
     @property
-    def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        return self._properties
+    def features(self):
+        """Dataframe-like features table.
 
-    @properties.setter
-    def properties(self, properties: Dict[str, Array]):
-        self._properties, self._property_choices = prepare_properties(
-            properties, self._property_choices, num_data=len(self.data)
-        )
+        It is an implementation detail that this is a `pandas.DataFrame`. In the future,
+        we will target the currently-in-development Data API dataframe protocol [1].
+        This will enable us to use alternate libraries such as xarray or cuDF for
+        additional features without breaking existing usage of this.
+
+        If you need to specifically rely on the pandas API, please coerce this to a
+        `pandas.DataFrame` using `features_to_pandas_dataframe`.
+
+        References
+        ----------
+        .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
+        """
+        return self._feature_table.values
+
+    @features.setter
+    def features(
+        self,
+        features: Union[Dict[str, np.ndarray], pd.DataFrame],
+    ) -> None:
+        self._feature_table.set_values(features, num_data=self.nshapes)
         if self._face_color_property and (
-            self._face_color_property not in self._properties
+            self._face_color_property not in self.features
         ):
             self._face_color_property = ''
             warnings.warn(
@@ -698,7 +739,7 @@ class Shapes(Layer):
             )
 
         if self._edge_color_property and (
-            self._edge_color_property not in self._properties
+            self._edge_color_property not in self.features
         ):
             self._edge_color_property = ''
             warnings.warn(
@@ -714,8 +755,25 @@ class Shapes(Layer):
         self.events.properties()
 
     @property
+    def feature_defaults(self):
+        """Dataframe-like with one row of feature default values.
+
+        See `features` for more details on the type of this property.
+        """
+        return self._feature_table.defaults
+
+    @property
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
+        return self._feature_table.properties()
+
+    @properties.setter
+    def properties(self, properties: Dict[str, Array]):
+        self.features = properties
+
+    @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return self._property_choices
+        return self._feature_table.choices()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -794,24 +852,21 @@ class Shapes(Layer):
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added shape."""
-        return self._current_properties
+        return self._feature_table.currents()
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self._current_properties = coerce_current_properties(
-            current_properties
-        )
-
+        update_indices = None
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         ):
-            props = self.properties
-            for k in props:
-                props[k][list(self.selected_data)] = current_properties[k]
-            self.properties = props
-
+            update_indices = list(self.selected_data)
+        self._feature_table.set_currents(
+            current_properties, update_indices=update_indices
+        )
+        if update_indices is not None:
             self.refresh_colors()
         self.events.current_properties()
 
@@ -1466,7 +1521,7 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
-                'property_choices': self._property_choices,
+                'property_choices': self.property_choices,
                 'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
@@ -1481,6 +1536,7 @@ class Shapes(Layer):
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
+                'features': self.features,
             }
         )
         return state
@@ -1501,13 +1557,17 @@ class Shapes(Layer):
         return self.text.view_text(self._indices_view)
 
     @property
-    def _view_text_coords(self) -> np.ndarray:
+    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
         -------
         text_coords : (N x D) np.ndarray
             Array of coordinates for the N text elements in view
+        anchor_x : str
+            The vispy text anchor for the x axis
+        anchor_y : str
+            The vispy text anchor for the y axis
         """
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
@@ -1550,6 +1610,16 @@ class Shapes(Layer):
         mode, changed = self._mode_setter_helper(mode, Mode)
         if not changed:
             return
+
+        if mode.value not in Mode.keys():
+            raise ValueError(
+                trans._(
+                    "Mode not recognized: {mode}", deferred=True, mode=mode
+                )
+            )
+
+        old_mode = self._mode
+        self._mode = mode
 
         self.help = _FWD_SHAPE_HELP[mode]
 
@@ -1888,7 +1958,7 @@ class Shapes(Layer):
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes. Overriden by data shape_type, if present.
+            shapes. Overridden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1940,19 +2010,11 @@ class Shapes(Layer):
             else:
                 n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
+            self._feature_table.resize(total_shapes)
             if total_shapes > n_prop_values:
                 n_props_to_add = total_shapes - n_prop_values
-                for k in self.properties:
-                    new_property = np.repeat(
-                        self.current_properties[k], n_props_to_add, axis=0
-                    )
-                    self.properties[k] = np.concatenate(
-                        (self.properties[k], new_property), axis=0
-                    )
                 self.text.add(self.current_properties, n_props_to_add)
             if total_shapes < n_prop_values:
-                for k in self.properties:
-                    self.properties[k] = self.properties[k][:total_shapes]
                 n_props_to_remove = n_prop_values - total_shapes
                 indices_to_remove = np.arange(n_prop_values)[
                     -n_props_to_remove:
@@ -2196,8 +2258,10 @@ class Shapes(Layer):
 
     @text.setter
     def text(self, text):
-        self._text._set_text(
-            text, n_text=len(self.data), properties=self.properties
+        self._text._update_from_layer(
+            text=text,
+            n_text=self.nshapes,
+            properties=self.properties,
         )
 
     def refresh_text(self):
@@ -2458,9 +2522,12 @@ class Shapes(Layer):
     @contextmanager
     def block_thumbnail_update(self):
         """Use this context manager to block thumbnail updates"""
+        previous = self._allow_thumbnail_update
         self._allow_thumbnail_update = False
-        yield
-        self._allow_thumbnail_update = True
+        try:
+            yield
+        finally:
+            self._allow_thumbnail_update = previous
 
     def _update_thumbnail(self, event=None):
         """Update thumbnail with current shapes and colors."""
@@ -2499,10 +2566,7 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
-            for k in self.properties:
-                self.properties[k] = np.delete(
-                    self.properties[k], index, axis=0
-                )
+            self._feature_table.remove(index)
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2570,45 +2634,6 @@ class Shapes(Layer):
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
-
-    def expand_shape(self, data):
-        """Expand shape from 2D to the full data dims.
-
-        expand_shape is deprecated and will be removed in version 0.4.9.
-        It should no longer be used as layers should will soon not know
-        which dimensions are displayed. Instead you should work with
-        full nD shape data as much as possible.
-
-        Parameters
-        ----------
-        data : array
-            2D data array of shape to be expanded.
-
-        Returns
-        -------
-        data_full : array
-            Full D dimensional data array of the shape.
-        """
-        warnings.warn(
-            trans._(
-                "expand_shape is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should work with full nD shape data as much as possible.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        if self.ndim == 2:
-            data_full = data[:, self._dims_displayed_order]
-        else:
-            data_full = np.zeros((len(data), self.ndim), dtype=float)
-            indices = np.array(self._slice_indices)
-            data_full[:, self._dims_not_displayed] = indices[
-                self._dims_not_displayed
-            ]
-            data_full[:, self._dims_displayed] = data
-
-        return data_full
 
     def _get_value(self, position):
         """Value of the data at a position in data coordinates.
@@ -2680,6 +2705,145 @@ class Shapes(Layer):
 
         return value
 
+    def _get_value_3d(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Tuple[Union[float, int], None]:
+        """Get the layer data value along a ray
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        vertex : None
+            Index of vertex if any that is at the coordinates. Always returns `None`.
+        """
+        value, _ = self._get_index_and_intersection(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        )
+
+        return (value, None)
+
+    def _get_index_and_intersection(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Tuple[Union[float, int], None]:
+        """Get the shape index and intersection point of the first shape
+        (i.e., closest to start_point) along the specified 3D line segment.
+
+        Note: this method is meant to be used for 3D intersection and returns
+        (None, None) when used in 2D (i.e., len(dims_displayed) is 2).
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data in
+            layer coordinates.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data in
+            layer coordinates.
+        dims_displayed : List[int]
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        intersection_point : np.ndarray
+            (n,) array containing the point where the ray intersects the first shape
+            (i.e., the shape most in the foreground). The coordinate is in layer
+            coordinates.
+        """
+        if len(dims_displayed) == 3:
+            if (start_point is not None) and (end_point is not None):
+                # Get the normal vector of the click plane
+                start_position_view = start_point[dims_displayed]
+                end_position_view = end_point[dims_displayed]
+                ray_direction = end_position_view - start_position_view
+                ray_direction_normed = ray_direction / np.linalg.norm(
+                    ray_direction
+                )
+                # step the start position back a little bit to be able to detect shapes
+                # that contain the start_position
+                start_position_view = (
+                    start_position_view - 0.1 * ray_direction_normed
+                )
+                value, intersection = self._data_view._inside_3d(
+                    start_position_view, ray_direction_normed
+                )
+
+                # add the full nD coords to intersection
+                intersection_point = start_point.copy()
+                intersection_point[dims_displayed] = intersection
+
+            else:
+                value = None
+                intersection_point = None
+        else:
+            value = None
+            intersection_point = None
+        return value, intersection_point
+
+    def get_index_and_intersection(
+        self,
+        position: np.ndarray,
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
+    ) -> Tuple[Union[float, int], None]:
+        """Get the shape index and intersection point of the first shape
+        (i.e., closest to start_point) "under" a mouse click.
+
+        See examples/add_points_on_nD_shapes.py for example usage.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
+
+        Returns
+        -------
+        value
+            The data value along the supplied ray.
+        intersection_point : np.ndarray
+            (n,) array containing the point where the ray intersects the first shape
+            (i.e., the shape most in the foreground). The coordinate is in layer
+            coordinates.
+        """
+        start_point, end_point = self.get_ray_intersections(
+            position, view_direction, dims_displayed
+        )
+        if (start_point is not None) and (end_point is not None):
+            shape_index, intersection_point = self._get_index_and_intersection(
+                start_point=start_point,
+                end_point=end_point,
+                dims_displayed=dims_displayed,
+            )
+        else:
+            shape_index = (None,)
+            intersection_point = None
+        return shape_index, intersection_point
+
     def move_to_front(self):
         """Moves selected objects to be displayed in front of all others."""
         if len(self.selected_data) == 0:
@@ -2709,9 +2873,7 @@ class Shapes(Layer):
                 ],
                 'edge_color': deepcopy(self._data_view._edge_color[index]),
                 'face_color': deepcopy(self._data_view._face_color[index]),
-                'properties': {
-                    k: deepcopy(v[index]) for k, v in self.properties.items()
-                },
+                'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
             }
             if len(self.text.values) == 0:
@@ -2731,11 +2893,7 @@ class Shapes(Layer):
                 for i in self._dims_not_displayed
             ]
 
-            for k in self.properties:
-                self.properties[k] = np.concatenate(
-                    (self.properties[k], self._clipboard['properties'][k]),
-                    axis=0,
-                )
+            self._feature_table.append(self._clipboard['features'])
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):
@@ -2769,7 +2927,7 @@ class Shapes(Layer):
         ----------
         mask_shape : np.ndarray | tuple | None
             tuple defining shape of mask to be generated. If non specified,
-            takes the max of all the vertiecs
+            takes the max of all the vertices
 
         Returns
         -------
@@ -2777,7 +2935,11 @@ class Shapes(Layer):
             Array where there is one binary mask for each shape
         """
         if mask_shape is None:
-            mask_shape = self._extent_data[1] - self._extent_data[0]
+            # See https://github.com/napari/napari/issues/2778
+            # Point coordinates land on pixel centers. We want to find the
+            # smallest shape that will hold the largest point in the data,
+            # using rounding.
+            mask_shape = np.round(self._extent_data[1]) + 1
 
         mask_shape = np.ceil(mask_shape).astype('int')
         masks = self._data_view.to_masks(mask_shape=mask_shape)
@@ -2801,7 +2963,11 @@ class Shapes(Layer):
             For overlapping shapes z-ordering will be respected.
         """
         if labels_shape is None:
-            labels_shape = self._extent_data[1] - self._extent_data[0]
+            # See https://github.com/napari/napari/issues/2778
+            # Point coordinates land on pixel centers. We want to find the
+            # smallest shape that will hold the largest point in the data,
+            # using rounding.
+            labels_shape = np.round(self._extent_data[1]) + 1
 
         labels_shape = np.ceil(labels_shape).astype('int')
         labels = self._data_view.to_labels(labels_shape=labels_shape)

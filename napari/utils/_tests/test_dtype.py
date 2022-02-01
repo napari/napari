@@ -5,7 +5,7 @@ import pytest
 import zarr
 from dask import array as da
 
-from napari.utils._dtype import normalize_dtype
+from napari.utils._dtype import get_dtype_limits, normalize_dtype
 
 ts = pytest.importorskip('tensorstore')
 torch = pytest.importorskip('torch')
@@ -58,3 +58,27 @@ def test_pure_python_types(dtype_str):
 
 # note: we don't write specific tests for zarr and dask because they use numpy
 # dtypes directly.
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        int,
+        'uint8',
+        np.uint8,
+        'int8',
+        'uint16',
+        'int16',
+        'uint32',
+        'int32',
+        float,
+        'float32',
+        'float64',
+        '>f4',
+        '>f8',
+    ]
+    + [''.join(t) for t in itertools.product('<>', 'iu', '1248')],
+)
+def test_dtype_lims(dtype):
+    lims = get_dtype_limits(dtype)
+    assert isinstance(lims, tuple) and len(lims) == 2

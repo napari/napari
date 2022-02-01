@@ -10,20 +10,21 @@ from qtpy.QtWidgets import (
     QSpinBox,
     QWidget,
 )
-from superqt import QLabeledSlider as QSlider
+from superqt import QLargeIntSpinBox
 
-from ...layers.image._image_constants import Rendering
 from ...layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
+    LabelsRendering,
     Mode,
 )
 from ...layers.labels._labels_utils import get_dtype
+from ...utils._dtype import get_dtype_limits
 from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity
-from ..widgets.qt_large_int_spinbox import QtLargeIntSpinBox
+from ..widgets._slider_compat import QSlider
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
@@ -53,8 +54,8 @@ class QtLabelsControls(QtLayerControls):
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Labels
         An instance of a napari Labels layer.
-    ndimCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to control if label layer is n-dimensional.
+    ndimSpinBox : qtpy.QtWidgets.QSpinBox
+        Spinbox to control the number of editable dimensions of label layer.
     paint_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select PAINT mode on Labels layer.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
@@ -63,7 +64,7 @@ class QtLabelsControls(QtLayerControls):
         Button to select PICKER mode on Labels layer.
     erase_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
-    selectionSpinBox : napari._qt.widgets.qt_large_int_spinbox.QtLargeIntSpinBox
+    selectionSpinBox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
 
@@ -96,9 +97,9 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.color_mode.connect(self._on_color_mode_change)
 
         # selection spinbox
-        self.selectionSpinBox = QtLargeIntSpinBox()
-        layer_dtype = get_dtype(layer)
-        self.selectionSpinBox.set_dtype(layer_dtype)
+        self.selectionSpinBox = QLargeIntSpinBox()
+        dtype_lims = get_dtype_limits(get_dtype(layer))
+        self.selectionSpinBox.setRange(*dtype_lims)
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
@@ -129,8 +130,8 @@ class QtLabelsControls(QtLayerControls):
         ndim_sb.setAlignment(Qt.AlignCenter)
         self._on_n_edit_dimensions_change()
 
-        self.contourSpinBox = QtLargeIntSpinBox()
-        self.contourSpinBox.set_dtype(layer_dtype)
+        self.contourSpinBox = QLargeIntSpinBox()
+        self.contourSpinBox.setRange(*dtype_lims)
         self.contourSpinBox.setToolTip(trans._('display contours of labels'))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
@@ -222,15 +223,15 @@ class QtLabelsControls(QtLayerControls):
         button_row.addStretch(1)
         button_row.addWidget(self.colormapUpdate)
         button_row.addWidget(self.erase_button)
-        button_row.addWidget(self.fill_button)
         button_row.addWidget(self.paint_button)
+        button_row.addWidget(self.fill_button)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.panzoom_button)
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
 
         renderComboBox = QComboBox(self)
-        rendering_options = [i.value for i in Rendering.labels_layer_subset()]
+        rendering_options = [i.value for i in LabelsRendering]
         renderComboBox.addItems(rendering_options)
         index = renderComboBox.findText(
             self.layer.rendering, Qt.MatchFixedString
@@ -251,7 +252,7 @@ class QtLabelsControls(QtLayerControls):
             if self.layer.color_mode == data:
                 color_mode_comboBox.setCurrentIndex(index)
 
-        color_mode_comboBox.activated[str].connect(self.change_color_mode)
+        color_mode_comboBox.activated.connect(self.change_color_mode)
         self.colorModeComboBox = color_mode_comboBox
         self._on_color_mode_change()
 
@@ -318,6 +319,8 @@ class QtLabelsControls(QtLayerControls):
             self.fill_button.setChecked(True)
         elif mode == Mode.ERASE:
             self.erase_button.setChecked(True)
+        elif mode == Mode.TRANSFORM:
+            pass
         else:
             raise ValueError(trans._("Mode not recognized"))
 
@@ -416,54 +419,26 @@ class QtLabelsControls(QtLayerControls):
         state : QCheckBox
             Checkbox indicating if overwriting label is enabled.
         """
-        if state == Qt.Checked:
-            self.layer.preserve_labels = True
-        else:
-            self.layer.preserve_labels = False
+        self.layer.preserve_labels = state == Qt.Checked
 
-    def change_color_mode(self, new_mode):
-        """Change color mode of label layer.
-
-        Parameters
-        ----------
-        new_mode : str
-            AUTO (default) allows color to be set via a hash function with a seed.
-            DIRECT allows color of each label to be set directly by a color dictionary.
-        """
+    def change_color_mode(self):
+        """Change color mode of label layer"""
         self.layer.color_mode = self.colorModeComboBox.currentData()
 
-    def _on_contour_change(self, event=None):
-        """Receive layer model contour value change event and update spinbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_contour_change(self):
+        """Receive layer model contour value change event and update spinbox."""
         with self.layer.events.contour.blocker():
             value = self.layer.contour
             self.contourSpinBox.setValue(value)
 
-    def _on_selected_label_change(self, event=None):
-        """Receive layer model label selection change event and update spinbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_selected_label_change(self):
+        """Receive layer model label selection change event and update spinbox."""
         with self.layer.events.selected_label.blocker():
             value = self.layer.selected_label
             self.selectionSpinBox.setValue(value)
 
-    def _on_brush_size_change(self, event=None):
-        """Receive layer model brush size change event and update the slider.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_brush_size_change(self):
+        """Receive layer model brush size change event and update the slider."""
         with self.layer.events.brush_size.blocker():
             value = self.layer.brush_size
             value = np.maximum(1, int(value))
@@ -471,61 +446,31 @@ class QtLabelsControls(QtLayerControls):
                 self.brushSizeSlider.setMaximum(int(value))
             self.brushSizeSlider.setValue(value)
 
-    def _on_n_edit_dimensions_change(self, event=None):
-        """Receive layer model n-dim mode change event and update the checkbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_n_edit_dimensions_change(self):
+        """Receive layer model n-dim mode change event and update the checkbox."""
         with self.layer.events.n_edit_dimensions.blocker():
             value = self.layer.n_edit_dimensions
             self.ndimSpinBox.setValue(int(value))
 
-    def _on_contiguous_change(self, event=None):
-        """Receive layer model contiguous change event and update the checkbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_contiguous_change(self):
+        """Receive layer model contiguous change event and update the checkbox."""
         with self.layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self.layer.contiguous)
 
-    def _on_preserve_labels_change(self, event=None):
-        """Receive layer model preserve_labels event and update the checkbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_preserve_labels_change(self):
+        """Receive layer model preserve_labels event and update the checkbox."""
         with self.layer.events.preserve_labels.blocker():
             self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
 
-    def _on_color_mode_change(self, event=None):
-        """Receive layer model color.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_color_mode_change(self):
+        """Receive layer model color."""
         with self.layer.events.color_mode.blocker():
             self.colorModeComboBox.setCurrentIndex(
                 self.colorModeComboBox.findData(self.layer.color_mode)
             )
 
-    def _on_editable_change(self, event=None):
-        """Receive layer model editable change event & enable/disable buttons.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
+    def _on_editable_change(self):
+        """Receive layer model editable change event & enable/disable buttons."""
         # In 3D mode, we need to disable all buttons other than picking
         # (only picking works in 3D)
         widget_list = [
@@ -547,28 +492,16 @@ class QtLabelsControls(QtLayerControls):
             self.layer.editable,
         )
 
-    def _on_rendering_change(self, event):
-        """Receive layer model rendering change event and update dropdown menu.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_rendering_change(self):
+        """Receive layer model rendering change event and update dropdown menu."""
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(
                 self.layer.rendering, Qt.MatchFixedString
             )
             self.renderComboBox.setCurrentIndex(index)
 
-    def _on_ndisplay_change(self, event=None):
-        """Toggle between 2D and 3D visualization modes.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method, default is None.
-        """
+    def _on_ndisplay_change(self):
+        """Toggle between 2D and 3D visualization modes."""
         if self.layer._ndisplay == 2:
             self.renderComboBox.hide()
             self.renderLabel.hide()
@@ -577,6 +510,10 @@ class QtLabelsControls(QtLayerControls):
             self.renderLabel.show()
 
         self._on_editable_change()
+
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self.colorBox)
+        super().deleteLater()
 
 
 class QtColorBox(QWidget):
@@ -604,24 +541,12 @@ class QtColorBox(QWidget):
         self.setFixedHeight(self._height)
         self.setToolTip(trans._('Selected label color'))
 
-    def _on_selected_label_change(self, event):
-        """Receive layer model label selection change event & update colorbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_selected_label_change(self):
+        """Receive layer model label selection change event & update colorbox."""
         self.update()
 
-    def _on_opacity_change(self, event):
-        """Receive layer model label selection change event & update colorbox.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
+    def _on_opacity_change(self):
+        """Receive layer model label selection change event & update colorbox."""
         self.update()
 
     def paintEvent(self, event):
@@ -652,7 +577,11 @@ class QtColorBox(QWidget):
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
 
-    def close(self):
+    def deleteLater(self):
+        disconnect_events(self.layer.events, self)
+        super().deleteLater()
+
+    def closeEvent(self, event):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
-        super().close()
+        super().closeEvent(event)

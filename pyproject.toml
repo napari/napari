@@ -22,7 +22,7 @@ version = "0.0.1"
 formal_name = "napari"
 description = "napari: a multi-dimensional image viewer"
 sources = ['napari']
-icon = "resources/icon"
+icon = "napari/resources/icon"
 # populated in bundle.py
 requires = []
 
@@ -65,7 +65,14 @@ ignore = [
   "tools/minreq.py",
   "tox.ini",
   "napari/_qt/qt_resources/_qt_resources_*.py",
-  "*.pyi"  # added by make typestubs
+  "*.pyi",  # added by make typestubs
+  "binder/Desktop/napari.desktop",
+  "binder/apt.txt",
+  "binder/environment.yml",
+  "binder/postBuild",
+  "binder/xfce4-panel.xml",
+  "binder/xsettings.xml",
+  ".env_sample",
 ]
 
 [tool.isort]
@@ -76,7 +83,7 @@ skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = "--maxfail=5 --durations=5"
+addopts = "--maxfail=5 --durations=10 -rXxs"
 
 # NOTE: only put things that will never change in here.
 # napari deprecation and future warnings should NOT go in here.
@@ -84,9 +91,12 @@ addopts = "--maxfail=5 --durations=5"
 # That way we can clean them up when no longer necessary
 filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
+  "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
+  "ignore:Restart required for this change:UserWarning:napari",  # triggered by a lot of async tests
   "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
+  "ignore::DeprecationWarning:tensorstore",
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
   "ignore:pythonw executable not found:UserWarning:",
   "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
@@ -94,8 +104,10 @@ filterwarnings = [
   "ignore:numpy.ufunc size changed:RuntimeWarning",
   "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
+  "ignore:.*Themes were changed to use evented model",  # specifying the full is not working here so glob pattern is used instead
+  "ignore:distutils Version classes are deprecated::",
 ]
 markers = [
     "sync_only: Test should only be run synchronously",
-    "async_only: Test should only be run asynchronously"
+    "async_only: Test should only be run asynchronously",
 ]

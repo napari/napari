@@ -16,6 +16,8 @@ ITERABLE = (0, 1, 2)
 NESTED_ITERABLE = [ITERABLE, ITERABLE, ITERABLE]
 DICT = {'a': 1, 'b': 3, 'c': 5}
 LIST_OF_DICTS = [DICT, DICT, DICT]
+PARTLY_NESTED_ITERABLE = [ITERABLE, None, None]
+REPEATED_PARTLY_NESTED_ITERABLE = [PARTLY_NESTED_ITERABLE] * 3
 
 
 @pytest.mark.parametrize(
@@ -28,15 +30,30 @@ LIST_OF_DICTS = [DICT, DICT, DICT]
         [LIST_OF_DICTS, LIST_OF_DICTS],
         [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
         [None, (None, None, None)],
-        # BEWARE: only the first element of a nested sequence is checked.
-        [((0, 1), None, None), ((0, 1), None, None)],
+        [PARTLY_NESTED_ITERABLE, REPEATED_PARTLY_NESTED_ITERABLE],
+        [[], ([], [], [])],
     ],
 )
 def test_sequence_of_iterables(input, expected):
     """Test ensure_sequence_of_iterables returns a sequence of iterables."""
-    zipped = zip(range(3), ensure_sequence_of_iterables(input), expected)
+    zipped = zip(
+        range(3),
+        ensure_sequence_of_iterables(input, repeat_empty=True),
+        expected,
+    )
     for i, result, expectation in zipped:
         assert result == expectation
+
+
+def test_sequence_of_iterables_allow_none():
+    input = [(1, 2), None]
+    assert ensure_sequence_of_iterables(input, allow_none=True) == input
+
+
+def test_sequence_of_iterables_no_repeat_empty():
+    assert ensure_sequence_of_iterables([], repeat_empty=False) == []
+    with pytest.raises(ValueError):
+        ensure_sequence_of_iterables([], repeat_empty=False, length=3)
 
 
 def test_sequence_of_iterables_raises():

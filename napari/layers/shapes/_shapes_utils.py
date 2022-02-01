@@ -406,7 +406,7 @@ def find_corners(data):
     Returns
     -------
     corners : np.ndarray
-        4x2 array of corners of the boudning box
+        4x2 array of corners of the bounding box
     """
     min_val = data.min(axis=0)
     max_val = data.max(axis=0)
@@ -431,7 +431,7 @@ def center_radii_to_corners(center, radii):
     Returns
     -------
     corners : np.ndarray
-        4x2 array of corners of the boudning box
+        4x2 array of corners of the bounding box
     """
     data = np.array([center + radii, center - radii])
     corners = find_corners(data)
@@ -528,7 +528,7 @@ def triangulate_face(data):
     Returns
     -------
     vertices : np.ndarray
-        Mx2 array vertices of the trinagles.
+        Mx2 array vertices of the triangles.
     triangles : np.ndarray
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
@@ -557,7 +557,7 @@ def triangulate_edge(path, closed=False):
     Returns
     -------
     centers : np.ndarray
-        Mx2 or Mx3 array central coordinates of path trinagles.
+        Mx2 or Mx3 array central coordinates of path triangles.
     offsets : np.ndarray
         Mx2 or Mx3 array of the offsets to the central coordinates that need to
         be scaled by the line width and then added to the centers to
@@ -616,7 +616,7 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     Returns
     -------
     centers : np.ndarray
-        Mx2 or Mx3 array central coordinates of path trinagles.
+        Mx2 or Mx3 array central coordinates of path triangles.
     offsets : np.ndarray
         Mx2 or Mx3 array of the offsets to the central coordinates that need to
         be scaled by the line width and then added to the centers to
@@ -762,7 +762,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     """Generates list of mesh vertices and triangles from a path
 
     Adapted from vispy.visuals.TubeVisual
-    https://github.com/vispy/vispy/blob/master/vispy/visuals/tube.py
+    https://github.com/vispy/vispy/blob/main/vispy/visuals/tube.py
 
     Parameters
     ----------
@@ -998,7 +998,7 @@ def get_default_shape_type(current_type):
         list of current shape types
 
     Returns
-    ----------
+    -------
     default_type : str
         default shape type
     """
@@ -1108,7 +1108,10 @@ def validate_num_vertices(
         ):
             raise ValueError(
                 trans._(
-                    f"{shape_type} {shape} has invalid number of vertices: {len(shape)}.",
+                    "{shape_type} {shape} has invalid number of vertices: {shape_length}.",
                     deferred=True,
+                    shape_type=shape_type,
+                    shape=shape,
+                    shape_length=len(shape),
                 )
             )

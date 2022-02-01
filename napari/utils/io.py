@@ -6,6 +6,7 @@ from glob import glob
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
+import imageio
 import numpy as np
 from dask import array as da
 from dask import delayed
@@ -13,6 +14,9 @@ from dask import delayed
 from ..types import FullLayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
+
+IMAGEIO_EXTENSIONS = {x for f in imageio.formats for x in f.extensions}
+READER_EXTENSIONS = IMAGEIO_EXTENSIONS.union({'.zarr', '.lsm'})
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -40,7 +44,11 @@ def imsave(filename: str, data: np.ndarray):
             # like repackaging on linux or anything else we fallback to
             # using compress
             warnings.warn(
-                f'Error parsing tiffile version number {tifffile.__version__:!r}'
+                trans._(
+                    'Error parsing tiffile version number {version_number}',
+                    deferred=True,
+                    version_number=f"{tifffile.__version__:!r}",
+                )
             )
 
         if compression_instead_of_compress:
@@ -447,7 +455,7 @@ def read_csv(
 
 
 def csv_to_layer_data(
-    path: str, require_type: str = None
+    path: str, require_type: Optional[str] = None
 ) -> Optional[FullLayerData]:
     """Return layer data from a CSV file if detected as a valid type.
 

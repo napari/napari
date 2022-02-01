@@ -29,7 +29,7 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
 
     Parameters
     ----------
-    path: Path, optional
+    path : Path, optional
         The path to read/write the settings from.
 
     Returns
@@ -54,9 +54,9 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
         calframe = inspect.getouterframes(curframe, 2)
         raise Exception(
             trans._(
-                "The path can only be set once per session. Settings called from {calframe[1][3]}",
+                "The path can only be set once per session. Settings called from {calframe}",
                 deferred=True,
-                calframe=calframe,
+                calframe=calframe[1][3],
             )
         )
 

@@ -1,5 +1,5 @@
-jupyter-book==0.10.2
-jupytext==1.10.3
-sphinx_autodoc_typehints==1.11.0
+jupyter-book==0.12.1
+sphinx_autodoc_typehints==1.12.0
 furo
 Jinja2
+sphinx-tabs

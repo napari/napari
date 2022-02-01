@@ -7,7 +7,7 @@ from napari.components._viewer_constants import Position
 
 def test_vispy_text_visual(make_napari_viewer):
     viewer = make_napari_viewer()
-    qt_widget = viewer.window.qt_viewer
+    qt_widget = viewer.window._qt_viewer
     assert viewer.scale_bar is not None
     assert qt_widget.scale_bar is not None
 
@@ -74,3 +74,4 @@ def test_vispy_text_visual(make_napari_viewer):
     viewer.scale_bar.visible = False
     viewer.scale_bar.unit = "pixel"
     assert qt_widget.scale_bar._quantity.units == "pixel"
+    del qt_widget

@@ -173,7 +173,7 @@ def test_singleton_dims(qtbot):
     """
     ndim = 4
     dims = Dims(ndim=ndim)
-    dims.set_range(0, (0, 0, 1))
+    dims.set_range(0, (0, 1, 1))
     view = QtDims(dims)
     qtbot.addWidget(view)
 
@@ -297,7 +297,7 @@ def test_play_button(qtbot):
 def test_slice_labels(qtbot):
     ndim = 4
     dims = Dims(ndim=ndim)
-    dims.set_range(0, (0, 19, 1))
+    dims.set_range(0, (0, 20, 1))
     view = QtDims(dims)
     qtbot.addWidget(view)
 

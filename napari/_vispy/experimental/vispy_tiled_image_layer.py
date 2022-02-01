@@ -8,11 +8,9 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, List
 
-from vispy.scene.visuals import create_visual_node
-
 from ...utils.events import EmitterGroup
 from ...utils.perf import block_timer
-from ..vispy_image_layer import VispyImageLayer
+from ..layers.image import VispyImageLayer
 from .tile_grid import TileGrid
 from .tiled_image_visual import TiledImageVisual
 
@@ -20,11 +18,6 @@ if TYPE_CHECKING:
     from ...layers.image.experimental import OctreeChunk
     from ...layers.image.image import Image
 
-
-# Create the scene graph Node version of this visual. Visuals are a mix of
-# the visual itself and a scene graph node. The scene graph node is what
-# can added to the scene and transformed.
-TiledImageNode = create_visual_node(TiledImageVisual)
 
 LOGGER = logging.getLogger("napari.octree.visual")
 
@@ -80,7 +73,7 @@ class VispyTiledImageLayer(VispyImageLayer):
     def __init__(self, layer: Image):
 
         # All tiles are stored in a single TileImageVisual.
-        visual = TiledImageNode(
+        visual = TiledImageVisual(
             tile_shape=layer.tile_shape,
             image_converter=layer._raw_to_displayed,
         )
@@ -93,7 +86,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         # QtPoll listens to. Because a chunk might be loaded when QtPoll is
         # totally quiet, no mouse movement, no in-progress loading. We need
         # to get the polling going so we can load the chunks over time.
-        self.events = EmitterGroup(source=self, auto_connect=True, loaded=None)
+        self.events = EmitterGroup(source=self, loaded=None)
 
         # An optional grid that shows tile borders.
         self.grid = TileGrid(self.node)
@@ -298,7 +291,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         # every frame.
         return self.node.add_chunks(drawable_chunks)
 
-    def _on_loaded(self, _event) -> None:
+    def _on_loaded(self) -> None:
         """The layer loaded new data, so update our view."""
         self._update_view()
         self.events.loaded()

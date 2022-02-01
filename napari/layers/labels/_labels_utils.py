@@ -187,7 +187,7 @@ def mouse_event_to_labels_coordinate(layer, event):
 
     Returns
     -------
-    coordinates : array of int
+    coordinates : array of int or None
         The data coordinates for the mouse event.
     """
     ndim = len(layer._dims_displayed)
@@ -200,5 +200,7 @@ def mouse_event_to_labels_coordinate(layer, event):
             dims_displayed=layer._dims_displayed,
             world=True,
         )
+        if start is None and end is None:
+            return None
         coordinates = first_nonzero_coordinate(layer.data, start, end)
     return coordinates

@@ -3,7 +3,7 @@ Internal napari hook implementations to be registered by the plugin manager
 """
 import os
 import shutil
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Sequence, Union
 
 import numpy as np
 from napari_plugin_engine import napari_hook_implementation
@@ -16,6 +16,7 @@ from ..types import (
     image_reader_to_layerdata_reader,
 )
 from ..utils.io import (
+    READER_EXTENSIONS,
     csv_to_layer_data,
     imsave,
     imsave_extensions,
@@ -25,8 +26,8 @@ from ..utils.io import (
 from ..utils.misc import abspath_or_url
 
 
-def csv_reader_function(path: Union[str, List[str]]) -> List[LayerData]:
-    if isinstance(path, list):
+def csv_reader_function(path: Union[str, Sequence[str]]) -> List[LayerData]:
+    if not isinstance(path, str):
         out: List[LayerData] = []
         for p in path:
             layer_data = csv_to_layer_data(p, require_type=None)
@@ -38,8 +39,15 @@ def csv_reader_function(path: Union[str, List[str]]) -> List[LayerData]:
         return [layer_data] if layer_data else []
 
 
+def npy_to_layer_data(path: Union[str, Sequence[str]]) -> List[LayerData]:
+    if isinstance(path, str):
+        return [(np.load(path),)]
+
+    return [(np.load(p),) for p in path]
+
+
 @napari_hook_implementation(trylast=True)
-def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
+def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the
@@ -55,9 +63,19 @@ def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
     callable
         function that returns layer_data to be handed to viewer._add_layer_data
     """
-    if isinstance(path, str) and path.endswith('.csv'):
-        return csv_reader_function
-    return image_reader_to_layerdata_reader(magic_imread)
+    if isinstance(path, str):
+        if path.endswith('.csv'):
+            return csv_reader_function
+        if os.path.isdir(path):
+            return image_reader_to_layerdata_reader(magic_imread)
+        if path.endswith('.npy'):
+            return npy_to_layer_data
+        path = [path]
+
+    if all(str(x).lower().endswith(tuple(READER_EXTENSIONS)) for x in path):
+        return image_reader_to_layerdata_reader(magic_imread)
+
+    return None
 
 
 @napari_hook_implementation(trylast=True)
@@ -89,6 +107,8 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
     if ext in imsave_extensions():
         imsave(path, data)
         return path
+
+    return None
 
 
 @napari_hook_implementation(trylast=True)
@@ -139,15 +159,12 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     """
     ext = os.path.splitext(path)[1]
     if ext == '':
-        path = path + '.csv'
+        path += '.csv'
     elif ext != '.csv':
         # If an extension is provided then it must be `.csv`
-        return
+        return None
 
-    if 'properties' in meta:
-        properties = meta['properties']
-    else:
-        properties = {}
+    properties = meta.get('properties', {})
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
     column_names = ['axis-' + str(n) for n in range(data.shape[1])]
@@ -193,23 +210,19 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
     """
     ext = os.path.splitext(path)[1]
     if ext == '':
-        path = path + '.csv'
+        path += '.csv'
     elif ext != '.csv':
         # If an extension is provided then it must be `.csv`
-        return
+        return None
 
-    if 'shape_type' in meta:
-        shape_type = meta['shape_type']
-    else:
-        shape_type = ['rectangle'] * len(data)
-
+    shape_type = meta.get('shape_type', ['rectangle'] * len(data))
     # No data passed so nothing written
     if len(data) == 0:
-        return
+        return None
 
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
-    n_dimensions = max([s.shape[1] for s in data])
+    n_dimensions = max(s.shape[1] for s in data)
     column_names = ['axis-' + str(n) for n in range(n_dimensions)]
 
     # add shape id and vertex id of each vertex

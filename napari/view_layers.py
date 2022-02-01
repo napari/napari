@@ -3,6 +3,8 @@
 All functions follow this pattern, (where <layer_type> is replaced with one
 of the layer types, like "image", "points", etc...):
 
+.. code-block:: python
+
     def view_<layer_type>(*args, **kwargs):
         # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
         viewer = Viewer(**viewer_kwargs)
@@ -46,14 +48,12 @@ def _merge_docstrings(add_method, layer_string):
     import textwrap
 
     add_method_doc = _NumpyDocString(add_method.__doc__)
-    params = (
-        "\n".join(add_method_doc._str_param_list('Parameters')) + _VIEW_PARAMS
-    )
+
     # this ugliness is because the indentation of the parsed numpydocstring
     # is different for the first parameter :(
-    lines = params.splitlines()
+    lines = add_method_doc._str_param_list('Parameters')
     lines = lines[:3] + textwrap.dedent("\n".join(lines[3:])).splitlines()
-    params = "\n".join(lines)
+    params = "\n".join(lines) + "\n" + textwrap.dedent(_VIEW_PARAMS)
     n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
     return _doc_template.format(n=n, layer_string=layer_string, params=params)
 
