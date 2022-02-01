@@ -97,9 +97,12 @@ class Points(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
+    out_of_slice_display : bool
+        If True, renders points not just in central plane but also slightly out of slice
+        according to specified point marker size.
     n_dimensional : bool
-        If True, renders points not just in central plane but also in all
-        n-dimensions according to specified point marker size.
+        This property will soon be deprecated in favor of 'out_of_slice_display'.
+        Use that instead.
     name : str
         Name of the layer.
     metadata : dict
@@ -202,9 +205,9 @@ class Points(Layer):
     current_face_color : str
         Size of the marker edge for the next point to be added or the currently
         selected point.
-    n_dimensional : bool
-        If True, renders points not just in central plane but also in all
-        n-dimensions according to specified point marker size.
+    out_of_slice_display : bool
+        If True, renders points not just in central plane but also slightly out of slice
+        according to specified point marker size.
     selected_data : set
         Integer indices of any selected points.
     mode : str
@@ -286,7 +289,8 @@ class Points(Layer):
         face_color_cycle=None,
         face_colormap='viridis',
         face_contrast_limits=None,
-        n_dimensional=False,
+        out_of_slice_display=False,
+        n_dimensional=None,
         name=None,
         metadata=None,
         scale=None,
@@ -337,7 +341,15 @@ class Points(Layer):
             properties=Event,
             current_properties=Event,
             symbol=Event,
+            out_of_slice_display=Event,
             n_dimensional=Event,
+            # n_dimensional=WarningEmitter(
+            # trans._(
+            # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
+            # "use 'out_of_slice_display' instead."
+            # ),
+            # type='n_dimensional',
+            # ),
             highlight=Event,
             shading=Event,
             _antialias=Event,
@@ -364,7 +376,6 @@ class Points(Layer):
 
         # Save the point style params
         self.symbol = symbol
-        self._n_dimensional = n_dimensional
         self.edge_width = edge_width
 
         # The following point properties are for the new points that will
@@ -419,6 +430,11 @@ class Points(Layer):
             categorical_colormap=face_color_cycle,
             properties=color_properties,
         )
+
+        if n_dimensional is not None:
+            self._out_of_slice_display = n_dimensional
+        else:
+            self._out_of_slice_display = out_of_slice_display
 
         self._shown = np.empty(0).astype(bool)
         self.size = size
@@ -645,15 +661,43 @@ class Points(Layer):
         return extrema
 
     @property
-    def n_dimensional(self) -> bool:
-        """bool: renders points as n-dimensional."""
-        return self._n_dimensional
+    def out_of_slice_display(self) -> bool:
+        """bool: renders points slightly out of slice."""
+        return self._out_of_slice_display
 
-    @n_dimensional.setter
-    def n_dimensional(self, n_dimensional: bool) -> None:
-        self._n_dimensional = n_dimensional
+    @out_of_slice_display.setter
+    def out_of_slice_display(self, out_of_slice_display: bool) -> None:
+        self._out_of_slice_display = bool(out_of_slice_display)
+        self.events.out_of_slice_display()
         self.events.n_dimensional()
         self.refresh()
+
+    @property
+    def n_dimensional(self) -> bool:
+        """
+        This property will soon be deprecated in favor of `out_of_slice_display`. Use that instead.
+        """
+        # warnings.warn(
+        # trans._(
+        # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
+        # "use 'out_of_slice_display' instead."
+        # ),
+        # DeprecationWarning,
+        # stacklevel=2,
+        # )
+        return self._out_of_slice_display
+
+    @n_dimensional.setter
+    def n_dimensional(self, value: bool) -> None:
+        # warnings.warn(
+        # trans._(
+        # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
+        # "use 'out_of_slice_display' instead."
+        # ),
+        # DeprecationWarning,
+        # stacklevel=2,
+        # )
+        self.out_of_slice_display = value
 
     @property
     def symbol(self) -> str:
@@ -1057,7 +1101,8 @@ class Points(Layer):
                 'properties': self.properties,
                 'property_choices': self.property_choices,
                 'text': self.text.dict(),
-                'n_dimensional': self.n_dimensional,
+                'out_of_slice_display': self.out_of_slice_display,
+                'n_dimensional': self.out_of_slice_display,
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
@@ -1324,7 +1369,7 @@ class Points(Layer):
         slice_indices : list
             Indices of points in the currently viewed slice.
         scale : float, (N, ) array
-            If in `n_dimensional` mode then the scale factor of points, where
+            If in `out_of_slice_display` mode then the scale factor of points, where
             values of 1 corresponds to points located in the slice, and values
             less than 1 correspond to points located in neighboring slices.
         """
@@ -1332,7 +1377,7 @@ class Points(Layer):
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
-            if self.n_dimensional is True and self.ndim > 2:
+            if self.out_of_slice_display is True and self.ndim > 2:
                 distances = abs(self.data[:, not_disp] - indices[not_disp])
                 sizes = self.size[:, not_disp] / 2
                 matches = np.all(distances <= sizes, axis=1)
