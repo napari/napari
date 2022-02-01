@@ -913,7 +913,7 @@ class Window:
             menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
-        del self._dock_widgets[_dw.name]
+        self._dock_widgets.pop(_dw.name, None)
 
         # Deleting the dock widget means any references to it will no longer
         # work but it's not really useful anyway, since the inner widget has
@@ -1143,7 +1143,7 @@ class Window:
             By default, True.
 
         Returns
-        ----------
+        -------
         img : QImage
         """
         from .utils import add_flash_animation
