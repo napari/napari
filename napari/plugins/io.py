@@ -101,29 +101,14 @@ def read_data_with_plugins(
 
         return layer_data or None, hookimpl
 
-    errors: List[PluginCallError] = []
-    skip_impls: List[HookImplementation] = []
     layer_data = None
-    while True:
-        result = hook_caller.call_with_result_obj(
-            path=path, _skip_impls=skip_impls
-        )
-        reader = result.result  # will raise exceptions if any occurred
-        if not reader:
-            # we're all out of reader plugins
-            break
-        try:
-            layer_data = reader(path)  # try to read data
-            if layer_data:
-                hookimpl = result.implementation
-                break
-        except Exception as exc:
-            # collect the error and log it, but don't raise it.
-            err = PluginCallError(result.implementation, cause=exc)
-            err.log(logger=logger)
-            errors.append(err)
-        # don't try this impl again
-        skip_impls.append(result.implementation)
+    result = hook_caller.call_with_result_obj(path=path)
+    reader = result.result  # will raise exceptions if any occurred
+    try:
+        layer_data = reader(path)  # try to read data
+        hookimpl = result.implementation
+    except Exception as exc:
+        raise PluginCallError(result.implementation, cause=exc)
 
     if not layer_data:
         # if layer_data is empty, it means no plugin could read path
@@ -144,13 +129,6 @@ def read_data_with_plugins(
 
         # TODO: change to a warning notification in a later PR
         raise ValueError(message)
-
-    if errors:
-        names = {repr(e.plugin_name) for e in errors}
-        err_msg = f"({len(errors)}) error{'s' if len(errors) > 1 else ''} "
-        err_msg += f"occurred in plugins: {', '.join(names)}. "
-        err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
-        logger.error(err_msg)
 
     # if the reader returns a "null layer" sentinel indicating an empty file,
     # return an empty list, otherwise return the result or None
