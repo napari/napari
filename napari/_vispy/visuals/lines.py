@@ -96,7 +96,7 @@ void main()
 """
 
 
-class LineQuadVisual(Visual):
+class LineVisual(Visual):
     def __init__(self, width=5, scaling=True, **kwargs):
         self._vbo = VertexBuffer()
         self._data = None
@@ -204,4 +204,4 @@ class LineQuadVisual(Visual):
             return (0, 0)
 
 
-LineQuad = create_visual_node(LineQuadVisual)
+Line = create_visual_node(LineVisual)

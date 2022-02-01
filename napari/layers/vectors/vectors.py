@@ -125,6 +125,8 @@ class Vectors(Layer):
     out_of_slice_display : bool
         If True, renders vectors not just in central plane but also slightly out of slice
         according to specified point marker size.
+    fixed_canvas_width : bool
+        If True, vector width is defined in canvas pixels.
 
     Notes
     -----
@@ -176,6 +178,7 @@ class Vectors(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        fixed_canvas_width=False,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -207,11 +210,12 @@ class Vectors(Layer):
             edge_color_mode=Event,
             properties=Event,
             out_of_slice_display=Event,
-            fixed_canvas_size=Event,
+            fixed_canvas_width=Event,
         )
 
         # Save the vector style params
         self._edge_width = edge_width
+        self._fixed_canvas_width = fixed_canvas_width
         self._out_of_slice_display = out_of_slice_display
 
         self._length = float(length)
@@ -428,13 +432,13 @@ class Vectors(Layer):
         self.refresh()
 
     @property
-    def fixed_canvas_size(self):
-        return self._fixed_canvas_size
+    def fixed_canvas_width(self):
+        return self._fixed_canvas_width
 
-    @fixed_canvas_size.setter
-    def fixed_canvas_size(self, value):
-        self._fixed_canvas_size = bool(value)
-        self.events.fixed_canvas_size()
+    @fixed_canvas_width.setter
+    def fixed_canvas_width(self, value):
+        self._fixed_canvas_width = bool(value)
+        self.events.fixed_canvas_width()
 
     @property
     def edge_color(self) -> np.ndarray:

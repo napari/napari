@@ -12,8 +12,8 @@ class VispyVectorsLayer(VispyBaseLayer):
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.length.connect(self._on_data_change)
         self.layer.events.edge_width.connect(self._on_edge_width_change)
-        self.layer.events.fixed_canvas_size.connect(
-            self._on_fixed_canvas_size_change
+        self.layer.events.fixed_canvas_width.connect(
+            self._on_fixed_canvas_width_change
         )
 
         self.reset()
@@ -50,8 +50,8 @@ class VispyVectorsLayer(VispyBaseLayer):
     def _on_edge_width_change(self):
         self.node.width = self.layer.edge_width
 
-    def _on_fixed_canvas_size_change(self):
-        self.node.scaling = self.layer.fixed_canvas_size
+    def _on_fixed_canvas_width_change(self):
+        self.node.scaling = not self.layer.fixed_canvas_width
 
     def reset(self):
         super().reset()
