@@ -890,30 +890,30 @@ def test_edge_width():
     assert layer.edge_width == 3
 
 
-def test_n_dimensional():
-    """Test setting n_dimensional flag for 2D and 4D data."""
+def test_out_of_slice_display():
+    """Test setting out_of_slice_display flag for 2D and 4D data."""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.n_dimensional is False
+    assert layer.out_of_slice_display is False
 
-    layer.n_dimensional = True
-    assert layer.n_dimensional is True
+    layer.out_of_slice_display = True
+    assert layer.out_of_slice_display is True
 
-    layer = Points(data, n_dimensional=True)
-    assert layer.n_dimensional is True
+    layer = Points(data, out_of_slice_display=True)
+    assert layer.out_of_slice_display is True
 
     shape = (10, 4)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.n_dimensional is False
+    assert layer.out_of_slice_display is False
 
-    layer.n_dimensional = True
-    assert layer.n_dimensional is True
+    layer.out_of_slice_display = True
+    assert layer.out_of_slice_display is True
 
-    layer = Points(data, n_dimensional=True)
-    assert layer.n_dimensional is True
+    layer = Points(data, out_of_slice_display=True)
+    assert layer.out_of_slice_display is True
 
 
 @pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
@@ -1692,7 +1692,7 @@ def test_view_data():
 def test_view_size():
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
-    layer = Points(coords, size=sizes, n_dimensional=False)
+    layer = Points(coords, size=sizes, out_of_slice_display=False)
 
     layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
@@ -1704,11 +1704,11 @@ def test_view_size():
         layer._view_size == sizes[np.ix_([2], layer._dims_displayed)]
     )
 
-    layer.n_dimensional = True
+    layer.out_of_slice_display = True
     assert len(layer._view_size) == 3
 
     # test a slice with no points
-    layer.n_dimensional = False
+    layer.out_of_slice_display = False
     layer._slice_dims([2, slice(None), slice(None)])
     assert np.all(layer._view_size == [])
 

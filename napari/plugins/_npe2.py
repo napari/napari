@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -37,9 +36,12 @@ def read(
     path: Union[str, Sequence[str]], plugin: Optional[str] = None
 ) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
-    with suppress(ValueError):
+    try:
         layer_data, reader = read_get_reader(path, plugin_name=plugin)
         return layer_data, _FakeHookimpl(reader.plugin_name)
+    except ValueError as e:
+        if 'No readers returned data' not in str(e):
+            raise e
     return None
 
 
