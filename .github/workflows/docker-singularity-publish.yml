@@ -6,14 +6,15 @@ name: Docker and Singularity build
 # documentation.
 
 on:
+on:
+  workflow_dispatch:
+
 #  schedule:
 #    - cron: '31 0 * * *'
   push:
     branches: [ main ]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
-  pull_request:
-    branches: [ main ]
 
 env:
   # Use docker.io for Docker Hub if empty
