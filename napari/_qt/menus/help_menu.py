@@ -20,16 +20,12 @@ class HelpMenu(NapariMenu):
             }
         ]
         try:
-            from napari_error_monitor import _ask_opt_in, _settings_path
-
-            def _show_dialog():
-                _settings_path().unlink(missing_ok=True)
-                _ask_opt_in()
+            from napari_error_monitor import ask_opt_in
 
             ACTIONS.append(
                 {
                     'text': trans._('Bug reporting opt in/out...'),
-                    'slot': _show_dialog,
+                    'slot': lambda: ask_opt_in(force=True),
                 }
             )
         except ImportError:
