@@ -20,7 +20,7 @@ class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
     """Defines a way to encode style values, like colors and strings."""
 
     @abstractmethod
-    def __call__(self, features: Any) -> StyleArray:
+    def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         """Apply this encoding with the given features to generate style values.
 
         Parameters
@@ -30,9 +30,9 @@ class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
 
         Returns
         -------
-        StyleArray
-            The numpy array of encoded values should either have a length of 1 or
-            have the same length as the given features.
+        Union[StyleValue, StyleArray]
+            Either a single style value (e.g. from a constant encoding) or an
+            array of encoded values the same length as the given features.
 
         Raises
         ------
@@ -106,12 +106,12 @@ class _ConstantStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
     constant: StyleValue
 
     def __call__(self, features: Any) -> StyleArray:
-        return np.array([self.constant])
+        return self.constant
 
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
     ) -> StyleArray:
-        return self(features)
+        return self.constant
 
     def _append(self, array: StyleArray) -> None:
         pass
@@ -203,7 +203,7 @@ class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
                 ),
                 category=RuntimeWarning,
             )
-        return _broadcast_constant(self.fallback, n_rows, indices)
+        return self.fallback
 
     def _append(self, array: StyleArray) -> None:
         self._cached = np.append(self._cached, array, axis=0)
@@ -226,14 +226,6 @@ def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
     # delete again with OOB indices.
     safe_indices = [i for i in indices if i < array.shape[0]]
     return np.delete(array, safe_indices, axis=0)
-
-
-def _broadcast_constant(
-    constant: np.ndarray, n_rows: int, indices: Optional[IndicesType] = None
-) -> np.ndarray:
-    output_length = n_rows if indices is None else len(indices)
-    output_shape = (output_length,) + constant.shape
-    return np.broadcast_to(constant, output_shape)
 
 
 def _maybe_index_array(

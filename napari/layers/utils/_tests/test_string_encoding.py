@@ -26,20 +26,20 @@ def make_features_with_class_confidence_columns():
 
 def test_constant_call_with_no_rows():
     features = make_features_with_no_columns(num_rows=0)
-    encoding = ConstantStringEncoding(constant='text')
+    encoding = ConstantStringEncoding(constant='abc')
 
     values = encoding(features)
 
-    np.testing.assert_equal(values, ['text'])
+    np.testing.assert_equal(values, 'abc')
 
 
 def test_constant_call_with_some_rows():
     features = make_features_with_no_columns(num_rows=3)
-    encoding = ConstantStringEncoding(constant='text')
+    encoding = ConstantStringEncoding(constant='abc')
 
     values = encoding(features)
 
-    np.testing.assert_equal(values, ['text'])
+    np.testing.assert_equal(values, 'abc')
 
 
 def test_manual_call_with_no_rows():
@@ -138,7 +138,7 @@ def test_validate_from_format():
 
 
 def test_validate_from_non_format():
-    argument = 'test'
+    argument = 'abc'
     expected = ConstantStringEncoding(constant=argument)
 
     actual = validate_string_encoding(argument)
