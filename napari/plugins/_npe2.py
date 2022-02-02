@@ -178,9 +178,14 @@ def get_readers(path: str) -> Dict[str, str]:
     Dict[str, str]
         Dictionary of display_name to plugin_name
     """
+
+    def _display_name(pm: PluginManifest) -> str:
+        """Fall back to plugin_name if display_name is missing."""
+        return pm.display_name or pm.plugin_name
+
     pm = npe2.PluginManager.instance()
     return {
-        pm.get_manifest(reader.command).display_name: reader.plugin_name
+        _display_name(pm.get_manifest(reader.command)): reader.plugin_name
         for reader in pm.iter_compatible_readers(path)
     }
 
