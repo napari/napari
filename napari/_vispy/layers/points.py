@@ -120,14 +120,12 @@ class VispyPointsLayer(VispyBaseLayer):
         if (len(self.layer._indices_view) == 0) or (
             self.layer.text.visible is False
         ):
-            text_coords = np.zeros((1, ndisplay))
+            text_coords = np.zeros((0, ndisplay))
             text = []
             anchor_x = 'center'
             anchor_y = 'center'
         else:
             text_coords, anchor_x, anchor_y = self.layer._view_text_coords
-            if len(text_coords) == 0:
-                text_coords = np.zeros((1, ndisplay))
             text = self.layer._view_text
         text_node = self._get_text_node()
         update_text(

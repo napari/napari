@@ -51,6 +51,10 @@ def update_text(
         else:
             positions = raw_positions
 
+    # Vispy always wants a 1D array of text values, so broadcast to
+    # handle scalar constants.
+    text_values = np.broadcast_to(text_values, (len(coords),))
+
     text_node.text = text_values
     text_node.pos = positions
     text_node.anchors = anchor
