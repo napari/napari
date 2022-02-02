@@ -102,7 +102,7 @@ def test_text_manager_format():
 
     # test getting the text elements when there are none in view
     text_view = text_manager.view_text([])
-    np.testing.assert_equal(text_view, [''])
+    np.testing.assert_equal(text_view, np.empty((0,), dtype=str))
 
     # test getting the text elements when the first two elements are in view
     text_view = text_manager.view_text([0, 1])

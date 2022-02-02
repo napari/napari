@@ -17,7 +17,6 @@ from .layer_utils import _validate_features
 from .string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
-    ManualStringEncoding,
     StringArray,
     StringEncodingArgument,
     StringEncodingUnion,
@@ -159,10 +158,6 @@ class TextManager(EventedModel):
         #     ),
         #     DeprecationWarning,
         # )
-        if isinstance(
-            self.string, (ConstantStringEncoding, ManualStringEncoding)
-        ):
-            return
         features = pd.DataFrame(
             {
                 name: np.repeat(value, n_text, axis=0)
@@ -244,10 +239,6 @@ class TextManager(EventedModel):
         #    ),
         #    DeprecationWarning,
         # )
-        if len(indices_view) == 0 or isinstance(
-            self.string, (ConstantStringEncoding, ManualStringEncoding)
-        ):
-            return np.array([''])
         return self.string._update(self._features, indices=indices_view)
 
     @classmethod
