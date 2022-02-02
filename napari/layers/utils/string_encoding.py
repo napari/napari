@@ -162,6 +162,7 @@ def validate_string_encoding(
     if isinstance(value, _STRING_ENCODINGS):
         return value
     if isinstance(value, dict):
+        # Let Pydantic try to parse a dict as one of the supported encodings.
         return value
     if isinstance(value, str):
         if _is_format_string(value):

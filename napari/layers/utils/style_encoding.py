@@ -43,7 +43,7 @@ class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
     @abstractmethod
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
-    ) -> StyleArray:
+    ) -> Union[StyleValue, StyleArray]:
         """Updates cached values by applying this to the tail of the given features.
 
         If the cached values have the same length as the given features, this may
@@ -105,12 +105,12 @@ class _ConstantStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
 
     constant: StyleValue
 
-    def __call__(self, features: Any) -> StyleArray:
+    def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         return self.constant
 
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
-    ) -> StyleArray:
+    ) -> Union[StyleValue, StyleArray]:
         return self.constant
 
     def _append(self, array: StyleArray) -> None:
@@ -143,7 +143,7 @@ class _ManualStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
     array: StyleArray
     default: StyleValue
 
-    def __call__(self, features: Any) -> StyleArray:
+    def __call__(self, features: Any) -> Union[StyleArray, StyleValue]:
         n_values = self.array.shape[0]
         n_rows = features.shape[0]
         if n_rows > n_values:
@@ -153,7 +153,7 @@ class _ManualStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
 
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
-    ) -> StyleArray:
+    ) -> Union[StyleValue, StyleArray]:
         if len(self.array) < features.shape[0]:
             self.array = self(features)
         return _maybe_index_array(self.array, indices)
@@ -186,24 +186,23 @@ class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
 
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
-    ) -> StyleArray:
-        n_values = self._cached.shape[0]
+    ) -> Union[StyleValue, StyleArray]:
+        n_cached = self._cached.shape[0]
         n_rows = features.shape[0]
-        tail_indices = range(n_values, n_rows)
-        try:
-            if len(tail_indices) > 0:
-                tail_array = self(features.iloc[tail_indices])
-                self._append(tail_array)
-            return _maybe_index_array(self._cached, indices)
-        except (KeyError, ValueError):
-            warnings.warn(
-                trans._(
-                    'Applying the encoding failed. Returning safe fallback value instead.',
-                    deferred=True,
-                ),
-                category=RuntimeWarning,
-            )
-        return self.fallback
+        if n_cached < n_rows:
+            try:
+                tail_array = self(features.iloc[n_cached:n_rows])
+            except (KeyError, ValueError):
+                warnings.warn(
+                    trans._(
+                        'Applying the encoding failed. Returning safe fallback value instead.',
+                        deferred=True,
+                    ),
+                    category=RuntimeWarning,
+                )
+                return self.fallback
+            self._append(tail_array)
+        return _maybe_index_array(self._cached, indices)
 
     def _append(self, array: StyleArray) -> None:
         self._cached = np.append(self._cached, array, axis=0)

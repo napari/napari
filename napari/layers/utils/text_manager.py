@@ -103,7 +103,7 @@ class TextManager(EventedModel):
                     kwargs['string'] = text
         super().__init__(**kwargs)
         # Update strings on initialization to support deprecated use of
-        # add and remove immediately.
+        # values, add, and remove.
         self.string._update(self._features)
 
     @property
