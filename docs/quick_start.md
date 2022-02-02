@@ -58,9 +58,9 @@ pip install 'napari[all]'
 
 - Or download the bundled app for simple installation:
 
-    [Linux installation](napari-0.4.13-Linux-x86_64.zip)<br>
-    [macOS installaion](napari-0.4.13-macOS-x86_64.zip)<br>
-    [Windows installation](napari-0.4.13-Windows-x86_64.zip)<br>
+    [Linux installation](https://github.com/napari/napari/releases/download/v0.4.13/napari-0.4.13-Linux-x86_64.zip)<br>
+    [macOS installaion](https://github.com/napari/napari/releases/download/v0.4.13/napari-0.4.13-macOS-x86_64.zip)<br>
+    [Windows installation](https://github.com/napari/napari/releases/download/v0.4.13/napari-0.4.13-Windows-x86_64.zip)<br>
 
     *Note: 0.4.13 bundled app is missing sample menu data ([issue 3968](https://github.com/napari/napari/issues/3968))*
     
