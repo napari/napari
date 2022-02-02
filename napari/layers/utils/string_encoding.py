@@ -2,18 +2,15 @@ from string import Formatter
 from typing import Any, Sequence, Union
 
 import numpy as np
-from typing_extensions import Literal, Protocol, runtime_checkable
+from typing_extensions import Literal
 
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 from .style_encoding import (
-    EncodingType,
-    StyleEncoding,
     _ConstantStyleEncoding,
     _DerivedStyleEncoding,
     _ManualStyleEncoding,
-    parse_kwargs_as_encoding,
 )
 
 """A scalar array that represents one string value."""
@@ -21,86 +18,6 @@ StringValue = Array[str, ()]
 
 """An Nx1 array where each element represents one string value."""
 StringArray = Array[str, (-1,)]
-
-
-@runtime_checkable
-class StringEncoding(StyleEncoding[StringArray], Protocol):
-    """Encodes strings from features.
-
-    See ``validate_string_encoding`` for a description of the supported types
-    that can be used when assigning a value to a StringEncoding field.
-    """
-
-
-def validate_string_encoding(
-    string: Union[StringEncoding, dict, str, Sequence[str], None],
-) -> StringEncoding:
-    """Validates and coerces an input to a StringEncoding.
-
-    Parameters
-    ----------
-    string : Union[StringEncoding, dict, str, Sequence[str], None]
-        The value to validate and/or coerce.
-        If this is already a StringEncoding, it is returned as is.
-        If this is a dict, then it should represent one of the built-in StringEncodings.
-        If this a valid format string, then a FormatStringEncoding is returned.
-        If this is any other string, a ConstantStringEncoding is returned.
-        If this is a sequence of strings, a ManualStringEncoding is returned.
-        See the examples for some expected usage.
-
-    Returns
-    -------
-    StringEncoding
-
-    Raises
-    ------
-    TypeError
-        If the input is not a supported type.
-    ValidationError
-        If the input cannot be parsed into a StringEncoding.
-
-    Examples
-    --------
-    Leave an existing StringEncoding alone.
-    >>> original = ConstantStringEncoding(constant='abc')
-    >>> validated = validate_string_encoding(original)
-    >>> id(original) == id(validated)
-    True
-
-    Coerce a dict to a DirectStringEncoding.
-    >>> validate_string_encoding({'feature': 'class'})
-    DirectStringEncoding(fallback=array('', dtype='<U1'), feature='class', encoding_type=<EncodingType.DIRECT: 'direct'>)
-
-    Coerce a format string to a FormatStringEncoding.
-    >>> validate_string_encoding('{class}: {score:.2f}')
-    FormatStringEncoding(fallback=array('', dtype='<U1'), format='{class}: {score:.2f}', encoding_type=<EncodingType.FORMAT: 'format'>)
-
-    Coerce a non-format string to a ConstantStringEncoding.
-    >>> validate_string_encoding('abc')
-    ConstantStringEncoding(constant=array('abc', dtype='<U3'), encoding_type=<EncodingType.CONSTANT: 'constant'>)
-
-    Coerce a sequence of strings to a ManualStringEncoding.
-    >>> validate_string_encoding(a', 'b', 'c'])
-    ManualStringEncoding(array=array(['a', 'b', 'c'], dtype='<U1'), default=array('', dtype='<U1'), encoding_type=<EncodingType.MANUAL: 'manual'>)
-    """
-    if string is None:
-        return ConstantStringEncoding(constant=DEFAULT_STRING)
-    if isinstance(string, StringEncoding):
-        return string
-    if isinstance(string, dict):
-        return parse_kwargs_as_encoding(_STRING_ENCODINGS, **string)
-    if isinstance(string, str):
-        if _is_format(string):
-            return FormatStringEncoding(format=string)
-        return ConstantStringEncoding(constant=string)
-    if isinstance(string, Sequence):
-        return ManualStringEncoding(array=string, default='')
-    raise TypeError(
-        trans._(
-            'string should be a StringEncoding, dict, str, Sequence[str], or None',
-            deferred=True,
-        )
-    )
 
 
 """The default string to use, which may also be used a safe fallback string."""
@@ -114,13 +31,13 @@ class ConstantStringEncoding(_ConstantStyleEncoding[StringValue, StringArray]):
     ----------
     constant : StringValue
         The constant string value.
-    encoding_type : Literal['constant']
+    encoding_type : Literal['ConstantStringEncoding']
         The type of encoding this specifies, which is useful for distinguishing
         this from other encodings when passing this as a dictionary.
     """
 
     constant: StringValue
-    encoding_type: Literal[EncodingType.CONSTANT] = 'constant'
+    encoding_type: Literal['ConstantStringEncoding'] = 'ConstantStringEncoding'
 
 
 class ManualStringEncoding(_ManualStyleEncoding[StringValue, StringArray]):
@@ -133,14 +50,14 @@ class ManualStringEncoding(_ManualStyleEncoding[StringValue, StringArray]):
     default : StringValue
         The default string value that is used when requesting a value that
         is out of bounds in the array attribute.
-    encoding_type : Literal['manual']
+    encoding_type : Literal['ManualStringEncoding']
         The type of encoding this specifies, which is useful for distinguishing
         this from other encodings when passing this as a dictionary.
     """
 
     array: StringArray = []
     default: StringValue = DEFAULT_STRING
-    encoding_type: Literal[EncodingType.MANUAL] = 'manual'
+    encoding_type: Literal['ManualStringEncoding'] = 'ManualStringEncoding'
 
 
 class DirectStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
@@ -153,14 +70,14 @@ class DirectStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     fallback : StringValue
         The safe constant fallback string to use if the feature column
         does not contain valid string values.
-    encoding_type : Literal['direct']
+    encoding_type : Literal['DirectStringEncoding']
         The type of encoding this specifies, which is useful for distinguishing
         this from other encodings when passing this as a dictionary.
     """
 
     feature: str
     fallback: StringValue = DEFAULT_STRING
-    encoding_type: Literal[EncodingType.DIRECT] = 'direct'
+    encoding_type: Literal['DirectStringEncoding'] = 'DirectStringEncoding'
 
     def __call__(self, features: Any) -> StringArray:
         return np.array(features[self.feature], dtype=str)
@@ -177,18 +94,20 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     fallback : StringValue
         The safe constant fallback string to use if the format string
         is not valid or contains fields other than feature names.
-    encoding_type : Literal['format']
+    encoding_type : Literal['FormatStringEncoding']
         The type of encoding this specifies, which is useful for distinguishing
         this from other encodings when passing this as a dictionary.
     """
 
     format: str
     fallback: StringValue = DEFAULT_STRING
-    encoding_type: Literal[EncodingType.FORMAT] = 'format'
+    encoding_type: Literal['FormatStringEncoding'] = 'FormatStringEncoding'
 
     def __call__(self, features: Any) -> StringArray:
         values = features.apply(
-            lambda row: self.format.format(**row), axis='columns'
+            lambda row: self.format.format(**row),
+            axis='columns',
+            result_type='reduce',
         )
         return np.array(values, dtype=str)
 
@@ -204,8 +123,61 @@ _STRING_ENCODINGS = (
     ManualStringEncoding,
 )
 
+StringEncodingUnion = Union[_STRING_ENCODINGS]
 
-def _is_format(string: str) -> bool:
+StringEncodingArgument = Union[
+    StringEncodingUnion, dict, str, Sequence[str], None
+]
+
+
+def validate_string_encoding(
+    value: StringEncodingArgument,
+) -> StringEncodingUnion:
+    """Validates and coerces an input to a StringEncoding.
+
+    Parameters
+    ----------
+    value : StringEncodingArgument
+        The value to validate and coerce.
+        If this is already one of the supported string encodings, it is returned as is.
+        If this is a dict, then it should represent one of the supported string encodings.
+        If this a valid format string, then a FormatStringEncoding is returned.
+        If this is any other string, a ConstantStringEncoding is returned.
+        If this is a sequence of strings, a ManualStringEncoding is returned.
+
+    Returns
+    -------
+    StringEncodingUnion
+        An instance of one of the support string encodings.
+
+    Raises
+    ------
+    TypeError
+        If the input is not a supported type.
+    ValidationError
+        If the input cannot be parsed into a StringEncoding.
+    """
+    if value is None:
+        return ConstantStringEncoding(constant=DEFAULT_STRING)
+    if isinstance(value, _STRING_ENCODINGS):
+        return value
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        if _is_format_string(value):
+            return FormatStringEncoding(format=value)
+        return ConstantStringEncoding(constant=value)
+    if isinstance(value, Sequence):
+        return ManualStringEncoding(array=value, default='')
+    raise TypeError(
+        trans._(
+            'value should be one of the support string encodings, a dict, a string, a sequence of strings, or None',
+            deferred=True,
+        )
+    )
+
+
+def _is_format_string(string: str) -> bool:
     """Checks if a string is a valid format string with at least one field.
 
     Parameters

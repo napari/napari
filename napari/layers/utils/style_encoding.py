@@ -1,14 +1,11 @@
 import warnings
 from abc import ABC, abstractmethod
-from enum import auto
-from typing import Any, Generic, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Generic, List, Optional, TypeVar, Union
 
 import numpy as np
-from pydantic import ValidationError, parse_obj_as
-from typing_extensions import Protocol, runtime_checkable
 
 from ...utils.events import EventedModel
-from ...utils.misc import StringEnum
+from ...utils.translations import trans
 
 IndicesType = Union[range, List[int], np.ndarray]
 
@@ -19,21 +16,10 @@ StyleValue = TypeVar('StyleValue', bound=np.ndarray)
 StyleArray = TypeVar('StyleArray', bound=np.ndarray)
 
 
-class EncodingType(StringEnum):
-    """The encoding type, which is useful for disambiguation of dict input."""
-
-    CONSTANT = auto()
-    MANUAL = auto()
-    DIRECT = auto()
-    NOMINAL = auto()
-    QUANTITATIVE = auto()
-    FORMAT = auto()
-
-
-@runtime_checkable
-class StyleEncoding(Protocol[StyleArray]):
+class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
     """Defines a way to encode style values, like colors and strings."""
 
+    @abstractmethod
     def __call__(self, features: Any) -> StyleArray:
         """Apply this encoding with the given features to generate style values.
 
@@ -54,6 +40,7 @@ class StyleEncoding(Protocol[StyleArray]):
             If generating values from the given features fails.
         """
 
+    @abstractmethod
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
     ) -> StyleArray:
@@ -77,6 +64,7 @@ class StyleEncoding(Protocol[StyleArray]):
             The updated array of cached values, possibly indexed by the given indices.
         """
 
+    @abstractmethod
     def _append(self, array: StyleArray) -> None:
         """Appends raw style values to cached values.
 
@@ -88,6 +76,7 @@ class StyleEncoding(Protocol[StyleArray]):
             The values to append. The dimensionality of these should match that of the existing style values.
         """
 
+    @abstractmethod
     def _delete(self, indices: IndicesType) -> None:
         """Deletes cached style values by index.
 
@@ -97,26 +86,15 @@ class StyleEncoding(Protocol[StyleArray]):
             The indices of the style values to remove.
         """
 
+    @abstractmethod
     def _clear(self) -> None:
         """Clears all previously generated and cached values.
 
         Call this before calling _update this to refresh all cached values.
         """
 
-    def _json_encode(self) -> dict:
-        """Converts the encoding to a dict that should be convertible to JSON."""
 
-
-class _StyleEncodingModel(EventedModel, Generic[StyleValue, StyleArray]):
-    class Config:
-        # Ensure different types of encodings can be properly resolved.
-        extra = 'forbid'
-
-    def _json_encode(self) -> dict:
-        return self.dict()
-
-
-class _ConstantStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
+class _ConstantStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
     """Encodes a constant style value.
 
     Attributes
@@ -145,7 +123,7 @@ class _ConstantStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
         pass
 
 
-class _ManualStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
+class _ManualStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
     """Encodes style values manually.
 
     The style values are encoded manually in the array attribute, so that
@@ -190,7 +168,7 @@ class _ManualStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray]):
         pass
 
 
-class _DerivedStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray], ABC):
+class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
     """Encodes style values by deriving them from feature values.
 
     Attributes
@@ -206,10 +184,6 @@ class _DerivedStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray], ABC):
         super().__init__(**kwargs)
         self._cached = _empty_array_like(self.fallback)
 
-    @abstractmethod
-    def __call__(self, features: Any) -> StyleArray:
-        pass
-
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
     ) -> StyleArray:
@@ -221,15 +195,12 @@ class _DerivedStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray], ABC):
                 tail_array = self(features.iloc[tail_indices])
                 self._append(tail_array)
             return _maybe_index_array(self._cached, indices)
-        except (KeyError, ValueError) as error:
-            self_str = repr(self)
+        except (KeyError, ValueError):
             warnings.warn(
-                '\n'
-                'Applying the encoding:\n'
-                f'{self_str}\n'
-                'failed with error:\n'
-                f'{error}\n'
-                f'Returning safe fallback value instead.',
+                trans._(
+                    'Applying the encoding failed. Returning safe fallback value instead.',
+                    deferred=True,
+                ),
                 category=RuntimeWarning,
             )
         return _broadcast_constant(self.fallback, n_rows, indices)
@@ -242,41 +213,6 @@ class _DerivedStyleEncoding(_StyleEncodingModel[StyleValue, StyleArray], ABC):
 
     def _clear(self) -> None:
         self._cached = _empty_array_like(self.fallback)
-
-
-def parse_kwargs_as_encoding(encodings: Tuple[type, ...], **kwargs) -> Any:
-    """Parses the given kwargs as one of the given encodings.
-
-    Parameters
-    ----------
-    encodings : Tuple[type, ...]
-        The supported encoding types, each of which must be a subclass of
-        :class:`StyleEncoding`. The first encoding that can be constructed
-        from the given kwargs will be returned.
-    kwargs
-        The keyword arguments of the StyleEncoding to create.
-
-    Returns
-    -------
-    The StyleEncoding created from the given kwargs.
-
-    Raises
-    ------
-    ValueError
-        If the provided kwargs cannot be used to construct any of the given encodings.
-    """
-    try:
-        return parse_obj_as(Union[encodings], kwargs)
-    except ValidationError as error:
-        encoding_names = tuple(enc.__name__ for enc in encodings)
-        raise ValueError(
-            'Original error:\n'
-            f'{error}'
-            'Failed to parse a supported encoding from kwargs:\n'
-            f'{kwargs}\n\n'
-            'The kwargs must specify the fields of exactly one of the following encodings:\n'
-            f'{encoding_names}\n\n'
-        )
 
 
 def _empty_array_like(single_array: StyleValue) -> StyleArray:

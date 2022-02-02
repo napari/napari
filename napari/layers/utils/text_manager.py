@@ -19,7 +19,8 @@ from .string_encoding import (
     DirectStringEncoding,
     ManualStringEncoding,
     StringArray,
-    StringEncoding,
+    StringEncodingArgument,
+    StringEncodingUnion,
     validate_string_encoding,
 )
 
@@ -65,7 +66,7 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     """
 
-    string: StringEncoding = ConstantStringEncoding(constant='')
+    string: StringEncodingUnion = ConstantStringEncoding(constant='')
     visible: bool = True
     size: PositiveInt = 12
     color: Array[float, (4,)] = 'cyan'
@@ -315,7 +316,7 @@ class TextManager(EventedModel):
         self.update(new_manager, recurse=False)
 
     @validator('string', pre=True, always=True)
-    def _check_string(cls, string):
+    def _check_string(cls, string: StringEncodingArgument):
         return validate_string_encoding(string)
 
     @validator('color', pre=True, always=True)
