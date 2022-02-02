@@ -219,11 +219,14 @@ def _empty_array_like(single_array: StyleValue) -> StyleArray:
     return np.empty_like(single_array, shape=shape)
 
 
-def _delete_in_bounds(array: np.ndarray, indices) -> np.ndarray:
+def _delete_in_bounds(array: np.ndarray, indices: IndicesType) -> np.ndarray:
     # We need to check bounds here because Points.remove_selected calls
     # delete once directly, then calls Points.data.setter which calls
     # delete again with OOB indices.
-    safe_indices = [i for i in indices if i < array.shape[0]]
+    if isinstance(indices, range):
+        safe_indices = range(indices.start, array.shape[0], indices.step)
+    else:
+        safe_indices = [i for i in indices if i < array.shape[0]]
     return np.delete(array, safe_indices, axis=0)
 
 
