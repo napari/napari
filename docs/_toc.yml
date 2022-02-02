@@ -1,6 +1,7 @@
 format: jb-book
 root: index
 chapters:
+- file: quick_start
 - file: howtos/index
   title: How-to guides
   sections:
