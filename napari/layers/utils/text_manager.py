@@ -110,6 +110,8 @@ class TextManager(EventedModel):
     def values(self):
         _warn_about_deprecated_values_field()
         values = self.string._update(self._features)
+        # TODO: check if this is needed to pass tests and if it should be
+        # generalized for all scalar values (e.g. fallback from derived).
         if isinstance(self.string, ConstantStringEncoding):
             return np.broadcast_to(values, (self._features.shape[0],))
         return values
@@ -210,6 +212,7 @@ class TextManager(EventedModel):
         anchor_y : str
             The vispy text anchor for the y axis
         """
+        # TODO: optimize this when there is effectively no text.
         if len(view_data) > 0:
             anchor_coords, anchor_x, anchor_y = get_text_anchors(
                 view_data, ndisplay, self.anchor
