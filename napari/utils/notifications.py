@@ -264,12 +264,6 @@ class NotificationManager:
     ):
         if isinstance(value, KeyboardInterrupt):
             sys.exit("Closed by KeyboardInterrupt")
-        if self.exit_on_error:
-            sys.__excepthook__(exctype, value, traceback)
-            sys.exit("Exit on error")
-        if not self.catch_error:
-            sys.__excepthook__(exctype, value, traceback)
-            return
 
         try:
             from napari_error_monitor import capture_exception
@@ -277,6 +271,13 @@ class NotificationManager:
             capture_exception(value)
         except ImportError:
             pass
+
+        if self.exit_on_error:
+            sys.__excepthook__(exctype, value, traceback)
+            sys.exit("Exit on error")
+        if not self.catch_error:
+            sys.__excepthook__(exctype, value, traceback)
+            return
 
         try:
             self.dispatch(Notification.from_exception(value))
