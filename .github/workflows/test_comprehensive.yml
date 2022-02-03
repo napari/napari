@@ -93,7 +93,7 @@ jobs:
       - name: Test with tox
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: tox
+          run: python -m tox
         env:
           PLATFORM: ${{ matrix.platform }}
           TOXENV: ${{ matrix.toxenv }}

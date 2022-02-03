@@ -47,7 +47,7 @@ jobs:
         # run tests using pip install --pre
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: tox -v --pre
+          run: python -m tox -v --pre
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
