@@ -216,7 +216,7 @@ def test_text_constant_then_repeat_values():
 
 def test_text_constant_with_no_properties_then_no_values():
     text_manager = TextManager(text='point', n_text=3)
-    assert len(text_manager.values) == 0
+    np.testing.assert_equal(text_manager.values, ['point'] * 3)
 
 
 def test_add_with_text_constant_then_ignored():
@@ -225,11 +225,11 @@ def test_add_with_text_constant_then_ignored():
     text_manager = TextManager(
         text='point', n_text=n_text, properties=properties
     )
-    assert len(text_manager.values) == n_text
+    np.testing.assert_equal(text_manager.values, ['point'] * 3)
 
     text_manager.add({'class': np.array(['C'])}, 2)
 
-    assert len(text_manager.values) == n_text
+    np.testing.assert_equal(text_manager.values, ['point'] * 5)
 
 
 def test_add_with_text_constant_init_empty_then_ignored():
@@ -238,7 +238,7 @@ def test_add_with_text_constant_init_empty_then_ignored():
 
     text_manager.add({'class': np.array(['C'])}, 2)
 
-    assert len(text_manager.values) == 0
+    np.testing.assert_equal(text_manager.values, ['point'] * 2)
 
 
 def test_remove_with_text_constant_then_ignored():

@@ -108,12 +108,7 @@ class TextManager(EventedModel):
     @property
     def values(self):
         _warn_about_deprecated_values_field()
-        values = self.string._update(self._features)
-        # TODO: check if this is needed to pass tests and if it should be
-        # generalized for all scalar values (e.g. fallback from derived).
-        if isinstance(self.string, ConstantStringEncoding):
-            return np.broadcast_to(values, (self._features.shape[0],))
-        return values
+        return self.string._update(self._features)
 
     def __setattr__(self, key, value):
         if key == 'values':
