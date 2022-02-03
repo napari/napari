@@ -166,7 +166,7 @@ class _ManualStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
         self.array = np.append(self.array, array, axis=0)
 
     def _delete(self, indices: IndicesType) -> None:
-        self.array = _delete_in_bounds(self.array, indices)
+        self.array = np.delete(self.array, indices, axis=0)
 
     def _clear(self) -> None:
         pass
@@ -217,7 +217,7 @@ class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
         self._cached = np.append(self._cached, array, axis=0)
 
     def _delete(self, indices: IndicesType) -> None:
-        self._cached = _delete_in_bounds(self._cached, indices)
+        self._cached = np.delete(self._cached, indices, axis=0)
 
     def _clear(self) -> None:
         self._cached = _empty_array_like(self.fallback)
@@ -226,17 +226,6 @@ class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
 def _empty_array_like(single_array: StyleValue) -> StyleArray:
     shape = (0,) + np.asarray(single_array).shape
     return np.empty_like(single_array, shape=shape)
-
-
-def _delete_in_bounds(array: np.ndarray, indices: IndicesType) -> np.ndarray:
-    # We need to check bounds here because Points.remove_selected calls
-    # delete once directly, then calls Points.data.setter which calls
-    # delete again with OOB indices.
-    if isinstance(indices, range):
-        safe_indices = range(indices.start, array.shape[0], indices.step)
-    else:
-        safe_indices = [i for i in indices if i < array.shape[0]]
-    return np.delete(array, safe_indices, axis=0)
 
 
 def _maybe_index_array(
