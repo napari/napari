@@ -3,7 +3,6 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
-import pytest
 
 from napari import utils
 from napari.components import ViewerModel
@@ -101,10 +100,6 @@ def test_reader_plugin_can_return_null_layer_sentinel(
     napari_plugin_manager, monkeypatch
 ):
     from napari_plugin_engine import napari_hook_implementation
-
-    with pytest.raises(ValueError) as e:
-        io.read_data_with_plugins('/')
-    assert 'No plugin found capable of reading' in str(e)
 
     class sample_plugin:
         @napari_hook_implementation(tryfirst=True)

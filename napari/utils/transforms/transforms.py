@@ -521,9 +521,9 @@ class Affine(Transform):
 
         Parameters
         ----------
-        axes: Sequence[int]
+        axes : Sequence[int]
             Axes where the transform will be replaced
-        transform: Affine
+        transform : Affine
             The transform that will be inserted. Must have as many dimension as len(axes)
 
         Returns

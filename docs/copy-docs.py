@@ -54,6 +54,13 @@ TOC_IGNORE = [
     'glossary.md',  # this document will still be at the destination ToC
     'guides/stable/_layer_events.md',
     'guides/stable/_viewer_events.md',
+    'plugins/stable/_npe2_contributions.md',
+    'plugins/stable/_npe2_manifest.md',
+    'plugins/stable/_npe2_readers_guide.md',
+    'plugins/stable/_npe2_widgets_guide.md',
+    'plugins/stable/_npe2_writers_guide.md',
+    'plugins/stable/_npe2_sample_data_guide.md',
+    'plugins/stable/_layer_data_guide.md',
 ]
 
 

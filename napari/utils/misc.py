@@ -116,12 +116,12 @@ def ensure_iterable(arg, color=False):
         return itertools.repeat(arg)
 
 
-def is_iterable(arg, color=False):
+def is_iterable(arg, color=False, allow_none=False):
     """Determine if a single argument is an iterable. If a color is being
     provided and the argument is a 1-D array of length 3 or 4 then the input
-    is taken to not be iterable.
+    is taken to not be iterable. If allow_none is True, `None` is considered iterable.
     """
-    if arg is None:
+    if arg is None and not allow_none:
         return False
     elif type(arg) is str:
         return False
@@ -154,7 +154,10 @@ def is_sequence(arg):
 
 
 def ensure_sequence_of_iterables(
-    obj, length: Optional[int] = None, repeat_empty: bool = False
+    obj,
+    length: Optional[int] = None,
+    repeat_empty: bool = False,
+    allow_none: bool = False,
 ):
     """Ensure that ``obj`` behaves like a (nested) sequence of iterables.
 
@@ -169,6 +172,8 @@ def ensure_sequence_of_iterables(
         If provided, assert that obj has len ``length``, by default None
     repeat_empty : bool
         whether to repeat an empty sequence (otherwise return the empty sequence itself)
+    allow_none : bool
+        treat None as iterable
 
     Returns
     -------
@@ -183,23 +188,26 @@ def ensure_sequence_of_iterables(
     In [2]: ensure_sequence_of_iterables([(1, 2), (3, 4)])
     Out[2]: [(1, 2), (3, 4)]
 
-    In [3]: ensure_sequence_of_iterables({'a':1})
-    Out[3]: repeat({'a': 1})
+    In [3]: ensure_sequence_of_iterables([(1, 2), None], allow_none=True)
+    Out[3]: [(1, 2), None]
 
-    In [4]: ensure_sequence_of_iterables(None)
-    Out[4]: repeat(None)
+    In [4]: ensure_sequence_of_iterables({'a':1})
+    Out[4]: repeat({'a': 1})
 
-    In [5]: ensure_sequence_of_iterables([])
-    Out[5]: repeat([])
+    In [5]: ensure_sequence_of_iterables(None)
+    Out[5]: repeat(None)
 
-    In [6]: ensure_sequence_of_iterables([], repeat_empty=False)
-    Out[6]: []
+    In [6]: ensure_sequence_of_iterables([])
+    Out[6]: repeat([])
+
+    In [7]: ensure_sequence_of_iterables([], repeat_empty=False)
+    Out[7]: []
     """
 
     if (
         obj is not None
         and is_sequence(obj)
-        and all(is_iterable(el) for el in obj)
+        and all(is_iterable(el, allow_none=allow_none) for el in obj)
     ):
         if length is not None and len(obj) != length:
             if (len(obj) == 0 and not repeat_empty) or len(obj) > 0:
@@ -320,7 +328,7 @@ def camel_to_spaces(val):
 T = TypeVar('T', str, Sequence[str])
 
 
-def abspath_or_url(relpath: T) -> T:
+def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     """Utility function that normalizes paths or a sequence thereof.
 
     Expands user directory and converts relpaths to abspaths... but ignores
@@ -330,6 +338,8 @@ def abspath_or_url(relpath: T) -> T:
     ----------
     relpath : str or list or tuple
         A path, or list or tuple of paths.
+    must_exist : bool, default True
+        Raise ValueError if `relpath` is not a URL and does not exist.
 
     Returns
     -------
@@ -340,14 +350,28 @@ def abspath_or_url(relpath: T) -> T:
     from urllib.parse import urlparse
 
     if isinstance(relpath, (tuple, list)):
-        return type(relpath)(abspath_or_url(p) for p in relpath)
+        return type(relpath)(
+            abspath_or_url(p, must_exist=must_exist) for p in relpath
+        )
 
     if isinstance(relpath, (str, PathLike)):
         relpath = fspath(relpath)
         urlp = urlparse(relpath)
         if urlp.scheme and urlp.netloc:
             return relpath
-        return os_path.abspath(os_path.expanduser(relpath))
+
+        path = os_path.abspath(os_path.expanduser(relpath))
+        if must_exist and not (
+            urlp.scheme or urlp.netloc or os.path.exists(path)
+        ):
+            raise ValueError(
+                trans._(
+                    "Requested path {path!r} does not exist.",
+                    deferred=True,
+                    path=path,
+                )
+            )
+        return path
 
     raise TypeError(
         trans._(

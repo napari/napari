@@ -38,7 +38,7 @@ points_layer = viewer.add_points(
     edge_width=5,
     edge_color='edge_feature',
     face_color='face_feature',
-    n_dimensional=False,
+    out_of_slice_display=False,
 )
 
 # change the face color cycle

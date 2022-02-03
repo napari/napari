@@ -4,6 +4,7 @@ from typing import List, Sequence, Tuple, Union
 
 import numpy as np
 
+from ..utils.translations import trans
 from ._data_protocols import LayerDataProtocol, assert_protocol
 
 
@@ -36,7 +37,9 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     ) -> None:
         self._data: List[LayerDataProtocol] = list(data)
         if not self._data:
-            raise ValueError("Multiscale data must be a (non-empty) sequence")
+            raise ValueError(
+                trans._("Multiscale data must be a (non-empty) sequence")
+            )
         for d in self._data:
             assert_protocol(d)
 

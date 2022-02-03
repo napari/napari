@@ -1,6 +1,6 @@
 (best-practices)=
 
-# Best practices when developing napari plugins
+# Best practices
 
 There are a number of good and bad practices that may not be immediately obvious
 when developing a plugin.  This page covers some known practices that could
@@ -207,67 +207,7 @@ dedicated to the stability of your plugin. Aim for 100%!
 Of course, simply having 100% coverage doesn't mean your code is bug-free, so
 make sure that you test all of the various ways that your code might be called.
 
-### Tips for testing napari plugins
-
-The most common issue people run into when designing tests for napari plugins is
-that they try to test everything as a full "integration test", starting from the
-napari event or action that would trigger their plugin to do something.  For
-example, let's say you have a dock widget that connects a mouse callback to the
-viewer:
-
-```py
-class MyWidget:
-    def __init__(self, viewer: 'napari.Viewer'):
-        self._viewer = viewer
-
-        @viewer.mouse_move_callbacks.append
-        def _on_mouse_move(viewer, event):
-            if 'Shift' in event.modifiers:
-                ...
-
-@napari_hook_implementation
-def napari_experimental_provide_dock_widget():
-    return MyWidget
-```
-
-You might think that you need to somehow simulate a mouse movement in napari in
-order to test this, but you don't! Just *trust* that napari will call this
-function with a `Viewer` and an `Event` when a mouse move has been made, and
-otherwise leave `napari` out of it.
-
-Instead, focus on "unit testing" your code: just call the function directly with
-objects that emulate, or "mock" the objects that your function expects to
-receive from napari. You may also need to slightly reorganize your code.  Let's
-modify the above widget to make it easier to test:
-
-```py
-class MyWidget:
-    def __init__(self, viewer: 'napari.Viewer'):
-        self._viewer = viewer
-        # connecting to a method rather than a local function
-        # makes it easier to test
-        viewer.mouse_move_callbacks.append(self._on_mouse_move)
-
-    def _on_mouse_move(self, viewer, event):
-        if 'Shift' in event.modifiers:
-            ...
-```
-
-To test this, we can often just instantiate the widget with our own viewer, and
-then call the methods directly. As for the `event` object, notice that all we
-care about in this plugin is that it has a `modifiers` attribute that may or may
-not contain the string `"Shift"`.  So let's just fake it!
-
-```py
-class FakeEvent:
-    modifiers = {'Shift'}
-
-def test_mouse_callback(make_napari_viewer):
-    viewer = make_napari_viewer()
-    wdg = MyWidget(viewer)
-    wdg._on_mouse_move(viewer, FakeEvent())
-    # assert that what you expect to happen actually happened!
-```
+See our [Tips for testing napari plugins](plugin-testing-tips).
 
 ### How to check test coverage?
 

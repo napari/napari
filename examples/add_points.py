@@ -41,8 +41,8 @@ layer.opacity = 0.9
 # change the layer point symbol using an alias
 layer.symbol = '+'
 
-# change the layer point n_dimensional status
-layer.n_dimensional = True
+# change the layer point out_of_slice_display status
+layer.out_of_slice_display = True
 
 # change the layer mode
 layer.mode = 'add'
