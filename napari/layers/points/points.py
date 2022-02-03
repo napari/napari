@@ -25,7 +25,6 @@ from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import (
-    _features_to_choices,
     _features_to_properties,
     _FeatureTable,
     _warn_about_deprecated_current_properties,
@@ -378,7 +377,7 @@ class Points(Layer):
         self._text = TextManager._from_layer(
             text=text,
             n_text=len(self.data),
-            properties=_features_to_properties(self._features),
+            properties=self._feature_table.properties(),
         )
 
         # Save the point style params
@@ -419,9 +418,9 @@ class Points(Layer):
         self._round_index = False
 
         color_properties = (
-            _features_to_properties(self._features)
+            self._feature_table.properties()
             if self._data.size > 0
-            else _features_to_choices(self._features)
+            else self._feature_table.choices()
         )
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(data),
@@ -514,10 +513,7 @@ class Points(Layer):
                             np.arange(cur_npoints, len(data))
                         )
 
-                        self.text.add(
-                            _features_to_properties(self._feature_defaults),
-                            adding,
-                        )
+                        self.text.add(self._feature_table.currents(), adding)
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -610,7 +606,7 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], pd.DataFrame, None]
     ):
-        _warn_about_deprecated_properties()
+        # _warn_about_deprecated_properties()
         self.features = properties
 
     @property
@@ -1171,12 +1167,22 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_size = size
 
-        unique_features = self._features.apply(
-            lambda col: col.unique(), axis=0
-        )
-        n_unique_features = unique_features.apply(len)
-        if np.all(n_unique_features == 1):
-            self._feature_defaults = unique_features
+        properties = {}
+        for k, v in self._feature_table.properties().items():
+            # pandas uses `object` as dtype for strings by default, which
+            # combined with the axis argument breaks np.unique
+            axis = 0 if v.ndim > 1 else None
+            properties[k] = np.unique(v[index], axis=axis)
+
+        n_unique_properties = np.array([len(v) for v in properties.values()])
+        if np.all(n_unique_properties == 1):
+            with self.block_update_properties():
+                with warnings.catch_warnings():
+                    warnings.simplefilter(
+                        'ignore', category=DeprecationWarning
+                    )
+                    self.current_properties = properties
+
         self._set_highlight()
 
     def interaction_box(self, index) -> Optional[np.ndarray]:

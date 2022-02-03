@@ -769,7 +769,7 @@ class Shapes(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        _warn_about_deprecated_properties()
+        # _warn_about_deprecated_properties()
         return self._feature_table.properties()
 
     @properties.setter
