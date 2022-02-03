@@ -16,6 +16,7 @@
 
 
 import napari
+
 release = napari.__version__
 if "dev" in release:
     version = "dev"
@@ -37,10 +38,10 @@ autosummary_generate = True
 autosummary_imported_members = True
 comments_config = {'hypothesis': False, 'utterances': False}
 
-#execution_allow_errors = False
-#execution_excludepatterns = []
-#execution_in_temp = False
-#execution_timeout = 30
+# execution_allow_errors = False
+# execution_excludepatterns = []
+# execution_in_temp = False
+# execution_timeout = 30
 
 extensions = [
     "sphinx.ext.napoleon",
@@ -50,7 +51,7 @@ extensions = [
     "sphinx_external_toc",
     "sphinx_tabs.tabs",
     'myst_nb',
-#    "sphinx_comments",
+    #    "sphinx_comments",
     "sphinx_panels",
     "sphinx.ext.viewcode",
 ]
@@ -71,7 +72,7 @@ html_theme_options = {
     "github_url": "https://github.com/napari/napari",
     "navbar_start": ["navbar-logo", "navbar-project"],
     "navbar_end": ["version-switcher", "navbar-icon-links"],
-	"switcher": {
+    "switcher": {
         "json_url": "_static/version_switcher.json",
         "url_template": "https://napari.org/docs/{version}/",
         "version_match": "dev",
@@ -91,12 +92,12 @@ intersphinx_mapping = {
     'numpy': ['https://numpy.org/doc/stable/', None],
     'napari_plugin_engine': [
         'https://napari-plugin-engine.readthedocs.io/en/latest/',
-        'https://napari-plugin-engine.readthedocs.io/en/latest/objects.inv'
+        'https://napari-plugin-engine.readthedocs.io/en/latest/objects.inv',
     ],
     'magicgui': [
         'https://napari.org/magicgui/',
-        'https://napari.org/magicgui/objects.inv'
-    ]
+        'https://napari.org/magicgui/objects.inv',
+    ],
 }
 
 jupyter_cache = ''
@@ -106,7 +107,7 @@ myst_enable_extensions = [
     'colon_fence',
     'dollarmath',
     'substitution',
-    'tasklist'
+    'tasklist',
 ]
 
 nb_output_stderr = 'show'
@@ -126,5 +127,5 @@ exclude_patterns = [
     'Thumbs.db',
     '.DS_Store',
     '.jupyter_cache',
-    'jupyter_execute'
+    'jupyter_execute',
 ]
