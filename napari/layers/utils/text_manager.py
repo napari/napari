@@ -122,6 +122,7 @@ class TextManager(EventedModel):
     def refresh(self, features: Any) -> None:
         self.string._clear()
         self.string._update(features)
+        self.events.string()
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
