@@ -48,7 +48,7 @@ color = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
 label_layer = viewer.add_labels(
     label_image,
     name='segmentation',
-    features=label_properties,
+    properties=label_properties,
     color=color,
 )
 
