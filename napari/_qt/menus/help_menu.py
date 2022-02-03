@@ -19,4 +19,16 @@ class HelpMenu(NapariMenu):
                 'statusTip': trans._('About napari'),
             }
         ]
+        try:
+            from napari_error_monitor import ask_opt_in
+
+            ACTIONS.append(
+                {
+                    'text': trans._('Bug reporting opt in/out...'),
+                    'slot': lambda: ask_opt_in(force=True),
+                }
+            )
+        except ImportError:
+            pass
+
         populate_menu(self, ACTIONS)
