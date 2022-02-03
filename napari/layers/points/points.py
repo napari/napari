@@ -606,7 +606,7 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, Array], pd.DataFrame, None]
     ):
-        # _warn_about_deprecated_properties()
+        _warn_about_deprecated_properties()
         self.features = properties
 
     @property
@@ -617,7 +617,6 @@ class Points(Layer):
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        # TODO: consider not deprecating this yet?
         _warn_about_deprecated_current_properties()
         update_indices = None
         if (
