@@ -423,14 +423,18 @@ def _omit_viewer_args(constructor):
     def _func(*args, **kwargs):
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
-                "viewer argument is deprecated and should not be used",
+                trans._(
+                    "viewer argument is deprecated and should not be used"
+                ),
                 category=FutureWarning,
                 stacklevel=2,
             )
             args = args[:1] + args[2:]
         if "viewer" in kwargs:
             warnings.warn(
-                "viewer argument is deprecated and should not be used",
+                trans._(
+                    "viewer argument is deprecated and should not be used"
+                ),
                 category=FutureWarning,
                 stacklevel=2,
             )
@@ -505,7 +509,9 @@ class QtStateButton(QtViewerPushButton):
         offstate=False,
     ):
         warnings.warn(
-            "QtStateButton is deprecated and will be removed in 0.4.14",
+            trans._(
+                "QtStateButton is deprecated and will be removed in 0.4.14"
+            ),
             stacklevel=2,
             category=FutureWarning,
         )

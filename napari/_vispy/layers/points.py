@@ -188,9 +188,8 @@ class VispyPointsLayer(VispyBaseLayer):
     def reset(self):
         super().reset()
         self._update_text(update_node=False)
-        self._on_blending_change()
+        self._on_symbol_change()
         self._on_highlight_change()
-        self._on_matrix_change()
         self._on_antialias_change()
         self._on_shading_change()
         self._on_canvas_size_limits_change()

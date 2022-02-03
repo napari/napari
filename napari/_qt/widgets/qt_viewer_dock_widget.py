@@ -74,11 +74,13 @@ class QtViewerDockWidget(QDockWidget):
         shortcut=_sentinel,
         object_name: str = '',
         add_vertical_stretch=True,
+        close_btn=True,
     ):
         self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name
+        self._close_btn = close_btn
 
         areas = {
             'left': Qt.LeftDockWidgetArea,
@@ -142,7 +144,9 @@ class QtViewerDockWidget(QDockWidget):
         self.dockLocationChanged.connect(self._set_title_orientation)
 
         # custom title bar
-        self.title = QtCustomTitleBar(self, title=self.name)
+        self.title = QtCustomTitleBar(
+            self, title=self.name, close_btn=close_btn
+        )
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
 
@@ -262,7 +266,10 @@ class QtViewerDockWidget(QDockWidget):
             self.setTitleBarWidget(None)
             if not self.isFloating():
                 self.title = QtCustomTitleBar(
-                    self, title=self.name, vertical=not self.is_vertical
+                    self,
+                    title=self.name,
+                    vertical=not self.is_vertical,
+                    close_btn=self._close_btn,
                 )
                 self.setTitleBarWidget(self.title)
 
@@ -287,7 +294,9 @@ class QtCustomTitleBar(QLabel):
         Whether this titlebar is oriented vertically or not.
     """
 
-    def __init__(self, parent, title: str = '', vertical=False):
+    def __init__(
+        self, parent, title: str = '', vertical=False, close_btn=True
+    ):
         super().__init__(parent)
         self.setObjectName("QtCustomTitleBar")
         self.setProperty('vertical', str(vertical))
@@ -297,26 +306,6 @@ class QtCustomTitleBar(QLabel):
         line = QFrame(self)
         line.setObjectName("QtCustomTitleBarLine")
 
-        add_close = False
-        try:
-            # if the plugins menu is already created, check to see if this is a plugin
-            # dock widget.  If it is, then add the close button option to the title bar.
-            win = self.parent().parent()._qt_viewer.viewer.window
-            actions = [action.text() for action in win.plugins_menu.actions()]
-
-            if self.parent().name in actions:
-                add_close = True
-                self.close_button = QPushButton(self)
-                self.close_button.setToolTip(trans._('close this panel'))
-                self.close_button.setObjectName("QTitleBarCloseButton")
-                self.close_button.setCursor(Qt.ArrowCursor)
-                self.close_button.clicked.connect(
-                    lambda: self.parent().destroyOnClose()
-                )
-            else:
-                add_close = False
-        except AttributeError:
-            pass
         self.hide_button = QPushButton(self)
         self.hide_button.setToolTip(trans._('hide this panel'))
         self.hide_button.setObjectName("QTitleBarHideButton")
@@ -335,12 +324,21 @@ class QtCustomTitleBar(QLabel):
             QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         )
 
+        if close_btn:
+            self.close_button = QPushButton(self)
+            self.close_button.setToolTip(trans._('close this panel'))
+            self.close_button.setObjectName("QTitleBarCloseButton")
+            self.close_button.setCursor(Qt.ArrowCursor)
+            self.close_button.clicked.connect(
+                lambda: self.parent().destroyOnClose()
+            )
+
         if vertical:
             layout = QVBoxLayout()
             layout.setSpacing(4)
             layout.setContentsMargins(0, 8, 0, 8)
             line.setFixedWidth(1)
-            if add_close:
+            if close_btn:
                 layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
             layout.addWidget(self.hide_button, 0, Qt.AlignHCenter)
             layout.addWidget(self.float_button, 0, Qt.AlignHCenter)
@@ -352,7 +350,7 @@ class QtCustomTitleBar(QLabel):
             layout.setSpacing(4)
             layout.setContentsMargins(8, 1, 8, 0)
             line.setFixedHeight(1)
-            if add_close:
+            if close_btn:
                 layout.addWidget(self.close_button)
 
             layout.addWidget(self.hide_button)
