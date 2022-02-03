@@ -6,7 +6,6 @@ except ImportError:
 import os
 import sys
 from functools import partial
-from unittest.mock import patch
 
 import dask.threaded
 import numpy as np
@@ -405,15 +404,3 @@ def napari_svg_name():
         return 'svg'
     else:
         return 'napari-svg'
-
-
-@pytest.fixture(autouse=True, scope='session')
-def _no_error_monitor():
-    """Turn off napari_error_monitor if it's installed."""
-    try:
-        p1 = patch('napari_error_monitor.capture_exception')
-        p2 = patch('napari_error_monitor.install_error_monitor')
-        with p1, p2:
-            yield
-    except (ModuleNotFoundError, AttributeError):
-        yield
