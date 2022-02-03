@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Dict, Sequence, Tuple, Union
+from typing import Any, Dict, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -17,6 +17,7 @@ from .layer_utils import _validate_features
 from .string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
+    ManualStringEncoding,
     StringArray,
     StringEncodingArgument,
     StringEncodingUnion,
@@ -75,9 +76,6 @@ class TextManager(EventedModel):
     translation: Array[float] = 0
     rotation: float = 0
 
-    # Only needed for deprecated behavior.
-    _features: pd.DataFrame
-
     def __init__(
         self, text=None, properties=None, n_text=None, _features=None, **kwargs
     ):
@@ -85,9 +83,9 @@ class TextManager(EventedModel):
             _warn_about_deprecated_n_text_parameter()
         if properties is not None:
             _warn_about_deprecated_properties_parameter()
-            self._features = _validate_features(properties, num_data=n_text)
+            _features = _validate_features(properties, num_data=n_text)
         else:
-            self._features = _validate_features(_features)
+            _features = _validate_features(_features)
         if 'values' in kwargs:
             _warn_about_deprecated_values_field()
             values = kwargs.pop('values')
@@ -96,19 +94,23 @@ class TextManager(EventedModel):
         if text is not None:
             _warn_about_deprecated_text_parameter()
             if 'string' not in kwargs:
-                if isinstance(text, str) and text in self._features:
+                if isinstance(text, str) and text in _features:
                     kwargs['string'] = DirectStringEncoding(feature=text)
                 else:
                     kwargs['string'] = text
         super().__init__(**kwargs)
         # Update strings on initialization to support deprecated use of
         # values, add, and remove.
-        self.string._update(self._features)
+        self.string._update(_features)
 
     @property
     def values(self):
         _warn_about_deprecated_values_field()
-        return self.string._update(self._features)
+        if isinstance(self.string, ConstantStringEncoding):
+            return self.string.constant
+        elif isinstance(self.string, ManualStringEncoding):
+            return self.string.array
+        return self.string._cached
 
     def __setattr__(self, key, value):
         if key == 'values':
@@ -116,6 +118,10 @@ class TextManager(EventedModel):
             self.string = value
         else:
             super().__setattr__(key, value)
+
+    def refresh(self, features: Any) -> None:
+        self.string._clear()
+        self.string._update(features)
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
@@ -132,9 +138,8 @@ class TextManager(EventedModel):
         #     ),
         #     DeprecationWarning,
         # )
-        self._features = _validate_features(properties)
-        self.string._clear()
-        self.string._update(self._features)
+        _features = _validate_features(properties)
+        self.refresh(_features)
 
     def add(self, properties: dict, n_text: int):
         """Adds a number of a new text elements.
@@ -234,7 +239,10 @@ class TextManager(EventedModel):
         #    ),
         #    DeprecationWarning,
         # )
-        return self.string._update(self._features, indices=indices_view)
+        values = self.values
+        if values.shape == ():
+            return np.broadcast_to(values, indices_view.shape[0])
+        return values[indices_view]
 
     @classmethod
     def _from_layer(
@@ -303,6 +311,10 @@ class TextManager(EventedModel):
         # If we got here, then there were no errors, so update for real.
         # Connected callbacks may raise errors, but those are bugs.
         self.update(new_manager, recurse=False)
+
+        # In general we get a new instance of string, so update its cached
+        # values for deprecated stateful behavior.
+        self.string._update(features)
 
     @validator('string', pre=True, always=True)
     def _check_string(cls, string: StringEncodingArgument):

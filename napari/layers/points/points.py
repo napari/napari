@@ -461,7 +461,7 @@ class Points(Layer):
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
                     self._feature_table.resize(len(data))
-                    self._text._features = self.features
+                    self._text.string._update(self.features)
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones
@@ -475,7 +475,6 @@ class Points(Layer):
                             )
                         self._shown = self._shown[: len(data)]
                         self._size = self._size[: len(data)]
-                        self.text.remove(range(len(data), cur_npoints))
 
                     elif len(data) > cur_npoints:
                         # If there are now more points, add the size and colors of the
@@ -548,8 +547,7 @@ class Points(Layer):
         self._update_color_manager(
             self._edge, self._feature_table, "edge_color"
         )
-        self.text._features = self.features
-        self.text._clear()
+        self.text.refresh(self.features)
         self.events.properties()
 
     @property
@@ -636,7 +634,7 @@ class Points(Layer):
 
         This is generally used if the features were updated without changing the data
         """
-        self.text._clear()
+        self.text.refresh(self.features)
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -1718,7 +1716,6 @@ class Points(Layer):
             with self._face.events.blocker_all():
                 self._face._remove(indices_to_remove=index)
             self._feature_table.remove(index)
-            self.text._features = self.features
             self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
@@ -1781,7 +1778,6 @@ class Points(Layer):
 
             self._feature_table.append(self._clipboard['features'])
 
-            self.text._features = self.features
             self.text._paste(
                 self._clipboard['text_strings'],
             )

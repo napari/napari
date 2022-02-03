@@ -749,8 +749,7 @@ class Shapes(Layer):
                 RuntimeWarning,
             )
 
-        self.text._features = self.features
-        self.text._clear()
+        self.text.refresh(self.features)
 
         self.events.properties()
 
@@ -2006,15 +2005,9 @@ class Shapes(Layer):
             z_index = z_index or 0
 
         if n_new_shapes > 0:
-            if len(self.properties) > 0:
-                first_prop_key = next(iter(self.properties))
-                n_prop_values = len(self.properties[first_prop_key])
-            else:
-                n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
             self._feature_table.resize(total_shapes)
-            self.text._features = self.features
-            self.text.remove(range(total_shapes, n_prop_values))
+            self.text.string._update(self.features)
             self._add_shapes(
                 data,
                 shape_type=shape_type,
@@ -2262,7 +2255,7 @@ class Shapes(Layer):
 
         This is generally used if the properties were updated without changing the data
         """
-        self.text.refresh_text(self.properties)
+        self.text.refresh(self.features)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
@@ -2560,7 +2553,6 @@ class Shapes(Layer):
 
         if len(index) > 0:
             self._feature_table.remove(index)
-            self.text._features = self.features
             self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
@@ -2887,7 +2879,6 @@ class Shapes(Layer):
             ]
 
             self._feature_table.append(self._clipboard['features'])
-            self.text._features = self.features
             self.text._paste(self._clipboard['text_strings'])
 
             # Add new shape data

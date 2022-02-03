@@ -2228,10 +2228,10 @@ def test_set_properties_with_missing_text_property_text_becomes_constant_empty_a
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    points.properties = {'not_class': np.array(['D', 'E', 'F'])}
-
     with pytest.warns(RuntimeWarning):
-        values = points.text.values
+        points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+
+    values = points.text.values
     np.testing.assert_array_equal(values, ['', '', ''])
 
 
