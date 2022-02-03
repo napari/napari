@@ -195,12 +195,13 @@ class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
             except (KeyError, ValueError):
                 warnings.warn(
                     trans._(
-                        'Applying the encoding failed. Returning safe fallback value instead.',
+                        'Applying the encoding failed. Using a safe fallback value instead.',
                         deferred=True,
                     ),
                     category=RuntimeWarning,
                 )
-                return self.fallback
+                tail_shape = (n_rows - n_cached,) + self.fallback.shape
+                tail_array = np.broadcast_to(self.fallback, tail_shape)
             self._append(tail_array)
         return _maybe_index_array(self._cached, indices)
 
