@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, List, Optional, TypeVar, Union
 
 import numpy as np
+from typing_extensions import Protocol, runtime_checkable
 
 from ...utils.events import EventedModel
 from ...utils.translations import trans
@@ -16,10 +17,10 @@ StyleValue = TypeVar('StyleValue')
 StyleArray = TypeVar('StyleArray', bound=np.ndarray)
 
 
-class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
+@runtime_checkable
+class StyleEncoding(Protocol[StyleValue, StyleArray]):
     """Defines a way to encode style values, like colors and strings."""
 
-    @abstractmethod
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         """Apply this encoding with the given features to generate style values.
 
@@ -40,7 +41,9 @@ class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
             If generating values from the given features fails.
         """
 
-    @abstractmethod
+    def _values(self) -> Union[StyleValue, StyleArray]:
+        """Returns the cached values."""
+
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
     ) -> Union[StyleValue, StyleArray]:
@@ -64,7 +67,6 @@ class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
             The updated array of cached values, possibly indexed by the given indices.
         """
 
-    @abstractmethod
     def _append(self, array: StyleArray) -> None:
         """Appends raw style values to cached values.
 
@@ -76,7 +78,6 @@ class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
             The values to append. The dimensionality of these should match that of the existing style values.
         """
 
-    @abstractmethod
     def _delete(self, indices: IndicesType) -> None:
         """Deletes cached style values by index.
 
@@ -86,7 +87,6 @@ class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
             The indices of the style values to remove.
         """
 
-    @abstractmethod
     def _clear(self) -> None:
         """Clears all previously generated and cached values.
 
@@ -94,7 +94,7 @@ class _StyleEncoding(EventedModel, Generic[StyleValue, StyleArray], ABC):
         """
 
 
-class _ConstantStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
+class _ConstantStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
     """Encodes a constant style value.
 
     Attributes
@@ -106,6 +106,9 @@ class _ConstantStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
     constant: StyleValue
 
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
+        return self.constant
+
+    def _values(self) -> Union[StyleValue, StyleArray]:
         return self.constant
 
     def _update(
@@ -123,7 +126,7 @@ class _ConstantStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
         pass
 
 
-class _ManualStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
+class _ManualStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
     """Encodes style values manually.
 
     The style values are encoded manually in the array attribute, so that
@@ -151,6 +154,9 @@ class _ManualStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
             return np.append(self.array, tail_array, axis=0)
         return np.array(self.array[:n_rows])
 
+    def _values(self) -> Union[StyleValue, StyleArray]:
+        return self.array
+
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
     ) -> Union[StyleValue, StyleArray]:
@@ -172,7 +178,9 @@ class _ManualStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
         pass
 
 
-class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
+class _DerivedStyleEncoding(
+    EventedModel, Generic[StyleValue, StyleArray], ABC
+):
     """Encodes style values by deriving them from feature values.
 
     Attributes
@@ -187,6 +195,13 @@ class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._cached = _empty_array_like(self.fallback)
+
+    @abstractmethod
+    def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
+        pass
+
+    def _values(self):
+        return self._cached
 
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None

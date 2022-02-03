@@ -2,12 +2,14 @@ from string import Formatter
 from typing import Any, Sequence, Union
 
 import numpy as np
-from typing_extensions import Literal
+from pydantic import parse_obj_as
+from typing_extensions import Literal, Protocol, runtime_checkable
 
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 from .style_encoding import (
+    StyleEncoding,
     _ConstantStyleEncoding,
     _DerivedStyleEncoding,
     _ManualStyleEncoding,
@@ -22,6 +24,11 @@ StringArray = Array[str, (-1,)]
 
 """The default string to use, which may also be used a safe fallback string."""
 DEFAULT_STRING = ''
+
+
+@runtime_checkable
+class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
+    pass
 
 
 class ConstantStringEncoding(_ConstantStyleEncoding[StringValue, StringArray]):
@@ -55,7 +62,7 @@ class ManualStringEncoding(_ManualStyleEncoding[StringValue, StringArray]):
         this from other encodings when passing this as a dictionary.
     """
 
-    array: StringArray = []
+    array: StringArray
     default: StringValue = DEFAULT_STRING
     encoding_type: Literal['ManualStringEncoding'] = 'ManualStringEncoding'
 
@@ -112,27 +119,12 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
         return np.array(values, dtype=str)
 
 
-# Define supported encodings as tuples instead of Union, so that they can be used with
-# isinstance without relying on get_args, which was only added in python 3.8.
-
-"""The string encodings supported by napari in order of precedence."""
-_STRING_ENCODINGS = (
-    FormatStringEncoding,
-    DirectStringEncoding,
-    ConstantStringEncoding,
-    ManualStringEncoding,
-)
-
-StringEncodingUnion = Union[_STRING_ENCODINGS]
-
-StringEncodingArgument = Union[
-    StringEncodingUnion, dict, str, Sequence[str], None
-]
+StringEncodingArgument = Union[StringEncoding, dict, str, Sequence[str], None]
 
 
 def validate_string_encoding(
     value: StringEncodingArgument,
-) -> StringEncodingUnion:
+) -> StringEncoding:
     """Validates and coerces an input to a StringEncoding.
 
     Parameters
@@ -159,11 +151,18 @@ def validate_string_encoding(
     """
     if value is None:
         return ConstantStringEncoding(constant=DEFAULT_STRING)
-    if isinstance(value, _STRING_ENCODINGS):
+    if isinstance(value, StringEncoding):
         return value
     if isinstance(value, dict):
-        # Let Pydantic try to parse a dict as one of the supported encodings.
-        return value
+        return parse_obj_as(
+            Union[
+                ConstantStringEncoding,
+                ManualStringEncoding,
+                DirectStringEncoding,
+                FormatStringEncoding,
+            ],
+            value,
+        )
     if isinstance(value, str):
         if _is_format_string(value):
             return FormatStringEncoding(format=value)
@@ -172,7 +171,7 @@ def validate_string_encoding(
         return ManualStringEncoding(array=value, default='')
     raise TypeError(
         trans._(
-            'value should be one of the support string encodings, a dict, a string, a sequence of strings, or None',
+            'value should be a StringEncoding, a dict, a string, a sequence of strings, or None',
             deferred=True,
         )
     )

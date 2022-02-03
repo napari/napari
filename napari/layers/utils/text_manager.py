@@ -17,10 +17,9 @@ from .layer_utils import _validate_features
 from .string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
-    ManualStringEncoding,
     StringArray,
+    StringEncoding,
     StringEncodingArgument,
-    StringEncodingUnion,
     validate_string_encoding,
 )
 
@@ -66,7 +65,7 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     """
 
-    string: StringEncodingUnion = ConstantStringEncoding(constant='')
+    string: StringEncoding = ConstantStringEncoding(constant='')
     visible: bool = True
     size: PositiveInt = 12
     color: Array[float, (4,)] = 'cyan'
@@ -106,11 +105,7 @@ class TextManager(EventedModel):
     @property
     def values(self):
         _warn_about_deprecated_values_field()
-        if isinstance(self.string, ConstantStringEncoding):
-            return np.asarray(self.string.constant)
-        elif isinstance(self.string, ManualStringEncoding):
-            return self.string.array
-        return self.string._cached
+        return self.string._values()
 
     def __setattr__(self, key, value):
         if key == 'values':
