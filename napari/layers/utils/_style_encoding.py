@@ -102,9 +102,15 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
         """
 
     def _clear(self) -> None:
-        """Clears all previously generated and cached values.
+        """Clears all previously generated and cached values."""
 
-        Call this before calling _update this to refresh all cached values.
+    def _json_encode(self) -> dict:
+        """Convert this to a dictionary that can be passed to json.dumps.
+
+        Returns
+        -------
+        dict
+            The dictionary representation of this with JSON compatible keys and values.
         """
 
 
@@ -138,6 +144,9 @@ class _ConstantStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
 
     def _clear(self) -> None:
         pass
+
+    def _json_encode(self) -> dict:
+        return self.dict()
 
 
 class _ManualStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
@@ -183,6 +192,9 @@ class _ManualStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
 
     def _clear(self) -> None:
         pass
+
+    def _json_encode(self) -> dict:
+        return self.dict()
 
 
 class _DerivedStyleEncoding(
@@ -246,6 +258,9 @@ class _DerivedStyleEncoding(
 
     def _clear(self) -> None:
         self._cached = _empty_array_like(self.fallback)
+
+    def _json_encode(self) -> dict:
+        return self.dict()
 
 
 def _empty_array_like(value: StyleValue) -> StyleArray:

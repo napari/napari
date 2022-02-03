@@ -34,8 +34,6 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
     to set a field of type ``StringEncoding``.
     """
 
-    pass
-
 
 class ConstantStringEncoding(_ConstantStyleEncoding[StringValue, StringArray]):
     """Encodes color values from a single constant color.
