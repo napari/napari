@@ -15,19 +15,18 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 
-# -- Project information -----------------------------------------------------
-
-project = 'napari'
-copyright = '2022, The napari team'
-author = 'The napari team'
-
 import napari
-
 release = napari.__version__
 if "dev" in release:
     version = "dev"
 else:
     version = release
+
+# -- Project information -----------------------------------------------------
+
+project = 'napari'
+copyright = '2022, The napari team'
+author = 'The napari team'
 
 # -- General configuration ---------------------------------------------------
 
@@ -71,7 +70,6 @@ html_theme_options = {
     ],
     "github_url": "https://github.com/napari/napari",
     "navbar_start": ["navbar-logo", "navbar-project"],
-	"navbar_end": ["navbar-icon-links"],
     "navbar_end": ["version-switcher", "navbar-icon-links"],
 	"switcher": {
         "json_url": "_static/version_switcher.json",
