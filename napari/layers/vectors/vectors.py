@@ -13,11 +13,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import (
-    _FeatureTable,
-    _warn_about_deprecated_properties,
-    _warn_about_deprecated_property_choices,
-)
+from ..utils.layer_utils import _FeatureTable
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
@@ -362,12 +358,10 @@ class Vectors(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        _warn_about_deprecated_properties()
         return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        _warn_about_deprecated_properties()
         self.features = properties
 
     @property
@@ -380,7 +374,6 @@ class Vectors(Layer):
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        _warn_about_deprecated_property_choices()
         return self._feature_table.choices()
 
     def _get_state(self):

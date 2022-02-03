@@ -1,5 +1,5 @@
 """
-Display a labels layer with various features
+Display a labels layer with various properties
 """
 
 
@@ -35,7 +35,7 @@ size_range = max(label_areas) - min(label_areas)
 small_threshold = min(label_areas) + (size_range / 2)
 coin_sizes = np.where(label_areas > small_threshold, 'large', 'small')
 
-label_features = {
+label_properties = {
     'row': ['none']
     + ['top'] * 4
     + ['bottom'] * 4,  # background is row: none
@@ -48,7 +48,7 @@ color = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
 label_layer = viewer.add_labels(
     label_image,
     name='segmentation',
-    features=label_features,
+    features=label_properties,
     color=color,
 )
 

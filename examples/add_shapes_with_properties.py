@@ -55,8 +55,8 @@ polygons = [
     ),
 ]
 
-# create features
-features = {
+# create properties
+properties = {
     'likelihood': [0.2, 0.5, 1],
     'class': ['sky', 'person', 'building'],
 }
@@ -65,7 +65,7 @@ face_color_cycle = ['blue', 'magenta', 'green']
 # add polygons
 layer = viewer.add_shapes(
     polygons,
-    features=features,
+    properties=properties,
     shape_type='polygon',
     edge_width=1,
     edge_color='likelihood',

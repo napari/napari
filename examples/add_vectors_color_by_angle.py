@@ -34,8 +34,8 @@ angle = np.mod(phi_space, 2 * np.pi)
 # create a property that is true for all angles  > pi
 pos_angle = angle > np.pi
 
-# create the features
-features = {
+# create the properties
+properties = {
     'angle': angle,
     'pos_angle': pos_angle,
 }
@@ -44,7 +44,7 @@ features = {
 layer = viewer.add_vectors(
     pos,
     edge_width=3,
-    features=features,
+    properties=properties,
     edge_color='angle',
     edge_colormap='husl',
     name='vectors'

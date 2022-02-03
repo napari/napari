@@ -26,11 +26,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    _FeatureTable,
-    _warn_about_deprecated_properties,
-    _warn_about_deprecated_property_choices,
-)
+from ..utils.layer_utils import _FeatureTable
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -769,17 +765,14 @@ class Shapes(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
-        # _warn_about_deprecated_properties()
         return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        _warn_about_deprecated_properties()
         self.features = properties
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        _warn_about_deprecated_property_choices()
         return self._feature_table.choices()
 
     def _get_ndim(self):

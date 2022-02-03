@@ -19,8 +19,8 @@ polygons = [
     np.array([[111, 336], [220, 336], [220, 240], [111, 240]]),
 ]
 
-# create features
-features = {
+# create properties
+properties = {
     'likelihood': [21.23423, 51.2315, 100],
     'class': ['hand', 'face', 'camera'],
 }
@@ -37,7 +37,7 @@ text_properties = {
 # add polygons
 shapes_layer = viewer.add_shapes(
     polygons,
-    features=features,
+    properties=properties,
     shape_type='polygon',
     edge_width=3,
     edge_color='class',
