@@ -14,7 +14,7 @@ from .style_encoding import (
 )
 
 """A scalar array that represents one string value."""
-StringValue = Array[str, ()]
+StringValue = str
 
 """An Nx1 array where each element represents one string value."""
 StringArray = Array[str, (-1,)]

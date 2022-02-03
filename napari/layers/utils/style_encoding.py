@@ -10,7 +10,7 @@ from ...utils.translations import trans
 IndicesType = Union[range, List[int], np.ndarray]
 
 """The variable type of a single style value."""
-StyleValue = TypeVar('StyleValue', bound=np.ndarray)
+StyleValue = TypeVar('StyleValue')
 
 """The variable type of multiple style values in an array."""
 StyleArray = TypeVar('StyleArray', bound=np.ndarray)
@@ -204,7 +204,9 @@ class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
                     ),
                     category=RuntimeWarning,
                 )
-                tail_shape = (n_rows - n_cached,) + self.fallback.shape
+                tail_shape = (n_rows - n_cached,) + np.asarray(
+                    self.fallback
+                ).shape
                 tail_array = np.broadcast_to(self.fallback, tail_shape)
             self._append(tail_array)
         elif n_cached > n_rows:
@@ -222,7 +224,7 @@ class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
 
 
 def _empty_array_like(single_array: StyleValue) -> StyleArray:
-    shape = (0,) + single_array.shape
+    shape = (0,) + np.asarray(single_array).shape
     return np.empty_like(single_array, shape=shape)
 
 

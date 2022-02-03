@@ -216,7 +216,7 @@ def test_text_constant_then_repeat_values():
 
 def test_text_constant_with_no_properties_then_no_values():
     text_manager = TextManager(text='point', n_text=3)
-    np.testing.assert_equal(text_manager.values, ['point'] * 3)
+    np.testing.assert_array_equal(text_manager.values, ['point'] * 3)
 
 
 def test_add_with_text_constant_then_ignored():
@@ -225,11 +225,11 @@ def test_add_with_text_constant_then_ignored():
     text_manager = TextManager(
         text='point', n_text=n_text, properties=properties
     )
-    np.testing.assert_equal(text_manager.values, ['point'] * 3)
+    np.testing.assert_array_equal(text_manager.values, ['point'] * 3)
 
     text_manager.add({'class': np.array(['C'])}, 2)
 
-    np.testing.assert_equal(text_manager.values, ['point'] * 5)
+    np.testing.assert_array_equal(text_manager.values, ['point'] * 5)
 
 
 def test_add_with_text_constant_init_empty_then_ignored():
@@ -238,7 +238,7 @@ def test_add_with_text_constant_init_empty_then_ignored():
 
     text_manager.add({'class': np.array(['C'])}, 2)
 
-    np.testing.assert_equal(text_manager.values, ['point'] * 2)
+    np.testing.assert_array_equal(text_manager.values, ['point'] * 2)
 
 
 def test_remove_with_text_constant_then_ignored():
@@ -250,7 +250,7 @@ def test_remove_with_text_constant_then_ignored():
 
     text_manager.remove([1, 3])
 
-    np.testing.assert_equal(text_manager.values, ['point'] * n_text)
+    np.testing.assert_array_equal(text_manager.values, ['point'] * n_text)
 
 
 def test_from_layer():

@@ -107,7 +107,7 @@ class TextManager(EventedModel):
     def values(self):
         _warn_about_deprecated_values_field()
         if isinstance(self.string, ConstantStringEncoding):
-            return self.string.constant
+            return np.asarray(self.string.constant)
         elif isinstance(self.string, ManualStringEncoding):
             return self.string.array
         return self.string._cached
