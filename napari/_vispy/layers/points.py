@@ -68,7 +68,6 @@ class VispyPointsLayer(VispyBaseLayer):
         self.reset()
 
     def _on_symbol_change(self):
-        print('asd')
         self.node.symbol = self.layer.symbol
 
     def _on_highlight_change(self):
