@@ -138,8 +138,7 @@ windows/
 
 napari/_version.py
 
-docs/api/*
-!docs/api/index.rst
+docs/api/napari*
 docs/_build
 
 # built in setup.py

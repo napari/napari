@@ -88,6 +88,8 @@ subtrees:
       - file: release/index
         subtrees:
         - entries:
+          - file: release/release_0_4_14
+          - file: release/release_0_4_13
           - file: release/release_0_4_12
           - file: release/release_0_4_11
           - file: release/release_0_4_10
@@ -125,7 +127,6 @@ subtrees:
           - file: release/release_0_1_5
           - file: release/release_0_1_3
           - file: release/release_0_1_0
-          - file: release/release_0_4_13
       - file: roadmaps/index
         subtrees:
         - entries:
@@ -133,3 +134,10 @@ subtrees:
           - file: roadmaps/0_3_retrospective
           - file: roadmaps/0_3
   - file: api/index
+    subtrees:
+    - titlesonly: True
+      entries: 
+      - file: api/modules
+      - file: api/event_loop
+      - file: api/view_layer
+      - file: api/misc
