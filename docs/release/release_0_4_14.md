@@ -10,7 +10,7 @@ This is a small release containing some new features and fixing a few issues tha
 
 This release adds the ability to convert a shapes layer to a labels layer from a context menu available on right clicking the layer list entry (#3978). Our vectors layer has gained the 
 ability to render vectors in 2D across multiple slices (#2902) and points in the points
-layer can now be hidden individually (#3625). Support has also been added for (opt-in only) error reporting using `napari-error-reporting`.
+layer can now be hidden individually (#3625).
 
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
