@@ -160,7 +160,7 @@ class _ManualStyleEncoding(_StyleEncoding[StyleValue, StyleArray]):
             self.array = self(features)
         elif n_values > n_rows:
             self.array = self.array[:n_rows]
-        return _maybe_index_array(self.array, features, indices)
+        return _maybe_index_array(self.array, indices)
 
     def _append(self, array: StyleArray) -> None:
         self.array = np.append(self.array, array, axis=0)
@@ -209,7 +209,7 @@ class _DerivedStyleEncoding(_StyleEncoding[StyleValue, StyleArray], ABC):
             self._append(tail_array)
         elif n_cached > n_rows:
             self._cached = self._cached[:n_rows]
-        return _maybe_index_array(self._cached, features, indices)
+        return _maybe_index_array(self._cached, indices)
 
     def _append(self, array: StyleArray) -> None:
         self._cached = np.append(self._cached, array, axis=0)
@@ -238,8 +238,6 @@ def _delete_in_bounds(array: np.ndarray, indices: IndicesType) -> np.ndarray:
 
 
 def _maybe_index_array(
-    array: np.ndarray, features: Any, indices: Optional[IndicesType]
+    array: np.ndarray, indices: Optional[IndicesType]
 ) -> np.ndarray:
-    if indices is None:
-        indices = range(features.shape[0])
-    return array[indices]
+    return array if indices is None else array[indices]
