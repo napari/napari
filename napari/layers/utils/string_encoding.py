@@ -2,15 +2,17 @@ from string import Formatter
 from typing import Any, Sequence, Union
 
 import numpy as np
-from typing_extensions import Literal
+from pydantic import parse_obj_as
+from typing_extensions import Literal, Protocol, runtime_checkable
 
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
 
 from ._style_encoding import (
-    ConstantStyleEncoding,
-    DerivedStyleEncoding,
-    ManualStyleEncoding,
+    StyleEncoding,
+    _ConstantStyleEncoding,
+    _DerivedStyleEncoding,
+    _ManualStyleEncoding,
 )
 
 """A scalar array that represents one string value."""
@@ -20,11 +22,18 @@ StringValue = Array[str, ()]
 StringArray = Array[str, (-1,)]
 
 
-"""The default string to use, which may also be used a safe fallback string."""
+"""The default string value, which may also be used a safe fallback string."""
 DEFAULT_STRING = ''
 
 
-class ConstantStringEncoding(ConstantStyleEncoding[StringValue, StringArray]):
+@runtime_checkable
+class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
+    """Encodes strings from layer features."""
+
+    pass
+
+
+class ConstantStringEncoding(_ConstantStyleEncoding[StringValue, StringArray]):
     """Encodes color values from a single constant color.
 
     Attributes
@@ -40,7 +49,7 @@ class ConstantStringEncoding(ConstantStyleEncoding[StringValue, StringArray]):
     encoding_type: Literal['ConstantStringEncoding'] = 'ConstantStringEncoding'
 
 
-class ManualStringEncoding(ManualStyleEncoding[StringValue, StringArray]):
+class ManualStringEncoding(_ManualStyleEncoding[StringValue, StringArray]):
     """Encodes string values manually in an array.
 
     Attributes
@@ -55,12 +64,12 @@ class ManualStringEncoding(ManualStyleEncoding[StringValue, StringArray]):
         this from other encodings when passing this as a dictionary.
     """
 
-    array: StringArray = []
+    array: StringArray
     default: StringValue = DEFAULT_STRING
     encoding_type: Literal['ManualStringEncoding'] = 'ManualStringEncoding'
 
 
-class DirectStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
+class DirectStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     """Encodes strings directly from a feature column.
 
     Attributes
@@ -83,7 +92,7 @@ class DirectStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
         return np.array(features[self.feature], dtype=str)
 
 
-class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
+class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     """Encodes string values by formatting feature values.
 
     Attributes
@@ -112,84 +121,64 @@ class FormatStringEncoding(DerivedStyleEncoding[StringValue, StringArray]):
         return np.array(values, dtype=str)
 
 
-# Define supported encodings as tuples instead of Union, so that they can be used with
-# isinstance without relying on get_args, which was only added in python 3.8.
-
-"""The string encodings supported by napari in order of precedence."""
-_STRING_ENCODINGS = (
-    FormatStringEncoding,
-    DirectStringEncoding,
-    ConstantStringEncoding,
-    ManualStringEncoding,
-)
-
-StringEncodingUnion = Union[_STRING_ENCODINGS]
-
-StringEncodingArgument = Union[
-    StringEncodingUnion, dict, str, Sequence[str], None
-]
+"""The types of arguments supported when setting a StringEncoding field."""
+StringEncodingArgument = Union[StringEncoding, dict, str, Sequence[str], None]
 
 
-def validate_string_encoding(
-    value: StringEncodingArgument,
-) -> StringEncodingUnion:
-    """Validates and coerces an input to a StringEncoding.
+def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
+    """Validates and coerces a value to a StringEncoding.
 
     Parameters
     ----------
     value : StringEncodingArgument
         The value to validate and coerce.
-        If this is already one of the supported string encodings, it is returned as is.
-        If this is a dict, then it should represent one of the supported string encodings.
+        If this is already a StringEncoding, it is returned as is.
+        If this is a dict, then it should represent one of the built-in string encodings.
         If this a valid format string, then a FormatStringEncoding is returned.
         If this is any other string, a ConstantStringEncoding is returned.
         If this is a sequence of strings, a ManualStringEncoding is returned.
 
     Returns
     -------
-    StringEncodingUnion
-        An instance of one of the support string encodings.
+    StringEncoding
 
     Raises
     ------
     TypeError
-        If the input is not a supported type.
+        If the value is not a supported type.
     ValidationError
-        If the input cannot be parsed into a StringEncoding.
+        If the value cannot be parsed into a StringEncoding.
     """
     if value is None:
         return ConstantStringEncoding(constant=DEFAULT_STRING)
-    if isinstance(value, _STRING_ENCODINGS):
+    if isinstance(value, StringEncoding):
         return value
     if isinstance(value, dict):
-        # Let Pydantic try to parse a dict as one of the supported encodings.
-        return value
+        return parse_obj_as(
+            Union[
+                ConstantStringEncoding,
+                ManualStringEncoding,
+                DirectStringEncoding,
+                FormatStringEncoding,
+            ],
+            value,
+        )
     if isinstance(value, str):
         if _is_format_string(value):
             return FormatStringEncoding(format=value)
         return ConstantStringEncoding(constant=value)
     if isinstance(value, Sequence):
-        return ManualStringEncoding(array=value, default='')
+        return ManualStringEncoding(array=value, default=DEFAULT_STRING)
     raise TypeError(
         trans._(
-            'value should be one of the support string encodings, a dict, a string, a sequence of strings, or None',
+            'value should be a StringEncoding, a dict, a string, a sequence of strings, or None',
             deferred=True,
         )
     )
 
 
 def _is_format_string(string: str) -> bool:
-    """Checks if a string is a valid format string with at least one field.
-
-    Parameters
-    ----------
-    string : str
-        The string to check.
-
-    Returns
-    -------
-    True if format contains at least one field, False otherwise.
-    """
+    """Returns True if a string is a valid format string with at least one field, False otherwise."""
     try:
         fields = tuple(
             field

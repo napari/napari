@@ -128,7 +128,7 @@ def test_format_with_missing_field():
         encoding(features)
 
 
-def test_validate_from_format():
+def test_validate_from_format_string():
     argument = '{class}: {score:.2f}'
     expected = FormatStringEncoding(format=argument)
 
@@ -137,7 +137,7 @@ def test_validate_from_format():
     assert actual == expected
 
 
-def test_validate_from_non_format():
+def test_validate_from_non_format_string():
     argument = 'abc'
     expected = ConstantStringEncoding(constant=argument)
 
@@ -149,6 +149,47 @@ def test_validate_from_non_format():
 def test_validate_from_sequence():
     argument = ['a', 'b', 'c']
     expected = ManualStringEncoding(array=argument)
+
+    actual = validate_string_encoding(argument)
+
+    assert actual == expected
+
+
+def test_validate_from_constant_dict():
+    constant = 'test'
+    argument = {'constant': constant}
+    expected = ConstantStringEncoding(constant=constant)
+
+    actual = validate_string_encoding(argument)
+
+    assert actual == expected
+
+
+def test_validate_from_manual_dict():
+    array = ['a', 'b', 'c']
+    default = 'd'
+    argument = {'array': array, 'default': default}
+    expected = ManualStringEncoding(array=array, default=default)
+
+    actual = validate_string_encoding(argument)
+
+    assert actual == expected
+
+
+def test_validate_from_direct_dict():
+    feature = 'class'
+    argument = {'feature': feature}
+    expected = DirectStringEncoding(feature=feature)
+
+    actual = validate_string_encoding(argument)
+
+    assert actual == expected
+
+
+def test_validate_from_format_dict():
+    format = '{class}: {score:.2f}'
+    argument = {'format': format}
+    expected = FormatStringEncoding(format=format)
 
     actual = validate_string_encoding(argument)
 
