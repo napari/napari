@@ -28,7 +28,11 @@ DEFAULT_STRING = ''
 
 @runtime_checkable
 class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
-    """Encodes strings from layer features."""
+    """Encodes strings from layer features.
+
+    See :func:`validate_string_encoding` to understand what values can be used
+    to set a field of type ``StringEncoding``.
+    """
 
     pass
 

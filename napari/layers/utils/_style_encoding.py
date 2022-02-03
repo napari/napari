@@ -151,10 +151,8 @@ class _ManualStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
     array : np.ndarray
         The array of values.
     default : np.ndarray
-        The default style value that is used when requesting a value that
-        is out of bounds in the array attribute. In general this is a numpy
-        array because color is a 1D RGBA numpy array, but mostly this will
-        be a 0D numpy array (i.e. a scalar).
+        The default style value that is used when ``array`` is shorter than
+        the given features.
     """
 
     array: StyleArray
@@ -209,7 +207,7 @@ class _DerivedStyleEncoding(
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         pass
 
-    def _values(self):
+    def _values(self) -> Union[StyleValue, StyleArray]:
         return self._cached
 
     def _update(
@@ -225,7 +223,7 @@ class _DerivedStyleEncoding(
         return _maybe_index_array(self._cached, indices)
 
     def _apply_safely(self, features: Any) -> StyleArray:
-        """Applies this without raising encoding errors, and warning instead."""
+        """Applies this without raising encoding errors, warning instead."""
         try:
             array = self(features.iloc)
         except (KeyError, ValueError):
