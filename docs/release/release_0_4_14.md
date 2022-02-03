@@ -23,7 +23,6 @@ Complete list of changes below:
 - Hide points individually (#3625)
 
 ## New Features
-- Support error reporting via napari-error monitor (#4040)
 
 ## Improvements
 - Update tests to remove warnings (#3974)
