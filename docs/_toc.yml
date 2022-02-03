@@ -7,7 +7,8 @@ subtrees:
       entries:
       - file: tutorials/start_index
         subtrees:
-        - entries:
+        - titlesonly: True
+          entries:
           - file: tutorials/fundamentals/installation
           - file: tutorials/fundamentals/getting_started
           - file: tutorials/fundamentals/viewer
@@ -30,7 +31,8 @@ subtrees:
           - file: tutorials/segmentation/annotate_segmentation
       - file: howtos/index
         subtrees:
-        - entries:
+        - titlesonly: True
+          entries:
           - file: howtos/connecting_events
           - file: howtos/napari_imageJ
           - file: howtos/docker
@@ -49,7 +51,6 @@ subtrees:
           - file: guides/contexts_expressions
           - file: guides/preferences
       - file: glossary
-      - file: api/index
   - file: plugins/index
     subtrees:
     - entries:
@@ -131,3 +132,4 @@ subtrees:
           - file: roadmaps/0_4
           - file: roadmaps/0_3_retrospective
           - file: roadmaps/0_3
+  - file: api/index
