@@ -90,7 +90,7 @@ def test_adding_removing_layer(make_napari_viewer):
     # Check that no other internal callbacks have been registered
     assert len(layer.events.callbacks) == 0
     for name, em in layer.events.emitters.items():
-        assert len(em.callbacks) == (name == "set_data")
+        assert len(em.callbacks) == 0
 
     # re-add layer
     viewer.layers.append(layer)

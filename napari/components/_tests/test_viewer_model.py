@@ -705,7 +705,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check that all callbacks have been removed
     assert len(layer.events.callbacks) == 0
     for name, em in layer.events.emitters.items():
-        assert len(em.callbacks) == (name == "set_data")
+        assert len(em.callbacks) == 0
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
