@@ -1,6 +1,6 @@
 import inspect
 from enum import auto
-from typing import ClassVar, List, Sequence
+from typing import ClassVar, List, Sequence, Union
 from unittest.mock import Mock
 
 import dask.array as da
@@ -236,6 +236,25 @@ def test_values_updated():
     user1.events.id.assert_not_called()
     user2.events.id.assert_not_called()
     assert user1_events.call_count == 0
+
+
+def test_update_with_inner_model_union():
+    class AltInner(EventedModel):
+        w: str
+
+    class Inner(EventedModel):
+        x: str
+
+    class Outer(EventedModel):
+        y: int
+        z: Union[Inner, AltInner]
+
+    original = Outer(y=1, z=Inner(x='a'))
+    updated = Outer(y=2, z=AltInner(w='b'))
+
+    original.update(updated, recurse=False)
+
+    assert original == updated
 
 
 def test_evented_model_signature():
