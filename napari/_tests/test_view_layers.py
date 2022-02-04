@@ -159,6 +159,6 @@ def test_kwargs_passed(monkeypatch):
         scale=(1, 2, 3),
     )
     assert viewer_mock.mock_calls == [
-        call(title='my viewer'),
+        call(title='my viewer', ndisplay=3),
         call().open(path='some/path', name='img name', scale=(1, 2, 3)),
     ]
