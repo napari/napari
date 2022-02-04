@@ -6,7 +6,7 @@ from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
 from ...utils.translations import trans
 from ...utils.tree import Group, Node
-from ._base_item_model import _BaseEventedItemModel
+from ._base_item_model import SortRole, _BaseEventedItemModel
 
 logger = logging.getLogger(__name__)
 NodeType = TypeVar("NodeType", bound=Node)
@@ -33,11 +33,12 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
         A given class:`QModelIndex` can store multiple types of data, each with
         its own "ItemDataRole".
         """
-        item = self.getItem(index)
         if role == Qt.DisplayRole:
-            return item._node_name()
+            return self.getItem(index)._node_name()
         if role == Qt.UserRole:
             return self.getItem(index)
+        if role == SortRole:
+            return index.row()
         return None
 
     def index(

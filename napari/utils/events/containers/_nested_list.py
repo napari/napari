@@ -429,8 +429,10 @@ class NestableEventedList(EventedList[_T]):
         self.events.moving(index=src_index, new_index=dest_index)
 
         dest_par = self[dest_par_i]  # grab this before popping src_i
-        value = self[src_par_i]._list.pop(src_i)
-        dest_par._list.insert(dest_i, value)
+
+        with self.events.blocker_all():
+            value = self[src_par_i].pop(src_i)
+            dest_par.insert(dest_i, value)
 
         self.events.moved(index=src_index, new_index=dest_index, value=value)
         self.events.reordered(value=self)

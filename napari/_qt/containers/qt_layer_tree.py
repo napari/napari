@@ -8,7 +8,8 @@ from qtpy.QtGui import QImage
 from ...layers import Layer
 from ._base_item_model import ThumbnailRole
 from ._layer_delegate import LayerDelegate
-from .qt_layer_list import ReverseProxyModel
+
+# from .qt_layer_list import ReverseProxyModel
 from .qt_tree_model import QtNodeTreeModel
 from .qt_tree_view import QtNodeTreeView
 
@@ -107,9 +108,10 @@ class QtLayerTreeView(QtNodeTreeView):
         font.setPointSize(12)
         self.setFont(font)
 
-        # This reverses the order of the items in the view,
-        # so items at the end of the list are at the top.
-        self.setModel(ReverseProxyModel(self.model()))  # not working??
+        # # This reverses the order of the items in the view,
+        # # so items at the end of the list are at the top.
+        # # FIXME! not working at the moment, and causing test segfaults
+        # self.setModel(ReverseProxyModel(self.model()))
 
     def viewOptions(self) -> QStyleOptionViewItem:
         options = super().viewOptions()
