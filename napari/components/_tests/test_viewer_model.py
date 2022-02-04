@@ -704,7 +704,7 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
 
     # Check that all callbacks have been removed
     assert len(layer.events.callbacks) == 0
-    for name, em in layer.events.emitters.items():
+    for em in layer.events.emitters.values():
         assert len(em.callbacks) == 0
 
 
