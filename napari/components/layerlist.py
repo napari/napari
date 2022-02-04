@@ -43,7 +43,6 @@ class LayerList(SelectableEventedList[Layer]):
 
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
-        self.events.removed.connect(self._removed_layer)
 
     def _on_selection_changed(self, event):
         # This method is a temporary workaround to the fact that the Points
@@ -56,13 +55,8 @@ class LayerList(SelectableEventedList[Layer]):
         for layer in event.removed:
             layer._on_selection(False)
 
-    def __delitem__(self, key):
-        self._clean_cache()
-        super().__delitem__(key)
-        self._clean_cache()
-
-    def _removed_layer(self, event):
-        event.value.events.set_data.disconnect(self._clean_cache)
+    def _process_delete_item(self, item: Layer):
+        item.value.events.set_data.disconnect(self._clean_cache)
         self._clean_cache()
 
     def _clean_cache(self):
@@ -94,7 +88,7 @@ class LayerList(SelectableEventedList[Layer]):
             Coerced, unique name.
         """
         existing_layers = {x.name for x in self if x is not layer}
-        for i in range(len(self)):
+        for _ in range(len(self)):
             if name in existing_layers:
                 name = inc_name_count(name)
         return name
