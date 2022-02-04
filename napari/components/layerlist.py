@@ -43,8 +43,7 @@ class LayerList(SelectableEventedList[Layer]):
 
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
-        self.events.inserted.connect(self._inserted_layer)
-        self.events.removed.connect(self._inserted_layer)
+        self.events.removed.connect(self._removed_layer)
 
     def _on_selection_changed(self, event):
         # This method is a temporary workaround to the fact that the Points
@@ -57,8 +56,9 @@ class LayerList(SelectableEventedList[Layer]):
         for layer in event.removed:
             layer._on_selection(False)
 
-    def _inserted_layer(self, event):
-        event.value.events.set_data.connect(self._clean_cache)
+    def __delitem__(self, key):
+        self._clean_cache()
+        super().__delitem__(key)
         self._clean_cache()
 
     def _removed_layer(self, event):
@@ -108,6 +108,8 @@ class LayerList(SelectableEventedList[Layer]):
         """Insert ``value`` before index."""
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
+        self._clean_cache()
+        new_layer.events.set_data.connect(self._clean_cache)
         super().insert(index, new_layer)
 
     def move_selected(self, index, insert):

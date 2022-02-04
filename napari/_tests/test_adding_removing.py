@@ -137,4 +137,4 @@ def test_add_remove_layer_external_callbacks(
     for name, em in layer.events.emitters.items():
         # warningEmitters are not connected when connecting to the emitterGroup
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1 + (name == "set_data")
+            assert len(em.callbacks) == 1
