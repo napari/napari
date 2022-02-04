@@ -58,11 +58,12 @@ Complete list of changes below:
 - Use python -m pytest with xvfb-action (#4046)
 - Update packaging files, remove setup.py and requirements.txt (#4014)
 
-## 10 authors added to this release (alphabetical)
+## 11 authors added to this release (alphabetical)
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
+- [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
@@ -71,7 +72,7 @@ Complete list of changes below:
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 
 
-## 8 reviewers added to this release (alphabetical)
+## 11 reviewers added to this release (alphabetical)
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [Chi-li Chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
