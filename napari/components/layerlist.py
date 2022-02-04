@@ -60,10 +60,13 @@ class LayerList(SelectableEventedList[Layer]):
         self._clean_cache()
 
     def _clean_cache(self):
-        cached_properties = ('extent', '_extent_world', '_step_size',
-                             '_ranges')
+        cached_properties = (
+            'extent',
+            '_extent_world',
+            '_step_size',
+            '_ranges',
+        )
         [self.__dict__.pop(p, None) for p in cached_properties]
-
 
     def __newlike__(self, data):
         return LayerList(data)
