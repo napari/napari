@@ -44,7 +44,8 @@ Complete list of changes below:
 - Fix error when setting ndisplay=3 with empty shapes layer in viewer (#4003)
 - Fix bug preventing close button on dock widgets (#4006)
 - Fix point symbol on instantiation (#4043)
-- Only set dims kwargs on viewer after adding layer
+- Only set dims kwargs on viewer after adding layer (#4021)
+- Imsave deprecation (#4057)
 
 ## API Changes
 
