@@ -31,6 +31,10 @@ Complete list of changes below:
 - Change base vector slice thickness to half a unit (#4001)
 - Use scikit-image[data] in the bundle (#4024)
 - Rename n_dimensional to out_of_slice_display in Points and Vectors (#4007)
+- Raise reader plugin errors sooner, (avoid cryptic error messages) (#4026)
+- Unlink close button from plugins (#4027)
+- Update QtProgressBar total when progress total is changed (#4034)
+- Update on merge to stack action ordering (#4033)
 
 ## Bug Fixes
 - Fix about on python 3.10 (#3972)
@@ -39,6 +43,8 @@ Complete list of changes below:
 - Don't use texture_format auto if float textures not available on machine (#3990)
 - Fix error when setting ndisplay=3 with empty shapes layer in viewer (#4003)
 - Fix bug preventing close button on dock widgets (#4006)
+- Fix point symbol on instantiation (#4043)
+- Only set dims kwargs on viewer after adding layer
 
 ## API Changes
 
@@ -48,11 +54,17 @@ Complete list of changes below:
 ## Build Tools and Docs
 - DOC: Misc doc syntax. (#3985)
 - Fix include_package_data inclusion in the "your first plugin" docs page (#4022)
+- 0.4.14 translation strings (#4029)
+- Use python -m pytest with xvfb-action (#4046)
+- Update packaging files, remove setup.py and requirements.txt (#4014)
 
-## 5 authors added to this release (alphabetical)
+## 10 authors added to this release (alphabetical)
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
+- [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
+- [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
+- [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
@@ -63,7 +75,9 @@ Complete list of changes below:
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [Chi-li Chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
+- [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
 - [Nathan Clack](https://github.com/napari/napari/commits?author=nclack) - @nclack
