@@ -1,9 +1,13 @@
+import pytest
+
 from napari.components.layerlist import LayerList
 from napari.layers import Points
+from napari.layers.layergroup import LayerGroup
 from napari.utils.context import LayerListContextKeys
 
 
-def test_layerlist_context():
+@pytest.mark.parametrize('LayersClass', [LayerList, LayerGroup])
+def test_layerlist_context(LayersClass):
     assert 'layers_selection_count' in LayerListContextKeys.__members__
 
     ctx = {}
@@ -11,7 +15,7 @@ def test_layerlist_context():
     assert llc.layers_selection_count == 0
     assert ctx['layers_selection_count'] == 0
 
-    layers = LayerList()
+    layers = LayersClass()
 
     layers.selection.events.changed.connect(llc.update)
     layers.append(Points())

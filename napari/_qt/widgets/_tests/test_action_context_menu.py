@@ -1,9 +1,11 @@
 import numpy as np
+import pytest
 
 from napari._qt.widgets.qt_action_context_menu import QtActionContextMenu
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels
 from napari.layers._layer_actions import _LAYER_ACTIONS
+from napari.layers.layergroup import LayerGroup
 from napari.utils.context._expressions import parse_expression
 
 
@@ -31,10 +33,11 @@ def test_action_menu(qapp):
     assert not menu._get_action('add_one').isEnabled()
 
 
-def test_layer_action_menu(qapp):
+@pytest.mark.parametrize('LayersClass', [LayerList, LayerGroup])
+def test_layer_action_menu(qapp, LayersClass):
     """Test the actions in LAYER_ACTIONS."""
     menu = QtActionContextMenu(_LAYER_ACTIONS)
-    layer_list = LayerList([])
+    layer_list = LayersClass([])
     menu.update_from_context(layer_list._ctx)
     assert not menu._get_action('napari:convert_to_image').isEnabled()
 
