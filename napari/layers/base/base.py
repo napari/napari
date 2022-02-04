@@ -672,7 +672,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if 'extent' in self.__dict__:
             del self.extent
 
-        self.refresh()
+        self.refresh()  # This call is need for invalidate cache of extent in LayerList. If you remove it pleas ad another workaround.
 
     @property
     @abstractmethod
