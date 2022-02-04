@@ -443,6 +443,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Layer to add.
         """
         layer = event.value
+        self.layers._clean_cache()  # This should be obsolete, but events are called in wrong order
 
         # Connect individual layer events to viewer events
         # TODO: in a future PR, we should now be able to connect viewer *only*
@@ -484,6 +485,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             The layer that was added (same as input).
         """
         layer = event.value
+        self.layers._clean_cache()  # This should be obsolete, but events are called in wrong order
 
         # Disconnect all connections from layer
         disconnect_events(layer.events, self)
