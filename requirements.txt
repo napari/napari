@@ -1,4 +1,0 @@
-# requirements are in setup.cfg
-# https://caremad.io/posts/2013/07/setup-vs-requirement/
-
--e ".[dev]"
