@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
+from .._vendor.cpython.functools import cached_property
 from ..layers import Layer
 from ..layers.image.image import _ImageBase
 from ..utils.context import create_context
@@ -42,6 +43,8 @@ class LayerList(SelectableEventedList[Layer]):
 
         # temporary: see note in _on_selection_event
         self.selection.events.changed.connect(self._on_selection_changed)
+        self.events.inserted.connect(self._inserted_layer)
+        self.events.removed.connect(self._inserted_layer)
 
     def _on_selection_changed(self, event):
         # This method is a temporary workaround to the fact that the Points
@@ -53,6 +56,24 @@ class LayerList(SelectableEventedList[Layer]):
             layer._on_selection(True)
         for layer in event.removed:
             layer._on_selection(False)
+
+    def _inserted_layer(self, event):
+        event.value.events.set_data.connect(self._clean_cache)
+        self._clean_cache()
+
+    def _removed_layer(self, event):
+        event.value.events.set_data.disconnect(self._clean_cache)
+        self._clean_cache()
+
+    def _clean_cache(self):
+        if 'extent' in self.__dict__:
+            del self.extent
+        if "_extent_world" in self.__dict__:
+            del self._extent_world
+        if "_step_size" in self.__dict__:
+            del self._step_size
+        if "_ranges" in self.__dict__:
+            del self._ranges
 
     def __newlike__(self, data):
         return LayerList(data)
@@ -119,7 +140,7 @@ class LayerList(SelectableEventedList[Layer]):
         for layer in self.selection:
             layer.visible = not layer.visible
 
-    @property
+    @cached_property
     def _extent_world(self) -> np.ndarray:
         """Extent of layers in world coordinates.
 
@@ -188,7 +209,7 @@ class LayerList(SelectableEventedList[Layer]):
 
         return np.vstack([min_v, max_v])
 
-    @property
+    @cached_property
     def _step_size(self) -> np.ndarray:
         """Ideal step size between planes in world coordinates.
 
@@ -219,7 +240,7 @@ class LayerList(SelectableEventedList[Layer]):
             min_scales = self._step_size_from_scales(scales)
             return min_scales
 
-    @property
+    @cached_property
     def extent(self) -> Extent:
         """Extent of layers in data and world coordinates."""
         extent_list = [layer.extent for layer in self]
@@ -229,7 +250,7 @@ class LayerList(SelectableEventedList[Layer]):
             step=self._get_step_size(extent_list),
         )
 
-    @property
+    @cached_property
     def _ranges(self) -> List[Tuple[float, float, float]]:
         """Get ranges for Dims.range in world coordinates.
 

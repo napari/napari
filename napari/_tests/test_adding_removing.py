@@ -89,8 +89,8 @@ def test_adding_removing_layer(make_napari_viewer):
 
     # Check that no other internal callbacks have been registered
     assert len(layer.events.callbacks) == 0
-    for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
+    for name, em in layer.events.emitters.items():
+        assert len(em.callbacks) == (name == "set_data")
 
     # re-add layer
     viewer.layers.append(layer)
@@ -134,7 +134,7 @@ def test_add_remove_layer_external_callbacks(
 
     # Check that all internal callbacks have been removed
     assert len(layer.events.callbacks) == 1
-    for em in layer.events.emitters.values():
+    for name, em in layer.events.emitters.items():
         # warningEmitters are not connected when connecting to the emitterGroup
         if not isinstance(em, WarningEmitter):
-            assert len(em.callbacks) == 1
+            assert len(em.callbacks) == 1 + (name == "set_data")
