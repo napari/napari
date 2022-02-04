@@ -459,9 +459,8 @@ class NestableEventedList(EventedList[_T]):
 
         Depth first traversal of the tree
         """
-        for i in range(start, len(self) if stop is None else stop):
+        for i, item in enumerate(self[:stop]):
             yield root + (i,) if root else i
-            item = self[i]
             if isinstance(item, NestableEventedList):
                 yield from item._iter_indices(root=root + (i,))
 
