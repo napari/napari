@@ -5,12 +5,12 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
+from functools import cached_property
 from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
 
-from ..._vendor.cpython.functools import cached_property
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
