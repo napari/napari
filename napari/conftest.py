@@ -386,10 +386,7 @@ HistoryManager.enabled = False
 @pytest.fixture
 def napari_svg_name():
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
-    try:
-        from importlib.metadata import metadata
-    except ImportError:
-        from importlib_metadata import metadata
+    from importlib.metadata import metadata
 
     if tuple(metadata('napari-svg')['Version'].split('.')) < ('0', '1', '6'):
         return 'svg'

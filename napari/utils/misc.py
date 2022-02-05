@@ -2,6 +2,7 @@
 """
 import builtins
 import collections.abc
+import importlib.metadata
 import inspect
 import itertools
 import os
@@ -33,11 +34,6 @@ if TYPE_CHECKING:
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
-try:
-    from importlib import metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata  # noqa
-
 
 def parse_version(v) -> 'packaging.version._BaseVersion':
     """Parse a version string and return a packaging.version.Version obj."""
@@ -62,8 +58,8 @@ def running_as_bundled_app() -> bool:
     except AttributeError:
         return False
     try:
-        metadata = importlib_metadata.metadata(app_module)
-    except importlib_metadata.PackageNotFoundError:
+        metadata = importlib.metadata.metadata(app_module)
+    except importlib.metadata.PackageNotFoundError:
         return False
 
     return 'Briefcase-Version' in metadata
