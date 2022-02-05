@@ -4,7 +4,6 @@ except ImportError:
     pass
 
 import os
-import sys
 from functools import partial
 
 import dask.threaded
@@ -360,28 +359,21 @@ def fresh_settings(monkeypatch):
     yield
 
 
-if sys.version_info > (
-    3,
-    8,
-):
-    # There seem to be on issue on 3.7 where ThreadPool has not shutdown method.
-    # just do nothing. No need to define it on 3.7 as we are not requesting the
-    # fixture explicitely ever.
-    @pytest.fixture(autouse=True)
-    def auto_shutdown_dask_threadworkers():
-        """
-        This automatically shutdown dask thread workers.
+@pytest.fixture(autouse=True)
+def auto_shutdown_dask_threadworkers():
+    """
+    This automatically shutdown dask thread workers.
 
-        We don't assert the number of threads in unchanged as other things
-        modify the number of threads.
-        """
-        assert dask.threaded.default_pool is None
-        try:
-            yield
-        finally:
-            if dask.threaded.default_pool is not None:
-                dask.threaded.default_pool.shutdown()
-                dask.threaded.default_pool = None
+    We don't assert the number of threads in unchanged as other things
+    modify the number of threads.
+    """
+    assert dask.threaded.default_pool is None
+    try:
+        yield
+    finally:
+        if dask.threaded.default_pool is not None:
+            dask.threaded.default_pool.shutdown()
+            dask.threaded.default_pool = None
 
 
 # this is not the proper way to configure IPython, but it's an easy one.

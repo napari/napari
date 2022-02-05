@@ -441,7 +441,7 @@ def main():
             warnings.warn(msg)
 
     # Prevent https://github.com/napari/napari/issues/3415
-    if sys.platform == "darwin" and sys.version_info >= (3, 8):
+    if sys.platform == "darwin":
         import multiprocessing
 
         multiprocessing.set_start_method('fork')

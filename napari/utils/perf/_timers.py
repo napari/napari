@@ -2,9 +2,9 @@
 """
 import contextlib
 import os
+from time import perf_counter_ns
 from typing import Dict, Optional
 
-from ._compat import perf_counter_ns
 from ._event import PerfEvent
 from ._stat import Stat
 from ._trace_file import PerfTraceFile
