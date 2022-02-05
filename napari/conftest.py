@@ -276,8 +276,7 @@ def single_tiff():
 @pytest.fixture(scope="session", autouse=True)
 def configure_loading(request):
     """Configure async/async loading."""
-    async_mode = request.config.getoption("--async_only")
-    if async_mode:
+    if request.config.getoption("--async_only"):
         # Late import so we don't import experimental code unless using it.
         from napari.components.experimental.chunk import synchronous_loading
 

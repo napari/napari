@@ -25,8 +25,7 @@ class InfoAction(argparse.Action):
         from .plugins import plugin_manager
 
         plugin_manager.discover_widgets()
-        errors = plugin_manager.get_errors()
-        if errors:
+        if errors := plugin_manager.get_errors():
             names = {e.plugin_name for e in errors}
             print("\n‼️  Errors were detected in the following plugins:")
             print("(Run 'napari --plugin-info -v' for more details)")
@@ -43,8 +42,7 @@ class PluginInfoAction(argparse.Action):
         plugin_manager.discover_widgets()
         print(plugin_manager)
 
-        errors = plugin_manager.get_errors()
-        if errors:
+        if errors := plugin_manager.get_errors():
             print("‼️  Some errors occurred:")
             verbose = '-v' in sys.argv or '--verbose' in sys.argv
             if not verbose:
@@ -95,7 +93,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
     from napari.components.viewer_model import valid_add_kwargs
 
-    out: Dict[str, Any] = dict()
+    out: Dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
     for i, arg in enumerate(unknown):
         if not arg.startswith("--"):

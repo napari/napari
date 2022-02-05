@@ -386,10 +386,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        if mode == Modeclass.PAN_ZOOM:
-            self.interactive = True
-        else:
-            self.interactive = False
+        self.interactive = mode == Modeclass.PAN_ZOOM
         return mode, True
 
     @classmethod
@@ -487,10 +484,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._visible = visibility
         self.refresh()
         self.events.visible()
-        if self.visible:
-            self.editable = self._set_editable()
-        else:
-            self.editable = False
+        self.editable = self._set_editable() if self.visible else False
 
     @property
     def editable(self):
