@@ -385,9 +385,8 @@ class Points(Layer):
             properties=self.properties,
         )
 
-        # Save the point style params
-        self.symbol = symbol
-        self.edge_width = edge_width
+        self._edge_width_is_relative = False
+        self._shown = np.empty(0).astype(bool)
 
         # The following point properties are for the new points that will
         # be added. For any given property, if a list is passed to the
@@ -450,11 +449,10 @@ class Points(Layer):
         else:
             self._out_of_slice_display = out_of_slice_display
 
-        self._shown = np.empty(0).astype(bool)
+        # Save the point style params
         self.size = size
         self.shown = shown
-
-        self._edge_width_is_relative = False
+        self.symbol = symbol
         self.edge_width = edge_width
         self.edge_width_is_relative = edge_width_is_relative
 

@@ -63,12 +63,12 @@ class VispyPointsLayer(VispyBaseLayer):
         if self.layer.edge_width_is_relative:
             edge_kw = {
                 'edge_width': None,
-                'edge_width_is_relative': edge_width,
+                'edge_width_rel': edge_width,
             }
         else:
             edge_kw = {
                 'edge_width': edge_width,
-                'edge_width_is_relative': None,
+                'edge_width_rel': None,
             }
 
         set_data(
