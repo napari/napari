@@ -624,7 +624,7 @@ class Points(Layer):
         self._feature_table.set_currents(
             current_properties, update_indices=update_indices
         )
-        current_properties = self.current_properties
+        current_properties = self._feature_table.currents()
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
