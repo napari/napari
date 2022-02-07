@@ -231,7 +231,7 @@ class Dims(EventedModel):
             axis = tuple(axis)  # type: ignore
             if len(axis) != len(_range):
                 raise ValueError(
-                    "axis and _range sequences must have equal length"
+                    trans._("axis and _range sequences must have equal length")
                 )
             if _range != full_range:
                 for ax, r in zip(axis, _range):
@@ -266,7 +266,7 @@ class Dims(EventedModel):
             axis = tuple(axis)  # type: ignore
             if len(axis) != len(value):
                 raise ValueError(
-                    "axis and value sequences must have equal length"
+                    trans._("axis and value sequences must have equal length")
                 )
             raw_steps = []
             for ax, val in zip(axis, value):
@@ -306,7 +306,7 @@ class Dims(EventedModel):
             axis = tuple(axis)  # type: ignore
             if len(axis) != len(value):
                 raise ValueError(
-                    "axis and value sequences must have equal length"
+                    trans._("axis and value sequences must have equal length")
                 )
             if value != full_current_step:
                 # (computed) nsteps property outside of the loop for efficiency
@@ -345,7 +345,7 @@ class Dims(EventedModel):
             axis = tuple(axis)  # type: ignore
             if len(axis) != len(label):
                 raise ValueError(
-                    "axis and label sequences must have equal length"
+                    trans._("axis and label sequences must have equal length")
                 )
             if label != full_axis_labels:
                 for ax, val in zip(axis, label):

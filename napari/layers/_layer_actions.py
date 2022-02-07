@@ -121,7 +121,8 @@ def _convert(ll: LayerList, type_: str):
 
 
 def _merge_stack(ll: LayerList, rgb=False):
-    selection = list(ll.selection)
+    # force selection to follow LayerList ordering
+    selection = [layer for layer in ll if layer in ll.selection]
     for layer in selection:
         ll.remove(layer)
     if rgb:

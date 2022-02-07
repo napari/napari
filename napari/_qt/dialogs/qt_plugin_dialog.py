@@ -345,7 +345,9 @@ class PluginListItem(QFrame):
         self.row1.insertWidget(2, npe2_icon)
         self.enabled_checkbox.setEnabled(False)
         self.enabled_checkbox.setToolTip(
-            'This is a npe2 plugin and cannot be enabled/disabled at this time.'
+            trans._(
+                'This is a npe2 plugin and cannot be enabled/disabled at this time.'
+            )
         )
 
     def _get_dialog(self) -> QDialog:
@@ -542,7 +544,9 @@ class QPluginList(QListWidget):
         self._warn_dialog = None
         if item.npe_version != 1:
             # show warning pop up dialog
-            message = 'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+            message = trans._(
+                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+            )
             self._warn_dialog = WarnPopup(
                 text=message,
             )
