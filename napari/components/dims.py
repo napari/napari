@@ -369,7 +369,9 @@ class Dims(EventedModel):
         """
         if isinstance(axis, Integral):
             axis = assert_axis_in_bounds(axis, self.ndim)
-            thickness = max(value, 0)
+            range = self.range[axis]
+            max_thickness = (range[1] - range[0]) * 2
+            thickness = round(min(max(value, 0), max_thickness))
             if self.thickness_slices[axis] != thickness:
                 full_thickness = list(self.thickness_slices)
                 full_thickness[axis] = thickness
@@ -387,7 +389,9 @@ class Dims(EventedModel):
                 # (computed) nsteps property outside of the loop for efficiency
                 for ax, val in zip(axis, value):
                     ax = assert_axis_in_bounds(int(ax), self.ndim)
-                    thickness = max(val, 0)
+                    range = self.range[axis]
+                    max_thickness = (range[1] - range[0]) * 2
+                    thickness = round(min(max(value, 0), max_thickness))
                     full_thickness[ax] = thickness
                 self.thickness_slices = full_thickness
 
