@@ -349,13 +349,6 @@ class Points(Layer):
             symbol=Event,
             out_of_slice_display=Event,
             n_dimensional=Event,
-            # n_dimensional=WarningEmitter(
-            # trans._(
-            # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
-            # "use 'out_of_slice_display' instead."
-            # ),
-            # type='n_dimensional',
-            # ),
             highlight=Event,
             shading=Event,
             _antialias=Event,
@@ -690,26 +683,10 @@ class Points(Layer):
         """
         This property will soon be deprecated in favor of `out_of_slice_display`. Use that instead.
         """
-        # warnings.warn(
-        # trans._(
-        # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
-        # "use 'out_of_slice_display' instead."
-        # ),
-        # DeprecationWarning,
-        # stacklevel=2,
-        # )
         return self._out_of_slice_display
 
     @n_dimensional.setter
     def n_dimensional(self, value: bool) -> None:
-        # warnings.warn(
-        # trans._(
-        # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
-        # "use 'out_of_slice_display' instead."
-        # ),
-        # DeprecationWarning,
-        # stacklevel=2,
-        # )
         self.out_of_slice_display = value
 
     @property
