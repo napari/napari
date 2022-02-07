@@ -611,6 +611,9 @@ class Points(Layer):
     @current_properties.setter
     def current_properties(self, current_properties):
         _warn_about_deprecated_current_properties()
+        self._set_current_properties(current_properties)
+
+    def _set_current_properties(self, current_properties):
         update_indices = None
         if (
             self._update_properties
@@ -1153,11 +1156,7 @@ class Points(Layer):
         n_unique_properties = np.array([len(v) for v in properties.values()])
         if np.all(n_unique_properties == 1):
             with self.block_update_properties():
-                with warnings.catch_warnings():
-                    warnings.simplefilter(
-                        'ignore', category=DeprecationWarning
-                    )
-                    self.current_properties = properties
+                self._set_current_properties(properties)
 
         self._set_highlight()
 
