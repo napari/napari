@@ -45,9 +45,9 @@ points_layer.edge_color_mode = 'colormap'
 def toggle_point_annotation(viewer):
     selected_points = list(points_layer.selected_data)
     if len(selected_points) > 0:
-        # TODO: should not really use pandas specific loc, but otherwise can be hard to avoid a warning:
-        # https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-        points_layer.features.loc[selected_points, 'good_point'] = ~points_layer.features['good_point']
+        good_point = np.asarray(points_layer.features['good_point'])
+        good_point[selected_points] = ~good_point[selected_points]
+        points_layer.features['good_point'] = good_point
 
         # we need to manually refresh since we did not use the Points.features setter
         # to avoid changing the color map if all points get toggled to the same class,
