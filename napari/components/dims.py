@@ -353,6 +353,44 @@ class Dims(EventedModel):
                     full_axis_labels[ax] = val
                 self.axis_labels = full_axis_labels
 
+    def set_thickness(
+        self,
+        axis: Union[int, Sequence[int]],
+        value: Union[Union[int, float], Sequence[Union[int, float]]],
+    ):
+        """Set the slider slice thickness for this dimension.
+
+        Parameters
+        ----------
+        axis : int or sequence of int
+            Dimension index or a sequence of axes whose slice thickness will be set.
+        value : scalar or sequence of scalars
+            Value of the slice thickness.
+        """
+        if isinstance(axis, Integral):
+            axis = assert_axis_in_bounds(axis, self.ndim)
+            thickness = max(value, 0)
+            if self.thickness_slices[axis] != thickness:
+                full_thickness = list(self.thickness_slices)
+                full_thickness[axis] = thickness
+                self.thickness_slices = full_thickness
+        else:
+            full_thickness = list(self.thickness_slices)
+            # cast value to list for list comparison below
+            value = list(value)  # type: ignore
+            axis = tuple(axis)  # type: ignore
+            if len(axis) != len(value):
+                raise ValueError(
+                    trans._("axis and value sequences must have equal length")
+                )
+            if value != full_thickness:
+                # (computed) nsteps property outside of the loop for efficiency
+                for ax, val in zip(axis, value):
+                    ax = assert_axis_in_bounds(int(ax), self.ndim)
+                    thickness = max(val, 0)
+                    full_thickness[ax] = thickness
+                self.thickness_slices = full_thickness
+
     def reset(self):
         """Reset dims values to initial states."""
         # Don't reset axis labels
