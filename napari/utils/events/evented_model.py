@@ -251,18 +251,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             ):
                 setattr(self, name, value)
 
-    def asdict(self) -> Dict[str, Any]:
-        """Convert a model to a dictionary."""
-        warnings.warn(
-            trans._(
-                "The `asdict` method has been renamed `dict` and is now deprecated. It will be removed in 0.4.7",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.dict()
-
     def update(self, values: Union['EventedModel', dict]):
         """Update a model in place.
 
