@@ -1353,25 +1353,12 @@ class Points(Layer):
         # Get a list of the data for the points in this slice
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
-        # this whole if/else can be replaced with the thickness_slices usage
         if len(self.data) > 0:
-            if self.out_of_slice_display is True and self.ndim > 2:
-                distances = abs(self.data[:, not_disp] - indices[not_disp])
-                sizes = self.size[:, not_disp] / 2
-                matches = np.all(distances <= sizes, axis=1)
-                size_match = sizes[matches]
-                size_match[size_match == 0] = 1
-                scale_per_dim = (size_match - distances[matches]) / size_match
-                scale_per_dim[size_match == 0] = 1
-                scale = np.prod(scale_per_dim, axis=1)
-                slice_indices = np.where(matches)[0].astype(int)
-                return slice_indices, scale
-            else:
-                data = self.data[:, not_disp]
-                distances = np.abs(data - indices[not_disp])
-                matches = np.all(distances <= 0.5, axis=1)
-                slice_indices = np.where(matches)[0].astype(int)
-                return slice_indices, 1
+            not_disp_thick = np.array(thickness_slices)[not_disp]
+            distances = abs(self.data[:, not_disp] - indices[not_disp])
+            matches = np.all(distances <= not_disp_thick / 2, axis=1)
+            slice_indices = np.where(matches)[0].astype(int)
+            return slice_indices, 1
         else:
             return [], np.empty(0)
 
@@ -1551,7 +1538,7 @@ class Points(Layer):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
         indices, scale = self._slice_data(
-            self._slice_indices, self._thickness_slices_data
+            self._slice_indices, self._thickness_slices_data()
         )
         self._view_size_scale = scale
         self._indices_view = np.array(indices, dtype=int)

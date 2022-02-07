@@ -171,6 +171,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
+        self.dims.events.thickness_slices.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
@@ -315,7 +316,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layers = layers or self.layers
         for layer in layers:
             layer._slice_dims(
-                self.dims.point, self.dims.ndisplay, self.dims.order
+                self.dims.point,
+                self.dims.thickness_slices,
+                self.dims.ndisplay,
+                self.dims.order,
             )
 
     def _on_active_layer(self, event):
