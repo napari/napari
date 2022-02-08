@@ -30,7 +30,7 @@ class Dims(EventedModel):
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
-    thickness_slices : tuple of float
+    thickness : tuple of float
         Thickness of the slice in each dimension.
 
     Attributes
@@ -67,7 +67,7 @@ class Dims(EventedModel):
     displayed_order : tuple of int
         Order of only displayed dimensions. These are calculated from the
         ``displayed`` dimensions.
-    thickness_slices : tuple of float
+    thickness : tuple of float
         Thickness of the slice in each dimension.
     """
 
@@ -79,7 +79,7 @@ class Dims(EventedModel):
     current_step: Tuple[int, ...] = ()
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
-    thickness_slices: Tuple[float, ...] = ()
+    thickness: Tuple[float, ...] = ()
 
     # private vars
     _scroll_progress: int = 0
@@ -155,12 +155,12 @@ class Dims(EventedModel):
             values['axis_labels'] = values['axis_labels'][-ndim:]
 
         # Check the thickness tuple has same number of elements as ndim
-        if len(values['thickness_slices']) < ndim:
-            values['thickness_slices'] = (1,) * (
-                ndim - len(values['thickness_slices'])
-            ) + values['thickness_slices']
-        elif len(values['thickness_slices']) > ndim:
-            values['thickness_slices'] = values['thickness_slices'][-ndim:]
+        if len(values['thickness']) < ndim:
+            values['thickness'] = (1,) * (
+                ndim - len(values['thickness'])
+            ) + values['thickness']
+        elif len(values['thickness']) > ndim:
+            values['thickness'] = values['thickness'][-ndim:]
 
         return values
 
@@ -372,12 +372,12 @@ class Dims(EventedModel):
             range = self.range[axis]
             max_thickness = (range[1] - range[0]) * 2
             thickness = round(min(max(value, 0), max_thickness))
-            if self.thickness_slices[axis] != thickness:
-                full_thickness = list(self.thickness_slices)
+            if self.thickness[axis] != thickness:
+                full_thickness = list(self.thickness)
                 full_thickness[axis] = thickness
-                self.thickness_slices = full_thickness
+                self.thickness = full_thickness
         else:
-            full_thickness = list(self.thickness_slices)
+            full_thickness = list(self.thickness)
             # cast value to list for list comparison below
             value = list(value)  # type: ignore
             axis = tuple(axis)  # type: ignore
@@ -393,7 +393,7 @@ class Dims(EventedModel):
                     max_thickness = (range[1] - range[0]) * 2
                     thickness = round(min(max(value, 0), max_thickness))
                     full_thickness[ax] = thickness
-                self.thickness_slices = full_thickness
+                self.thickness = full_thickness
 
     def reset(self):
         """Reset dims values to initial states."""

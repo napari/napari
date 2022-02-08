@@ -281,7 +281,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._position = (0,) * ndim
         self._dims_point = [0] * ndim
-        self._thickness_slices = [1] * ndim
+        self._thickness = [1] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
         self._array_like = False
@@ -766,10 +766,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(indices)
 
-    def _thickness_slices_data(self):
+    def _thickness_data(self):
         """(D, ) array: Thickness of slices in data coordinates"""
         scale = self._data_to_world.inverse.scale
-        return tuple(th * sc for th, sc in zip(self._thickness_slices, scale))
+        return tuple(th * sc for th, sc in zip(self._thickness, scale))
 
     @abstractmethod
     def _get_ndim(self):
@@ -931,9 +931,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
-    def _slice_dims(
-        self, point=None, thickness_slices=None, ndisplay=2, order=None
-    ):
+    def _slice_dims(self, point=None, thickness=None, ndisplay=2, order=None):
         """Slice data with values from a global dims model.
 
         Note this will likely be moved off the base layer soon.
@@ -972,10 +970,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         else:
             point = list(point)
 
-        if thickness_slices is None:
-            thickness_slices = [0.5] * ndim
+        if thickness is None:
+            thickness = [0.5] * ndim
         else:
-            thickness_slices = list(thickness_slices)
+            thickness = list(thickness)
 
         # If no slide data has changed, then do nothing
         offset = ndim - self.ndim
@@ -983,7 +981,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             np.all(order == self._dims_order)
             and ndisplay == self._ndisplay
             and np.all(point[offset:] == self._dims_point)
-            and np.all(thickness_slices == self._thickness_slices)
+            and np.all(thickness == self._thickness)
         ):
             return
 
@@ -994,7 +992,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # Update the point values
         self._dims_point = point[offset:]
-        self._thickness_slices = thickness_slices
+        self._thickness = thickness
         self._update_dims()
         self._set_editable()
 

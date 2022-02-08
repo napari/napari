@@ -177,7 +177,7 @@ class QtDimSliderWidget(QWidget):
         range = self.dims.range[self.axis]
         max_thickness = (range[1] - range[0]) * 2
         slider.setMaximum(max_thickness)
-        slider.setValue(self.dims.thickness_slices[self.axis])
+        slider.setValue(self.dims.thickness[self.axis])
 
         slider.valueChanged.connect(self._thickness_changed)
 
@@ -259,9 +259,7 @@ class QtDimSliderWidget(QWidget):
             range = self.dims.range[self.axis]
             max_thickness = (range[1] - range[0]) * 2
             self.thickness_slider.setMaximum(max_thickness)
-            self.thickness_slider.setValue(
-                self.dims.thickness_slices[self.axis]
-            )
+            self.thickness_slider.setValue(self.dims.thickness[self.axis])
 
     def _update_slider(self):
         """Update dimension slider."""
@@ -273,7 +271,7 @@ class QtDimSliderWidget(QWidget):
         self.curslice_label.setText(str(self.dims.current_step[self.axis]))
         self.curslice_label.setAlignment(Qt.AlignRight)
 
-    def _update_thickness_slices(self):
+    def _update_thickness(self):
         self.thickness_slider
 
     @property
