@@ -101,7 +101,7 @@ def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
     for t in ['TestP1', 'TestP2: Widg3', 'TestP3: magic']:
         assert t in texts
 
-    # the first item of the plugins is a submenu (for "Test plugin1")
+    # Expect a submenu ("Test plugin1") with particular entries.
     tp1 = next(m for m in actions if m.text() == 'TestP1')
     assert tp1.menu()
     assert [a.text() for a in tp1.menu().actions()] == ['Widg1', 'Widg2']
