@@ -727,7 +727,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
 
-        if self.ndim == self._ndisplay:
+        if self.ndim <= self._ndisplay:
             # all dims are displayed dimensions
             return (slice(None),) * self.ndim
 
