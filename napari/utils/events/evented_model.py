@@ -276,7 +276,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             be found as attributes on the current model.
         recurse : bool
             If True, recursively update fields that are EventedModels.
-            Otherwise, just update the immediate fields of this EventedModel.
+            Otherwise, just update the immediate fields of this EventedModel,
+            which is useful when the declared field type (e.g. ``Union``) can have
+            different realized types with different fields.
         """
         if isinstance(values, self.__class__):
             values = values.dict()
@@ -293,7 +295,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             for key, value in values.items():
                 field = getattr(self, key)
                 if isinstance(field, EventedModel) and recurse:
-                    field.update(value)
+                    field.update(value, recurse=recurse)
                 else:
                     setattr(self, key, value)
 
