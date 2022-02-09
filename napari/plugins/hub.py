@@ -8,7 +8,7 @@ from functools import lru_cache
 from typing import Generator, Optional
 from urllib import error, request
 
-from .utils import normalized_name, ProjectInfo
+from .utils import ProjectInfo, normalized_name
 
 NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
 ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'
@@ -16,7 +16,9 @@ ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'
 
 @lru_cache(maxsize=128)
 def hub_plugin_info(
-    name: str, min_dev_status=3, conda_forge=False,
+    name: str,
+    min_dev_status=3,
+    conda_forge=False,
 ) -> Optional[ProjectInfo]:
     """Get package metadat from the napari hub.
 
@@ -43,7 +45,9 @@ def hub_plugin_info(
     version = info["version"]
     norm_name = normalized_name(info["name"])
     if conda_forge:
-        anaconda_api = ANACONDA_ORG.format(channel="conda-forge", package_name=norm_name)
+        anaconda_api = ANACONDA_ORG.format(
+            channel="conda-forge", package_name=norm_name
+        )
         try:
             with request.urlopen(anaconda_api) as resp_api:
                 anaconda_info = json.loads(resp_api.read().decode())
@@ -72,8 +76,7 @@ def hub_plugin_info(
 def iter_napari_plugin_info(
     skip={}, conda_forge=False
 ) -> Generator[ProjectInfo, None, None]:
-    """Return a generator that yields ProjectInfo of available napari plugins.
-    """
+    """Return a generator that yields ProjectInfo of available napari plugins."""
     with request.urlopen(NAPARI_HUB_PLUGINS) as resp:
         plugins = json.loads(resp.read().decode())
 
@@ -81,7 +84,8 @@ def iter_napari_plugin_info(
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [
             executor.submit(hub_plugin_info, name, conda_forge=conda_forge)
-            for name in sorted(plugins) if name not in skip
+            for name in sorted(plugins)
+            if name not in skip
         ]
 
         for future in as_completed(futures):
