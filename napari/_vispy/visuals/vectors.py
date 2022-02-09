@@ -1,20 +1,21 @@
-import warnings
+# import warnings
 
 from ..utils.gl import get_gl_extensions
 from .clipping_planes_mixin import ClippingPlanesMixin
 
 GLPLUS = 'geometry_shader' in get_gl_extensions()
-# GLPLUS = False
+# GLPLUS = False  # TODO: remove this
 
 if GLPLUS:
     from .lines import Line
 else:
     from vispy.scene.visuals import Line as OldLine
 
-    warnings.warn(
-        'Could not use GL+ backend; some Line functionality may be limited',
-        ImportWarning,
-    )
+    # TODO uncomment this before merge, it's just to test ci works fine
+    # warnings.warn(
+    # 'Could not use GL+ backend; some Line functionality may be limited',
+    # ImportWarning,
+    # )
 
     class Line(OldLine):
         def __init__(self, **kwargs):
@@ -38,10 +39,12 @@ else:
 
         @scaling.setter
         def scaling(self, value):
-            warnings.warn(
-                'Line width cannot be scaled with zoom without GL+ backend',
-                RuntimeWarning,
-            )
+            # TODO uncomment this before merge, it's just to test ci works fine
+            # warnings.warn(
+            # 'Line width cannot be scaled with zoom without GL+ backend',
+            # RuntimeWarning,
+            # )
+            pass
 
 
 class VectorsVisual(ClippingPlanesMixin, Line):
