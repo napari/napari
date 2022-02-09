@@ -93,7 +93,7 @@ class QtBaseImageControls(QtLayerControls):
             self.layer.contrast_limits_range, self.layer.dtype
         )
         self.contrastLimitsSlider.setRange(*self.layer.contrast_limits_range)
-        self.contrastLimitsSlider.setSingleStep(10 ** -decimals)
+        self.contrastLimitsSlider.setSingleStep(10**-decimals)
         self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
         self.contrastLimitsSlider.setToolTip(
             trans._('Right click for detailed slider popup.')
@@ -220,7 +220,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
         self.slider.setRange(*layer.contrast_limits_range)
         self.slider.setDecimals(decimals)
-        self.slider.setSingleStep(10 ** -decimals)
+        self.slider.setSingleStep(10**-decimals)
         self.slider.setValue(layer.contrast_limits)
 
         connect_setattr(self.slider.valueChanged, layer, "contrast_limits")
