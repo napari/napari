@@ -1,5 +1,5 @@
 import re
-from typing import Dict, NamedTuple
+from typing import Dict
 
 from . import _npe2, plugin_manager
 
@@ -39,16 +39,9 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
     return readers
 
 
-class ProjectInfo(NamedTuple):
-    """Info associated with a PyPI Project."""
-
-    name: str
-    version: str
-    url: str
-    summary: str
-    author: str
-    license: str
-
-
-def normalized_name(name) -> str:
+def normalized_name(name: str) -> str:
+    """
+    Normalize a plugin name by replacing underscores and dots by dashes and
+    lower casing it.
+    """
     return re.sub(r"[-_.]+", "-", name).lower()

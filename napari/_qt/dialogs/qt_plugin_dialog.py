@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Sequence, Tuple
 
 from napari_plugin_engine.dist import standard_metadata
+from npe2.manifest.package_metadata import PackageMetadata
 from qtpy.QtCore import (
     QEvent,
     QObject,
@@ -38,8 +39,9 @@ from typing_extensions import Literal
 import napari.resources
 
 from ...plugins import plugin_manager
-from ...plugins.hub import iter_napari_plugin_info
-from ...plugins.utils import ProjectInfo, normalized_name
+from ...plugins.hub import iter_hub_plugin_info
+from ...plugins.pypi import iter_napari_plugin_info
+from ...plugins.utils import normalized_name
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
@@ -475,10 +477,10 @@ class QPluginList(QListWidget):
         self.setSortingEnabled(True)
         self._remove_list = []
 
-    @Slot(ProjectInfo)
+    @Slot(PackageMetadata)
     def addItem(
         self,
-        project_info: ProjectInfo,
+        project_info: PackageMetadata,
         installed=False,
         plugin_name=None,
         enabled=True,
@@ -497,7 +499,12 @@ class QPluginList(QListWidget):
         item.version = project_info.version
         super().addItem(item)
         widg = PluginListItem(
-            *project_info,
+            package_name=project_info.name,
+            version=project_info.version,
+            url=project_info.home_page,
+            summary=project_info.summary,
+            author=project_info.author,
+            license=project_info.license,
             parent=self,
             plugin_name=plugin_name,
             enabled=enabled,
@@ -510,11 +517,11 @@ class QPluginList(QListWidget):
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
 
-        if project_info.url:
+        if project_info.home_page:
             import webbrowser
 
             widg.help_button.clicked.connect(
-                lambda: webbrowser.open(project_info.url)
+                lambda: webbrowser.open(project_info.home_page)
             )
         else:
             widg.help_button.setVisible(False)
@@ -577,8 +584,8 @@ class QPluginList(QListWidget):
             widget.set_busy(trans._("cancelling..."), update)
             method((pkg_name,))
 
-    @Slot(ProjectInfo)
-    def tag_outdated(self, project_info: ProjectInfo):
+    @Slot(PackageMetadata)
+    def tag_outdated(self, project_info: PackageMetadata):
         for item in self.findItems(project_info.name, Qt.MatchStartsWith):
             current = item.version
             latest = project_info.version
@@ -657,13 +664,14 @@ class QtPluginDialog(QDialog):
                 meta = {}
 
             self.installed_list.addItem(
-                ProjectInfo(
-                    normalized_name(distname or ''),
-                    meta.get('version', ''),
-                    meta.get('url', ''),
-                    meta.get('summary', ''),
-                    meta.get('author', ''),
-                    meta.get('license', ''),
+                PackageMetadata(
+                    metadata_version="1.0",
+                    name=normalized_name(distname or ''),
+                    version=meta.get('version', ''),
+                    summary=meta.get('summary', ''),
+                    home_page=meta.get('url', ''),
+                    author=meta.get('author', ''),
+                    license=meta.get('license', ''),
                 ),
                 installed=True,
                 enabled=enabled,
@@ -676,7 +684,11 @@ class QtPluginDialog(QDialog):
                 continue
             _add_to_installed(distname, True, npe_version=2)
 
-        for plugin_name, mod_name, distname in plugin_manager.iter_available():
+        for (
+            plugin_name,
+            _mod_name,
+            distname,
+        ) in plugin_manager.iter_available():
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
@@ -694,7 +706,11 @@ class QtPluginDialog(QDialog):
         )
 
         # fetch available plugins
-        self.worker = create_worker(iter_napari_plugin_info)
+        use_hub = False
+        if use_hub:
+            self.worker = create_worker(iter_hub_plugin_info)
+        else:
+            self.worker = create_worker(iter_napari_plugin_info)
 
         self.worker.yielded.connect(self._handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)

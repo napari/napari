@@ -8,7 +8,9 @@ from functools import lru_cache
 from typing import Generator, Optional
 from urllib import error, request
 
-from .utils import ProjectInfo, normalized_name
+from npe2.manifest.package_metadata import PackageMetadata
+
+from .utils import normalized_name
 
 NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
 ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'
@@ -18,8 +20,8 @@ ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'
 def hub_plugin_info(
     name: str,
     min_dev_status=3,
-    conda_forge=False,
-) -> Optional[ProjectInfo]:
+    conda_forge=True,
+) -> Optional[PackageMetadata]:
     """Get package metadat from the napari hub.
 
     Parameters
@@ -33,7 +35,7 @@ def hub_plugin_info(
 
     Returns
     -------
-    ProjectInfo or None
+    PackageMetadata or None
         Project metadata or None.
     """
     try:
@@ -63,24 +65,25 @@ def hub_plugin_info(
             return None
 
     authors = ", ".join([author["name"] for author in info["authors"]])
-    return ProjectInfo(
+    return PackageMetadata(
+        metadata_version="1.0",
         name=norm_name,
         version=version,
-        url=info["project_site"],
         summary=info["summary"],
+        home_page=info["project_site"],
         author=authors,
         license=info["license"] or "UNKNOWN",
     )
 
 
-def iter_napari_plugin_info(
-    skip={}, conda_forge=False
-) -> Generator[ProjectInfo, None, None]:
+def iter_hub_plugin_info(
+    skip={}, conda_forge=True
+) -> Generator[PackageMetadata, None, None]:
     """Return a generator that yields ProjectInfo of available napari plugins."""
     with request.urlopen(NAPARI_HUB_PLUGINS) as resp:
         plugins = json.loads(resp.read().decode())
 
-    already_yielded = set()
+    already_yielded = []
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [
             executor.submit(hub_plugin_info, name, conda_forge=conda_forge)
@@ -91,5 +94,5 @@ def iter_napari_plugin_info(
         for future in as_completed(futures):
             info = future.result()
             if info and info not in already_yielded:
-                already_yielded.add(info)
+                already_yielded.append(info)
                 yield info
