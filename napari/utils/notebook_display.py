@@ -1,5 +1,9 @@
 import base64
+import html
 from io import BytesIO
+
+from lxml.html import document_fromstring
+from lxml.html.clean import Cleaner
 
 __all__ = ['nbscreenshot']
 
@@ -40,7 +44,7 @@ class NotebookScreenshot:
         viewer,
         *,
         canvas_only=False,
-        alt_text="Screenshot of the napari image viewer.",
+        alt_text=None,
     ):
         """Initialize screenshot object.
 
@@ -60,7 +64,21 @@ class NotebookScreenshot:
         self.viewer = viewer
         self.canvas_only = canvas_only
         self.image = None
-        self.alt_text = alt_text
+        self.alt_text = self._clean_alt_text(alt_text)
+
+    def _clean_alt_text(self, alt_text):
+        """Clean user input to prevent script injection."""
+        if alt_text is not None:
+            alt_text = html.unescape(
+                str(alt_text)
+            )  # cleaner won't recognize unescaped script tags
+            cleaner = Cleaner()
+            doc = document_fromstring(alt_text)
+            alt_text = cleaner.clean_html(doc).text_content()
+            if alt_text == "":
+                alt_text = None
+            alt_text = html.escape(alt_text)
+        return alt_text
 
     def _repr_png_(self):
         """PNG representation of the viewer object for IPython.
@@ -86,8 +104,13 @@ class NotebookScreenshot:
     def _repr_html_(self):
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
-        html = f'<img src="{url}" alt="{html.escape(self.alt_text)}"></img>'
-        return html
+        if self.alt_text is None:
+            html_output = f'<img src="{url}"></img>'
+        else:
+            html_output = (
+                f'<img src="{url}" alt="{html.escape(self.alt_text)}"></img>'
+            )
+        return html_output
 
 
 nbscreenshot = NotebookScreenshot
