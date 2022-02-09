@@ -1,157 +1,146 @@
 (npe2-migration-guide)=
 
-# npe2 migration guide
+# `npe2` migration guide
 
-We've introduced a new plugin engine. The new library [npe2] is a
-re-imagining of how napari interacts with plugins. Rather than importing a
-package to discover plugin functionality, a static manifest file is used to
-declaratively describe a plugin's capabilities. Details can be found in the
-[](npe2-manifest-spec).
+This document details how to convert a plugin using the first generation
+`napari-plugin-engine`, to the new `npe2` format.  
 
-Plugins targeting `napari-plugin-engine` will continue to work, but we
-recommend migrating to `npe2`. This guide will help you learn how!
+The primary difference between the first generation and second generation plugin
+system relates to how napari *discovers* plugin functionality. In the first
+generation plugin engine, napari had to *import* plugin modules to search for
+hook implementations decorated with `@napari_hook_implementation`. In `npe2`,
+plugins declare their contributions *statically* with a [manifest
+file](./manifest).
 
 ## Migrating using the `npe2` command line tool
 
 `npe2` provides a command line interface to help convert a
 `napari-plugin-engine`-style plugin.
 
-### 1. Install the `npe2` command
+### 1. Install `npe2`
 
-```bash
+```sh
 pip install npe2
-npe2 convert --help
 ```
 
-The `npe2` tool provides a few commands to help you develop your plugin. In
-this case we're asking for help with the `convert` command:
+The `npe2` command line tool provides a few commands to help you develop your
+plugin. In this case we're going to use `convert` to *modify* a repository
+to fit the new pattern:
 
-```
-Usage: npe2 convert [OPTIONS] PLUGIN_NAME
+```sh
+$ npe2 convert --help
 
-  Convert existing plugin to new manifest.
+Usage: npe2 convert [OPTIONS] PATH
+
+  Convert first generation napari plugin to new (manifest) format.
 
 Arguments:
-  PLUGIN_NAME  The name of the plugin to convert  [required]
+  PATH  Path of a local repository to convert (package must also be installed
+        in current environment). Or, the name of an installed package/plugin.
+        If a package is provided instead of a directory, the new manifest will
+        simply be printed to stdout.  [required]
+
 
 Options:
-  --format [yaml|json|toml]  [default: yaml]
-  --out PATH
-  --help                     Show this message and exit.
+  -n, --dry-runs  Just print manifest to stdout. Do not modify anything
+                  [default: False]
+
+  --help          Show this message and exit.
 ```
 
-### 2. Install your `napari-plugin-engine` based plugin.
+### 2. Ensure your plugin is intalled in your environment
 
-As an example, we'll walk through the process using the `napari-animation`
-plugin.
+This step is critical: your first-generation plugin *must* be installed
+in your currently active environment for `npe2 convert` to find it.
 
-We checkout the plugin and install it as a local editable package.
+Typically this will look something like:
 
-```bash
-git clone https://github.com/napari/napari-animation.git
-cd napari-animation
+```
+conda activate your-env
+cd path/to/your/plugin/repository
 pip install -e .
 ```
 
-### 3. Inspect package metadata
+If `npe2 convert` cannot import your plugin, you will likely get an error
+like:
 
-The `napari-animation` package defines it's core metadata in `setup.cfg`.
-Inside, it defines an _entry point group_. That section should initially
-contain:
-
-```ini
-[options.entry_points]
-napari.plugin =
-    animation = napari_animation
+```pytb
+PackageNotFoundError: We tried hard! but could not detect a plugin named '...'
 ```
 
-That metadata gives the name of the plugin: "animation". The name is used in
-the next step. Later we're going to come back and update this section.
+### 3. Convert your plugin with `npe2 convert`
 
-### 4. Generate the plugin manifest
+```{warning}
+Executing `npe2 convert .` will **modify** the current directory!
+```
 
-To create the manifest, use the npe2 command in the terminal:
+The `npe2 convert` command will:
+
+1. Inspect your plugin for hook implementations, and generate an npe2-compatible
+   [manifest file](./manifest), called `napari.yaml`.
+2. **Modify** your `setup.cfg` to use the new `napari.manifest` entry point, and 
+   include the manifest file in your package data.
+
+Use the `npe2 convert` command, passing a path to a plugin
+repository (here, the current directory `.`)
 
 ```bash
-# we're in the napari-animation directory
-npe2 convert animation --out napari_animation/napari.yaml
+# convert the current directory
+❯ npe2 convert .
+✔  Conversion complete!
+New manifest at /Users/talley/Desktop/napari-animation/napari_animation/napari.yaml.
+If you have any napari_plugin_engine imports or hook_implementation decorators, you may remove them now.
 ```
+
+You are encouraged to inspect the newly-generated `napari.yaml` file.  Refer to
+the [manifest](./manifest) and [contributions](./contributions) references pages
+for details on each field in the manifest.
 
 ```{note}
-This step uses `napari-plugin-engine` to discover the plugins installed on the
-system. If you have other plugins installed there's a chance they may interfere.
+In some cases the conversion tool may not be able to completely convert your
+plugin.  Notable cases include:
+
+- multi-layer writers using the `napari_get_writer` hook specification
+- *locally* scoped functions returned from `napari_experimental_provide_function`.
+  All [command contributions](contributions-commands)
+  must have global `python_paths`.
+  
+Feel free to contact us on zulip or github if you need help converting!.
 ```
 
-This generates `napari_animation/napari.yaml` with contents:
-
-```yaml
-name: napari_animation
-contributions:
-  commands:
-    - id: napari_animation.AnimationWidget
-      python_name: napari_animation._hookimpls:AnimationWidget
-      title: Create Wizard
-  widgets:
-    - command: napari_animation.AnimationWidget
-      name: Wizard
-```
-
-In this case, the manifest could be created without any intervention, but
-sometimes the generated manifest needs to be edited. The conversion tool will
-let you know when this happens.
-
-### 5. Update the package metadata
-
-Finally, we need to make sure `napari-animation` defines the npe2 entry point
-group. This lets the plugin engine know where to find the plugin manifest file.
-
-```ini
-[options.entry_points]
-# napari.plugin =
-  # animation = napari_animation
-napari.manifest =
-    napari-animation = napari_animation:napari.yaml
-```
-
-Since we're interested in creating distributions of our package, make sure the
-manifest gets included as package data:
-
-```ini
-[options]
-include_package_data = True
-   ...
-
-[options.package_data]
-napari_animation =
-    napari.yaml
-```
-
-All done! Update the local package metadata by repeating:
+Now, update the local package metadata by repeating:
 
 ```
 > pip install -e .
 ```
 
-and the next time napari is run `napari-animation` will be discovered as an
-`npe2` plugin!
+The next time napari is run, your plugin should be discovered as an
+`npe2` plugin.
 
-## Migration details
+----------------
 
-Existing `napari-plugin-engine` plugins expose functionality via _hook
-implementations_. These are functions decorated to indicate they fullfil a
-_hook specification_ described by napari. Though there are some exceptions,
-most _hook implementations_ can be straightforwardly mapped as a
-_contribution_ in the `npe2` manifest. More information can be found in the
-{ref}`npe2-manifest-spec` - Look for "calling conventions" for each field.
+## Migration Reference
+
+> *This section goes into detail on the differences between first-generation and
+second-generation implementations. In many cases, this will be more detail than
+you need.  If you are still struggling with a specific conversion after using
+`npe2 convert` and reading the [contributions](./contributions) reference and
+[guides](./guides), this section may be of help.*
+
+
+Existing `napari-plugin-engine` plugins expose functionality via *hook
+implementations*. These are functions decorated to indicate they fullfil a
+*hook specification* described by napari. Though there are some exceptions,
+most *hook implementations* can be straightforwardly mapped to npe2 [contributions](./contributions)
 
 `npe2` provides a command-line tool that will generate plugin manifests by
-inspecting exposed _hook implementations_. Below, we will walk through the
+inspecting exposed *hook implementations*. Below, we will walk through the
 kinds of migrations `npe2 convert` helps with.
 
-For each type of _hook specification_ there is a corresponding section below
-with migration tips. Each lists the _hook specifications_ that are relevant to
+For each type of *hook specification* there is a corresponding section below
+with migration tips. Each lists the *hook specifications* that are relevant to
 that section and an example manifest. For details, refer to the
-{ref}`npe2-manifest-spec`.
+[Contributions references](./contributions).
 
 ### Readers
 
@@ -234,7 +223,8 @@ function.
 When migrating, you'll need to fill out the `layer_types` and
 `filename_extensions` used by your writer. `layer_types` is a set of
 constraints describing the combinations of layer types acceptable by this
-writer. More about layer types can be found in the {ref}`npe2-manifest-spec`.
+writer. More about layer types can be found in the
+[Writer contribution guide](./guides.html#layer-type-constraints).
 
 In the example below, the svg writer accepts a set of layers with 0 or more
 images, and 0 or more label layers, and so on. It will not accept surface

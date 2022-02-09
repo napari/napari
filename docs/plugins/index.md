@@ -1,62 +1,69 @@
 (plugins-index)=
-
 # Plugins
 
-```{admonition} Introducing npe2
-:class: tip
-We introduced a new plugin engine in December 2021. The new library
-[`npe2`][npe2] is a re-imagining of how napari interacts with plugins. Rather
-than importing a package to discover plugin functionality, a static manifest
-file is used to declaratively describe a plugin's capabilities. Details can be
-found in the [](npe2-manifest-spec).
 
-Plugins targeting `napari-plugin-engine` will continue to work, but we
-recommend migrating to `npe2` as soon as possible. `npe2` includes tooling to
-help automate the process of migrating plugins. See the [migration
-guide](npe2-migration-guide) for details.
+```{note}
+These pages describe the process of **building** a plugin.
 
-For getting started writing new npe2 plugins see the [](npe2-getting-started).
+If you are looking to **use** published plugins, see the [guide on installing
+plugins](find-and-install-plugins), or head to the [napari hub][napari_hub] to
+search for plugins.
 ```
 
-napari loves plugins. Plugins allow people to customize and extend to napari.
+Plugins allow developers to customize and extend napari.  This includes
 
-This document describes:
+- Adding file format support with [readers] and [writers]
+- Adding custom [widgets] and user interface elements
+- Providing [sample data][sample_data]
+- Changing the look of napari with a color [theme]
 
-- How to [build, run and publish a plugin](how-to-build-a-plugin).
-- Where to find guides and code samples to help get you started.
-- [Guidelines](best-practices) for writing plugins.
+Here you can find:
 
-If you are looking for plugins, head to the [napari
-hub](https://napari-hub.org). Plugins can be installed directly from within
-napari or with package installers (pip/conda) via the command line -- to learn
-more see {ref}`find-and-install-plugins`.
+- How to [build, test and publish a plugin](how-to-build-a-plugin).
+- Where to find [guides](./guides) to help get you started.
+- [Best practices](./best_practices) when developing plugins.
 
-## What can plugins do?
+```{admonition} Introducing npe2
+:class: important
 
-- Change the look of napari with a color theme
-- Add custom widgets and user interface elements
-- Add file format support - readers and writers
-- Provide sample data
+We introduced a new plugin engine [`npe2`][npe2] in December 2021.
+
+Unless otherwise stated, most of the documentation herein pertains
+to the new npe2 format (which uses a static `napari.yaml` manifest)
+
+Plugins targeting the first generation `napari-plugin-engine` 
+(using `@napari_hook_implementation` decorators) will
+continue to work for at least the first half of 2022, but we
+recommend migrating to `npe2`. See the
+[migration guide](npe2-migration-guide) for details.
+```
 
 (how-to-build-a-plugin)=
+## How to build plugins
 
-## How to build plugins?
+If you're just getting started with napari plugins, try our
+[Your First Plugin](./first_plugin) tutorial.
 
-New plugins should target `npe2`. See the {ref}`npe2-getting-started`.
+For a list of all available contribution points and specifications,
+see the [Contributions reference](./contributions)
 
-For a guide on how to create a plugin using `napari-plugin-engine`, see
-{ref}`plugins-for-plugin-developers`. For a complete list of _hook
-specifications_ that developers can implement, see the
-{ref}`hook-specifications-reference`.
+If you're ready to publish your plugin, see [Test and deploy](./test_deploy)
 
 For special considerations when building a napari plugin, see
 {ref}`best-practices`.
 
-## Looking for help
+## Looking for help?
 
-If you have questions, try asking on the [zulip
-chat](https://napari.zulipchat.com/). Submit issues to the [napari github
-repository](https://github.com/napari/napari).
+If you have questions, try asking on the [zulip chat][napari_zulip].
+Submit issues to the [napari github repository][napari_issues].
 
 [npe1]: https://github.com/napari/napari-plugin-engine
-[npe2]: https://github.com/tlambert03/npe2
+[npe2]: https://github.com/napari/npe2
+[napari_issues]: https://github.com/napari/napari/issues/new/choose
+[napari_zulip]: https://napari.zulipchat.com/
+[napari_hub]: https://napari-hub.org
+[readers]: ./contributions.html#contributions-readers
+[writers]: ./contributions.html#contributions-writers
+[widgets]: ./contributions.html#contributions-widgets
+[sample_data]: ./contributions.html#contributions-sample-data
+[theme]: ./contributions.html#contributions-themes

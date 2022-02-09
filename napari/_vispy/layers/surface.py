@@ -25,7 +25,15 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.shading.connect(self._on_shading_change)
-        self.layer.wireframe.events.connect(self._on_wireframe_change)
+        self.layer.wireframe.events.visible.connect(
+            self._on_wireframe_visible_change
+        )
+        self.layer.wireframe.events.width.connect(
+            self._on_wireframe_width_change
+        )
+        self.layer.wireframe.events.color.connect(
+            self._on_wireframe_color_change
+        )
         self.layer.normals.face.events.connect(self._on_face_normals_change)
         self.layer.normals.vertex.events.connect(
             self._on_vertex_normals_change
@@ -116,8 +124,16 @@ class VispySurfaceLayer(VispyBaseLayer):
             self.node.shading = shading
         self.node.update()
 
-    def _on_wireframe_change(self):
-        self.node.wireframe_filter.enabled = self.layer.wireframe
+    def _on_wireframe_visible_change(self):
+        self.node.wireframe_filter.enabled = self.layer.wireframe.visible
+        self.node.update()
+
+    def _on_wireframe_width_change(self):
+        self.node.wireframe_filter.width = self.layer.wireframe.width
+        self.node.update()
+
+    def _on_wireframe_color_change(self):
+        self.node.wireframe_filter.color = self.layer.wireframe.color
         self.node.update()
 
     def _on_face_normals_change(self):
@@ -147,6 +163,8 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_colormap_change()
         self._on_contrast_limits_change()
         self._on_shading_change()
-        self._on_wireframe_change()
+        self._on_wireframe_visible_change()
+        self._on_wireframe_width_change()
+        self._on_wireframe_color_change()
         self._on_face_normals_change()
         self._on_vertex_normals_change()

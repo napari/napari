@@ -17,6 +17,7 @@ from typing import (
     Sequence,
     Tuple,
 )
+from weakref import WeakValueDictionary
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon
@@ -408,7 +409,9 @@ class Window:
         get_app()
 
         # Dictionary holding dock widgets
-        self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
+        self._dock_widgets: Dict[
+            str, QtViewerDockWidget
+        ] = WeakValueDictionary()
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
@@ -655,8 +658,12 @@ class Window:
         """
         from ..plugins import _npe2
 
-        Widget = _npe2.get_widget_contribution(plugin_name, widget_name)
+        Widget = None
         dock_kwargs = {}
+
+        result = _npe2.get_widget_contribution(plugin_name, widget_name)
+        if result:
+            Widget, widget_name = result
 
         if Widget is None:
             Widget, dock_kwargs = plugin_manager.get_widget(
@@ -906,7 +913,7 @@ class Window:
             menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
-        del self._dock_widgets[_dw.name]
+        self._dock_widgets.pop(_dw.name, None)
 
         # Deleting the dock widget means any references to it will no longer
         # work but it's not really useful anyway, since the inner widget has
@@ -1136,7 +1143,7 @@ class Window:
             By default, True.
 
         Returns
-        ----------
+        -------
         img : QImage
         """
         from .utils import add_flash_animation

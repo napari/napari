@@ -15,11 +15,8 @@ jobs:
           python-version: 3.9
       - name: Install napari
         run: |
-          # needed for https://github.com/python/mypy/pull/11561
-          pip install git+https://github.com/python/mypy.git
-
+          pip install mypy types-PyYAML types-setuptools
           pip install -e .[all]
-          pip install types-PyYAML types-setuptools
 
       - name: Run mypy on typed modules
         run: make typecheck

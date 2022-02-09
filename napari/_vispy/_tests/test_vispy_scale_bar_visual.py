@@ -74,3 +74,4 @@ def test_vispy_text_visual(make_napari_viewer):
     viewer.scale_bar.visible = False
     viewer.scale_bar.unit = "pixel"
     assert qt_widget.scale_bar._quantity.units == "pixel"
+    del qt_widget

@@ -620,7 +620,11 @@ class NapariPluginManager(PluginManager):
         from ..settings import get_settings
 
         self._assign_plugin_to_extensions(reader, extensions, type_='reader')
-        get_settings().plugins.extension2reader = self._extension2reader
+        extension2readers = get_settings().plugins.extension2reader
+        get_settings().plugins.extension2reader = {
+            **extension2readers,
+            **self._extension2reader,
+        }
 
     def get_writer_for_extension(self, extension: str) -> Optional[str]:
         """Return writer plugin assigned to `extension`, or None."""

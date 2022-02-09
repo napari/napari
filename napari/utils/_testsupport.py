@@ -1,15 +1,19 @@
 import collections
+import gc
 import os
 import sys
 import warnings
 from contextlib import suppress
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 from unittest.mock import patch
+from weakref import WeakSet
 
 import pytest
 
 if TYPE_CHECKING:
     from pytest import FixtureRequest
+
+_SAVE_GRAPH_OPNAME = "--save-leaked-object-graph"
 
 
 def pytest_addoption(parser):
@@ -19,6 +23,45 @@ def pytest_addoption(parser):
         default=False,
         help="don't show viewer during tests",
     )
+
+    parser.addoption(
+        _SAVE_GRAPH_OPNAME,
+        action="store_true",
+        default=False,
+        help="Try to save a graph of leaked object's reference (need objgraph"
+        "and graphviz installed",
+    )
+
+
+COUNTER = 0
+
+
+def fail_obj_graph(Klass):
+    """
+    Fail is a given class _instances weakset is non empty and print the object graph.
+    """
+
+    try:
+        import objgraph
+    except ImportError:
+        return
+
+    if not len(Klass._instances) == 0:
+        global COUNTER
+        COUNTER += 1
+        import gc
+
+        gc.collect()
+
+        objgraph.show_backrefs(
+            list(Klass._instances),
+            max_depth=20,
+            filename=f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf',
+        )
+
+        # DO not remove len, this can break as C++ obj are gone, but python objects
+        # still hang around and _repr_ would crash.
+        assert False, len(Klass._instances)
 
 
 @pytest.fixture
@@ -103,12 +146,28 @@ def make_napari_viewer(
     from qtpy.QtWidgets import QApplication
 
     from napari import Viewer
+    from napari._qt.qt_viewer import QtViewer
     from napari.settings import get_settings
+
+    gc.collect()
+
+    _do_not_inline_below = len(QtViewer._instances)
+    # # do not inline to avoid pytest trying to compute repr of expression.
+    # # it fails if C++ object gone but not Python object.
+    if request.config.getoption(_SAVE_GRAPH_OPNAME):
+        fail_obj_graph(QtViewer)
+    QtViewer._instances.clear()
+    assert _do_not_inline_below == 0, (
+        "Some instance of QtViewer is not properly cleaned in one of previous test. For easier debug one may "
+        f"use {_SAVE_GRAPH_OPNAME} flag for pytest to get graph of leaked objects. If you use qtbot (from pytest-qt)"
+        " to clean Qt objects after test you may need to switch to manual clean using "
+        "`deleteLater()` and `qtbot.wait(50)` later."
+    )
 
     settings = get_settings()
     settings.reset()
 
-    viewers: List[Viewer] = []
+    viewers: WeakSet[Viewer] = WeakSet()
 
     # may be overridden by using `make_napari_viewer(strict=True)`
     _strict = False
@@ -133,7 +192,7 @@ def make_napari_viewer(
         should_show = request.config.getoption("--show-napari-viewer")
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
         viewer = ViewerClass(*model_args, **model_kwargs)
-        viewers.append(viewer)
+        viewers.add(viewer)
 
         return viewer
 
@@ -153,6 +212,16 @@ def make_napari_viewer(
                 viewer.close()
         else:
             viewer.close()
+
+    gc.collect()
+
+    if request.config.getoption(_SAVE_GRAPH_OPNAME):
+        fail_obj_graph(QtViewer)
+
+    _do_not_inline_below = len(QtViewer._instances)
+    # do not inline to avoid pytest trying to compute repr of expression.
+    # it fails if C++ object gone but not Python object.
+    assert _do_not_inline_below == 0
 
     # only check for leaked widgets if an exception was raised during the test,
     # or "strict" mode was used.
