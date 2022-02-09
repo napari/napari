@@ -48,7 +48,7 @@ def hub_plugin_info(
             with request.urlopen(anaconda_api) as resp_api:
                 anaconda_info = json.loads(resp_api.read().decode())
                 if version not in anaconda_info.get("versions", []):
-                    return
+                    return None
 
         except error.HTTPError:
             return None
