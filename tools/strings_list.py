@@ -545,6 +545,7 @@ SKIP_WORDS = {
         '{name} ({_fmt_exts(exts)})',
         'submenu',
         '{name} {writer.display_name}',
+        'No readers returned data',
     ],
     'napari/plugins/utils.py': [
         'builtins',
@@ -2011,10 +2012,7 @@ SKIP_WORDS = {
     ],
     'napari/plugins/hook_specifications.py': [],
     'napari/plugins/io.py': [
-        "({len(errors)}) error{'s' if len(errors) > 1 else ''} ",
-        'See full error logs in "Plugins → Plugin Errors..."',
         'napari_write_{layer._type_string}',
-        "occurred in plugins: {', '.join(names)}. ",
         'Falling back to original plugin engine.',
         'Writing to {path}.  Hook caller: {hook_caller}',
     ],

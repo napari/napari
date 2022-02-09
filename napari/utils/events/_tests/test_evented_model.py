@@ -1,6 +1,6 @@
 import inspect
 from enum import auto
-from typing import ClassVar, List, Sequence
+from typing import ClassVar, List, Sequence, Union
 from unittest.mock import Mock
 
 import dask.array as da
@@ -9,6 +9,7 @@ import pytest
 from dask import delayed
 from dask.delayed import Delayed
 from pydantic import Field
+from typing_extensions import Protocol, runtime_checkable
 
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
@@ -236,6 +237,64 @@ def test_values_updated():
     user1.events.id.assert_not_called()
     user2.events.id.assert_not_called()
     assert user1_events.call_count == 0
+
+
+def test_update_with_inner_model_union():
+    class Inner(EventedModel):
+        w: str
+
+    class AltInner(EventedModel):
+        x: str
+
+    class Outer(EventedModel):
+        y: int
+        z: Union[Inner, AltInner]
+
+    original = Outer(y=1, z=Inner(w='a'))
+    updated = Outer(y=2, z=AltInner(x='b'))
+
+    original.update(updated, recurse=False)
+
+    assert original == updated
+
+
+def test_update_with_inner_model_protocol():
+    @runtime_checkable
+    class InnerProtocol(Protocol):
+        def string(self) -> str:
+            ...
+
+        # Protocol fields are not successfully set without explicit validation.
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v):
+            return v
+
+    class Inner(EventedModel):
+        w: str
+
+        def string(self) -> str:
+            return self.w
+
+    class AltInner(EventedModel):
+        x: str
+
+        def string(self) -> str:
+            return self.x
+
+    class Outer(EventedModel):
+        y: int
+        z: InnerProtocol
+
+    original = Outer(y=1, z=Inner(w='a'))
+    updated = Outer(y=2, z=AltInner(x='b'))
+
+    original.update(updated, recurse=False)
+
+    assert original == updated
 
 
 def test_evented_model_signature():
