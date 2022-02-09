@@ -69,7 +69,7 @@ def sphere_indices(radius, scale):
     indices = np.mgrid[slices].T.reshape(-1, ndim)
     distances_sq = np.sum((indices * scale_normalized) ** 2, axis=1)
     # Use distances within desired radius to mask indices in grid
-    mask_indices = indices[distances_sq <= radius ** 2].astype(int)
+    mask_indices = indices[distances_sq <= radius**2].astype(int)
 
     return mask_indices
 

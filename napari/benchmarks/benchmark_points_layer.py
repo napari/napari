@@ -10,7 +10,7 @@ from napari.layers import Points
 class Points2DSuite:
     """Benchmarks for the Points layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 18, 2)]
+    params = [2**i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -49,7 +49,7 @@ class Points2DSuite:
 class Points3DSuite:
     """Benchmarks for the Points layer with 3D data."""
 
-    params = [2 ** i for i in range(4, 18, 2)]
+    params = [2**i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
