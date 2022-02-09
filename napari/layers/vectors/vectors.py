@@ -93,6 +93,8 @@ class Vectors(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
+    fixed_canvas_width : bool
+        If True, vector width is defined in canvas pixels.
 
     Attributes
     ----------
@@ -372,6 +374,7 @@ class Vectors(Layer):
                 'ndim': self.ndim,
                 'features': self.features,
                 'out_of_slice_display': self.out_of_slice_display,
+                'fixed_canvas_width': self.fixed_canvas_width,
             }
         )
         return state
