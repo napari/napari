@@ -6,8 +6,10 @@ import json
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
-from typing import Dict, Generator, List, NamedTuple, Optional
+from typing import Dict, Generator, List, Optional
 from urllib import error, parse, request
+
+from .utils import ProjectInfo, normalized_name
 
 PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
 
@@ -17,17 +19,6 @@ setup_py_entrypoint = re.compile(
 setup_py_pypi_name = re.compile(
     r"setup\s?\(.*name\s?=\s?['\"]([^'\"]+)['\"]", re.DOTALL
 )
-
-
-class ProjectInfo(NamedTuple):
-    """Info associated with a PyPI Project."""
-
-    name: str
-    version: str
-    url: str
-    summary: str
-    author: str
-    license: str
 
 
 @lru_cache(maxsize=128)
@@ -146,7 +137,3 @@ def iter_napari_plugin_info(
             if info and info not in already_yielded:
                 already_yielded.add(info)
                 yield info
-
-
-def normalized_name(name) -> str:
-    return re.sub(r"[-_.]+", "-", name).lower()

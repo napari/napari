@@ -1,4 +1,5 @@
-from typing import Dict
+import re
+from typing import Dict, NamedTuple
 
 from . import _npe2, plugin_manager
 
@@ -36,3 +37,18 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
         del readers['builtins']
 
     return readers
+
+
+class ProjectInfo(NamedTuple):
+    """Info associated with a PyPI Project."""
+
+    name: str
+    version: str
+    url: str
+    summary: str
+    author: str
+    license: str
+
+
+def normalized_name(name) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()

@@ -38,11 +38,8 @@ from typing_extensions import Literal
 import napari.resources
 
 from ...plugins import plugin_manager
-from ...plugins.pypi import (
-    ProjectInfo,
-    iter_napari_plugin_info,
-    normalized_name,
-)
+from ...plugins.hub import iter_napari_plugin_info
+from ...plugins.utils import ProjectInfo, normalized_name
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
