@@ -96,6 +96,9 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - uses: tlambert03/setup-qt-libs@v1
+      - name: Install Linux OpenGL
+        if: runner.os == 'Linux'
+        uses: openrndr/setup-opengl@v1.1
 
       # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL
