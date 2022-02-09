@@ -75,9 +75,9 @@ class NotebookScreenshot:
             cleaner = Cleaner()
             doc = document_fromstring(alt_text)
             alt_text = cleaner.clean_html(doc).text_content()
+            # alt_text = html.escape(alt_text)
             if alt_text == "":
                 alt_text = None
-            alt_text = html.escape(alt_text)
         return alt_text
 
     def _repr_png_(self):
