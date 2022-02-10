@@ -294,10 +294,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _new_labels(self):
         """Create new labels layer filling full world coordinates space."""
-        extent = self.layers.extent.world
-        scale = self.layers.extent.step
+        layers_extent = self.layers.extent
+        extent = layers_extent.world
+        scale = layers_extent.step
         scene_size = extent[1] - extent[0]
-        corner = extent[0] + 0.5 * self.layers.extent.step
+        corner = extent[0] + 0.5 * layers_extent.step
         shape = [
             np.round(s / sc).astype('int') if s > 0 else 1
             for s, sc in zip(scene_size, scale)

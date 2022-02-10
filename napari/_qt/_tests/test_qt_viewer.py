@@ -302,7 +302,7 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
 def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     """Test that the viewer doesn't change the underlying array."""
     image = np.random.rand(10, 32, 32)
-    image *= 200 if dtype.endswith('8') else 2 ** 14
+    image *= 200 if dtype.endswith('8') else 2**14
     image = image.astype(dtype)
     imean = image.mean()
 
