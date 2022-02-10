@@ -70,7 +70,7 @@ def fix_data_vectors(
     """
     if vectors is None:
         vectors = []
-    vectors = np.asarray(vectors)
+    vectors = np.asarray(vectors, float)
 
     if vectors.ndim == 3 and vectors.shape[1] == 2:
         # an (N, 2, D) array that is coordinate-like, we're good to go

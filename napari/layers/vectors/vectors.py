@@ -222,7 +222,14 @@ class Vectors(Layer):
 
         self._length = float(length)
 
-        self._data = data
+        self._data = np.empty((0, 2, 2), float)
+        self._view_data = np.empty((0, 2, 2), float)
+        self._view_indices = np.empty(0, int)
+        self._view_alphas = 1.0
+        self._feature_table = _FeatureTable()
+        self._edge = ColorManager()
+
+        self.data = data
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -241,11 +248,6 @@ class Vectors(Layer):
             if self._data.size > 0
             else self.property_choices,
         )
-
-        # Data containing vectors in the currently viewed slice
-        self._view_data = np.empty((0, 2, 2))
-        self._view_indices = np.empty(0).astype(int)
-        self._view_alphas = 1.0
 
         # now that everything is set up, make the layer visible (if set to visible)
         self._update_dims()
@@ -631,7 +633,7 @@ class Vectors(Layer):
             slice_indices = np.where(matches)[0].astype(int)
             return slice_indices, alpha
         else:
-            return [], np.empty(0)
+            return [], np.empty(0, float)
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
