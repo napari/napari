@@ -333,7 +333,7 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     pts.add((8.7, 0, 0))
     viewer.dims.set_point(0, 30 * 0.29)  # middle plane
     layer = viewer.layers[1]
-    indices, scale = layer._slice_data(layer._slice_indices)
+    indices = layer._slice_data(layer._slice_indices, layer._thickness_data())
     np.testing.assert_equal(indices, [0])
 
 

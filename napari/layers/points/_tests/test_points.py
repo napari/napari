@@ -888,32 +888,6 @@ def test_edge_width():
     assert layer.edge_width == 3
 
 
-def test_out_of_slice_display():
-    """Test setting out_of_slice_display flag for 2D and 4D data."""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer.out_of_slice_display is False
-
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
-
-    layer = Points(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
-
-    shape = (10, 4)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer.out_of_slice_display is False
-
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
-
-    layer = Points(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
-
-
 @pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
@@ -1690,7 +1664,7 @@ def test_view_data():
 def test_view_size():
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
-    layer = Points(coords, size=sizes, out_of_slice_display=False)
+    layer = Points(coords, size=sizes)
 
     layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
@@ -1701,14 +1675,6 @@ def test_view_size():
     assert np.all(
         layer._view_size == sizes[np.ix_([2], layer._dims_displayed)]
     )
-
-    layer.out_of_slice_display = True
-    assert len(layer._view_size) == 3
-
-    # test a slice with no points
-    layer.out_of_slice_display = False
-    layer._slice_dims([2, slice(None), slice(None)])
-    assert np.all(layer._view_size == [])
 
 
 def test_view_colors():
@@ -1772,13 +1738,26 @@ def test_slice_data():
         (10 - 2 * 1e-7, 1, 6),
     ]
     layer = Points(data)
-    assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
-    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 4
     assert (
-        len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
+        len(layer._slice_data((8, slice(None), slice(None)), (1, 1, 1))[0])
+        == 1
+    )
+    assert (
+        len(layer._slice_data((10, slice(None), slice(None)), (1, 1, 1))[0])
         == 4
     )
-    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 4
+    assert (
+        len(
+            layer._slice_data(
+                (10 + 2 * 1e-12, slice(None), slice(None)), (1, 1, 1)
+            )[0]
+        )
+        == 4
+    )
+    assert (
+        len(layer._slice_data((10.1, slice(None), slice(None)), (1, 1, 1))[0])
+        == 4
+    )
 
 
 def test_scale_init():

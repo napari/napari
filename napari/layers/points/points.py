@@ -97,12 +97,6 @@ class Points(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    out_of_slice_display : bool
-        If True, renders points not just in central plane but also slightly out of slice
-        according to specified point marker size.
-    n_dimensional : bool
-        This property will soon be deprecated in favor of 'out_of_slice_display'.
-        Use that instead.
     name : str
         Name of the layer.
     metadata : dict
@@ -205,9 +199,6 @@ class Points(Layer):
     current_face_color : str
         Size of the marker edge for the next point to be added or the currently
         selected point.
-    out_of_slice_display : bool
-        If True, renders points not just in central plane but also slightly out of slice
-        according to specified point marker size.
     selected_data : set
         Integer indices of any selected points.
     mode : str
@@ -289,8 +280,6 @@ class Points(Layer):
         face_color_cycle=None,
         face_colormap='viridis',
         face_contrast_limits=None,
-        out_of_slice_display=False,
-        n_dimensional=None,
         name=None,
         metadata=None,
         scale=None,
@@ -341,8 +330,6 @@ class Points(Layer):
             properties=Event,
             current_properties=Event,
             symbol=Event,
-            out_of_slice_display=Event,
-            n_dimensional=Event,
             highlight=Event,
             shading=Event,
             _antialias=Event,
@@ -396,7 +383,6 @@ class Points(Layer):
 
         # initialize view data
         self.__indices_view = np.empty(0, int)
-        self._view_size_scale = []
 
         self._drag_box = None
         self._drag_box_stored = None
@@ -423,11 +409,6 @@ class Points(Layer):
             categorical_colormap=face_color_cycle,
             properties=color_properties,
         )
-
-        if n_dimensional is not None:
-            self._out_of_slice_display = n_dimensional
-        else:
-            self._out_of_slice_display = out_of_slice_display
 
         self._shown = np.empty(0).astype(bool)
         self.size = size
@@ -652,29 +633,6 @@ class Points(Layer):
             mins = np.min(self.data, axis=0)
             extrema = np.vstack([mins, maxs])
         return extrema
-
-    @property
-    def out_of_slice_display(self) -> bool:
-        """bool: renders points slightly out of slice."""
-        return self._out_of_slice_display
-
-    @out_of_slice_display.setter
-    def out_of_slice_display(self, out_of_slice_display: bool) -> None:
-        self._out_of_slice_display = bool(out_of_slice_display)
-        self.events.out_of_slice_display()
-        self.events.n_dimensional()
-        self.refresh()
-
-    @property
-    def n_dimensional(self) -> bool:
-        """
-        This property will soon be deprecated in favor of `out_of_slice_display`. Use that instead.
-        """
-        return self._out_of_slice_display
-
-    @n_dimensional.setter
-    def n_dimensional(self, value: bool) -> None:
-        self.out_of_slice_display = value
 
     @property
     def symbol(self) -> str:
@@ -1078,8 +1036,6 @@ class Points(Layer):
                 'properties': self.properties,
                 'property_choices': self.property_choices,
                 'text': self.text.dict(),
-                'out_of_slice_display': self.out_of_slice_display,
-                'n_dimensional': self.out_of_slice_display,
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,
@@ -1287,13 +1243,9 @@ class Points(Layer):
             Array of sizes for the N points in view
         """
         if len(self._indices_view) > 0:
-            # Get the point sizes and scale for ndim display
-            sizes = (
-                self.size[
-                    np.ix_(self._indices_view, self._dims_displayed)
-                ].mean(axis=1)
-                * self._view_size_scale
-            )
+            sizes = self.size[
+                np.ix_(self._indices_view, self._dims_displayed)
+            ].mean(axis=1)
 
         else:
             # if no points, return an empty list
@@ -1345,10 +1297,6 @@ class Points(Layer):
         -------
         slice_indices : list
             Indices of points in the currently viewed slice.
-        scale : float, (N, ) array
-            If in `out_of_slice_display` mode then the scale factor of points, where
-            values of 1 corresponds to points located in the slice, and values
-            less than 1 correspond to points located in neighboring slices.
         """
         # Get a list of the data for the points in this slice
         not_disp = list(self._dims_not_displayed)
@@ -1358,9 +1306,9 @@ class Points(Layer):
             distances = abs(self.data[:, not_disp] - indices[not_disp])
             matches = np.all(distances <= not_disp_thick / 2, axis=1)
             slice_indices = np.where(matches)[0].astype(int)
-            return slice_indices, 1
+            return slice_indices
         else:
-            return [], np.empty(0)
+            return []
 
     def _get_value(self, position) -> Union[None, int]:
         """Index of the point at a given 2D position in data coordinates.
@@ -1537,10 +1485,7 @@ class Points(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
-        indices, scale = self._slice_data(
-            self._slice_indices, self._thickness_data()
-        )
-        self._view_size_scale = scale
+        indices = self._slice_data(self._slice_indices, self._thickness_data())
         self._indices_view = np.array(indices, dtype=int)
         # get the selected points that are in view
         self._selected_view = list(

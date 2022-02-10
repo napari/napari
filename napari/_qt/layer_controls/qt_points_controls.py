@@ -47,8 +47,6 @@ class QtPointsControls(QtLayerControls):
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Points
         An instance of a napari Points layer.
-    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to indicate whether to render out of slice.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
         Button for pan/zoom mode.
     select_button : qtpy.QtWidgets.QtModeRadioButton
@@ -69,9 +67,6 @@ class QtPointsControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events.out_of_slice_display.connect(
-            self._on_out_of_slice_display_change
-        )
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.size.connect(self._on_size_change)
         self.layer.events.current_edge_color.connect(
@@ -122,12 +117,6 @@ class QtPointsControls(QtLayerControls):
         symbol_comboBox.setCurrentIndex(current_index)
         symbol_comboBox.activated[str].connect(self.changeSymbol)
         self.symbolComboBox = symbol_comboBox
-
-        out_of_slice_cb = QCheckBox()
-        out_of_slice_cb.setToolTip(trans._('Out of slice display'))
-        out_of_slice_cb.setChecked(self.layer.out_of_slice_display)
-        out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
-        self.outOfSliceCheckBox = out_of_slice_cb
 
         self.select_button = QtModeRadioButton(
             layer,
@@ -195,9 +184,7 @@ class QtPointsControls(QtLayerControls):
         self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
         self.grid_layout.addWidget(QLabel(trans._('display text:')), 7, 0)
         self.grid_layout.addWidget(self.textDispCheckBox, 7, 1)
-        self.grid_layout.addWidget(QLabel(trans._('out of slice:')), 8, 0)
-        self.grid_layout.addWidget(self.outOfSliceCheckBox, 8, 1)
-        self.grid_layout.setRowStretch(9, 1)
+        self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -251,16 +238,6 @@ class QtPointsControls(QtLayerControls):
         """
         self.layer.current_size = value
 
-    def change_out_of_slice(self, state):
-        """Toggleout of slice display of points layer.
-
-        Parameters
-        ----------
-        state : QCheckBox
-            Checkbox indicating whether to render out of slice.
-        """
-        self.layer.out_of_slice_display = state == Qt.Checked
-
     def change_text_visibility(self, state):
         """Toggle the visibility of the text.
 
@@ -275,11 +252,6 @@ class QtPointsControls(QtLayerControls):
         """Receive layer model text visibiltiy change change event and update checkbox."""
         with self.layer.text.events.visible.blocker():
             self.textDispCheckBox.setChecked(self.layer.text.visible)
-
-    def _on_out_of_slice_display_change(self):
-        """Receive layer model out_of_slice_display change event and update checkbox."""
-        with self.layer.events.out_of_slice_display.blocker():
-            self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
 
     def _on_symbol_change(self):
         """Receive marker symbol change event and update the dropdown menu."""
