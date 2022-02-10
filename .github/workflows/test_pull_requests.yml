@@ -86,6 +86,10 @@ jobs:
           - python: '3.10'
             platform: ubuntu-latest
             backend: pyqt
+          - python: 3.8
+            platform: ubuntu-18.04
+            backed: pyqt
+            toxenv: glplus-py38-linux
 
     steps:
       - uses: actions/checkout@v2
@@ -96,8 +100,9 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Install Linux OpenGL
-        if: runner.os == 'Linux'
+        if: ${{ matrix.toxenv == 'glplus-py38-linux' }}
         uses: openrndr/setup-opengl@v1.1
+
       - uses: tlambert03/setup-qt-libs@v1
 
       # strategy borrowed from vispy for installing opengl libs on windows
