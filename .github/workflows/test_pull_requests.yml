@@ -45,7 +45,7 @@ jobs:
           semgrep --error --lang python --pattern 'trans._($X.format(...))' napari
 
   test:
-    name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }} ${{ matrix.GLPLUS && 'glplus' }}
+    name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }} ${{ matrix.MESA_GL_VERSION_OVERRIDE && 'glplus' }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -88,7 +88,7 @@ jobs:
             backend: pyqt
           - python: 3.8
             platform: ubuntu-18.04
-            GLPLUS: 1
+            MESA_GL_VERSION_OVERRIDE: 3.2
 
     steps:
       - uses: actions/checkout@v2
@@ -97,10 +97,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-
-      - name: Install Linux OpenGL
-        if: ${{ matrix.GLPLUS }}
-        uses: openrndr/setup-opengl@v1.1
 
       - uses: tlambert03/setup-qt-libs@v1
 
@@ -158,6 +154,7 @@ jobs:
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
           MIN_REQ: ${{ matrix.MIN_REQ }}
+          MESA_GL_VERSION_OVERRIDE: ${{ matrix.MESA_GL_VERSION_OVERRIDE }}
       # this steps display the cached folder size for debug and
       # remove the biggest contenders.
       - name: Display Cache size, and remove largest files from cache.
