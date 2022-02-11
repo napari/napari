@@ -12,6 +12,17 @@ from typing import Callable, List, Optional, Sequence, Tuple, Type, Union
 from .events import Event, EventEmitter
 from .misc import StringEnum
 
+try:
+    from napari_error_reporter import capture_exception, install_error_reporter
+except ImportError:
+
+    def _noop(*_, **__):
+        pass
+
+    install_error_reporter = _noop
+    capture_exception = _noop
+
+
 name2num = {
     'error': 40,
     'warning': 30,
@@ -224,13 +235,7 @@ class NotificationManager:
             # Patch for Python < 3.8
             _setup_thread_excepthook()
 
-        try:
-            from napari_error_monitor import install_error_monitor
-
-            install_error_monitor()
-        except ImportError:
-            pass
-
+        install_error_reporter()
         self._originals_except_hooks.append(sys.excepthook)
         self._original_showwarnings_hooks.append(warnings.showwarning)
 
@@ -265,12 +270,7 @@ class NotificationManager:
         if isinstance(value, KeyboardInterrupt):
             sys.exit("Closed by KeyboardInterrupt")
 
-        try:
-            from napari_error_monitor import capture_exception
-
-            capture_exception(value)
-        except ImportError:
-            pass
+        capture_exception(value)
 
         if self.exit_on_error:
             sys.__excepthook__(exctype, value, traceback)

@@ -408,11 +408,11 @@ def napari_svg_name():
 
 
 @pytest.fixture(autouse=True, scope='session')
-def _no_error_monitor():
-    """Turn off napari_error_monitor if it's installed."""
+def _no_error_reports():
+    """Turn off napari_error_reporter if it's installed."""
     try:
-        p1 = patch('napari_error_monitor.capture_exception')
-        p2 = patch('napari_error_monitor.install_error_monitor')
+        p1 = patch('napari_error_reporter.capture_exception')
+        p2 = patch('napari_error_reporter.install_error_reporter')
         with p1, p2:
             yield
     except (ModuleNotFoundError, AttributeError):
