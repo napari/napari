@@ -904,6 +904,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             else None,  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
+                plugin = plugin or _get_preferred_reader(_path)
                 added.extend(
                     self._add_layers_with_plugins(
                         _path, kwargs, plugin=plugin, layer_type=layer_type
@@ -1244,6 +1245,14 @@ def valid_add_kwargs() -> Dict[str, Set[str]]:
         params = inspect.signature(getattr(ViewerModel, meth)).parameters
         valid[meth[4:]] = set(params) - {'self', 'kwargs'}
     return valid
+
+
+def _get_preferred_reader(_path):
+    """Return preferred reader for _path from settings, if one exists."""
+    _, extension = os.path.splitext(_path)
+    if extension:
+        reader_settings = get_settings().plugins.extension2reader
+        return reader_settings.get(extension)
 
 
 for _layer in (
