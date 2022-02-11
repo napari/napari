@@ -5,6 +5,7 @@ except ImportError:
 
 import os
 from functools import partial
+from multiprocessing.pool import ThreadPool
 
 import dask.threaded
 import numpy as np
@@ -370,9 +371,12 @@ def auto_shutdown_dask_threadworkers():
     try:
         yield
     finally:
-        if dask.threaded.default_pool is not None:
+        if isinstance(dask.threaded.default_pool, ThreadPool):
+            dask.threaded.default_pool.close()
+            dask.threaded.default_pool.join()
+        elif dask.threaded.default_pool:
             dask.threaded.default_pool.shutdown()
-            dask.threaded.default_pool = None
+        dask.threaded.default_pool = None
 
 
 # this is not the proper way to configure IPython, but it's an easy one.
