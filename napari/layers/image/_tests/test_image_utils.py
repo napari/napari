@@ -3,6 +3,7 @@ import time
 import dask.array as da
 import numpy as np
 import pytest
+import skimage
 from hypothesis import given
 from hypothesis.extra.numpy import array_shapes
 from skimage.transform import pyramid_gaussian
@@ -52,15 +53,18 @@ def test_guess_multiscale():
     data = tuple(data)
     assert guess_multiscale(data)[0]
 
+    if skimage.__version__ > '0.19':
+        pyramid_kwargs = {'channel_axis': None}
+    else:
+        pyramid_kwargs = {'multichannel': False}
+
     data = tuple(
-        pyramid_gaussian(np.random.random((10, 15)), multichannel=False)
+        pyramid_gaussian(np.random.random((10, 15)), **pyramid_kwargs)
     )
     assert guess_multiscale(data)[0]
 
     data = np.asarray(
-        tuple(
-            pyramid_gaussian(np.random.random((10, 15)), multichannel=False)
-        ),
+        tuple(pyramid_gaussian(np.random.random((10, 15)), **pyramid_kwargs)),
         dtype=object,
     )
     assert guess_multiscale(data)[0]

@@ -1,4 +1,5 @@
 import numpy as np
+import skimage
 from skimage.transform import pyramid_gaussian
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -67,7 +68,13 @@ def test_multiscale_tuple():
     shape = (40, 20)
     np.random.seed(0)
     img = np.random.random(shape)
-    data = list(pyramid_gaussian(img, multichannel=False))
+
+    if skimage.__version__ > '0.19':
+        pyramid_kwargs = {'channel_axis': None}
+    else:
+        pyramid_kwargs = {'multichannel': False}
+
+    data = list(pyramid_gaussian(img, **pyramid_kwargs))
     layer = Image(data)
     assert layer.data == data
     assert layer.multiscale is True
