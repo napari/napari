@@ -672,7 +672,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if 'extent' in self.__dict__:
             del self.extent
 
-        self.refresh()
+        self.refresh()  # This call is need for invalidate cache of extent in LayerList. If you remove it pleas ad another workaround.
 
     @property
     @abstractmethod
@@ -1170,7 +1170,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
-            self.events.set_data()
+            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
             self._update_thumbnail()
             self._set_highlight(force=True)
 

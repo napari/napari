@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
+from .._vendor.cpython.functools import cached_property
 from ..layers import Layer
 from ..layers.image.image import _ImageBase
 from ..utils.context import create_context
@@ -54,6 +55,19 @@ class LayerList(SelectableEventedList[Layer]):
         for layer in event.removed:
             layer._on_selection(False)
 
+    def _process_delete_item(self, item: Layer):
+        item.events.set_data.disconnect(self._clean_cache)
+        self._clean_cache()
+
+    def _clean_cache(self):
+        cached_properties = (
+            'extent',
+            '_extent_world',
+            '_step_size',
+            '_ranges',
+        )
+        [self.__dict__.pop(p, None) for p in cached_properties]
+
     def __newlike__(self, data):
         return LayerList(data)
 
@@ -73,7 +87,7 @@ class LayerList(SelectableEventedList[Layer]):
             Coerced, unique name.
         """
         existing_layers = {x.name for x in self if x is not layer}
-        for i in range(len(self)):
+        for _ in range(len(self)):
             if name in existing_layers:
                 name = inc_name_count(name)
         return name
@@ -87,6 +101,8 @@ class LayerList(SelectableEventedList[Layer]):
         """Insert ``value`` before index."""
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
+        self._clean_cache()
+        new_layer.events.set_data.connect(self._clean_cache)
         super().insert(index, new_layer)
 
     def move_selected(self, index, insert):
@@ -119,7 +135,7 @@ class LayerList(SelectableEventedList[Layer]):
         for layer in self.selection:
             layer.visible = not layer.visible
 
-    @property
+    @cached_property
     def _extent_world(self) -> np.ndarray:
         """Extent of layers in world coordinates.
 
@@ -188,7 +204,7 @@ class LayerList(SelectableEventedList[Layer]):
 
         return np.vstack([min_v, max_v])
 
-    @property
+    @cached_property
     def _step_size(self) -> np.ndarray:
         """Ideal step size between planes in world coordinates.
 
@@ -219,7 +235,7 @@ class LayerList(SelectableEventedList[Layer]):
             min_scales = self._step_size_from_scales(scales)
             return min_scales
 
-    @property
+    @cached_property
     def extent(self) -> Extent:
         """Extent of layers in data and world coordinates."""
         extent_list = [layer.extent for layer in self]
@@ -229,7 +245,7 @@ class LayerList(SelectableEventedList[Layer]):
             step=self._get_step_size(extent_list),
         )
 
-    @property
+    @cached_property
     def _ranges(self) -> List[Tuple[float, float, float]]:
         """Get ranges for Dims.range in world coordinates.
 

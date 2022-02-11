@@ -75,7 +75,7 @@ class Colormap(EventedModel):
             return np.linspace(0, 1, n_controls)
 
         # Check control end points are correct
-        if v[0] != 0 or v[-1] != 1:
+        if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
             raise ValueError(
                 trans._(
                     'Control points must start with 0.0 and end with 1.0. Got {start_control_point} and {end_control_point}',

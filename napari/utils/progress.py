@@ -75,7 +75,11 @@ class progress(tqdm):
         **kwargs,
     ) -> None:
         self.events = EmitterGroup(
-            value=Event, description=Event, overflow=Event, eta=Event
+            value=Event,
+            description=Event,
+            overflow=Event,
+            eta=Event,
+            total=Event,
         )
         self.nest_under = nest_under
         self.is_init = True
@@ -88,6 +92,15 @@ class progress(tqdm):
 
     def __repr__(self) -> str:
         return self.desc
+
+    @property
+    def total(self):
+        return self._total
+
+    @total.setter
+    def total(self, total):
+        self._total = total
+        self.events.total(value=self.total)
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display and emit eta event."""
