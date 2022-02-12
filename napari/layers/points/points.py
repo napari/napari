@@ -71,8 +71,10 @@ class Points(Layer):
         Size of the point marker in data pixels. If given as a scalar, all points are made
         the same size. If given as an array, size must be the same or broadcastable
         to the same shape as the data.
-    edge_width : float
+    edge_width : float, array
         Width of the symbol edge in pixels.
+    edge_width_is_relative : bool
+        If enabled, edge_width is interpreted as a fraction of the point size.
     edge_color : str, array-like, dict
         Color of the point marker border. Numeric color values should be RGB(A).
     edge_color_cycle : np.ndarray, list
@@ -170,8 +172,10 @@ class Points(Layer):
     size : array (N, D)
         Array of sizes for each point in each dimension. Must have the same
         shape as the layer `data`.
-    edge_width : float
+    edge_width : array (N,)
         Width of the marker edges in pixels for all points
+    edge_width : array (N,)
+        Width of the marker edges for all points as a fraction of their size.
     edge_color : Nx4 numpy array
         Array of edge color RGBA values, one for each point.
     edge_color_cycle : np.ndarray, list
@@ -199,11 +203,14 @@ class Points(Layer):
     current_size : float
         Size of the marker for the next point to be added or the currently
         selected point.
+    current_edge_width : float
+        Edge width of the marker for the next point to be added or the currently
+        selected point.
     current_edge_color : str
-        Size of the marker edge for the next point to be added or the currently
+        Edge color of the marker edge for the next point to be added or the currently
         selected point.
     current_face_color : str
-        Size of the marker edge for the next point to be added or the currently
+        Face color of the marker edge for the next point to be added or the currently
         selected point.
     out_of_slice_display : bool
         If True, renders points not just in central plane but also slightly out of slice
@@ -248,6 +255,8 @@ class Points(Layer):
         2D coordinates of points in the currently viewed slice.
     _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
+    _view_edge_width : array (M, )
+        Edge width of the point markers in the currently viewed slice.
     _indices_view : array (M, )
         Integer indices of the points in the currently viewed slice and are shown.
     _selected_view :
@@ -280,7 +289,8 @@ class Points(Layer):
         text=None,
         symbol='o',
         size=10,
-        edge_width=1,
+        edge_width=0.1,
+        edge_width_is_relative=True,
         edge_color='black',
         edge_color_cycle=None,
         edge_colormap='viridis',
@@ -334,6 +344,7 @@ class Points(Layer):
             mode=Event,
             size=Event,
             edge_width=Event,
+            edge_width_is_relative=Event,
             face_color=Event,
             current_face_color=Event,
             edge_color=Event,
@@ -343,13 +354,6 @@ class Points(Layer):
             symbol=Event,
             out_of_slice_display=Event,
             n_dimensional=Event,
-            # n_dimensional=WarningEmitter(
-            # trans._(
-            # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
-            # "use 'out_of_slice_display' instead."
-            # ),
-            # type='n_dimensional',
-            # ),
             highlight=Event,
             shading=Event,
             _antialias=Event,
@@ -373,15 +377,17 @@ class Points(Layer):
             features=self.features,
         )
 
-        # Save the point style params
-        self.symbol = symbol
-        self.edge_width = edge_width
+        self._edge_width_is_relative = False
+        self._shown = np.empty(0).astype(bool)
 
         # The following point properties are for the new points that will
         # be added. For any given property, if a list is passed to the
         # constructor so each point gets its own value then the default
         # value is used when adding new points
         self._current_size = np.asarray(size) if np.isscalar(size) else 10
+        self._current_edge_width = (
+            np.asarray(edge_width) if np.isscalar(edge_width) else 0.1
+        )
         # Indices of selected points
         self._selected_data = set()
         self._selected_data_stored = set()
@@ -435,9 +441,13 @@ class Points(Layer):
         else:
             self._out_of_slice_display = out_of_slice_display
 
-        self._shown = np.empty(0).astype(bool)
+        # Save the point style params
         self.size = size
         self.shown = shown
+        self.symbol = symbol
+        self.edge_width = edge_width
+        self.edge_width_is_relative = edge_width_is_relative
+
         self.experimental_canvas_size_limits = experimental_canvas_size_limits
         self.shading = shading
         self._antialias = True
@@ -475,6 +485,7 @@ class Points(Layer):
                             )
                         self._shown = self._shown[: len(data)]
                         self._size = self._size[: len(data)]
+                        self._edge_width = self._edge_width[: len(data)]
 
                     elif len(data) > cur_npoints:
                         # If there are now more points, add the size and colors of the
@@ -491,6 +502,14 @@ class Points(Layer):
                             )
                         size = np.repeat([new_size], adding, axis=0)
 
+                        if len(self._edge_width) > 0:
+                            new_edge_width = copy(self._edge_width[-1])
+                        else:
+                            new_edge_width = self.current_edge_width
+                        edge_width = np.repeat(
+                            [new_edge_width], adding, axis=0
+                        )
+
                         # add new colors
                         self._edge._add(n_colors=adding)
                         self._face._add(n_colors=adding)
@@ -501,6 +520,9 @@ class Points(Layer):
                         )
 
                         self.size = np.concatenate((self._size, size), axis=0)
+                        self.edge_width = np.concatenate(
+                            (self._edge_width, edge_width), axis=0
+                        )
                         self.selected_data = set(
                             np.arange(cur_npoints, len(data))
                         )
@@ -673,26 +695,10 @@ class Points(Layer):
         """
         This property will soon be deprecated in favor of `out_of_slice_display`. Use that instead.
         """
-        # warnings.warn(
-        # trans._(
-        # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
-        # "use 'out_of_slice_display' instead."
-        # ),
-        # DeprecationWarning,
-        # stacklevel=2,
-        # )
         return self._out_of_slice_display
 
     @n_dimensional.setter
     def n_dimensional(self, value: bool) -> None:
-        # warnings.warn(
-        # trans._(
-        # "'n_dimensional' is deprecated and will be removed in napari v0.5.0, "
-        # "use 'out_of_slice_display' instead."
-        # ),
-        # DeprecationWarning,
-        # stacklevel=2,
-        # )
         self.out_of_slice_display = value
 
     @property
@@ -713,7 +719,7 @@ class Points(Layer):
         self.events.highlight()
 
     @property
-    def size(self) -> Union[int, float, np.ndarray, list]:
+    def size(self) -> np.ndarray:
         """(N, D) array: size of all N points in D dimensions."""
         return self._size
 
@@ -800,14 +806,63 @@ class Points(Layer):
         self.refresh()
 
     @property
-    def edge_width(self) -> Union[None, int, float]:
-        """float: width used for all point markers."""
+    def edge_width(self) -> np.ndarray:
+        """(N, D) array: edge_width of all N points."""
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(self, edge_width: Union[None, float]) -> None:
+    def edge_width(
+        self, edge_width: Union[int, float, np.ndarray, list]
+    ) -> None:
+        edge_width = np.broadcast_to(edge_width, self.data.shape[0]).copy()
+        if self.edge_width_is_relative and np.any(
+            (edge_width > 1) | (edge_width < 0)
+        ):
+            raise ValueError(
+                trans._(
+                    'edge_width must be between 0 and 1 if edge_width_is_relative is enabled',
+                    deferred=True,
+                )
+            )
         self._edge_width = edge_width
-        self.events.edge_width()
+        self.refresh()
+
+    @property
+    def edge_width_is_relative(self) -> bool:
+        """bool: treat edge_width as a fraction of point size."""
+        return self._edge_width_is_relative
+
+    @edge_width_is_relative.setter
+    def edge_width_is_relative(self, edge_width_is_relative: bool) -> None:
+        if edge_width_is_relative and np.any(
+            (self.edge_width > 1) | (self.edge_width < 0)
+        ):
+            raise ValueError(
+                trans._(
+                    'edge_width_is_relative can only be enabled if edge_width is between 0 and 1',
+                    deferred=True,
+                )
+            )
+        self._edge_width_is_relative = edge_width_is_relative
+        self.events.edge_width_is_relative()
+
+    @property
+    def current_edge_width(self) -> Union[int, float]:
+        """float: edge_width of marker for the next added point."""
+        return self._current_edge_width
+
+    @current_edge_width.setter
+    def current_edge_width(self, edge_width: Union[None, float]) -> None:
+        self._current_edge_width = edge_width
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
+            for i in self.selected_data:
+                self.edge_width[i] = (self.edge_width[i] > 0) * edge_width
+            self.refresh()
+            self.events.edge_width()
 
     @property
     def edge_color(self) -> np.ndarray:
@@ -1086,6 +1141,7 @@ class Points(Layer):
             {
                 'symbol': self.symbol,
                 'edge_width': self.edge_width,
+                'edge_width_is_relative': self.edge_width_is_relative,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.name,
@@ -1148,6 +1204,12 @@ class Points(Layer):
             size = size[0]
             with self.block_update_properties():
                 self.current_size = size
+
+        edge_width = np.unique(self.edge_width[index])
+        if len(edge_width) == 1:
+            edge_width = edge_width[0]
+            with self.block_update_properties():
+                self.current_edge_width = edge_width
 
         properties = {}
         for k, v in self.properties.items():
@@ -1320,6 +1382,17 @@ class Points(Layer):
             # if no points, return an empty list
             sizes = np.array([])
         return sizes
+
+    @property
+    def _view_edge_width(self) -> np.ndarray:
+        """Get the edge_width of the points in view
+
+        Returns
+        -------
+        view_edge_width : (N,) np.ndarray
+            Array of edge_widths for the N points in view
+        """
+        return self.edge_width[self._indices_view]
 
     @property
     def _view_face_color(self) -> np.ndarray:
@@ -1711,6 +1784,7 @@ class Points(Layer):
         if len(index):
             self._shown = np.delete(self._shown, index, axis=0)
             self._size = np.delete(self._size, index, axis=0)
+            self._edge_width = np.delete(self._edge_width, index, axis=0)
             with self._edge.events.blocker_all():
                 self._edge._remove(indices_to_remove=index)
             with self._face.events.blocker_all():
@@ -1782,6 +1856,11 @@ class Points(Layer):
                 self._clipboard['text_strings'],
             )
 
+            self._edge_width = np.append(
+                self.edge_width,
+                deepcopy(self._clipboard['edge_width']),
+                axis=0,
+            )
             self._edge._paste(
                 colors=self._clipboard['edge_color'],
                 properties=_features_to_properties(
@@ -1813,6 +1892,7 @@ class Points(Layer):
                 'face_color': deepcopy(self.face_color[index]),
                 'shown': deepcopy(self.shown[index]),
                 'size': deepcopy(self.size[index]),
+                'edge_width': deepcopy(self.edge_width[index]),
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
                 'text_strings': self.text.string._update(

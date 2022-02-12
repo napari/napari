@@ -441,6 +441,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer = Points(
         data,
         size=size,
+        edge_width=size,
         features={'feature': feature},
         face_color=color,
         edge_color=color,
@@ -451,6 +452,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer_expected = Points(
         data[1:],
         size=size[1:],
+        edge_width=size[1:],
         features={'feature': feature[1:]},
         face_color=color[1:],
         edge_color=color[1:],
@@ -880,13 +882,27 @@ def test_edge_width():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.edge_width == 1
+    np.testing.assert_array_equal(layer.edge_width, 0.1)
 
+    layer.edge_width = 0.5
+    np.testing.assert_array_equal(layer.edge_width, 0.5)
+
+    # fail outside of range 0, 1 if relative is enabled (default)
+    with pytest.raises(ValueError):
+        layer.edge_width = 2
+
+    layer.edge_width_is_relative = False
     layer.edge_width = 2
-    assert layer.edge_width == 2
+    np.testing.assert_array_equal(layer.edge_width, 2)
 
-    layer = Points(data, edge_width=3)
-    assert layer.edge_width == 3
+    # fail if we try to come back again
+    with pytest.raises(ValueError):
+        layer.edge_width_is_relative = True
+
+    # all should work on instantiation too
+    layer = Points(data, edge_width=3, edge_width_is_relative=False)
+    np.testing.assert_array_equal(layer.edge_width, 3)
+    assert layer.edge_width_is_relative is False
 
 
 def test_out_of_slice_display():

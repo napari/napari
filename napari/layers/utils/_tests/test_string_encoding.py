@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from napari.layers.utils.string_encoding import (
+from napari.layers.utils._string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
     FormatStringEncoding,
@@ -128,7 +128,7 @@ def test_format_with_missing_field():
         encoding(features)
 
 
-def test_validate_from_format():
+def test_validate_from_format_string():
     argument = '{class}: {score:.2f}'
     expected = FormatStringEncoding(format=argument)
 
@@ -137,7 +137,7 @@ def test_validate_from_format():
     assert actual == expected
 
 
-def test_validate_from_non_format():
+def test_validate_from_non_format_string():
     argument = 'abc'
     expected = ConstantStringEncoding(constant=argument)
 
