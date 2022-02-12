@@ -16,19 +16,23 @@ from .style_encoding import (
 )
 
 """A scalar array that represents one string value."""
-StringValue = str
+StringValue = Array[str, ()]
 
 """An Nx1 array where each element represents one string value."""
 StringArray = Array[str, (-1,)]
 
 
-"""The default string to use, which may also be used a safe fallback string."""
+"""The default string value, which may also be used a safe fallback string."""
 DEFAULT_STRING = ''
 
 
 @runtime_checkable
 class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
-    pass
+    """Encodes strings from layer features.
+
+    See :func:`validate_string_encoding` to understand what values can be used
+    to set a field of type ``StringEncoding``.
+    """
 
 
 class ConstantStringEncoding(_ConstantStyleEncoding[StringValue, StringArray]):
@@ -119,35 +123,33 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
         return np.array(values, dtype=str)
 
 
+"""The types of arguments supported when setting a StringEncoding field."""
 StringEncodingArgument = Union[StringEncoding, dict, str, Sequence[str], None]
 
 
-def validate_string_encoding(
-    value: StringEncodingArgument,
-) -> StringEncoding:
-    """Validates and coerces an input to a StringEncoding.
+def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
+    """Validates and coerces a value to a StringEncoding.
 
     Parameters
     ----------
     value : StringEncodingArgument
         The value to validate and coerce.
-        If this is already one of the supported string encodings, it is returned as is.
-        If this is a dict, then it should represent one of the supported string encodings.
+        If this is already a StringEncoding, it is returned as is.
+        If this is a dict, then it should represent one of the built-in string encodings.
         If this a valid format string, then a FormatStringEncoding is returned.
         If this is any other string, a ConstantStringEncoding is returned.
         If this is a sequence of strings, a ManualStringEncoding is returned.
 
     Returns
     -------
-    StringEncodingUnion
-        An instance of one of the support string encodings.
+    StringEncoding
 
     Raises
     ------
     TypeError
-        If the input is not a supported type.
+        If the value is not a supported type.
     ValidationError
-        If the input cannot be parsed into a StringEncoding.
+        If the value cannot be parsed into a StringEncoding.
     """
     if value is None:
         return ConstantStringEncoding(constant=DEFAULT_STRING)
@@ -168,7 +170,7 @@ def validate_string_encoding(
             return FormatStringEncoding(format=value)
         return ConstantStringEncoding(constant=value)
     if isinstance(value, Sequence):
-        return ManualStringEncoding(array=value, default='')
+        return ManualStringEncoding(array=value, default=DEFAULT_STRING)
     raise TypeError(
         trans._(
             'value should be a StringEncoding, a dict, a string, a sequence of strings, or None',
@@ -178,17 +180,7 @@ def validate_string_encoding(
 
 
 def _is_format_string(string: str) -> bool:
-    """Checks if a string is a valid format string with at least one field.
-
-    Parameters
-    ----------
-    string : str
-        The string to check.
-
-    Returns
-    -------
-    True if format contains at least one field, False otherwise.
-    """
+    """Returns True if a string is a valid format string with at least one field, False otherwise."""
     try:
         fields = tuple(
             field

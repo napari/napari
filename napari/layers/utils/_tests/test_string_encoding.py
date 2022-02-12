@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from napari.layers.utils._string_encoding import (
+from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
     FormatStringEncoding,
