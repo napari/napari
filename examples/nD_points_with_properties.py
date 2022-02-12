@@ -36,6 +36,7 @@ points_layer = viewer.add_points(
     properties=properties,
     size=3,
     edge_width=5,
+    edge_width_is_relative=False,
     edge_color='edge_property',
     face_color='face_property',
     out_of_slice_display=False,
