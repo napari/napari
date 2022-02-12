@@ -727,35 +727,36 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
 
-        if self.ndim <= self._ndisplay:
+        if len(self._dims_not_displayed) == 0:
             # all dims are displayed dimensions
             return (slice(None),) * self.ndim
 
-        inv_transform = self._data_to_world.inverse
-        # Subspace spanned by non displayed dimensions
-        non_displayed_subspace = np.zeros(self.ndim)
-        for d in self._dims_not_displayed:
-            non_displayed_subspace[d] = 1
-        # Map subspace through inverse transform, ignoring translation
-        _inv_transform = Affine(
-            ndim=self.ndim,
-            linear_matrix=inv_transform.linear_matrix,
-            translate=None,
-        )
-        mapped_nd_subspace = _inv_transform(non_displayed_subspace)
-        # Look at displayed subspace
-        displayed_mapped_subspace = (
-            mapped_nd_subspace[d] for d in self._dims_displayed
-        )
-        # Check that displayed subspace is null
-        if any(abs(v) > 1e-8 for v in displayed_mapped_subspace):
-            warnings.warn(
-                trans._(
-                    'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
-                    deferred=True,
-                ),
-                category=UserWarning,
+        if self.ndim > self._ndisplay:
+            inv_transform = self._data_to_world.inverse
+            # Subspace spanned by non displayed dimensions
+            non_displayed_subspace = np.zeros(self.ndim)
+            for d in self._dims_not_displayed:
+                non_displayed_subspace[d] = 1
+            # Map subspace through inverse transform, ignoring translation
+            _inv_transform = Affine(
+                ndim=self.ndim,
+                linear_matrix=inv_transform.linear_matrix,
+                translate=None,
             )
+            mapped_nd_subspace = _inv_transform(non_displayed_subspace)
+            # Look at displayed subspace
+            displayed_mapped_subspace = (
+                mapped_nd_subspace[d] for d in self._dims_displayed
+            )
+            # Check that displayed subspace is null
+            if any(abs(v) > 1e-8 for v in displayed_mapped_subspace):
+                warnings.warn(
+                    trans._(
+                        'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
+                        deferred=True,
+                    ),
+                    category=UserWarning,
+                )
 
         slice_inv_transform = inv_transform.set_slice(self._dims_not_displayed)
         world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
