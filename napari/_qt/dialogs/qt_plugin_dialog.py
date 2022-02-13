@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Sequence, Tuple
 
 from napari_plugin_engine.dist import standard_metadata
+from npe2 import PluginManager
 from qtpy.QtCore import (
     QEvent,
     QObject,
@@ -343,12 +344,6 @@ class PluginListItem(QFrame):
         npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
         self.row1.insertWidget(2, QLabel('npe2'))
         self.row1.insertWidget(2, npe2_icon)
-        self.enabled_checkbox.setEnabled(False)
-        self.enabled_checkbox.setToolTip(
-            trans._(
-                'This is a npe2 plugin and cannot be enabled/disabled at this time.'
-            )
-        )
 
     def _get_dialog(self) -> QDialog:
         p = self.parent()
@@ -465,9 +460,13 @@ class PluginListItem(QFrame):
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
         enabled = bool(state)
-        current_distname = self.plugin_name.text()
+        plugin_name = self.plugin_name.text()
+        pm2 = PluginManager.instance()
+        if plugin_name in pm2:
+            pm2.enable(plugin_name) if state else pm2.disable(plugin_name)
+
         for plugin_name, _, distname in plugin_manager.iter_available():
-            if distname and distname == current_distname:
+            if distname and distname == plugin_name:
                 plugin_manager.set_blocked(plugin_name, not enabled)
 
 

@@ -10,6 +10,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
 )
@@ -248,3 +249,11 @@ def get_sample_data(
         if c.key == sample:
             return c.open, []
     return None, [(p, x.key) for p, s in pm.iter_sample_data() for x in s]
+
+
+def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
+    from napari import Viewer
+
+    for v in Viewer._instances:
+        v.window.plugins_menu._build()
+        v.window.file_menu._rebuild_samples_menu()

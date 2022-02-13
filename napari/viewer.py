@@ -33,7 +33,7 @@ class Viewer(ViewerModel):
     """
 
     _window: 'Window' = None  # type: ignore
-    _instances: typing.ClassVar[WeakSet] = WeakSet()
+    _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
         self,
