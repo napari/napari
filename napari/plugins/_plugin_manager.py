@@ -12,6 +12,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Set,
     Tuple,
     Union,
 )
@@ -76,6 +77,10 @@ class NapariPluginManager(PluginManager):
         self._blocked: EventedSet[str] = EventedSet()
         self._blocked.events.changed.connect(self._on_blocked_change)
 
+        # set of package names to skip when discovering, used for skipping
+        # npe2 stuff
+        self._skip_packages: Set[str] = set()
+
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
 
@@ -115,6 +120,17 @@ class NapariPluginManager(PluginManager):
         if name:
             self.events.registered(value=name)
         return name
+
+    def iter_available(
+        self,
+        path: Optional[str] = None,
+        entry_point: Optional[str] = None,
+        prefix: Optional[str] = None,
+    ) -> Iterator[Tuple[str, str, Optional[str]]]:
+        # overriding to skip npe2 plugins
+        for item in super().iter_available(path, entry_point, prefix):
+            if item[-1] not in self._skip_packages:
+                yield item
 
     def unregister(
         self,

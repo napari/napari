@@ -642,7 +642,9 @@ class QtPluginDialog(QDialog):
         self.available_list.clear()
 
         # fetch installed
-        from ...plugins import _npe2, plugin_manager
+        from npe2 import PluginManager
+
+        from ...plugins import plugin_manager
 
         plugin_manager.discover()  # since they might not be loaded yet
 
@@ -672,11 +674,13 @@ class QtPluginDialog(QDialog):
                 npe_version=npe_version,
             )
 
-        for manifest in _npe2.iter_manifests():
+        pm2 = PluginManager.instance()
+        for manifest in pm2.iter_manifests():
             distname = normalized_name(manifest.name or '')
             if distname in self.already_installed or distname == 'napari':
                 continue
-            _add_to_installed(distname, True, npe_version=2)
+            enabled = not pm2.is_disabled(manifest.name)
+            _add_to_installed(distname, enabled, npe_version=2)
 
         for plugin_name, mod_name, distname in plugin_manager.iter_available():
             # not showing these in the plugin dialog

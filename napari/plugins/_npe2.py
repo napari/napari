@@ -198,8 +198,8 @@ def get_readers(path: str) -> Dict[str, str]:
     }
 
 
-def iter_manifests() -> Iterator[PluginManifest]:
-    yield from npe2.PluginManager.instance()._manifests.values()
+def iter_manifests(**kwargs) -> Iterator[PluginManifest]:
+    return npe2.PluginManager.instance().iter_manifests(**kwargs)
 
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
@@ -252,7 +252,14 @@ def get_sample_data(
 
 
 def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
-    from napari import Viewer
+    from .. import Viewer
+    from ..settings import get_settings
+
+    plugin_settings = get_settings().plugins
+    to_disable = set(plugin_settings.disabled_plugins)
+    to_disable.difference_update(enabled)
+    to_disable.update(disabled)
+    plugin_settings.disabled_plugins = to_disable
 
     for v in Viewer._instances:
         v.window.plugins_menu._build()
