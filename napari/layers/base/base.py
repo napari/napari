@@ -5,7 +5,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
@@ -20,6 +20,7 @@ from ...utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
+from ...utils.lock import Locker
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
@@ -199,6 +200,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         * `_basename()`: base/default name of the layer
     """
 
+    locker: Locker = Locker()
+
     def __init__(
         self,
         data,
@@ -215,6 +218,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         blending='translucent',
         visible=True,
         multiscale=False,
+        locker: Locker = Locker(),
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
     ):
@@ -238,6 +242,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._value = None
         self.scale_factor = 1
         self.multiscale = multiscale
+        self.locker = locker
         self._experimental_clipping_planes = ClippingPlaneList()
 
         self._ndim = ndim
@@ -338,6 +343,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def __repr__(self):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        """Checks locks before changing value"""
+        if self.locker.is_locked(__name, hard_lock=True):
+            warnings.warn(
+                trans._(
+                    f'Attribute ({__name}) is locked is locked',
+                    deferred=True,
+                ),
+                category=UserWarning,
+                stacklevel=2,
+            )
+            return None
+        else:
+            return super().__setattr__(__name, __value)
 
     def _mode_setter_helper(self, mode, Modeclass):
         """
