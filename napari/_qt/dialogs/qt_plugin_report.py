@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ...plugins import plugin_manager
 from ...plugins.exceptions import format_exceptions
 from ...utils.translations import trans
 
@@ -58,7 +59,6 @@ class QtPluginErrReporter(QDialog):
         initial_plugin: Optional[str] = None,
     ) -> None:
         super().__init__(parent)
-        from ...plugins import plugin_manager
 
         self.plugin_manager = plugin_manager
 

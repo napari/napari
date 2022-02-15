@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Sequence
 
 from qtpy.QtWidgets import QAction
 
-from ...plugins import _npe2
+from ...plugins import _npe2, plugin_manager
 from ...utils.translations import trans
 from ..dialogs.qt_plugin_dialog import QtPluginDialog
 from ..dialogs.qt_plugin_report import QtPluginErrReporter
@@ -17,8 +17,6 @@ class PluginsMenu(NapariMenu):
     def __init__(self, window: 'Window'):
         self._win = window
         super().__init__(trans._('&Plugins'), window._qt_window)
-
-        from ...plugins import plugin_manager
 
         plugin_manager.discover_widgets()
         plugin_manager.events.disabled.connect(
@@ -54,7 +52,6 @@ class PluginsMenu(NapariMenu):
                 self._win._remove_dock_widget(event=event)
 
     def _add_registered_widget(self, event=None, call_all=False):
-        from ...plugins import plugin_manager
 
         # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
         for hook_type, (plugin_name, widgets) in chain(
