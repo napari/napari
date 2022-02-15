@@ -1237,7 +1237,7 @@ class Shapes(Layer):
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
             setattr(self, f'_{attribute}_color_property', color)
-            self.refresh_colors()
+            self.refresh_colors(update_color_mapping=True)
 
         else:
             if len(self.data) > 0:
