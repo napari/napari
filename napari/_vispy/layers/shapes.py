@@ -3,7 +3,7 @@ import numpy as np
 from ...settings import get_settings
 from ...utils.events import disconnect_events
 from ..utils.gl import BLENDING_MODES
-from ..utils.text import update_text
+from ..utils.text import update_text_node
 from ..visuals.shapes import ShapesVisual
 from .base import VispyBaseLayer
 
@@ -116,30 +116,7 @@ class VispyShapesLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        ndisplay = self.layer._ndisplay
-        if (len(self.layer._indices_view) == 0) or (
-            self.layer._text.visible is False
-        ):
-            text_coords = np.zeros((1, ndisplay))
-            text = []
-            anchor_x = 'center'
-            anchor_y = 'center'
-        else:
-            text_coords, anchor_x, anchor_y = self.layer._view_text_coords
-            if len(text_coords) == 0:
-                text_coords = np.zeros((1, ndisplay))
-            text = self.layer._view_text
-        text_node = self._get_text_node()
-        update_text(
-            text_values=text,
-            coords=text_coords,
-            anchor=(anchor_x, anchor_y),
-            rotation=self.layer._text.rotation,
-            color=self.layer._text.color,
-            size=self.layer._text.size,
-            ndisplay=ndisplay,
-            text_node=text_node,
-        )
+        update_text_node(text_node=self._get_text_node(), layer=self.layer)
         if update_node:
             self.node.update()
 

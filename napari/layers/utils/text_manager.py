@@ -166,10 +166,6 @@ class TextManager(EventedModel):
     def _paste(self, strings: StringArray):
         self.string._append(strings)
 
-    def _clear(self):
-        self.string._clear()
-        self.events.string()
-
     def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
         """Remove the indicated text elements
 
@@ -203,16 +199,10 @@ class TextManager(EventedModel):
         anchor_y : str
             The vispy text anchor for the y axis
         """
-        # TODO: optimize this when there is effectively no text.
-        if len(view_data) > 0:
-            anchor_coords, anchor_x, anchor_y = get_text_anchors(
-                view_data, ndisplay, self.anchor
-            )
-            text_coords = anchor_coords + self.translation
-        else:
-            text_coords = np.zeros((0, ndisplay))
-            anchor_x = 'center'
-            anchor_y = 'center'
+        anchor_coords, anchor_x, anchor_y = get_text_anchors(
+            view_data, ndisplay, self.anchor
+        )
+        text_coords = anchor_coords + self.translation
         return text_coords, anchor_x, anchor_y
 
     def view_text(self, indices_view: np.ndarray) -> np.ndarray:
@@ -228,13 +218,6 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        # warnings.warn(
-        #    trans._(
-        #        'TextManager.view_text is deprecated. '
-        #        'Call TextManager.string instead.'
-        #    ),
-        #    DeprecationWarning,
-        # )
         values = self.values
         if values.shape == ():
             return np.broadcast_to(values, indices_view.shape[0])
