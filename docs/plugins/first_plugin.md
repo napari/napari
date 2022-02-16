@@ -257,7 +257,7 @@ napari
 Once napari starts, select `napari-hello: Hello World` from the
 `Plugins` menu, then click the `Run` button to see the message.
 
-![hello-example](../images/hello.png)
+% ![hello-example](../images/hello.png)
 
 ## Get going quickly with cookiecutter
 
@@ -271,7 +271,7 @@ management, and deployment hooks.
 
 ```sh
 pip install cookiecutter
-cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe2
+cookiecutter https://github.com/napari/cookiecutter-napari-plugin
 ```
 
 ## Next Steps
