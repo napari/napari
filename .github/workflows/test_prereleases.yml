@@ -29,12 +29,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install Linux libraries
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
-            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
-            libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+      - uses: tlambert03/setup-qt-libs@v1
 
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
@@ -52,7 +47,7 @@ jobs:
         # run tests using pip install --pre
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: tox -v --pre
+          run: python -m tox -v --pre
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}

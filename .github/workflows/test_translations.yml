@@ -21,7 +21,7 @@ jobs:
           pip install -e .[testing]
       - name: Run check
         run: |
-          pytest -Wignore tools/ --tb=short
+          python -m pytest -Wignore tools/ --tb=short
       - uses: JasonEtco/create-an-issue@v2
         if: ${{ failure() }}
         env:

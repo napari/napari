@@ -96,3 +96,8 @@ def test_colormap_equality():
     cmap_3 = Colormap(colors, name='testing', controls=[0, 0.25, 1])
     assert cmap_1 == cmap_2
     assert cmap_1 != cmap_3
+
+
+def test_colormap_recreate():
+    c_map = Colormap("black")
+    Colormap(**c_map.dict())

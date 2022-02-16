@@ -153,6 +153,7 @@ class QtActivityDialog(QDialog):
         prog.events.description.connect(pbar._set_description)
         prog.events.overflow.connect(pbar._make_indeterminate)
         prog.events.eta.connect(pbar._set_eta)
+        prog.events.total.connect(pbar._set_total)
 
         # connect pbar close method if we're closed
         self.destroyed.connect(prog.close)

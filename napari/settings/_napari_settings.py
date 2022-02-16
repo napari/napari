@@ -8,7 +8,7 @@ from ..utils._base import _DEFAULT_CONFIG_PATH
 from ..utils.translations import trans
 from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
-from ._base import EventedConfigFileSettings
+from ._base import EventedConfigFileSettings, _remove_empty_dicts
 from ._experimental import ExperimentalSettings
 from ._plugins import PluginsSettings
 from ._shortcuts import ShortcutsSettings
@@ -68,9 +68,9 @@ class NapariSettings(EventedConfigFileSettings):
         allow_mutation = False
 
     def __str__(self):
-        out = 'NapariSettings (defaults excluded)\n'
-        out += '----------------------------------\n'
-        out += self._yaml_dump(self._save_dict())
+        out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
+        data = self.dict(exclude_defaults=True)
+        out += self._yaml_dump(_remove_empty_dicts(data))
         return out
 
     def __repr__(self):
