@@ -471,7 +471,7 @@ class Points(Layer):
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
                     self._feature_table.resize(len(data))
-                    self._text.string._update(self.features)
+                    self.text.update(self.features)
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones

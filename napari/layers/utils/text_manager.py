@@ -98,9 +98,7 @@ class TextManager(EventedModel):
                 else:
                     kwargs['string'] = text
         super().__init__(**kwargs)
-        # Update strings on initialization to support deprecated use of
-        # values, add, and remove.
-        self.string._update(_features)
+        self.update(_features)
 
     @property
     def values(self):
@@ -130,7 +128,7 @@ class TextManager(EventedModel):
         # warnings.warn(
         #     trans._(
         #         'TextManager.refresh_text is deprecated. '
-        #         'Call TextManager.string instead.'
+        #         'Use TextManager.refresh instead.'
         #     ),
         #     DeprecationWarning,
         # )
@@ -148,10 +146,7 @@ class TextManager(EventedModel):
             The number of text elements to add
         """
         # warnings.warn(
-        #     trans._(
-        #         'TextManager.add is deprecated. '
-        #         'Call TextManager.string instead.'
-        #     ),
+        #     trans._('add is deprecated. Use update instead.'),
         #     DeprecationWarning,
         # )
         features = pd.DataFrame(
@@ -163,7 +158,11 @@ class TextManager(EventedModel):
         values = self.string(features)
         self.string._append(values)
 
-    def _paste(self, strings: StringArray):
+    def update(self, features: Any):
+        """Updates any cached encoded values like strings."""
+        self.string._update(features)
+
+    def _paste(self, *, strings: StringArray):
         self.string._append(strings)
 
     def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
