@@ -1,1 +1,4 @@
-# Community resources
+# Community
+
+```{tableofcontents}
+```

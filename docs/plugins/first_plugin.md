@@ -257,7 +257,7 @@ napari
 Once napari starts, select `napari-hello: Hello World` from the
 `Plugins` menu, then click the `Run` button to see the message.
 
-![hello-example](../images/hello.png)
+% ![hello-example](../images/hello.png)
 
 ## Get going quickly with cookiecutter
 
