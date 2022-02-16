@@ -382,7 +382,7 @@ def test_nd_text():
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
 
-@pytest.mark.parametrize("properties", [properties_array, properties_list, {}])
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_data_setter_with_text(properties):
     """Test layer data on a layer with text via the data setter"""
     shape = (10, 4, 2)
@@ -394,26 +394,18 @@ def test_data_setter_with_text(properties):
     n_new_shapes = 4
     new_data = 20 * np.random.random((n_new_shapes, 4, 2))
     layer.data = new_data
-    assert (
-        layer.text.values.shape == () or len(layer.text.values) == n_new_shapes
-    )
+    assert len(layer.text.values) == n_new_shapes
 
     # test setting to data with more shapes
     n_new_shapes_2 = 6
     new_data_2 = 20 * np.random.random((n_new_shapes_2, 4, 2))
     layer.data = new_data_2
-    assert (
-        layer.text.values.shape == ()
-        or len(layer.text.values) == n_new_shapes_2
-    )
+    assert len(layer.text.values) == n_new_shapes_2
 
     # test setting to data with same shapes
     new_data_3 = 20 * np.random.random((n_new_shapes_2, 4, 2))
     layer.data = new_data_3
-    assert (
-        layer.text.values.shape == ()
-        or len(layer.text.values) == n_new_shapes_2
-    )
+    assert len(layer.text.values) == n_new_shapes_2
 
 
 @pytest.mark.parametrize(
