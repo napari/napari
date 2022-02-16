@@ -35,8 +35,8 @@ jobs:
         with:
           run: make docs
 
-      - name: Deploy docs
-        uses: JamesIves/github-pages-deploy-action@4.1.5
-        with:
-          branch: gh-pages
-          folder: docs/_build/html
+#      - name: Deploy docs
+#        uses: JamesIves/github-pages-deploy-action@4.1.5
+#        with:
+#          branch: gh-pages
+#          folder: docs/_build/html
