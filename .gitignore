@@ -138,8 +138,7 @@ windows/
 
 napari/_version.py
 
-docs/api/*
-!docs/api/index.rst
+docs/api/napari*
 docs/_build
 
 # built in setup.py
@@ -156,3 +155,5 @@ docs/plugins/_npe2_*.md
 
 napari/settings/napari.schema.json
 
+docs/jupyter_execute/
+docs/.jupyter_cache/
