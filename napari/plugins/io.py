@@ -35,8 +35,8 @@ def read_data_with_plugins(
 
     Parameters
     ----------
-    path : str
-        The path (file, directory, url) to open
+    path : str, or list of string
+        The path, or list of path (file, directory, url) to open
     plugin : str, optional
         Name of a plugin to use.  If provided, will force ``path`` to be read
         with the specified ``plugin``.  If the requested plugin cannot read
