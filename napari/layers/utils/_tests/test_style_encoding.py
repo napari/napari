@@ -55,19 +55,19 @@ def test_scalar_constant_encoding_update_some(features):
 def test_scalar_constant_encoding_append():
     encoding = ScalarConstantEncoding(constant=0)
     encoding._append(Vector.validate_type([4, 5]))
-    np.testing.assert_array_equal(encoding._values(), 0)
+    np.testing.assert_array_equal(encoding._values, 0)
 
 
 def test_scalar_constant_encoding_delete():
     encoding = ScalarConstantEncoding(constant=0)
     encoding._delete([0, 2])
-    np.testing.assert_array_equal(encoding._values(), 0)
+    np.testing.assert_array_equal(encoding._values, 0)
 
 
 def test_scalar_constant_encoding_clear():
     encoding = ScalarConstantEncoding(constant=0)
     encoding._clear()
-    np.testing.assert_array_equal(encoding._values(), 0)
+    np.testing.assert_array_equal(encoding._values, 0)
 
 
 class ScalarManualEncoding(_ManualStyleEncoding[Scalar, ScalarArray]):
@@ -96,19 +96,19 @@ def test_scalar_manual_encoding_update_with_longer(features):
 def test_scalar_manual_encoding_append():
     encoding = ScalarManualEncoding(array=[1, 2, 3])
     encoding._append(Vector.validate_type([4, 5]))
-    np.testing.assert_array_equal(encoding._values(), [1, 2, 3, 4, 5])
+    np.testing.assert_array_equal(encoding._values, [1, 2, 3, 4, 5])
 
 
 def test_scalar_manual_encoding_delete():
     encoding = ScalarManualEncoding(array=[1, 2, 3])
     encoding._delete([0, 2])
-    np.testing.assert_array_equal(encoding._values(), [2])
+    np.testing.assert_array_equal(encoding._values, [2])
 
 
 def test_scalar_manual_encoding_clear():
     encoding = ScalarManualEncoding(array=[1, 2, 3])
     encoding._clear()
-    np.testing.assert_array_equal(encoding._values(), [1, 2, 3])
+    np.testing.assert_array_equal(encoding._values, [1, 2, 3])
 
 
 class ScalarDirectEncoding(_DerivedStyleEncoding[Scalar, ScalarArray]):
@@ -152,7 +152,7 @@ def test_scalar_derived_encoding_append():
 
     encoding._append(ScalarArray.validate_type([4, 5]))
 
-    np.testing.assert_array_equal(encoding._values(), [1, 2, 3, 4, 5])
+    np.testing.assert_array_equal(encoding._values, [1, 2, 3, 4, 5])
 
 
 def test_scalar_derived_encoding_delete():
@@ -161,7 +161,7 @@ def test_scalar_derived_encoding_delete():
 
     encoding._delete([0, 2])
 
-    np.testing.assert_array_equal(encoding._values(), [2])
+    np.testing.assert_array_equal(encoding._values, [2])
 
 
 def test_scalar_derived_encoding_clear():
@@ -170,7 +170,7 @@ def test_scalar_derived_encoding_clear():
 
     encoding._clear()
 
-    np.testing.assert_array_equal(encoding._values(), [])
+    np.testing.assert_array_equal(encoding._values, [])
 
 
 Vector = Array[int, (2,)]
@@ -196,19 +196,19 @@ def test_vector_constant_encoding_update_some(features):
 def test_vector_constant_encoding_append():
     encoding = VectorConstantEncoding(constant=[0, 0])
     encoding._append(Vector.validate_type([4, 5]))
-    np.testing.assert_array_equal(encoding._values(), [0, 0])
+    np.testing.assert_array_equal(encoding._values, [0, 0])
 
 
 def test_vector_constant_encoding_delete():
     encoding = VectorConstantEncoding(constant=[0, 0])
     encoding._delete([0, 2])
-    np.testing.assert_array_equal(encoding._values(), [0, 0])
+    np.testing.assert_array_equal(encoding._values, [0, 0])
 
 
 def test_vector_constant_encoding_clear():
     encoding = VectorConstantEncoding(constant=[0, 0])
     encoding._clear()
-    np.testing.assert_array_equal(encoding._values(), [0, 0])
+    np.testing.assert_array_equal(encoding._values, [0, 0])
 
 
 class VectorManualEncoding(_ManualStyleEncoding[Vector, VectorArray]):
@@ -238,20 +238,20 @@ def test_vector_manual_encoding_append():
     encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3]])
     encoding._append(Vector.validate_type([[4, 4], [5, 5]]))
     np.testing.assert_array_equal(
-        encoding._values(), [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+        encoding._values, [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
     )
 
 
 def test_vector_manual_encoding_delete():
     encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3]])
     encoding._delete([0, 2])
-    np.testing.assert_array_equal(encoding._values(), [[2, 2]])
+    np.testing.assert_array_equal(encoding._values, [[2, 2]])
 
 
 def test_vector_manual_encoding_clear():
     encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3]])
     encoding._clear()
-    np.testing.assert_array_equal(encoding._values(), [[1, 1], [2, 2], [3, 3]])
+    np.testing.assert_array_equal(encoding._values, [[1, 1], [2, 2], [3, 3]])
 
 
 class VectorDirectEncoding(_DerivedStyleEncoding[Vector, VectorArray]):
@@ -296,7 +296,7 @@ def test_vector_derived_encoding_append():
     encoding._append(VectorArray.validate_type([[4, 4], [5, 5]]))
 
     np.testing.assert_array_equal(
-        encoding._values(), [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+        encoding._values, [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
     )
 
 
@@ -306,7 +306,7 @@ def test_vector_derived_encoding_delete():
 
     encoding._delete([0, 2])
 
-    np.testing.assert_array_equal(encoding._values(), [[2, 2]])
+    np.testing.assert_array_equal(encoding._values, [[2, 2]])
 
 
 def test_vector_derived_encoding_clear():
@@ -315,4 +315,4 @@ def test_vector_derived_encoding_clear():
 
     encoding._clear()
 
-    np.testing.assert_array_equal(encoding._values(), np.empty((0, 2)))
+    np.testing.assert_array_equal(encoding._values, np.empty((0, 2)))

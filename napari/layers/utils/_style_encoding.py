@@ -51,14 +51,9 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
             If generating values from the given features fails.
         """
 
+    @property
     def _values(self) -> Union[StyleValue, StyleArray]:
-        """Returns the previously generated and cached values.
-
-        Returns
-        -------
-        Union[StyleValue, StyleArray]
-            The cached values.
-        """
+        """The previously generated and cached values."""
 
     def _update(
         self, features: Any, *, indices: Optional[IndicesType] = None
@@ -128,6 +123,7 @@ class _ConstantStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         return self.constant
 
+    @property
     def _values(self) -> Union[StyleValue, StyleArray]:
         return self.constant
 
@@ -175,6 +171,7 @@ class _ManualStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
             return np.append(self.array, tail_array, axis=0)
         return np.array(self.array[:n_rows])
 
+    @property
     def _values(self) -> Union[StyleValue, StyleArray]:
         return self.array
 
@@ -219,6 +216,7 @@ class _DerivedStyleEncoding(
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         pass
 
+    @property
     def _values(self) -> Union[StyleValue, StyleArray]:
         return self._cached
 
