@@ -173,6 +173,11 @@ def test_abspath_or_url():
         abspath_or_url({'a', '~'})
 
 
+def test_type_stable():
+    assert isinstance(abspath_or_url('~'), str)
+    assert isinstance(abspath_or_url(Path('~')), Path)
+
+
 def test_equality_operator():
     import operator
 
