@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
@@ -20,6 +21,8 @@ from typing import (
 
 import numpy as np
 from pydantic import Extra, Field, validator
+
+from napari.plugins.utils import get_potential_readers
 
 from .. import layers
 from ..layers import Image, Layer
@@ -843,6 +846,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         stack: bool = False,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
+        select_reader_helper: Callable[
+            [str, Dict[str, str], Exception], Tuple[str, bool]
+        ] = None,
         **kwargs,
     ) -> List[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
@@ -871,6 +877,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
+        select_reader_helper: Callable[[str, Dict[str, str], Exception], Tuple[str, bool]]
+            When plugin choice is ambiguous allows for function to facilitate
+            selection of reader from available readers.
         ``**kwargs``
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
@@ -904,12 +913,116 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             else None,  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
-                plugin = plugin or _get_preferred_reader(_path)
+                # TODO: do we want to do anything fancy here, like only raising an error if there's multiple available plugins
+                # TODO: where can I put tests for this so that I have access to different plugins to try
+                if plugin:
+                    added.extend(
+                        self._add_layers_with_plugins(
+                            _path, kwargs, plugin=plugin, layer_type=layer_type
+                        )
+                    )
+                # no plugin choice was made
+                else:
+                    readers = get_potential_readers(_path)
+                    if select_reader_helper is None:
+
+                        def _default_helper(plugin, readers, exception):
+                            if exception:
+                                raise exception
+                            raise RuntimeError(
+                                f"Multiple plugins found capable of reading {_path}. Select plugin from {readers.values()} and call using `viewer.open(..., plugin=...)`."
+                            )
+
+                        select_reader_helper = _default_helper
+                    added.extend(
+                        self._open_or_get_error(
+                            readers,
+                            _path,
+                            kwargs,
+                            layer_type,
+                            select_reader_helper,
+                        )
+                    )
+
+        return added
+
+    def _open_or_get_error(
+        self, readers, _path, kwargs, layer_type, select_reader_helper
+    ):
+        added = []
+        if not readers:
+            warnings.warn(
+                trans._(
+                    'No readers found to try reading {filename}.',
+                    deferred=True,
+                    filename=_path,
+                )
+            )
+            return []
+
+        plugin = _get_preferred_reader(_path)
+        if plugin is None:
+            if len(readers) == 1:
+                plugin = next(iter(readers.values()))
                 added.extend(
                     self._add_layers_with_plugins(
-                        _path, kwargs, plugin=plugin, layer_type=layer_type
+                        _path,
+                        kwargs,
+                        plugin=plugin,
+                        layer_type=layer_type,
                     )
                 )
+            else:
+                # multiple plugins
+                plugin, persist_choice = select_reader_helper(
+                    plugin, readers, None
+                )
+                if plugin:
+                    # TODO: add to added
+                    added.extend(
+                        self._add_layers_with_plugins(
+                            _path,
+                            kwargs,
+                            plugin=plugin,
+                            layer_type=layer_type,
+                        )
+                    )
+                    # persist
+        else:
+            if plugin not in readers.values():
+                e = RuntimeError(
+                    f"Can't find {plugin} plugin associated with {os.path.splitext(_path)[1]} files."
+                )
+                plugin, persist_choice = select_reader_helper(
+                    plugin, readers, e
+                )
+            if plugin:
+                try:
+                    # TODO: add to added
+                    added.extend(
+                        self._add_layers_with_plugins(
+                            _path,
+                            kwargs,
+                            plugin=plugin,
+                            layer_type=layer_type,
+                        )
+                    )
+                    # persist
+                except Exception as e:
+                    plugin, persist_choice = select_reader_helper(
+                        plugin, readers, e
+                    )
+                    if plugin:
+                        # TODO: add to added
+                        added.extend(
+                            self._add_layers_with_plugins(
+                                _path,
+                                kwargs,
+                                plugin=plugin,
+                                layer_type=layer_type,
+                            )
+                        )
+                        # persist
         return added
 
     def _add_layers_with_plugins(

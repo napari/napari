@@ -103,12 +103,11 @@ class QtReaderDialog(QDialog):
 
 
 def get_reader_choice_for_file(
-    readerDialog: Any, readers: Dict[str, str], has_errored: bool
+    readerDialog: Any,
 ) -> Optional[Tuple[str, bool]]:
     """Gets choice of reader from user for the given filename.
 
-    If there is just one reader and no error message, dialog
-    is not shown. Otherwise, launch dialog and ask user for
+    Launch dialog and ask user for
     plugin choice and whether setting is persisted.
 
     Returns None if user cancels on dialog.
@@ -119,8 +118,6 @@ def get_reader_choice_for_file(
         reader dialog to use for choices from the user
     readers : str
         Dictionary of display-name:plugin-name of potential readers for file
-    has_errored : bool
-        True when we've tried to read this file and failed, otherwise False
 
     Returns
     -------
@@ -132,12 +129,6 @@ def get_reader_choice_for_file(
     """
     display_name = ''
     persist_choice = False
-
-    # if we have just one reader and no errors from existing settings
-    if len(readers) == 1 and not has_errored:
-        # no need to open the dialog, just get the reader choice
-        display_name = next(iter(readers.keys()))
-        return display_name, persist_choice
 
     # either we have more reader options or there was an error
     res = readerDialog.get_user_choices()
