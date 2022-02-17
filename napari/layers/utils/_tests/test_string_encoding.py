@@ -11,12 +11,12 @@ from napari.layers.utils._string_encoding import (
 )
 
 
-def make_features_with_no_columns(*, num_rows):
+def make_features_with_no_columns(*, num_rows) -> pd.DataFrame:
     return pd.DataFrame({}, index=range(num_rows))
 
 
 @pytest.fixture
-def features():
+def features() -> pd.DataFrame:
     return pd.DataFrame(
         {
             'class': ['a', 'b', 'c'],
