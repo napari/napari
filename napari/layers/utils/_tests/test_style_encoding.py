@@ -111,7 +111,7 @@ def test_scalar_manual_encoding_clear():
     np.testing.assert_array_equal(encoding._values(), [1, 2, 3])
 
 
-class ScalarDerivedEncoding(_DerivedStyleEncoding[Scalar, ScalarArray]):
+class ScalarDirectEncoding(_DerivedStyleEncoding[Scalar, ScalarArray]):
     feature: str
     fallback: Scalar = -1
 
@@ -120,7 +120,7 @@ class ScalarDerivedEncoding(_DerivedStyleEncoding[Scalar, ScalarArray]):
 
 
 def test_scalar_derived_encoding_update_all(features):
-    encoding = ScalarDerivedEncoding(feature='scalar')
+    encoding = ScalarDirectEncoding(feature='scalar')
 
     values = encoding._update(features)
 
@@ -129,7 +129,7 @@ def test_scalar_derived_encoding_update_all(features):
 
 
 def test_scalar_derived_encoding_update_some(features):
-    encoding = ScalarDerivedEncoding(feature='scalar')
+    encoding = ScalarDirectEncoding(feature='scalar')
 
     values = encoding._update(features, indices=[0, 2])
 
@@ -138,7 +138,7 @@ def test_scalar_derived_encoding_update_some(features):
 
 
 def test_scalar_derived_encoding_append():
-    encoding = ScalarDerivedEncoding(feature='scalar')
+    encoding = ScalarDirectEncoding(feature='scalar')
     encoding._cached = ScalarArray.validate_type([1, 2, 3])
 
     encoding._append(ScalarArray.validate_type([4, 5]))
@@ -147,7 +147,7 @@ def test_scalar_derived_encoding_append():
 
 
 def test_scalar_derived_encoding_delete():
-    encoding = ScalarDerivedEncoding(feature='scalar')
+    encoding = ScalarDirectEncoding(feature='scalar')
     encoding._cached = ScalarArray.validate_type([1, 2, 3])
 
     encoding._delete([0, 2])
@@ -156,21 +156,13 @@ def test_scalar_derived_encoding_delete():
 
 
 def test_scalar_derived_encoding_clear():
-    encoding = ScalarDerivedEncoding(feature='scalar')
+    encoding = ScalarDirectEncoding(feature='scalar')
     encoding._cached = ScalarArray.validate_type([1, 2, 3])
 
     encoding._clear()
 
     np.testing.assert_array_equal(encoding._values(), [])
 
-
-"""
-Style encodings can also handle non-scalar style values.
-For example, the standardized color value in napari is defined
-as an RGBA 4-vector.
-In general, they should work with any dimensionality as long as
-the StyleArray type has one more leading dimension than the StyleValue.
-"""
 
 Vector = Array[int, (2,)]
 VectorArray = Array[int, (-1, 2)]
@@ -253,7 +245,7 @@ def test_vector_manual_encoding_clear():
     np.testing.assert_array_equal(encoding._values(), [[1, 1], [2, 2], [3, 3]])
 
 
-class VectorDerivedEncoding(_DerivedStyleEncoding[Vector, VectorArray]):
+class VectorDirectEncoding(_DerivedStyleEncoding[Vector, VectorArray]):
     feature: str
     fallback: Vector = [-1, -1]
 
@@ -262,7 +254,7 @@ class VectorDerivedEncoding(_DerivedStyleEncoding[Vector, VectorArray]):
 
 
 def test_vector_derived_encoding_update_all(features):
-    encoding = VectorDerivedEncoding(feature='vector')
+    encoding = VectorDirectEncoding(feature='vector')
 
     values = encoding._update(features)
 
@@ -271,7 +263,7 @@ def test_vector_derived_encoding_update_all(features):
 
 
 def test_vector_derived_encoding_update_some(features):
-    encoding = VectorDerivedEncoding(feature='vector')
+    encoding = VectorDirectEncoding(feature='vector')
 
     values = encoding._update(features, indices=[0, 2])
 
@@ -280,7 +272,7 @@ def test_vector_derived_encoding_update_some(features):
 
 
 def test_vector_derived_encoding_append():
-    encoding = VectorDerivedEncoding(feature='vector')
+    encoding = VectorDirectEncoding(feature='vector')
     encoding._cached = VectorArray.validate_type([[1, 1], [2, 2], [3, 3]])
 
     encoding._append(VectorArray.validate_type([[4, 4], [5, 5]]))
@@ -291,7 +283,7 @@ def test_vector_derived_encoding_append():
 
 
 def test_vector_derived_encoding_delete():
-    encoding = VectorDerivedEncoding(feature='vector')
+    encoding = VectorDirectEncoding(feature='vector')
     encoding._cached = VectorArray.validate_type([[1, 1], [2, 2], [3, 3]])
 
     encoding._delete([0, 2])
@@ -300,7 +292,7 @@ def test_vector_derived_encoding_delete():
 
 
 def test_vector_derived_encoding_clear():
-    encoding = VectorDerivedEncoding(feature='vector')
+    encoding = VectorDirectEncoding(feature='vector')
     encoding._cached = VectorArray.validate_type([[1, 1], [2, 2], [3, 3]])
 
     encoding._clear()
