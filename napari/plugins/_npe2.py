@@ -129,9 +129,13 @@ def populate_qmenu(menu: QMenu, menu_key: str):
             subm = menu.addMenu(subm_contrib.label)
             populate_qmenu(subm, subm_contrib.id)
         else:
-            cmd = pm.get_command(item.command)
-            action = menu.addAction(cmd.title)
-            action.triggered.connect(lambda *args: cmd.exec(args=args))
+            try:
+                cmd = pm.get_command(item.command)
+                action = menu.addAction(cmd.title)
+                action.triggered.connect(lambda *args: cmd.exec(args=args))
+            except KeyError:
+                # this does not have a command associated with it.
+                pass
 
 
 def file_extensions_string_for_layers(
