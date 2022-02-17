@@ -36,14 +36,14 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-        python: [3.7, 3.8, 3.9]
+        python: ["3.8", "3.9", "3.10"]
         include:
           # test big sur on 3.9.0
           - python: 3.9
             platform: macos-11
             toxenv: py39-macos-pyqt
           # test with minimum specified requirements
-          - python: 3.7
+          - python: 3.8
             platform: ubuntu-18.04
             MIN_REQ: 1
           # test with --async_only

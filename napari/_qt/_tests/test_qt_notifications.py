@@ -1,4 +1,3 @@
-import sys
 import threading
 import time
 import warnings
@@ -17,8 +16,6 @@ from napari.utils.notifications import (
     NotificationSeverity,
     notification_manager,
 )
-
-PY37_OR_LOWER = sys.version_info[:2] <= (3, 7)
 
 
 def _threading_warn():
@@ -186,14 +183,13 @@ def test_notification_error(mock_show, monkeypatch, clean_current):
 
 
 @pytest.mark.sync_only
-@pytest.mark.skipif(PY37_OR_LOWER, reason="Fails on py37")
 def test_notifications_error_with_threading(make_napari_viewer):
     """Test notifications of `threading` threads, using a dask example."""
-    random_image = da.random.random(size=(50, 50))
+    random_image = da.random.random((50, 50))
     with notification_manager:
         viewer = make_napari_viewer()
         viewer.add_image(random_image)
-        result = da.divide(random_image, da.zeros(50, 50))
+        result = da.divide(random_image, da.zeros((50, 50)))
         viewer.add_image(result)
         assert len(notification_manager.records) >= 1
         notification_manager.records = []

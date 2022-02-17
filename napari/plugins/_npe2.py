@@ -18,6 +18,8 @@ import npe2
 from npe2.io_utils import read_get_reader
 from npe2.manifest.schema import PluginManifest
 
+from ..utils.translations import trans
+
 if TYPE_CHECKING:
     from npe2._types import LayerData, WidgetCallable
     from npe2.manifest.contributions import WriterContribution
@@ -93,11 +95,21 @@ def write_layers(
 def get_widget_contribution(
     plugin_name: str, widget_name: Optional[str] = None
 ) -> Optional[Tuple[WidgetCallable, str]]:
+    widgets_seen = set()
     for contrib in npe2.PluginManager.instance().iter_widgets():
-        if contrib.plugin_name == plugin_name and (
-            not widget_name or contrib.display_name == widget_name
-        ):
-            return contrib.get_callable(), contrib.display_name
+        if contrib.plugin_name == plugin_name:
+            if not widget_name or contrib.display_name == widget_name:
+                return contrib.get_callable(), contrib.display_name
+            widgets_seen.add(contrib.display_name)
+    if widget_name and widgets_seen:
+        msg = trans._(
+            'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {seen}',
+            plugin_name=plugin_name,
+            widget_name=widget_name,
+            seen=widgets_seen,
+            deferred=True,
+        )
+        raise KeyError(msg)
     return None
 
 

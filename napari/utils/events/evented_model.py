@@ -251,19 +251,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             ):
                 setattr(self, name, value)
 
-    def asdict(self) -> Dict[str, Any]:
-        """Convert a model to a dictionary."""
-        warnings.warn(
-            trans._(
-                "The `asdict` method has been renamed `dict` and is now deprecated. It will be removed in 0.4.7",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.dict()
-
-    def update(self, values: Union['EventedModel', dict]):
+    def update(
+        self, values: Union['EventedModel', dict], recurse: bool = True
+    ) -> None:
         """Update a model in place.
 
         Parameters
@@ -272,6 +262,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             Values to update the model with. If an EventedModel is passed it is
             first converted to a dictionary. The keys of this dictionary must
             be found as attributes on the current model.
+        recurse : bool
+            If True, recursively update fields that are EventedModels.
+            Otherwise, just update the immediate fields of this EventedModel,
+            which is useful when the declared field type (e.g. ``Union``) can have
+            different realized types with different fields.
         """
         if isinstance(values, self.__class__):
             values = values.dict()
@@ -287,8 +282,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         with self.events.blocker() as block:
             for key, value in values.items():
                 field = getattr(self, key)
-                if isinstance(field, EventedModel):
-                    field.update(value)
+                if isinstance(field, EventedModel) and recurse:
+                    field.update(value, recurse=recurse)
                 else:
                     setattr(self, key, value)
 

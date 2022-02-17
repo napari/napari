@@ -206,6 +206,11 @@ def test_settings_env_variables(monkeypatch):
     monkeypatch.setenv('NAPARI_APPLICATION', '{"first_time": "false"}')
     assert NapariSettings(None).application.first_time is False
 
+    # can also use json in nested vars
+    assert NapariSettings(None).plugins.extension2reader == {}
+    monkeypatch.setenv('NAPARI_PLUGINS_EXTENSION2READER', '{".zarr": "hi"}')
+    assert NapariSettings(None).plugins.extension2reader == {".zarr": "hi"}
+
 
 def test_settings_env_variables_fails(monkeypatch):
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'FOOBAR')
