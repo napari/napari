@@ -34,9 +34,7 @@ class _FakeHookimpl:
 
 
 def read(
-    paths: Sequence[str],
-    plugin: Optional[str] = None,
-    stack: bool = None,
+    paths: Sequence[str], plugin: Optional[str] = None, *, stack: bool
 ) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
     assert stack is not None

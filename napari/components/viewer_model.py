@@ -893,7 +893,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if stack:
             return self._add_layers_with_plugins(
                 paths,
-                kwargs,
+                kwargs=kwargs,
                 plugin=plugin,
                 layer_type=layer_type,
                 stack=stack,
@@ -911,7 +911,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 added.extend(
                     self._add_layers_with_plugins(
                         [_path],
-                        kwargs,
+                        kwargs=kwargs,
                         plugin=plugin,
                         layer_type=layer_type,
                         stack=stack,
@@ -922,10 +922,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _add_layers_with_plugins(
         self,
         paths: List[str],
+        *,
+        stack: bool,
         kwargs: Optional[dict] = None,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
-        stack: bool = None,
     ) -> List[Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 

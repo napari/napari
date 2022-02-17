@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def read_data_with_plugins(
     paths: Sequence[str],
     plugin: Optional[str] = None,
-    stack: bool = None,
+    stack: bool = False,
 ) -> Tuple[Optional[List[LayerData]], Optional[HookImplementation]]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
