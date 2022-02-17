@@ -464,10 +464,11 @@ class PluginListItem(QFrame):
         pm2 = PluginManager.instance()
         if plugin_name in pm2:
             pm2.enable(plugin_name) if state else pm2.disable(plugin_name)
+            return
 
-        for plugin_name, _, distname in plugin_manager.iter_available():
-            if distname and distname == plugin_name:
-                plugin_manager.set_blocked(plugin_name, not enabled)
+        for npe1_name, _, distname in plugin_manager.iter_available():
+            if distname and (distname == plugin_name):
+                plugin_manager.set_blocked(npe1_name, not enabled)
 
 
 class QPluginList(QListWidget):

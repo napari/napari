@@ -17,12 +17,12 @@ menu_item_template = '{}: {}'
 plugin_manager = NapariPluginManager()
 
 
-@lru_cache()  # only call once
+@lru_cache  # only call once
 def _initialize_plugins():
-    disabled_in_settings = get_settings().plugins.disabled_plugins
+    settings = get_settings()
 
     _npe2pm = _PluginManager.instance()
-    for p in disabled_in_settings:
+    for p in settings.plugins.disabled_plugins_npe2:
         _npe2pm.disable(p)
     _npe2pm.discover()
     _npe2pm.events.enablement_changed.connect(
@@ -41,8 +41,13 @@ def _initialize_plugins():
 
     # Disable plugins listed as disabled in settings, or detected in npe2
     _from_npe2 = {m.package_metadata.name for m in _npe2pm.iter_manifests()}
+
+    print('_from_npe2', _from_npe2)
+    settings.plugins.disabled_plugins.difference_update(_from_npe2)
     plugin_manager._skip_packages = _from_npe2
-    plugin_manager._blocked.update(disabled_in_settings)
+
+    print("disabled_plugins_npe1", settings.plugins.disabled_plugins)
+    plugin_manager._blocked.update(settings.plugins.disabled_plugins)
     plugin_manager._initialize()
 
 

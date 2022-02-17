@@ -256,10 +256,10 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     from ..settings import get_settings
 
     plugin_settings = get_settings().plugins
-    to_disable = set(plugin_settings.disabled_plugins)
+    to_disable = set(plugin_settings.disabled_plugins_npe2)
     to_disable.difference_update(enabled)
     to_disable.update(disabled)
-    plugin_settings.disabled_plugins = to_disable
+    plugin_settings.disabled_plugins_npe2 = to_disable
 
     for v in Viewer._instances:
         v.window.plugins_menu._build()

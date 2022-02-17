@@ -32,6 +32,13 @@ class PluginsSettings(EventedModel):
             "Plugins to disable on application start.",
         ),
     )
+    disabled_plugins_npe2: Set[str] = Field(
+        set(),
+        title=trans._("Disabled plugins using npe2"),
+        description=trans._(
+            "npe2 plugins to disable on application start.",
+        ),
+    )
     extension2reader: Dict[str, str] = Field(
         default_factory=dict,
         title=trans._('File extension readers'),
