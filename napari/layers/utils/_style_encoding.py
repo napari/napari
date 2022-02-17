@@ -237,7 +237,7 @@ class _DerivedStyleEncoding(
     def _apply_safely(self, features: Any) -> StyleArray:
         """Applies this without raising encoding errors, warning instead."""
         try:
-            array = self(features.iloc)
+            array = self(features)
         except (KeyError, ValueError):
             warnings.warn(
                 trans._(
