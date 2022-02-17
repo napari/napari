@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import warnings
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 from weakref import WeakSet
@@ -41,10 +40,7 @@ from ..utils.misc import in_ipython
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
-from .dialogs.qt_reader_dialog import (
-    QtReaderDialog,
-    get_reader_choice_for_file,
-)
+from .dialogs.qt_reader_dialog import get_reader_helper
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, crosshair_pixmap, square_pixmap
@@ -1061,47 +1057,10 @@ class QtViewer(QSplitter):
             return
 
         for filename in filenames:
-            _, extension = os.path.splitext(filename)
-
-            def select_reader_helper(plugin, readers, exception):
-                error_message = ''
-                if exception:
-                    error_message += f"{str(exception)}\n"
-                readerDialog = QtReaderDialog(
-                    parent=self,
-                    pth=filename,
-                    extension=extension,
-                    error_message=error_message,
-                    readers=readers,
-                )
-                plugin_name, persist_choice = self.get_preferred_reader(
-                    readerDialog, readers, error_message
-                )
-                return plugin_name, persist_choice
-
+            select_reader_helper = get_reader_helper(filename, self)
             self.viewer.open(
                 filename, select_reader_helper=select_reader_helper
             )
-
-    def get_preferred_reader(self, readerDialog, readers, error_message):
-        """Get preferred reader from user through dialog and try to open file
-
-        Parameters
-        ----------
-        readerDialog : QtReaderDialog
-            dialog for user to select their preferences
-        readers : Dict[str, str]
-            dictionary of display_name:plugin_name of available readers
-        """
-        # get plugin choice from user
-        # choice is None if file was opened or user chose cancel
-        choice = get_reader_choice_for_file(readerDialog)
-        if choice:
-            display_name, persist_choice = choice
-            plugin_name = readers[display_name]
-            return plugin_name, persist_choice
-        else:
-            return '', False
 
     def closeEvent(self, event):
         """Cleanup and close.

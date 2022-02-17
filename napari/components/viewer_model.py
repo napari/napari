@@ -929,7 +929,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                             if exception:
                                 raise exception
                             raise RuntimeError(
-                                f"Multiple plugins found capable of reading {_path}. Select plugin from {readers.values()} and call using `viewer.open(..., plugin=...)`."
+                                f"Multiple plugins found capable of reading {_path}. Select plugin from {list(readers.values())} and use `viewer.open(..., plugin=...)`."
                             )
 
                         select_reader_helper = _default_helper
@@ -977,7 +977,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     )
                 )
                 # preferred plugin works
-                # persist
                 return added
 
             # preferred plugin failed
@@ -1002,6 +1001,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 plugin, readers, error
             )
         if plugin:
+            # use plugin chosen by user
             added.extend(
                 self._add_layers_with_plugins(
                     _path,
@@ -1010,7 +1010,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     layer_type=layer_type,
                 )
             )
-            # persist
+            # are we persisting an association?
             if persist_choice:
                 _, extension = os.path.splitext(_path)
                 display_name = next(

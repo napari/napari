@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -102,38 +102,42 @@ class QtReaderDialog(QDialog):
         return display_name, persist_choice
 
 
-def get_reader_choice_for_file(
-    readerDialog: Any,
-) -> Optional[Tuple[str, bool]]:
-    """Gets choice of reader from user for the given filename.
+def get_reader_helper(_pth, viewer):
+    _, extension = os.path.splitext(_pth)
 
-    Launch dialog and ask user for
-    plugin choice and whether setting is persisted.
+    def select_reader_helper(plugin, readers, exception):
+        error_message = ''
+        if exception:
+            error_message += f"{str(exception)}\n"
+        readerDialog = QtReaderDialog(
+            parent=viewer,
+            pth=_pth,
+            extension=extension,
+            error_message=error_message,
+            readers=readers,
+        )
+        display_name, persist_choice = get_preferred_reader(
+            readerDialog, readers
+        )
+        return display_name, persist_choice
 
-    Returns None if user cancels on dialog.
+    return select_reader_helper
+
+
+def get_preferred_reader(readerDialog, readers):
+    """Get preferred reader from user through dialog
 
     Parameters
     ----------
-    readerDialog : QtReaderDialog or MockQtReaderDialog
-        reader dialog to use for choices from the user
-    readers : str
-        Dictionary of display-name:plugin-name of potential readers for file
-
-    Returns
-    -------
-    display_name: str
-        Display name of the chosen plugin
-    persist_choice: bool
-        Whether to persist the chosen plugin choice or not
-
+    readerDialog : QtReaderDialog
+        dialog for user to select their preferences
+    readers : Dict[str, str]
+        dictionary of display_name:display_name of available readers
     """
     display_name = ''
     persist_choice = False
 
-    # either we have more reader options or there was an error
     res = readerDialog.get_user_choices()
-    # user pressed cancel, return None
-    if not res:
-        return
-    display_name, persist_choice = res
+    if res:
+        display_name, persist_choice = readers[res[0]], res[1]
     return display_name, persist_choice
