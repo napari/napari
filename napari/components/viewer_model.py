@@ -913,7 +913,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             else None,  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
-                # TODO: do we want to do anything fancy here, like only raising an error if there's multiple available plugins
                 # TODO: where can I put tests for this so that I have access to different plugins to try
                 if plugin:
                     added.extend(
@@ -934,6 +933,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                             )
 
                         select_reader_helper = _default_helper
+
                     added.extend(
                         self._open_or_get_error(
                             readers,
@@ -958,12 +958,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     filename=_path,
                 )
             )
-            return []
+            return added
 
         plugin = _get_preferred_reader(_path)
-        if plugin is None:
-            if len(readers) == 1:
-                plugin = next(iter(readers.values()))
+        is_ambiguous = False
+        persist_choice = False
+        error = None
+
+        # preferred plugin exists
+        if plugin in readers.values():
+            try:
                 added.extend(
                     self._add_layers_with_plugins(
                         _path,
@@ -972,57 +976,56 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                         layer_type=layer_type,
                     )
                 )
-            else:
-                # multiple plugins
-                plugin, persist_choice = select_reader_helper(
-                    plugin, readers, None
-                )
-                if plugin:
-                    # TODO: add to added
-                    added.extend(
-                        self._add_layers_with_plugins(
-                            _path,
-                            kwargs,
-                            plugin=plugin,
-                            layer_type=layer_type,
-                        )
-                    )
-                    # persist
+                # preferred plugin works
+                # persist
+                return added
+
+            # preferred plugin failed
+            except Exception as e:
+                is_ambiguous = True
+                error = e
+        # preferred plugin doesn't exist
+        elif plugin:
+            error = RuntimeError(
+                f"Can't find {plugin} plugin associated with {os.path.splitext(_path)[1]} files."
+            )
+            is_ambiguous = True
+        # plugin is None (no preferred plugin) but we only have one option available
+        elif len(readers) == 1:
+            plugin = next(iter(readers.values()))
         else:
-            if plugin not in readers.values():
-                e = RuntimeError(
-                    f"Can't find {plugin} plugin associated with {os.path.splitext(_path)[1]} files."
+            is_ambiguous = True
+
+        if is_ambiguous:
+            # multiple potential readers OR can't find preferred plugin OR preferred plugin failed
+            plugin, persist_choice = select_reader_helper(
+                plugin, readers, error
+            )
+        if plugin:
+            added.extend(
+                self._add_layers_with_plugins(
+                    _path,
+                    kwargs,
+                    plugin=plugin,
+                    layer_type=layer_type,
                 )
-                plugin, persist_choice = select_reader_helper(
-                    plugin, readers, e
+            )
+            # persist
+            if persist_choice:
+                _, extension = os.path.splitext(_path)
+                display_name = next(
+                    (
+                        disp_name
+                        for disp_name, plugin_name in readers.items()
+                        if plugin_name == plugin
+                    ),
+                    None,
                 )
-            if plugin:
-                try:
-                    # TODO: add to added
-                    added.extend(
-                        self._add_layers_with_plugins(
-                            _path,
-                            kwargs,
-                            plugin=plugin,
-                            layer_type=layer_type,
-                        )
-                    )
-                    # persist
-                except Exception as e:
-                    plugin, persist_choice = select_reader_helper(
-                        plugin, readers, e
-                    )
-                    if plugin:
-                        # TODO: add to added
-                        added.extend(
-                            self._add_layers_with_plugins(
-                                _path,
-                                kwargs,
-                                plugin=plugin,
-                                layer_type=layer_type,
-                            )
-                        )
-                        # persist
+                get_settings().plugins.extension2reader = {
+                    **get_settings().plugins.extension2reader,
+                    extension: display_name,
+                }
+
         return added
 
     def _add_layers_with_plugins(
