@@ -21,6 +21,22 @@ recommended**). If you are new to virtual environments, we recommend
 [installing miniconda][miniconda] and [creating a new environment with
 python][python_env].
 
+Even though your plugin does not need to directly depend on the `napari`
+package, and
+[should not depend on a specific Qt backend](best-practices-no-qt-backend),
+you will need a full installation of napari in your active Python
+environment to use and test your plugin.
+If napari is not already installed and working, consider installing it
+with `pip`
+
+```sh
+pip install "napari[all]>=0.4.13"
+```
+
+where `[all]` means that the default Qt backend will be installed and
+`0.4.13` is the minimum version of napari that supports `npe2`.
+
+
 ## What is a plugin?
 
 Napari plugins are just Python packages. *Minimally*, they must:
