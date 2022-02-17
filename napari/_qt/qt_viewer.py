@@ -731,7 +731,8 @@ class QtViewer(QSplitter):
         )
 
         if folder not in {'', None}:
-            self.viewer.open([folder])
+            reader_helper = get_reader_helper(folder, self)
+            self.viewer.open([folder], select_reader_helper=reader_helper)
             update_open_history(folder)
 
     def _toggle_chunk_outlines(self):

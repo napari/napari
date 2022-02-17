@@ -925,7 +925,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     readers = get_potential_readers(_path)
                     if select_reader_helper is None:
 
-                        def _default_helper(plugin, readers, exception):
+                        def _default_helper(_path, readers, exception):
                             if exception:
                                 raise exception
                             raise RuntimeError(
@@ -998,7 +998,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if is_ambiguous:
             # multiple potential readers OR can't find preferred plugin OR preferred plugin failed
             plugin, persist_choice = select_reader_helper(
-                plugin, readers, error
+                _path, readers, error
             )
         if plugin:
             # use plugin chosen by user

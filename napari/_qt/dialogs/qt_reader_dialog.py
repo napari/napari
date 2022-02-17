@@ -105,13 +105,13 @@ class QtReaderDialog(QDialog):
 def get_reader_helper(_pth, viewer):
     _, extension = os.path.splitext(_pth)
 
-    def select_reader_helper(plugin, readers, exception):
+    def select_reader_helper(_path, readers, exception):
         error_message = ''
         if exception:
             error_message += f"{str(exception)}\n"
         readerDialog = QtReaderDialog(
             parent=viewer,
-            pth=_pth,
+            pth=_path,
             extension=extension,
             error_message=error_message,
             readers=readers,
