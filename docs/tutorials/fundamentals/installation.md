@@ -13,6 +13,8 @@ jupyter:
     name: python3
 ---
 
+(installation)=
+
 # How to install napari on your machine
 
 Welcome to the **napari** installation guide!
