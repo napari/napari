@@ -1,6 +1,6 @@
 from npe2 import PluginManager
 from npe2.types import FullLayerData
-from qtpy.QtWidgets import QMenu
+from PyQt5.QtWidgets import QMenu
 
 from ...plugins._npe2 import (
     file_extensions_string_for_layers,
