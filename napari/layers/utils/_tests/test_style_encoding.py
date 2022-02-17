@@ -137,6 +137,15 @@ def test_scalar_derived_encoding_update_some(features):
     np.testing.assert_array_equal(values, expected_values)
 
 
+def test_scalar_derived_encoding_update_with_failure(features):
+    encoding = ScalarDirectEncoding(feature='not_a_column', fallback=-1)
+
+    with pytest.warns(RuntimeWarning):
+        values = encoding._update(features)
+
+    np.testing.assert_array_equal(values, -1)
+
+
 def test_scalar_derived_encoding_append():
     encoding = ScalarDirectEncoding(feature='scalar')
     encoding._cached = ScalarArray.validate_type([1, 2, 3])
@@ -269,6 +278,15 @@ def test_vector_derived_encoding_update_some(features):
 
     expected_values = list(features['vector'][[0, 2]])
     np.testing.assert_array_equal(values, expected_values)
+
+
+def test_vector_derived_encoding_update_with_failure(features):
+    encoding = VectorDirectEncoding(feature='not_a_column', fallback=[-1, -1])
+
+    with pytest.warns(RuntimeWarning):
+        values = encoding._update(features)
+
+    np.testing.assert_array_equal(values, [[-1, -1]] * len(features))
 
 
 def test_vector_derived_encoding_append():
