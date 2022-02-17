@@ -21,6 +21,14 @@ recommended**). If you are new to virtual environments, we recommend
 [installing miniconda][miniconda] and [creating a new environment with
 python][python_env].
 
+Even though plugins don't necessarily need to list `napari` as a direct dependency, and
+[should not depend on a specific Qt backend](best-practices-no-qt-backend),
+you will need a working installation of napari in your active Python
+environment to use and test your plugin.
+See the [installation guide](installation) if this is your first time
+installing napari.
+
+
 ## What is a plugin?
 
 Napari plugins are just Python packages. *Minimally*, they must:
@@ -257,7 +265,7 @@ napari
 Once napari starts, select `napari-hello: Hello World` from the
 `Plugins` menu, then click the `Run` button to see the message.
 
-![hello-example](../images/hello.png)
+% ![hello-example](../images/hello.png)
 
 ## Get going quickly with cookiecutter
 
@@ -271,7 +279,7 @@ management, and deployment hooks.
 
 ```sh
 pip install cookiecutter
-cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe2
+cookiecutter https://github.com/napari/cookiecutter-napari-plugin
 ```
 
 ## Next Steps

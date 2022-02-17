@@ -1,14 +1,6 @@
-import sys
-
 from napari_plugin_engine import PluginError, standard_metadata
 
 from ..utils.translations import trans
-
-if sys.version_info >= (3, 8):
-    from importlib import metadata as importlib_metadata
-else:
-    import importlib_metadata
-Distribution = importlib_metadata.Distribution
 
 
 def format_exceptions(plugin_name: str, as_html: bool = False):
