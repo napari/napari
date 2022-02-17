@@ -21,7 +21,7 @@ class VispyVectorsLayer(VispyBaseLayer):
 
     def _on_data_change(self):
         if len(self.layer._view_indices) == 0:
-            pos = np.zeros((1, self.layer._ndisplay))
+            pos = np.zeros((2, self.layer._ndisplay))
             color = np.zeros((1, 4))
         else:
             # reverse to draw most recent last and swap xy for vispy
