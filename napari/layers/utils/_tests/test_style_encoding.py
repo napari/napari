@@ -1,3 +1,13 @@
+"""
+These tests cover and help explain the implementations of different
+types of generic encodings, like constant, manual, and derived encodings,
+rather than the types of values they encode like strings and colors
+or the ways those are encoded.
+
+In particular, these cover the stateful part of the StyleEncoding, which
+is important to napari at the time of writing, but may be removed in the future.
+"""
+
 from typing import Any, Union
 
 import numpy as np
@@ -66,13 +76,13 @@ class ScalarManualEncoding(_ManualStyleEncoding[Scalar, ScalarArray]):
 
 
 def test_scalar_manual_encoding_update_with_shorter(features):
-    encoding = ScalarManualEncoding(array=[1, 2, 3, 4], default=-1)
+    encoding = ScalarManualEncoding(array=[1, 2, 3, 4])
     values = encoding._update(features)
     np.testing.assert_array_equal(values, [1, 2, 3])
 
 
 def test_scalar_manual_encoding_update_with_equal_length(features):
-    encoding = ScalarManualEncoding(array=[1, 2, 3], default=-1)
+    encoding = ScalarManualEncoding(array=[1, 2, 3])
     values = encoding._update(features)
     np.testing.assert_array_equal(values, [1, 2, 3])
 
@@ -111,7 +121,9 @@ class ScalarDerivedEncoding(_DerivedStyleEncoding[Scalar, ScalarArray]):
 
 def test_scalar_derived_encoding_update_all(features):
     encoding = ScalarDerivedEncoding(feature='scalar')
+
     values = encoding._update(features)
+
     expected_values = features['scalar']
     np.testing.assert_array_equal(values, expected_values)
 
@@ -152,6 +164,14 @@ def test_scalar_derived_encoding_clear():
     np.testing.assert_array_equal(encoding._values(), [])
 
 
+"""
+Style encodings can also handle non-scalar style values.
+For example, the standardized color value in napari is defined
+as an RGBA 4-vector.
+In general, they should work with any dimensionality as long as
+the StyleArray type has one more leading dimension than the StyleValue.
+"""
+
 Vector = Array[int, (2,)]
 VectorArray = Array[int, (-1, 2)]
 
@@ -160,14 +180,129 @@ class VectorConstantEncoding(_ConstantStyleEncoding[Vector, VectorArray]):
     constant: Vector
 
 
+def test_vector_constant_encoding_update_all(features):
+    encoding = VectorConstantEncoding(constant=[0, 0])
+    values = encoding._update(features)
+    np.testing.assert_array_equal(values, [0, 0])
+
+
+def test_vector_constant_encoding_update_some(features):
+    encoding = VectorConstantEncoding(constant=[0, 0])
+    values = encoding._update(features, indices=[0, 2])
+    np.testing.assert_array_equal(values, [0, 0])
+
+
+def test_vector_constant_encoding_append():
+    encoding = VectorConstantEncoding(constant=[0, 0])
+    encoding._append(Vector.validate_type([4, 5]))
+    np.testing.assert_array_equal(encoding._values(), [0, 0])
+
+
+def test_vector_constant_encoding_delete():
+    encoding = VectorConstantEncoding(constant=[0, 0])
+    encoding._delete([0, 2])
+    np.testing.assert_array_equal(encoding._values(), [0, 0])
+
+
+def test_vector_constant_encoding_clear():
+    encoding = VectorConstantEncoding(constant=[0, 0])
+    encoding._clear()
+    np.testing.assert_array_equal(encoding._values(), [0, 0])
+
+
 class VectorManualEncoding(_ManualStyleEncoding[Vector, VectorArray]):
     array: VectorArray
-    default: Vector
+    default: Vector = [-1, -1]
+
+
+def test_vector_manual_encoding_update_with_shorter(features):
+    encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3], [4, 4]])
+    values = encoding._update(features)
+    np.testing.assert_array_equal(values, [[1, 1], [2, 2], [3, 3]])
+
+
+def test_vector_manual_encoding_update_with_equal_length(features):
+    encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3]])
+    values = encoding._update(features)
+    np.testing.assert_array_equal(values, [[1, 1], [2, 2], [3, 3]])
+
+
+def test_vector_manual_encoding_update_with_longer(features):
+    encoding = VectorManualEncoding(array=[[1, 1], [2, 2]], default=[-1, -1])
+    values = encoding._update(features)
+    np.testing.assert_array_equal(values, [[1, 1], [2, 2], [-1, -1]])
+
+
+def test_vector_manual_encoding_append():
+    encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3]])
+    encoding._append(Vector.validate_type([[4, 4], [5, 5]]))
+    np.testing.assert_array_equal(
+        encoding._values(), [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+    )
+
+
+def test_vector_manual_encoding_delete():
+    encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3]])
+    encoding._delete([0, 2])
+    np.testing.assert_array_equal(encoding._values(), [[2, 2]])
+
+
+def test_vector_manual_encoding_clear():
+    encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3]])
+    encoding._clear()
+    np.testing.assert_array_equal(encoding._values(), [[1, 1], [2, 2], [3, 3]])
 
 
 class VectorDerivedEncoding(_DerivedStyleEncoding[Vector, VectorArray]):
     feature: str
-    fallback: Vector
+    fallback: Vector = [-1, -1]
 
     def __call__(self, features: Any) -> Union[Vector, VectorArray]:
-        return VectorArray.validate_type(features.self.feature)
+        return VectorArray.validate_type(list(features[self.feature]))
+
+
+def test_vector_derived_encoding_update_all(features):
+    encoding = VectorDerivedEncoding(feature='vector')
+
+    values = encoding._update(features)
+
+    expected_values = list(features['vector'])
+    np.testing.assert_array_equal(values, expected_values)
+
+
+def test_vector_derived_encoding_update_some(features):
+    encoding = VectorDerivedEncoding(feature='vector')
+
+    values = encoding._update(features, indices=[0, 2])
+
+    expected_values = list(features['vector'][[0, 2]])
+    np.testing.assert_array_equal(values, expected_values)
+
+
+def test_vector_derived_encoding_append():
+    encoding = VectorDerivedEncoding(feature='vector')
+    encoding._cached = VectorArray.validate_type([[1, 1], [2, 2], [3, 3]])
+
+    encoding._append(VectorArray.validate_type([[4, 4], [5, 5]]))
+
+    np.testing.assert_array_equal(
+        encoding._values(), [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+    )
+
+
+def test_vector_derived_encoding_delete():
+    encoding = VectorDerivedEncoding(feature='vector')
+    encoding._cached = VectorArray.validate_type([[1, 1], [2, 2], [3, 3]])
+
+    encoding._delete([0, 2])
+
+    np.testing.assert_array_equal(encoding._values(), [[2, 2]])
+
+
+def test_vector_derived_encoding_clear():
+    encoding = VectorDerivedEncoding(feature='vector')
+    encoding._cached = VectorArray.validate_type([[1, 1], [2, 2], [3, 3]])
+
+    encoding._clear()
+
+    np.testing.assert_array_equal(encoding._values(), np.empty((0, 2)))
