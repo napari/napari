@@ -143,7 +143,7 @@ def test_scalar_derived_encoding_update_with_failure(features):
     with pytest.warns(RuntimeWarning):
         values = encoding._update(features)
 
-    np.testing.assert_array_equal(values, -1)
+    np.testing.assert_array_equal(values, [-1] * len(features))
 
 
 def test_scalar_derived_encoding_append():
