@@ -19,6 +19,7 @@ from typing import (
     Iterable,
     Optional,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -319,7 +320,10 @@ def camel_to_spaces(val):
     return camel_to_spaces_pattern.sub(r" \1", val)
 
 
-def abspath_or_url(relpath: str, *, must_exist: bool = False) -> str:
+T = TypeVar('T', str, Path)
+
+
+def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     """Utility function that normalizes paths or a sequence thereof.
 
     Expands user directory and converts relpaths to abspaths... but ignores
@@ -327,20 +331,24 @@ def abspath_or_url(relpath: str, *, must_exist: bool = False) -> str:
 
     Parameters
     ----------
-    relpath : str
+    relpath : str|Path
         A path, either as string or Path object.
     must_exist : bool, default True
         Raise ValueError if `relpath` is not a URL and does not exist.
 
     Returns
     -------
-    abspath : str
-        An absolute path.
+    abspath : str|Path
+        An absolute path, or list or tuple of absolute paths (same type as
+        input)
     """
     from urllib.parse import urlparse
 
-    if not isinstance(relpath, str):
-        raise TypeError(trans._("Argument must be a string", deferred=True))
+    if not isinstance(relpath, (str, Path)):
+        raise TypeError(
+            trans._("Argument must be a string or Path", deferred=True)
+        )
+    OriginType = type(relpath)
 
     relpath = fspath(relpath)
     urlp = urlparse(relpath)
@@ -356,7 +364,7 @@ def abspath_or_url(relpath: str, *, must_exist: bool = False) -> str:
                 path=path,
             )
         )
-    return path
+    return OriginType(path)
 
 
 class CallDefault(inspect.Parameter):
