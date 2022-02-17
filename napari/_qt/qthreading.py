@@ -1,6 +1,6 @@
 import inspect
 import warnings
-from functools import wraps
+from functools import partial, wraps
 from types import FunctionType, GeneratorType
 from typing import (
     Callable,
@@ -168,7 +168,17 @@ def create_worker(
             )
             total = 0
 
-        pbar = progress(total=total, desc=desc)
+        with progress._all_instances.events.changed.blocker():
+            pbar = progress(total=total, desc=desc)
+
+        worker.started.connect(
+            partial(
+                lambda prog: progress._all_instances.events.changed(
+                    added={prog}, removed={}
+                ),
+                pbar,
+            )
+        )
         worker.finished.connect(pbar.close)
         if total != 0 and isinstance(worker, GeneratorWorker):
             worker.yielded.connect(pbar.increment_with_overflow)

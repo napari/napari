@@ -122,6 +122,25 @@ def test_adding_properties(attribute):
         layer.properties = properties_2
 
 
+def test_colormap_scale_change():
+    data = 20 * np.random.random((10, 4, 2))
+    properties = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
+    layer = Shapes(data, properties=properties, edge_color='b')
+
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
+
+    layer.edge_color = 'a'
+
+    # note that VisPy colormaps linearly interpolate by default, so
+    # non-rescaled colors are not identical, but they are closer than 24-bit
+    # color precision can distinguish!
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
+
+
 def test_data_setter_with_properties():
     """Test layer data on a layer with properties via the data setter"""
     shape = (10, 4, 2)

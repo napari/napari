@@ -42,7 +42,7 @@ def get_gl_extensions() -> str:
         return gl.glGetParameter(gl.GL_EXTENSIONS)
 
 
-@lru_cache()
+@lru_cache
 def get_max_texture_sizes() -> Tuple[int, int]:
     """Return the maximum texture sizes for 2D and 3D rendering.
 

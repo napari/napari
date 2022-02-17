@@ -7,6 +7,8 @@ when developing a plugin.  This page covers some known practices that could
 affect the ability to install or use your plugin effectively.
 
 
+(best-practices-no-qt-backend)=
+
 ## Don't include `PySide2` or `PyQt5` in your plugin's dependencies.
 
 *This is important!*
