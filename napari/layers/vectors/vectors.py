@@ -139,8 +139,6 @@ class Vectors(Layer):
         colors for the M in view vectors
     _view_indices : (1, M) array
         indices for the M in view vectors
-    _view_alphas : (M,) or float
-        relative opacity for the M in view vectors
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Vectors.properties.
     _max_vectors_thumbnail : int
@@ -223,9 +221,7 @@ class Vectors(Layer):
         self._length = float(length)
 
         self._data = np.empty((0, 2, 2), float)
-        self._view_data = np.empty((0, 2, 2), float)
         self._view_indices = np.empty(0, int)
-        self._view_alphas = 1.0
         self._feature_table = _FeatureTable()
         self._edge = ColorManager()
 
@@ -580,16 +576,8 @@ class Vectors(Layer):
     ):
         self._edge.contrast_limits = contrast_limits
 
-    @property
-    def _view_color(self) -> np.ndarray:
-        """(Mx4) np.ndarray : colors for the M in view vectors"""
-        color = self.edge_color[self._view_indices]
-        color[:, -1] *= self._view_alphas
-
-        return color
-
     def _slice_data(
-        self, dims_indices
+        self, dims_indices, thickness
     ) -> Tuple[List[int], Union[float, np.ndarray]]:
         """Determines the slice of vectors given the indices.
 
@@ -602,47 +590,52 @@ class Vectors(Layer):
         -------
         slice_indices : list
             Indices of vectors in the currently viewed slice.
-        alpha : float, (N, ) array
-            The computed, relative opacity of vectors in the current slice.
-            If `out_of_slice_display` is mode is off, this is always 1.
-            Otherwise, vectors originating in the current slice are assigned a value of 1,
-            while vectors passing through the current slice are assigned progressively lower
-            values, based on how far from the current slice they originate.
         """
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
-            data = self.data[:, 0, not_disp]
-            distances = abs(data - indices[not_disp])
-            if self.out_of_slice_display is True:
-                projected_lengths = abs(
-                    self.data[:, 1, not_disp] * self.length
-                )
-                matches = np.all(distances <= projected_lengths, axis=1)
-                alpha_match = projected_lengths[matches]
-                alpha_match[alpha_match == 0] = 1
-                alpha_per_dim = (
-                    alpha_match - distances[matches]
-                ) / alpha_match
-                alpha_per_dim[alpha_match == 0] = 1
-                alpha = np.prod(alpha_per_dim, axis=1).astype(float)
-            else:
-                matches = np.all(distances <= 0.5, axis=1)
-                alpha = 1.0
-
+            not_disp_thick = np.array(thickness)[not_disp]
+            distances = abs(self.data[:, 0, not_disp] - indices[not_disp])
+            matches = np.all(distances <= not_disp_thick / 2, axis=1)
             slice_indices = np.where(matches)[0].astype(int)
-            return slice_indices, alpha
+            return slice_indices
         else:
-            return [], np.empty(0, float)
+            return []
+
+    @property
+    def _view_data(self) -> np.ndarray:
+        """Get the coords of the points in view
+
+        Returns
+        -------
+        view_data : (N x D) np.ndarray
+            Array of coordinates for the N vectors in view
+        """
+        if len(self._view_indices) > 0:
+            # for some reason need to split the indexing, otherwise we lose one dimension in some cases. Weird!
+            data = self.data[self._view_indices][..., self._dims_displayed]
+        else:
+            # if no points in this slice send dummy data
+            data = np.zeros((0, 2, self._ndisplay))
+
+        return data
+
+    @property
+    def _view_color(self) -> np.ndarray:
+        """Get the colors of the vectors in view
+
+        Returns
+        -------
+        view_color : (N x 4) np.ndarray
+            RGBA color array for the colors of the N vectors in view.
+            If there are no vectors in view, returns array of length 0.
+        """
+        return self.edge_color[self._view_indices]
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-        indices, alphas = self._slice_data(self._slice_indices)
-        self._view_indices = indices
-        self._view_alphas = alphas
-        disp = list(self._dims_displayed)
-        # This indexing had to be split in two or we would lose dimensionality... why?
-        self._view_data = self.data[self._view_indices][..., disp]
+        indices = self._slice_data(self._slice_indices, self._thickness_data())
+        self._view_indices = np.array(indices, dtype=int)
 
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""

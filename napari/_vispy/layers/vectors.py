@@ -20,16 +20,16 @@ class VispyVectorsLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
-        if len(self.layer._view_indices) == 0:
-            pos = np.zeros((2, self.layer._ndisplay))
-            color = np.zeros((1, 4))
-        else:
+        if len(self.layer._view_indices) > 0:
             # reverse to draw most recent last and swap xy for vispy
             pos = self.layer._view_data[::-1, :, ::-1].copy()
             # scale vector and add it to its origin to get the endpoint coordinate
             pos[:, 1] *= self.layer.length
             pos[:, 1] += pos[:, 0]
             color = self.layer._view_color
+        else:
+            pos = np.zeros((2, self.layer._ndisplay))
+            color = np.zeros((1, 4))
 
         if self.layer._ndisplay == 3 and self.layer.ndim == 2:
             pos = np.pad(pos, ((0, 0), (0, 0), (0, 1)), mode='constant')
@@ -38,6 +38,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         pos = pos.reshape(-1, self.layer._ndisplay)
         color = color.repeat(2, axis=0)
 
+        print(pos.shape, color.shape)
         self.node.set_data(
             pos=pos,
             color=color,

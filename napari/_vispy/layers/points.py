@@ -39,7 +39,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
-        if len(self.layer._indices_view) > 0:
+        if len(self.layer._view_indices) > 0:
             edge_color = self.layer._view_edge_color
             face_color = self.layer._view_face_color
         else:
@@ -49,7 +49,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switched for vispy's x / y ordering
-        if len(self.layer._indices_view) == 0:
+        if len(self.layer._view_indices) == 0:
             data = np.zeros((1, self.layer._ndisplay))
             size = [0]
             edge_width = [0]
@@ -131,7 +131,7 @@ class VispyPointsLayer(VispyBaseLayer):
             If true, update the node after setting the properties
         """
         ndisplay = self.layer._ndisplay
-        if (len(self.layer._indices_view) == 0) or (
+        if (len(self.layer._view_indices) == 0) or (
             self.layer.text.visible is False
         ):
             text_coords = np.zeros((1, ndisplay))

@@ -248,7 +248,7 @@ class Points(Layer):
         Size of the point markers in the currently viewed slice.
     _view_edge_width : array (M, )
         Edge width of the point markers in the currently viewed slice.
-    _indices_view : array (M, )
+    _view_indices : array (M, )
         Integer indices of the points in the currently viewed slice and are shown.
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
@@ -395,7 +395,7 @@ class Points(Layer):
         self._drag_up = None
 
         # initialize view data
-        self.__indices_view = np.empty(0, int)
+        self.__view_indices = np.empty(0, int)
 
         self._drag_box = None
         self._drag_box_stored = None
@@ -1137,7 +1137,7 @@ class Points(Layer):
         self._selected_view = list(
             np.intersect1d(
                 np.array(list(self._selected_data)),
-                self._indices_view,
+                self._view_indices,
                 return_indices=True,
             )[2]
         )
@@ -1265,15 +1265,15 @@ class Points(Layer):
         self.events.mode(mode=mode)
 
     @property
-    def _indices_view(self):
-        return self.__indices_view
+    def _view_indices(self):
+        return self.__view_indices
 
-    @_indices_view.setter
-    def _indices_view(self, value):
+    @_view_indices.setter
+    def _view_indices(self, value):
         if len(self._shown) == 0:
-            self.__indices_view = np.empty(0, int)
+            self.__view_indices = np.empty(0, int)
         else:
-            self.__indices_view = value[self.shown[value]]
+            self.__view_indices = value[self.shown[value]]
 
     @property
     def _view_data(self) -> np.ndarray:
@@ -1284,8 +1284,8 @@ class Points(Layer):
         view_data : (N x D) np.ndarray
             Array of coordinates for the N points in view
         """
-        if len(self._indices_view) > 0:
-            data = self.data[np.ix_(self._indices_view, self._dims_displayed)]
+        if len(self._view_indices) > 0:
+            data = self.data[np.ix_(self._view_indices, self._dims_displayed)]
         else:
             # if no points in this slice send dummy data
             data = np.zeros((0, self._ndisplay))
@@ -1301,7 +1301,7 @@ class Points(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.view_text(self._indices_view)
+        return self.text.view_text(self._view_indices)
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
@@ -1327,9 +1327,9 @@ class Points(Layer):
         view_size : (N x D) np.ndarray
             Array of sizes for the N points in view
         """
-        if len(self._indices_view) > 0:
+        if len(self._view_indices) > 0:
             sizes = self.size[
-                np.ix_(self._indices_view, self._dims_displayed)
+                np.ix_(self._view_indices, self._dims_displayed)
             ].mean(axis=1)
 
         else:
@@ -1346,7 +1346,7 @@ class Points(Layer):
         view_edge_width : (N,) np.ndarray
             Array of edge_widths for the N points in view
         """
-        return self.edge_width[self._indices_view]
+        return self.edge_width[self._view_indices]
 
     @property
     def _view_face_color(self) -> np.ndarray:
@@ -1358,7 +1358,7 @@ class Points(Layer):
             RGBA color array for the face colors of the N points in view.
             If there are no points in view, returns array of length 0.
         """
-        return self.face_color[self._indices_view]
+        return self.face_color[self._view_indices]
 
     @property
     def _view_edge_color(self) -> np.ndarray:
@@ -1370,7 +1370,7 @@ class Points(Layer):
             RGBA color array for the edge colors of the N points in view.
             If there are no points in view, returns array of length 0.
         """
-        return self.edge_color[self._indices_view]
+        return self.edge_color[self._view_indices]
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
@@ -1436,7 +1436,7 @@ class Points(Layer):
             )
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
-                selection = self._indices_view[indices[-1]]
+                selection = self._view_indices[indices[-1]]
 
         return selection
 
@@ -1496,7 +1496,7 @@ class Points(Layer):
             # find the point that is most in the foreground
             candidate_point_distances = projection_distances[indices]
             closest_index = indices[np.argmin(candidate_point_distances)]
-            selection = self._indices_view[closest_index]
+            selection = self._view_indices[closest_index]
         else:
             selection = None
         return selection
@@ -1582,12 +1582,12 @@ class Points(Layer):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
         indices = self._slice_data(self._slice_indices, self._thickness_data())
-        self._indices_view = np.array(indices, dtype=int)
+        self._view_indices = np.array(indices, dtype=int)
         # get the selected points that are in view
         self._selected_view = list(
             np.intersect1d(
                 np.array(list(self._selected_data)),
-                self._indices_view,
+                self._view_indices,
                 return_indices=True,
             )[2]
         )
@@ -1620,22 +1620,22 @@ class Points(Layer):
                 index = copy(self._selected_view)
                 # highlight the hovered point if not in adding mode
                 if (
-                    self._value in self._indices_view
+                    self._value in self._view_indices
                     and self._mode == Mode.SELECT
                     and not self._is_selecting
                 ):
-                    hover_point = list(self._indices_view).index(self._value)
+                    hover_point = list(self._view_indices).index(self._value)
                     if hover_point not in index:
                         index.append(hover_point)
                 index.sort()
             else:
                 # only highlight hovered points in select mode
                 if (
-                    self._value in self._indices_view
+                    self._value in self._view_indices
                     and self._mode == Mode.SELECT
                     and not self._is_selecting
                 ):
-                    hover_point = list(self._indices_view).index(self._value)
+                    hover_point = list(self._view_indices).index(self._value)
                     index = [hover_point]
                 else:
                     index = []
@@ -1683,7 +1683,7 @@ class Points(Layer):
                 points = view_data[thumbnail_indices]
             else:
                 points = view_data
-                thumbnail_indices = self._indices_view
+                thumbnail_indices = self._view_indices
 
             # Calculate the point coordinates in the thumbnail data space.
             thumbnail_shape = np.clip(
