@@ -109,10 +109,7 @@ class progress(tqdm):
             super().display(msg, pos)
             return
         # TODO: This could break if user is formatting their own terminal tqdm
-        etas = ""
-        if self.total != 0:
-            etas = str(self).split('|')[-1]
-
+        etas = str(self).split('|')[-1] if self.total != 0 else ""
         self.events.eta(value=etas)
 
     def update(self, n):

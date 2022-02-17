@@ -1,11 +1,11 @@
 import itertools
 import warnings
 from collections import namedtuple
+from functools import cached_property
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
-from .._vendor.cpython.functools import cached_property
 from ..layers import Layer
 from ..layers.image.image import _ImageBase
 from ..utils.context import create_context

@@ -5,12 +5,12 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
+from functools import cached_property
 from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
 
-from ..._vendor.cpython.functools import cached_property
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -386,10 +386,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        if mode == Modeclass.PAN_ZOOM:
-            self.interactive = True
-        else:
-            self.interactive = False
+        self.interactive = mode == Modeclass.PAN_ZOOM
         return mode, True
 
     @classmethod
@@ -487,10 +484,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._visible = visibility
         self.refresh()
         self.events.visible()
-        if self.visible:
-            self.editable = self._set_editable()
-        else:
-            self.editable = False
+        self.editable = self._set_editable() if self.visible else False
 
     @property
     def editable(self):
@@ -726,23 +720,30 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        inv_transform = self._data_to_world.inverse
+
+        if len(self._dims_not_displayed) == 0:
+            # all dims are displayed dimensions
+            return (slice(None),) * self.ndim
 
         if self.ndim > self._ndisplay:
+            inv_transform = self._data_to_world.inverse
             # Subspace spanned by non displayed dimensions
             non_displayed_subspace = np.zeros(self.ndim)
             for d in self._dims_not_displayed:
                 non_displayed_subspace[d] = 1
             # Map subspace through inverse transform, ignoring translation
-            mapped_nd_subspace = inv_transform(
-                non_displayed_subspace
-            ) - inv_transform(np.zeros(self.ndim))
+            _inv_transform = Affine(
+                ndim=self.ndim,
+                linear_matrix=inv_transform.linear_matrix,
+                translate=None,
+            )
+            mapped_nd_subspace = _inv_transform(non_displayed_subspace)
             # Look at displayed subspace
-            displayed_mapped_subspace = [
+            displayed_mapped_subspace = (
                 mapped_nd_subspace[d] for d in self._dims_displayed
-            ]
+            )
             # Check that displayed subspace is null
-            if not np.allclose(displayed_mapped_subspace, 0):
+            if any(abs(v) > 1e-8 for v in displayed_mapped_subspace):
                 warnings.warn(
                     trans._(
                         'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
@@ -752,10 +753,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 )
 
         slice_inv_transform = inv_transform.set_slice(self._dims_not_displayed)
-
         world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
         data_pts = slice_inv_transform(world_pts)
-        if not hasattr(self, "_round_index") or self._round_index:
+        if getattr(self, "_round_index", True):
             # A round is taken to convert these values to slicing integers
             data_pts = np.round(data_pts).astype(int)
 
