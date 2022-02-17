@@ -1,4 +1,4 @@
-import importlib
+import importlib.util
 import sys
 import warnings
 from functools import partial
