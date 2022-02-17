@@ -10,35 +10,49 @@ class VispyVectorsLayer(VispyBaseLayer):
         super().__init__(layer, node)
 
         self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer.events.length.connect(self._on_data_change)
+        self.layer.events.edge_width.connect(self._on_edge_width_change)
+        self.layer.events.fixed_canvas_width.connect(
+            self._on_fixed_canvas_width_change
+        )
 
         self.reset()
         self._on_data_change()
 
     def _on_data_change(self):
-        if (
-            len(self.layer._view_vertices) == 0
-            or len(self.layer._view_faces) == 0
-        ):
-            vertices = np.zeros((3, self.layer._ndisplay))
-            faces = np.array([[0, 1, 2]])
-            face_color = np.array([[0, 0, 0, 0]])
+        if len(self.layer._view_indices) == 0:
+            pos = np.zeros((1, self.layer._ndisplay))
+            color = np.zeros((1, 4))
         else:
-            vertices = self.layer._view_vertices[:, ::-1]
-            faces = self.layer._view_faces
-            face_color = self.layer._view_face_color
+            # reverse to draw most recent last and swap xy for vispy
+            pos = self.layer._view_data[::-1, :, ::-1].copy()
+            # scale vector and add it to its origin to get the endpoint coordinate
+            pos[:, 1] *= self.layer.length
+            pos[:, 1] += pos[:, 0]
+            color = self.layer._view_color
 
         if self.layer._ndisplay == 3 and self.layer.ndim == 2:
-            vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
+            pos = np.pad(pos, ((0, 0), (0, 0), (0, 1)), mode='constant')
 
-        # self.node.set_data(
-        #     vertices=vertices, faces=faces, color=self.layer.current_edge_color
-        # )
+        # reshape to what LineVisual needs
+        pos = pos.reshape(-1, self.layer._ndisplay)
+        color = color.repeat(2, axis=0)
+
         self.node.set_data(
-            vertices=vertices,
-            faces=faces,
-            face_colors=face_color,
+            pos=pos,
+            color=color,
         )
 
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
+
+    def _on_edge_width_change(self):
+        self.node.width = self.layer.edge_width
+
+    def _on_fixed_canvas_width_change(self):
+        self.node.scaling = not self.layer.fixed_canvas_width
+
+    def reset(self):
+        super().reset()
+        self._on_edge_width_change()

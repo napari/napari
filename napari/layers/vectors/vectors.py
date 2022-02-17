@@ -14,7 +14,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import _FeatureTable
-from ._vector_utils import fix_data_vectors, generate_vector_meshes
+from ._vector_utils import fix_data_vectors
 
 
 class Vectors(Layer):
@@ -93,6 +93,8 @@ class Vectors(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
+    fixed_canvas_width : bool
+        If True, vector width is defined in canvas pixels.
 
     Attributes
     ----------
@@ -125,31 +127,22 @@ class Vectors(Layer):
     out_of_slice_display : bool
         If True, renders vectors not just in central plane but also slightly out of slice
         according to specified point marker size.
+    fixed_canvas_width : bool
+        If True, vector width is defined in canvas pixels.
 
     Notes
     -----
     _view_data : (M, 2, 2) array
         The start point and projections of N vectors in 2D for vectors whose
         start point is in the currently viewed slice.
-    _view_face_color : (M, 4) np.ndarray
+    _view_color : (M, 4) np.ndarray
         colors for the M in view vectors
     _view_indices : (1, M) array
         indices for the M in view vectors
-    _view_vertices : (4M, 2) or (8M, 2) np.ndarray
-        the corner points for the M in view faces. Shape is (4M, 2) for 2D and (8M, 2) for 3D.
-    _view_faces : (2M, 3) or (4M, 3) np.ndarray
-        indices of the _mesh_vertices that form the faces of the M in view vectors.
-        Shape is (2M, 2) for 2D and (4M, 2) for 3D.
     _view_alphas : (M,) or float
         relative opacity for the M in view vectors
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Vectors.properties.
-    _mesh_vertices : (4N, 2) array
-        The four corner points for the mesh representation of each vector as as
-        rectangle in the slice that it starts in.
-    _mesh_triangles : (2N, 3) array
-        The integer indices of the `_mesh_vertices` that form the two triangles
-        for the mesh representation of the vectors.
     _max_vectors_thumbnail : int
         The maximum number of vectors that will ever be used to render the
         thumbnail. If more vectors are present then they are randomly
@@ -187,6 +180,7 @@ class Vectors(Layer):
         visible=True,
         cache=True,
         experimental_clipping_planes=None,
+        fixed_canvas_width=False,
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -218,24 +212,24 @@ class Vectors(Layer):
             edge_color_mode=Event,
             properties=Event,
             out_of_slice_display=Event,
+            fixed_canvas_width=Event,
         )
 
         # Save the vector style params
         self._edge_width = edge_width
+        self._fixed_canvas_width = fixed_canvas_width
         self._out_of_slice_display = out_of_slice_display
 
         self._length = float(length)
 
-        self._data = data
+        self._data = np.empty((0, 2, 2), float)
+        self._view_data = np.empty((0, 2, 2), float)
+        self._view_indices = np.empty(0, int)
+        self._view_alphas = 1.0
+        self._feature_table = _FeatureTable()
+        self._edge = ColorManager()
 
-        vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
+        self.data = data
 
         self._feature_table = _FeatureTable.from_layer(
             features=features,
@@ -255,14 +249,6 @@ class Vectors(Layer):
             else self.property_choices,
         )
 
-        # Data containing vectors in the currently viewed slice
-        self._view_data = np.empty((0, 2, 2))
-        self._displayed_stored = []
-        self._view_vertices = []
-        self._view_faces = []
-        self._view_indices = []
-        self._view_alphas = []
-
         # now that everything is set up, make the layer visible (if set to visible)
         self._update_dims()
         self.visible = visible
@@ -278,15 +264,6 @@ class Vectors(Layer):
 
         self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
-
-        vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
 
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
@@ -399,6 +376,7 @@ class Vectors(Layer):
                 'ndim': self.ndim,
                 'features': self.features,
                 'out_of_slice_display': self.out_of_slice_display,
+                'fixed_canvas_width': self.fixed_canvas_width,
             }
         )
         return state
@@ -445,18 +423,7 @@ class Vectors(Layer):
     @edge_width.setter
     def edge_width(self, edge_width: Union[int, float]):
         self._edge_width = edge_width
-
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
-            self._edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
-
         self.events.edge_width()
-        self.refresh()
 
     @property
     def length(self) -> Union[int, float]:
@@ -466,18 +433,17 @@ class Vectors(Layer):
     @length.setter
     def length(self, length: Union[int, float]):
         self._length = float(length)
-
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims_displayed)],
-            self.edge_width,
-            self._length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims_displayed)
-
         self.events.length()
         self.refresh()
+
+    @property
+    def fixed_canvas_width(self):
+        return self._fixed_canvas_width
+
+    @fixed_canvas_width.setter
+    def fixed_canvas_width(self, value):
+        self._fixed_canvas_width = bool(value)
+        self.events.fixed_canvas_width()
 
     @property
     def edge_color(self) -> np.ndarray:
@@ -615,16 +581,12 @@ class Vectors(Layer):
         self._edge.contrast_limits = contrast_limits
 
     @property
-    def _view_face_color(self) -> np.ndarray:
+    def _view_color(self) -> np.ndarray:
         """(Mx4) np.ndarray : colors for the M in view vectors"""
-        face_color = self.edge_color[self._view_indices]
-        face_color[:, -1] *= self._view_alphas
-        face_color = np.repeat(face_color, 2, axis=0)
+        color = self.edge_color[self._view_indices]
+        color[:, -1] *= self._view_alphas
 
-        if self._ndisplay == 3 and self.ndim > 2:
-            face_color = np.vstack([face_color, face_color])
-
-        return face_color
+        return color
 
     def _slice_data(
         self, dims_indices
@@ -671,60 +633,16 @@ class Vectors(Layer):
             slice_indices = np.where(matches)[0].astype(int)
             return slice_indices, alpha
         else:
-            return [], np.empty(0)
+            return [], np.empty(0, float)
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-
         indices, alphas = self._slice_data(self._slice_indices)
-        if not self._dims_displayed == self._displayed_stored:
-            vertices, triangles = generate_vector_meshes(
-                self.data[:, :, list(self._dims_displayed)],
-                self.edge_width,
-                self.length,
-            )
-            self._mesh_vertices = vertices
-            self._mesh_triangles = triangles
-            self._displayed_stored = copy(self._dims_displayed)
-
-        vertices = self._mesh_vertices
+        self._view_indices = indices
+        self._view_alphas = alphas
         disp = list(self._dims_displayed)
-
-        if len(self.data) == 0:
-            faces = []
-            self._view_data = np.empty((0, 2, 2))
-            self._view_indices = []
-        elif self.ndim > 2:
-            indices, alphas = self._slice_data(self._slice_indices)
-            self._view_indices = indices
-            self._view_alphas = alphas
-            self._view_data = self.data[np.ix_(indices, [0, 1], disp)]
-            if len(indices) == 0:
-                faces = []
-            else:
-                keep_inds = np.repeat(2 * indices, 2)
-                keep_inds[1::2] = keep_inds[1::2] + 1
-                if self._ndisplay == 3:
-                    keep_inds = np.concatenate(
-                        [
-                            keep_inds,
-                            len(self._mesh_triangles) // 2 + keep_inds,
-                        ],
-                        axis=0,
-                    )
-                faces = self._mesh_triangles[keep_inds]
-        else:
-            faces = self._mesh_triangles
-            self._view_data = self.data[:, :, disp]
-            self._view_indices = np.arange(self.data.shape[0])
-            self._view_alphas = 1.0
-
-        if len(faces) == 0:
-            self._view_vertices = []
-            self._view_faces = []
-        else:
-            self._view_vertices = vertices
-            self._view_faces = faces
+        # This indexing had to be split in two or we would lose dimensionality... why?
+        self._view_data = self.data[self._view_indices][..., disp]
 
     def _update_thumbnail(self):
         """Update thumbnail with current vectors and colors."""
@@ -743,7 +661,6 @@ class Vectors(Layer):
         ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 
-        # vectors = copy(self._data_view[:, :, -2:])
         if self._view_data.shape[0] > self._max_vectors_thumbnail:
             thumbnail_indices = np.random.randint(
                 0, self._view_data.shape[0], self._max_vectors_thumbnail

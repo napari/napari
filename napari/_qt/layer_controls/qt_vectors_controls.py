@@ -42,6 +42,8 @@ class QtVectorsControls(QtLayerControls):
         Multiplicative factor on projections for length of all vectors.
     widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling edge line width of vectors.
+    fixed_canvas_width : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate if the canvas width is fixed.
     """
 
     def __init__(self, layer):
@@ -56,6 +58,9 @@ class QtVectorsControls(QtLayerControls):
             self._on_edge_color_mode_change
         )
         self.layer.events.edge_color.connect(self._on_edge_color_change)
+        self.layer.events.fixed_canvas_width.connect(
+            self._on_fixed_canvas_width_change
+        )
 
         # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()
@@ -108,6 +113,12 @@ class QtVectorsControls(QtLayerControls):
         out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
         self.outOfSliceCheckBox = out_of_slice_cb
 
+        fixed_width_cb = QCheckBox()
+        fixed_width_cb.setToolTip(trans._('Fixed canvas width'))
+        fixed_width_cb.setChecked(self.layer.fixed_canvas_width)
+        fixed_width_cb.stateChanged.connect(self.change_fixed_canvas_width)
+        self.fixedCanvasWidthCheckBox = fixed_width_cb
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
@@ -126,7 +137,11 @@ class QtVectorsControls(QtLayerControls):
         self.grid_layout.addWidget(self.color_prop_box, 6, 1, 1, 2)
         self.grid_layout.addWidget(QLabel(trans._('out of slice:')), 7, 0)
         self.grid_layout.addWidget(self.outOfSliceCheckBox, 7, 1)
-        self.grid_layout.setRowStretch(8, 1)
+        self.grid_layout.addWidget(
+            QLabel(trans._('fixed canvas width:')), 8, 0
+        )
+        self.grid_layout.addWidget(self.fixedCanvasWidthCheckBox, 8, 1)
+        self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -217,6 +232,19 @@ class QtVectorsControls(QtLayerControls):
         else:
             self.layer.out_of_slice_display = False
 
+    def change_fixed_canvas_width(self, state):
+        """Toggle fixed canvas width of vectors layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox to indicate whether canvas width is fixed.
+        """
+        if state == Qt.Checked:
+            self.layer.fixed_canvas_width = True
+        else:
+            self.layer.fixed_canvas_width = False
+
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.
         This is typically used when edge_color_mode changes
@@ -264,6 +292,12 @@ class QtVectorsControls(QtLayerControls):
         """Receive layer model out_of_slice_display change event and update checkbox."""
         with self.layer.events.out_of_slice_display.blocker():
             self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
+
+    def _on_fixed_canvas_width_change(self):
+        with self.layer.events.fixed_canvas_width.blocker():
+            self.fixedCanvasWidthCheckBox.setChecked(
+                self.layer.fixed_canvas_width
+            )
 
     def _on_edge_width_change(self):
         """Receive layer model width change event and update width spinbox."""
