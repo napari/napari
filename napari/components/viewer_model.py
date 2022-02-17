@@ -968,11 +968,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         assert not isinstance(paths, str)
 
         if stack:
-            layer_data, hookimpl = read_data_with_plugins(paths, plugin=plugin)
+            layer_data, hookimpl = read_data_with_plugins(
+                paths, plugin=plugin, stack=stack
+            )
         else:
             assert len(paths) == 1
             layer_data, hookimpl = read_data_with_plugins(
-                paths[0], plugin=plugin
+                paths, plugin=plugin, stack=stack
             )
 
         # glean layer names from filename. These will be used as *fallback*
