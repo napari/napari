@@ -675,7 +675,20 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self._transforms['tile2data'].scale = np.ones(self.ndim)
             image_indices = self._slice_indices
-            image = self.data[image_indices]
+            # XXX this breaks labels!
+            # TODO probably rounding wrong, get back to this
+            thickness = np.array(self._thickness_data(), dtype=int)
+            image_slices = tuple(
+                slice(
+                    max(0, image_indices[i] - thickness[i]),
+                    min(image_indices[i] + thickness[i], self.data.shape[i]),
+                )
+                if i in not_disp
+                else image_indices[i]
+                for i in range(self.ndim)
+            )
+            image = self.data[image_slices]
+            image = np.mean(image, axis=tuple(not_disp))
 
             # For single-scale we don't request a separate thumbnail_source
             # from the ChunkLoader because in ImageSlice.chunk_loaded we

@@ -38,7 +38,6 @@ class VispyVectorsLayer(VispyBaseLayer):
         pos = pos.reshape(-1, self.layer._ndisplay)
         color = color.repeat(2, axis=0)
 
-        print(pos.shape, color.shape)
         self.node.set_data(
             pos=pos,
             color=color,
