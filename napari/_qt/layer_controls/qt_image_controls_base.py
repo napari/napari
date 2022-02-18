@@ -235,7 +235,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         reset_btn = QPushButton("reset")
         reset_btn.setObjectName("reset_clims_button")
         reset_btn.setToolTip(trans._("autoscale contrast to data range"))
-        reset_btn.setFixedWidth(40)
+        reset_btn.setFixedWidth(45)
         reset_btn.clicked.connect(reset)
         self._layout.addWidget(reset_btn, alignment=Qt.AlignBottom)
 
@@ -248,7 +248,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
             range_btn.setToolTip(
                 trans._("set contrast range to full bit-depth")
             )
-            range_btn.setFixedWidth(65)
+            range_btn.setFixedWidth(75)
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
             self._layout.addWidget(range_btn, alignment=Qt.AlignBottom)
 
