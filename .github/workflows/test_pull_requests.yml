@@ -51,15 +51,8 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest]
-        python: [3.7, 3.8, 3.9]
+        python: ["3.8", "3.9", "3.10"]
         include:
-          # Windows py37
-          - python: 3.7
-            platform: windows-latest
-            backend: pyqt
-          - python: 3.7
-            platform: windows-latest
-            backend: pyside
           # Windows py38
           - python: 3.8
             platform: windows-latest
@@ -67,12 +60,11 @@ jobs:
           - python: 3.8
             platform: windows-latest
             backend: pyside
-          # macOS py38
           - python: 3.9
             platform: macos-11
             backend: pyqt # (only testing pyqt on mac in the interest of speed)
           # minimum specified requirements
-          - python: 3.7
+          - python: 3.8
             platform: ubuntu-18.04
             MIN_REQ: 1
           # test with --async_only
@@ -83,9 +75,6 @@ jobs:
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: headless-py38-linux
-          - python: '3.10'
-            platform: ubuntu-latest
-            backend: pyqt
 
     steps:
       - uses: actions/checkout@v2
@@ -172,21 +161,24 @@ jobs:
         uses: codecov/codecov-action@v1
 
   test_pip_install:
-    name: ubuntu-latest 3.8 pip install
+    name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.8
+      - uses: actions/checkout@v2
+        with:
+          path: napari-from-github
+
+      - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - uses: tlambert03/setup-qt-libs@v1
 
       - name: Install this commit
         run: |
-          # pip install this git sha directly from github
           pip install --upgrade pip
-          pip install git+https://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
+          pip install ./napari-from-github[all,testing]
 
       - name: Test
         uses: GabrielBB/xvfb-action@v1

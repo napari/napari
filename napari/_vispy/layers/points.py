@@ -4,7 +4,7 @@ from ...settings import get_settings
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import disconnect_events
 from ..utils.gl import BLENDING_MODES
-from ..utils.text import update_text_node
+from ..utils.text import update_text
 from ..visuals.points import PointsVisual
 from .base import VispyBaseLayer
 
@@ -130,7 +130,7 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text_node(text_node=self._get_text_node(), layer=self.layer)
+        update_text(node=self._get_text_node(), layer=self.layer)
         if update_node:
             self.node.update()
 

@@ -25,7 +25,7 @@ git remote add upstream https://github.com/napari/napari.git
 
 Install the package in editable mode, along with all of the developer tools
 ```sh
-pip install -r requirements.txt
+pip install -e ".[dev]"  # (quotes only needed for zsh shell)
 ```
 
 We use [`pre-commit`](https://pre-commit.com) to sort imports with

@@ -471,7 +471,7 @@ class Points(Layer):
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
                     self._feature_table.resize(len(data))
-                    self.text.update(self.features)
+                    self.text.string._update(self.features)
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones
@@ -1853,7 +1853,7 @@ class Points(Layer):
             self._feature_table.append(self._clipboard['features'])
 
             self.text._paste(
-                self._clipboard['text_strings'],
+                strings=self._clipboard['text_strings'],
             )
 
             self._edge_width = np.append(

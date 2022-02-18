@@ -312,11 +312,7 @@ class KeybindingDescriptor:
         self.__func__ = func
 
     def __get__(self, instance, cls):
-        if instance is not None:
-            keymap = instance.keymap
-        else:
-            keymap = cls.class_keymap
-
+        keymap = instance.keymap if instance is not None else cls.class_keymap
         return types.MethodType(self.__func__, keymap)
 
 

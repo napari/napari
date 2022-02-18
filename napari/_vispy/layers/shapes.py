@@ -3,7 +3,7 @@ import numpy as np
 from ...settings import get_settings
 from ...utils.events import disconnect_events
 from ..utils.gl import BLENDING_MODES
-from ..utils.text import update_text_node
+from ..utils.text import update_text
 from ..visuals.shapes import ShapesVisual
 from .base import VispyBaseLayer
 
@@ -116,7 +116,7 @@ class VispyShapesLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text_node(text_node=self._get_text_node(), layer=self.layer)
+        update_text(node=self._get_text_node(), layer=self.layer)
         if update_node:
             self.node.update()
 

@@ -98,7 +98,7 @@ class TextManager(EventedModel):
                 else:
                     kwargs['string'] = text
         super().__init__(**kwargs)
-        self.update(_features)
+        self.string._update(_features)
 
     @property
     def values(self):
@@ -157,10 +157,6 @@ class TextManager(EventedModel):
         )
         values = self.string(features)
         self.string._append(values)
-
-    def update(self, features: Any):
-        """Updates any cached encoded values like strings."""
-        self.string._update(features)
 
     def _paste(self, *, strings: StringArray):
         self.string._append(strings)

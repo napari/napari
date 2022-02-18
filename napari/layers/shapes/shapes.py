@@ -2879,7 +2879,7 @@ class Shapes(Layer):
             ]
 
             self._feature_table.append(self._clipboard['features'])
-            self.text._paste(self._clipboard['text_strings'])
+            self.text._paste(strings=self._clipboard['text_strings'])
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):
