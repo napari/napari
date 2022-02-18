@@ -23,6 +23,7 @@ exclude_patterns: [
   'ORGANIZATION.md',
   'guides/_viewer_events.md',
   'guides/_layer_events.md',
+  'guides/_layerlist_events.md',
 ]
 
 # Add GitHub buttons to your book
