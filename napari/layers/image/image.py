@@ -63,8 +63,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Colormap.
     contrast_limits : list (2,)
         Color limits to be used for determining the colormap bounds for
-        luminance images. If not passed is calculated as the min and max of
-        the image.
+        luminance images. For integer data types it is set to the data type's
+        range. Otherwise, it is calculated as the min and max of the image,
+        although if the image size is sufficiently large, this value
+        is computed from only a subset of the image. If ``rgb`` is `True`,
+        ``contrast_limits`` is ignored.
     gamma : float
         Gamma correction for determining colormap linearity. Defaults to 1.
     interpolation : str
@@ -315,6 +318,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._mode = Mode.PAN_ZOOM
         # Whether to calculate clims on the next set_view_slice
         self._should_calc_clims = False
+        self._initial_contrast_limits = None
         if contrast_limits is None:
             if not isinstance(data, np.ndarray):
                 dtype = normalize_dtype(getattr(data, 'dtype', None))
@@ -326,6 +330,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             else:
                 self.contrast_limits_range = self._calc_data_range()
         else:
+            self._initial_contrast_limits = contrast_limits
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
         self.colormap = colormap

@@ -36,9 +36,12 @@ class IntensityVisualizationMixin:
         self._keep_auto_contrast = False
 
     def reset_contrast_limits(self: 'Image', mode=None):
-        """Scale contrast limits to data range"""
+        """Scale contrast limits to data range or initial contrast_limits"""
         mode = mode or self._auto_contrast_source
-        self.contrast_limits = self._calc_data_range(mode)
+        if getattr(self, '_initial_contrast_limits', None):
+            self.contrast_limits = self._initial_contrast_limits
+        else:
+            self.contrast_limits = self._calc_data_range(mode)
 
     def reset_contrast_limits_range(self):
         """Scale contrast limits range to data type.
