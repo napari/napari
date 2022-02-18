@@ -2,8 +2,9 @@ name: Build Docs
 
 on:
   pull_request:
-    branches:
-      - main
+#    branches:
+#      - main
+    types: [labeled]
   push:
     branches:
       - docs
@@ -11,6 +12,7 @@ on:
 
 jobs:
   build-and-upload-artifact:
+    if: ${{ github.event.label.name == 'build-docs' && github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
     name: Build & Upload Artifact
     runs-on: ubuntu-latest
     steps:
