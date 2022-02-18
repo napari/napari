@@ -11,33 +11,21 @@ kernelspec:
   name: python3
 ---
 
-# shapes layer tutorial
+# Using the shapes layer
 
-+++
+In this document, you will learn about the `napari` `Shapes` layer, including
+how to display and edit shapes like rectangle, ellipses, polygons, paths, and
+lines. You will also understand how to add a shapes layer and edit it from the
+GUI and from the console.
 
-Welcome to the tutorial on the **napari** `Shapes` layer!
-
-This tutorial assumes you have already installed **napari**, know how to launch
-the viewer, and are familiar with its layout. For help with installation see our
-[installation](./installation) tutorial. For help getting started with the
-viewer see our [getting started](./getting_started) tutorial. For help
-understanding the organisation of the viewer, including things like the layers
-list, the layer properties widgets, the layer control panels, and the dimension
-sliders see our [napari viewer](./viewer) tutorial.
-
-This tutorial will teach you about the **napari** `Shapes` layer, including how
-to display and edit shapes like rectangle, ellipses, polygons, paths, and lines.
-At the end of the tutorial you should understand how to add a shapes layer and
-edit it from the GUI and from the console.
+## When to use the shapes layer
 
 The points layer allows you to display a list of an NxD arrays, where each array
 corresponds to one shape, specified by N points in D coordinates. You can adjust
 the position, size, face color, edge color, and opacity of all the shapes
 independently, both programmatically and from the GUI.
 
-+++
-
-## a simple example
+## A simple example
 
 You can create a new viewer and add a list of shapes in one go using the
 `napari.view_shapes` method, or if you already have an existing viewer, you can
@@ -88,7 +76,7 @@ nbscreenshot(viewer)
 viewer.close()
 ```
 
-## arguments of view_shapes and add_shapes
+## Arguments of `view_shapes` and `add_shapes`
 
 {meth}`~napari.view_layers.view_shapes` and {meth}`~napari.Viewer.add_shapes`
 accept the same layer-creation parameters.
@@ -99,7 +87,7 @@ accept the same layer-creation parameters.
 help(napari.view_shapes)
 ```
 
-## shapes data
+## Shapes data
 
 The input data to the shapes layer must be a list of NxD numpy array, with each
 array containing the coordinates of the N vertices in D dimensions that make up
@@ -110,9 +98,7 @@ or deleted. By storing data as a list of arrays it is possible for each shape to
 have a different number of vertices in it. This is especially useful when
 drawing polygons or paths.
 
-+++
-
-## adding different shape types
+## Adding different shape types
 
 Right now the shapes layer supports 5 types of shapes, `Lines`, `Rectangles`,
 `Ellipses`, `Polygons`, and `Paths`. When adding new data can set the shape type
@@ -122,15 +108,11 @@ the shapes have different types. The actual shape types of all the shapes is
 accessible through the `layer.shape_types` property. Selecting different shape
 creation tools will cause shapes of the different types to be added.
 
-+++
-
 `Lines` consist of two vertices representing the end points of the line. The
 line creation tool can be selected from the layer control panel or by pressing
 the `L` key when the shapes layer is selected. When adding a new line the first
 click will coordinates of the first endpoint and the second click will mark the
 coordinates of the second endpoint. You'll then be able to add another line.
-
-+++
 
 `Rectangles` can be added using two vertices representing the corners of the
 rectangle for axis aligned rectangle, or using four corners so that non-axis
@@ -142,8 +124,6 @@ click and drag the rectangle to have the desired shape. When you release the
 mouse the rectangle will be completed and you'll then be able to add another
 one. If you just make a single click then a rectangle of default size will be
 created centered on that click.
-
-+++
 
 `Ellipses` can be added using either two vectors, one representing the center
 position of the ellipse and the other representing the radii of the ellipse in
@@ -157,8 +137,6 @@ ellipse will be completed and you'll then be able to add another one. If you
 just make a single click then an ellipse of default size will be created
 centered on that click.
 
-+++
-
 `Polygons` can be added using an array of N vertices. Polygons are closed by
 default, and so you don't also need to include the first point at the end of the
 array. The order of the vertices will determine the triangulation of the
@@ -169,8 +147,6 @@ vertex at the clicked location. To finish drawing a polygon you must click the
 `escape` key, which will add a final vertex at the current mouse position and
 complete the polygon. You'll then be able to start adding another one.
 
-+++
-
 `Paths` are like polygons but are not closed or filled in. They can also be
 added using an array of N vertices. The path creation tool can be selected from
 the layer control panel or by pressing the `T` key when the shapes layer is
@@ -179,17 +155,15 @@ location. To finish drawing a path you must click the `escape` key, which will
 add a final vertex at the current mouse position and complete the path. You'll
 then be able to start adding another one.
 
-+++
-
 When using the shapes addition or editing tools the pan and zoom functionality
 of the viewer canvas is disabled and you can edit the layer. You can temporarily
 re-enable pan and zoom by pressing and holding the spacebar. This feature can be
 useful if you want to move around the shapes layer as you edit it.
 
-+++
+### Adding new shapes
 
-You can add new shapes to an existing `Shapes` layer programmatically by using 
-the `add` method, which allows you to pass in a `shape_type` list when you 
+You can add new shapes to an existing `Shapes` layer programmatically by using
+the `add` method, which allows you to pass in a `shape_type` list when you
 have mixed shape data.
 
 ```{code-cell} python
@@ -214,10 +188,10 @@ shapes_layer = viewer.add_shapes()
 
 # add mixed shapes using the `add` method
 shapes_layer.add(
-  mixed_shapes, 
-  shape_type=['polygon', 'ellipse'], 
+  mixed_shapes,
+  shape_type=['polygon', 'ellipse'],
   edge_width=5,
-  edge_color='coral', 
+  edge_color='coral',
   face_color='royalblue'
 )
 ```
@@ -235,8 +209,6 @@ nbscreenshot(viewer)
 
 viewer.close()
 ```
-
-+++
 
 Finally, each shape type has its own convenience method for adding new shapes
 to a layer. Their arguments are identical to those of the `add` method, but
@@ -263,9 +235,9 @@ shapes_layer = viewer.add_shapes()
 
 # add ellipses using their convenience method
 shapes_layer.add_ellipses(
-  ellipses, 
+  ellipses,
   edge_width=5,
-  edge_color='coral', 
+  edge_color='coral',
   face_color='royalblue'
 )
 ```
@@ -284,9 +256,7 @@ nbscreenshot(viewer)
 viewer.close()
 ```
 
-+++
-
-## creating a new shapes layer
+## Creating a new shapes layer
 
 As you can add new shapes to a shapes layer using the various shape creation
 tools, it is possible to create a brand-new empty shapes layers by clicking the
@@ -296,9 +266,7 @@ adjust as needed. The dimension of the new shapes layer will default to the
 largest dimension of any layer currently in the viewer, or to 2 if no other
 layers are present in the viewer.
 
-+++
-
-## non-editable mode
+## Non-editable mode
 
 If you want to disable editing of the shapes layer you can set the `editable`
 property of the layer to `False`.
@@ -306,21 +274,15 @@ property of the layer to `False`.
 As note in the section on 3D rendering, when using 3D rendering the shapes layer
 is not editable.
 
-+++
-
 ## 3D rendering of shapes
 
 All our layers can be rendered in both 2D and 3D mode, and one of our viewer
 buttons can toggle between each mode. The number of dimensions sliders will be 2
 or 3 less than the total number of dimensions of the layer. See for example the
-[`examples/nD_shapes.py`](https://github.com/napari/napari/blob/master/examples/nD_shapes.py)
+[`examples/nD_shapes.py`](https://github.com/napari/napari/blob/main/examples/nD_shapes.py)
 to see shapes in both 2D and 3D:
 
-+++
-
-![image: nD shapes](../assets/tutorials/nD_shapes.gif)
-
-+++
+![image: nD shapes](../../images/nD_shapes.gif)
 
 Note though that when entering 3D rendering mode the shape editing tools are all
 disabled. Those options are only supported when viewing a layer using 2D
@@ -332,20 +294,16 @@ view slice, i.e. the shape must be entirely defined within that plane.
 
 For paths that are defined by coordinates spanning more than two dimensions, it
 is possible to visualize them as 3D cylinders, see for example the
-[`examples/3D_paths.py`](https://github.com/napari/napari/blob/master/examples/3D_paths.py)
+[`examples/3D_paths.py`](https://github.com/napari/napari/blob/main/examples/3D_paths.py)
 
-+++
+![image: 3D paths](../../images/3D_paths.png)
 
-![image: 3D paths](../assets/tutorials/3D_paths.png)
-
-+++
-
+```{note}
 Right now, it is not possible to display 3D cuboids or 3D spheroids, but will be
 supporting those options soon.
+```
 
-+++
-
-## pan and zoom mode
+## Pan and zoom mode
 
 The default mode of the shapes layer is to support panning and zooming, as in
 the image layer. This mode is represented by the magnifying glass in the layers
@@ -354,9 +312,7 @@ Continue reading to learn how to use some of the editing modes. You can always
 return to pan and zoom mode by pressing the `Z` key when the shapes layer is
 selected.
 
-+++
-
-## selecting, resizing, moving, and deleting shapes
+## Selecting, resizing, moving, and deleting shapes
 
 New shapes can be added using one of the 5 shape creation tools, for `Lines`,
 `Rectangles`, `Ellipses`, `Polygons`, and `Paths`. For more information on the
@@ -384,14 +340,9 @@ key if you are in select mode.
 Once selected you can delete the selected shapes by clicking on the delete
 button in the layer controls panel or pressing the delete key.
 
-+++
+For example see below: ![image: shape resizing](../../images/shape_resizing.gif)
 
-For example see below: ![image: shape
-resizing](../assets/tutorials/shape_resizing.gif)
-
-+++
-
-## adding, moving, and deleting individual vertices
+## Adding, moving, and deleting individual vertices
 
 You can move individual vertices by entering the direct selection mode by either
 clicking on the direct select tool in the layer controls panel or pressing the
@@ -406,14 +357,10 @@ You can delete vertices to a selected shape using the vertex deletion tool which
 can be selected either clicking on the vertex deletion tool in the layer
 controls panel or pressing the `X` key while the shapes layer is selected.
 
-+++
-
 For example see below: ![image: shape vertex
-editing](../assets/tutorials/shape_vertex_editing.gif)
+editing](../../images/shape_vertex_editing.gif)
 
-+++
-
-## changing shape edge and face colors
+## Changing shape edge and face colors
 
 Individual shapes can each have different edge and face colors. You can
 initially set these colors by providing a list of colors to the `edge_color` or
@@ -428,9 +375,7 @@ To change the shape color properties from the GUI you must first select the
 shape whose properties you want to change, otherwise you will just be
 initializing the property for the next shape you add.
 
-+++
-
-## changing shape edge widths
+## Changing shape edge widths
 
 Individual shapes can each have different edge widths. You can initially set the
 edge widths by providing a list of values to the `edge_width` keyword arguments
@@ -444,18 +389,14 @@ To change the edge with property from the GUI you must first select the shape
 whose properties you want to change, otherwise you will just be initializing the
 property for the next shape you add.
 
-+++
-
-## layer ordering
+## Layer ordering
 
 You can adjust the ordering of shapes in the layer by selecting shapes and then
 clicking the move to front or move to back buttons. You can get the ordering of
 all the shapes using the `layer.z_indices` property. You can also set the
 initial ordering of shapes by passing a list to the `layer.z_index` property.
 
-+++
-
-## copying and pasting shapes
+## Copying and pasting shapes
 
 It is possible to copy and paste any selected shapes using the `ctrl-C` and
 `ctrl-V` keybindings respectively. If you have a multidimensional shapes layer
@@ -464,100 +405,20 @@ slice. The coordinates of the shapes in the visible dimensions will be in the
 same place on the new slice as in the old slice, but the rest of the coordinates
 will be updated with the new slice values.
 
-+++
+## Shapes layer opacity
 
-## layer visibility
-
-All our layers support a visibility toggle that allows you to set the `visible`
-property of each layer. This property is located inside the layer widget in the
-layers list and is represented by an eye icon.
-
-+++
-
-## layer opacity
-
-All our layers support an opacity slider and `opacity` property that allow you
-to adjust the layer opacity between 0, fully invisible, and 1, fully visible.
-The opacity value applies individually to each shape in the layer, and so you
-must have shapes selected for it to have an effect.
-
-You can also initialize the shape opacities using the `opacity` keyword argument
-which accepts either a list of opacities or a single opacity value that will be
+The {ref}`opacity value <layer_opacity>` applies individually to each shape in
+the layer, and so you must have shapes selected for it to have an effect. You
+can initialize the shape opacities using the `opacity` keyword argument which
+accepts either a list of opacities or a single opacity value that will be
 applied globally. You can then access the opacity of every shape using the
 `layer.opacities` property. Note that this property is different from the
 `layer.opacity` property that determines the opacity of the next shape to be
 added.
 
-+++
-
-## blending layers
-
-All our layers support three blending modes `translucent`, `additive`, and
-`opaque` that determine how the visuals for this layer get mixed with the
-visuals from the other layers.
-
-An `opaque` layer renders all the other layers below it invisible and will fade
-to black as you decrease its opacity.
-
-The `translucent` setting will cause the layer to blend with the layers below it
-if you decrease its opacity but will fully block those layers if its opacity is
-1. This is a reasonable default, useful for many applications.
-
-The final blending mode `additive` will cause the layer to blend with the layers
-below even when it has full opacity. This mode is especially useful for
-visualizing multiple layers at the same time.
-
-+++
-
-## naming layers
-
-All our layers support a `name` property that can be set inside a text box
-inside the layer widget in the layers list. The name of each layer is forced
-into being unique so that you can use the name to index into `viewer.layers` to
-retrieve the layer object.
-
-+++
-
-## scaling layers
-
-All our layers support a `scale` property and keyword argument that will rescale
-the layer multiplicatively according to the scale values (one for each
-dimension). This property can be particularly useful for viewing anisotropic
-data where the size of the voxel in the z dimension might be different then the
-size in the x and y dimensions.
-
-+++
-
-## translating layers
-
-All our layers support a `translate` property and keyword argument that you can
-use to offset a layer relative to the other layers, which could be useful if you
-are trying to overlay two layers for image registration purposes.
-
-+++
-
-## layer metadata
-
-All our layers also support a `metadata` property and keyword argument that you
-can use to store an arbitrary metadata dictionary on the layer.
-
-+++
-
-## putting it all together
+## Putting it all together
 
 Here you can see an example of adding, selecting, and editing shapes and change
 their properties:
 
-+++
-
-![image: editing shapes](../assets/tutorials/editing_shapes.gif)
-
-+++
-
-## next steps
-
-Hopefully, this tutorial has given you a detailed understanding of the `Shapes`
-layer, including how to create one and control its properties. To learn more
-about some of the other layer types that **napari** supports checkout some more
-of our tutorials listed below. The [surface layer](./surface) tutorial is a
-great one to try next as it describes rendering complex surfaces.
+![image: editing shapes](../../images/editing_shapes.gif)
