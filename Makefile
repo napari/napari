@@ -5,7 +5,7 @@ docs:
 	rm -rf docs/api/napari*.rst
 	pip install -qr docs/requirements.txt
 	python docs/_scripts/prep_docs.py
-	NAPARI_APPLICATION_IPY_INTERACTIVE=0 jb build docs
+	NAPARI_APPLICATION_IPY_INTERACTIVE=0 sphinx-build -b html docs/ docs/_build
 
 typestubs:
 	python -m napari.utils.stubgen

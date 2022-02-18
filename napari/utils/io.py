@@ -54,9 +54,9 @@ def imsave(filename: str, data: np.ndarray):
         if compression_instead_of_compress:
             # 'compression' scheme is more complex. See:
             # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
-            tifffile.imsave(filename, data, compression=('zlib', 1))
+            tifffile.imwrite(filename, data, compression=('zlib', 1))
         else:  # older version of tifffile since 2021.6.6  this is deprecated
-            tifffile.imsave(filename, data, compress=1)
+            tifffile.imwrite(filename, data, compress=1)
     else:
         import imageio
 

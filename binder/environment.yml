@@ -2,7 +2,7 @@ channels:
 - conda-forge # Used by jupyter-desktop-server
 dependencies:
 # See: https://github.com/conda-forge/napari-feedstock/blob/master/recipe/meta.yaml
-- python >=3.7
+- python >=3.8
 # dependencies matched to pip
 - appdirs >=1.4.4
 - cachey >=0.2.1
