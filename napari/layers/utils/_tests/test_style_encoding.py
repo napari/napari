@@ -40,16 +40,10 @@ class ScalarConstantEncoding(_ConstantStyleEncoding[Scalar, ScalarArray]):
     constant: Scalar
 
 
-def test_scalar_constant_encoding_update_all(features):
+def test_scalar_constant_encoding_update(features):
     encoding = ScalarConstantEncoding(constant=0)
-    values = encoding._update(features)
-    np.testing.assert_array_equal(values, 0)
-
-
-def test_scalar_constant_encoding_update_some(features):
-    encoding = ScalarConstantEncoding(constant=0)
-    values = encoding._update(features, indices=[0, 2])
-    np.testing.assert_array_equal(values, 0)
+    encoding._update(features)
+    np.testing.assert_array_equal(encoding._values, 0)
 
 
 def test_scalar_constant_encoding_append():
@@ -77,20 +71,20 @@ class ScalarManualEncoding(_ManualStyleEncoding[Scalar, ScalarArray]):
 
 def test_scalar_manual_encoding_update_with_shorter(features):
     encoding = ScalarManualEncoding(array=[1, 2, 3, 4])
-    values = encoding._update(features)
-    np.testing.assert_array_equal(values, [1, 2, 3])
+    encoding._update(features)
+    np.testing.assert_array_equal(encoding._values, [1, 2, 3])
 
 
 def test_scalar_manual_encoding_update_with_equal_length(features):
     encoding = ScalarManualEncoding(array=[1, 2, 3])
-    values = encoding._update(features)
-    np.testing.assert_array_equal(values, [1, 2, 3])
+    encoding._update(features)
+    np.testing.assert_array_equal(encoding._values, [1, 2, 3])
 
 
 def test_scalar_manual_encoding_update_with_longer(features):
     encoding = ScalarManualEncoding(array=[1, 2], default=-1)
-    values = encoding._update(features)
-    np.testing.assert_array_equal(values, [1, 2, -1])
+    encoding._update(features)
+    np.testing.assert_array_equal(encoding._values, [1, 2, -1])
 
 
 def test_scalar_manual_encoding_append():
@@ -119,31 +113,22 @@ class ScalarDirectEncoding(_DerivedStyleEncoding[Scalar, ScalarArray]):
         return ScalarArray.validate_type(features[self.feature])
 
 
-def test_scalar_derived_encoding_update_all(features):
+def test_scalar_derived_encoding_update(features):
     encoding = ScalarDirectEncoding(feature='scalar')
 
-    values = encoding._update(features)
+    encoding._update(features)
 
     expected_values = features['scalar']
-    np.testing.assert_array_equal(values, expected_values)
-
-
-def test_scalar_derived_encoding_update_some(features):
-    encoding = ScalarDirectEncoding(feature='scalar')
-
-    values = encoding._update(features, indices=[0, 2])
-
-    expected_values = features['scalar'][[0, 2]]
-    np.testing.assert_array_equal(values, expected_values)
+    np.testing.assert_array_equal(encoding._values, expected_values)
 
 
 def test_scalar_derived_encoding_update_with_failure(features):
     encoding = ScalarDirectEncoding(feature='not_a_column', fallback=-1)
 
     with pytest.warns(RuntimeWarning):
-        values = encoding._update(features)
+        encoding._update(features)
 
-    np.testing.assert_array_equal(values, [-1] * len(features))
+    np.testing.assert_array_equal(encoding._values, [-1] * len(features))
 
 
 def test_scalar_derived_encoding_append():
@@ -181,16 +166,10 @@ class VectorConstantEncoding(_ConstantStyleEncoding[Vector, VectorArray]):
     constant: Vector
 
 
-def test_vector_constant_encoding_update_all(features):
+def test_vector_constant_encoding_update(features):
     encoding = VectorConstantEncoding(constant=[0, 0])
-    values = encoding._update(features)
-    np.testing.assert_array_equal(values, [0, 0])
-
-
-def test_vector_constant_encoding_update_some(features):
-    encoding = VectorConstantEncoding(constant=[0, 0])
-    values = encoding._update(features, indices=[0, 2])
-    np.testing.assert_array_equal(values, [0, 0])
+    encoding._update(features)
+    np.testing.assert_array_equal(encoding._values, [0, 0])
 
 
 def test_vector_constant_encoding_append():
@@ -218,20 +197,20 @@ class VectorManualEncoding(_ManualStyleEncoding[Vector, VectorArray]):
 
 def test_vector_manual_encoding_update_with_shorter(features):
     encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3], [4, 4]])
-    values = encoding._update(features)
-    np.testing.assert_array_equal(values, [[1, 1], [2, 2], [3, 3]])
+    encoding._update(features)
+    np.testing.assert_array_equal(encoding._values, [[1, 1], [2, 2], [3, 3]])
 
 
 def test_vector_manual_encoding_update_with_equal_length(features):
     encoding = VectorManualEncoding(array=[[1, 1], [2, 2], [3, 3]])
-    values = encoding._update(features)
-    np.testing.assert_array_equal(values, [[1, 1], [2, 2], [3, 3]])
+    encoding._update(features)
+    np.testing.assert_array_equal(encoding._values, [[1, 1], [2, 2], [3, 3]])
 
 
 def test_vector_manual_encoding_update_with_longer(features):
     encoding = VectorManualEncoding(array=[[1, 1], [2, 2]], default=[-1, -1])
-    values = encoding._update(features)
-    np.testing.assert_array_equal(values, [[1, 1], [2, 2], [-1, -1]])
+    encoding._update(features)
+    np.testing.assert_array_equal(encoding._values, [[1, 1], [2, 2], [-1, -1]])
 
 
 def test_vector_manual_encoding_append():
@@ -262,31 +241,22 @@ class VectorDirectEncoding(_DerivedStyleEncoding[Vector, VectorArray]):
         return VectorArray.validate_type(list(features[self.feature]))
 
 
-def test_vector_derived_encoding_update_all(features):
+def test_vector_derived_encoding_update(features):
     encoding = VectorDirectEncoding(feature='vector')
 
-    values = encoding._update(features)
+    encoding._update(features)
 
     expected_values = list(features['vector'])
-    np.testing.assert_array_equal(values, expected_values)
-
-
-def test_vector_derived_encoding_update_some(features):
-    encoding = VectorDirectEncoding(feature='vector')
-
-    values = encoding._update(features, indices=[0, 2])
-
-    expected_values = list(features['vector'][[0, 2]])
-    np.testing.assert_array_equal(values, expected_values)
+    np.testing.assert_array_equal(encoding._values, expected_values)
 
 
 def test_vector_derived_encoding_update_with_failure(features):
     encoding = VectorDirectEncoding(feature='not_a_column', fallback=[-1, -1])
 
     with pytest.warns(RuntimeWarning):
-        values = encoding._update(features)
+        encoding._update(features)
 
-    np.testing.assert_array_equal(values, [[-1, -1]] * len(features))
+    np.testing.assert_array_equal(encoding._values, [[-1, -1]] * len(features))
 
 
 def test_vector_derived_encoding_append():
