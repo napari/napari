@@ -19,11 +19,10 @@ plugin_manager = NapariPluginManager()
 
 @lru_cache  # only call once
 def _initialize_plugins():
-    settings = get_settings().plugins
-
     _npe2pm = _PluginManager.instance()
-    for p in settings.disabled_plugins_npe2:
-        _npe2pm.disable(p)
+    settings = get_settings().plugins
+    # for p in settings.disabled_plugins:
+    #     _npe2pm.disable(p)
     _npe2pm.discover()
     _npe2pm.events.enablement_changed.connect(
         _npe2._on_plugin_enablement_change

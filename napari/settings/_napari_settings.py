@@ -1,8 +1,9 @@
 import os
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Optional
 
-from pydantic import Field
+from pydantic import BaseModel, Field, validator
 
 from ..utils._base import _DEFAULT_CONFIG_PATH
 from ..utils.translations import trans
@@ -10,10 +11,13 @@ from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
 from ._base import EventedConfigFileSettings, _remove_empty_dicts
 from ._experimental import ExperimentalSettings
+from ._fields import Version
 from ._plugins import PluginsSettings
 from ._shortcuts import ShortcutsSettings
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
+
+CURRENT_SCHEMA_VERSION = Version(0, 4, 0)
 
 
 class NapariSettings(EventedConfigFileSettings):
@@ -25,11 +29,15 @@ class NapariSettings(EventedConfigFileSettings):
     #    or if you want to *rename* options, then you need to do a MAJOR update in
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
-    schema_version: Tuple[int, int, int] = Field(
-        (0, 3, 0),
+    schema_version: Version = Field(
+        CURRENT_SCHEMA_VERSION,
         description=trans._("Napari settings schema version."),
-        allow_mutation=False,
     )
+
+    @validator('schema_version', pre=True)
+    def _handle_empty_schema(cls, value):
+        return '0.3.0' if not value else value
+
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings,
         title=trans._("Application"),
@@ -67,6 +75,14 @@ class NapariSettings(EventedConfigFileSettings):
         # (you can still mutate attributes in the subfields)
         allow_mutation = False
 
+    def __init__(self, config_path=..., **values: Any) -> None:
+        super().__init__(config_path, **values)
+        self._maybe_migrate()
+
+    def _save_dict(self):
+        # TODO: there must be a better way to always include this
+        return {'schema_version': self.schema_version, **super()._save_dict()}
+
     def __str__(self):
         out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
         data = self.dict(exclude_defaults=True)
@@ -75,6 +91,53 @@ class NapariSettings(EventedConfigFileSettings):
 
     def __repr__(self):
         return str(self)
+
+    def _maybe_migrate(self):
+        if self.schema_version < CURRENT_SCHEMA_VERSION:
+            for migration in Migration.subclasses():
+                if self.schema_version == migration.from_:
+                    with mutation_allowed(self):
+                        migration().migrate(self)
+                        self.schema_version = Version.parse(migration.to_)
+
+
+@contextmanager
+def mutation_allowed(obj: BaseModel):
+    config = obj.__config__
+    prev, config.allow_mutation = config.allow_mutation, True
+    try:
+        yield
+    finally:
+        config.allow_mutation = prev
+
+
+class Migration:
+    from_: str
+    to_: str
+
+    def migrate(self, model: NapariSettings) -> None:
+        ...
+
+    @classmethod
+    def subclasses(cls):
+        yield from sorted(cls.__subclasses__(), key=lambda x: x.from_)
+
+
+class Migrate_030_040(Migration):
+    from_ = '0.3.0'
+    to_ = '0.4.0'
+
+    def migrate(self, model: NapariSettings):
+        from importlib.metadata import distributions
+
+        # prior to v0.4.0, npe2 plugins were automatically added to
+        # disabled plugins
+        for dist in distributions():
+            for ep in dist.entry_points:
+                if ep.group == "napari.manifest":
+                    model.plugins.disabled_plugins.discard(
+                        dist.metadata['Name']
+                    )
 
 
 if __name__ == '__main__':
