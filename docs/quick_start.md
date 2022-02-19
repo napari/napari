@@ -22,7 +22,7 @@ napari is a fast, interactive, multi-dimensional image viewer, with [a vibrant p
 
 napari is an open source project on [GitHub](https://github.com/napari/napari) to facilitate transparency, reuse, and extensibility. 
 
-At its core, it provides critical viewer features out-of-the-box, such as support for [large multi-dimensional data](https://napari.org/tutorials/applications/dask.html); provide [“layers”](https://napari.org/tutorials/start_index.html) to simultaneously visualize images, models, and analysis results; and easy manual, interactive annotation in 3D.
+At its core, it provides critical viewer features out-of-the-box, such as support for [large multi-dimensional data](https://napari.org/tutorials/applications/dask.html); [“layers”](https://napari.org/tutorials/start_index.html) to simultaneously visualize images, models, and analysis results; and easy manual, interactive annotation in 3D.
 
 This tutorial uses napari 0.4.13. <br>
 
@@ -48,23 +48,29 @@ You will also see some examples of plugins. The core napari viewer focuses on do
 
 ### Installation
 
+- Download the bundled app for simple installation:
+
+    [Linux installation](https://github.com/napari/napari/releases/download/v0.4.14/napari-0.4.14-Linux-x86_64.zip)<br>
+    [macOS installaion](https://github.com/napari/napari/releases/download/v0.4.14/napari-0.4.14-macOS-x86_64.zip)<br>
+    [Windows installation](https://github.com/napari/napari/releases/download/v0.4.14/napari-0.4.14-Windows-x86_64.zip)<br>
+
+    *Note: for the latest release, please visit [here](https://github.com/napari/napari/releases) and look for Assets.*
+
 - For those familiar with Python:
 
-    napari can be installed on most macOS, Linux, and Windows systems with Python 3.7, 3.8, and 3.9 using pip:
+    napari can be installed on most macOS, Linux, and Windows systems with Python 3.7, 3.8, and 3.9 using pip. 
+    
+    First, create a clean virtual environment:
+```python
+conda create -y -n napari-env -c conda-forge python=3.9
+conda activate napari-env
+```
+    Once in napari-env,
 
 ```python
 pip install 'napari[all]'
 ```
 
-- Or download the bundled app for simple installation:
-
-    [Linux installation](https://github.com/napari/napari/releases/download/v0.4.13/napari-0.4.13-Linux-x86_64.zip)<br>
-    [macOS installaion](https://github.com/napari/napari/releases/download/v0.4.13/napari-0.4.13-macOS-x86_64.zip)<br>
-    [Windows installation](https://github.com/napari/napari/releases/download/v0.4.13/napari-0.4.13-Windows-x86_64.zip)<br>
-
-    *Note: 0.4.13 bundled app is missing sample menu data ([issue 3968](https://github.com/napari/napari/issues/3968))*
-    
-    *Note: for the latest release, please visit [here](https://github.com/napari/napari/releases) and look for Assets.*
 
 If you run into any issue, please visit the more detailed [installation guide](https://napari.org/tutorials/fundamentals/installation.html), or report an issue on GitHub!
 
@@ -127,9 +133,9 @@ nbscreenshot(viewer)
 
 ### Image display adjustment
 
-The layer control panel at the upper left of napari viewer allows you adjust contrast, colormap etc. These settings affect the visualization, but do not affect the underlying data.
+The layer controls panel at the upper left of the viewer allows you to adjust contrast, colormap, and other layer properties. These settings affect the visualization, but do not affect the underlying data.
 
-To change the image display through [API](https://napari.org/api/stable/napari.layers.Image.html), in IPython console, type
+To change the image display through the [API](https://napari.org/api/stable/napari.layers.Image.html), in IPython console, type
 
 ```python
 viewer.layers['cell'].colormap = "yellow"
@@ -144,24 +150,25 @@ nbscreenshot(viewer)
 
 ### Manually label the cell
 
-To measure the area of the cell, we can use labels layer and manually "paint" the cell.
+To measure the area of the cell, we can use a labels layer and manually "paint" the cell.
 The labels layer allows you to record the segmentation result by assigning background = 0, and assigning each object with an integer.
 
-(1) Add a new labels layer <br> 
-(2) Click on "paint" <br>
-(3) Circle the cell <br>
-(4) Use "fill" bucket to fill it. <br>
+1. Add a new labels layer 
+1. Click on "paint"
+1. Circle the cell
+1. Use "fill" bucket to fill it.
 
 ![manual_label](./img/manual_label.gif)
 
-Several plugins can perform automatic segmentation that takes image layer as input and generates labels layer as output. <br>
+Several plugins can perform automatic segmentation that takes image layer as input and generates labels layer as output.
+
 Try [cellpose-napari](https://www.napari-hub.org/plugins/cellpose-napari) if you have cell images.
 
 +++
 
 ### Get the cell area measurement
 
-[skimage.measure.regionprops](https://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops) provides a good set of features that can be extracted from labels, including area measurement.
+To analyze labels layer, we can use [scikit-image](https://scikit-image.org/), a popular Python library that comes with napari installtion. [skimage.measure.regionprops](https://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops) provides a good set of features that can be extracted from labels, including area measurement.
 
 In IPython console, type
 
@@ -182,14 +189,16 @@ viewer.close_all()
 ```
 
 ### Next steps
-- Try opening 3D or higher dimensional images, and switch to 3D view. <br>
+- napari provides the flexibility to handle multi-dimensional data. Try opening 3D or higher dimensional images, and switch to 3D view. <br>
 <img src="./images/ndisplay.png" alt="ndisplay" width="30%"/><br> 
-napari provides the flexibility to handle multi-dimensional data, though the increased dimension could add to overall complexity.
+
 
 - Test some [examples](https://github.com/napari/napari/tree/main/examples) to see how to add different layer types and add your own widgets to napari. 
 
 - Explore other [plugins](https://www.napari-hub.org/). A few fun ones: [napari-clusters-plotter](https://www.napari-hub.org/plugins/napari-clusters-plotter), [napari-pyclesperanto-assistant](https://www.napari-hub.org/plugins/napari-pyclesperanto-assistant), [napari-animation](https://www.napari-hub.org/plugins/napari-animation).
 
-- If you don't see the functions you need in existing plugins, try to [make one](https://napari.org/plugins/stable/index.html)!
+- If you don't see the functions you need in existing plugins, try to make your own widget with [magicgui](https://napari.org/magicgui/).
 
-- Help napari project by [filing issues](https://github.com/napari/napari/issues) for bugs you encounter or features that you'd like to see! Or even better, come [join the community meeting](https://napari.org/community/meeting_schedule.html) and get to know the team.
+- If you've developed some functionality that you think would benefit the community as a whole, consider publish it as a [plugin](https://napari.org/plugins/stable/index.html)!
+
+- Help the napari project by [filing issues](https://github.com/napari/napari/issues) for bugs you encounter or features that you'd like to see! Or even better, come [join the community meeting](https://napari.org/community/meeting_schedule.html) and get to know the team.
