@@ -1,9 +1,8 @@
 import os
-from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, validator
 
 from ..utils._base import _DEFAULT_CONFIG_PATH
 from ..utils.translations import trans
@@ -94,50 +93,9 @@ class NapariSettings(EventedConfigFileSettings):
 
     def _maybe_migrate(self):
         if self.schema_version < CURRENT_SCHEMA_VERSION:
-            for migration in Migration.subclasses():
-                if self.schema_version == migration.from_:
-                    with mutation_allowed(self):
-                        migration().migrate(self)
-                        self.schema_version = Version.parse(migration.to_)
+            from ._migrations import do_migrations
 
-
-@contextmanager
-def mutation_allowed(obj: BaseModel):
-    config = obj.__config__
-    prev, config.allow_mutation = config.allow_mutation, True
-    try:
-        yield
-    finally:
-        config.allow_mutation = prev
-
-
-class Migration:
-    from_: str
-    to_: str
-
-    def migrate(self, model: NapariSettings) -> None:
-        ...
-
-    @classmethod
-    def subclasses(cls):
-        yield from sorted(cls.__subclasses__(), key=lambda x: x.from_)
-
-
-class Migrate_030_040(Migration):
-    from_ = '0.3.0'
-    to_ = '0.4.0'
-
-    def migrate(self, model: NapariSettings):
-        from importlib.metadata import distributions
-
-        # prior to v0.4.0, npe2 plugins were automatically added to
-        # disabled plugins
-        for dist in distributions():
-            for ep in dist.entry_points:
-                if ep.group == "napari.manifest":
-                    model.plugins.disabled_plugins.discard(
-                        dist.metadata['Name']
-                    )
+            do_migrations(self)
 
 
 if __name__ == '__main__':
