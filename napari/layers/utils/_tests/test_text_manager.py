@@ -199,8 +199,7 @@ def test_text_with_format_string_missing_property_then_constant_empty_with_warni
         text_manager = TextManager(
             text=text, n_text=n_text, properties=properties
         )
-        values = text_manager.values
-    np.testing.assert_array_equal(values, [''] * n_text)
+    np.testing.assert_array_equal(text_manager.values, [''] * n_text)
 
 
 def test_text_constant_then_repeat_values():
