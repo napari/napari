@@ -78,7 +78,7 @@ If you run into any issue, please visit the more detailed [installation guide](h
 
 ### Open napari
 
-napari can be opened by [multiple ways](https://napari.org/tutorials/fundamentals/getting_started.html), depending on how its used in your image analysis workflow. 
+napari can be opened in one of [multiple ways](https://napari.org/tutorials/fundamentals/getting_started.html), depending on how it's used in your image analysis workflow.
 
 Here we will be mainly focused on the GUI application.
 
