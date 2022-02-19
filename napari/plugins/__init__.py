@@ -20,9 +20,11 @@ plugin_manager = NapariPluginManager()
 @lru_cache  # only call once
 def _initialize_plugins():
     _npe2pm = _PluginManager.instance()
-    settings = get_settings().plugins
-    # for p in settings.disabled_plugins:
-    #     _npe2pm.disable(p)
+    settings = get_settings()
+    if settings.schema_version >= '0.4.0':
+        for p in settings.plugins.disabled_plugins:
+            _npe2pm.disable(p)
+
     _npe2pm.discover()
     _npe2pm.events.enablement_changed.connect(
         _npe2._on_plugin_enablement_change
@@ -43,10 +45,7 @@ def _initialize_plugins():
     _from_npe2.add('napari')
     plugin_manager._skip_packages = _from_npe2
 
-    settings.disabled_plugins = settings.disabled_plugins.difference(
-        _from_npe2
-    )
-    plugin_manager._blocked.update(settings.disabled_plugins)
+    plugin_manager._blocked.update(settings.plugins.disabled_plugins)
     plugin_manager._initialize()
 
 
