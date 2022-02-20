@@ -22,12 +22,10 @@ subtrees:
       - file: tutorials/index
         subtrees:
         - entries:
+          - file: tutorials/annotation/index
+          - file: tutorials/processing/index
           - file: tutorials/segmentation/index
           - file: tutorials/tracking/index
-          - file: tutorials/applications/annotate_points
-          - file: tutorials/applications/dask
-          - file: tutorials/tracking/cell_tracking
-          - file: tutorials/segmentation/annotate_segmentation
       - file: further-resources/napari-workshops
       - file: howtos/index
         subtrees:
