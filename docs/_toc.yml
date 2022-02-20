@@ -26,9 +26,9 @@ subtrees:
           - file: tutorials/tracking/index
           - file: tutorials/applications/annotate_points
           - file: tutorials/applications/dask
-          - file: tutorials/further-resources/napari-workshops
           - file: tutorials/tracking/cell_tracking
           - file: tutorials/segmentation/annotate_segmentation
+      - file: further-resources/napari-workshops
       - file: howtos/index
         subtrees:
         - titlesonly: True
@@ -50,7 +50,7 @@ subtrees:
           - file: guides/events_reference
           - file: guides/contexts_expressions
           - file: guides/preferences
-      - file: glossary
+      - file: further-resources/glossary
   - file: plugins/index
     subtrees:
     - entries:
