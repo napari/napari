@@ -440,10 +440,10 @@ def main():
             )
             warnings.warn(msg)
 
-
     # Prevent https://github.com/napari/napari/issues/3415
     if sys.platform == "darwin":
         import multiprocessing
+
         multiprocessing.set_start_method('fork')
 
     _run()
