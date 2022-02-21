@@ -45,6 +45,11 @@ def test_sequence_of_iterables(input, expected):
         assert result == expectation
 
 
+def test_sequence_of_iterables_allow_none():
+    input = [(1, 2), None]
+    assert ensure_sequence_of_iterables(input, allow_none=True) == input
+
+
 def test_sequence_of_iterables_no_repeat_empty():
     assert ensure_sequence_of_iterables([], repeat_empty=False) == []
     with pytest.raises(ValueError):
@@ -159,13 +164,14 @@ def test_abspath_or_url():
     assert abspath_or_url('ftp://something') == 'ftp://something'
     assert abspath_or_url('s3://something') == 's3://something'
     assert abspath_or_url('file://something') == 'file://something'
-    assert abspath_or_url(('a', '~')) == (abspath('a'), expanduser('~'))
-    assert abspath_or_url(['a', '~']) == [abspath('a'), expanduser('~')]
-
-    assert abspath_or_url(('a', Path('~'))) == (abspath('a'), expanduser('~'))
 
     with pytest.raises(TypeError):
         abspath_or_url({'a', '~'})
+
+
+def test_type_stable():
+    assert isinstance(abspath_or_url('~'), str)
+    assert isinstance(abspath_or_url(Path('~')), Path)
 
 
 def test_equality_operator():

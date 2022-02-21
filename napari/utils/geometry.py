@@ -127,7 +127,7 @@ def rotation_matrix_from_vectors_3d(vec_1, vec_2):
             ]
         )
         rotation_matrix = (
-            np.eye(3) + kmat + kmat.dot(kmat) * ((1 - dot_prod) / (s ** 2))
+            np.eye(3) + kmat + kmat.dot(kmat) * ((1 - dot_prod) / (s**2))
         )
 
     else:

@@ -150,13 +150,13 @@ class QtViewerButtons(QFrame):
         )
         self.ndisplayButton = ndb
         ndb.setCheckable(True)
-        ndb.setChecked(self.viewer.dims.ndisplay == 2)
+        ndb.setChecked(self.viewer.dims.ndisplay == 3)
         ndb.setContextMenuPolicy(Qt.CustomContextMenu)
         ndb.customContextMenuRequested.connect(self.open_perspective_popup)
 
         @self.viewer.dims.events.ndisplay.connect
         def _set_ndisplay_mode_checkstate(event):
-            ndb.setChecked(event.value == 2)
+            ndb.setChecked(event.value == 3)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -413,14 +413,18 @@ def _omit_viewer_args(constructor):
     def _func(*args, **kwargs):
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
-                "viewer argument is deprecated and should not be used",
+                trans._(
+                    "viewer argument is deprecated and should not be used"
+                ),
                 category=FutureWarning,
                 stacklevel=2,
             )
             args = args[:1] + args[2:]
         if "viewer" in kwargs:
             warnings.warn(
-                "viewer argument is deprecated and should not be used",
+                trans._(
+                    "viewer argument is deprecated and should not be used"
+                ),
                 category=FutureWarning,
                 stacklevel=2,
             )
@@ -495,7 +499,9 @@ class QtStateButton(QtViewerPushButton):
         offstate=False,
     ):
         warnings.warn(
-            "QtStateButton is deprecated and will be removed in 0.4.14",
+            trans._(
+                "QtStateButton is deprecated and will be removed in 0.4.14"
+            ),
             stacklevel=2,
             category=FutureWarning,
         )
