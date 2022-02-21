@@ -2,9 +2,9 @@
 """
 import contextlib
 import os
+from time import perf_counter_ns
 from typing import Dict, Optional
 
-from ._compat import perf_counter_ns
 from ._event import PerfEvent
 from ._stat import Stat
 from ._trace_file import PerfTraceFile
@@ -157,9 +157,13 @@ def block_timer(
 
     Examples
     --------
-    with block_timer("draw") as event:
-        draw_stuff()
-    print(f"The timer took {event.duration_ms} milliseconds.")
+
+    .. code-block:: python
+
+        with block_timer("draw") as event:
+            draw_stuff()
+        print(f"The timer took {event.duration_ms} milliseconds.")
+
     """
     start_ns = perf_counter_ns()
 

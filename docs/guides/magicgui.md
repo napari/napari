@@ -73,7 +73,7 @@ be added to a napari viewer (either via `viewer.window.add_dock_widget`, or
 by providing a magicgui-based widget via the {func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget` plugin hook specification).
 ```
 
-## Parameter Annotations
+## Parameter annotations
 
 The following napari types may be used as *parameter* type annotations in
 magicgui functions to get information from the napari viewer into your
@@ -193,7 +193,7 @@ is otherwise missing here, please consider opening an issue in the
 describing your use case.
 ```
 
-## Return Annotations
+## Return annotations
 
 The following napari types may be used as *return* type annotations in `magicgui`
 functions to add layers to napari from your `magicgui` function. The consequence of
@@ -447,7 +447,7 @@ development environment, you will still get all the type inference.
 ## Using `magicgui` in napari plugin widgets
 
 Using `magicgui` can be an effective way to generate widgets for use in napari
-[plugins](../plugins/index.md), in particular the
+{ref}`plugins-index`, in particular the
 {func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget`
 plugin hook specification.  There is an important distinction to be made,
 however, between using `magicgui` with `viewer.window.add_dock_widget`, and

@@ -10,7 +10,7 @@ from napari.layers import Labels
 class Labels2DSuite:
     """Benchmarks for the Labels layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 13)]
+    params = [2**i for i in range(4, 13)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -39,7 +39,7 @@ class Labels2DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):
         """Time to paint circle."""
@@ -65,7 +65,7 @@ class Labels2DSuite:
 class Labels3DSuite:
     """Benchmarks for the Labels layer with 3D data."""
 
-    params = [2 ** i for i in range(4, 11)]
+    params = [2**i for i in range(4, 11)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -94,7 +94,7 @@ class Labels3DSuite:
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
-        self.layer._raw_to_displayed(self.layer._data_raw)
+        self.layer._raw_to_displayed(self.layer._slice.image.raw)
 
     def time_paint_circle(self, n):
         """Time to paint circle."""

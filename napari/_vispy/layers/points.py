@@ -19,8 +19,9 @@ class VispyPointsLayer(VispyBaseLayer):
         node = PointsVisual()
         super().__init__(layer, node)
 
-        self.layer.events.symbol.connect(self._on_data_change)
+        self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.edge_width.connect(self._on_data_change)
+        self.layer.events.edge_width_is_relative.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer._edge.events.colors.connect(self._on_data_change)
         self.layer._edge.events.color_properties.connect(self._on_data_change)
@@ -29,6 +30,11 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer._face.events.color_properties.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
+        self.layer.events.shading.connect(self._on_shading_change)
+        self.layer.events._antialias.connect(self._on_antialias_change)
+        self.layer.events.experimental_canvas_size_limits.connect(
+            self._on_canvas_size_limits_change
+        )
 
         self._on_data_change()
 
@@ -46,23 +52,37 @@ class VispyPointsLayer(VispyBaseLayer):
         if len(self.layer._indices_view) == 0:
             data = np.zeros((1, self.layer._ndisplay))
             size = [0]
+            edge_width = [0]
         else:
             data = self.layer._view_data
             size = self.layer._view_size
+            edge_width = self.layer._view_edge_width
 
         set_data = self.node._subvisuals[0].set_data
+
+        if self.layer.edge_width_is_relative:
+            edge_kw = {
+                'edge_width': None,
+                'edge_width_rel': edge_width,
+            }
+        else:
+            edge_kw = {
+                'edge_width': edge_width,
+                'edge_width_rel': None,
+            }
 
         set_data(
             data[:, ::-1],
             size=size,
-            edge_width=self.layer.edge_width,
-            symbol=self.layer.symbol,
+            **edge_kw,
             edge_color=edge_color,
             face_color=face_color,
-            scaling=True,
         )
 
         self.reset()
+
+    def _on_symbol_change(self):
+        self.node.symbol = self.layer.symbol
 
     def _on_highlight_change(self):
         settings = get_settings()
@@ -80,34 +100,25 @@ class VispyPointsLayer(VispyBaseLayer):
             data[:, ::-1],
             size=size,
             edge_width=settings.appearance.highlight_thickness,
-            symbol=self.layer.symbol,
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
-            scaling=True,
         )
 
-        # only draw a box in 2D
-        if self.layer._ndisplay == 2:
-            if (
-                self.layer._highlight_box is None
-                or 0 in self.layer._highlight_box.shape
-            ):
-                pos = np.zeros((1, self.layer._ndisplay))
-                width = 0
-            else:
-                pos = self.layer._highlight_box
-                width = settings.appearance.highlight_thickness
-
-            self.node._subvisuals[2].set_data(
-                pos=pos[:, ::-1],
-                color=self._highlight_color,
-                width=width,
-            )
+        if (
+            self.layer._highlight_box is None
+            or 0 in self.layer._highlight_box.shape
+        ):
+            pos = np.zeros((1, self.layer._ndisplay))
+            width = 0
         else:
-            self.node._subvisuals[2].set_data(
-                pos=np.zeros((1, self.layer._ndisplay)),
-                width=0,
-            )
+            pos = self.layer._highlight_box
+            width = settings.appearance.highlight_thickness
+
+        self.node._subvisuals[2].set_data(
+            pos=pos[:, ::-1],
+            color=self._highlight_color,
+            width=width,
+        )
 
         self.node.update()
 
@@ -119,31 +130,7 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        ndisplay = self.layer._ndisplay
-        if (len(self.layer._indices_view) == 0) or (
-            self.layer.text.visible is False
-        ):
-            text_coords = np.zeros((1, ndisplay))
-            text = []
-            anchor_x = 'center'
-            anchor_y = 'center'
-        else:
-            text_coords, anchor_x, anchor_y = self.layer._view_text_coords
-            if len(text_coords) == 0:
-                text_coords = np.zeros((1, ndisplay))
-            text = self.layer._view_text
-        text_node = self._get_text_node()
-        update_text(
-            text_values=text,
-            coords=text_coords,
-            anchor=(anchor_x, anchor_y),
-            rotation=self.layer._text.rotation,
-            color=self.layer._text.color,
-            size=self.layer._text.size,
-            ndisplay=ndisplay,
-            text_node=text_node,
-        )
-
+        update_text(node=self._get_text_node(), layer=self.layer)
         if update_node:
             self.node.update()
 
@@ -166,14 +153,36 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_blending_kwargs = BLENDING_MODES[self.layer.text.blending]
         text_node.set_gl_state(**text_blending_kwargs)
+
+        # selection box is always without depth
+        box_blending_kwargs = BLENDING_MODES['translucent_no_depth']
+        self.node._subvisuals[2].set_gl_state(**box_blending_kwargs)
+
         self.node.update()
 
-    def reset(self, event=None):
+    def _on_antialias_change(self):
+        self.node.antialias = self.layer._antialias
+
+    def _on_shading_change(self):
+        shading = self.layer.shading
+        if shading == 'spherical':
+            self.node.spherical = True
+        else:
+            self.node.spherical = False
+
+    def _on_canvas_size_limits_change(self):
+        min_size, max_size = self.layer.experimental_canvas_size_limits
+        self.node.clamp_filter.min_size = min_size
+        self.node.clamp_filter.max_size = max_size
+
+    def reset(self):
         super().reset()
         self._update_text(update_node=False)
-        self._on_blending_change()
+        self._on_symbol_change()
         self._on_highlight_change()
-        self._on_matrix_change()
+        self._on_antialias_change()
+        self._on_shading_change()
+        self._on_canvas_size_limits_change()
 
     def close(self):
         """Vispy visual is closing."""

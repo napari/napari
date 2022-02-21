@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
 
-from napari._tests.utils import slow
-
 
 def test_big_2D_image(make_napari_viewer):
     """Test big 2D image with axis exceeding max texture size."""
@@ -11,7 +9,7 @@ def test_big_2D_image(make_napari_viewer):
     shape = (20_000, 10)
     data = np.random.random(shape)
     layer = viewer.add_image(data, multiscale=False)
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.layer_to_visual[layer]
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_2D is not None:
         s = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_2D)).astype(int)
@@ -25,14 +23,13 @@ def test_big_3D_image(make_napari_viewer):
     shape = (5, 10, 3_000)
     data = np.random.random(shape)
     layer = viewer.add_image(data, multiscale=False)
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    visual = viewer.window._qt_viewer.layer_to_visual[layer]
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_3D is not None:
         s = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_3D)).astype(int)
         assert np.all(layer._transforms['tile2data'].scale == s)
 
 
-@slow(10)
 @pytest.mark.parametrize(
     "shape",
     [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],

@@ -19,6 +19,10 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
 
+        # TODO: move to overlays
+        self.node._subvisuals[3].symbol = 'square'
+        self.node._subvisuals[3].scaling = False
+
         self.reset()
         self._on_data_change()
 
@@ -37,7 +41,11 @@ class VispyShapesLayer(VispyBaseLayer):
             faces = np.array([[0, 1, 2]])
             colors = np.array([[0, 0, 0, 0]])
 
-        if self.layer._ndisplay == 3 and self.layer.ndim == 2:
+        if (
+            len(self.layer.data)
+            and self.layer._ndisplay == 3
+            and self.layer.ndim == 2
+        ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
 
         self.node._subvisuals[0].set_data(
@@ -90,8 +98,6 @@ class VispyShapesLayer(VispyBaseLayer):
             face_color=face_color,
             edge_color=edge_color,
             edge_width=width,
-            symbol='square',
-            scaling=False,
         )
 
         if pos is None or len(pos) == 0:
@@ -110,30 +116,7 @@ class VispyShapesLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        ndisplay = self.layer._ndisplay
-        if (len(self.layer._indices_view) == 0) or (
-            self.layer._text.visible is False
-        ):
-            text_coords = np.zeros((1, ndisplay))
-            text = []
-            anchor_x = 'center'
-            anchor_y = 'center'
-        else:
-            text_coords, anchor_x, anchor_y = self.layer._view_text_coords
-            if len(text_coords) == 0:
-                text_coords = np.zeros((1, ndisplay))
-            text = self.layer._view_text
-        text_node = self._get_text_node()
-        update_text(
-            text_values=text,
-            coords=text_coords,
-            anchor=(anchor_x, anchor_y),
-            rotation=self.layer._text.rotation,
-            color=self.layer._text.color,
-            size=self.layer._text.size,
-            ndisplay=ndisplay,
-            text_node=text_node,
-        )
+        update_text(node=self._get_text_node(), layer=self.layer)
         if update_node:
             self.node.update()
 

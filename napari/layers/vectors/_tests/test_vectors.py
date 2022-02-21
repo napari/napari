@@ -75,7 +75,7 @@ def test_empty_vectors_with_property_choices():
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._view_data.shape[2] == 2
-    np.testing.assert_equal(layer._property_choices, property_choices)
+    np.testing.assert_equal(layer.property_choices, property_choices)
 
 
 def test_empty_layer_with_edge_colormap():
@@ -243,7 +243,7 @@ def test_adding_properties():
         layer.properties = properties_2
 
     # adding properties with the wrong length should raise an exception
-    bad_properties = {'vector_type': np.array(['A'])}
+    bad_properties = {'vector_type': np.array(['A', 'B'])}
     with pytest.raises(ValueError):
         layer.properties = bad_properties
 
@@ -421,7 +421,7 @@ def test_edge_color_colormap():
         edge_color='angle',
         edge_colormap='gray',
     )
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     assert layer.edge_color_mode == 'colormap'
     edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     assert np.all(layer.edge_color == edge_color_array)
@@ -637,3 +637,29 @@ def test_world_data_extent():
     layer = Vectors(np.array(data))
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5), False)
+
+
+def test_out_of_slice_display():
+    """Test setting out_of_slice_display flag for 2D and 4D data."""
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Vectors(data)
+    assert layer.out_of_slice_display is False
+
+    layer.out_of_slice_display = True
+    assert layer.out_of_slice_display is True
+
+    layer = Vectors(data, out_of_slice_display=True)
+    assert layer.out_of_slice_display is True
+
+    shape = (10, 2, 4)
+    data = 20 * np.random.random(shape)
+    layer = Vectors(data)
+    assert layer.out_of_slice_display is False
+
+    layer.out_of_slice_display = True
+    assert layer.out_of_slice_display is True
+
+    layer = Vectors(data, out_of_slice_display=True)
+    assert layer.out_of_slice_display is True

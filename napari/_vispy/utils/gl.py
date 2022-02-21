@@ -12,9 +12,7 @@ from vispy.gloo.context import get_current_canvas
 from ...utils.translations import trans
 
 texture_dtypes = [
-    np.dtype(np.int8),
     np.dtype(np.uint8),
-    np.dtype(np.int16),
     np.dtype(np.uint16),
     np.dtype(np.float32),
 ]
@@ -37,7 +35,14 @@ def _opengl_context():
             canvas.close()
 
 
-@lru_cache()
+@lru_cache(maxsize=1)
+def get_gl_extensions() -> str:
+    """Get basic info about the Gl capabilities of this machine"""
+    with _opengl_context():
+        return gl.glGetParameter(gl.GL_EXTENSIONS)
+
+
+@lru_cache
 def get_max_texture_sizes() -> Tuple[int, int]:
     """Return the maximum texture sizes for 2D and 3D rendering.
 
@@ -91,7 +96,7 @@ def fix_data_dtype(data):
         return data
     else:
         try:
-            dtype = dict(i=np.int16, f=np.float32, u=np.uint16, b=np.uint8)[
+            dtype = dict(i=np.float32, f=np.float32, u=np.uint16, b=np.uint8)[
                 dtype.kind
             ]
         except KeyError:  # not an int or float

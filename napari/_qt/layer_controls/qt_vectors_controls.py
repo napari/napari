@@ -1,6 +1,6 @@
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QDoubleSpinBox, QLabel
+from qtpy.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel
 
 from ...layers.utils._color_manager_constants import ColorMode
 from ...utils.translations import trans
@@ -35,6 +35,8 @@ class QtVectorsControls(QtLayerControls):
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Vectors
         An instance of a napari Vectors layer.
+    outOfSliceCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether to render out of slice.
     lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling line length of vectors.
         Multiplicative factor on projections for length of all vectors.
@@ -47,6 +49,9 @@ class QtVectorsControls(QtLayerControls):
 
         self.layer.events.edge_width.connect(self._on_edge_width_change)
         self.layer.events.length.connect(self._on_length_change)
+        self.layer.events.out_of_slice_display.connect(
+            self._on_out_of_slice_display_change
+        )
         self.layer.events.edge_color_mode.connect(
             self._on_edge_color_mode_change
         )
@@ -97,6 +102,12 @@ class QtVectorsControls(QtLayerControls):
         self.lengthSpinBox.setMaximum(np.inf)
         self.lengthSpinBox.valueChanged.connect(self.change_length)
 
+        out_of_slice_cb = QCheckBox()
+        out_of_slice_cb.setToolTip(trans._('Out of slice display'))
+        out_of_slice_cb.setChecked(self.layer.out_of_slice_display)
+        out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
+        self.outOfSliceCheckBox = out_of_slice_cb
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
@@ -113,7 +124,9 @@ class QtVectorsControls(QtLayerControls):
         self.grid_layout.addWidget(self.edgeColorEdit, 5, 1, 1, 2)
         self.grid_layout.addWidget(self.edge_prop_label, 6, 0)
         self.grid_layout.addWidget(self.color_prop_box, 6, 1, 1, 2)
-        self.grid_layout.setRowStretch(7, 1)
+        self.grid_layout.addWidget(QLabel(trans._('out of slice:')), 7, 0)
+        self.grid_layout.addWidget(self.outOfSliceCheckBox, 7, 1)
+        self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -191,6 +204,19 @@ class QtVectorsControls(QtLayerControls):
         self.lengthSpinBox.clearFocus()
         self.setFocus()
 
+    def change_out_of_slice(self, state):
+        """Toggle out of slice display of vectors layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox to indicate whether to render out of slice.
+        """
+        if state == Qt.Checked:
+            self.layer.out_of_slice_display = True
+        else:
+            self.layer.out_of_slice_display = False
+
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.
         This is typically used when edge_color_mode changes
@@ -220,10 +246,10 @@ class QtVectorsControls(QtLayerControls):
         -------
         property_values : np.ndarray
             array of all of the union of the property names (keys)
-            in Vectors.properties and Vectors._property_choices
+            in Vectors.properties and Vectors.property_choices
 
         """
-        property_choices = [*self.layer._property_choices]
+        property_choices = [*self.layer.property_choices]
         properties = [*self.layer.properties]
         property_values = np.union1d(property_choices, properties)
 
@@ -233,6 +259,11 @@ class QtVectorsControls(QtLayerControls):
         """Change length of vectors."""
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
+
+    def _on_out_of_slice_display_change(self, event):
+        """Receive layer model out_of_slice_display change event and update checkbox."""
+        with self.layer.events.out_of_slice_display.blocker():
+            self.outOfSliceCheckBox.setChecked(self.layer.out_of_slice_display)
 
     def _on_edge_width_change(self):
         """Receive layer model width change event and update width spinbox."""

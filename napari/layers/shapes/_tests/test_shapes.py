@@ -73,7 +73,7 @@ def test_properties(properties):
     # test copy/paste
     layer.selected_data = {0, 1}
     layer._copy_data()
-    assert np.all(layer._clipboard['properties']['shape_type'] == ['A', 'B'])
+    assert np.all(layer._clipboard['features']['shape_type'] == ['A', 'B'])
 
     layer._paste_data()
     paste_properties = np.concatenate((add_properties, ['A', 'B']), axis=0)
@@ -120,6 +120,25 @@ def test_adding_properties(attribute):
     }
     with pytest.warns(RuntimeWarning):
         layer.properties = properties_2
+
+
+def test_colormap_scale_change():
+    data = 20 * np.random.random((10, 4, 2))
+    properties = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
+    layer = Shapes(data, properties=properties, edge_color='b')
+
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
+
+    layer.edge_color = 'a'
+
+    # note that VisPy colormaps linearly interpolate by default, so
+    # non-rescaled colors are not identical, but they are closer than 24-bit
+    # color precision can distinguish!
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
 
 
 def test_data_setter_with_properties():
@@ -1481,7 +1500,7 @@ def test_color_cycle(attribute, color_cycle):
     }
     layer = Shapes(data, **shapes_kwargs)
 
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, shape[0]))
     )
@@ -1615,7 +1634,7 @@ def test_color_colormap(attribute):
         f'{attribute}_colormap': 'gray',
     }
     layer = Shapes(data, **shapes_kwargs)
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(shape[0] / 2))

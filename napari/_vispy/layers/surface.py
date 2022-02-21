@@ -1,9 +1,7 @@
-import warnings
-
 import numpy as np
 from vispy.color import Colormap as VispyColormap
+from vispy.geometry import MeshData
 
-from ...utils.translations import trans
 from ..visuals.surface import SurfaceVisual
 from .base import VispyBaseLayer
 
@@ -18,6 +16,7 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     def __init__(self, layer):
         node = SurfaceVisual()
+        self._meshdata = None
         super().__init__(layer, node)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -26,6 +25,19 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.shading.connect(self._on_shading_change)
+        self.layer.wireframe.events.visible.connect(
+            self._on_wireframe_visible_change
+        )
+        self.layer.wireframe.events.width.connect(
+            self._on_wireframe_width_change
+        )
+        self.layer.wireframe.events.color.connect(
+            self._on_wireframe_color_change
+        )
+        self.layer.normals.face.events.connect(self._on_face_normals_change)
+        self.layer.normals.vertex.events.connect(
+            self._on_vertex_normals_change
+        )
 
         self.reset()
         self._on_data_change()
@@ -38,10 +50,12 @@ class VispySurfaceLayer(VispyBaseLayer):
         else:
             # Offsetting so pixels now centered
             # coerce to float to solve vispy/vispy#2007
+            # reverse order to get zyx instead of xyz
             vertices = np.asarray(
                 self.layer._data_view[:, ::-1], dtype=np.float32
             )
-            faces = self.layer._view_faces
+            # due to above xyz>zyx, also reverse order of faces to fix handedness of normals
+            faces = self.layer._view_faces[:, ::-1]
             vertex_values = self.layer._view_vertex_values
 
         if (
@@ -51,10 +65,33 @@ class VispySurfaceLayer(VispyBaseLayer):
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
 
-        self._on_shading_change()
+        # manually detach filters when we go to 2D to avoid dimensionality issues
+        # see comments in napari#3475. The filter is set again after set_data!
+        if self.layer._ndisplay == 2:
+            filt = self.node.shading_filter
+            try:
+                self.node.detach(filt)
+                self.node.shading = None
+                self.node.shading_filter = None
+            except ValueError:
+                # sometimes we try to detach non-attached filters, which causes a ValueError
+                pass
+
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
+
+        # disable normals in 2D to avoid shape errors
+        if self.layer._ndisplay == 2:
+            meshdata = MeshData()
+        else:
+            meshdata = self.node.mesh_data
+        self._meshdata = meshdata
+
+        self._on_face_normals_change()
+        self._on_vertex_normals_change()
+        self._on_shading_change()
+
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
@@ -82,25 +119,52 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_colormap_change()
 
     def _on_shading_change(self):
-        if self.layer.shading == 'none':
-            self.node.shading = None
-            if self.node.shading_filter is not None:
-                self.node.shading_filter._attached = False
-        elif self.layer._ndisplay < 3:
-            warnings.warn(
-                trans._(
-                    "Alternative shading modes are only available in 3D, defaulting to none"
-                )
+        shading = None if self.layer.shading == 'none' else self.layer.shading
+        if self.layer._ndisplay == 3:
+            self.node.shading = shading
+        self.node.update()
+
+    def _on_wireframe_visible_change(self):
+        self.node.wireframe_filter.enabled = self.layer.wireframe.visible
+        self.node.update()
+
+    def _on_wireframe_width_change(self):
+        self.node.wireframe_filter.width = self.layer.wireframe.width
+        self.node.update()
+
+    def _on_wireframe_color_change(self):
+        self.node.wireframe_filter.color = self.layer.wireframe.color
+        self.node.update()
+
+    def _on_face_normals_change(self):
+        self.node.face_normals.visible = self.layer.normals.face.visible
+        if self.node.face_normals.visible:
+            self.node.face_normals.set_data(
+                self._meshdata,
+                length=self.layer.normals.face.length,
+                color=self.layer.normals.face.color,
+                width=self.layer.normals.face.width,
+                primitive='face',
             )
-            self.node.shading = None
-            if self.node.shading_filter is not None:
-                self.node.shading_filter._attached = False
-        else:
-            self.node.shading = self.layer.shading
-        self.node.mesh_data_changed()
+
+    def _on_vertex_normals_change(self):
+        self.node.vertex_normals.visible = self.layer.normals.vertex.visible
+        if self.node.vertex_normals.visible:
+            self.node.vertex_normals.set_data(
+                self._meshdata,
+                length=self.layer.normals.vertex.length,
+                color=self.layer.normals.vertex.color,
+                width=self.layer.normals.vertex.width,
+                primitive='vertex',
+            )
 
     def reset(self, event=None):
         super().reset()
         self._on_colormap_change()
         self._on_contrast_limits_change()
         self._on_shading_change()
+        self._on_wireframe_visible_change()
+        self._on_wireframe_width_change()
+        self._on_wireframe_color_change()
+        self._on_face_normals_change()
+        self._on_vertex_normals_change()

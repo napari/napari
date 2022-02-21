@@ -44,6 +44,7 @@ from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
+from .overlays import Overlays
 from .scale_bar import ScaleBar
 from .text_overlay import TextOverlay
 from .tooltip import Tooltip
@@ -115,6 +116,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     text_overlay: TextOverlay = Field(
         default_factory=TextOverlay, allow_mutation=False
     )
+    overlays: Overlays = Field(default_factory=Overlays, allow_mutation=False)
 
     help: str = ''
     status: str = 'Ready'
@@ -291,10 +293,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _new_labels(self):
         """Create new labels layer filling full world coordinates space."""
-        extent = self.layers.extent.world
-        scale = self.layers.extent.step
+        layers_extent = self.layers.extent
+        extent = layers_extent.world
+        scale = layers_extent.step
         scene_size = extent[1] - extent[0]
-        corner = extent[0] + 0.5 * self.layers.extent.step
+        corner = extent[0] + 0.5 * layers_extent.step
         shape = [
             np.round(s / sc).astype('int') if s > 0 else 1
             for s, sc in zip(scene_size, scale)
@@ -329,6 +332,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
 
+    @staticmethod
+    def rounded_division(min_val, max_val, precision):
+        return int(((min_val + max_val) / 2) / precision) * precision
+
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
@@ -337,8 +344,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ranges = self.layers._ranges
             ndim = len(ranges)
             self.dims.ndim = ndim
-            for i, _range in enumerate(ranges):
-                self.dims.set_range(i, _range)
+            self.dims.set_range(range(ndim), ranges)
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -387,7 +393,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.help = active.help
             if self.tooltip.visible:
                 self.tooltip.text = active._get_tooltip_text(
-                    self.cursor.position, world=True
+                    self.cursor.position,
+                    view_direction=self.cursor._view_direction,
+                    dims_displayed=list(self.dims.displayed),
+                    world=True,
                 )
 
     def _on_grid_change(self):
@@ -414,7 +423,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
-        layer.translate_grid = translate
+        layer._translate_grid = translate
 
     @property
     def experimental(self):
@@ -458,6 +467,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if len(self.layers) == 1:
             self.reset_view()
+            ranges = self.layers._ranges
+            midpoint = [self.rounded_division(*_range) for _range in ranges]
+            self.dims.set_point(range(len(ranges)), midpoint)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
@@ -753,9 +765,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-        **kwargs
+        ``**kwargs``
             additional kwargs will be passed to the sample data loader provided
-            by `plugin`.  Use of **kwargs may raise an error if the kwargs do
+            by `plugin`.  Use of ``**kwargs`` may raise an error if the kwargs do
             not match the sample data loader.
 
         Returns
@@ -768,25 +780,32 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import plugin_manager
+        from ..plugins import _npe2, plugin_manager
 
-        try:
-            data = plugin_manager._sample_data[plugin][sample]['data']
-        except KeyError:
-            samples = plugin_manager.available_samples()
+        # try with npe2
+        data, available = _npe2.get_sample_data(plugin, sample)
+
+        # then try with npe1
+        if data is None:
+            try:
+                data = plugin_manager._sample_data[plugin][sample]['data']
+            except KeyError:
+                available += list(plugin_manager.available_samples())
+
+        if data is None:
             msg = trans._(
                 "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
                 plugin=plugin,
                 sample=sample,
                 deferred=True,
             )
-            if samples:
+            if available:
                 msg = trans._(
                     "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
                     deferred=True,
                     plugin=plugin,
                     sample=sample,
-                    samples=samples,
+                    samples=available,
                 )
             else:
                 msg = trans._(
@@ -852,7 +871,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
-        **kwargs
+        ``**kwargs``
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
 
@@ -873,13 +892,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if stack:
             return self._add_layers_with_plugins(
-                paths, kwargs, plugin=plugin, layer_type=layer_type
+                paths,
+                kwargs=kwargs,
+                plugin=plugin,
+                layer_type=layer_type,
+                stack=stack,
             )
 
         added: List[Layer] = []  # for layers that get added
         with progress(
             paths,
-            desc='Opening Files',
+            desc=trans._('Opening Files'),
             total=0
             if len(paths) == 1
             else None,  # indeterminate bar for 1 file
@@ -887,14 +910,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             for _path in pbr:
                 added.extend(
                     self._add_layers_with_plugins(
-                        _path, kwargs, plugin=plugin, layer_type=layer_type
+                        [_path],
+                        kwargs=kwargs,
+                        plugin=plugin,
+                        layer_type=layer_type,
+                        stack=stack,
                     )
                 )
         return added
 
     def _add_layers_with_plugins(
         self,
-        path_or_paths: Union[str, Sequence[str]],
+        paths: List[str],
+        *,
+        stack: bool,
         kwargs: Optional[dict] = None,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
@@ -907,7 +936,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Parameters
         ----------
-        path_or_paths : str or list of str
+        paths : list of str
             A filepath, directory, or URL (or a list of any) to open. If a
             list, the assumption is that the list is to be treated as a stack.
         kwargs : dict, optional
@@ -923,6 +952,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
+        stack : bool
+            See `open` method
+            Stack=False => path is unique string, and list of len(1)
+            Stack=True => path is list of path
 
         Returns
         -------
@@ -931,23 +964,31 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         from ..plugins.io import read_data_with_plugins
 
-        layer_data, hookimpl = read_data_with_plugins(
-            path_or_paths, plugin=plugin
-        )
+        assert stack is not None
+        assert isinstance(paths, list)
+        assert not isinstance(paths, str)
+
+        if stack:
+            layer_data, hookimpl = read_data_with_plugins(
+                paths, plugin=plugin, stack=stack
+            )
+        else:
+            assert len(paths) == 1
+            layer_data, hookimpl = read_data_with_plugins(
+                paths, plugin=plugin, stack=stack
+            )
 
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
         filenames = []
-        if isinstance(path_or_paths, str):
-            filenames = itertools.repeat(path_or_paths)
-        elif is_sequence(path_or_paths):
-            if len(path_or_paths) == len(layer_data):
-                filenames = iter(path_or_paths)
-            else:
-                # if a list of paths has been returned as a list of layer data
-                # without a 1:1 relationship between the two lists we iterate
-                # over the first name
-                filenames = itertools.repeat(path_or_paths[0])
+
+        if len(paths) == len(layer_data):
+            filenames = iter(paths)
+        else:
+            # if a list of paths has been returned as a list of layer data
+            # without a 1:1 relationship between the two lists we iterate
+            # over the first name
+            filenames = itertools.repeat(paths[0])
 
         # add each layer to the viewer
         added: List[Layer] = []  # for layers that get added
@@ -1235,5 +1276,5 @@ for _layer in (
     layers.Tracks,
     layers.Vectors,
 ):
-    func = create_add_method(_layer)
+    func = create_add_method(_layer, filename=__file__)
     setattr(ViewerModel, func.__name__, func)

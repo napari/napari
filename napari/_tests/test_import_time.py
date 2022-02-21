@@ -13,7 +13,7 @@ def test_import_time(tmp_path):
     proc = subprocess.run(cmd, capture_output=True, check=True)
     log = proc.stderr.decode()
     last_line = log.splitlines()[-1]
-    time, name = [i.strip() for i in last_line.split("|")[-2:]]
+    time, name = (i.strip() for i in last_line.split("|")[-2:])
 
     # # This is too hard to do on CI... but we have the time here if we can
     # # figure out how to use it

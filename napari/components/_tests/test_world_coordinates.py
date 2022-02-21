@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pytest
 
@@ -82,7 +84,7 @@ def test_no_warning_non_affine_slicing():
     np.random.seed(0)
     data = np.random.random((10, 10, 10))
     viewer.add_image(data, scale=[2, 1, 1], translate=[10, 15, 20])
-    with pytest.warns(None) as recorded_warnings:
+    with warnings.catch_warnings(record=True) as recorded_warnings:
         viewer.layers[0].refresh()
     assert len(recorded_warnings) == 0
 
@@ -97,7 +99,7 @@ def test_warning_affine_slicing():
             data,
             scale=[2, 1, 1],
             translate=[10, 15, 20],
-            shear=[[1, 0, 0], [0, 1, 0], [10, 0, 1]],
+            shear=[[1, 0, 0], [0, 1, 0], [4, 0, 1]],
         )
     assert 'Non-orthogonal slicing is being requested' in str(wrn[0].message)
     with pytest.warns(UserWarning) as recorded_warnings:

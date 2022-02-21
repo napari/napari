@@ -1,4 +1,5 @@
-# Contributing Guide
+(napari-contributing)=
+# Contributing guide
 
 We welcome your contributions! Please see the provided steps below and never hesitate to contact us.
 
@@ -24,7 +25,7 @@ git remote add upstream https://github.com/napari/napari.git
 
 Install the package in editable mode, along with all of the developer tools
 ```sh
-pip install -r requirements.txt
+pip install -e ".[dev]"  # (quotes only needed for zsh shell)
 ```
 
 We use [`pre-commit`](https://pre-commit.com) to sort imports with
@@ -136,7 +137,7 @@ from napari.utils.translations import trans
 some_string = trans._("Localizable string")
 ```
 
-To learn more, please see the [translations guide](../guides/translations.md).
+To learn more, please see the {ref}`translations guide <translations>`.
 
 ## Making changes
 
@@ -163,7 +164,7 @@ We use unit tests, integration tests, and functional tests to ensure that
 napari works as intended. Writing tests for new code is a critical part of
 keeping napari maintainable as it grows.
 
-We have dedicated documentation on [testing](TESTING.md) that we recommend you
+We have dedicated documentation on [testing](napari-testing) that we recommend you
 read as you're working on your first contribution.
 
 ### Help us make sure it's you
@@ -221,9 +222,9 @@ Try entering `file:///absolute/path/to/napari/docs/_build/html/index.html` in yo
 
 To read more about the docs, how they're organized, and built, read {ref}`docs-dev`.
 
-## Code of conduct
+## Code of Conduct
 
-`napari` has a [Code of Conduct](CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
+`napari` has a [Code of Conduct](napari-coc) that should be honored by everyone who participates in the `napari` community.
 
 ## Questions, comments, and feedback
 

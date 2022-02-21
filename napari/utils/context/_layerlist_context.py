@@ -43,16 +43,20 @@ def _only_labels(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == "labels" for x in s))
 
 
+def _only_shapes(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == "shapes" for x in s))
+
+
 def _active_type(s: LayerSel) -> Optional[str]:
-    return s.active and s.active._type_string
+    return s.active._type_string if s.active else None
 
 
 def _active_ndim(s: LayerSel) -> Optional[int]:
-    return s.active and getattr(s.active.data, "ndim", None)
+    return getattr(s.active.data, "ndim", None) if s.active else None
 
 
 def _active_shape(s: LayerSel) -> Optional[Tuple[int, ...]]:
-    return s.active and getattr(s.active.data, "shape", None)
+    return getattr(s.active.data, "shape", None) if s.active else None
 
 
 def _same_shape(s: LayerSel) -> bool:
@@ -103,6 +107,9 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
         ),
         _active_type,
     )
+    # TODO: try to reduce these `only_x_selected` to a single set of strings
+    # or something... however, this would require that our context expressions
+    # support Sets, tuples, lists, etc...  which they currently do not.
     only_images_selected = ContextKey(
         False,
         trans._(
@@ -116,6 +123,13 @@ class LayerListContextKeys(ContextNamespace['LayerSel']):
             "True when there is at least one selected layer and all selected layers are labels"
         ),
         _only_labels,
+    )
+    only_shapes_selected = ContextKey(
+        False,
+        trans._(
+            "True when there is at least one selected layer and all selected layers are shapes"
+        ),
+        _only_shapes,
     )
     active_layer_ndim = ContextKey['LayerSel', Optional[int]](
         None,

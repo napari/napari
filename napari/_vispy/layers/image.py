@@ -5,18 +5,33 @@ from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
 from ...utils.translations import trans
-from ..utils.gl import fix_data_dtype
+from ..utils.gl import fix_data_dtype, get_gl_extensions
 from ..visuals.image import Image as ImageNode
 from ..visuals.volume import Volume as VolumeNode
 from .base import VispyBaseLayer
 
 
 class ImageLayerNode:
-    def __init__(self, custom_node: Node = None):
+    def __init__(self, custom_node: Node = None, texture_format=None):
+        if (
+            texture_format == 'auto'
+            and 'texture_float' not in get_gl_extensions()
+        ):
+            # if the GPU doesn't support float textures, texture_format auto
+            # WILL fail on float dtypes
+            # https://github.com/napari/napari/issues/3988
+            texture_format = None
+
         self._custom_node = custom_node
-        self._image_node = ImageNode(None, method='auto')
+        self._image_node = ImageNode(
+            None,
+            method='auto',
+            texture_format=texture_format,
+        )
         self._volume_node = VolumeNode(
-            np.zeros((1, 1, 1), dtype=np.float32), clim=[0, 1]
+            np.zeros((1, 1, 1), dtype=np.float32),
+            clim=[0, 1],
+            texture_format=texture_format,
         )
 
     def get_node(self, ndisplay: int) -> Node:
@@ -32,10 +47,10 @@ class ImageLayerNode:
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, node=None):
+    def __init__(self, layer, node=None, texture_format='auto'):
 
         # Use custom node from caller, or our standard image/volume nodes.
-        self._layer_node = ImageLayerNode(node)
+        self._layer_node = ImageLayerNode(node, texture_format=texture_format)
 
         # Default to 2D (image) node.
         super().__init__(layer, self._layer_node.get_node(2))
@@ -64,18 +79,21 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_experimental_slicing_plane_normal_change
         )
 
+        # display_change is special (like data_change) because it requires a self.reset()
+        # this means that we have to call it manually. Also, it must be called before reset
+        # in order to set the appropriate node first
+        self._on_display_change()
         self.reset()
         self._on_data_change()
 
     def _on_display_change(self, data=None):
-
         parent = self.node.parent
         self.node.parent = None
 
         self.node = self._layer_node.get_node(self.layer._ndisplay)
 
         if data is None:
-            data = np.zeros((1,) * self.layer._ndisplay)
+            data = np.zeros((1,) * self.layer._ndisplay, dtype=np.float32)
 
         if self.layer._empty:
             self.node.visible = False

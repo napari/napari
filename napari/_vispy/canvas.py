@@ -1,7 +1,9 @@
 """VispyCanvas class.
 """
+from weakref import WeakSet
+
 from qtpy.QtCore import QSize
-from vispy.scene import SceneCanvas
+from vispy.scene import SceneCanvas, Widget
 
 from ..utils.colormaps.standardize_color import transform_color
 from .utils.gl import get_max_texture_sizes
@@ -20,6 +22,8 @@ class VispyCanvas(SceneCanvas):
 
     """
 
+    _instances = WeakSet()
+
     def __init__(self, *args, **kwargs):
 
         # Since the base class is frozen we must create this attribute
@@ -28,6 +32,7 @@ class VispyCanvas(SceneCanvas):
         self._last_theme_color = None
         self._background_color_override = None
         super().__init__(*args, **kwargs)
+        self._instances.add(self)
 
         # Call get_max_texture_sizes() here so that we query OpenGL right
         # now while we know a Canvas exists. Later calls to
@@ -76,6 +81,15 @@ class VispyCanvas(SceneCanvas):
     def bgcolor(self, value):
         _value = self._background_color_override or value
         SceneCanvas.bgcolor.fset(self, _value)
+
+    @property
+    def central_widget(self):
+        """Overrides SceneCanvas.central_widget to make border_width=0"""
+        if self._central_widget is None:
+            self._central_widget = Widget(
+                size=self.size, parent=self.scene, border_width=0
+            )
+        return self._central_widget
 
     def _process_mouse_event(self, event):
         """Ignore mouse wheel events which have modifiers."""

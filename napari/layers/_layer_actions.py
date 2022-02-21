@@ -59,7 +59,9 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
         return
     if layer._type_string != 'image':
         raise NotImplementedError(
-            "Projections are only implemented for images"
+            trans._(
+                "Projections are only implemented for images", deferred=True
+            )
         )
 
     # this is not the desired behavior for coordinate-based layers
@@ -83,7 +85,10 @@ def _convert_dtype(ll: LayerList, mode='int64'):
         return
     if layer._type_string != 'labels':
         raise NotImplementedError(
-            "Data type conversion only implemented for labels"
+            trans._(
+                "Data type conversion only implemented for labels",
+                deferred=True,
+            )
         )
 
     target_dtype = np.dtype(mode)
@@ -92,23 +97,32 @@ def _convert_dtype(ll: LayerList, mode='int64'):
         or np.max(layer.data) > np.iinfo(target_dtype).max
     ):
         raise AssertionError(
-            "Labeling contains values outside of the target data type range."
+            trans._(
+                "Labeling contains values outside of the target data type range.",
+                deferred=True,
+            )
         )
     else:
         layer.data = layer.data.astype(np.dtype(mode))
 
 
 def _convert(ll: LayerList, type_: str):
+    from ..layers import Shapes
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
-        data = lay.data.astype(int) if type_ == 'labels' else lay.data
         ll.pop(idx)
-        ll.insert(idx, Layer.create(data, {'name': lay.name}, type_))
+        if isinstance(lay, Shapes) and type_ == 'labels':
+            data = lay.to_labels()
+        else:
+            data = lay.data.astype(int) if type_ == 'labels' else lay.data
+        new_layer = Layer.create(data, {'name': lay.name}, type_)
+        ll.insert(idx, new_layer)
 
 
 def _merge_stack(ll: LayerList, rgb=False):
-    selection = list(ll.selection)
+    # force selection to follow LayerList ordering
+    selection = [layer for layer in ll if layer in ll.selection]
     for layer in selection:
         ll.remove(layer)
     if rgb:
@@ -216,7 +230,9 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
         'napari:convert_to_labels': {
             'description': trans._('Convert to Labels'),
             'action': partial(_convert, type_='labels'),
-            'enable_when': LLCK.only_images_selected,
+            'enable_when': (
+                LLCK.only_images_selected | LLCK.only_shapes_selected
+            ),
             'show_when': True,
         },
         'napari:convert_to_image': {

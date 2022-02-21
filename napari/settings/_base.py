@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, cast
 from warnings import warn
 
 from pydantic import BaseModel, BaseSettings, ValidationError
+from pydantic.env_settings import SettingsError
 from pydantic.error_wrappers import display_errors
 
 from ..utils.events import EmitterGroup, EventedModel
@@ -54,7 +55,12 @@ class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
 
                 @emitter.connect
                 def _warn_restart(*_):
-                    warn("Restart required for this change to take effect.")
+                    warn(
+                        trans._(
+                            "Restart required for this change to take effect.",
+                            deferred=True,
+                        )
+                    )
 
     def _on_sub_event(self, event: Event, field=None):
         """emit the field.attr name and new value"""
@@ -155,7 +161,12 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         """
         path = path or self.config_path
         if not path:
-            raise ValueError("No path provided in config or save argument.")
+            raise ValueError(
+                trans._(
+                    "No path provided in config or save argument.",
+                    deferred=True,
+                )
+            )
 
         path = Path(path).expanduser().resolve()
         path.parent.mkdir(exist_ok=True, parents=True)
@@ -170,7 +181,11 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             _data = json_dumps(data, default=self.__json_encoder__)
         else:
             raise NotImplementedError(
-                f"Can only currently dump to `.json` or `.yaml`, not {path!r}"
+                trans._(
+                    "Can only currently dump to `.json` or `.yaml`, not {path!r}",
+                    deferred=True,
+                    path=path,
+                )
             )
         with open(path, 'w') as target:
             target.write(_data)
@@ -284,6 +299,19 @@ def nested_env_settings(
                         if env_val is not None:
                             break
 
+                is_complex, all_json_fail = super_eset.field_is_complex(subf)
+                if env_val is not None and is_complex:
+                    try:
+                        env_val = settings.__config__.json_loads(env_val)
+                    except ValueError as e:
+                        if not all_json_fail:
+                            msg = f'error parsing JSON for "{env_name}"'
+                            raise SettingsError(msg) from e
+
+                    if isinstance(env_val, dict):
+                        explode = super_eset.explode_env_vars(field, env_vars)
+                        env_val = deep_update(env_val, explode)
+
                 # if we found an env var, store it and return it
                 if env_val is not None:
                     if field.alias not in d:
@@ -386,11 +414,10 @@ def config_file_settings_source(
 
         # if errors occur, we still want to boot, so we just remove bad keys
         errors = err.errors()
-        msg = (
-            "Validation errors in config file(s).\n"
-            "The following fields have been reset to the default value:\n\n"
-            + display_errors(errors)
-            + "\n"
+        msg = trans._(
+            "Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n",
+            deferred=True,
+            errors=display_errors(errors),
         )
         try:
             # we're about to nuke some settings, so just in case... try backup
@@ -414,7 +441,7 @@ def config_file_settings_source(
     return data
 
 
-def _remove_bad_keys(data: dict, keys: List[Tuple[str, ...]]):
+def _remove_bad_keys(data: dict, keys: List[Tuple[Union[int, str], ...]]):
     """Remove list of keys (as string tuples) from dict (in place).
 
     Parameters

@@ -12,9 +12,9 @@ from qtpy.QtWidgets import (
 )
 from superqt import QLargeIntSpinBox
 
-from ...layers.image._image_constants import Rendering
 from ...layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
+    LabelsRendering,
     Mode,
 )
 from ...layers.labels._labels_utils import get_dtype
@@ -28,7 +28,7 @@ from ..widgets._slider_compat import QSlider
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
-INT32_MAX = 2 ** 31 - 1
+INT32_MAX = 2**31 - 1
 
 
 class QtLabelsControls(QtLayerControls):
@@ -54,8 +54,8 @@ class QtLabelsControls(QtLayerControls):
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Labels
         An instance of a napari Labels layer.
-    ndimCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to control if label layer is n-dimensional.
+    ndimSpinBox : qtpy.QtWidgets.QSpinBox
+        Spinbox to control the number of editable dimensions of label layer.
     paint_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select PAINT mode on Labels layer.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
@@ -231,7 +231,7 @@ class QtLabelsControls(QtLayerControls):
         button_row.setContentsMargins(0, 0, 0, 5)
 
         renderComboBox = QComboBox(self)
-        rendering_options = [i.value for i in Rendering.labels_layer_subset()]
+        rendering_options = [i.value for i in LabelsRendering]
         renderComboBox.addItems(rendering_options)
         index = renderComboBox.findText(
             self.layer.rendering, Qt.MatchFixedString
@@ -319,6 +319,8 @@ class QtLabelsControls(QtLayerControls):
             self.fill_button.setChecked(True)
         elif mode == Mode.ERASE:
             self.erase_button.setChecked(True)
+        elif mode == Mode.TRANSFORM:
+            pass
         else:
             raise ValueError(trans._("Mode not recognized"))
 

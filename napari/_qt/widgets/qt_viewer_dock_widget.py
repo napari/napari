@@ -2,7 +2,8 @@ import warnings
 from functools import reduce
 from itertools import count
 from operator import ior
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
+from weakref import ReferenceType, ref
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -18,6 +19,9 @@ from qtpy.QtWidgets import (
 
 from ...utils.translations import trans
 from ..utils import combine_widgets, qt_signals_blocked
+
+if TYPE_CHECKING:
+    from ..qt_viewer import QtViewer
 
 counter = count()
 _sentinel = object()
@@ -70,11 +74,13 @@ class QtViewerDockWidget(QDockWidget):
         shortcut=_sentinel,
         object_name: str = '',
         add_vertical_stretch=True,
+        close_btn=True,
     ):
-        self.qt_viewer = qt_viewer
+        self._ref_qt_viewer: 'ReferenceType[QtViewer]' = ref(qt_viewer)
         super().__init__(name)
         self._parent = qt_viewer
         self.name = name
+        self._close_btn = close_btn
 
         areas = {
             'left': Qt.LeftDockWidgetArea,
@@ -138,13 +144,29 @@ class QtViewerDockWidget(QDockWidget):
         self.dockLocationChanged.connect(self._set_title_orientation)
 
         # custom title bar
-        self.title = QtCustomTitleBar(self, title=self.name)
+        self.title = QtCustomTitleBar(
+            self, title=self.name, close_btn=close_btn
+        )
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
 
+    @property
+    def _parent(self):
+        """
+        Let's make sure parent always a weakref:
+
+            1) parent is likely to always exists after child
+            2) even if not strictly necessary it make it easier to view reference cycles.
+        """
+        return self._ref_parent()
+
+    @_parent.setter
+    def _parent(self, obj):
+        self._ref_parent = ref(obj)
+
     def destroyOnClose(self):
         """Destroys dock plugin dock widget when 'x' is clicked."""
-        self.qt_viewer.viewer.window.remove_dock_widget(self)
+        self._ref_qt_viewer().viewer.window.remove_dock_widget(self)
 
     def _maybe_add_vertical_stretch(self, widget):
         """Add vertical stretch to the bottom of a vertical layout only
@@ -198,7 +220,7 @@ class QtViewerDockWidget(QDockWidget):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
         # method, be sure to call super().keyPressEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
-        return self.qt_viewer.keyPressEvent(event)
+        return self._ref_qt_viewer().keyPressEvent(event)
 
     def _set_title_orientation(self, area):
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
@@ -224,12 +246,12 @@ class QtViewerDockWidget(QDockWidget):
         try:
             actions = [
                 action.text()
-                for action in self.qt_viewer.viewer.window.plugins_menu.actions()
+                for action in self._ref_qt_viewer().viewer.window.plugins_menu.actions()
             ]
             idx = actions.index(self.name)
 
             current_action = (
-                self.qt_viewer.viewer.window.plugins_menu.actions()[idx]
+                self._ref_qt_viewer().viewer.window.plugins_menu.actions()[idx]
             )
             current_action.setChecked(visible)
             self.setVisible(visible)
@@ -244,7 +266,10 @@ class QtViewerDockWidget(QDockWidget):
             self.setTitleBarWidget(None)
             if not self.isFloating():
                 self.title = QtCustomTitleBar(
-                    self, title=self.name, vertical=not self.is_vertical
+                    self,
+                    title=self.name,
+                    vertical=not self.is_vertical,
+                    close_btn=self._close_btn,
                 )
                 self.setTitleBarWidget(self.title)
 
@@ -269,7 +294,9 @@ class QtCustomTitleBar(QLabel):
         Whether this titlebar is oriented vertically or not.
     """
 
-    def __init__(self, parent, title: str = '', vertical=False):
+    def __init__(
+        self, parent, title: str = '', vertical=False, close_btn=True
+    ):
         super().__init__(parent)
         self.setObjectName("QtCustomTitleBar")
         self.setProperty('vertical', str(vertical))
@@ -279,27 +306,6 @@ class QtCustomTitleBar(QLabel):
         line = QFrame(self)
         line.setObjectName("QtCustomTitleBarLine")
 
-        add_close = False
-        try:
-            # if the plugins menu is already created, check to see if this is a plugin
-            # dock widget.  If it is, then add the close button option to the title bar.
-            actions = [
-                action.text()
-                for action in self.parent().qt_viewer.viewer.window.plugins_menu.actions()
-            ]
-            if self.parent().name in actions:
-                add_close = True
-                self.close_button = QPushButton(self)
-                self.close_button.setToolTip(trans._('close this panel'))
-                self.close_button.setObjectName("QTitleBarCloseButton")
-                self.close_button.setCursor(Qt.ArrowCursor)
-                self.close_button.clicked.connect(
-                    lambda: self.parent().destroyOnClose()
-                )
-            else:
-                add_close = False
-        except AttributeError:
-            pass
         self.hide_button = QPushButton(self)
         self.hide_button.setToolTip(trans._('hide this panel'))
         self.hide_button.setObjectName("QTitleBarHideButton")
@@ -318,12 +324,21 @@ class QtCustomTitleBar(QLabel):
             QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         )
 
+        if close_btn:
+            self.close_button = QPushButton(self)
+            self.close_button.setToolTip(trans._('close this panel'))
+            self.close_button.setObjectName("QTitleBarCloseButton")
+            self.close_button.setCursor(Qt.ArrowCursor)
+            self.close_button.clicked.connect(
+                lambda: self.parent().destroyOnClose()
+            )
+
         if vertical:
             layout = QVBoxLayout()
             layout.setSpacing(4)
             layout.setContentsMargins(0, 8, 0, 8)
             line.setFixedWidth(1)
-            if add_close:
+            if close_btn:
                 layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
             layout.addWidget(self.hide_button, 0, Qt.AlignHCenter)
             layout.addWidget(self.float_button, 0, Qt.AlignHCenter)
@@ -335,7 +350,7 @@ class QtCustomTitleBar(QLabel):
             layout.setSpacing(4)
             layout.setContentsMargins(8, 1, 8, 0)
             line.setFixedHeight(1)
-            if add_close:
+            if close_btn:
                 layout.addWidget(self.close_button)
 
             layout.addWidget(self.hide_button)

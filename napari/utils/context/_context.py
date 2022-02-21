@@ -7,6 +7,7 @@ from weakref import finalize
 from typing_extensions import Final
 
 from ..events.event import Event, EventEmitter
+from ..translations import trans
 
 _null = object()
 
@@ -86,7 +87,14 @@ class SettingsAwareContext(Context):
 
     def __setitem__(self, k: str, v: Any) -> None:
         if k.startswith(self._PREFIX):
-            raise ValueError(f"Cannot set key starting with {self._PREFIX!r}")
+            raise ValueError(
+                trans._(
+                    "Cannot set key starting with {prefix!r}",
+                    deferred=True,
+                    prefix=self._PREFIX,
+                )
+            )
+
         return super().__setitem__(k, v)
 
     def __bool__(self):
@@ -116,7 +124,9 @@ def create_context(
             _ROOT_CONTEXT = SettingsAwareContext()
         root = _ROOT_CONTEXT
     else:
-        assert isinstance(root, Context), 'root must be an instance of Context'
+        assert isinstance(root, Context), trans._(
+            'root must be an instance of Context', deferred=True
+        )
 
     parent = root
     if hasattr(sys, '_getframe'):  # CPython implementation detail

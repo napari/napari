@@ -1,5 +1,7 @@
-jupyter-book==0.10.2
-jupytext==1.10.3
-sphinx_autodoc_typehints==1.11.0
-furo==2021.6.18b36
+sphinx_autodoc_typehints==1.12.0
 Jinja2
+sphinx-tabs
+sphinx-panels
+myst-nb
+pydata-sphinx-theme==0.8.0
+sphinx-external-toc

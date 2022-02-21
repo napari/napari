@@ -30,6 +30,7 @@ points_layer = viewer.add_points(
     properties=properties,
     size=20,
     edge_width=7,
+    edge_width_is_relative=False,
     edge_color='confidence',
     edge_colormap='gray',
     face_color='good_point',

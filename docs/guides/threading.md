@@ -25,7 +25,7 @@ viewer.add_image(image)
 In order to avoid freezing the viewer during a long-running blocking function,
 you must run your function in another thread or process.
 
-## Processes, Threads, and `asyncio`
+## Processes, threads, and `asyncio`
 
 There are multiple ways to achieve "concurrency" (multiple things happening at
 the same time) in python, each with their own advantages and disadvantages.
@@ -119,7 +119,7 @@ be manually started by calling
 {meth}`worker.start() <napari.qt.threading.WorkerBase.start>`.
 ```
 
-## Responding to Feedback from Threads
+## Responding to feedback from threads
 
 As shown above, the `worker` object returned by a function decorated with
 {func}`@thread_worker <napari.qt.threading.thread_worker>` has a number of
@@ -132,7 +132,7 @@ provided by the `worker` are:
 * `errored` [*exception*] - emitted with an `Exception` object if an
   exception is raised in the thread.
 
-### Example: Custom Exception Handler
+### Example: Custom exception handler
 
 Because debugging issues in multithreaded applications can be tricky, the
 default behavior of a `@thread_worker` - decorated function is to re-raise
@@ -152,7 +152,7 @@ def error_prone_function():
     ...
 ```
 
-## Generators for the Win!
+## Generators for the win!
 
 ````{admonition} quick reminder
 
@@ -167,7 +167,6 @@ def my_generator():
         yield i
 ```
 ````
-
 
 **Use a generator!** By writing our decorated function as a generator that
 `yields` results instead of a function that `returns` a single result at
@@ -187,8 +186,7 @@ Additionally, generator `workers` will also have a few additional methods:
 * `toggle_pause` - send a request to toggle the running state of the worker
 * `quit` - send a request to abort the worker
 
-
-### Retrieving Intermediate Results
+### Retrieving intermediate results
 
 The most obvious benefit of using a generator is that you can monitor
 intermediate results back in the main thread.  Continuing with our example of
@@ -242,8 +240,7 @@ shorter-running yield statements like this, you not only benefit from the
 increased responsiveness in the viewer, you can often save on precious memory
 resources.
 
-
-#### Flow Control and Escape Hatches
+#### Flow control and escape hatches
 
 A perhaps even more useful aspect of yielding periodically in our long running
 function is that we provide a "hook" for the main thread to control the flow of
@@ -293,7 +290,7 @@ worker.start()
 napari.run()
 ```
 
-#### Graceful Exit
+#### Graceful exit
 
 A side-effect of this added flow control is that `napari` can gracefully
 shutdown any still-running workers when you try to quit the program.  Try the
@@ -310,7 +307,7 @@ to force quit your program.
 
 So whenever possible, sprinkle your long-running functions with `yield`.
 
-## Full Two-way Communication
+## Full two-way communication
 
 So far we've mostly been *receiving* results from the threaded function, but we
 can send values *into* a generator-based thread as well using
@@ -415,7 +412,7 @@ computation in another thread.  But it demonstrates some of the power and
 features provided when decorating a generator function with the
 {func}`@thread_worker <napari.qt.threading.thread_worker>` decorator.
 
-## Syntactic Sugar
+## Syntactic sugar
 
 The {func}`@thread_worker <napari.qt.threading.thread_worker>` decorator is
 just syntactic sugar for calling {func}`~napari.qt.threading.create_worker` on
@@ -462,7 +459,7 @@ the `FunctionWorker` class is that `create_worker` will automatically
 dispatch the appropriate type of `Worker` class depending on whether the
 function is a generator or not).
 
-## Using a Custom Worker Class
+## Using a custom worker class
 
 If you need even more control over the worker – such as the ability to define
 custom methods or signals that the worker can emit, then you can subclass the
@@ -509,7 +506,7 @@ look at the two main concrete subclasses in napari:
 {class}`~napari.qt.threading.GeneratorWorker`.  You may also wish to simply
 subclass one of those two classes.
 
-#### Adding custom signals
+### Adding custom signals
 
 In order to emit signals, an object must inherit from `QObject`.  However,
 due to challenges with multiple inheritance in Qt, the signals for
