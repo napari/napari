@@ -21,7 +21,7 @@ to add and manipulate a variety of different types of images both from the
 ## A simple example
 
 You can create a new viewer and add an image in one go using the
-`napari.view_image` method, or if you already have an existing viewer, you can
+`napari.view_image` function, or if you already have an existing viewer, you can
 add an image to it using `viewer.add_image`. The api of both methods is the
 same. In these examples we'll mainly use `view_image`.
 
