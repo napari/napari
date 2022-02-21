@@ -12,13 +12,7 @@ subtrees:
           - file: tutorials/fundamentals/installation
           - file: tutorials/fundamentals/getting_started
           - file: tutorials/fundamentals/viewer
-          - file: tutorials/fundamentals/image
-          - file: tutorials/fundamentals/labels
-          - file: tutorials/fundamentals/points
-          - file: tutorials/fundamentals/shapes
-          - file: tutorials/fundamentals/surface
-          - file: tutorials/fundamentals/tracks
-          - file: tutorials/fundamentals/vectors
+          - file: guides/layers
       - file: tutorials/index
         subtrees:
         - entries:
@@ -31,6 +25,17 @@ subtrees:
         subtrees:
         - titlesonly: True
           entries:
+          - file: howtos/layers/index
+            subtrees:
+            - titlesonly: True
+              entries:
+              - file: howtos/layers/image
+              - file: howtos/layers/labels
+              - file: howtos/layers/points
+              - file: howtos/layers/shapes
+              - file: howtos/layers/surface
+              - file: howtos/layers/tracks
+              - file: howtos/layers/vectors
           - file: howtos/connecting_events
           - file: howtos/napari_imageJ
           - file: howtos/docker
@@ -134,7 +139,7 @@ subtrees:
   - file: api/index
     subtrees:
     - titlesonly: True
-      entries: 
+      entries:
       - file: api/modules
       - file: api/event_loop
       - file: api/view_layer
