@@ -114,7 +114,13 @@ def _constructor(version=_version(), extra_specs=None):
         napari = f"napari={version}=*pyqt*"
     else:
         napari = f"napari={version}=*pyside*"
-    specs = [
+    base_specs = [
+        f"python={sys.version_info.major}.{sys.version_info.minor}.*",
+        "conda",
+        "mamba",
+        "pip"
+    ]
+    napari_specs = [
         napari,
         f"napari-menu={version}",
         f"python={sys.version_info.major}.{sys.version_info.minor}.*",
@@ -138,7 +144,8 @@ def _constructor(version=_version(), extra_specs=None):
         "installer_filename": OUTPUT_FILENAME,
         "initialize_by_default": False,
         "license_file": os.path.join(HERE, "resources", "bundle_license.rtf"),
-        "specs": specs,
+        "specs": base_specs,
+        "extra_envs": {f"napari-{version}": {"specs": napari_specs}},
         "menu_packages": [
             "napari-menu",
         ],
