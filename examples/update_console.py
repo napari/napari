@@ -1,5 +1,5 @@
 """
-Display one shapes layer ontop of one image layer using the add_shapes and
+Display one shapes layer on top of one image layer using the add_shapes and
 add_image APIs. When the window is closed it will print the coordinates of
 your shapes.
 """
@@ -10,6 +10,13 @@ import napari
 
 
 # create the viewer and window
+#
+# Creating the viewer will try to keep a reference to the first higher scope
+# that is not inside napari related code, and inject the locals into the jupyter
+# console namespace. This means that runing this example and opening the console
+# you will see `polygons`, `shapes_layer`, `data`, `photographer` ... as
+# variables.
+#
 viewer = napari.Viewer()
 
 # add the image
@@ -69,7 +76,5 @@ shapes_layer = viewer.add_shapes(
     name='shapes',
 )
 
-# Send local variables to the console
-viewer.update_console(locals())
 
 napari.run()

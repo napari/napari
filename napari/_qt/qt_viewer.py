@@ -438,6 +438,7 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
+                self.console.push(self.viewer._caller_frame_locals)
             except ImportError:
                 warnings.warn(
                     trans._(

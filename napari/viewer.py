@@ -1,5 +1,6 @@
+import inspect
 import typing
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -30,10 +31,16 @@ class Viewer(ViewerModel):
         Dimension names. by default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
+    console_local_update : bool, optional
+        By default try to capture the locals from the lowest caller outside
+        of napari, and inject them into the qtconsole when created.
+        This may create object leaks.
+
     """
 
     _window: 'Window' = None  # type: ignore
     _instances: typing.ClassVar[WeakSet] = WeakSet()
+    _caller_frame_locals: Any
 
     def __init__(
         self,
@@ -43,6 +50,7 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
+        console_local_update=True,
     ):
         super().__init__(
             title=title,
@@ -56,6 +64,28 @@ class Viewer(ViewerModel):
 
         self._window = Window(self, show=show)
         self._instances.add(self)
+        if console_local_update:
+            self._caller_frame_locals = self._find_calling_frame.f_locals
+        else:
+            self._caller_frame_locals = {}
+
+    def _find_calling_frame(self):
+        frame = inspect.currentframe()
+
+        while frame:
+
+            name = frame.f_globals.get("__name__", None)
+            if name in ('__main__', '<run_path>'):
+                return frame
+            if (
+                name != 'napari'
+                and name != '<run_path>'
+                and 'runpy' not in name
+                and not name.startswith('napari.')
+            ):
+                return frame
+
+            frame = frame.f_back
 
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
