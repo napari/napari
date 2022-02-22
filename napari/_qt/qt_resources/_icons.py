@@ -207,9 +207,9 @@ def _compile_qrc_pyside2(qrc) -> bytes:
     PySide compiles qrc files using the rcc binary in the root directory, (same
     path as PySide2.__init__)
     """
-    from subprocess import CalledProcessError, run
-    from itertools import product
     import sys
+    from itertools import product
+    from subprocess import CalledProcessError, run
 
     import PySide2
 
