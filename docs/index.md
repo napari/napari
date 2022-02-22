@@ -126,7 +126,10 @@ To install the current `main` branch on github (which will usually be ahead
 of the latest release on pypi)
 
 ```sh
-pip install "git+https://github.com/napari/napari.git#egg=napari[all]"
+git clone https://github.com/napari/napari.git
+pip install "./napari[all]"
+# optionally
+rm -rf ./napari
 ```
 
 For more information or troubleshooting see our [installation

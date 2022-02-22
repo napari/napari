@@ -120,7 +120,10 @@ conda update napari
 To install the latest version with yet to be released features from github via pip, call
 
 ```sh
-python -m pip install "git+https://github.com/napari/napari.git#egg=napari[all]"
+git clone https://github.com/napari/napari.git
+pip install "./napari[all]"
+# optionally
+rm -rf ./napari
 ```
 ````
 
