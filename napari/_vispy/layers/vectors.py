@@ -26,7 +26,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             # scale vector and add it to its origin to get the endpoint coordinate
             pos[:, 1] *= self.layer.length
             pos[:, 1] += pos[:, 0]
-            color = self.layer._view_color
+            color = self.layer._view_color[::-1]  # match inverted draw order
         else:
             pos = np.zeros((2, self.layer._ndisplay))
             color = np.zeros((1, 4))
