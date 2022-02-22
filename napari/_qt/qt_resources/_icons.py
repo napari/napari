@@ -213,7 +213,7 @@ def _find_pyside2_rcc():
         directories = (
             Path(PySide2.__file__).parent,
             Path(sys.prefix, 'Scripts'),
-            Path(sys.prefix, 'Library', 'bin')
+            Path(sys.prefix, 'Library', 'bin'),
         )
     else:
         executables = ('pyside2-rcc', 'rcc')
