@@ -208,20 +208,25 @@ def _compile_qrc_pyside2(qrc) -> bytes:
     path as PySide2.__init__)
     """
     from subprocess import CalledProcessError, run
+    from itertools import product
+    import sys
 
     import PySide2
 
     pyside_root = Path(PySide2.__file__).parent
+    python_root = Path(sys.executable).parent
+    directories = pyside_root, python_root
 
     if os.name == 'nt':
-        look_for = ('rcc.exe', 'pyside2-rcc.exe')
+        executables = ('pyside2-rcc.exe', 'rcc.exe')
     else:
-        look_for = ('rcc', 'pyside2-rcc')
+        executables = ('pyside2-rcc', 'rcc')
 
-    for bin in look_for:
-        if (pyside_root / bin).exists():
-            cmd = [str(pyside_root / bin)]
-            if 'pyside2' not in bin:
+    for directory, executable in product(directories, executables):
+        path = Path(directory, executable)
+        if path.exists():
+            cmd = [str(path)]
+            if 'pyside2' not in executable:
                 # the newer pure rcc version requires this for python
                 cmd.extend(['-g', 'python'])
             break
@@ -229,9 +234,16 @@ def _compile_qrc_pyside2(qrc) -> bytes:
         raise RuntimeError(f"PySide2 rcc binary not found in {pyside_root}")
 
     try:
-        return run(cmd + [qrc], check=True, capture_output=True).stdout
+        process = run(cmd + [qrc], capture_output=True)
+        process.check_returncode()
+        return process.stdout
     except CalledProcessError as e:
-        raise RuntimeError(f"Failed to build PySide2 resources {e}")
+        raise RuntimeError(
+            f"Failed to build PySide2 resources!"
+            f"  Exception: {e}\n"
+            f"  Stdout: {process.stdout.decode()}\n"
+            f"  Stderr: {process.stderr.decode()}"
+        )
 
 
 def compile_qrc(qrc) -> bytes:
