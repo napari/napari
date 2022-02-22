@@ -174,9 +174,8 @@ class QtDimSliderWidget(QWidget):
         slider.setObjectName("thickness_slider")
         slider.setFocusPolicy(Qt.NoFocus)
         slider.setMinimum(0)
-        range = self.dims.range[self.axis]
-        max_thickness = (range[1] - range[0]) * 2
-        slider.setMaximum(max_thickness)
+        nsteps = self.dims.range[self.axis][2]
+        slider.setMaximum(nsteps * 2)
         slider.setValue(self.dims.thickness[self.axis])
 
         slider.valueChanged.connect(self._thickness_changed)
@@ -272,7 +271,7 @@ class QtDimSliderWidget(QWidget):
         self.curslice_label.setAlignment(Qt.AlignRight)
 
     def _update_thickness(self):
-        self.thickness_slider
+        self.thickness_slider.setValue(self.dims.thickness[self.axis])
 
     @property
     def fps(self):

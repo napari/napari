@@ -319,6 +319,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer._slice_dims(
                 self.dims.point,
                 self.dims.thickness,
+                self.dims.range,
                 self.dims.ndisplay,
                 self.dims.order,
             )

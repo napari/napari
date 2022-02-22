@@ -31,7 +31,7 @@ class Dims(EventedModel):
     axis_labels : tuple of str
         Tuple of labels for each dimension.
     thickness : tuple of float
-        Thickness of the slice in each dimension.
+        Thickness of the slice in each dimension, measured in number of steps.
 
     Attributes
     ----------
@@ -68,7 +68,7 @@ class Dims(EventedModel):
         Order of only displayed dimensions. These are calculated from the
         ``displayed`` dimensions.
     thickness : tuple of float
-        Thickness of the slice in each dimension.
+        Thickness of the slice in each dimension, measured in number of steps.
     """
 
     # fields
@@ -156,7 +156,7 @@ class Dims(EventedModel):
 
         # Check the thickness tuple has same number of elements as ndim
         if len(values['thickness']) < ndim:
-            values['thickness'] = (1,) * (
+            values['thickness'] = (0,) * (
                 ndim - len(values['thickness'])
             ) + values['thickness']
         elif len(values['thickness']) > ndim:
@@ -367,11 +367,15 @@ class Dims(EventedModel):
         value : scalar or sequence of scalars
             Value of the slice thickness.
         """
+        # * 2 allows to see the whole dim in one slice
+        max_thicknesses = [steps * 2 for steps in self.nsteps]
         if isinstance(axis, Integral):
             axis = assert_axis_in_bounds(axis, self.ndim)
-            range = self.range[axis]
-            max_thickness = (range[1] - range[0]) * 2
-            thickness = round(min(max(value, 0), max_thickness))
+            if isinstance(value, Sequence):
+                raise ValueError(
+                    'cannot set multiple thickess values to a single axis'
+                )
+            thickness = round(min(max(value, 0), max_thicknesses[axis]))
             if self.thickness[axis] != thickness:
                 full_thickness = list(self.thickness)
                 full_thickness[axis] = thickness
@@ -386,12 +390,9 @@ class Dims(EventedModel):
                     trans._("axis and value sequences must have equal length")
                 )
             if value != full_thickness:
-                # (computed) nsteps property outside of the loop for efficiency
                 for ax, val in zip(axis, value):
                     ax = assert_axis_in_bounds(int(ax), self.ndim)
-                    range = self.range[axis]
-                    max_thickness = (range[1] - range[0]) * 2
-                    thickness = round(min(max(value, 0), max_thickness))
+                    thickness = round(min(max(val, 0), max_thicknesses[ax]))
                     full_thickness[ax] = thickness
                 self.thickness = full_thickness
 

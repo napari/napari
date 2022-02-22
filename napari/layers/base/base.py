@@ -650,6 +650,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
             self._dims_point = self._dims_point[-ndim:]
+            self._thickness = self._thickness[-ndim:]
             self._dims_order = list(
                 reorder_after_dim_reduction(self._dims_order[-ndim:])
             )
@@ -658,6 +659,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
+            self._thickness = [0] * (ndim - old_ndim) + self._thickness
             self._dims_order = list(range(ndim - old_ndim)) + [
                 o + ndim - old_ndim for o in self._dims_order
             ]
@@ -765,11 +767,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             indices[ax] = data_pts[i]
 
         return tuple(indices)
-
-    def _thickness_data(self):
-        """(D, ) array: Thickness of slices in data coordinates"""
-        scale = self._data_to_world.inverse.scale
-        return tuple(th * sc for th, sc in zip(self._thickness, scale))
 
     @abstractmethod
     def _get_ndim(self):
@@ -931,7 +928,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
-    def _slice_dims(self, point=None, thickness=None, ndisplay=2, order=None):
+    def _slice_dims(
+        self, point=None, thickness=None, range=None, ndisplay=2, order=None
+    ):
         """Slice data with values from a global dims model.
 
         Note this will likely be moved off the base layer soon.
@@ -940,6 +939,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ----------
         point : list
             Values of data to slice at in world coordinates.
+        thickness: list
+            Thickess of slices for each dimensions in world coordinates.
         ndisplay : int
             Number of dimensions to be displayed.
         order : list of int
@@ -971,9 +972,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             point = list(point)
 
         if thickness is None:
-            thickness = [0.5] * ndim
+            thickness = [0] * ndim
         else:
             thickness = list(thickness)
+
+        step = self.extent.step
+        if range is not None:
+            dims_step = [rng[2] for rng in range]
+            step = [dst / st for dst, st in zip(dims_step, self.extent.step)]
+
+        thickness = [th * st for th, st in zip(thickness, step)]
 
         # If no slide data has changed, then do nothing
         offset = ndim - self.ndim
@@ -992,7 +1000,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # Update the point values
         self._dims_point = point[offset:]
-        self._thickness = thickness
+        self._thickness = thickness[offset:]
         self._update_dims()
         self._set_editable()
 

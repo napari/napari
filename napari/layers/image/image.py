@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import types
 import warnings
+from math import ceil
 from typing import TYPE_CHECKING, Sequence, Union
 
 import numpy as np
@@ -676,12 +677,18 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._transforms['tile2data'].scale = np.ones(self.ndim)
             image_indices = self._slice_indices
             # XXX this breaks labels!
-            # TODO probably rounding wrong, get back to this
-            thickness = np.array(self._thickness_data(), dtype=int)
+            half_thickness = (
+                np.maximum(np.ceil(self._thickness).astype(int), 1) / 2
+            )
             image_slices = tuple(
                 slice(
-                    max(0, image_indices[i] - thickness[i]),
-                    min(image_indices[i] + thickness[i], self.data.shape[i]),
+                    ceil(max(0, image_indices[i] - half_thickness[i])),
+                    ceil(
+                        min(
+                            image_indices[i] + half_thickness[i],
+                            self.data.shape[i],
+                        )
+                    ),
                 )
                 if i in not_disp
                 else image_indices[i]

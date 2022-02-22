@@ -1398,9 +1398,14 @@ class Points(Layer):
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
-            not_disp_thick = np.array(thickness)[not_disp]
+            # TODO: is this np.maximum ok? zero thickness slice is probably unwanted
+            # (might as well set the layer invisible) and it also can cause issues with empty arrays
+            # so here we use a reasonable default (same as used to in napari before #3997)
+            not_disp_thickness = np.maximum(
+                np.array(thickness)[not_disp], 1e-5
+            )
             distances = abs(self.data[:, not_disp] - indices[not_disp])
-            matches = np.all(distances <= not_disp_thick / 2, axis=1)
+            matches = np.all(distances <= not_disp_thickness / 2, axis=1)
             slice_indices = np.where(matches)[0].astype(int)
             return slice_indices
         else:
@@ -1581,7 +1586,7 @@ class Points(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
-        indices = self._slice_data(self._slice_indices, self._thickness_data())
+        indices = self._slice_data(self._slice_indices, self._thickness)
         self._view_indices = np.array(indices, dtype=int)
         # get the selected points that are in view
         self._selected_view = list(
