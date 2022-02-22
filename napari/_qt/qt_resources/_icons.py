@@ -214,13 +214,17 @@ def _compile_qrc_pyside2(qrc) -> bytes:
     import PySide2
 
     pyside_root = Path(PySide2.__file__).parent
-    python_root = Path(sys.executable).parent
-    directories = pyside_root, python_root
 
     if os.name == 'nt':
         executables = ('pyside2-rcc.exe', 'rcc.exe')
+        directories = (
+            pyside_root,
+            Path(sys.prefix, 'Scripts'),
+            Path(sys.prefix, 'Library', 'bin')
+        )
     else:
         executables = ('pyside2-rcc', 'rcc')
+        directories = pyside_root, Path(sys.executable).parent
 
     for directory, executable in product(directories, executables):
         path = Path(directory, executable)
