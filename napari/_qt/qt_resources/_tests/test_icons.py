@@ -6,3 +6,14 @@ def test_icon_hash_equality():
     dir_hash_result = dir_hash(ICON_PATH)
     paths_hash_result = paths_hash(ICONS.values())
     assert dir_hash_result == paths_hash_result
+
+
+def test_pyside2_rcc_first():
+    """
+    Ensure pyside2-rcc is checked before rcc. Otherwise
+    we might use an older qt's rcc with no -g support.
+    """
+    from napari._qt.qt_resources._icons import _find_pyside2_rcc
+
+    exe_name = next(exe for _, exe in _find_pyside2_rcc())
+    assert "pyside2-" in exe_name

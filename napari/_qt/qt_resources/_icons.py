@@ -29,6 +29,7 @@ inputs.
 """
 
 import os
+import sys
 from contextlib import contextmanager
 from itertools import product
 from pathlib import Path
@@ -201,32 +202,38 @@ def _compile_qrc_pyqt6(qrc) -> bytes:
     raise NotImplementedError('pyrcc discontinued on Pyqt6')
 
 
+def _find_pyside2_rcc():
+    import sys
+    from itertools import product
+
+    import PySide2
+
+    if os.name == 'nt':
+        executables = ('pyside2-rcc.exe', 'rcc.exe')
+        directories = (
+            Path(PySide2.__file__).parent,
+            Path(sys.prefix, 'Scripts'),
+            Path(sys.prefix, 'Library', 'bin')
+        )
+    else:
+        executables = ('pyside2-rcc', 'rcc')
+        directories = (
+            Path(PySide2.__file__).parent,
+            Path(sys.executable).parent
+        )
+    return product(directories, executables)
+
+
+
 def _compile_qrc_pyside2(qrc) -> bytes:
     """Compile qrc file using the PySide2 method.
 
     PySide compiles qrc files using the rcc binary in the root directory, (same
     path as PySide2.__init__)
     """
-    import sys
-    from itertools import product
     from subprocess import CalledProcessError, run
 
-    import PySide2
-
-    pyside_root = Path(PySide2.__file__).parent
-
-    if os.name == 'nt':
-        executables = ('pyside2-rcc.exe', 'rcc.exe')
-        directories = (
-            pyside_root,
-            Path(sys.prefix, 'Scripts'),
-            Path(sys.prefix, 'Library', 'bin')
-        )
-    else:
-        executables = ('pyside2-rcc', 'rcc')
-        directories = pyside_root, Path(sys.executable).parent
-
-    for directory, executable in product(directories, executables):
+    for directory, executable in _find_pyside2_rcc():
         path = Path(directory, executable)
         if path.exists():
             cmd = [str(path)]
@@ -235,7 +242,10 @@ def _compile_qrc_pyside2(qrc) -> bytes:
                 cmd.extend(['-g', 'python'])
             break
     else:
-        raise RuntimeError(f"PySide2 rcc binary not found in {pyside_root}")
+        raise RuntimeError(
+            f"PySide2 rcc binary not found in any of the expected paths: "
+            ", ".join(Path(*parts) for parts in _find_pyside2_rcc())
+        )
 
     try:
         process = run(cmd + [qrc], capture_output=True)
