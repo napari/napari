@@ -232,10 +232,9 @@ def _find_pyside2_rcc() -> Iterable[Tuple[str, str]]:
         executables = ('pyside2-rcc', 'rcc')
         directories = (
             Path(PySide2.__file__).parent,
-            Path(sys.executable).parent
+            Path(sys.executable).parent,
         )
     return product(directories, executables)
-
 
 
 def _compile_qrc_pyside2(qrc) -> bytes:
