@@ -220,7 +220,7 @@ def _compile_qrc_pyside2(qrc) -> bytes:
         directories = (
             pyside_root,
             Path(sys.prefix, 'Scripts'),
-            Path(sys.prefix, 'Library', 'bin')
+            Path(sys.prefix, 'Library', 'bin'),
         )
     else:
         executables = ('pyside2-rcc', 'rcc')
