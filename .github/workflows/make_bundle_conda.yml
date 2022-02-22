@@ -50,7 +50,7 @@ jobs:
             - conda-forge
           dependencies:
             - conda-smithy
-            - python 3.7
+            - python 3.8
             - pip
             - tomlkit
             - ruamel.yaml
