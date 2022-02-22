@@ -202,7 +202,20 @@ def _compile_qrc_pyqt6(qrc) -> bytes:
     raise NotImplementedError('pyrcc discontinued on Pyqt6')
 
 
-def _find_pyside2_rcc():
+def _find_pyside2_rcc() -> Iterable[Tuple[str, str]]:
+    """
+    Return possible search paths for (pyside2-)rcc.
+
+    Note pyside2-rcc needs to be checked before the
+    "pure" rcc so we don't take an older qt's rcc
+    by mistake (with no -g support).
+
+    The binaries can be found in PySide2's directory
+    under site-packages (pip installs), or under a
+    directory immediately under sys.prefix (conda installs).
+    This subdirectory is platform dependent: `bin/` on Unix,
+    `Scripts/` (sometimes `Library/bin/` too) on Windows.
+    """
     import sys
     from itertools import product
 
