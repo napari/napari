@@ -118,7 +118,7 @@ def _constructor(version=_version(), extra_specs=None):
         f"python={sys.version_info.major}.{sys.version_info.minor}.*",
         "conda",
         "mamba",
-        "pip"
+        "pip",
     ]
     napari_specs = [
         napari,

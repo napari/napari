@@ -345,7 +345,9 @@ class PluginListItem(QFrame):
         self.row1.insertWidget(2, npe2_icon)
         self.enabled_checkbox.setEnabled(False)
         self.enabled_checkbox.setToolTip(
-            'This is a npe2 plugin and cannot be enabled/disabled at this time.'
+            trans._(
+                'This is a npe2 plugin and cannot be enabled/disabled at this time.'
+            )
         )
 
     def _get_dialog(self) -> QDialog:
@@ -542,7 +544,9 @@ class QPluginList(QListWidget):
         self._warn_dialog = None
         if item.npe_version != 1:
             # show warning pop up dialog
-            message = 'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+            message = trans._(
+                'When installing/uninstalling npe2 plugins, you must restart napari for UI changes to take effect.'
+            )
             self._warn_dialog = WarnPopup(
                 text=message,
             )
@@ -643,16 +647,15 @@ class QtPluginDialog(QDialog):
 
         plugin_manager.discover()  # since they might not be loaded yet
 
-        already_installed = set()
+        self.already_installed = set()
 
         def _add_to_installed(distname, enabled, npe_version=1):
-
             if distname:
                 meta = standard_metadata(distname)
                 if len(meta) == 0:
                     # will not add builtins.
                     return
-                already_installed.add(distname)
+                self.already_installed.add(distname)
             else:
                 meta = {}
 
@@ -672,7 +675,7 @@ class QtPluginDialog(QDialog):
 
         for manifest in _npe2.iter_manifests():
             distname = normalized_name(manifest.name or '')
-            if distname in already_installed or distname == 'napari':
+            if distname in self.already_installed or distname == 'napari':
                 continue
             _add_to_installed(distname, True, npe_version=2)
 
@@ -680,7 +683,7 @@ class QtPluginDialog(QDialog):
             # not showing these in the plugin dialog
             if plugin_name in ('napari_plugin_engine',):
                 continue
-            if distname in already_installed:
+            if distname in self.already_installed:
                 continue
             _add_to_installed(
                 distname, not plugin_manager.is_blocked(plugin_name)

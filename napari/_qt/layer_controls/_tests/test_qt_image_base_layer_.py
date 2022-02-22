@@ -10,6 +10,7 @@ from napari._qt.layer_controls.qt_image_controls_base import (
     QContrastLimitsPopup,
     QRangeSliderPopup,
     QtBaseImageControls,
+    range_to_decimals,
 )
 from napari.layers import Image, Surface
 
@@ -83,10 +84,10 @@ def test_range_popup_clim_buttons(mock_show, qtbot, layer):
     if np.issubdtype(layer.dtype, np.integer):
         rangebtn.click()
         qtbot.wait(20)
-        assert tuple(layer.contrast_limits_range) == (0, 2 ** 16 - 1)
+        assert tuple(layer.contrast_limits_range) == (0, 2**16 - 1)
         min_ = qtctrl.contrastLimitsSlider.minimum()
         max_ = qtctrl.contrastLimitsSlider.maximum()
-        assert (min_, max_) == (0, 2 ** 16 - 1)
+        assert (min_, max_) == (0, 2**16 - 1)
     else:
         assert rangebtn is None
 
@@ -97,19 +98,22 @@ def test_clim_slider_step_size_and_precision(qtbot, mag):
 
     ...across a broad range of orders of magnitude.
     """
-    layer = Image(np.random.rand(20, 20) * 10 ** mag)
+    layer = Image(np.random.rand(20, 20) * 10**mag)
     popup = QContrastLimitsPopup(layer)
     qtbot.addWidget(popup)
 
-    # the range slider popup labels should have a number of decimal points that
-    # is inversely proportional to the order of magnitude of the range of data,
-    # but should never be greater than 5 or less than 0
-    decimals = min(6, max(int(3 - mag), 0))
+    # scale precision with the log of the data range order of magnitude
+    # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
+    #       0 - 10  (1 order of mag)  -> 2 decimals
+    #       0 - 100 (2 orders of mag) -> 1 decimal
+    #       ≥ 3 orders of mag -> no decimals
+    # no more than 64 decimals
+    decimals = range_to_decimals(layer.contrast_limits, layer.dtype)
     assert popup.slider.decimals() == decimals
 
     # the slider step size should also be inversely proportional to the data
     # range, with 1000 steps across the data range
-    assert popup.slider.singleStep() == 10 ** -decimals
+    assert popup.slider.singleStep() == 10**-decimals
 
 
 def test_qt_image_controls_change_contrast(qtbot):

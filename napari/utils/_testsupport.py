@@ -149,6 +149,21 @@ def make_napari_viewer(
     from napari._qt.qt_viewer import QtViewer
     from napari.settings import get_settings
 
+    gc.collect()
+
+    _do_not_inline_below = len(QtViewer._instances)
+    # # do not inline to avoid pytest trying to compute repr of expression.
+    # # it fails if C++ object gone but not Python object.
+    if request.config.getoption(_SAVE_GRAPH_OPNAME):
+        fail_obj_graph(QtViewer)
+    QtViewer._instances.clear()
+    assert _do_not_inline_below == 0, (
+        "Some instance of QtViewer is not properly cleaned in one of previous test. For easier debug one may "
+        f"use {_SAVE_GRAPH_OPNAME} flag for pytest to get graph of leaked objects. If you use qtbot (from pytest-qt)"
+        " to clean Qt objects after test you may need to switch to manual clean using "
+        "`deleteLater()` and `qtbot.wait(50)` later."
+    )
+
     settings = get_settings()
     settings.reset()
 

@@ -3,9 +3,9 @@ from __future__ import annotations
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
-from .._vendor.cpython.functools import cached_property
 from ..utils.events import EmitterGroup
 from ._injection import inject_napari_dependencies
 from .interactions import Shortcut

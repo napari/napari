@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -12,15 +11,13 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Union,
 )
 
-try:
-    import npe2
-    from npe2.io_utils import read_get_reader
-    from npe2.manifest.schema import PluginManifest
-except ImportError:
-    npe2 = None
+import npe2
+from npe2.io_utils import read_get_reader
+from npe2.manifest.schema import PluginManifest
+
+from ..utils.translations import trans
 
 if TYPE_CHECKING:
     from npe2._types import LayerData, WidgetCallable
@@ -31,39 +28,33 @@ if TYPE_CHECKING:
     from ..types import SampleDict
 
 
-def npe2_or_return(val=None):
-    def decorator(func):
-        if npe2 is None:
-
-            def noop(*_, **__) -> None:
-                return val
-
-            return noop
-        return func
-
-    return decorator
-
-
-npe2_or_return_none = npe2_or_return(None)
-
-
 class _FakeHookimpl:
     def __init__(self, name):
         self.plugin_name = name
 
 
-@npe2_or_return_none
 def read(
-    path: Union[str, Sequence[str]], plugin: Optional[str] = None
+    paths: Sequence[str], plugin: Optional[str] = None, *, stack: bool
 ) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
-    with suppress(ValueError):
-        layer_data, reader = read_get_reader(path, plugin_name=plugin)
+    assert stack is not None
+    # the goal here would be to make read_get_reader of npe2 aware of "stack",
+    # and not have this conditional here.
+    # this would also allow the npe2-npe1 shim to do this transform as well
+    if stack:
+        npe1_path = paths
+    else:
+        assert len(paths) == 1
+        npe1_path = paths[0]
+    try:
+        layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)
         return layer_data, _FakeHookimpl(reader.plugin_name)
+    except ValueError as e:
+        if 'No readers returned data' not in str(e):
+            raise e
     return None
 
 
-@npe2_or_return([])
 def write_layers(
     path: str,
     layers: List[Layer],
@@ -96,9 +87,12 @@ def write_layers(
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
 
     if writer is None:
-        return npe2.write(
-            path=path, layer_data=layer_data, plugin_name=plugin_name
-        )
+        try:
+            return npe2.write(
+                path=path, layer_data=layer_data, plugin_name=plugin_name
+            )
+        except ValueError:
+            return []
 
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
@@ -106,20 +100,27 @@ def write_layers(
     return [res] if isinstance(res, str) else res or []
 
 
-@npe2_or_return_none
 def get_widget_contribution(
-    plugin_name: str, widget_name: str
-) -> Optional[WidgetCallable]:
+    plugin_name: str, widget_name: Optional[str] = None
+) -> Optional[Tuple[WidgetCallable, str]]:
+    widgets_seen = set()
     for contrib in npe2.PluginManager.instance().iter_widgets():
-        if (
-            contrib.plugin_name == plugin_name
-            and contrib.display_name == widget_name
-        ):
-            return contrib.get_callable()
+        if contrib.plugin_name == plugin_name:
+            if not widget_name or contrib.display_name == widget_name:
+                return contrib.get_callable(), contrib.display_name
+            widgets_seen.add(contrib.display_name)
+    if widget_name and widgets_seen:
+        msg = trans._(
+            'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {seen}',
+            plugin_name=plugin_name,
+            widget_name=widget_name,
+            seen=widgets_seen,
+            deferred=True,
+        )
+        raise KeyError(msg)
     return None
 
 
-@npe2_or_return_none
 def populate_qmenu(menu: QMenu, menu_key: str):
     """Populate `menu` from a `menu_key` offering in the manifest."""
     # TODO: declare somewhere what menu_keys are valid.
@@ -135,7 +136,6 @@ def populate_qmenu(menu: QMenu, menu_key: str):
             action.triggered.connect(lambda *args: cmd.exec(args=args))
 
 
-@npe2_or_return((None, []))
 def file_extensions_string_for_layers(
     layers: Sequence[Layer],
 ) -> Tuple[Optional[str], List[WriterContribution]]:
@@ -182,12 +182,33 @@ def file_extensions_string_for_layers(
     )
 
 
-@npe2_or_return(iter([]))
+def get_readers(path: str) -> Dict[str, str]:
+    """Get valid reader display_name: plugin_name mapping given path.
+
+    Iterate through compatible readers for the given path and return
+    dictionary of display_name to plugin_name for each reader
+
+    Parameters
+    ----------
+    path : str
+        path for which to find compatible readers
+
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary of display_name to plugin_name
+    """
+    pm = npe2.PluginManager.instance()
+    return {
+        pm.get_manifest(reader.command).display_name: reader.plugin_name
+        for reader in pm.iter_compatible_readers(path)
+    }
+
+
 def iter_manifests() -> Iterator[PluginManifest]:
     yield from npe2.PluginManager.instance()._manifests.values()
 
 
-@npe2_or_return(iter([]))
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
@@ -196,7 +217,6 @@ def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
     return (('dock', x) for x in wdgs.items())
 
 
-@npe2_or_return(iter([]))
 def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     pm = npe2.PluginManager.instance()
     return (
@@ -211,7 +231,6 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
     )
 
 
-@npe2_or_return((None, []))
 def get_sample_data(
     plugin: str, sample: str
 ) -> Tuple[Optional[Callable[[], Iterable[LayerData]]], List[Tuple[str, str]]]:

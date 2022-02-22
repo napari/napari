@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -13,12 +13,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import (
-    _features_from_layer,
-    _features_to_choices,
-    _features_to_properties,
-    _resize_features,
-)
+from ..utils.layer_utils import _FeatureTable
 from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
@@ -61,6 +56,9 @@ class Vectors(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
+    out_of_slice_display : bool
+        If True, renders vectors not just in central plane but also slightly out of slice
+        according to specified point marker size.
     name : str
         Name of the layer.
     metadata : dict
@@ -124,6 +122,9 @@ class Vectors(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
+    out_of_slice_display : bool
+        If True, renders vectors not just in central plane but also slightly out of slice
+        according to specified point marker size.
 
     Notes
     -----
@@ -139,6 +140,8 @@ class Vectors(Layer):
     _view_faces : (2M, 3) or (4M, 3) np.ndarray
         indices of the _mesh_vertices that form the faces of the M in view vectors.
         Shape is (2M, 2) for 2D and (4M, 2) for 3D.
+    _view_alphas : (M,) or float
+        relative opacity for the M in view vectors
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Vectors.properties.
     _mesh_vertices : (4N, 2) array
@@ -170,6 +173,7 @@ class Vectors(Layer):
         edge_color_cycle=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
+        out_of_slice_display=False,
         length=1,
         name=None,
         metadata=None,
@@ -213,10 +217,12 @@ class Vectors(Layer):
             edge_color=Event,
             edge_color_mode=Event,
             properties=Event,
+            out_of_slice_display=Event,
         )
 
         # Save the vector style params
         self._edge_width = edge_width
+        self._out_of_slice_display = out_of_slice_display
 
         self._length = float(length)
 
@@ -231,7 +237,7 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        self._features, self._feature_defaults = _features_from_layer(
+        self._feature_table = _FeatureTable.from_layer(
             features=features,
             properties=properties,
             property_choices=property_choices,
@@ -255,6 +261,7 @@ class Vectors(Layer):
         self._view_vertices = []
         self._view_faces = []
         self._view_indices = []
+        self._view_alphas = []
 
         # now that everything is set up, make the layer visible (if set to visible)
         self._update_dims()
@@ -284,11 +291,7 @@ class Vectors(Layer):
         # Adjust the props/color arrays when the number of vectors has changed
         with self.events.blocker_all():
             with self._edge.events.blocker_all():
-                self._features = _resize_features(
-                    self._features,
-                    n_vectors,
-                    defaults=self._feature_defaults,
-                )
+                self._feature_table.resize(n_vectors)
                 if n_vectors < previous_n_vectors:
                     # If there are now fewer points, remove the size and colors of the
                     # extra ones
@@ -323,18 +326,14 @@ class Vectors(Layer):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        return self._feature_table.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features, self._feature_defaults = _features_from_layer(
-            features=features,
-            num_data=len(self.data),
-        )
-
+        self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
             if self._edge.color_properties.name not in self.features:
                 self._edge.color_mode = ColorMode.DIRECT
@@ -359,7 +358,7 @@ class Vectors(Layer):
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
-        return _features_to_properties(self._features)
+        return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
@@ -371,11 +370,11 @@ class Vectors(Layer):
 
         See `features` for more details on the type of this property.
         """
-        return self._feature_defaults
+        return self._feature_table.defaults
 
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
-        return _features_to_choices(self._features)
+        return self._feature_table.choices()
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -399,6 +398,7 @@ class Vectors(Layer):
                 'property_choices': self.property_choices,
                 'ndim': self.ndim,
                 'features': self.features,
+                'out_of_slice_display': self.out_of_slice_display,
             }
         )
         return state
@@ -425,6 +425,17 @@ class Vectors(Layer):
             mins = np.min(data, axis=(0, 1))
             extrema = np.vstack([mins, maxs])
         return extrema
+
+    @property
+    def out_of_slice_display(self) -> bool:
+        """bool: renders vectors slightly out of slice."""
+        return self._out_of_slice_display
+
+    @out_of_slice_display.setter
+    def out_of_slice_display(self, out_of_slice_display: bool) -> None:
+        self._out_of_slice_display = out_of_slice_display
+        self.events.out_of_slice_display()
+        self.refresh()
 
     @property
     def edge_width(self) -> Union[int, float]:
@@ -475,12 +486,11 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
-        current_properties = _features_to_properties(self._feature_defaults)
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
             properties=self.properties,
-            current_properties=current_properties,
+            current_properties=self._feature_table.currents(),
         )
         self.events.edge_color()
 
@@ -607,15 +617,66 @@ class Vectors(Layer):
     @property
     def _view_face_color(self) -> np.ndarray:
         """(Mx4) np.ndarray : colors for the M in view vectors"""
-        face_color = np.repeat(self.edge_color[self._view_indices], 2, axis=0)
+        face_color = self.edge_color[self._view_indices]
+        face_color[:, -1] *= self._view_alphas
+        face_color = np.repeat(face_color, 2, axis=0)
+
         if self._ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
 
         return face_color
 
+    def _slice_data(
+        self, dims_indices
+    ) -> Tuple[List[int], Union[float, np.ndarray]]:
+        """Determines the slice of vectors given the indices.
+
+        Parameters
+        ----------
+        dims_indices : sequence of int or slice
+            Indices to slice with.
+
+        Returns
+        -------
+        slice_indices : list
+            Indices of vectors in the currently viewed slice.
+        alpha : float, (N, ) array
+            The computed, relative opacity of vectors in the current slice.
+            If `out_of_slice_display` is mode is off, this is always 1.
+            Otherwise, vectors originating in the current slice are assigned a value of 1,
+            while vectors passing through the current slice are assigned progressively lower
+            values, based on how far from the current slice they originate.
+        """
+        not_disp = list(self._dims_not_displayed)
+        indices = np.array(dims_indices)
+        if len(self.data) > 0:
+            data = self.data[:, 0, not_disp]
+            distances = abs(data - indices[not_disp])
+            if self.out_of_slice_display is True:
+                projected_lengths = abs(
+                    self.data[:, 1, not_disp] * self.length
+                )
+                matches = np.all(distances <= projected_lengths, axis=1)
+                alpha_match = projected_lengths[matches]
+                alpha_match[alpha_match == 0] = 1
+                alpha_per_dim = (
+                    alpha_match - distances[matches]
+                ) / alpha_match
+                alpha_per_dim[alpha_match == 0] = 1
+                alpha = np.prod(alpha_per_dim, axis=1).astype(float)
+            else:
+                matches = np.all(distances <= 0.5, axis=1)
+                alpha = 1.0
+
+            slice_indices = np.where(matches)[0].astype(int)
+            return slice_indices, alpha
+        else:
+            return [], np.empty(0)
+
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
+        indices, alphas = self._slice_data(self._slice_indices)
         if not self._dims_displayed == self._displayed_stored:
             vertices, triangles = generate_vector_meshes(
                 self.data[:, :, list(self._dims_displayed)],
@@ -627,24 +688,21 @@ class Vectors(Layer):
             self._displayed_stored = copy(self._dims_displayed)
 
         vertices = self._mesh_vertices
-        not_disp = list(self._dims_not_displayed)
         disp = list(self._dims_displayed)
-        indices = np.array(self._slice_indices)
 
         if len(self.data) == 0:
             faces = []
             self._view_data = np.empty((0, 2, 2))
             self._view_indices = []
         elif self.ndim > 2:
-            data = self.data[:, 0, not_disp].astype('int')
-            matches = np.all(data == indices[not_disp], axis=1)
-            matches = np.where(matches)[0]
-            self._view_indices = matches
-            self._view_data = self.data[np.ix_(matches, [0, 1], disp)]
-            if len(matches) == 0:
+            indices, alphas = self._slice_data(self._slice_indices)
+            self._view_indices = indices
+            self._view_alphas = alphas
+            self._view_data = self.data[np.ix_(indices, [0, 1], disp)]
+            if len(indices) == 0:
                 faces = []
             else:
-                keep_inds = np.repeat(2 * matches, 2)
+                keep_inds = np.repeat(2 * indices, 2)
                 keep_inds[1::2] = keep_inds[1::2] + 1
                 if self._ndisplay == 3:
                     keep_inds = np.concatenate(
@@ -659,6 +717,7 @@ class Vectors(Layer):
             faces = self._mesh_triangles
             self._view_data = self.data[:, :, disp]
             self._view_indices = np.arange(self.data.shape[0])
+            self._view_alphas = 1.0
 
         if len(faces) == 0:
             self._view_vertices = []
