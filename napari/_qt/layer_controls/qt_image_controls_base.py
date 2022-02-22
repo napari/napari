@@ -242,7 +242,7 @@ class QContrastLimitsPopup(QRangeSliderPopup):
         # the "full range" button doesn't do anything if it's not an
         # unsigned integer type (it's unclear what range should be set)
         # so we don't show create it at all.
-        if np.issubdtype(layer.dtype, np.unsignedinteger):
+        if np.issubdtype(layer.dtype, np.integer):
             range_btn = QPushButton("full range")
             range_btn.setObjectName("full_clim_range_button")
             range_btn.setToolTip(
