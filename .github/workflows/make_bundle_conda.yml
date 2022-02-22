@@ -87,7 +87,8 @@ jobs:
                  -e "s|  git_rev:.*||"  \
                  recipe/meta.yaml
 
-          conda-smithy rerender
+          # temporary!
+          # conda-smithy rerender
           git diff
           mv ${GITHUB_WORKSPACE}/napari-source .
 
