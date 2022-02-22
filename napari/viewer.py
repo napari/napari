@@ -65,7 +65,7 @@ class Viewer(ViewerModel):
         self._window = Window(self, show=show)
         self._instances.add(self)
         if console_local_update:
-            self._caller_frame_locals = self._find_calling_frame.f_locals
+            self._caller_frame_locals = self._find_calling_frame().f_locals
         else:
             self._caller_frame_locals = {}
 
