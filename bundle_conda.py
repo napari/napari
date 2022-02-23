@@ -89,6 +89,7 @@ def _generate_background_images(installer_type, outpath="resources"):
         return
 
     from PIL import Image
+
     import napari
 
     logo_path = Path(napari.__file__).parent / "resources" / "logo.png"
@@ -255,7 +256,9 @@ def _constructor(version=_version(), extra_specs=None):
             definitions["signing_certificate"] = signing_certificate
 
     if definitions.get("welcome_image") or definitions.get("header_image"):
-        _generate_background_images(definitions["installer_type"], outpath="resources")
+        _generate_background_images(
+            definitions["installer_type"], outpath="resources"
+        )
 
     clean_these_files.append("construct.yaml")
 
