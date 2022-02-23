@@ -83,6 +83,40 @@ def _use_local():
     return os.environ.get("CONSTRUCTOR_USE_LOCAL")
 
 
+def _generate_background_images(installer_type, outpath="resources"):
+    if installer_type == "sh":
+        # shell installers are text-based, no graphics
+        return
+
+    from PIL import Image
+    import napari
+
+    logo_path = Path(napari.__file__).parent / "resources" / "logo.png"
+    logo = Image.open(logo_path, "r")
+
+    global clean_these_files
+
+    if installer_type in ("exe", "all"):
+        sidebar = Image.new("RGBA", (164, 314), (0, 0, 0, 0))
+        sidebar.paste(logo.resize((101, 101)), (32, 180))
+        output = Path(outpath, "napari_164x314.png")
+        sidebar.save(output, format="png")
+        clean_these_files.append(output)
+
+        banner = Image.new("RGBA", (150, 57), (0, 0, 0, 0))
+        banner.paste(logo.resize((44, 44)), (8, 6))
+        output = Path(outpath, "napari_150x57.png")
+        banner.save(output, format="png")
+        clean_these_files(output)
+
+    if installer_type in ("pkg", "all"):
+        background = Image.new("RGBA", (1227, 600), (0, 0, 0, 0))
+        background.paste(logo.resize((148, 148)), (95, 418))
+        output = Path(outpath, "napari_1227x600.png")
+        background.save(output, format="png")
+        clean_these_files.append(output)
+
+
 def _constructor(version=_version(), extra_specs=None):
     """
     Create a temporary `construct.yaml` input file and
@@ -220,6 +254,9 @@ def _constructor(version=_version(), extra_specs=None):
         if signing_certificate:
             definitions["signing_certificate"] = signing_certificate
 
+    if definitions.get("welcome_image") or definitions.get("header_image"):
+        _generate_background_images(definitions["installer_type"], outpath="resources")
+
     clean_these_files.append("construct.yaml")
 
     # TODO: temporarily patching password - remove block when the secret has been fixed
@@ -316,6 +353,11 @@ def cli(argv=None):
         help="Post-process licenses AFTER having built the installer. "
         "This must be run as a separate step.",
     )
+    p.add_argument(
+        "--images",
+        action="store_true",
+        help="Generate background images from the logo (test only)",
+    )
     return p.parse_args()
 
 
@@ -335,6 +377,9 @@ if __name__ == "__main__":
         sys.exit()
     if args.licenses:
         licenses()
+        sys.exit()
+    if args.images:
+        _generate_background_images()
         sys.exit()
 
     print('created', main(extra_specs=args.extra_specs))
