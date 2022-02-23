@@ -18,7 +18,7 @@ The release will be coordinated by a release manager whose responsibilities incl
 - Look through currently open PRs and get a sense of what would be good to merge before the first release candidate 
 - Create a zulip thread in the release channel letting people know the release candidate is coming and pointing out PRs that would be nice to merge before release
 
-At this stage, bug fixes should and features that are close to landing should be prioritised. The release manager will follow up with PR authors, reviewing and merging as needed.
+At this stage, bug fixes and features that are close to landing should be prioritized. The release manager will follow up with PR authors, reviewing and merging as needed.
   
 ## Nine days before release (two days before release candidate)
 - Generate release notes with the script in the release folder
