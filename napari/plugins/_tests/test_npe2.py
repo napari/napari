@@ -19,10 +19,10 @@ null_image: FullLayerData = ([], {}, "image")
 
 
 def test_read(uses_sample_plugin):
-    assert read("some.fzzy")[0] == [(None,)]
+    assert read(["some.fzzy"], stack=False)[0] == [(None,)]
 
     try:
-        read("some.test")
+        read(["some.test"], stack=False)
     except ValueError:
         assert True
 
