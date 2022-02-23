@@ -24,7 +24,7 @@ At this stage, bug fixes should and features that are close to landing should be
 - Generate release notes with the script in the release folder
 - Fill in the release highlights and make a PR with the release notes
 
-At this point the release manager should really now be the only person merging PRs on the repo for the next week.
+At this point the release manager should ideally be the only person merging PRs on the repo for the next week.
 
 ## One week before release 
 - Add any recently merged PRs to release notes
