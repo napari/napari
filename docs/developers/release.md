@@ -36,7 +36,7 @@ At this point the release manager should ideally be the only person merging PRs 
 - Merge any PRs and update release notes accordingly
 - Make new release candidates as necessary and announce them on zulip
 
-At this stage PRs merged should focus mainly on regressions and bug fixes. new features should wait until after release.
+At this stage PRs merged should focus mainly on regressions and bug fixes. New features should wait until after release.
 
 ## The day of release
 - make sure final rc has been tested
