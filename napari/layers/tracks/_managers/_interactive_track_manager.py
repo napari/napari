@@ -9,6 +9,8 @@ import pandas as pd
 from ....utils.translations import trans
 from ._base_track_manager import BaseTrackManager
 
+INVALID_TIME_SLICE = (0, -1)
+
 
 @dataclass
 class Node:
@@ -63,8 +65,7 @@ def outdate_serialization(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         self._is_serialized = False
-        # setting an invalid slice to force view update
-        self._view_time_slice = (0, -1)
+        self._view_time_slice = INVALID_TIME_SLICE
         return method(self, *args, **kwargs)
 
     return wrapper
@@ -931,7 +932,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
     def _copy_serialized_to_view(self) -> None:
         """Serializes and copies the data to their respective views."""
-        self._view_time_slice = (0, -1)  # setting an invalid interval
+        self._view_time_slice = INVALID_TIME_SLICE
         self._view_graph = self._graph
         self._view_graph_vertices = self._graph_vertices
         self._view_graph_connex = self._graph_connex
@@ -944,3 +945,44 @@ class InteractiveTrackManager(BaseTrackManager):
     def extent_vertices(self) -> np.ndarray:
         # extent of data doesn't reduce with nodes removal
         return self._extent_vertices
+
+    def _find_root(self, node_index: int) -> int:
+        node = self._get_node(node_index)
+
+        while len(node.parents) > 0:
+            node = node.parents[0]
+
+        return node.index
+
+    def _connected_component(
+        self, node_index: int, return_df: bool = False
+    ) -> Union[List, pd.DataFrame]:
+        # connected component starts from root to guarantee it's sorted
+        root_index = self._find_root(node_index)
+        root = self._get_node(root_index)
+
+        queue = [root]
+
+        nodes = []
+        features = []
+
+        while len(queue) > 0:
+            node = queue.pop()
+            nodes.append(node)
+            features.append(node.features)
+
+            for child in node.children:
+                queue.append(child)
+
+        indices = [node.index for node in nodes]
+        if not return_df:
+            return indices
+
+        df = pd.DataFrame(features)
+        df['index'] = indices
+        columns = ['time', 'z', 'y', 'x']
+        if self.ndim == 3:
+            columns.remove('z')
+
+        df[columns] = [node.vertex for node in nodes]
+        return df
