@@ -174,8 +174,7 @@ class QtDimSliderWidget(QWidget):
         slider.setObjectName("thickness_slider")
         slider.setFocusPolicy(Qt.NoFocus)
         slider.setMinimum(0)
-        nsteps = self.dims.range[self.axis][2]
-        slider.setMaximum(nsteps * 2)
+        slider.setMaximum(self.dims.nsteps[self.axis] * 2)
         slider.setValue(self.dims.thickness[self.axis])
 
         slider.valueChanged.connect(self._thickness_changed)
@@ -255,9 +254,7 @@ class QtDimSliderWidget(QWidget):
             self._update_slice_labels()
 
             self.thickness_slider.setMinimum(0)
-            range = self.dims.range[self.axis]
-            max_thickness = (range[1] - range[0]) * 2
-            self.thickness_slider.setMaximum(max_thickness)
+            self.thickness_slider.setMaximum(self.dims.nsteps[self.axis] * 2)
             self.thickness_slider.setValue(self.dims.thickness[self.axis])
 
     def _update_slider(self):

@@ -373,7 +373,9 @@ class Dims(EventedModel):
             axis = assert_axis_in_bounds(axis, self.ndim)
             if isinstance(value, Sequence):
                 raise ValueError(
-                    'cannot set multiple thickess values to a single axis'
+                    trans._(
+                        'cannot set multiple thickness values to a single axis'
+                    )
                 )
             thickness = round(min(max(value, 0), max_thicknesses[axis]))
             if self.thickness[axis] != thickness:

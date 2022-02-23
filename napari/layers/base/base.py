@@ -659,7 +659,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
-            self._thickness = [0] * (ndim - old_ndim) + self._thickness
+            self._thickness = [1] * (ndim - old_ndim) + self._thickness
             self._dims_order = list(range(ndim - old_ndim)) + [
                 o + ndim - old_ndim for o in self._dims_order
             ]
@@ -972,7 +972,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             point = list(point)
 
         if thickness is None:
-            thickness = [0] * ndim
+            thickness = [1] * ndim
         else:
             thickness = list(thickness)
 
