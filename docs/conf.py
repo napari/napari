@@ -64,7 +64,7 @@ external_toc_exclude_missing = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'pydata_sphinx_theme'
+html_theme = 'napari_sphinx_theme'
 html_theme_options = {
     "external_links": [
         {"name": "napari hub", "url": "https://napari-hub.org"}
