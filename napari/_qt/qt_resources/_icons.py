@@ -29,7 +29,6 @@ inputs.
 """
 
 import os
-import sys
 from contextlib import contextmanager
 from itertools import product
 from pathlib import Path
@@ -255,8 +254,8 @@ def _compile_qrc_pyside2(qrc) -> bytes:
             break
     else:
         raise RuntimeError(
-            f"PySide2 rcc binary not found in any of the expected paths: "
-            ", ".join(Path(*parts) for parts in _find_pyside2_rcc())
+            "PySide2 rcc binary not found in any of the expected paths: "
+            ", ".join(f"'{Path(*parts)}'" for parts in _find_pyside2_rcc())
         )
 
     try:
