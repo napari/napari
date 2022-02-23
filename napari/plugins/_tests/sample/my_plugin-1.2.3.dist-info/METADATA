@@ -1,0 +1,6 @@
+Metadata-Version: 2.1
+Name: my-plugin
+Version: 1.2.3
+Summary: My napari plugin
+License: BSD-3
+Author: The Black Knight

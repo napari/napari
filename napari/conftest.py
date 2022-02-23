@@ -416,7 +416,7 @@ def _no_error_reports():
 
 @pytest.fixture
 def sample_path():
-    return Path(__file__).parent / "sample"
+    return Path(__file__).parent / "plugins/_tests/sample"
 
 
 @pytest.fixture
