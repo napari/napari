@@ -17,6 +17,7 @@ def test_pyside2_rcc_first():
     """
     try:
         from napari._qt.qt_resources._icons import _find_pyside2_rcc
+
         exe_name = next(exe for _, exe in _find_pyside2_rcc())
         assert "pyside2-" in exe_name
     except ModuleNotFoundError as exc:
