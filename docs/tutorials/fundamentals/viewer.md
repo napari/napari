@@ -91,8 +91,8 @@ viewer.close()
 
 Both the `view_image` and the `add_image` methods accept any numpy-array like
 object as an input, including n-dimensional arrays. For more information on
-adding images to the viewer see the [image layer](./image) tutorial. Now we will
-continue exploring the rest of the viewer.
+adding images to the viewer see the [image layer guide](../../howtos/layers/image).
+Now we will continue exploring the rest of the viewer.
 
 +++
 
@@ -122,6 +122,7 @@ performant. You can also return to the original zoom level by clicking the
 
 +++
 
+(layer_list)=
 ### Layer list
 
 One of the basic **napari** objects are layers. There are different layer types
@@ -287,8 +288,7 @@ It is also possible to mix data of different shapes and dimensionality in
 different layers. If a 2D and 4D dataset are both added to the viewer then the
 sliders will only affect the 4D dataset and the 2D dataset will be remain the
 same. Effectively, the two datasets are broadcast together using [NumPy
-broadcasting
-rules](https://docs.scipy.org/doc/numpy/user/basics.broadcasting.html).
+broadcasting rules](https://numpy.org/doc/stable/user/basics.broadcasting.html).
 
 For example, the following commands from the console will add a both 2D and 3D
 datasets to the same viewer:
@@ -416,8 +416,8 @@ viewer.theme = 'dark'
 
 Adding your own custom theme isn't too hard either but does require creating
 your own color `palette` and rebuilding the icons. If people want more themes,
-we're happy to add them or if you look at our [contributing
-guidelines](https://github.com/napari/napari/tree/master/docs/CONTRIBUTING) for
+we're happy to add them or if you look at our
+[contributing guidelines](../../developers/contributing) for
 more information about building the icons and add one yourself!
 
 +++
@@ -493,6 +493,4 @@ within **napari** and we hope you take full advantage of them.
 Hopefully, this tutorial has given you an overview of the functionality
 available on the **napari** viewer, including the `LayerList` and some of the
 different layer types. To learn more about the different layer types that
-**napari** supports checkout some more of our tutorials listed below. The [image
-layer](./image) tutorial is a great one to try next as viewing images is a
-fundamental part of what **napari** is about.
+**napari** supports, check out [our guides on using layers](../../howtos/layers/index).
