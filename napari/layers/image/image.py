@@ -24,6 +24,7 @@ from ..utils.layer_utils import calc_data_range
 from ..utils.plane import SlicingPlane
 from ._image_constants import (
     ImageRendering,
+    ImageSliceProjection,
     Interpolation,
     Interpolation3D,
     Mode,
@@ -224,6 +225,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         cache=True,
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
+        slice_projection='average',
     ):
         if name is None and data is not None:
             name = magic_name(data)
@@ -276,6 +278,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             rendering=Event,
             iso_threshold=Event,
             attenuation=Event,
+            slice_projection=Event,
         )
 
         self._array_like = True
@@ -344,6 +347,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if experimental_slicing_plane is not None:
             self.experimental_slicing_plane = experimental_slicing_plane
             self.experimental_slicing_plane.update(experimental_slicing_plane)
+        self.slice_projection = slice_projection
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -676,26 +680,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         else:
             self._transforms['tile2data'].scale = np.ones(self.ndim)
             image_indices = self._slice_indices
-            # XXX this breaks labels!
-            half_thickness = (
-                np.maximum(np.ceil(self._thickness).astype(int), 1) / 2
-            )
-            image_slices = tuple(
-                slice(
-                    ceil(max(0, image_indices[i] - half_thickness[i])),
-                    ceil(
-                        min(
-                            image_indices[i] + half_thickness[i],
-                            self.data.shape[i],
-                        )
-                    ),
-                )
-                if i in not_disp
-                else image_indices[i]
-                for i in range(self.ndim)
-            )
-            image = self.data[image_slices]
-            image = np.mean(image, axis=tuple(not_disp))
+
+            image = self._project_slice()
 
             # For single-scale we don't request a separate thumbnail_source
             # from the ChunkLoader because in ImageSlice.chunk_loaded we
@@ -711,6 +697,43 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if self._keep_auto_contrast or self._should_calc_clims:
             self.reset_contrast_limits()
             self._should_calc_clims = False
+
+    def _project_slice(self):
+        """
+        Project a thick nD slice into a single 2d or 3d image that can be passed to the GPU.
+
+        Projection is based on slice thickness and the current projection mode.
+        """
+        if self.slice_projection == ImageSliceProjection.NONE:
+            return self.data[self._slice_indices]
+
+        half_thickness = (
+            np.maximum(np.ceil(self._thickness).astype(int), 1) / 2
+        )
+        image_slices = tuple(
+            slice(
+                ceil(max(0, self._slice_indices[i] - half_thickness[i])),
+                ceil(
+                    min(
+                        self._slice_indices[i] + half_thickness[i],
+                        self.data.shape[i],
+                    )
+                ),
+            )
+            if i in self._dims_not_displayed
+            else self._slice_indices[i]
+            for i in range(self.ndim)
+        )
+
+        proj_funcs = {
+            ImageSliceProjection.ADDITIVE: np.sum,
+            ImageSliceProjection.AVERAGE: np.mean,
+        }
+
+        image = proj_funcs[self.slice_projection](
+            self.data[image_slices], axis=tuple(self._dims_not_displayed)
+        )
+        return image
 
     @property
     def _SliceDataClass(self):
@@ -932,6 +955,18 @@ class Image(_ImageBase):
     def rendering(self, rendering):
         self._rendering = ImageRendering(rendering)
         self.events.rendering()
+
+    @property
+    def slice_projection(self):
+        return str(self._slice_projection)
+
+    @slice_projection.setter
+    def slice_projection(self, value):
+        if value is None:
+            value = 'none'
+        self._slice_projection = ImageSliceProjection(value)
+        self.events.slice_projection()
+        self.refresh()
 
     def _get_state(self):
         """Get dictionary of layer state.

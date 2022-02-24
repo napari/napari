@@ -88,3 +88,9 @@ class ImageRendering(StringEnum):
     MINIP = auto()
     ATTENUATED_MIP = auto()
     AVERAGE = auto()
+
+
+class ImageSliceProjection(StringEnum):
+    NONE = auto()
+    AVERAGE = auto()
+    ADDITIVE = auto()

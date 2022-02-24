@@ -24,7 +24,12 @@ from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import _FeatureTable
-from ._labels_constants import LabelColorMode, LabelsRendering, Mode
+from ._labels_constants import (
+    LabelColorMode,
+    LabelsRendering,
+    LabelsSliceProjection,
+    Mode,
+)
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
@@ -239,6 +244,7 @@ class Labels(_ImageBase):
         cache=True,
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
+        slice_projection=None,
     ):
         if name is None and data is not None:
             name = magic_name(data)
@@ -277,6 +283,7 @@ class Labels(_ImageBase):
             cache=cache,
             experimental_slicing_plane=experimental_slicing_plane,
             experimental_clipping_planes=experimental_clipping_planes,
+            slice_projection=slice_projection,
         )
 
         self.events.add(
@@ -341,6 +348,18 @@ class Labels(_ImageBase):
     def rendering(self, rendering):
         self._rendering = LabelsRendering(rendering)
         self.events.rendering()
+
+    @property
+    def slice_projection(self):
+        return str(self._slice_projection)
+
+    @slice_projection.setter
+    def slice_projection(self, value):
+        if value is None:
+            value = 'none'
+        self._slice_projection = LabelsSliceProjection(value)
+        self.events.slice_projection()
+        self.refresh()
 
     @property
     def contiguous(self):
