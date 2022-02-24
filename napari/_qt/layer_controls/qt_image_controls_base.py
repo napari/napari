@@ -67,8 +67,6 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
-    layer: Image
-
     def __init__(self, layer: Image):
         super().__init__(layer)
 
@@ -129,14 +127,6 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setToolTip(trans._('Colorbar'))
 
         self._on_colormap_change()
-
-        @self.destroyed.connect
-        def _disconnect():
-            self.layer.events.colormap.disconnect(self._on_colormap_change)
-            self.layer.events.gamma.disconnect(self._on_gamma_change)
-            self.layer.events.contrast_limits.disconnect(
-                self._on_contrast_limits_change
-            )
 
     def changeColor(self, text):
         """Change colormap on the layer model.
