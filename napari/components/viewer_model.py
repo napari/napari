@@ -913,7 +913,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             else None,  # indeterminate bar for 1 file
         ) as pbr:
             for _path in pbr:
-                # TODO: where can I put tests for this so that I have access to different plugins to try
                 if plugin:
                     added.extend(
                         self._add_layers_with_plugins(

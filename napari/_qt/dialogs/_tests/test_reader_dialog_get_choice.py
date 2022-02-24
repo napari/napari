@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Tuple
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
-from napari._qt.dialogs.qt_reader_dialog import get_reader_choice_for_file
+from napari._qt.dialogs.qt_reader_dialog import get_preferred_reader
 
 
 class MockQtReaderDialog:
@@ -52,7 +52,7 @@ def test_get_reader_choice_single_reader():
     filename = './my_file.abc'
     readers = {'disp-name': 'plugin_name'}
     dialog = MockQtReaderDialog(filename, None, readers)
-    choice = get_reader_choice_for_file(dialog, readers, False)
+    choice = get_preferred_reader(dialog, readers)
 
     assert choice[0] == 'disp-name'
     assert choice[1] is False
@@ -64,7 +64,7 @@ def test_get_reader_choice_cancel():
     dialog = MockQtReaderDialog(filename, None, readers)
     dialog._set_user_cancelled()
 
-    choice = get_reader_choice_for_file(dialog, readers, False)
+    choice = get_preferred_reader(dialog, readers)
     assert choice is None
 
 
@@ -74,7 +74,7 @@ def test_get_reader_choice_many_persist():
     dialog = MockQtReaderDialog(filename, None, readers)
     dialog._set_plugin_choice('p1')
 
-    choice = get_reader_choice_for_file(dialog, readers, False)
+    choice = get_preferred_reader(dialog, readers, False)
     assert choice[0] == 'p1'
     assert choice[1] is True
 
@@ -86,6 +86,6 @@ def test_get_reader_choice_no_persist():
     dialog._set_plugin_choice('p1')
     dialog._set_persist_choice(False)
 
-    choice = get_reader_choice_for_file(dialog, readers, False)
+    choice = get_preferred_reader(dialog, readers, False)
     assert choice[0] == 'p1'
     assert choice[1] is False
