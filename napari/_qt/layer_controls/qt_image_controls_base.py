@@ -67,6 +67,8 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
+    layer: Image
+
     def __init__(self, layer: Image):
         super().__init__(layer)
 
@@ -127,6 +129,14 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setToolTip(trans._('Colorbar'))
 
         self._on_colormap_change()
+
+        @self.destroyed.connect
+        def _disconnect():
+            self.layer.events.colormap.disconnect(self._on_colormap_change)
+            self.layer.events.gamma.disconnect(self._on_gamma_change)
+            self.layer.events.contrast_limits.disconnect(
+                self._on_contrast_limits_change
+            )
 
     def changeColor(self, text):
         """Change colormap on the layer model.
@@ -206,11 +216,14 @@ class AutoScaleButtons(QWidget):
         auto_btn.setFocusPolicy(Qt.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
         connect_no_arg(once_btn.clicked, layer, "reset_contrast_limits")
-        connect_setattr(auto_btn.toggled, layer, "_keep_autoscale")
+        connect_setattr(auto_btn.toggled, layer, "_keep_auto_contrast")
         connect_no_arg(auto_btn.clicked, layer, "reset_contrast_limits")
 
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
+
+        self._once_btn = once_btn
+        self._auto_btn = auto_btn
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
