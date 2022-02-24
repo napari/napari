@@ -212,6 +212,7 @@ class AutoScaleButtons(QWidget):
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
 
+        # just for testing
         self._once_btn = once_btn
         self._auto_btn = auto_btn
 
