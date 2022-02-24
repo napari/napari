@@ -22,7 +22,7 @@ Event = collections.namedtuple(
 class Shapes2DSuite:
     """Benchmarks for the Shapes layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 9)]
+    params = [2**i for i in range(4, 9)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -61,7 +61,7 @@ class Shapes2DSuite:
 class Shapes3DSuite:
     """Benchmarks for the Shapes layer with 3D data."""
 
-    params = [2 ** i for i in range(4, 9)]
+    params = [2**i for i in range(4, 9)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -100,7 +100,7 @@ class Shapes3DSuite:
 class ShapesInteractionSuite:
     """Benchmarks for interacting with the Shapes layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 9)]
+    params = [2**i for i in range(4, 9)]
 
     def setup(self, n):
         np.random.seed(0)

@@ -916,7 +916,7 @@ def test_ndim_paint():
 
 
 def test_switching_display_func():
-    label_data = np.random.randint(2 ** 25, 2 ** 25 + 5, size=(50, 50))
+    label_data = np.random.randint(2**25, 2**25 + 5, size=(50, 50))
     layer = Labels(label_data)
     assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
 

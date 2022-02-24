@@ -474,9 +474,6 @@ class ExprTranformer(ast.NodeTransformer):
         type_ = type(node).__name__
 
         if type_ not in ExprTranformer._SUPPORTED_NODES:
-            if sys.version_info < (3, 8) and type_ in self._PY37_CONSTS:
-                val = getattr(node, self._PY37_CONSTS[type_])
-                return Constant(val, lineno=1, col_offset=0)
             raise SyntaxError(
                 trans._(
                     "Type {type_!r} not supported", deferred=True, type_=type_
@@ -495,14 +492,6 @@ class ExprTranformer(ast.NodeTransformer):
             else:
                 kwargs[name] = field
         return globals()[type_](**kwargs)
-
-    # can drop after py3.7 support is gone
-    _PY37_CONSTS = {
-        'Num': 'n',
-        'Str': 's',
-        'Bytes': 's',
-        'NameConstant': 'value',
-    }
 
 
 class ExprSerializer(ast.NodeVisitor):

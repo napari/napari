@@ -1,6 +1,7 @@
 import itertools
 import warnings
 from collections import namedtuple
+from functools import cached_property
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
@@ -71,7 +72,7 @@ class _LayerListMixin:
     ):
         return self._link_layers('unlink_layers', layers, attributes)
 
-    @property
+    @cached_property
     def _ranges(self) -> List[Tuple[float, float, float]]:
         """Get ranges for Dims.range in world coordinates.
 
@@ -172,6 +173,34 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
     ----------
     data : iterable
         Iterable of napari.layer.Layer
+
+    Attributes
+    ----------
+    inserting : (index: int)
+        emitted before an item is inserted at ``index``
+    inserted : (index: int, value: T)
+        emitted after ``value`` is inserted at ``index``
+    removing : (index: int)
+        emitted before an item is removed at ``index``
+    removed : (index: int, value: T)
+        emitted after ``value`` is removed at ``index``
+    moving : (index: int, new_index: int)
+        emitted before an item is moved from ``index`` to ``new_index``
+    moved : (index: int, new_index: int, value: T)
+        emitted after ``value`` is moved from ``index`` to ``new_index``
+    changed : (index: int, old_value: T, value: T)
+        emitted when ``index`` is set from ``old_value`` to ``value``
+    changed <OVERLOAD> : (index: slice, old_value: List[_T], value: List[_T])
+        emitted when ``index`` is set from ``old_value`` to ``value``
+    reordered : (value: self)
+        emitted when the list is reordered (eg. moved/reversed).
+    selection.changed : (added: Set[_T], removed: Set[_T])
+        Emitted when the set changes, includes item(s) that have been added
+        and/or removed from the set.
+    selection.active : (value: _T)
+        emitted when the current item has changed.
+    selection._current : (value: _T)
+        emitted when the current item has changed. (Private event)
     """
 
     def __init__(self, data=()):
@@ -205,7 +234,7 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
             Coerced, unique name.
         """
         existing_layers = {x.name for x in self if x is not layer}
-        for i in range(len(self)):
+        for _ in range(len(self)):
             if name in existing_layers:
                 name = inc_name_count(name)
         return name
@@ -219,9 +248,24 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         """Insert ``value`` before index."""
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
+        self._clean_cache()
+        new_layer.events.set_data.connect(self._clean_cache)
         super().insert(index, new_layer)
 
-    @property
+    def _process_delete_item(self, item: Layer):
+        item.events.set_data.disconnect(self._clean_cache)
+        self._clean_cache()
+
+    def _clean_cache(self):
+        cached_properties = (
+            'extent',
+            '_extent_world',
+            '_step_size',
+            '_ranges',
+        )
+        [self.__dict__.pop(p, None) for p in cached_properties]
+
+    @cached_property
     def _extent_world(self) -> np.ndarray:
         """Extent of layers in world coordinates.
 
@@ -255,7 +299,7 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
 
         return np.vstack([min_v, max_v])
 
-    @property
+    @cached_property
     def _step_size(self) -> np.ndarray:
         """Ideal step size between planes in world coordinates.
 
@@ -275,7 +319,7 @@ class LayerList(_LayerListMixin, SelectableEventedList[Layer]):
         scales = [extent.step for extent in layer_extent_list]
         return self._step_size_from_scales(scales)
 
-    @property
+    @cached_property
     def extent(self) -> Extent:
         """Extent of layers in data and world coordinates."""
         extent_list = [layer.extent for layer in self]
