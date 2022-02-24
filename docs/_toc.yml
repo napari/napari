@@ -9,6 +9,7 @@ subtrees:
         subtrees:
         - titlesonly: True
           entries:
+          - file: tutorials/fundamentals/quick_start
           - file: tutorials/fundamentals/installation
           - file: tutorials/fundamentals/getting_started
           - file: tutorials/fundamentals/viewer
