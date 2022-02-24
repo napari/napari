@@ -1,5 +1,4 @@
 """Evented dictionary"""
-import sys
 from typing import (
     Any,
     Dict,
@@ -51,15 +50,6 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
 
     def __repr__(self):
         return str(self._dict)
-
-    if sys.version_info < (3, 8):
-
-        def __hash__(self):
-            # We've explicitly added __hash__ for python < 3.8 because otherwise
-            # nested evented dictionaries fail tests.
-            # This can be removed once we drop support for python < 3.8
-            # see: https://github.com/napari/napari/pull/2994#issuecomment-877105434
-            return hash(frozenset(self))
 
     def _type_check(self, e: Any) -> _T:
         if self._basetypes and not any(

@@ -4,7 +4,7 @@ import os
 import pathlib
 import warnings
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
 from napari_plugin_engine import HookImplementation, PluginCallError
 
@@ -20,8 +20,9 @@ if TYPE_CHECKING:
 
 
 def read_data_with_plugins(
-    path: Union[str, Sequence[str]],
+    paths: Sequence[str],
     plugin: Optional[str] = None,
+    stack: bool = False,
 ) -> Tuple[Optional[List[LayerData]], Optional[HookImplementation]]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
@@ -35,12 +36,14 @@ def read_data_with_plugins(
 
     Parameters
     ----------
-    path : str
-        The path (file, directory, url) to open
+    paths : str, or list of string
+        The of path (file, directory, url) to open
     plugin : str, optional
         Name of a plugin to use.  If provided, will force ``path`` to be read
         with the specified ``plugin``.  If the requested plugin cannot read
         ``path``, a PluginCallError will be raised.
+    stack : bool
+        See `Viewer.open`
 
     Returns
     -------
@@ -57,18 +60,25 @@ def read_data_with_plugins(
     PluginCallError
         If ``plugin`` is specified but raises an Exception while reading.
     """
+    assert isinstance(paths, list)
+    if not stack:
+        assert len(paths) == 1
     hookimpl: Optional[HookImplementation]
-    res = _npe2.read(path, plugin)
+
+    res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
         _ld, hookimpl = res
         return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl
 
     hook_caller = plugin_manager.hook.napari_get_reader
-    path = abspath_or_url(path, must_exist=True)
-    if not plugin and isinstance(path, (str, pathlib.Path)):
-        extension = os.path.splitext(path)[-1]
+    paths = [abspath_or_url(p, must_exist=True) for p in paths]
+    if not plugin and (stack is False):
+        extension = os.path.splitext(paths[0])[-1]
         plugin = plugin_manager.get_reader_for_extension(extension)
 
+    # npe1 compact whether we are reading as stack or not is carried in the type
+    # of paths
+    npe1_path = paths if stack else paths[0]
     hookimpl = None
     if plugin:
         if plugin not in plugin_manager.plugins:
@@ -81,19 +91,19 @@ def read_data_with_plugins(
                     names=names,
                 )
             )
-        reader = hook_caller._call_plugin(plugin, path=path)
+        reader = hook_caller._call_plugin(plugin, path=npe1_path)
         if not callable(reader):
             raise ValueError(
                 trans._(
-                    'Plugin {plugin!r} does not support file {path}',
+                    'Plugin {plugin!r} does not support file(s) {paths}',
                     deferred=True,
                     plugin=plugin,
-                    path=path,
+                    paths=paths,
                 )
             )
 
         hookimpl = hook_caller.get_plugin_implementation(plugin)
-        layer_data = reader(path)
+        layer_data = reader(npe1_path)
         # if the reader returns a "null layer" sentinel indicating an empty
         # file, return an empty list, otherwise return the result or None
         if _is_null_layer_sentinel(layer_data):
@@ -102,10 +112,10 @@ def read_data_with_plugins(
         return layer_data or None, hookimpl
 
     layer_data = None
-    result = hook_caller.call_with_result_obj(path=path)
+    result = hook_caller.call_with_result_obj(path=npe1_path)
     reader = result.result  # will raise exceptions if any occurred
     try:
-        layer_data = reader(path)  # try to read data
+        layer_data = reader(npe1_path)  # try to read data
         hookimpl = result.implementation
     except Exception as exc:
         raise PluginCallError(result.implementation, cause=exc)
@@ -114,17 +124,17 @@ def read_data_with_plugins(
         # if layer_data is empty, it means no plugin could read path
         # we just want to provide some useful feedback, which includes
         # whether or not paths were passed to plugins as a list.
-        if isinstance(path, (tuple, list)):
+        if stack:
             message = trans._(
-                'No plugin found capable of reading [{repr_path}, ...] as stack.',
+                'No plugin found capable of reading [{repr_path!r}, ...] as stack.',
                 deferred=True,
-                repr_path=path[0],
+                repr_path=paths[0],
             )
         else:
             message = trans._(
-                'No plugin found capable of reading {repr_path}.',
+                'No plugin found capable of reading {repr_path!r}.',
                 deferred=True,
-                repr_path=repr(path),
+                repr_path=paths,
             )
 
         # TODO: change to a warning notification in a later PR

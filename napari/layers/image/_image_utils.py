@@ -70,8 +70,7 @@ def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
         return False, data
 
     consistent = bool(np.all(sizes[:-1] > sizes[1:]))
-    flat = bool(np.all(sizes == sizes[0]))
-    if flat:
+    if np.all(sizes == sizes[0]):
         # note: the individual array case should be caught by the first
         # code line in this function, hasattr(ndim) and ndim > 1.
         raise ValueError(

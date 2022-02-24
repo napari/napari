@@ -1,6 +1,3 @@
-```{eval-rst}
-:orphan:
-```
 (find-and-install-plugins)=
 # Finding and installing a napari plugin
 

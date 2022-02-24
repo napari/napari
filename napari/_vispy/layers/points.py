@@ -21,6 +21,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.edge_width.connect(self._on_data_change)
+        self.layer.events.edge_width_is_relative.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer._edge.events.colors.connect(self._on_data_change)
         self.layer._edge.events.color_properties.connect(self._on_data_change)
@@ -51,16 +52,29 @@ class VispyPointsLayer(VispyBaseLayer):
         if len(self.layer._indices_view) == 0:
             data = np.zeros((1, self.layer._ndisplay))
             size = [0]
+            edge_width = [0]
         else:
             data = self.layer._view_data
             size = self.layer._view_size
+            edge_width = self.layer._view_edge_width
 
         set_data = self.node._subvisuals[0].set_data
+
+        if self.layer.edge_width_is_relative:
+            edge_kw = {
+                'edge_width': None,
+                'edge_width_rel': edge_width,
+            }
+        else:
+            edge_kw = {
+                'edge_width': edge_width,
+                'edge_width_rel': None,
+            }
 
         set_data(
             data[:, ::-1],
             size=size,
-            edge_width=self.layer.edge_width,
+            **edge_kw,
             edge_color=edge_color,
             face_color=face_color,
         )
@@ -116,31 +130,7 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        ndisplay = self.layer._ndisplay
-        if (len(self.layer._indices_view) == 0) or (
-            self.layer.text.visible is False
-        ):
-            text_coords = np.zeros((1, ndisplay))
-            text = []
-            anchor_x = 'center'
-            anchor_y = 'center'
-        else:
-            text_coords, anchor_x, anchor_y = self.layer._view_text_coords
-            if len(text_coords) == 0:
-                text_coords = np.zeros((1, ndisplay))
-            text = self.layer._view_text
-        text_node = self._get_text_node()
-        update_text(
-            text_values=text,
-            coords=text_coords,
-            anchor=(anchor_x, anchor_y),
-            rotation=self.layer._text.rotation,
-            color=self.layer._text.color,
-            size=self.layer._text.size,
-            ndisplay=ndisplay,
-            text_node=text_node,
-        )
-
+        update_text(node=self._get_text_node(), layer=self.layer)
         if update_node:
             self.node.update()
 
@@ -188,9 +178,8 @@ class VispyPointsLayer(VispyBaseLayer):
     def reset(self):
         super().reset()
         self._update_text(update_node=False)
-        self._on_blending_change()
+        self._on_symbol_change()
         self._on_highlight_change()
-        self._on_matrix_change()
         self._on_antialias_change()
         self._on_shading_change()
         self._on_canvas_size_limits_change()

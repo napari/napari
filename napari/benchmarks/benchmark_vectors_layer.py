@@ -10,7 +10,7 @@ from napari.layers import Vectors
 class Vectors2DSuite:
     """Benchmarks for the Vectors layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 18, 2)]
+    params = [2**i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -57,7 +57,7 @@ class Vectors2DSuite:
 class Vectors3DSuite:
     """Benchmarks for the Vectors layer with 3D data."""
 
-    params = [2 ** i for i in range(4, 18, 2)]
+    params = [2**i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
