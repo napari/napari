@@ -300,12 +300,16 @@ def licenses():
         raise
 
     zipname = f"licenses.{OS}-{ARCH}.zip"
-    output_zip = zipfile.ZipFile(zipname, mode="w", compression=zipfile.ZIP_DEFLATED)
+    output_zip = zipfile.ZipFile(
+        zipname, mode="w", compression=zipfile.ZIP_DEFLATED
+    )
     output_zip.write("info.json")
     for package_id, license_info in info["_licenses"].items():
         for license_type, license_files in license_info.items():
             for i, license_file in enumerate(license_files, 1):
-                arcname = f"{package_id}.{license_type.replace(' ', '_')}.{i}.txt"
+                arcname = (
+                    f"{package_id}.{license_type.replace(' ', '_')}.{i}.txt"
+                )
                 output_zip.write(license_file, arcname=arcname)
     output_zip.close()
     return zipname
