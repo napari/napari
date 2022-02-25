@@ -5,7 +5,7 @@ Currently, it only handles distribution, but as the project matures,
 it will include generating release notes, documentation, etc.
 
 # Timeline
-New versions of `napari` will be released every two months. The first release candidate will be available one week prior to release for testing purposes. Multiple release candidates may become available during the week prior to release.
+New versions of `napari` will be released every two months. The first release candidate will be available one week prior to release for testing purposes. Multiple release candidates may become available during the week prior to release. Upcoming releases can be found in our public calendar.
 
 The latest release candidate can be installed with 
 
