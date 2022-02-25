@@ -38,6 +38,7 @@ import platform
 import re
 import subprocess
 import sys
+import zipfile
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
@@ -294,11 +295,15 @@ def licenses():
         )
         return
 
+    output_zip = zipfile.ZipFile(f"licenses.{OS}-{ARCH}.zip", mode="w", compression=zipfile.ZIP_DEFLATED)
+    output_zip.write("info.json")
     for package_id, license_info in info["_licenses"].items():
         print("\n+++++++++++++++++++++\n")
         for license_type, license_files in license_info.items():
             print(package_id, "=", license_type, "\n")
-            for license_file in license_files:
+            for i, license_file in enumerate(license_files, 1):
+                arcname = f"{package_id}.{license_type.replace(' ', '_')}.{i}.txt"
+                output_zip.write(license_file, arcname=arcname)
                 with open(license_file, "rb") as f:
                     try:
                         print(indent(f.read().decode(errors="ignore"), "    "))
@@ -308,6 +313,7 @@ def licenses():
                                 repr(f.read().decode(errors="ignore")), "    "
                             )
                         )
+    output_zip.close()
 
 
 def main(extra_specs=None):
