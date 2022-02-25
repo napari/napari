@@ -138,7 +138,7 @@ jobs:
             -l nightly \
             ${GITHUB_WORKSPACE}${conda_bld_suffix}noarch/*.tar.bz2
 
-  bundle:
+  constructor-bundle:
     name: Bundle ${{ matrix.target-platform }}
     runs-on: ${{ matrix.os }}
     needs: conda-build
@@ -164,6 +164,9 @@ jobs:
       DISPLAY: ":99.0"
       CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
       CONSTRUCTOR_TARGET_PLATFORM: ${{ matrix.target-platform }}
+    outputs:
+      licenses-artifact: ${{ steps.licenses.outputs.licenses_artifact }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -306,11 +309,18 @@ jobs:
         run: python bundle_conda.py
 
       - name: Collect licenses
+        id: licenses
         shell: bash -l {0}
         run: |
-          # TODO: Remove this ls call
-          ls -alh
-          python bundle_conda.py --licenses
+          zipname=$(python bundle_conda.py --licenses)
+          echo "LICENSES_ARTIFACT_PATH=$zipname" >> $GITHUB_ENV
+          echo "::set-output name=licenses_artifact::$zipname"
+
+      - name: Upload License Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.LICENSES_ARTIFACT_PATH }}
+          path: ${{ env.LICENSES_ARTIFACT_PATH }}
 
       - name: Notarize Bundle (macOS)
         if: runner.os == 'macOS'
