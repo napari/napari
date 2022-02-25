@@ -164,13 +164,14 @@ def test_abspath_or_url():
     assert abspath_or_url('ftp://something') == 'ftp://something'
     assert abspath_or_url('s3://something') == 's3://something'
     assert abspath_or_url('file://something') == 'file://something'
-    assert abspath_or_url(('a', '~')) == (abspath('a'), expanduser('~'))
-    assert abspath_or_url(['a', '~']) == [abspath('a'), expanduser('~')]
-
-    assert abspath_or_url(('a', Path('~'))) == (abspath('a'), expanduser('~'))
 
     with pytest.raises(TypeError):
         abspath_or_url({'a', '~'})
+
+
+def test_type_stable():
+    assert isinstance(abspath_or_url('~'), str)
+    assert isinstance(abspath_or_url(Path('~')), Path)
 
 
 def test_equality_operator():

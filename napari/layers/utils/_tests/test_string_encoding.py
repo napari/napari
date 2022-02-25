@@ -11,11 +11,12 @@ from napari.layers.utils._string_encoding import (
 )
 
 
-def make_features_with_no_columns(*, num_rows):
+def make_features_with_no_columns(*, num_rows) -> pd.DataFrame:
     return pd.DataFrame({}, index=range(num_rows))
 
 
-def make_features_with_class_confidence_columns():
+@pytest.fixture
+def features() -> pd.DataFrame:
     return pd.DataFrame(
         {
             'class': ['a', 'b', 'c'],
@@ -86,44 +87,32 @@ def test_manual_with_more_rows():
     np.testing.assert_array_equal(values, ['a', 'b', 'c', 'd'])
 
 
-def test_direct():
-    features = make_features_with_class_confidence_columns()
+def test_direct(features):
     encoding = DirectStringEncoding(feature='class')
-
     values = encoding(features)
-
     np.testing.assert_array_equal(values, features['class'])
 
 
-def test_direct_with_a_missing_feature():
-    features = make_features_with_class_confidence_columns()
+def test_direct_with_a_missing_feature(features):
     encoding = DirectStringEncoding(feature='not_class')
-
     with pytest.raises(KeyError):
         encoding(features)
 
 
-def test_format():
-    features = make_features_with_class_confidence_columns()
+def test_format(features):
     encoding = FormatStringEncoding(format='{class}: {confidence:.2f}')
-
     values = encoding(features)
-
     np.testing.assert_array_equal(values, ['a: 0.50', 'b: 1.00', 'c: 0.25'])
 
 
-def test_format_with_bad_string():
-    features = make_features_with_class_confidence_columns()
+def test_format_with_bad_string(features):
     encoding = FormatStringEncoding(format='{class}: {confidence:.2f')
-
     with pytest.raises(ValueError):
         encoding(features)
 
 
-def test_format_with_missing_field():
-    features = make_features_with_class_confidence_columns()
+def test_format_with_missing_field(features):
     encoding = FormatStringEncoding(format='{class}: {score:.2f}')
-
     with pytest.raises(KeyError):
         encoding(features)
 
