@@ -206,11 +206,15 @@ class AutoScaleButtons(QWidget):
         auto_btn.setFocusPolicy(Qt.NoFocus)
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
         connect_no_arg(once_btn.clicked, layer, "reset_contrast_limits")
-        connect_setattr(auto_btn.toggled, layer, "_keep_autoscale")
+        connect_setattr(auto_btn.toggled, layer, "_keep_auto_contrast")
         connect_no_arg(auto_btn.clicked, layer, "reset_contrast_limits")
 
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
+
+        # just for testing
+        self._once_btn = once_btn
+        self._auto_btn = auto_btn
 
 
 class QContrastLimitsPopup(QRangeSliderPopup):
