@@ -13,6 +13,7 @@ from typing import Any, Union
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import Field
 
 from napari.layers.utils._style_encoding import (
     _ConstantStyleEncoding,
@@ -66,7 +67,7 @@ def test_scalar_constant_encoding_clear():
 
 class ScalarManualEncoding(_ManualStyleEncoding[Scalar, ScalarArray]):
     array: ScalarArray
-    default: Scalar = -1
+    default: Scalar = np.array(-1)
 
 
 def test_scalar_manual_encoding_update_with_shorter(features):
@@ -107,7 +108,7 @@ def test_scalar_manual_encoding_clear():
 
 class ScalarDirectEncoding(_DerivedStyleEncoding[Scalar, ScalarArray]):
     feature: str
-    fallback: Scalar = -1
+    fallback: Scalar = np.array(-1)
 
     def __call__(self, features: Any) -> ScalarArray:
         return ScalarArray.validate_type(features[self.feature])
@@ -192,7 +193,7 @@ def test_vector_constant_encoding_clear():
 
 class VectorManualEncoding(_ManualStyleEncoding[Vector, VectorArray]):
     array: VectorArray
-    default: Vector = [-1, -1]
+    default: Vector = Field(default_factory=lambda: np.array([-1, -1]))
 
 
 def test_vector_manual_encoding_update_with_shorter(features):
@@ -235,7 +236,7 @@ def test_vector_manual_encoding_clear():
 
 class VectorDirectEncoding(_DerivedStyleEncoding[Vector, VectorArray]):
     feature: str
-    fallback: Vector = [-1, -1]
+    fallback: Vector = Field(default_factory=lambda: np.array([-1, -1]))
 
     def __call__(self, features: Any) -> Union[Vector, VectorArray]:
         return VectorArray.validate_type(list(features[self.feature]))
