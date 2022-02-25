@@ -18,13 +18,13 @@ kernelspec:
 
 ## About napari
 
-napari is a fast, interactive, multi-dimensional image viewer, with [a vibrant plugin ecosystem](https://www.napari-hub.org/) that expands its capability to tackle various domain-specific visualization and analysis needs. It is built on Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy, and scikit-image). 
+napari is a fast, interactive, multi-dimensional image viewer, with [a vibrant plugin ecosystem](https://www.napari-hub.org/) that expands its capability to tackle various domain-specific visualization and analysis needs. It is built on Qt (for the GUI), [vispy](https://vispy.org/) (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy, and scikit-image). 
 
 napari is an open source project on [GitHub](https://github.com/napari/napari) to facilitate transparency, reuse, and extensibility. 
 
-At its core, it provides critical viewer features out-of-the-box, such as support for [large multi-dimensional data](https://napari.org/tutorials/applications/dask.html); [“layers”](https://napari.org/tutorials/start_index.html) to simultaneously visualize images, models, and analysis results; and easy manual, interactive annotation in 3D.
+At its core, it provides critical viewer features out-of-the-box, such as support for [large multi-dimensional data](tutorials/applications/dask); [“layers”](tutorials/start_index) to simultaneously visualize images, models, and analysis results; and easy manual, interactive annotation in 3D.
 
-This tutorial uses napari 0.4.13. <br>
+This tutorial uses napari 0.4.14. <br>
 
 +++
 
@@ -40,7 +40,7 @@ This tutorial is for napari first-timers to give them a quick glance of what nap
 - Get the cell area measurement
 - Next steps
 
-Along the way, you will see how to access napari functions from [Python code](https://napari.org/api/stable/index.html) and from GUI - though for different purposes, one method might be easier than another. This quick start guide will not cover ALL possible methods but only some ways to perform basic tasks. For the more complete guide, please visit [napari.org](https://napari.org/).
+Along the way, you will see how to access napari functions from [Python code](api/index) and from GUI - though for different purposes, one method might be easier than another. This quick start guide will not cover ALL possible methods but only some ways to perform basic tasks. For the more complete guide, please visit [napari.org](https://napari.org/).
 
 You will also see some examples of plugins. The core napari viewer focuses on domain-agnostic functions such as layer controls. Analyses and domain specific functions, such as reading a special file format and image segmentation, live in the realm of [plugins](https://www.napari-hub.org/).    
 
@@ -72,7 +72,7 @@ pip install 'napari[all]'
 ```
 
 
-If you run into any issue, please visit the more detailed [installation guide](https://napari.org/tutorials/fundamentals/installation.html), or report an issue on GitHub!
+If you run into any issues, please visit the more detailed [installation guide](tutorials/fundamentals/installation), or [report an issue on GitHub](https://github.com/napari/napari/issues/new/choose)!
 
 +++
 
@@ -109,7 +109,7 @@ Once you have the proper plugin installed, use File > Open Files(s)... and selec
 For demo purpose, we will use a sample image that comes with napari.
 
 (1) Open napari IPython console<br>
-<img src=".../images/IPython.png" alt="IPython console" width="30%"/>
+<img src="./images/IPython.png" alt="IPython console" width="30%"/>
 
 (2) Type
     
@@ -119,7 +119,7 @@ viewer.add_image(data.cell(), name='cell')
 ```
 
 ```{code-cell} ipython3
-:tags: [hide-cell]
+:tags: [remove-input]
 
 import napari
 from napari.utils import nbscreenshot
@@ -135,14 +135,14 @@ nbscreenshot(viewer)
 
 The layer controls panel at the upper left of the viewer allows you to adjust contrast, colormap, and other layer properties. These settings affect the visualization, but do not affect the underlying data.
 
-To change the image display through the [API](https://napari.org/api/stable/napari.layers.Image.html), in IPython console, type
+To change the image display through the [API](api/index), in IPython console, type
 
 ```python
 viewer.layers['cell'].colormap = "yellow"
 ```
 
 ```{code-cell} ipython3
-:tags: [hide-cell]
+:tags: [remove-input]
 
 viewer.layers['cell'].colormap = "yellow"
 nbscreenshot(viewer)
@@ -158,7 +158,7 @@ The labels layer allows you to record the segmentation result by assigning backg
 1. Circle the cell
 1. Use "fill" bucket to fill it.
 
-![manual_label](.../images/manual_label.gif)
+![manual_label](./images/manual_label.gif)
 
 Several plugins can perform automatic segmentation that takes image layer as input and generates labels layer as output.
 
@@ -183,14 +183,14 @@ Alternatively, try [this plugin](https://www.napari-hub.org/plugins/napari-skima
 **Note:** the area reported by regionprops is the number of pixels. Check pixel size and convert the reported number to physical units.
 
 ```{code-cell} ipython3
-:tags: [hide-cell]
+:tags: [remove-input]
 
 viewer.close_all()
 ```
 
 ### Next steps
 - napari provides the flexibility to handle multi-dimensional data. Try opening 3D or higher dimensional images, and switch to 3D view. <br>
-<img src=".../images/ndisplay.png" alt="ndisplay" width="30%"/><br> 
+<img src="./images/ndisplay.png" alt="ndisplay" width="30%"/><br> 
 
 
 - Test some [examples](https://github.com/napari/napari/tree/main/examples) to see how to add different layer types and add your own widgets to napari. 
@@ -199,6 +199,6 @@ viewer.close_all()
 
 - If you don't see the functions you need in existing plugins, try to make your own widget with [magicgui](https://napari.org/magicgui/).
 
-- If you've developed some functionality that you think would benefit the community as a whole, consider publish it as a [plugin](https://napari.org/plugins/stable/index.html)!
+- If you've developed some functionality that you think would benefit the community as a whole, consider publish it as a [plugin](plugins/index)!
 
-- Help the napari project by [filing issues](https://github.com/napari/napari/issues) for bugs you encounter or features that you'd like to see! Or even better, come [join the community meeting](https://napari.org/community/meeting_schedule.html) and get to know the team.
+- Help the napari project by [filing issues](https://github.com/napari/napari/issues) for bugs you encounter or features that you'd like to see! Or even better, come [join the community meeting](community/meeting_schedule) and get to know the team.
