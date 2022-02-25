@@ -110,7 +110,7 @@ That's it! `your_notebook.md` is now ready to contribute to napari!
 ## 4. Submit your pull request
 
 Once you have written and prepared your document, it's time to open a pull request to [napari's main repository](https://github.com/napari/napari) and contribute it to our codebase. 
-If you're not familiar with Git or pull requests, follow [this how-to](./how_to_submit_pr_online.md) to open your pull request online through GitHub. 
+If you're not familiar with Git or pull requests, follow [this how-to](./open_pr_online.md) to open your pull request online through GitHub. 
 If you already know how to submit pull requests but aren't sure where to put your document, here are the folder paths:
 
 - **Explanations** are in `napari/docs/guides/`
