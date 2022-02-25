@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 
 # NOTE:
@@ -33,6 +35,7 @@ CONFIG = {
 
 @skip_on_win_ci
 @skip_local_popups
+@pytest.mark.xfail
 def test_trace_on_start(tmp_path: Path):
     """Make sure napari can write a perfmon trace file."""
     trace_path = tmp_path / "trace.json"
