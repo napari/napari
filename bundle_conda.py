@@ -291,29 +291,21 @@ def licenses():
             info = json.load(f)
     except FileNotFoundError:
         print(
-            "!! Use `constructor --debug` to write info.json and get licenses"
+            "!! Use `constructor --debug` to write info.json and get licenses",
+            file=sys.stderr,
         )
-        return
+        raise
 
-    output_zip = zipfile.ZipFile(f"licenses.{OS}-{ARCH}.zip", mode="w", compression=zipfile.ZIP_DEFLATED)
+    zipname = f"licenses.{OS}-{ARCH}.zip"
+    output_zip = zipfile.ZipFile(zipname, mode="w", compression=zipfile.ZIP_DEFLATED)
     output_zip.write("info.json")
     for package_id, license_info in info["_licenses"].items():
-        print("\n+++++++++++++++++++++\n")
         for license_type, license_files in license_info.items():
-            print(package_id, "=", license_type, "\n")
             for i, license_file in enumerate(license_files, 1):
                 arcname = f"{package_id}.{license_type.replace(' ', '_')}.{i}.txt"
                 output_zip.write(license_file, arcname=arcname)
-                with open(license_file, "rb") as f:
-                    try:
-                        print(indent(f.read().decode(errors="ignore"), "    "))
-                    except UnicodeEncodeError:
-                        print(
-                            indent(
-                                repr(f.read().decode(errors="ignore")), "    "
-                            )
-                        )
     output_zip.close()
+    return zipname
 
 
 def main(extra_specs=None):
@@ -382,7 +374,7 @@ if __name__ == "__main__":
         print(OUTPUT_FILENAME)
         sys.exit()
     if args.licenses:
-        licenses()
+        print(licenses())
         sys.exit()
     if args.images:
         _generate_background_images()
