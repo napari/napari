@@ -180,7 +180,7 @@ print("the cell area is: ", props[0].area)
 
 Alternatively, try [this plugin](https://www.napari-hub.org/plugins/napari-skimage-regionprops) to have the result in a table form.
 
-**Note:** the area reported by regionprops is the number of pixels. Check pixel size and convert the reported number to physical units.
+**Note:** the area reported by `regionprops` is the number of pixels. Check pixel size and convert the reported number to physical units.
 
 ```{code-cell} ipython3
 :tags: [remove-cell]
