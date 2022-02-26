@@ -201,4 +201,4 @@ viewer.close_all()
 
 - If you've developed some functionality that you think would benefit the community as a whole, consider publishing it as a [plugin](plugins/index)!
 
-- Help the napari project by [filing issues](https://github.com/napari/napari/issues) for bugs you encounter or features that you'd like to see! Or even better, come [join the community meeting](community/meeting_schedule) and get to know the team.
+- Help the napari project by [filing issues](https://github.com/napari/napari/issues) for bugs you encounter or features that you'd like to see! Or even better, come [join the community meetings](community/meeting_schedule) and get to know the team.
