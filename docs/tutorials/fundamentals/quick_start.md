@@ -135,7 +135,7 @@ nbscreenshot(viewer)
 
 The layer controls panel at the upper left of the viewer allows you to adjust contrast, colormap, and other layer properties. These settings affect the visualization, but do not affect the underlying data.
 
-To change the image display through the [API](api/index), in IPython console, type
+To change the image display through the [API](.../api/index), in IPython console, type
 
 ```python
 viewer.layers['cell'].colormap = "yellow"
