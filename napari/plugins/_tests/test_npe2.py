@@ -84,10 +84,8 @@ def test_file_extensions_string_for_layers(
     layers, layer_data, layer_types, filenames = layer_data_and_types
     ext_str, writers = file_extensions_string_for_layers(layers)
 
-    print(ext_str)
-    print(writers)
+    assert len(writers) > 0
 
-    assert len(writers) == 1
 
 
 def test_get_readers(uses_sample_plugin):
