@@ -183,7 +183,7 @@ Alternatively, try [this plugin](https://www.napari-hub.org/plugins/napari-skima
 **Note:** the area reported by regionprops is the number of pixels. Check pixel size and convert the reported number to physical units.
 
 ```{code-cell} ipython3
-:tags: [remove-input]
+:tags: [remove-cell]
 
 viewer.close_all()
 ```
