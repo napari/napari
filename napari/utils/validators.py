@@ -1,4 +1,4 @@
-from collections.abc import Collection, Generator
+from collections.abc import Collection, Generator, Iterable
 
 from .translations import trans
 
@@ -82,3 +82,20 @@ def validate_n_seq(n: int, dtype=None):
                     )
 
     return func
+
+
+def validate_increasing(values: Iterable):
+    """
+    Checks if values in an iterable are increasing and raises an error otherwise.
+    """
+    value = values[0]
+    for other_value in values[1:]:
+        if other_value <= value:
+            raise TypeError(
+                trans._(
+                    "Every item in the sequence {sequence} must be smaller than its predecessor.",
+                    deferred=True,
+                    sequence=values,
+                )
+            )
+        value = other_value

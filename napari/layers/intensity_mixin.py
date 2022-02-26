@@ -5,7 +5,7 @@ import numpy as np
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event
 from ..utils.status_messages import format_float
-from ..utils.validators import validate_n_seq
+from ..utils.validators import validate_n_seq, validate_increasing
 
 validate_2_tuple = validate_n_seq(2)
 
@@ -74,6 +74,7 @@ class IntensityVisualizationMixin:
     @contrast_limits.setter
     def contrast_limits(self, contrast_limits):
         validate_2_tuple(contrast_limits)
+        validate_increasing(contrast_limits)
         self._contrast_limits_msg = (
             format_float(contrast_limits[0])
             + ', '
@@ -97,6 +98,7 @@ class IntensityVisualizationMixin:
     def contrast_limits_range(self, value):
         """Set the valid range of the contrast limits"""
         validate_2_tuple(value)
+        validate_increasing(value)
         if list(value) == self.contrast_limits_range:
             return
 
