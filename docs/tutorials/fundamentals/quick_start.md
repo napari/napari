@@ -199,6 +199,6 @@ viewer.close_all()
 
 - If you don't see the functions you need in existing plugins, try to make your own widget with [magicgui](https://napari.org/magicgui/).
 
-- If you've developed some functionality that you think would benefit the community as a whole, consider publish it as a [plugin](plugins/index)!
+- If you've developed some functionality that you think would benefit the community as a whole, consider publishing it as a [plugin](plugins/index)!
 
 - Help the napari project by [filing issues](https://github.com/napari/napari/issues) for bugs you encounter or features that you'd like to see! Or even better, come [join the community meeting](community/meeting_schedule) and get to know the team.
