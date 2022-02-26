@@ -168,7 +168,7 @@ Try [cellpose-napari](https://www.napari-hub.org/plugins/cellpose-napari) if you
 
 ### Get the cell area measurement
 
-To analyze labels layer, we can use [scikit-image](https://scikit-image.org/), a popular Python library that comes with napari installtion. [skimage.measure.regionprops](https://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops) provides a good set of features that can be extracted from labels, including area measurement.
+To analyze labels our layer, we can use [scikit-image](https://scikit-image.org/), a popular Python library that comes with your napari installation. [skimage.measure.regionprops](https://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops) provides a good set of features that can be extracted from labels, including area measurement.
 
 In IPython console, type
 
