@@ -40,7 +40,7 @@ This tutorial is for napari first-timers to give them a quick glance of what nap
 - Get the cell area measurement
 - Next steps
 
-Along the way, you will see how to access napari functions from [Python code](api/index) and from GUI - though for different purposes, one method might be easier than another. This quick start guide will not cover ALL possible methods but only some ways to perform basic tasks. For the more complete guide, please visit [napari.org](https://napari.org/).
+Along the way, you will see how to access napari functions from [Python code](api/index) and from GUI - though for different purposes, one method might be easier than another. This quick start guide will not cover ALL possible methods but only some ways to perform basic tasks. For the more complete guide, please visit [our usage guide](.../usage.md).
 
 You will also see some examples of plugins. The core napari viewer focuses on domain-agnostic functions such as layer controls. Analyses and domain specific functions, such as reading a special file format and image segmentation, live in the realm of [plugins](https://www.napari-hub.org/).    
 
