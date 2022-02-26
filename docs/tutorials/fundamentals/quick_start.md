@@ -109,7 +109,7 @@ Once you have the proper plugin installed, use File > Open Files(s)... and selec
 For demo purpose, we will use a sample image that comes with napari.
 
 (1) Open napari IPython console<br>
-<img src="./images/IPython.png" alt="IPython console" width="30%"/>
+<img src=".../images/IPython.png" alt="IPython console" width="30%"/>
 
 (2) Type
     
