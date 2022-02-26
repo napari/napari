@@ -160,7 +160,7 @@ The labels layer allows you to record the segmentation result by assigning backg
 
 ![manual_label](.../images/manual_label.gif)
 
-Several plugins can perform automatic segmentation that takes image layer as input and generates labels layer as output.
+Several plugins can perform automatic segmentation that takes image layers as input and generates labels layers as output.
 
 Try [cellpose-napari](https://www.napari-hub.org/plugins/cellpose-napari) if you have cell images.
 
