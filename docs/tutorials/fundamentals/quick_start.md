@@ -190,7 +190,7 @@ viewer.close_all()
 
 ### Next steps
 - napari provides the flexibility to handle multi-dimensional data. Try opening 3D or higher dimensional images, and switch to 3D view. <br>
-<img src="./images/ndisplay.png" alt="ndisplay" width="30%"/><br> 
+<img src=".../images/ndisplay.png" alt="ndisplay" width="30%"/><br> 
 
 
 - Test some [examples](https://github.com/napari/napari/tree/main/examples) to see how to add different layer types and add your own widgets to napari. 
