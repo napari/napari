@@ -40,7 +40,7 @@ This tutorial is for napari first-timers to give them a quick glance of what nap
 - Get the cell area measurement
 - Next steps
 
-Along the way, you will see how to access napari functions from [Python code](api/index) and from GUI - though for different purposes, one method might be easier than another. This quick start guide will not cover ALL possible methods but only some ways to perform basic tasks. For the more complete guide, please visit [our usage guide](.../usage.md).
+Along the way, you will see how to access napari functions from [Python code](api/index) and from GUI - though for different purposes, one method might be easier than another. This quick start guide will not cover ALL possible methods but only some ways to perform basic tasks. For the more complete guide, please visit [our usage guide](../../usage.md).
 
 You will also see some examples of plugins. The core napari viewer focuses on domain-agnostic functions such as layer controls. Analyses and domain specific functions, such as reading a special file format and image segmentation, live in the realm of [plugins](https://www.napari-hub.org/).    
 
@@ -104,12 +104,13 @@ Try with your own images or download [this ome tiff file](https://downloads.open
 Additional input file formats may be supported [by plugins](https://www.napari-hub.org/). 
 Try [napari-aicsimageio](https://www.napari-hub.org/plugins/napari-aicsimageio) if you have czi, lif, or nd2 files.
 
-Once you have the proper plugin installed, use File > Open Files(s)... and select the image file, or simply drag and drop the image into napari. 
+Once you have the proper plugin installed, use File > Open Files(s)
+and select the image file, or simply drag and drop the image into napari. 
 
 For demo purpose, we will use a sample image that comes with napari.
 
 (1) Open napari IPython console<br>
-<img src=".../images/IPython.png" alt="IPython console" width="30%"/>
+<img src="../../images/IPython.png" alt="IPython console" width="30%"/>
 
 (2) Type
     
@@ -135,7 +136,7 @@ nbscreenshot(viewer)
 
 The layer controls panel at the upper left of the viewer allows you to adjust contrast, colormap, and other layer properties. These settings affect the visualization, but do not affect the underlying data.
 
-To change the image display through the [API](.../api/index), in IPython console, type
+To change the image display through the [API](../../api/index), in IPython console, type
 
 ```python
 viewer.layers['cell'].colormap = "yellow"
@@ -158,7 +159,7 @@ The labels layer allows you to record the segmentation result by assigning backg
 1. Circle the cell
 1. Use "fill" bucket to fill it.
 
-![manual_label](.../images/manual_label.gif)
+![manual_label](../../images/manual_label.gif)
 
 Several plugins can perform automatic segmentation that takes image layers as input and generates labels layers as output.
 
@@ -190,7 +191,7 @@ viewer.close_all()
 
 ### Next steps
 - napari provides the flexibility to handle multi-dimensional data. Try opening 3D or higher dimensional images, and switch to 3D view. <br>
-<img src=".../images/ndisplay.png" alt="ndisplay" width="30%"/><br> 
+<img src="../../images/ndisplay.png" alt="ndisplay" width="30%"/><br> 
 
 
 - Test some [examples](https://github.com/napari/napari/tree/main/examples) to see how to add different layer types and add your own widgets to napari. 
