@@ -5,7 +5,7 @@ import numpy as np
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event
 from ..utils.status_messages import format_float
-from ..utils.validators import validate_n_seq, validate_increasing
+from ..utils.validators import validate_increasing, validate_n_seq
 
 validate_2_tuple = validate_n_seq(2)
 
