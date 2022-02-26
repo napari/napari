@@ -109,8 +109,9 @@ and select the image file, or simply drag and drop the image into napari.
 
 For demo purpose, we will use a sample image that comes with napari.
 
-(1) Open napari IPython console<br>
-<img src="../../images/IPython.png" alt="IPython console" width="30%"/>
+(1) Open napari IPython console
+
+![IPython console](../../images/IPython.png)
 
 (2) Type
     
@@ -190,9 +191,9 @@ viewer.close_all()
 ```
 
 ### Next steps
-- napari provides the flexibility to handle multi-dimensional data. Try opening 3D or higher dimensional images, and switch to 3D view. <br>
-<img src="../../images/ndisplay.png" alt="ndisplay" width="30%"/><br> 
+- napari provides the flexibility to handle multi-dimensional data. Try opening 3D or higher dimensional images, and switch to 3D view.
 
+![ndisplay](../../images/ndisplay.png)
 
 - Test some [examples](https://github.com/napari/napari/tree/main/examples) to see how to add different layer types and add your own widgets to napari. 
 
