@@ -306,10 +306,11 @@ def licenses():
     )
     output_zip.write("info.json")
     for package_id, license_info in info["_licenses"].items():
+        package_name = package_id.split("::", 1)[1]
         for license_type, license_files in license_info.items():
             for i, license_file in enumerate(license_files, 1):
                 arcname = (
-                    f"{package_id}.{license_type.replace(' ', '_')}.{i}.txt"
+                    f"{package_name}.{license_type.replace(' ', '_')}.{i}.txt"
                 )
                 output_zip.write(license_file, arcname=arcname)
     output_zip.close()
