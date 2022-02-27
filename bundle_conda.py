@@ -42,7 +42,6 @@ import zipfile
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
-from textwrap import indent
 
 from ruamel import yaml
 
@@ -109,7 +108,7 @@ def _generate_background_images(installer_type, outpath="resources"):
         banner.paste(logo.resize((44, 44)), (8, 6))
         output = Path(outpath, "napari_150x57.png")
         banner.save(output, format="png")
-        clean_these_files(output)
+        clean_these_files.append(output)
 
     if installer_type in ("pkg", "all"):
         background = Image.new("RGBA", (1227, 600), (0, 0, 0, 0))
