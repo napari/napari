@@ -196,6 +196,7 @@ def _constructor(version=_version(), extra_specs=None):
         definitions["license_file"] = os.path.join(
             HERE, "resources", "bundle_license.txt"
         )
+        definitions["installer_type"] = "sh"
 
     if MACOS:
         # we change this bc the installer takes the name
@@ -250,6 +251,7 @@ def _constructor(version=_version(), extra_specs=None):
                     '%ALLUSERSPROFILE%', f"{APP}-{version}"
                 ),
                 "check_path_length": False,
+                "installer_type": "exe",
             }
         )
         signing_certificate = os.environ.get("CONSTRUCTOR_SIGNING_CERTIFICATE")
@@ -258,7 +260,7 @@ def _constructor(version=_version(), extra_specs=None):
 
     if definitions.get("welcome_image") or definitions.get("header_image"):
         _generate_background_images(
-            definitions["installer_type"], outpath="resources"
+            definitions.get("installer_type", "all"), outpath="resources"
         )
 
     clean_these_files.append("construct.yaml")
