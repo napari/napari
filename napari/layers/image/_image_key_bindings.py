@@ -33,26 +33,32 @@ def orient_plane_normal_along_x(layer: Image):
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
-@Image.bind_key('o')
-@register_image_action(
-    trans._('orient plane normal along camera view direction')
-)
+@register_image_action(trans._('orient plane normal along view direction'))
 def orient_plane_normal_along_view_direction(layer: Image):
-    if napari.current_viewer().dims.ndisplay != 3:
+    viewer = napari.viewer.current_viewer()
+    if viewer.dims.ndisplay != 3:
+        return
+    layer.plane.normal = layer._world_to_data_ray(viewer.camera.view_direction)
+
+
+@Image.bind_key('o')
+def synchronise_plane_normal_with_view_direction(layer: Image):
+    viewer = napari.viewer.current_viewer()
+    if viewer.dims.ndisplay != 3:
         return
 
-    # define a mouse drag callback to sync plane normal during mouse drag
-    camera = napari.current_viewer().camera
+    layer.plane.normal = layer._world_to_data_ray(viewer.camera.view_direction)
 
     def sync_plane_normal_with_view_direction(layer, event=None):
+        """Plane normal syncronisation mouse callback."""
         yield
         while event.type == 'mouse_move':
-            view_direction = camera.view_direction
+            view_direction = viewer.camera.view_direction
             layer.plane.normal = layer._world_to_data_ray(view_direction)
             yield
 
     # update plane normal and add callback to mouse drag
-    layer.plane.normal = layer._world_to_data_ray(camera.view_direction)
+    layer.plane.normal = layer._world_to_data_ray(viewer.camera.view_direction)
     layer.mouse_drag_callbacks.append(sync_plane_normal_with_view_direction)
     yield
     # remove callback on key release
