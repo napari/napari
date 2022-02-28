@@ -19,26 +19,26 @@ points = []
 for z in range(blobs.shape[0]):
     points += [[z, 25, 25], [z, 25, 75], [z, 75, 25], [z, 75, 75]]
 
-# create the property for setting the face and edge color.
-face_property = np.array(
+# create the features for setting the face and edge color.
+face_feature = np.array(
     [True, True, True, True, False, False, False, False]
     * int(blobs.shape[0] / 2)
 )
-edge_property = np.array(['A', 'B', 'C', 'D', 'E'] * int(len(points) / 5))
+edge_feature = np.array(['A', 'B', 'C', 'D', 'E'] * int(len(points) / 5))
 
-properties = {
-    'face_property': face_property,
-    'edge_property': edge_property,
+features = {
+    'face_feature': face_feature,
+    'edge_feature': edge_feature,
 }
 
 points_layer = viewer.add_points(
     points,
-    properties=properties,
+    features=features,
     size=3,
     edge_width=5,
     edge_width_is_relative=False,
-    edge_color='edge_property',
-    face_color='face_property',
+    edge_color='edge_feature',
+    face_color='face_feature',
     out_of_slice_display=False,
 )
 
