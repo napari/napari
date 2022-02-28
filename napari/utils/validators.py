@@ -1,4 +1,5 @@
-from collections.abc import Collection, Generator, Iterable
+from collections.abc import Collection, Generator
+from typing import Iterable
 
 from .translations import trans
 
