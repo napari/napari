@@ -101,7 +101,7 @@ class Plane(EventedModel):
 class SlicingPlane(Plane):
     """Defines a draggable plane in 3D with a defined thickness.
 
-    A slicing plane is a defined by a position, a normal vector and a thickness
+    A slicing plane is defined by a position, a normal vector and a thickness
     value.
 
     Attributes
