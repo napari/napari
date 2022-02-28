@@ -55,6 +55,9 @@ def on_click(layer, event):
         points_layer.add(intersection_point)
 
 
-# set the viewer to 3D rendering mode
+# set the viewer to 3D rendering mode with the first two rectangles in view
 viewer.dims.ndisplay = 3
+viewer.dims.set_point(axis=0, value=0)
+viewer.camera.angles = (70, 30, 150)
+viewer.camera.zoom = 2.5
 napari.run()
