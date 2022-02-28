@@ -18,6 +18,7 @@ from ...layers.image._image_constants import (
 from ...utils.action_manager import action_manager
 from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
+from .qt_layer_controls_base import LayerListGridLayout
 
 
 class QtImageControls(QtBaseImageControls):
@@ -80,44 +81,38 @@ class QtImageControls(QtBaseImageControls):
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
 
-        depictionComboBox = QComboBox(self)
+        self.depictionComboBox = QComboBox(self)
         depiction_options = [d.value for d in VolumeDepiction]
-        depictionComboBox.addItems(depiction_options)
-        index = depictionComboBox.findText(
+        self.depictionComboBox.addItems(depiction_options)
+        index = self.depictionComboBox.findText(
             self.layer.depiction, Qt.MatchFixedString
         )
-        depictionComboBox.setCurrentIndex(index)
-        depictionComboBox.activated[str].connect(self.changeDepiction)
-        self.depictionComboBox = depictionComboBox
+        self.depictionComboBox.setCurrentIndex(index)
+        self.depictionComboBox.activated[str].connect(self.changeDepiction)
         self.depictionLabel = QLabel(trans._('depiction:'))
 
-        self.planeThicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
-        self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
-        self.planeThicknessSlider.setMinimum(1)
-        self.planeThicknessSlider.setMaximum(50)
-        self.planeThicknessSlider.setValue(self.layer.plane.thickness)
-        self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
-        self.planeThicknessSlider.valueChanged.connect(
+        self.planeControls = PlaneControls()
+        self.planeControls.planeThicknessSlider.setValue(
+            self.layer.plane.thickness
+        )
+        self.planeControls.planeThicknessSlider.valueChanged.connect(
             self.changePlaneThickness
         )
-
-        self.planeNormalLabel = QLabel(trans._('plane normal:'))
-        self.planeNormalButtons = PlaneNormalButtons(parent=self)
         action_manager.bind_button(
             'napari:orient_plane_normal_along_z',
-            self.planeNormalButtons.zButton,
+            self.planeControls.planeNormalButtons.zButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_y',
-            self.planeNormalButtons.yButton,
+            self.planeControls.planeNormalButtons.yButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_x',
-            self.planeNormalButtons.xButton,
+            self.planeControls.planeNormalButtons.xButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_view_direction',
-            self.planeNormalButtons.obliqueButton,
+            self.planeControls.planeNormalButtons.obliqueButton,
         )
 
         sld = QSlider(Qt.Horizontal, parent=self)
@@ -171,10 +166,7 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.renderComboBox, 7, 1)
         self.grid_layout.addWidget(self.depictionLabel, 8, 0)
         self.grid_layout.addWidget(self.depictionComboBox, 8, 1)
-        self.grid_layout.addWidget(self.planeNormalLabel, 9, 0)
-        self.grid_layout.addWidget(self.planeNormalButtons, 9, 1)
-        self.grid_layout.addWidget(self.planeThicknessLabel, 10, 0)
-        self.grid_layout.addWidget(self.planeThicknessSlider, 10, 1)
+        self.grid_layout.addWidget(self.planeControls, 9, 0, 2, 2)
         self.grid_layout.addWidget(self.isoThresholdLabel, 11, 0)
         self.grid_layout.addWidget(self.isoThresholdSlider, 11, 1)
         self.grid_layout.addWidget(self.attenuationLabel, 12, 0)
@@ -299,7 +291,9 @@ class QtImageControls(QtBaseImageControls):
 
     def _on_plane_thickness_change(self):
         with self.layer.plane.events.blocker():
-            self.planeThicknessSlider.setValue(self.layer.plane.thickness)
+            self.planeControls.planeThicknessSlider.setValue(
+                self.layer.plane.thickness
+            )
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
@@ -320,18 +314,10 @@ class QtImageControls(QtBaseImageControls):
     def _toggle_plane_parameter_visibility(self):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
-        plane_widgets = (
-            self.planeThicknessLabel,
-            self.planeThicknessSlider,
-            self.planeNormalLabel,
-            self.planeNormalButtons,
-        )
         if depiction == VolumeDepiction.VOLUME or self.layer._ndisplay == 2:
-            for widget in plane_widgets:
-                widget.hide()
+            self.planeControls.hide()
         if depiction == VolumeDepiction.PLANE and self.layer._ndisplay == 3:
-            for widget in plane_widgets:
-                widget.show()
+            self.planeControls.show()
 
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
@@ -397,3 +383,26 @@ class PlaneNormalButtons(QWidget):
         self.layout().addWidget(self.yButton)
         self.layout().addWidget(self.zButton)
         self.layout().addWidget(self.obliqueButton)
+
+
+class PlaneControls(QWidget):
+    """Qt widget encapsulating plane controls for an image layer."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.grid_layout = LayerListGridLayout(self)
+        self.setLayout(self.grid_layout)
+
+        self.planeNormalLabel = QLabel(trans._('plane normal:'))
+        self.planeNormalButtons = PlaneNormalButtons(parent=self)
+
+        self.planeThicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
+        self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
+        self.planeThicknessSlider.setMinimum(1)
+        self.planeThicknessSlider.setMaximum(50)
+        self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
+
+        self.grid_layout.addWidget(self.planeNormalLabel, 1, 0)
+        self.grid_layout.addWidget(self.planeNormalButtons, 1, 1)
+        self.grid_layout.addWidget(self.planeThicknessLabel, 2, 0)
+        self.grid_layout.addWidget(self.planeThicknessSlider, 2, 1)
