@@ -97,7 +97,7 @@ def test_plane_slider_value_change(qtbot):
         == layer.plane.thickness
     )
 
-    
+
 def test_auto_contrast_buttons(qtbot):
     layer = Image(np.arange(8**3).reshape(8, 8, 8), contrast_limits=(0, 1))
     qtctrl = QtImageControls(layer)
@@ -123,4 +123,3 @@ def test_auto_contrast_buttons(qtbot):
     qtctrl.autoScaleBar._once_btn.click()
     layer._slice_dims((4, 8, 8))
     assert layer.contrast_limits == [192, 255]
-
