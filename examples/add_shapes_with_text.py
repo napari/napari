@@ -47,7 +47,7 @@ shapes_layer = viewer.add_shapes(
     name='shapes',
 )
 
-# change some properties of the layer
+# change some attributes of the layer
 shapes_layer.opacity = 1
 
 # To save layers to svg:
