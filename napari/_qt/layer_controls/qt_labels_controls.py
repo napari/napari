@@ -28,7 +28,7 @@ from ..widgets._slider_compat import QSlider
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
-INT32_MAX = 2 ** 31 - 1
+INT32_MAX = 2**31 - 1
 
 
 class QtLabelsControls(QtLayerControls):
@@ -54,8 +54,8 @@ class QtLabelsControls(QtLayerControls):
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Labels
         An instance of a napari Labels layer.
-    ndimCheckBox : qtpy.QtWidgets.QCheckBox
-        Checkbox to control if label layer is n-dimensional.
+    ndimSpinBox : qtpy.QtWidgets.QSpinBox
+        Spinbox to control the number of editable dimensions of label layer.
     paint_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select PAINT mode on Labels layer.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton

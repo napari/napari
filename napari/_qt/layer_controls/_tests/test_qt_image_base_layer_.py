@@ -84,10 +84,10 @@ def test_range_popup_clim_buttons(mock_show, qtbot, layer):
     if np.issubdtype(layer.dtype, np.integer):
         rangebtn.click()
         qtbot.wait(20)
-        assert tuple(layer.contrast_limits_range) == (0, 2 ** 16 - 1)
+        assert tuple(layer.contrast_limits_range) == (0, 2**16 - 1)
         min_ = qtctrl.contrastLimitsSlider.minimum()
         max_ = qtctrl.contrastLimitsSlider.maximum()
-        assert (min_, max_) == (0, 2 ** 16 - 1)
+        assert (min_, max_) == (0, 2**16 - 1)
     else:
         assert rangebtn is None
 
@@ -98,7 +98,7 @@ def test_clim_slider_step_size_and_precision(qtbot, mag):
 
     ...across a broad range of orders of magnitude.
     """
-    layer = Image(np.random.rand(20, 20) * 10 ** mag)
+    layer = Image(np.random.rand(20, 20) * 10**mag)
     popup = QContrastLimitsPopup(layer)
     qtbot.addWidget(popup)
 
@@ -113,7 +113,7 @@ def test_clim_slider_step_size_and_precision(qtbot, mag):
 
     # the slider step size should also be inversely proportional to the data
     # range, with 1000 steps across the data range
-    assert popup.slider.singleStep() == 10 ** -decimals
+    assert popup.slider.singleStep() == 10**-decimals
 
 
 def test_qt_image_controls_change_contrast(qtbot):

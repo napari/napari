@@ -197,14 +197,27 @@ class ScaleTranslate(Transform):
         self.translate = np.array(translate)
 
     def __call__(self, coords):
-        coords = np.atleast_2d(coords)
-        scale = np.concatenate(
-            ([1.0] * (coords.shape[1] - len(self.scale)), self.scale)
-        )
-        translate = np.concatenate(
-            ([0.0] * (coords.shape[1] - len(self.translate)), self.translate)
-        )
-        return np.atleast_1d(np.squeeze(scale * coords + translate))
+        coords = np.asarray(coords)
+        append_first_axis = coords.ndim == 1
+        if append_first_axis:
+            coords = coords[np.newaxis, :]
+
+        coords_ndim = coords.shape[1]
+        if coords_ndim == len(self.scale):
+            scale = self.scale
+            translate = self.translate
+        else:
+            scale = np.concatenate(
+                ([1.0] * (coords_ndim - len(self.scale)), self.scale)
+            )
+            translate = np.concatenate(
+                ([0.0] * (coords_ndim - len(self.translate)), self.translate)
+            )
+        out = scale * coords
+        out += translate
+        if append_first_axis:
+            out = out[0]
+        return out
 
     @property
     def inverse(self) -> 'ScaleTranslate':
@@ -369,15 +382,20 @@ class Affine(Transform):
         self._translate = translate_to_vector(translate, ndim=ndim)
 
     def __call__(self, coords):
-        coords = np.atleast_2d(coords)
+        coords = np.asarray(coords)
+        append_first_axis = coords.ndim == 1
+        if append_first_axis:
+            coords = coords[np.newaxis, :]
         coords_ndim = coords.shape[1]
         padded_linear_matrix = embed_in_identity_matrix(
             self._linear_matrix, coords_ndim
         )
         translate = translate_to_vector(self._translate, ndim=coords_ndim)
-        return np.atleast_1d(
-            np.squeeze(coords @ padded_linear_matrix.T + translate)
-        )
+        out = coords @ padded_linear_matrix.T
+        out += translate
+        if append_first_axis:
+            out = out[0]
+        return out
 
     @property
     def ndim(self) -> int:

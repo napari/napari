@@ -161,15 +161,10 @@ class TextManager(EventedModel):
         anchor_y : str
             The vispy text anchor for the y axis
         """
-        if len(self.values) > 0:
-            anchor_coords, anchor_x, anchor_y = get_text_anchors(
-                view_data, ndisplay, self.anchor
-            )
-            text_coords = anchor_coords + self.translation
-        else:
-            text_coords = np.zeros((0, ndisplay))
-            anchor_x = 'center'
-            anchor_y = 'center'
+        anchor_coords, anchor_x, anchor_y = get_text_anchors(
+            view_data, ndisplay, self.anchor
+        )
+        text_coords = anchor_coords + self.translation
         return text_coords, anchor_x, anchor_y
 
     def view_text(self, indices_view: np.ndarray) -> np.ndarray:
@@ -190,8 +185,7 @@ class TextManager(EventedModel):
             TextMode.PROPERTY,
         ]:
             return self.values[indices_view]
-        # if no points in this slice send dummy data
-        return np.array([''])
+        return np.empty((0,), dtype=str)
 
     @classmethod
     def _from_layer(
