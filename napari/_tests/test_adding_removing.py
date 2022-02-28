@@ -139,22 +139,3 @@ def test_add_remove_layer_external_callbacks(
         if not isinstance(em, WarningEmitter):
             assert len(em.callbacks) == 1
 
-
-def test_adding_with_contrast_limits(make_napari_viewer):
-    viewer = make_napari_viewer()
-    image = np.asarray([[0, 1], [np.nan, np.inf]])
-    viewer.add_image(image, contrast_limits=[0, 1])
-
-    num_errors = 0
-    try:
-        viewer.add_image(image, contrast_limits=[1, 1])
-    except TypeError:
-        num_errors = num_errors + 1
-
-    try:
-        viewer.add_image(image, contrast_limits=[1, 0])
-    except TypeError:
-        num_errors = num_errors + 1
-
-    if num_errors != 2:
-        assert False
