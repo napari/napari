@@ -88,6 +88,8 @@ def validate_increasing(values: Iterable):
     """
     Checks if values in an iterable are increasing and raises an error otherwise.
     """
+    if len(values) < 2:
+        return
     value = values[0]
     for other_value in values[1:]:
         if other_value <= value:
