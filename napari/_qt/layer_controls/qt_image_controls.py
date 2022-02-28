@@ -91,7 +91,7 @@ class QtImageControls(QtBaseImageControls):
         self.depictionComboBox.activated[str].connect(self.changeDepiction)
         self.depictionLabel = QLabel(trans._('depiction:'))
 
-        self.planeControls = PlaneControls()
+        self.planeControls = QtPlaneControls()
         self.planeControls.planeThicknessSlider.setValue(
             self.layer.plane.thickness
         )
@@ -171,7 +171,7 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.isoThresholdSlider, 11, 1)
         self.grid_layout.addWidget(self.attenuationLabel, 12, 0)
         self.grid_layout.addWidget(self.attenuationSlider, 12, 1)
-        self.grid_layout.setRowStretch(12, 1)
+        self.grid_layout.setRowStretch(13, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -385,7 +385,7 @@ class PlaneNormalButtons(QWidget):
         self.layout().addWidget(self.obliqueButton)
 
 
-class PlaneControls(QWidget):
+class QtPlaneControls(QWidget):
     """Qt widget encapsulating plane controls for an image layer."""
 
     def __init__(self, *args, **kwargs):

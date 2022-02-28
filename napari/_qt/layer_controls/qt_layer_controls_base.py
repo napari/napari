@@ -15,6 +15,7 @@ class LayerListGridLayout(QGridLayout):
         self.setSpacing(2)
         self.setColumnMinimumWidth(0, 94)
         self.setColumnStretch(1, 1)
+        self.setSpacing(4)
 
 
 class QtLayerControls(QFrame):
