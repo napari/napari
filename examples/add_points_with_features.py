@@ -14,8 +14,8 @@ viewer = napari.view_image(rgb2gray(data.astronaut()))
 # add the points
 points = np.array([[100, 100], [200, 200], [333, 111]])
 
-# create properties for each point
-properties = {
+# create features for each point
+features = {
     'confidence': np.array([1, 0.5, 0]),
     'good_point': np.array([True, False, False])
 }
@@ -23,11 +23,12 @@ properties = {
 # define the color cycle for the face_color annotation
 face_color_cycle = ['blue', 'green']
 
-# create a points layer where the face_color is set by the good_point property
-# and the edge_color is set via a color map (grayscale) on the confidence property.
+# create a points layer where the face_color is set by the good_point feature
+# and the edge_color is set via a color map (grayscale) on the confidence
+# feature.
 points_layer = viewer.add_points(
     points,
-    properties=properties,
+    features=features,
     size=20,
     edge_width=7,
     edge_width_is_relative=False,
@@ -46,13 +47,14 @@ points_layer.edge_color_mode = 'colormap'
 def toggle_point_annotation(viewer):
     selected_points = list(points_layer.selected_data)
     if len(selected_points) > 0:
-        good_point = points_layer.properties['good_point']
+        good_point = points_layer.features['good_point']
         good_point[list(selected_points)] = ~good_point[list(selected_points)]
-        points_layer.properties['good_point'] = good_point
+        points_layer.features['good_point'] = good_point
 
-        # we need to manually refresh since we did not use the Points.properties setter
-        # to avoid changing the color map if all points get toggled to the same class,
-        # we set update_colors=False (only re-colors the point using the previously-determined color mapping).
+        # we need to manually refresh since we did not use the Points.features
+        # setter to avoid changing the color map if all points get toggled to
+        # the same class, we set update_colors=False (only re-colors the point
+        # using the previously-determined color mapping).
         points_layer.refresh_colors(update_color_mapping=False)
 
 
