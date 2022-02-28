@@ -94,7 +94,7 @@ def validate_increasing(values: Iterable):
     value = values[0]
     for other_value in values[1:]:
         if other_value <= value:
-            raise TypeError(
+            raise ValueError(
                 trans._(
                     "Every item in the sequence {sequence} must be smaller than its predecessor.",
                     deferred=True,
