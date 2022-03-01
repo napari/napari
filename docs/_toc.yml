@@ -104,6 +104,7 @@ subtrees:
       - file: release/index
         subtrees:
         - entries:
+          - file: release/release_0_4_15
           - file: release/release_0_4_14
           - file: release/release_0_4_13
           - file: release/release_0_4_12
