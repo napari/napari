@@ -10,21 +10,25 @@ kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
   name: python3
+theme:
+  intro: Template for adding new napari documentation
 ---
 
 # Docs template
 
 This template will guide you to write a well formatted document and prepare it for contribution to napari.org.
+Edit this section to include a sentence or two introducing the tutorial, and include a time estimate for completion.
 
 ## Prerequisites
 
-Fill out this section with a list of things the reader will need to prepare to be able to follow this document.
+Fill out this section with a list of things the reader will need to successfully follow this document.
 Include things like:
+- python and/or napari version needed
 - links to any existing napari.org tutorials or how-to guides that can help the user fulfill these prerequisites
 - the level of python/napari knowledge required to follow this document
     - try to be specific about what skills are needed e.g. 
     'connecting callbacks to layer events' or 'using matplotlib to produce plots'
-- plugins that should be installed
+- napari plugins that should be installed
 - python packages that should be installed (don't list napari or its dependencies)
 - links to sample data that can be used to follow your document
   - **don't add this data to the repository**
@@ -38,20 +42,13 @@ You should include pictures/videos, particularly when describing interactions wi
 accompanied by complete and descriptive alt-text. If you're using arrows/circles to highlight portions of the image, make sure
 they contrast well against the background of the image.
 
-### Use GitHub's media hosting
-
-GitHub now hosts videos and images added to comments and documents via their drag and drop API.
-This is not only very simple to achieve, but it keeps our repositories small.
-To use GitHub image hosting, upload your document to your pull request with no images. 
-Then, navigate to the document in your pull request and select "Edit file" from the three-dot menu on the top right of your file.
-Once you're in file editing mode, place your cursor on the line where you want the image to appear, and drag and drop the image.
-Don't forget to edit your alt text!
-
 ### Take screenshots of the viewer
 
 It's common for napari documentation to include code that has some effect in the napari Viewer e.g. adding layers,
 changing layer properties or using a plugin. These changes in the Viewer should be shown to the user, and this can
 be easily achieved in your notebook with napari's `nbscreenshot` utility. Follow these steps to include screenshots of the napari viewer and hide code cells.
+
+Note that wherever possible, auto-generated screenshots are *greatly* prefered to static images.
 
 #### 1. Use `nbscreenshot` for screenshots of the viewer
 
@@ -92,12 +89,13 @@ with ellipses for seeing existing tags, a text entry box for adding new tags, an
 
 2. If you're editing a MyST Markdown file directly, you can add tags to your code blocks like so:
 
+```
     ```{code-cell}
     :tags: [remove-input]
 
     print("Your code here")
     ```
-
+```
 #### What to put in hidden cells
 
 Alongside your call to `nbscreenshot`, you can also place other potentially distracting code in these tagged cells, 
@@ -113,10 +111,6 @@ viewer.dims.current_step = (25, 0, 1)
 nbscreenshot(viewer)
 ```
 
-Note how we've included the `nbscreenshot` import in this hidden cell. Even though in the
-example above we imported `nbscreenshot` to show its functionality, you should place the
-import in a hidden cell when you write your documentation.
-
 ```{code-cell} ipython3
 :tags: [remove-input]
 
@@ -126,6 +120,10 @@ viewer.window._qt_window.resize(750, 550)
 viewer.dims.current_step = (25, 0, 1)
 nbscreenshot(viewer)
 ```
+
+Note how we've included the `nbscreenshot` import in this hidden cell. Even though in the
+example above we imported `nbscreenshot` to show its functionality, you should place the
+import in a hidden cell when you write your documentation.
 
 Here are some examples of settings you might want to use in a hidden input cell to make your screenshot look pretty:
 - window resizing (as above)
@@ -144,3 +142,8 @@ If your guide contains any code the user is expected to run, make sure that the 
 
 This [style guide](https://developers.google.com/style/) should answer all your questions about when to italicise and when to bold, which
 words to capitalize in your headings (spoiler - we use sentence case for our headings) and other style conventions.
+
+## Next steps
+- Use this section to link to other relevant tutorials, further reading on any complex topics you mentioned,
+or other relevant documentation
+- Now that you've written your document, you can proceed with [pairing your notebook](./index.md#3-pair-your-notebook-with-myst-markdown)

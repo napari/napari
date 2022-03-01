@@ -94,7 +94,6 @@ subtrees:
             subtrees:
             - entries:
               - file: developers/documentation/docs_template
-              - file: developers/documentation/open_pr_online
       - file: release/index
         subtrees:
         - entries:

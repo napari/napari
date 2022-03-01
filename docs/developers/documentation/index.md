@@ -17,25 +17,39 @@ theme:
 # Contributing Documentation
 
 ## Prerequisites
-- [Jupyter notebook](https://jupyter.org/) installed
-- Familiarity with Jupyter notebooks (code cells and markdown cells)
-- Familiarity with using napari through a Jupyter notebook
-- A [GitHub account](https://github.com)
 
+- Familiarity with `git`
+- A [GitHub](https://github.com) account
 ## 0. Before you start
 
-If you'd like to contribute a brand new tutorial or how-to, it might be worth [opening an issue](https://github.com/napari/napari/issues/new?assignees=&labels=documentation&template=documentation.md&title=)
+If you'd like to contribute a brand new document to our usage section, it might be worth [opening an issue](https://github.com/napari/napari/issues/new?assignees=&labels=documentation&template=documentation.md&title=)
  on our repository first to discuss the content you'd like to see and get some early feedback from the community.
+The napari team can also suggest what type of document would be best suited, and whether there are already
+existing documents that could be expanded to include the content you think is lacking. 
 
-Our main types of documents are:
+Examples of documents you might want to contribute are:
 
 - **Explanations** (in `napari/docs/guides`): in depth content about napari architecture, development choices and some complex features 
 - **Tutorials** (in `napari/docs/tutorials`): detailed, reproducible step by step guides, usually combining multiple napari features to complete a potentially complex task
 - **How-tos** (in `napari/docs/howtos/`): simple step by step guides demonstrating the use of common features
+- **Getting started** (in `napari/docs/tutorials/fundamentals`): these documents are a mix of tutorials and how-tos covering the fundamentals of installing and working with napari for beginners
 
-The napari team can also suggest the type of document that would be best suited, and whether there are already
-existing documents that could be expanded to include the content you think is lacking. 
+```{admonition} Got materials for a workshop?
+:class: tip
 
+If you already have teaching materials e.g. recordings, slide decks or jupyter notebooks
+hosted somewhere, you can add links to these on our [napari workshops](../../further-resources/napari-workshops.md) page.
+```
+
+If you are writing a document whose content is mostly text,
+you can write a plain markdown document and skip straight to [Step #4 - Update TOC](#4-update-toc).
+If you are writing a how-to guide or tutorial that requires executing code or working with the napari viewer, follow
+the steps below to prepare your document.
+
+## Prerequisites for contributing documentation with code
+- [Jupyter notebook](https://jupyter.org/) installed
+- Familiarity with Jupyter notebooks (code cells and markdown cells)
+- Familiarity with using napari through a Jupyter notebook
 ## 1. Download our template
 
 Our goal is that all tutorials and how-tos are easily downloadable and executable by our users. 
@@ -81,12 +95,10 @@ conda install jupytext -c conda-forge
 
 ### 3.2 Pair your notebook
 Once installed, you can start Jupyter notebook as you usually would. Pairing your notebook with MyST Markdown
- will now be an option in the notebook's `File -> Jupytext` menu, as in the screenshot below. Selecting this option will generate a new markdown file
- for you in the same working directory as your notebook.
+ will now be an option in the notebook's `File -> Jupytext` menu. 
+Selecting this option will generate a new markdown file for you in the same working directory as your notebook.
 If you pair through Jupyter notebook, your markdown file will be updated every time you save the notebook,
 so you don't need to worry about keeping them synced.
-
-![Screenshot of Jupyter Notebook with File -> Jupytext menu open and Pair Notebook with MyST Markdown selected.](images/jupyter_jupytext.png)
 
 You can pair your notebook from the command line as well using the following command:
 
@@ -107,15 +119,89 @@ jupytext your_notebook.ipynb --to myst
 ```
 
 That's it! `your_notebook.md` is now ready to contribute to napari!
-## 4. Submit your pull request
 
-Once you have written and prepared your document, it's time to open a pull request to [napari's main repository](https://github.com/napari/napari) and contribute it to our codebase. 
-If you're not familiar with Git or pull requests, follow [this how-to](./open_pr_online.md) to open your pull request online through GitHub. 
-If you already know how to submit pull requests but aren't sure where to put your document, here are the folder paths:
+## 4. Update TOC
 
-- **Explanations** are in `napari/docs/guides/`
-- **Tutorials** are in `napari/docs/tutorials/`
-- **How-tos** are in `napari/docs/howtos/`
+Add your document to the correct folder based on its content (see the [list above](#0-before-you-start) for common locations), and update `napari/docs/_toc.yml`. 
 
-Not sure where to place your document? Make a best guess and open the pull request - the napari team will
+If you're adding a document
+to an existing group, simply add a new `- file:` entry in the appropriate spot. For example, if I wanted to add 
+a `progress_bars.md` how to guide, I would place it in `napari/docs/howtos` and update `_toc.yml` as below:
+
+```yml
+- file: howtos/index
+subtrees:
+- titlesonly: True
+entries:
+- file: howtos/layers/index
+subtrees:
+- titlesonly: True
+    entries:
+    - file: howtos/layers/image
+    - file: howtos/layers/labels
+    - file: howtos/layers/points
+    - file: howtos/layers/shapes
+    - file: howtos/layers/surface
+    - file: howtos/layers/tracks
+    - file: howtos/layers/vectors
+- file: howtos/connecting_events
+- file: howtos/napari_imageJ
+- file: howtos/docker
+- file: howtos/perfmon
+- file: howtos/progress_bars # added
+```
+
+To create a new subheading, you need a `subtrees` entry. For example, if I wanted to add `geo_tutorial1.md` and `geo_tutorial2.md`
+to a new `geosciences` subheading in tutorials, I would place my documents in a new folder `napari/docs/tutorials/geosciences`,
+together with an `index.md` that describes what these tutorials would be about, and then update `_toc.yml` as below:
+
+```yml
+- file: tutorials/index
+subtrees:
+- entries:
+    - file: tutorials/annotation/index
+    subtrees:
+    - entries: 
+        - file: tutorials/annotation/annotate_points
+    - file: tutorials/processing/index
+    subtrees:
+    - entries:
+        - file: tutorials/processing/dask
+    - file: tutorials/segmentation/index
+    subtrees:
+    - entries:
+        - file: tutorials/segmentation/annotate_segmentation
+    - file: tutorials/tracking/index
+    subtrees:
+    - entries:
+        - file: tutorials/tracking/cell_tracking
+    - file: tutorials/geosciences/index                 # added
+    subtrees:                                           # added
+    - entries:                                          # added
+        - file: tutorials/geosciences/geo_tutorial1     # added
+        - file: tutorials/geosciences/geo_tutorial2     # added
+```
+
+## 5. Preview your document
+
+Once you've added your document to the `docs` folder and updated the `_toc.yml`, you can preview the website
+ locally by installing napari and the required dependencies, then running `make docs` from the root of
+the `napari` repository.
+
+```{warning}
+It's best to run these commands in a fresh conda environment!
+```
+
+```bash
+pip install ".[all, dev, docs]"
+make docs
+```
+
+The rendered HTML will be placed in `napari/docs/_build`. Find `index.html` in this folder and drag it
+into a browser to preview the website with your new document.
+## 6. Submit your pull request
+
+Once you have written and previewed your document, it's time to open a pull request to [napari's main repository](https://github.com/napari/napari) and contribute it to our codebase. 
+
+Not sure where to place your document or update `_toc.yml`? Make a best guess and open the pull request - the napari team will
 help you edit your document and find the right spot!
