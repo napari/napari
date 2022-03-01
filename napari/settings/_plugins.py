@@ -1,12 +1,12 @@
-from typing import Dict, List, Set
 from enum import Enum
+from typing import Dict, List, Set
 
 from pydantic import Field
 from typing_extensions import TypedDict
 
 from ..utils.events.evented_model import EventedModel
-from ..utils.translations import trans
 from ..utils.misc import running_as_bundled_app
+from ..utils.translations import trans
 
 
 class PluginHookOption(TypedDict):
@@ -30,13 +30,6 @@ class PluginsSettings(EventedModel):
         title=trans._("Plugin API"),
         description=trans._(
             "Use the following API for querying plugin information.",
-        ),
-    )
-    check_conda_forge: bool = Field(
-        running_as_bundled_app(),
-        title=trans._("Check conda-forge availability"),
-        description=trans._(
-            "Check if the plugin is available for install from conda-forge."
         ),
     )
     call_order: CallOrderDict = Field(
@@ -79,6 +72,5 @@ class PluginsSettings(EventedModel):
             'extension2writer',
         ]
 
-        # if running_as_bundled_app():
-        #     preferences_exclude.append('plugin_api')
-        #     preferences_exclude.append('check_conda_forge')
+        if running_as_bundled_app():
+            preferences_exclude.append('plugin_api')

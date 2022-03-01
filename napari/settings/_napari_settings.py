@@ -14,7 +14,7 @@ from ._plugins import PluginsSettings
 from ._shortcuts import ShortcutsSettings
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
-
+print(_CFG_PATH)
 
 class NapariSettings(EventedConfigFileSettings):
     """Schema for napari settings."""

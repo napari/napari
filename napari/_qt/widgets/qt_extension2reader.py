@@ -110,7 +110,7 @@ class Extension2ReaderTable(QWidget):
                 return
 
     def value(self):
-        """Return extension:reader mapping from settings
+        """Return extension:reader mapping from settings.
 
         Returns
         -------

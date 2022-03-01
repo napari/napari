@@ -42,13 +42,14 @@ from ...plugins import plugin_manager
 from ...plugins.hub import iter_hub_plugin_info
 from ...plugins.pypi import iter_napari_plugin_info
 from ...plugins.utils import normalized_name
+from ...settings import get_settings
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
-from ...settings import get_settings
 from ..qt_resources import QColoredSVGIcon
 from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
+from ...utils.misc import running_as_bundled_app
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
 
@@ -604,8 +605,7 @@ class QPluginList(QListWidget):
             )
 
     def tag_unavailable(self, project_info: PackageMetadata):
-        """
-        """
+        """ """
         for item in self.findItems(project_info.name, Qt.MatchStartsWith):
             widget = self.itemWidget(item)
             widget.setObjectName("unavailable")
@@ -625,7 +625,8 @@ class QtPluginDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.already_installed = set()
-        self.installer = Installer()
+        installer = "mamba" if running_as_bundled_app() else "pip"
+        self.installer = Installer(installer=installer)
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)
@@ -718,10 +719,15 @@ class QtPluginDialog(QDialog):
 
         # fetch available plugins
         settings = get_settings()
-        use_hub = running_as_bundled_app() or settings.plugins.plugin_api == "napari_hub"
+        use_hub = (
+            running_as_bundled_app()
+            or settings.plugins.plugin_api == "napari_hub"
+        )
         if use_hub:
-            conda_forge = settings.plugins.check_conda_forge
-            self.worker = create_worker(iter_hub_plugin_info, conda_forge=conda_forge)
+            conda_forge = running_as_bundled_app()
+            self.worker = create_worker(
+                iter_hub_plugin_info, conda_forge=conda_forge
+            )
         else:
             self.worker = create_worker(iter_napari_plugin_info)
 
