@@ -6,6 +6,10 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
+Following NumPy's [NEP-29 deprecation
+policy](https://numpy.org/neps/nep-0029-deprecation_policy.html), this release
+drops support for Python 3.7, which enables us to simplify many code paths.
+From 0.4.15, napari supports Python 3.8, 3.9, and 3.10.
 
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
