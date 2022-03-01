@@ -108,7 +108,7 @@ viewer.dims.current_step = (25, 0, 1)
 nbscreenshot(viewer)
 ```
 
-```{code-cell} ipython3
+```{code-cell} python3
 :tags: [remove-input]
 
 from napari.utils import nbscreenshot
