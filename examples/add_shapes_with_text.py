@@ -26,7 +26,7 @@ features = {
 }
 edge_color_cycle = ['blue', 'magenta', 'green']
 
-text_features = {
+text = {
     'text': '{class}: {likelihood:0.1f}%',
     'anchor': 'upper_left',
     'translation': [-5, 0],
@@ -43,7 +43,7 @@ shapes_layer = viewer.add_shapes(
     edge_color='class',
     edge_color_cycle=edge_color_cycle,
     face_color='transparent',
-    text=text_features,
+    text=text,
     name='shapes',
 )
 
