@@ -61,7 +61,7 @@ from napari.utils import nbscreenshot
 
 viewer = napari.Viewer()
 # opens sample data and adds layer to the Viewer
-viewer.open_sample('scikit-image', 'cells3d')
+viewer.open_sample('napari', 'cells3d')
 
 # takes a screenshot and produces it as output for this cell
 nbscreenshot(viewer)
@@ -80,12 +80,9 @@ You can completely remove input (i.e. the code that's running) in a notebook cel
 How you add cell tags depends on how you're editing your notebook. 
 
 1. If you're working in Jupyter notebook,
-you can open up the Tags toolbar for your cell using `View -> Cell Toolbar -> Tags`. You can then add any tags you want
+you can open up the Tags toolbar for your cell using `View -> Cell Toolbar -> Tags`. A toolbar
+will be added to the top right of your cell. You can then add any tags you want
 (e.g. `remove-input`) by typing into the text entry box of the toolbar and clicking `Add Tag`. 
-Here's what the Tags toolbar looks like.
-
-![Jupyter notebook cell with Tags toolbar highlighted by a black square in the top right of the cell. Tags toolbar involves a button
-with ellipses for seeing existing tags, a text entry box for adding new tags, and an Add Tag button](images/jupyter_cell_tags.png)
 
 2. If you're editing a MyST Markdown file directly, you can add tags to your code blocks like so:
 

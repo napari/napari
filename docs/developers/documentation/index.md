@@ -16,6 +16,8 @@ theme:
 
 # Contributing Documentation
 
+This guide will teach you how to submit new documents to napari's usage documentation.
+
 ## Prerequisites
 
 - Familiarity with `git`
@@ -46,7 +48,7 @@ you can write a plain markdown document and skip straight to [Step #4 - Update T
 If you are writing a how-to guide or tutorial that requires executing code or working with the napari viewer, follow
 the steps below to prepare your document.
 
-## Prerequisites for contributing documentation with code
+### Prerequisites for contributing documentation with code
 - [Jupyter notebook](https://jupyter.org/) installed
 - Familiarity with Jupyter notebooks (code cells and markdown cells)
 - Familiarity with using napari through a Jupyter notebook
