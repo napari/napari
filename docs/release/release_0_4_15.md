@@ -22,7 +22,7 @@ https://github.com/napari/napari
 ## Highlights
 
 This release is focused on documentation improvements and bug fixes, with few
-change's to napari's API. The napari documentation is now entirely contained,
+changes to napari's API. The napari documentation is now entirely contained,
 built, and deployed within the napari repository (#4047, #4147, #4154). This
 and ongoing work will make it easier for the community to contribute
 documentation to the project and help others use napari.
