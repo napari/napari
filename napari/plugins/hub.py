@@ -5,7 +5,7 @@ retriving plugin information and related metadata.
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
-from typing import Generator, Optional
+from typing import Generator, Tuple
 from urllib import error, request
 
 from npe2.manifest.package_metadata import PackageMetadata
@@ -21,7 +21,7 @@ def hub_plugin_info(
     name: str,
     min_dev_status=3,
     conda_forge=True,
-) -> Optional[PackageMetadata]:
+) -> Tuple[PackageMetadata, bool]:
     """Get package metadat from the napari hub.
 
     Parameters
@@ -46,6 +46,7 @@ def hub_plugin_info(
 
     version = info["version"]
     norm_name = normalized_name(info["name"])
+    is_available_in_conda_forge = False
     if conda_forge:
         anaconda_api = ANACONDA_ORG.format(
             channel="conda-forge", package_name=norm_name
@@ -53,19 +54,19 @@ def hub_plugin_info(
         try:
             with request.urlopen(anaconda_api) as resp_api:
                 anaconda_info = json.loads(resp_api.read().decode())
-                if version not in anaconda_info.get("versions", []):
-                    return None
+                if version in anaconda_info.get("versions", []):
+                    is_available_in_conda_forge = True
 
         except error.HTTPError:
-            return None
+            pass
 
     classifiers = info.get("development_status", [])
     for _ in range(1, min_dev_status):
         if any(f'Development Status :: {1}' in x for x in classifiers):
-            return None
+            return None, False
 
     authors = ", ".join([author["name"] for author in info["authors"]])
-    return PackageMetadata(
+    data = PackageMetadata(
         metadata_version="1.0",
         name=norm_name,
         version=version,
@@ -74,6 +75,7 @@ def hub_plugin_info(
         author=authors,
         license=info["license"] or "UNKNOWN",
     )
+    return data, is_available_in_conda_forge
 
 
 def iter_hub_plugin_info(
@@ -92,7 +94,7 @@ def iter_hub_plugin_info(
         ]
 
         for future in as_completed(futures):
-            info = future.result()
+            info, is_available_in_conda_forge = future.result()
             if info and info not in already_yielded:
                 already_yielded.append(info)
-                yield info
+                yield info, is_available_in_conda_forge

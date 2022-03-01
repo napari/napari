@@ -139,4 +139,5 @@ def iter_napari_plugin_info(
             info = future.result()
             if info and info not in already_yielded:
                 already_yielded.append(info)
-                yield info
+                # `False` To match hub API on conda-forge availability
+                yield info, True

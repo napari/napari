@@ -45,6 +45,7 @@ from ...plugins.utils import normalized_name
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
 from ...utils.translations import trans
+from ...settings import get_settings
 from ..qt_resources import QColoredSVGIcon
 from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
@@ -602,6 +603,16 @@ class QPluginList(QListWidget):
                 trans._("update (v{latest})", latest=latest)
             )
 
+    def tag_unavailable(self, project_info: PackageMetadata):
+        """
+        """
+        for item in self.findItems(project_info.name, Qt.MatchStartsWith):
+            widget = self.itemWidget(item)
+            widget.setObjectName("unavailable")
+            widget.style().unpolish(widget)
+            widget.style().polish(widget)
+            widget.action_button.setEnabled(False)
+
     def filter(self, text: str):
         """Filter items to those containing `text`."""
         shown = self.findItems(text, Qt.MatchContains)
@@ -706,9 +717,11 @@ class QtPluginDialog(QDialog):
         )
 
         # fetch available plugins
-        use_hub = False
+        settings = get_settings()
+        use_hub = running_as_bundled_app() or settings.plugins.plugin_api == "napari_hub"
         if use_hub:
-            self.worker = create_worker(iter_hub_plugin_info)
+            conda_forge = settings.plugins.check_conda_forge
+            self.worker = create_worker(iter_hub_plugin_info, conda_forge=conda_forge)
         else:
             self.worker = create_worker(iter_napari_plugin_info)
 
@@ -854,11 +867,14 @@ class QtPluginDialog(QDialog):
         if packages:
             self.installer.install(packages)
 
-    def _handle_yield(self, project_info):
+    def _handle_yield(self, data):
+        project_info, is_available = data
         if project_info.name in self.already_installed:
             self.installed_list.tag_outdated(project_info)
         else:
             self.available_list.addItem(project_info)
+            if not is_available:
+                self.available_list.tag_unavailable(project_info)
 
         self.filter()
 
