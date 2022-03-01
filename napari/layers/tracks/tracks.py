@@ -37,7 +37,7 @@ class Tracks(Layer):
         case of track splitting, or more than one (the track has multiple
         parents, but only one child) in the case of track merging.
         See examples/tracks_3d_with_graph.py
-    color_by: str
+    color_by : str
         Track property (from property keys) by which to color vertices.
     tail_width : float
         Width of the track tails in pixels.

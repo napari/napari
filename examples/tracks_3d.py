@@ -28,7 +28,7 @@ def tracks_3d(num_tracks=10, track_length=200):
         track[:, 3] = 50.0 + y
         track[:, 4] = 50.0 + x
 
-        # calculate the speed as a property
+        # calculate the speed as a feature
         gz = np.gradient(track[:, 2])
         gy = np.gradient(track[:, 3])
         gx = np.gradient(track[:, 4])
@@ -47,7 +47,7 @@ def tracks_3d(num_tracks=10, track_length=200):
     tracks = np.concatenate(tracks, axis=0)
     data = tracks[:, :5]  # just the coordinate data
 
-    properties = {
+    features = {
         'time': tracks[:, 1],
         'gradient_z': tracks[:, 5],
         'gradient_y': tracks[:, 6],
@@ -57,7 +57,7 @@ def tracks_3d(num_tracks=10, track_length=200):
     }
 
     graph = {}
-    return data, properties, graph
+    return data, features, graph
 
 
 if __name__ == '__main__':
