@@ -530,7 +530,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Selects a preset depiction mode in vispy
             * volume: images are rendered as 3D volumes.
             * plane: images are rendered as 2D planes embedded in 3D.
-                plane position, normal, and thickness are attributes of 
+                plane position, normal, and thickness are attributes of
                 layer.plane which can be modified directly.
         """
         return str(self._depiction)

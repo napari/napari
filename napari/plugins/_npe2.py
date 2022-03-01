@@ -201,7 +201,7 @@ def get_readers(path: str) -> Dict[str, str]:
     pm = npe2.PluginManager.instance()
     return {
         pm.get_manifest(reader.command).display_name: reader.plugin_name
-        for reader in pm.iter_compatible_readers(path)
+        for reader in pm.iter_compatible_readers([path])
     }
 
 
