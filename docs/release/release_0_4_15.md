@@ -52,6 +52,8 @@ https://github.com/napari/napari
 - Add release management docs (#4139)
 - Use napari-sphinx-theme in docs build (#4147)
 - Add new core developers (#4157)
+- Move most examples to use features instead of properties (#4162)
+- improve examples/add_points_on_nD_shapes.py camera/dims setup (#4161)
 
 ## Bug Fixes
 
@@ -80,6 +82,7 @@ https://github.com/napari/napari
 - Add markupsafe pin to bundle build (#4118)
 - Don't pip install from github in comprehensive tests (avoid another LFS leak) (#4141)
 - fix make docs for non editable installs (#4156)
+- Deploy docs workflow (#4154)
 
 ## Other Pull Requests
 
@@ -92,7 +95,7 @@ https://github.com/napari/napari
 - Add stateful StyleEncoding tests (#4113)
 
 
-## 16 authors added to this release (alphabetical)
+## 17 authors added to this release (alphabetical)
 
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
@@ -102,6 +105,7 @@ https://github.com/napari/napari
 - [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
+- [Jeremy Asuncion](https://github.com/napari/napari/commits?author=codemonkey800) - @codemonkey800
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
