@@ -44,12 +44,16 @@ from ...plugins.pypi import iter_napari_plugin_info
 from ...plugins.utils import normalized_name
 from ...settings import get_settings
 from ...utils._appdirs import user_plugin_dir, user_site_packages
-from ...utils.misc import parse_version, running_as_bundled_app
+from ...utils.misc import (
+    parse_version,
+    running_as_bundled_app,
+    running_as_constructor_app,
+)
 from ...utils.translations import trans
 from ..qt_resources import QColoredSVGIcon
 from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
-from ...utils.misc import running_as_bundled_app
+from ..widgets.qt_tooltip import QtToolTipLabel
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
 
@@ -397,6 +401,16 @@ class PluginListItem(QFrame):
         self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
 
+        icon = QColoredSVGIcon.from_resources("warning")
+        self.warning_tooltip = QtToolTipLabel(self)
+        # TODO: This color should come from the theme or should be
+        # centralized somewhere?
+        self.warning_tooltip.setPixmap(
+            icon.colored(color="#E3B617").pixmap(15, 15)
+        )
+        self.warning_tooltip.setVisible(False)
+        self.row1.addWidget(self.warning_tooltip)
+
         self.item_status = QLabel(self)
         self.item_status.setObjectName("small_italic_text")
         self.item_status.setSizePolicy(sizePolicy)
@@ -470,6 +484,11 @@ class PluginListItem(QFrame):
         for plugin_name, _, distname in plugin_manager.iter_available():
             if distname and distname == current_distname:
                 plugin_manager.set_blocked(plugin_name, not enabled)
+
+    def show_warning(self, message: str = ""):
+        """Show warning icon and tooltip."""
+        self.warning_tooltip.setVisible(bool(message))
+        self.warning_tooltip.setToolTip(message)
 
 
 class QPluginList(QListWidget):
@@ -608,10 +627,14 @@ class QPluginList(QListWidget):
         """ """
         for item in self.findItems(project_info.name, Qt.MatchStartsWith):
             widget = self.itemWidget(item)
+            widget.show_warning(
+                trans._("Package not available on conda-forge")
+            )
             widget.setObjectName("unavailable")
             widget.style().unpolish(widget)
             widget.style().polish(widget)
             widget.action_button.setEnabled(False)
+            widget.warning_tooltip.setVisible(True)
 
     def filter(self, text: str):
         """Filter items to those containing `text`."""
@@ -625,8 +648,12 @@ class QtPluginDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.already_installed = set()
-        installer = "mamba" if running_as_bundled_app() else "pip"
-        self.installer = Installer(installer=installer)
+
+        installer_type = "pip"
+        if running_as_constructor_app():
+            installer_type = "mamba"
+
+        self.installer = Installer(installer=installer_type)
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)
@@ -721,10 +748,11 @@ class QtPluginDialog(QDialog):
         settings = get_settings()
         use_hub = (
             running_as_bundled_app()
-            or settings.plugins.plugin_api == "napari_hub"
+            or running_as_constructor_app()
+            or settings.plugins.plugin_api.name == "napari_hub"
         )
         if use_hub:
-            conda_forge = running_as_bundled_app()
+            conda_forge = running_as_constructor_app()
             self.worker = create_worker(
                 iter_hub_plugin_info, conda_forge=conda_forge
             )

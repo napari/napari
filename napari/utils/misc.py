@@ -45,23 +45,32 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
 
 
 def running_as_bundled_app() -> bool:
-    """Infer whether we are running as a briefcase bundle"""
+    """Infer whether we are running as a briefcase bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
     if (Path(sys.executable).parent / ".napari_is_bundled").exists():
         return True
+
     try:
         app_module = sys.modules['__main__'].__package__
     except AttributeError:
         return False
+
     try:
         metadata = importlib.metadata.metadata(app_module)
     except importlib.metadata.PackageNotFoundError:
         return False
 
     return 'Briefcase-Version' in metadata
+
+
+def running_as_constructor_app() -> bool:
+    """Infer whether we are running as a constructor bundle."""
+    return (
+        Path(sys.executable).parent / ".napari_is_constructor_bundled"
+    ).exists()
 
 
 def bundle_bin_dir() -> Optional[str]:

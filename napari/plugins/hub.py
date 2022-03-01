@@ -42,12 +42,13 @@ def hub_plugin_info(
         with request.urlopen(NAPARI_HUB_PLUGINS + "/" + name) as resp:
             info = json.loads(resp.read().decode())
     except error.HTTPError:
-        return None
+        return None, False
 
     version = info["version"]
     norm_name = normalized_name(info["name"])
-    is_available_in_conda_forge = False
+    is_available_in_conda_forge = True
     if conda_forge:
+        is_available_in_conda_forge = False
         anaconda_api = ANACONDA_ORG.format(
             channel="conda-forge", package_name=norm_name
         )

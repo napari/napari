@@ -20,7 +20,7 @@ CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
 class PluginAPI(str, Enum):
-    napari_hub = 'napari Hub'
+    napari_hub = 'napari hub'
     pypi = 'PyPI'
 
 

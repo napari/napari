@@ -559,6 +559,10 @@ QPushButton#install_button:pressed {
   background-color: {{ darken(current, 10) }}
 }
 
+QPushButton#install_button:disabled {
+  background-color: {{ lighten(current, 20) }}
+}
+
 QPushButton#remove_button {
   background-color: {{ warning }}
 }
@@ -656,6 +660,7 @@ QPushButton#close_button:disabled {
   margin-left: 1px;
   padding: 2px;
 }
+
 
 QtPluginDialog QSplitter{
   padding-right: 2;
