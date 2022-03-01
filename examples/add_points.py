@@ -19,7 +19,7 @@ viewer.add_points(points, size=size)
 # unselect the image layer
 viewer.layers.selection.discard(viewer.layers[0])
 
-# adjust some of the points layer properties
+# adjust some of the points layer attributes
 layer = viewer.layers[1]
 
 # change the layer name

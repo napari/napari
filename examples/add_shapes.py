@@ -77,7 +77,7 @@ layer = viewer.add_shapes(
 # )
 
 
-# change some properties of the layer
+# change some attributes of the layer
 layer.selected_data = set(range(layer.nshapes))
 layer.current_edge_width = 5
 layer.selected_data = set()
