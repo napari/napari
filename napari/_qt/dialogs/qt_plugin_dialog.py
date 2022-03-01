@@ -3,7 +3,11 @@ import sys
 from pathlib import Path
 from typing import Callable, Dict, List, Sequence, Tuple
 
-from napari_plugin_engine.dist import standard_metadata
+try:
+    from importlib.metadata import metadata
+except ImportError:
+    from importlib_metadata import metadata
+
 from npe2.manifest.package_metadata import PackageMetadata
 from qtpy.QtCore import (
     QEvent,
@@ -694,7 +698,7 @@ class QtPluginDialog(QDialog):
 
         def _add_to_installed(distname, enabled, npe_version=1):
             if distname:
-                meta = standard_metadata(distname)
+                meta = metadata(distname)
                 if len(meta) == 0:
                     # will not add builtins.
                     return
