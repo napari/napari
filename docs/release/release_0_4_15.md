@@ -16,6 +16,20 @@ https://github.com/napari/napari
 
 ## Highlights
 
+This release is focused on documentation improvements and bug fixes, with few
+change's to napari's API. The napari documentation is now entirely contained,
+built, and deployed within the napari repository (#4047, #4147, #4154). This
+and ongoing work will make it easier for the community to contribute
+documentation to the project and help others use napari.
+
+We have added completely optional, opt-in error reporting via the package
+[napari-error-reporter](https://github.com/tlambert03/napari-error-reporter/).
+If users install this third-party package, they will be presented with a
+dialog asking whether to opt-in to report errors to select napari core
+developers, which will help us prioritise and fix bugs that we might otherwise
+miss. See the project's
+[README](https://github.com/tlambert03/napari-error-reporter/#readme) for
+details.
 
 ## New Features
 
