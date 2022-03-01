@@ -62,6 +62,7 @@ https://github.com/napari/napari
 - support conda-style (pyside2-)rcc locations (#4144)
 - Fix style encoding tests on main (#4150)
 - Fix bug in continuous autocontrast button, add tests (#4152)
+- Tracks graph shader buffer order update (#4165)
 
 ## API Changes
 
@@ -87,7 +88,7 @@ https://github.com/napari/napari
 - Add stateful StyleEncoding tests (#4113)
 
 
-## 15 authors added to this release (alphabetical)
+## 16 authors added to this release (alphabetical)
 
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
@@ -97,6 +98,7 @@ https://github.com/napari/napari
 - [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
+- [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
