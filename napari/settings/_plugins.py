@@ -5,7 +5,7 @@ from pydantic import Field
 from typing_extensions import TypedDict
 
 from ..utils.events.evented_model import EventedModel
-from ..utils.misc import running_as_bundled_app
+from ..utils.misc import running_as_bundled_app, running_as_constructor_app
 from ..utils.translations import trans
 
 
@@ -72,5 +72,5 @@ class PluginsSettings(EventedModel):
             'extension2writer',
         ]
 
-        if running_as_bundled_app():
+        if running_as_bundled_app() or running_as_constructor_app():
             preferences_exclude.append('plugin_api')
