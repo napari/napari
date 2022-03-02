@@ -1404,7 +1404,7 @@ class Points(Layer):
             not_disp_thickness = np.maximum(
                 np.array(thickness)[not_disp], 1e-5
             )
-            distances = abs(self.data[:, not_disp] - indices[not_disp])
+            distances = np.abs(self.data[:, not_disp] - indices[not_disp])
             matches = np.all(distances <= not_disp_thickness / 2, axis=1)
             slice_indices = np.where(matches)[0].astype(int)
             return slice_indices
