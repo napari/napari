@@ -75,7 +75,11 @@ class progress(tqdm):
         **kwargs,
     ) -> None:
         self.events = EmitterGroup(
-            value=Event, description=Event, overflow=Event, eta=Event
+            value=Event,
+            description=Event,
+            overflow=Event,
+            eta=Event,
+            total=Event,
         )
         self.nest_under = nest_under
         self.is_init = True
@@ -89,6 +93,15 @@ class progress(tqdm):
     def __repr__(self) -> str:
         return self.desc
 
+    @property
+    def total(self):
+        return self._total
+
+    @total.setter
+    def total(self, total):
+        self._total = total
+        self.events.total(value=self.total)
+
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display and emit eta event."""
         # just plain tqdm if we don't have gui
@@ -96,10 +109,7 @@ class progress(tqdm):
             super().display(msg, pos)
             return
         # TODO: This could break if user is formatting their own terminal tqdm
-        etas = ""
-        if self.total != 0:
-            etas = str(self).split('|')[-1]
-
+        etas = str(self).split('|')[-1] if self.total != 0 else ""
         self.events.eta(value=etas)
 
     def update(self, n):

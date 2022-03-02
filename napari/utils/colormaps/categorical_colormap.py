@@ -26,12 +26,11 @@ class CategoricalColormap(EventedModel):
     """
 
     colormap: Dict[Any, Array[np.float32, (4,)]] = {}
-    fallback_color: ColorCycle = 'white'
+    fallback_color: ColorCycle = ColorCycle.validate_type('white')
 
     @validator('colormap', pre=True)
     def _standardize_colormap(cls, v):
-        transformed_colormap = {k: transform_color(v)[0] for k, v in v.items()}
-        return transformed_colormap
+        return {k: transform_color(v)[0] for k, v in v.items()}
 
     def map(self, color_properties: Union[list, np.ndarray]) -> np.ndarray:
         """Map an array of values to an array of colors

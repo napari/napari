@@ -52,8 +52,7 @@ def test_notification_manager_no_gui(monkeypatch):
         notification_manager.records.clear()
         # save all of the events that get emitted
         store: List[Notification] = []
-        _append = lambda e: store.append(e)  # lambda needed on py3.7  # noqa
-        notification_manager.notification_ready.connect(_append)
+        notification_manager.notification_ready.connect(store.append)
 
         show_info('this is one way of showing an information message')
         assert (
@@ -115,8 +114,7 @@ def test_notification_manager_no_gui_with_threading():
         notification_manager.records.clear()
         # save all of the events that get emitted
         store: List[Notification] = []
-        _append = lambda e: store.append(e)  # lambda needed on py3.7  # noqa
-        notification_manager.notification_ready.connect(_append)
+        notification_manager.notification_ready.connect(store.append)
 
         # Test exception inside threads
         if PY38_OR_HIGHER:
