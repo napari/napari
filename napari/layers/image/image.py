@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import types
 import warnings
-from functools import partial
 from typing import TYPE_CHECKING, Sequence, Union
 
 import numpy as np
@@ -29,7 +28,12 @@ from ._image_constants import (
     Mode,
     VolumeDepiction,
 )
-from ._image_mouse_bindings import move_plane_along_normal, set_plane_position
+from ._image_mouse_bindings import (
+    move_plane_along_normal as plane_drag_callback,
+)
+from ._image_mouse_bindings import (
+    set_plane_position as plane_double_click_callback,
+)
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
@@ -547,34 +551,27 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.plane.position = np.array(self.data.shape) / 2
         self.plane.normal = (1, 0, 0)
 
-    # The following callbacks are added as partials otherwise they are
-    # considered as methods on the class, this is similar to this problem:
-    # https://stackoverflow.com/questions/40338652/how-to-define-enum-values-that-are-functions
-    _plane_drag_callback = partial(move_plane_along_normal)
-    _plane_double_click_callback = partial(set_plane_position)
-
     def _update_plane_callbacks(self):
-        """Connect or disconnect plane callbacks as appropriate."""
+        """Set plane callbacks depending on depiction mode."""
         plane_drag_callback_connected = (
-            self._plane_drag_callback in self.mouse_drag_callbacks
+            plane_drag_callback in self.mouse_drag_callbacks
         )
         double_click_callback_connected = (
-            self._plane_double_click_callback
-            in self.mouse_double_click_callbacks
+            plane_double_click_callback in self.mouse_double_click_callbacks
         )
         if self.depiction == VolumeDepiction.VOLUME:
             if plane_drag_callback_connected:
-                self.mouse_drag_callbacks.remove(self._plane_drag_callback)
+                self.mouse_drag_callbacks.remove(plane_drag_callback)
             if double_click_callback_connected:
                 self.mouse_double_click_callbacks.remove(
-                    self._plane_double_click_callback
+                    plane_double_click_callback
                 )
         elif self.depiction == VolumeDepiction.PLANE:
             if not plane_drag_callback_connected:
-                self.mouse_drag_callbacks.append(self._plane_drag_callback)
+                self.mouse_drag_callbacks.append(plane_drag_callback)
             if not double_click_callback_connected:
                 self.mouse_double_click_callbacks.append(
-                    self._plane_double_click_callback
+                    plane_double_click_callback
                 )
 
     @property
