@@ -1,5 +1,6 @@
 """guess_rgb, guess_multiscale, guess_labels.
 """
+from math import ceil
 from typing import Tuple
 
 import numpy as np
@@ -104,3 +105,21 @@ def guess_labels(data):
         return 'labels'
 
     return 'image'
+
+
+def generate_thick_slices(
+    slice_indices, slice_thicknesses, data_shape, dims_not_displayed
+):
+    """
+    Generate thick slices based on slice indices and their relative thicknesses.
+    Ignore not-displayed dims.
+    """
+    for i in range(len(data_shape)):
+        if i in dims_not_displayed:
+            half_thick = max(ceil(slice_thicknesses[i]), 1) / 2
+            idx = slice_indices[i]
+            sl_start = max(0, round(idx - half_thick))
+            sl_end = min(round(idx + half_thick), data_shape[i])
+            yield slice(sl_start, sl_end)
+        else:
+            yield slice_indices[i]

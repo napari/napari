@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import types
 import warnings
-from math import ceil
 from typing import TYPE_CHECKING, Sequence, Union
 
 import numpy as np
@@ -31,7 +30,7 @@ from ._image_constants import (
 )
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
-from ._image_utils import guess_multiscale, guess_rgb
+from ._image_utils import generate_thick_slices, guess_multiscale, guess_rgb
 
 if TYPE_CHECKING:
     from ...components.experimental.chunk import ChunkRequest
@@ -707,22 +706,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if self.slice_projection == ImageSliceProjection.NONE:
             return self.data[self._slice_indices]
 
-        half_thickness = (
-            np.maximum(np.ceil(self._thickness).astype(int), 1) / 2
-        )
-        image_slices = tuple(
-            slice(
-                ceil(max(0, self._slice_indices[i] - half_thickness[i])),
-                ceil(
-                    min(
-                        self._slice_indices[i] + half_thickness[i],
-                        self.data.shape[i],
-                    )
-                ),
-            )
-            if i in self._dims_not_displayed
-            else self._slice_indices[i]
-            for i in range(self.ndim)
+        image_slices = generate_thick_slices(
+            self._slice_indices,
+            self._thickness,
+            self.data.shape,
+            self._dims_not_displayed,
         )
 
         proj_funcs = {
