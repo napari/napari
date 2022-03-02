@@ -341,11 +341,6 @@ class Points(Layer):
 
         self._colors = get_color_namelist()
 
-        # intialize point addition.
-        # this will be updated based on layer properties
-        # in self._set_editable and self._update_dims()
-        self._allow_point_add = False
-
         # Save the point coordinates
         self._data = np.asarray(data)
 
@@ -1277,17 +1272,10 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-        previous_allow_point_add = self._allow_point_add
         if self.ndim < 3 and self._ndisplay == 3:
-            self._allow_point_add = False
+            # interaction currently does not work for 2D
+            # layers being rendered in 3D.
             self.editable = False
-        elif self._ndisplay == 3:
-            self._allow_point_add = False
-        else:
-            self._allow_point_add = True
-
-        if previous_allow_point_add != self._allow_point_add:
-            self.events.editable()
 
     def _slice_data(
         self, dims_indices
