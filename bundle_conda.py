@@ -38,6 +38,7 @@ import platform
 import re
 import subprocess
 import sys
+from tempfile import NamedTemporaryFile
 import zipfile
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
@@ -169,6 +170,7 @@ def _constructor(version=_version(), extra_specs=None):
         + (["andfoy"] if ARM64 else [])  # TODO: temporary
         + ["napari/label/bundle_tools", "conda-forge"]
     )
+    empty_file = NamedTemporaryFile(delete=False)
     definitions = {
         "name": APP,
         "company": "Napari",
@@ -184,7 +186,10 @@ def _constructor(version=_version(), extra_specs=None):
         "menu_packages": [
             "napari-menu",
         ],
-        "extra_files": {"resources/bundle_readme.md": "README.txt"},
+        "extra_files": {
+            "resources/bundle_readme.md": "README.txt",
+            empty_file.name: ".napari_is_bundled_constructor",
+        },
     }
     if _use_local():
         definitions["channels"].insert(0, "local")
@@ -263,6 +268,7 @@ def _constructor(version=_version(), extra_specs=None):
         )
 
     clean_these_files.append("construct.yaml")
+    clean_these_files.append(empty_file.name)
 
     # TODO: temporarily patching password - remove block when the secret has been fixed
     # (I think it contains an ending newline or something like that, copypaste artifact?)
