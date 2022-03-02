@@ -116,7 +116,7 @@ class TextManager(EventedModel):
 
     @property
     def values(self):
-        return self.string._values()
+        return self.string._values
 
     def __setattr__(self, key, value):
         if key == 'values':

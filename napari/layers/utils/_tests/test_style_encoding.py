@@ -15,7 +15,7 @@ import pandas as pd
 import pytest
 from pydantic import Field
 
-from napari.layers.utils._style_encoding import (
+from napari.layers.utils.style_encoding import (
     _ConstantStyleEncoding,
     _DerivedStyleEncoding,
     _ManualStyleEncoding,
