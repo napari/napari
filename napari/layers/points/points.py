@@ -1406,7 +1406,7 @@ class Points(Layer):
             )
             distances = np.abs(self.data[:, not_disp] - indices[not_disp])
             matches = np.all(distances <= not_disp_thickness / 2, axis=1)
-            slice_indices = np.where(matches)[0].astype(int)
+            slice_indices = np.where(matches)[0]
             return slice_indices
         else:
             return []
