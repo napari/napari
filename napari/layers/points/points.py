@@ -1281,6 +1281,8 @@ class Points(Layer):
         if self.ndim < 3 and self._ndisplay == 3:
             self._allow_point_add = False
             self.editable = False
+        elif self._ndisplay == 3:
+            self._allow_point_add = False
         else:
             self._allow_point_add = True
 
