@@ -321,6 +321,11 @@ class QtPointsControls(QtLayerControls):
             ['select_button', 'addition_button', 'delete_button'],
             self.layer.editable,
         )
+        disable_with_opacity(
+            self,
+            ['addition_button'],
+            self.layer._allow_point_add,
+        )
 
     def close(self):
         """Disconnect events when widget is closing."""
