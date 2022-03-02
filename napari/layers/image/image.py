@@ -81,7 +81,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Rendering mode used by vispy. Must be one of our supported
         modes.
     depiction : str
-        3D Depiction mode used by vispy. Must be one of our supported modes.
+        3D Depiction mode. Must be one of {'volume', 'plane'}.
+        The default value is 'volume'.
     iso_threshold : float
         Threshold for isosurface.
     attenuation : float

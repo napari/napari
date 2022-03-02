@@ -114,7 +114,8 @@ class Labels(_ImageBase):
         rendering to calculate lighting effects on labeled surfaces.
         The default value is 'iso_categorical'.
     depiction : str
-        3D Depiction mode. Must be one of our supported modes.
+        3D Depiction mode. Must be one of {'volume', 'plane'}.
+        The default value is 'volume'.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
