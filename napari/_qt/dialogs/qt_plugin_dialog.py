@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Callable, Dict, List, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 try:
     from importlib.metadata import metadata
@@ -77,6 +77,7 @@ class Installer(QObject):
         self._processes: Dict[Tuple[str, ...], QProcess] = {}
         self._exit_code = 0
         self._conda_env_path = None
+        self._installer_type = installer
 
         if installer != "pip" and (Path(sys.prefix) / "conda-meta").is_dir():
             self._conda_env_path = sys.prefix
@@ -169,9 +170,10 @@ class Installer(QObject):
     def install(
         self,
         pkg_list: Sequence[str],
-        installer: InstallerTypes = "pip",
+        installer: Optional[InstallerTypes] = None,
         channels: Sequence[str] = ("conda-forge",),
     ):
+        installer = installer or self._installer_type
         self._queue.insert(
             0,
             [
@@ -184,9 +186,10 @@ class Installer(QObject):
     def _install(
         self,
         pkg_list: Sequence[str],
-        installer: InstallerTypes = "pip",
+        installer: Optional[InstallerTypes] = None,
         channels: Sequence[str] = ("conda-forge",),
     ):
+        installer = installer or self._installer_type
         if installer != "pip":
             cmd = [
                 'install',
@@ -221,9 +224,10 @@ class Installer(QObject):
     def uninstall(
         self,
         pkg_list: Sequence[str],
-        installer: InstallerTypes = "pip",
+        installer: Optional[InstallerTypes] = None,
         channels: Sequence[str] = ("conda-forge",),
     ):
+        installer = installer or self._installer_type
         self._queue.insert(
             0,
             [
@@ -236,9 +240,10 @@ class Installer(QObject):
     def _uninstall(
         self,
         pkg_list: Sequence[str],
-        installer: InstallerTypes = "pip",
+        installer: Optional[InstallerTypes] = None,
         channels: Sequence[str] = ("conda-forge",),
     ):
+        installer = installer or self._installer_type
         if installer != "pip":
             args = [
                 'remove',
@@ -826,12 +831,15 @@ class QtPluginDialog(QDialog):
         self.working_indicator.setMovie(mov)
         mov.start()
 
+        visibility_direct_entry = not running_as_constructor_app()
         self.direct_entry_edit = QLineEdit(self)
         self.direct_entry_edit.installEventFilter(self)
         self.direct_entry_edit.setPlaceholderText(
             trans._('install by name/url, or drop file...')
         )
+        self.direct_entry_edit.setVisible(visibility_direct_entry)
         self.direct_entry_btn = QPushButton(trans._("Install"), self)
+        self.direct_entry_btn.setVisible(visibility_direct_entry)
         self.direct_entry_btn.clicked.connect(self._install_packages)
 
         self.show_status_btn = QPushButton(trans._("Show Status"), self)
@@ -849,6 +857,8 @@ class QtPluginDialog(QDialog):
         buttonBox.addWidget(self.working_indicator)
         buttonBox.addWidget(self.direct_entry_edit)
         buttonBox.addWidget(self.direct_entry_btn)
+        if not visibility_direct_entry:
+            buttonBox.addStretch()
         buttonBox.addWidget(self.process_error_indicator)
         buttonBox.addSpacing(20)
         buttonBox.addWidget(self.cancel_all_btn)
