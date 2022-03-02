@@ -43,3 +43,13 @@ BLENDING_TRANSLATIONS = OrderedDict(
         (Blending.OPAQUE, trans._("opaque")),
     ]
 )
+
+
+class Projection(StringEnum):
+    """
+    Projection mode used to collapse thick dimensional slices into a single
+    point slice.
+        * SLICE: ignore slice thickness, only using the dims point
+    """
+
+    SLICE = auto()

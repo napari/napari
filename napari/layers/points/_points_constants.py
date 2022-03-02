@@ -115,3 +115,15 @@ SHADING_TRANSLATION = {
     trans._("none"): Shading.NONE,
     trans._("spherical"): Shading.SPHERICAL,
 }
+
+
+class PointsProjection(StringEnum):
+    """
+    Projection mode used to collapse thick dimensional slices into a single
+    point slice.
+        * SLICE: ignore slice thickness, only using the dims point
+        * ADDITIVE: include all points across the thick slice
+    """
+
+    SLICE = auto()
+    ADDITIVE = auto()

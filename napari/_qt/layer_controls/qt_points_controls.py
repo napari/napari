@@ -184,7 +184,9 @@ class QtPointsControls(QtLayerControls):
         self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
         self.grid_layout.addWidget(QLabel(trans._('display text:')), 7, 0)
         self.grid_layout.addWidget(self.textDispCheckBox, 7, 1)
-        self.grid_layout.setRowStretch(8, 1)
+        self.grid_layout.addWidget(QLabel(trans._('projection:')), 8, 0)
+        self.grid_layout.addWidget(self.projectionComboBox, 8, 1)
+        self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 

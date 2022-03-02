@@ -15,7 +15,6 @@ from superqt import QLargeIntSpinBox
 from ...layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
     LabelsRendering,
-    LabelsSliceProjection,
     Mode,
 )
 from ...layers.labels._labels_utils import get_dtype
@@ -262,15 +261,6 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
-        cmb = QComboBox(self)
-        proj_options = [i.value for i in LabelsSliceProjection]
-        cmb.addItems(proj_options)
-        index = cmb.findText(self.layer.slice_projection, Qt.MatchFixedString)
-        cmb.setCurrentIndex(index)
-        cmb.activated[str].connect(self.changeSliceProjection)
-        self.sliceProjectionComboBox = cmb
-        self.sliceProjectionLabel = QLabel(trans._('slice projection:'))
-
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addLayout(button_row, 0, 0, 1, 4)
@@ -300,9 +290,7 @@ class QtLabelsControls(QtLayerControls):
             QLabel(trans._('show\nselected:')), 11, 2, 1, 1
         )
         self.grid_layout.addWidget(self.selectedColorCheckbox, 11, 3, 1, 1)
-        self.grid_layout.addWidget(self.sliceProjectionLabel, 12, 0, 1, 1)
-        self.grid_layout.addWidget(self.sliceProjectionComboBox, 12, 1, 1, 3)
-        self.grid_layout.setRowStretch(13, 1)
+        self.grid_layout.setRowStretch(12, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -436,17 +424,6 @@ class QtLabelsControls(QtLayerControls):
     def change_color_mode(self):
         """Change color mode of label layer"""
         self.layer.color_mode = self.colorModeComboBox.currentData()
-
-    def changeSliceProjection(self, value):
-        with self.layer.events.blocker(self._on_slice_projection_change):
-            self.layer.slice_projection = value
-
-    def _on_slice_projection_change(self):
-        with self.layer.events.slice_projection.blocker():
-            index = self.sliceProjectionComboBox.findText(
-                self.layer.slice_projection, Qt.MatchFixedString
-            )
-            self.sliceProjectionComboBox.setCurrentIndex(index)
 
     def _on_contour_change(self):
         """Receive layer model contour value change event and update spinbox."""

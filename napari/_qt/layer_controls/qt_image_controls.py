@@ -3,7 +3,6 @@ from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
 
 from ...layers.image._image_constants import (
     ImageRendering,
-    ImageSliceProjection,
     Interpolation,
     Interpolation3D,
 )
@@ -98,15 +97,6 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
-        cmb = QComboBox(self)
-        proj_options = [i.value for i in ImageSliceProjection]
-        cmb.addItems(proj_options)
-        index = cmb.findText(self.layer.slice_projection, Qt.MatchFixedString)
-        cmb.setCurrentIndex(index)
-        cmb.activated[str].connect(self.changeSliceProjection)
-        self.sliceProjectionComboBox = cmb
-        self.sliceProjectionLabel = QLabel(trans._('slice projection:'))
-
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
@@ -121,16 +111,16 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addLayout(colormap_layout, 4, 1)
         self.grid_layout.addWidget(QLabel(trans._('blending:')), 5, 0)
         self.grid_layout.addWidget(self.blendComboBox, 5, 1)
-        self.grid_layout.addWidget(self.interpLabel, 6, 0)
-        self.grid_layout.addWidget(self.interpComboBox, 6, 1)
-        self.grid_layout.addWidget(self.renderLabel, 7, 0)
-        self.grid_layout.addWidget(self.renderComboBox, 7, 1)
-        self.grid_layout.addWidget(self.isoThresholdLabel, 8, 0)
-        self.grid_layout.addWidget(self.isoThresholdSlider, 8, 1)
-        self.grid_layout.addWidget(self.attenuationLabel, 9, 0)
-        self.grid_layout.addWidget(self.attenuationSlider, 9, 1)
-        self.grid_layout.addWidget(self.sliceProjectionLabel, 10, 0)
-        self.grid_layout.addWidget(self.sliceProjectionComboBox, 10, 1)
+        self.grid_layout.addWidget(QLabel(trans._('projection:')), 6, 0)
+        self.grid_layout.addWidget(self.projectionComboBox, 6, 1)
+        self.grid_layout.addWidget(self.interpLabel, 7, 0)
+        self.grid_layout.addWidget(self.interpComboBox, 7, 1)
+        self.grid_layout.addWidget(self.renderLabel, 8, 0)
+        self.grid_layout.addWidget(self.renderComboBox, 8, 1)
+        self.grid_layout.addWidget(self.isoThresholdLabel, 9, 0)
+        self.grid_layout.addWidget(self.isoThresholdSlider, 9, 1)
+        self.grid_layout.addWidget(self.attenuationLabel, 10, 0)
+        self.grid_layout.addWidget(self.attenuationSlider, 10, 1)
         self.grid_layout.setRowStretch(11, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -208,17 +198,6 @@ class QtImageControls(QtBaseImageControls):
         """Receive layer model attenuation change event and update the slider."""
         with self.layer.events.attenuation.blocker():
             self.attenuationSlider.setValue(int(self.layer.attenuation * 200))
-
-    def changeSliceProjection(self, value):
-        with self.layer.events.blocker(self._on_slice_projection_change):
-            self.layer.slice_projection = value
-
-    def _on_slice_projection_change(self):
-        with self.layer.events.slice_projection.blocker():
-            index = self.sliceProjectionComboBox.findText(
-                self.layer.slice_projection, Qt.MatchFixedString
-            )
-            self.sliceProjectionComboBox.setCurrentIndex(index)
 
     def _on_interpolation_change(self, event):
         """Receive layer interpolation change event and update dropdown menu.

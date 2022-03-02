@@ -26,7 +26,13 @@ from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
 from ..utils.layer_utils import _features_to_properties, _FeatureTable
 from ..utils.text_manager import TextManager
-from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
+from ._points_constants import (
+    SYMBOL_ALIAS,
+    Mode,
+    PointsProjection,
+    Shading,
+    Symbol,
+)
 from ._points_mouse_bindings import add, highlight, select
 from ._points_utils import (
     _create_box_from_corners_3d,
@@ -306,6 +312,7 @@ class Points(Layer):
         shading='none',
         experimental_canvas_size_limits=(0, 10000),
         shown=True,
+        projection='slice',
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -327,6 +334,7 @@ class Points(Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection=projection,
         )
 
         self.events.add(
@@ -1379,6 +1387,10 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
+    @property
+    def _projection_modes(self):
+        return PointsProjection
+
     def _slice_data(
         self, dims_indices, thickness
     ) -> Tuple[List[int], Union[float, np.ndarray]]:
@@ -1398,12 +1410,15 @@ class Points(Layer):
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
-            # TODO: is this np.maximum ok? zero thickness slice is probably unwanted
-            # (might as well set the layer invisible) and it also can cause issues with empty arrays
-            # so here we use a reasonable default (same as used to in napari before #3997)
-            not_disp_thickness = np.maximum(
-                np.array(thickness)[not_disp], 1e-5
-            )
+            if self.projection == PointsProjection.SLICE:
+                not_disp_thickness = 1
+            else:
+                # TODO: is this np.maximum ok? zero thickness slice is probably unwanted
+                # (might as well set the layer invisible) and it also can cause issues with empty arrays
+                # so here we use a reasonable default (same as used to in napari before #3997)
+                not_disp_thickness = np.maximum(
+                    np.array(thickness)[not_disp], 1e-5
+                )
             distances = np.abs(self.data[:, not_disp] - indices[not_disp])
             matches = np.all(distances <= not_disp_thickness / 2, axis=1)
             slice_indices = np.where(matches)[0]

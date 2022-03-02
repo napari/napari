@@ -64,6 +64,14 @@ class QtLayerControls(QFrame):
         blend_comboBox.activated[str].connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
 
+        cmb = QComboBox(self)
+        proj_options = [i.value for i in self.layer._projection_modes]
+        cmb.addItems(proj_options)
+        index = cmb.findText(self.layer.projection, Qt.MatchFixedString)
+        cmb.setCurrentIndex(index)
+        cmb.activated[str].connect(self.changeProjection)
+        self.projectionComboBox = cmb
+
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
 
@@ -97,6 +105,17 @@ class QtLayerControls(QFrame):
             self.blendComboBox.setCurrentIndex(
                 self.blendComboBox.findData(self.layer.blending)
             )
+
+    def changeProjection(self, value):
+        with self.layer.events.blocker(self._on_projection_change):
+            self.layer.projection = value
+
+    def _on_projection_change(self):
+        with self.layer.events.projection.blocker():
+            index = self.sliceProjectionComboBox.findText(
+                self.layer.projection, Qt.MatchFixedString
+            )
+            self.sliceProjectionComboBox.setCurrentIndex(index)
 
     def deleteLater(self):
         disconnect_events(self.layer.events, self)

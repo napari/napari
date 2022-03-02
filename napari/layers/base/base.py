@@ -35,7 +35,7 @@ from ..utils.layer_utils import (
     get_extent_world,
 )
 from ..utils.plane import ClippingPlane, ClippingPlaneList
-from ._base_constants import Blending
+from ._base_constants import Blending, Projection
 
 Extent = namedtuple('Extent', 'data world step')
 
@@ -217,6 +217,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         multiscale=False,
         cache=True,  # this should move to future "data source" object.
         experimental_clipping_planes=None,
+        projection='slice',
     ):
         super().__init__()
 
@@ -291,6 +292,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._update_properties = True
         self._name = ''
         self.experimental_clipping_planes = experimental_clipping_planes
+        self._projection = self._projection_modes(projection)
 
         self.events = EmitterGroup(
             source=self,
@@ -329,7 +331,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 ),
                 type='deselect',
             ),
+            projection=Event,
         )
+
         self.name = name
 
     def __str__(self):
@@ -474,6 +478,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def blending(self, blending):
         self._blending = Blending(blending)
         self.events.blending()
+
+    @property
+    def _projection_modes(self):
+        return Projection
+
+    @property
+    def projection(self):
+        return str(self._projection)
+
+    @projection.setter
+    def projection(self, projection):
+        self._projection = self._projection_modes(projection)
+        self.events.projection()
+        self.refresh()
 
     @property
     def visible(self):

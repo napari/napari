@@ -14,6 +14,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import _FeatureTable
+from ._vector_constants import VectorsProjection
 from ._vector_utils import fix_data_vectors
 
 
@@ -179,6 +180,7 @@ class Vectors(Layer):
         cache=True,
         experimental_clipping_planes=None,
         fixed_canvas_width=False,
+        projection='slice',
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -200,6 +202,7 @@ class Vectors(Layer):
             visible=visible,
             cache=cache,
             experimental_clipping_planes=experimental_clipping_planes,
+            projection=projection,
         )
 
         # events for non-napari calculations
@@ -576,6 +579,10 @@ class Vectors(Layer):
     ):
         self._edge.contrast_limits = contrast_limits
 
+    @property
+    def _projection_modes(self):
+        return VectorsProjection
+
     def _slice_data(
         self, dims_indices, thickness
     ) -> Tuple[List[int], Union[float, np.ndarray]]:
@@ -594,12 +601,15 @@ class Vectors(Layer):
         not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
-            # TODO: is this np.maximum ok? zero thickness slice is probably unwanted
-            # (might as well set the layer invisible) and it also can cause issues with empty arrays
-            # so here we use a reasonable default (same as used to in napari before #3997)
-            not_disp_thickness = np.maximum(
-                np.array(thickness)[not_disp], 1e-5
-            )
+            if self.projection == VectorsProjection.SLICE:
+                not_disp_thickness = 1
+            else:
+                # TODO: is this np.maximum ok? zero thickness slice is probably unwanted
+                # (might as well set the layer invisible) and it also can cause issues with empty arrays
+                # so here we use a reasonable default (same as used to in napari before #3997)
+                not_disp_thickness = np.maximum(
+                    np.array(thickness)[not_disp], 1e-5
+                )
             distances = abs(self.data[:, 0, not_disp] - indices[not_disp])
             matches = np.all(distances <= not_disp_thickness / 2, axis=1)
             slice_indices = np.where(matches)[0].astype(int)

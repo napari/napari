@@ -77,7 +77,3 @@ class LabelsRendering(StringEnum):
 
     TRANSLUCENT = auto()
     ISO_CATEGORICAL = auto()
-
-
-class LabelsSliceProjection(StringEnum):
-    NONE = auto()

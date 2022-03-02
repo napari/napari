@@ -90,7 +90,15 @@ class ImageRendering(StringEnum):
     AVERAGE = auto()
 
 
-class ImageSliceProjection(StringEnum):
-    NONE = auto()
-    AVERAGE = auto()
+class ImageProjection(StringEnum):
+    """
+    Projection mode used to collapse thick dimensional slices into a single
+    point slice.
+        * SLICE: ignore slice thickness, only using the dims point
+        * ADDITIVE: sum data across the thick slice
+        * AVERAGE: average data across the thick slice
+    """
+
+    SLICE = auto()
     ADDITIVE = auto()
+    AVERAGE = auto()

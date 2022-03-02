@@ -8,6 +8,7 @@ import numpy as np
 from ...utils.translations import trans
 from .._data_protocols import LayerDataProtocol
 from .._multiscale_data import MultiScaleData
+from ._image_constants import ImageProjection
 
 
 def guess_rgb(shape):
@@ -118,8 +119,19 @@ def generate_thick_slices(
         if i in dims_not_displayed:
             half_thick = max(ceil(slice_thicknesses[i]), 1) / 2
             idx = slice_indices[i]
-            sl_start = max(0, round(idx - half_thick))
-            sl_end = min(round(idx + half_thick), data_shape[i])
+            # round up always with ceil, this way the extremes become:
+            # - slice(i, i+1) for min thickness
+            # - slice(0, shape+1) for max thickness
+            sl_start = max(0, ceil(idx - half_thick))
+            sl_end = min(ceil(idx + half_thick), data_shape[i])
             yield slice(sl_start, sl_end)
         else:
             yield slice_indices[i]
+
+
+def project_slice(data, slices, axis, mode):
+    if mode == ImageProjection.ADDITIVE:
+        func = np.sum
+    elif mode == ImageProjection.AVERAGE:
+        func = np.mean
+    return func(data[slices], tuple(axis))
