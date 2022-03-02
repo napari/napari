@@ -113,6 +113,9 @@ class Labels(_ImageBase):
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
         rendering to calculate lighting effects on labeled surfaces.
         The default value is 'iso_categorical'.
+    depiction : str
+        3D Depiction mode. Must be one of {'volume', 'plane'}.
+        The default value is 'volume'.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -126,7 +129,7 @@ class Labels(_ImageBase):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    experimental_slicing_plane : dict or SlicingPlane
+    plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
@@ -201,7 +204,7 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
-    experimental_slicing_plane : SlicingPlane
+    plane : SlicingPlane
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
@@ -234,10 +237,11 @@ class Labels(_ImageBase):
         opacity=0.7,
         blending='translucent',
         rendering='iso_categorical',
+        depiction='volume',
         visible=True,
         multiscale=None,
         cache=True,
-        experimental_slicing_plane=None,
+        plane=None,
         experimental_clipping_planes=None,
     ):
         if name is None and data is not None:
@@ -262,6 +266,7 @@ class Labels(_ImageBase):
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
             rendering=rendering,
+            depiction=depiction,
             iso_threshold=0,
             name=name,
             metadata=metadata,
@@ -275,7 +280,7 @@ class Labels(_ImageBase):
             visible=visible,
             multiscale=multiscale,
             cache=cache,
-            experimental_slicing_plane=experimental_slicing_plane,
+            plane=plane,
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
@@ -584,7 +589,8 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self.properties,
                 'rendering': self.rendering,
-                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'depiction': self.depiction,
+                'plane': self.plane.dict(),
                 'experimental_clipping_planes': [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
