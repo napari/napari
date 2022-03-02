@@ -141,6 +141,6 @@ The [Google writing style guide](https://developers.google.com/style/) should an
 words to capitalize in your headings (spoiler - we use sentence case for our headings) and other style conventions.
 
 ## Next steps
-- Use this section to link to other relevant tutorials, further reading on any complex topics you mentioned,
+- Use this section to link to other (maybe more advanced?) tutorials, further reading on any complex topics you mentioned,
 or other relevant documentation
-- Now that you've written your document, you can proceed with [pairing your notebook](./index.md#3-pair-your-notebook-with-myst-markdown)
+- Now that you've written your document, you can proceed with [updating the TOC](./index.md#3-update-toc)
