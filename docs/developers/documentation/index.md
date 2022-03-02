@@ -50,7 +50,7 @@ Fork and clone [our repository](https://github.com/napari/napari), and make a co
 You can now edit the template directly in your prefered text editor, or you can open it in Jupyter notebook
 if you have Jupytext installed.
 
-```{tip}
+````{tip}
 You can install jupytext alone with 
 
 ```bash
@@ -62,8 +62,7 @@ or you can install our docs dependenices, which inlcude jupytext with
 ```bash
 pip install "napari[docs]"
 ```
-
-```
+````
 
 ## 2. Write your document
 
