@@ -124,12 +124,12 @@ import in a removed cell when you write your documentation.
 
 Here are some examples of settings you might want to use in a `remove-input` cell to make your screenshot look pretty:
 - window resizing (as above)
-- [toggling visible layers](https://napari.org/api/stable/napari.layers.Layer.html#napari.layers.Layer.visible)
-- [setting the slider position to a particular slice](https://napari.org/api/stable/napari.components.Dims.html#napari.components.Dims.current_step)
-- [adjusting contrast limits](https://napari.org/api/stable/napari.layers.Image.html#napari.layers.Image.contrast_limits)
-- [switching between 2D and 3D](https://napari.org/api/stable/napari.components.Dims.html#napari.components.Dims.ndisplay)
+- [toggling visible layers](napari.layers.Layer.visible)
+- [setting the slider position to a particular slice](napari.components.Dims.current_step)
+- [adjusting contrast limits](napari.layers.Image.contrast_limits)
+- [switching between 2D and 3D](napari.components.Dims.ndisplay)
 - switching to grid mode - use `viewer.grid.enabled = True` to enable grid mode
-- [setting the camera zoom](https://napari.org/api/stable/napari.components.Camera.html#napari.components.Camera.zoom)
+- setting the [camera zoom](napari.components.Camera.zoom) or [angles](napari.components.Camera.angles)
 
 ## Check that your notebook runs
 
@@ -137,7 +137,7 @@ If your guide contains any code the user is expected to run, make sure that the 
 
 ## Use the Google developer's style guide
 
-This [style guide](https://developers.google.com/style/) should answer all your questions about when to italicise and when to bold, which
+The [Google writing style guide](https://developers.google.com/style/) should answer all your questions about when to italicise and when to bold, which
 words to capitalize in your headings (spoiler - we use sentence case for our headings) and other style conventions.
 
 ## Next steps

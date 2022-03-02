@@ -50,9 +50,7 @@ Fork and clone [our repository](https://github.com/napari/napari), and make a co
 You can now edit the template directly in your prefered text editor, or you can open it in Jupyter notebook
 if you have Jupytext installed.
 
-```{admonition}
-:class: tip
-
+```{tip}
 You can install jupytext alone with 
 
 ```bash
@@ -122,7 +120,7 @@ If you're adding a document
 to an existing group, simply add a new `- file:` entry in the appropriate spot. For example, if I wanted to add 
 a `progress_bars.md` how to guide, I would place it in `napari/docs/howtos` and update `_toc.yml` as below:
 
-```yml
+```yaml
 - file: howtos/index
 subtrees:
 - titlesonly: True
@@ -149,7 +147,7 @@ To create a new subheading, you need a `subtrees` entry. For example, if I wante
 to a new `geosciences` subheading in tutorials, I would place my documents in a new folder `napari/docs/tutorials/geosciences`,
 together with an `index.md` that describes what these tutorials would be about, and then update `_toc.yml` as below:
 
-```yml
+```yaml
 - file: tutorials/index
 subtrees:
 - entries:
