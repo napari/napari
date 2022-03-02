@@ -19,7 +19,7 @@ subtrees:
         - entries:
           - file: tutorials/annotation/index
             subtrees:
-            - entries: 
+            - entries:
               - file: tutorials/annotation/annotate_points
           - file: tutorials/processing/index
             subtrees:
@@ -150,6 +150,7 @@ subtrees:
           - file: roadmaps/0_4
           - file: roadmaps/0_3_retrospective
           - file: roadmaps/0_3
+      - file: community/licensing
   - file: api/index
     subtrees:
     - titlesonly: True
