@@ -70,7 +70,7 @@ html_theme_options = {
         {"name": "napari hub", "url": "https://napari-hub.org"}
     ],
     "github_url": "https://github.com/napari/napari",
-    "navbar_start": ["navbar-logo", "navbar-project"],
+    "navbar_start": ["navbar-project"],
     "navbar_end": ["navbar-icon-links"],
 }
 
