@@ -2210,3 +2210,37 @@ def test_text_param_and_setter_are_consistent():
     np.testing.assert_array_equal(
         points_init.text.color, points_set.text.color
     )
+
+
+def test_editable_2d_layer_ndisplay_3():
+    """Interactivity doesn't work for 2D points layers
+    being rendered in 3D. Verify that layer.editable is set
+    to False upon switching to 3D rendering mode.
+
+    See: https://github.com/napari/napari/pull/4184
+    """
+    data = np.random.random((10, 2))
+    layer = Points(data, size=5)
+    assert layer.editable is True
+
+    # simulate switching to 3D rendering
+    # layer should no longer b editable
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    assert layer.editable is False
+
+
+def test_editable_3d_layer_ndisplay_3():
+    """Interactivity works for 3D points layers
+    being rendered in 3D. Verify that layer.editable remains
+    True upon switching to 3D rendering mode.
+
+    See: https://github.com/napari/napari/pull/4184
+    """
+    data = np.random.random((10, 3))
+    layer = Points(data, size=5)
+    assert layer.editable is True
+
+    # simulate switching to 3D rendering
+    # layer should no longer b editable
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    assert layer.editable is True
