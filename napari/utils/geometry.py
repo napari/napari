@@ -175,6 +175,7 @@ def rotate_points(
 
 def point_in_bounding_box(point: np.ndarray, bounding_box: np.ndarray) -> bool:
     """Determine whether an nD point is inside an nD bounding box.
+
     Parameters
     ----------
     point : np.ndarray
