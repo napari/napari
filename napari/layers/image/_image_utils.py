@@ -137,7 +137,10 @@ def gaussian_kernel(shape, std):
     Create an n-dimensional gaussian kernel
     """
     windows = [gaussian(size, std) for size in shape]
-    return prod(np.ix_(*windows))
+    kernel = prod(np.ix_(*windows))
+    # TODO: rounding to zeros during multiplication will kill np.average. For now
+    #       we just make them slightly bigger; not sure how to do this better
+    return np.where(kernel != 0, kernel, 1e-8)
 
 
 def _weighted_projection(data, axis, std=1):
