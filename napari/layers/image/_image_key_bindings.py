@@ -47,22 +47,20 @@ def synchronise_plane_normal_with_view_direction(layer: Image):
     if viewer.dims.ndisplay != 3:
         return
 
-    layer.plane.normal = layer._world_to_data_ray(viewer.camera.view_direction)
-
-    def sync_plane_normal_with_view_direction(layer, event=None):
+    def sync_plane_normal_with_view_direction(event=None):
         """Plane normal syncronisation mouse callback."""
-        yield
-        while event.type == 'mouse_move':
-            view_direction = viewer.camera.view_direction
-            layer.plane.normal = layer._world_to_data_ray(view_direction)
-            yield
+        layer.plane.normal = layer._world_to_data_ray(
+            viewer.camera.view_direction
+        )
 
     # update plane normal and add callback to mouse drag
-    layer.plane.normal = layer._world_to_data_ray(viewer.camera.view_direction)
-    layer.mouse_drag_callbacks.append(sync_plane_normal_with_view_direction)
+    sync_plane_normal_with_view_direction()
+    viewer.camera.events.angles.connect(sync_plane_normal_with_view_direction)
     yield
     # remove callback on key release
-    layer.mouse_drag_callbacks.remove(sync_plane_normal_with_view_direction)
+    viewer.camera.events.angles.disconnect(
+        sync_plane_normal_with_view_direction
+    )
 
 
 @Image.bind_key('Space')
