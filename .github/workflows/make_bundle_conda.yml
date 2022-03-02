@@ -87,8 +87,7 @@ jobs:
                  -e "s|  git_rev:.*||"  \
                  recipe/meta.yaml
 
-          # temporary!
-          # conda-smithy rerender
+          conda-smithy rerender
           git diff
           mv ${GITHUB_WORKSPACE}/napari-source .
 
@@ -103,12 +102,12 @@ jobs:
           export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda_bld_suffix }}"
           ./.scripts/run_docker_build.sh
 
-      - name: Run build scripts (PySide) # filename under feedstock's .ci_support/
+      - name: Run build scripts (PySide)
         shell: bash -l {0}
         working-directory: napari-feedstock
         env:
           DOCKER_IMAGE: quay.io/condaforge/linux-anvil-comp7
-          CONFIG: linux_64_qt_bindingspyside2
+          CONFIG: linux_64_qt_bindingspyside2 # filename under feedstock's .ci_support/
           CI: github_actions
         run: |
           export CONDA_BLD_PATH="${{ github.workspace }}${{ env.conda_bld_suffix }}"
