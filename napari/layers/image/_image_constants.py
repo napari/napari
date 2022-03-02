@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from enum import auto
 
 from ...utils.misc import StringEnum
@@ -103,7 +104,7 @@ class VolumeDepiction(StringEnum):
     PLANE = auto()
 
 
-VOLUME_DEPICTION_TRANSLATION = dict(
+VOLUME_DEPICTION_TRANSLATION = OrderedDict(
     [
         (VolumeDepiction.VOLUME, trans._('volume')),
         (VolumeDepiction.PLANE, trans._('plane')),
