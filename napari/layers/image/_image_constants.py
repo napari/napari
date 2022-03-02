@@ -97,8 +97,10 @@ class ImageProjection(StringEnum):
         * SLICE: ignore slice thickness, only using the dims point
         * ADDITIVE: sum data across the thick slice
         * AVERAGE: average data across the thick slice
+        * GAUSSIAN: average data across the thick slice using a gaussian kernel for weights
     """
 
     SLICE = auto()
     ADDITIVE = auto()
     AVERAGE = auto()
+    GAUSSIAN = auto()

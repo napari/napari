@@ -1,9 +1,11 @@
 """guess_rgb, guess_multiscale, guess_labels.
 """
-from math import ceil
+from functools import lru_cache
+from math import ceil, prod
 from typing import Tuple
 
 import numpy as np
+from scipy.signal.windows import gaussian
 
 from ...utils.translations import trans
 from .._data_protocols import LayerDataProtocol
@@ -129,9 +131,29 @@ def generate_thick_slices(
             yield slice_indices[i]
 
 
+@lru_cache(10)
+def gaussian_kernel(shape, std):
+    """
+    Create an n-dimensional gaussian kernel
+    """
+    windows = [gaussian(size, std) for size in shape]
+    return prod(np.ix_(*windows))
+
+
+def _weighted_projection(data, axis, std=1):
+    """
+    Calculate a weighted slice projection with a gaussian kernel
+    """
+    kernel = gaussian_kernel(data.shape, std=1)
+    return np.average(data, axis, kernel)
+
+
 def project_slice(data, slices, axis, mode):
+    mode = ImageProjection(mode)
     if mode == ImageProjection.ADDITIVE:
         func = np.sum
     elif mode == ImageProjection.AVERAGE:
         func = np.mean
+    elif mode == ImageProjection.GAUSSIAN:
+        func = _weighted_projection
     return func(data[slices], tuple(axis))
