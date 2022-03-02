@@ -1,6 +1,6 @@
 ---
 jupytext:
-  formats: ipynb,md:myst
+  formats: md:myst
   text_representation:
     extension: .md
     format_name: myst
@@ -34,7 +34,7 @@ Include things like:
   - **don't add this data to the repository**
 
 ## Write your document
-Fill out the main content of the document - your explanation, how-to steps or tutorial. 
+Fill out the main content of the document - your explanation, how-to steps or tutorial.
 
 ## Include pictures
 
@@ -67,14 +67,14 @@ viewer.open_sample('napari', 'cells3d')
 nbscreenshot(viewer)
 ```
 
-#### 2. Hide input cells
+#### 2. Remove input cells
 
 As you can see, it's simple to produce screenshots of the napari Viewer in your notebooks. However, if you look through napari's
 existing documentation, none of the code cells include calls to `nbscreenshot`, yet the screenshots are still produced. In fact,
 it would be distracting if all the code cells included `nbscreenshot`, and might be frustrating for users who
 want to execute these notebooks in their own workflows.
 
-To avoid this frustration, we place calls to `nbscreenshot` in a hidden cell in your notebooks.
+To avoid this frustration, we place calls to `nbscreenshot` in a removed cell in our notebooks.
 You can completely remove input (i.e. the code that's running) in a notebook cell by adding a `remove-input` tag to the cell metadata.
 
 How you add cell tags depends on how you're editing your notebook. 
@@ -87,18 +87,18 @@ will be added to the top right of your cell. You can then add any tags you want
 2. If you're editing a MyST Markdown file directly, you can add tags to your code blocks like so:
 
 ```
-    ```{code-cell}
+    ```{code-cell} python3
     :tags: [remove-input]
 
     print("Your code here")
     ```
 ```
-#### What to put in hidden cells
+#### What to put in removed cells
 
 Alongside your call to `nbscreenshot`, you can also place other potentially distracting code in these tagged cells, 
 such as resizing the Viewer window or opening a menu. In general, if you're running code the reader isn't meant to run,
-this should be in a hidden cell.
-The screenshot below is produced by the following code, which has been hidden from you using the `remove-input` tag.
+this should be in a removed cell.
+The screenshot below is produced by the following code. The code that ran was removed using the `remove-input` tag.
 
 ```python
 from napari.utils import nbscreenshot
@@ -118,11 +118,11 @@ viewer.dims.current_step = (25, 0, 1)
 nbscreenshot(viewer)
 ```
 
-Note how we've included the `nbscreenshot` import in this hidden cell. Even though in the
+Note how we've included the `nbscreenshot` import in this removed cell. Even though in the
 example above we imported `nbscreenshot` to show its functionality, you should place the
-import in a hidden cell when you write your documentation.
+import in a removed cell when you write your documentation.
 
-Here are some examples of settings you might want to use in a hidden input cell to make your screenshot look pretty:
+Here are some examples of settings you might want to use in a `remove-input` cell to make your screenshot look pretty:
 - window resizing (as above)
 - [toggling visible layers](https://napari.org/api/stable/napari.layers.Layer.html#napari.layers.Layer.visible)
 - [setting the slider position to a particular slice](https://napari.org/api/stable/napari.components.Dims.html#napari.components.Dims.current_step)

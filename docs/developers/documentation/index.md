@@ -1,19 +1,3 @@
----
-jupytext:
-  formats: ipynb,md:myst
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.10.3
-kernelspec:
-  display_name: Python 3 (ipykernel)
-  language: python
-  name: python3
-theme:
-  intro: This guide will walk you through submitting a new document to napari.org.
----
-
 # Contributing Documentation
 
 This guide will teach you how to submit new documents to napari's usage documentation.
@@ -22,6 +6,7 @@ This guide will teach you how to submit new documents to napari's usage document
 
 - Familiarity with `git`
 - A [GitHub](https://github.com) account
+
 ## 0. Before you start
 
 If you'd like to contribute a brand new document to our usage section, it might be worth [opening an issue](https://github.com/napari/napari/issues/new?assignees=&labels=documentation&template=documentation.md&title=)
@@ -49,25 +34,37 @@ If you are writing a how-to guide or tutorial that requires executing code or wo
 the steps below to prepare your document.
 
 ### Prerequisites for contributing documentation with code
+
 - [Jupyter notebook](https://jupyter.org/) installed
 - Familiarity with Jupyter notebooks (code cells and markdown cells)
 - Familiarity with using napari through a Jupyter notebook
+
 ## 1. Download our template
 
 Our goal is that all tutorials and how-tos are easily downloadable and executable by our users. 
 This helps ensure that they are reproducible and makes them easier to maintain. 
 We therefore provide a notebook template for our documents.
 
-To download, [click on this link](https://raw.githubusercontent.com/napari/napari.github.io/9aac1c2d69ef0b0bc196ec1ccacba1c1f806eea4/developers/documentation/docs_template.md) then right-click anywhere on the page and click `Save as`. 
+Fork and clone [our repository](https://github.com/napari/napari), and make a copy of `napari/docs/developers/documentation/docs_template.md`.
 
-```{admonition} Choose .md as the file extension
-:class: important
+You can now edit the template directly in your prefered text editor, or you can open it in Jupyter notebook
+if you have Jupytext installed.
 
-This will open a Save dialog and prepopulate the filename and extension. Often, the default file extension chosen will be `.txt`.
-You need to change this extension to `.md` to open this file later in Jupyter notebook.
+```{admonition}
+:class: tip
 
-On Mac, changing file extensions in the save dialog doesn't always work. You may have to navigate to the file in your directory
-and rename it without the `.txt` extension.
+You can install jupytext alone with 
+
+```bash
+pip install jupytext
+```
+
+or you can install our docs dependenices, which inlcude jupytext with
+
+```bash
+pip install "napari[docs]"
+```
+
 ```
 
 ## 2. Write your document
@@ -80,23 +77,18 @@ hiding code cells, using style guides and what to include in the required prereq
 [Jupyter notebooks](https://jupyter.org/) are a great option for our documents, because they allow you to easily combine code and well formatted text in markdown. 
 However, their [raw JSON format](https://numpy.org/numpy-tutorials/content/pairing.html#background) is not great for version control, so we use [MyST Markdown](https://myst-parser.readthedocs.io/en/latest/) documents in our repository and on napari.org.  
 
-Follow these steps to pair your notebook with MyST markdown format before submitting your pull request.
+If you are editing the template directly, your notebook is already in MyST markdown! You can go straight to [Step #4 - Update TOC](#4-update-toc).
+Alternatively, if you are working on your own `.ipynb` file, follow these steps to pair your notebook with MyST markdown format before submitting your pull request.
 
-### 3.1 Install Jupytext
-You can install `jupytext` from the command line:
-
-```
-pip install jupytext
-```
-
-or
+### 3.1 Install napari docs requirements
+You can install `jupytext`, as well as other napari docs requirements from the command line:
 
 ```
-conda install jupytext -c conda-forge
+pip install napari[docs]
 ```
 
 ### 3.2 Pair your notebook
-Once installed, you can start Jupyter notebook as you usually would. Pairing your notebook with MyST Markdown
+Once requirements are installed, you can start Jupyter notebook as you usually would. Pairing your notebook with MyST Markdown
  will now be an option in the notebook's `File -> Jupytext` menu. 
 Selecting this option will generate a new markdown file for you in the same working directory as your notebook.
 If you pair through Jupyter notebook, your markdown file will be updated every time you save the notebook,
@@ -201,9 +193,12 @@ make docs
 
 The rendered HTML will be placed in `napari/docs/_build`. Find `index.html` in this folder and drag it
 into a browser to preview the website with your new document.
+
 ## 6. Submit your pull request
 
 Once you have written and previewed your document, it's time to open a pull request to [napari's main repository](https://github.com/napari/napari) and contribute it to our codebase. 
+If you've never opened a Pull Request, you may find [this guide](https://www.digitalocean.com/community/tutorials/how-to-create-a-pull-request-on-github) useful.
+You can also reach out to us on [zulip](https://napari.zulipchat.com/#narrow/stream/212875-general) for assistance!
 
 Not sure where to place your document or update `_toc.yml`? Make a best guess and open the pull request - the napari team will
 help you edit your document and find the right spot!
