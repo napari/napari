@@ -292,7 +292,7 @@ QtColorBox {
 
 /* ----------------- QtLayerControls -------------------- */
 
-QtLayerControls > QLabel, QtLayerControls > QLabeledSlider > QAbstractSpinBox {
+QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
   font-size: 11pt;
   color: {{ text }};
 }
@@ -307,6 +307,10 @@ AutoScaleButtons QPushButton {
   padding: 4;
 }
 
+PlaneNormalButtons QPushButton {
+    font-size: 9pt;
+    padding: 4;
+}
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {

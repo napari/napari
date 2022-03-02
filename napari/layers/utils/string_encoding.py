@@ -23,7 +23,7 @@ StringArray = Array[str, (-1,)]
 
 
 """The default string value, which may also be used a safe fallback string."""
-DEFAULT_STRING = ''
+DEFAULT_STRING = np.array('', dtype='<U1')
 
 
 @runtime_checkable

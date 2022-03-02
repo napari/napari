@@ -74,7 +74,7 @@ def test_evented_model_with_array():
     """Test creating an evented pydantic model with an array."""
 
     def make_array():
-        return np.array([4, 3])
+        return np.array([[4, 3]])
 
     class Model(EventedModel):
         """Demo evented model."""

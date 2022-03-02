@@ -3,5 +3,5 @@ Jinja2
 sphinx-tabs
 sphinx-panels
 myst-nb
-pydata-sphinx-theme==0.8.0
+napari-sphinx-theme
 sphinx-external-toc

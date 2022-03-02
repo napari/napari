@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Generic, List, Optional, TypeVar, Union
+from typing import Any, Generic, List, TypeVar, Union
 
 import numpy as np
 from typing_extensions import Protocol, runtime_checkable
@@ -51,18 +51,11 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
             If generating values from the given features fails.
         """
 
+    @property
     def _values(self) -> Union[StyleValue, StyleArray]:
-        """Returns the previously generated and cached values.
+        """The previously generated and cached values."""
 
-        Returns
-        -------
-        Union[StyleValue, StyleArray]
-            The cached values.
-        """
-
-    def _update(
-        self, features: Any, *, indices: Optional[IndicesType] = None
-    ) -> Union[StyleValue, StyleArray]:
+    def _update(self, features: Any) -> None:
         """Updates cached values by applying this to the tail of the given features.
 
         If the cached values have the same length as the given features, this may
@@ -72,13 +65,6 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
         ----------
         features : Dataframe-like
             The full layer features table from which to derive the output values.
-        indices : Optional[IndicesType]
-            The row indices for which to return values. If None, return all of them.
-
-        Returns
-        -------
-        Union[StyleValue, StyleArray]
-            The updated cached values, indexed by the indices if given.
         """
 
     def _append(self, array: StyleArray) -> None:
@@ -128,13 +114,12 @@ class _ConstantStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         return self.constant
 
+    @property
     def _values(self) -> Union[StyleValue, StyleArray]:
         return self.constant
 
-    def _update(
-        self, features: Any, *, indices: Optional[IndicesType] = None
-    ) -> Union[StyleValue, StyleArray]:
-        return self.constant
+    def _update(self, features: Any) -> None:
+        pass
 
     def _append(self, array: StyleArray) -> None:
         pass
@@ -175,14 +160,12 @@ class _ManualStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
             return np.append(self.array, tail_array, axis=0)
         return np.array(self.array[:n_rows])
 
+    @property
     def _values(self) -> Union[StyleValue, StyleArray]:
         return self.array
 
-    def _update(
-        self, features: Any, *, indices: Optional[IndicesType] = None
-    ) -> Union[StyleValue, StyleArray]:
+    def _update(self, features: Any) -> None:
         self.array = self(features)
-        return _maybe_index_array(self.array, indices)
 
     def _append(self, array: StyleArray) -> None:
         self.array = np.append(self.array, array, axis=0)
@@ -219,12 +202,11 @@ class _DerivedStyleEncoding(
     def __call__(self, features: Any) -> Union[StyleValue, StyleArray]:
         pass
 
+    @property
     def _values(self) -> Union[StyleValue, StyleArray]:
         return self._cached
 
-    def _update(
-        self, features: Any, *, indices: Optional[IndicesType] = None
-    ) -> Union[StyleValue, StyleArray]:
+    def _update(self, features: Any) -> None:
         n_cached = self._cached.shape[0]
         n_rows = features.shape[0]
         if n_cached < n_rows:
@@ -232,7 +214,6 @@ class _DerivedStyleEncoding(
             self._append(tail_array)
         elif n_cached > n_rows:
             self._cached = self._cached[:n_rows]
-        return _maybe_index_array(self._cached, indices)
 
     def _apply_safely(self, features: Any) -> StyleArray:
         """Applies this without raising encoding errors, warning instead."""
@@ -267,10 +248,3 @@ def _empty_array_like(value: StyleValue) -> StyleArray:
     """Returns an empty array with the same type and remaining shape of the given value."""
     shape = (0,) + value.shape
     return np.empty_like(value, shape=shape)
-
-
-def _maybe_index_array(
-    array: StyleArray, indices: Optional[IndicesType]
-) -> StyleArray:
-    """Returns the given array, only using indices if given."""
-    return array if indices is None else array[indices]

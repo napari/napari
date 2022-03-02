@@ -9,30 +9,46 @@ subtrees:
         subtrees:
         - titlesonly: True
           entries:
+          - file: tutorials/fundamentals/quick_start
           - file: tutorials/fundamentals/installation
           - file: tutorials/fundamentals/getting_started
           - file: tutorials/fundamentals/viewer
-          - file: tutorials/fundamentals/image
-          - file: tutorials/fundamentals/labels
-          - file: tutorials/fundamentals/points
-          - file: tutorials/fundamentals/shapes
-          - file: tutorials/fundamentals/surface
-          - file: tutorials/fundamentals/tracks
-          - file: tutorials/fundamentals/vectors
+          - file: guides/layers
       - file: tutorials/index
         subtrees:
         - entries:
+          - file: tutorials/annotation/index
+            subtrees:
+            - entries: 
+              - file: tutorials/annotation/annotate_points
+          - file: tutorials/processing/index
+            subtrees:
+            - entries:
+              - file: tutorials/processing/dask
           - file: tutorials/segmentation/index
+            subtrees:
+            - entries:
+              - file: tutorials/segmentation/annotate_segmentation
           - file: tutorials/tracking/index
-          - file: tutorials/applications/annotate_points
-          - file: tutorials/applications/dask
-          - file: tutorials/further-resources/napari-workshops
-          - file: tutorials/tracking/cell_tracking
-          - file: tutorials/segmentation/annotate_segmentation
+            subtrees:
+            - entries:
+              - file: tutorials/tracking/cell_tracking
+      - file: further-resources/napari-workshops
       - file: howtos/index
         subtrees:
         - titlesonly: True
           entries:
+          - file: howtos/layers/index
+            subtrees:
+            - titlesonly: True
+              entries:
+              - file: howtos/layers/image
+              - file: howtos/layers/labels
+              - file: howtos/layers/points
+              - file: howtos/layers/shapes
+              - file: howtos/layers/surface
+              - file: howtos/layers/tracks
+              - file: howtos/layers/vectors
           - file: howtos/connecting_events
           - file: howtos/napari_imageJ
           - file: howtos/docker
@@ -50,7 +66,7 @@ subtrees:
           - file: guides/events_reference
           - file: guides/contexts_expressions
           - file: guides/preferences
-      - file: glossary
+      - file: further-resources/glossary
   - file: plugins/index
     subtrees:
     - entries:
@@ -88,6 +104,7 @@ subtrees:
       - file: release/index
         subtrees:
         - entries:
+          - file: release/release_0_4_15
           - file: release/release_0_4_14
           - file: release/release_0_4_13
           - file: release/release_0_4_12
@@ -136,7 +153,7 @@ subtrees:
   - file: api/index
     subtrees:
     - titlesonly: True
-      entries: 
+      entries:
       - file: api/modules
       - file: api/event_loop
       - file: api/view_layer
