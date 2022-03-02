@@ -8,9 +8,10 @@ from ..utils.translations import trans
 
 
 class PluginHookOption(TypedDict):
-    """Custom type specifying plugin and enabled state."""
+    """Custom type specifying plugin, hook implementation function name, and enabled state."""
 
     plugin: str
+    hook_impl: str
     enabled: bool
 
 

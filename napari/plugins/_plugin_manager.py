@@ -168,7 +168,7 @@ class NapariPluginManager(PluginManager):
         -------
         call_order : CallOrderDict
             mapping of hook_specification name, to a list of dicts with keys:
-            {'plugin', 'enabled'}.  Plugins earlier in the dict are called
+            {'plugin', 'hook_impl', 'enabled'}.  Plugins earlier in the dict are called
             sooner.
         """
 
@@ -181,7 +181,11 @@ class NapariPluginManager(PluginManager):
             # no need to save call order if there is only a single item
             if len(impls) > 1:
                 order[spec_name] = [
-                    {'plugin': impl.plugin_name, 'enabled': impl.enabled}
+                    {
+                        'plugin': impl.plugin_name,
+                        'hook_impl': impl.function.__name__,
+                        'enabled': impl.enabled,
+                    }
                     for impl in reversed(impls)
                 ]
         return order
@@ -208,7 +212,15 @@ class NapariPluginManager(PluginManager):
                         hook_caller._set_plugin_enabled(
                             p['plugin'], p['enabled']
                         )
-                        order.append(p['plugin'])
+                        hook_impls = hook_caller.get_hookimpls()
+                        hook_impl = list(
+                            filter(
+                                lambda impl: impl.plugin_name == p['plugin']
+                                and impl.function.__name__ == p['hook_impl'],
+                                hook_impls,
+                            )
+                        )[0]
+                        order.append(hook_impl)
                     except KeyError:
                         continue
                 if order:
