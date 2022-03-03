@@ -1,12 +1,6 @@
 import numpy as np
 from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import (
-    QButtonGroup,
-    QCheckBox,
-    QComboBox,
-    QHBoxLayout,
-    QLabel,
-)
+from qtpy.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QHBoxLayout
 
 from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
 from ...utils.action_manager import action_manager
@@ -180,26 +174,18 @@ class QtPointsControls(QtLayerControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 1)
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 1, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('point size:')), 2, 0)
-        self.grid_layout.addWidget(self.sizeSlider, 2, 1)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 3, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 1)
-        self.grid_layout.addWidget(QLabel(trans._('symbol:')), 4, 0)
-        self.grid_layout.addWidget(self.symbolComboBox, 4, 1)
-        self.grid_layout.addWidget(QLabel(trans._('face color:')), 5, 0)
-        self.grid_layout.addWidget(self.faceColorEdit, 5, 1)
-        self.grid_layout.addWidget(QLabel(trans._('edge color:')), 6, 0)
-        self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
-        self.grid_layout.addWidget(QLabel(trans._('display text:')), 7, 0)
-        self.grid_layout.addWidget(self.textDispCheckBox, 7, 1)
-        self.grid_layout.addWidget(QLabel(trans._('out of slice:')), 8, 0)
-        self.grid_layout.addWidget(self.outOfSliceCheckBox, 8, 1)
-        self.grid_layout.setRowStretch(9, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
+        self._populate_grid(
+            (button_row,),
+            (...,),
+            ('opacity:', self.opacitySlider),
+            ('point size:', self.sizeSlider),
+            ('blending:', self.blendComboBox),
+            ('symbol:', self.symbolComboBox),
+            ('face color:', self.faceColorEdit),
+            ('edge color:', self.edgeColorEdit),
+            ('display text:', self.textDispCheckBox),
+            ('out of slice:', self.outOfSliceCheckBox),
+        )
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when points layer mode is changed.
