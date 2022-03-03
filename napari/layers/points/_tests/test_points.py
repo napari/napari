@@ -2293,19 +2293,6 @@ def test_text_param_and_setter_are_consistent():
     )
 
 
-def test_text_direct_copy_paste():
-    text = {'string': ['A', 'B', 'C']}
-    points = Points(np.random.rand(3, 2), text=text)
-    points.selected_data = [0, 2]
-
-    points._copy_data()
-    points._paste_data()
-
-    np.testing.assert_array_equal(
-        points.text.values, ['A', 'B', 'C', 'A', 'C']
-    )
-
-
 def test_editable_2d_layer_ndisplay_3():
     """Interactivity doesn't work for 2D points layers
     being rendered in 3D. Verify that layer.editable is set

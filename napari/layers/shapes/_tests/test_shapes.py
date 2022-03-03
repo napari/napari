@@ -329,20 +329,6 @@ def test_text_error(properties):
         Shapes(data, properties=copy(properties), text=123)
 
 
-def test_text_direct_copy_paste():
-    text = {
-        'string': ['A', 'B', 'C'],
-        'color': ['red', 'green', 'blue'],
-    }
-    shapes = Shapes(np.random.rand(3, 4, 2), text=text)
-    shapes.selected_data = [0, 2]
-
-    shapes._copy_data()
-    shapes._paste_data()
-
-    np.testing.assert_array_equal(shapes._view_text, ['A', 'B', 'C', 'A', 'C'])
-
-
 def test_select_properties_object_dtype():
     """selecting points when they have a property of object dtype should not fail"""
     # pandas uses object as dtype for strings by default
