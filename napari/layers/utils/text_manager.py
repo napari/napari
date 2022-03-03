@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Any, Dict, Sequence, Tuple, Union
+from typing import Any, Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -209,25 +209,6 @@ class TextManager(EventedModel):
         values = self.string(features)
         self.string._append(values)
 
-    def fill(self, features: Any):
-        """Fills any encoded values to the same length as the given features.
-
-        Parameters
-        ----------
-        features : Any
-            The features table of a layer.
-        """
-        self.string._update(features)
-
-    def _copy(self, index) -> dict:
-        strings = self.string._values
-        if strings.ndim > 0:
-            strings = strings[index]
-        return {'strings': strings}
-
-    def _paste(self, *, strings: StringArray):
-        self.string._append(strings)
-
     def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
         """Remove the indicated text elements
 
@@ -239,6 +220,27 @@ class TextManager(EventedModel):
         if isinstance(indices_to_remove, set):
             indices_to_remove = list(indices_to_remove)
         self.string._delete(indices_to_remove)
+
+    def fill(self, features: Any):
+        """Fills any encoded values to the same length as the given features.
+
+        Parameters
+        ----------
+        features : Any
+            The features table of a layer.
+        """
+        self.string._update(features)
+
+    def _copy(self, indices: List[int]) -> dict:
+        """Copies all encoded values at the given indices."""
+        string = self.string._values
+        if string.ndim > 0:
+            string = string[indices]
+        return {'string': string}
+
+    def _paste(self, *, string: StringArray):
+        """Pastes encoded values to the end of the existing values."""
+        self.string._append(string)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -281,8 +283,8 @@ class TextManager(EventedModel):
             Array of text strings for the N text elements in view
         """
         values = self.values
-        if values.shape == ():
-            return np.broadcast_to(values, indices_view.shape[0])
+        if values.ndim == 0:
+            return np.broadcast_to(values, len(indices_view))
         return values[indices_view]
 
     @classmethod

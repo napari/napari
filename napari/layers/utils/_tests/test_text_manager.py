@@ -3,7 +3,11 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from napari.layers.utils.string_encoding import ConstantStringEncoding
+from napari.layers.utils.string_encoding import (
+    ConstantStringEncoding,
+    FormatStringEncoding,
+    ManualStringEncoding,
+)
 from napari.layers.utils.text_manager import TextManager
 
 
@@ -366,12 +370,113 @@ def test_update_from_layer_with_warning_only_one_emitted():
     assert len(record) == 1
 
 
-def test_init_with_string_none():
+def test_init_with_no_string():
     text_manager = TextManager(string=None)
+
     assert text_manager.string == ConstantStringEncoding(constant='')
+    np.testing.assert_array_equal(text_manager.values, '')
 
 
-def test_constant_string_copy_paste():
+def test_init_with_constant_string():
+    text_manager = TextManager(string='A')
+
+    assert text_manager.string == ConstantStringEncoding(constant='A')
+    np.testing.assert_array_equal(text_manager.values, 'A')
+
+
+def test_init_with_manual_string():
+    features = pd.DataFrame(index=range(3))
+
+    text_manager = TextManager(string=['A', 'B', 'C'], features=features)
+
+    assert text_manager.string == ManualStringEncoding(array=['A', 'B', 'C'])
+    np.testing.assert_array_equal(text_manager.values, ['A', 'B', 'C'])
+
+
+def test_init_with_format_string():
+    features = pd.DataFrame({'class': ['A', 'B', 'C']})
+
+    text_manager = TextManager(string='class: {class}', features=features)
+
+    assert text_manager.string == FormatStringEncoding(format='class: {class}')
+    np.testing.assert_array_equal(
+        text_manager.values, ['class: A', 'class: B', 'class: C']
+    )
+
+
+def test_fill_with_constant_string():
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(string='A')
+
+    features = pd.DataFrame(index=range(5))
+    text_manager.fill(features)
+
+    np.testing.assert_array_equal(text_manager.values, 'A')
+
+
+def test_fill_with_manual_string():
+    string = {
+        'array': ['A', 'B', 'C'],
+        'default': 'D',
+    }
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(string=string, features=features)
+
+    features = pd.DataFrame(index=range(5))
+    text_manager.fill(features)
+
+    np.testing.assert_array_equal(
+        text_manager.values, ['A', 'B', 'C', 'D', 'D']
+    )
+
+
+def test_fill_with_derived_string():
+    features = pd.DataFrame({'class': ['A', 'B', 'C']})
+    text_manager = TextManager(string='class: {class}', features=features)
+
+    features = pd.DataFrame({'class': ['A', 'B', 'C', 'D', 'E']})
+    text_manager.fill(features)
+
+    np.testing.assert_array_equal(
+        text_manager.values,
+        ['class: A', 'class: B', 'class: C', 'class: D', 'class: E'],
+    )
+
+
+def test_refresh_with_constant_string():
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(string='A')
+
+    text_manager.string = 'B'
+    text_manager.fill(features)
+
+    np.testing.assert_array_equal(text_manager.values, 'B')
+
+
+def test_refresh_with_manual_string():
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(string=['A', 'B', 'C'], features=features)
+
+    text_manager.string = ['C', 'B', 'A']
+    text_manager.refresh(features)
+
+    np.testing.assert_array_equal(text_manager.values, ['C', 'B', 'A'])
+
+
+def test_refresh_with_derived_string():
+    features = pd.DataFrame({'class': ['A', 'B', 'C']})
+    text_manager = TextManager(string='class: {class}', features=features)
+
+    features = pd.DataFrame({'class': ['E', 'D', 'C', 'B', 'A']})
+    text_manager.refresh(features)
+
+    np.testing.assert_array_equal(
+        text_manager.values,
+        ['class: E', 'class: D', 'class: C', 'class: B', 'class: A'],
+    )
+
+
+def test_copy_paste_with_constant_string():
     features = pd.DataFrame(index=range(3))
     text_manager = TextManager(string='A', features=features)
 
@@ -381,9 +486,9 @@ def test_constant_string_copy_paste():
     np.testing.assert_array_equal(text_manager.values, 'A')
 
 
-def test_direct_string_copy_paste():
-    features = pd.DataFrame({'class': ['A', 'B', 'C']})
-    text_manager = TextManager(string={'feature': 'class'}, features=features)
+def test_copy_paste_with_manual_string():
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(string=['A', 'B', 'C'], features=features)
 
     copied = text_manager._copy([0, 2])
     text_manager._paste(**copied)
@@ -393,7 +498,7 @@ def test_direct_string_copy_paste():
     )
 
 
-def test_format_string_copy_paste():
+def test_copy_paste_with_derived_string():
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
     text_manager = TextManager(string='class: {class}', features=features)
 
@@ -403,16 +508,4 @@ def test_format_string_copy_paste():
     np.testing.assert_array_equal(
         text_manager.values,
         ['class: A', 'class: B', 'class: C', 'class: A', 'class: C'],
-    )
-
-
-def test_manual_string_copy_paste():
-    features = pd.DataFrame(index=range(3))
-    text_manager = TextManager(string=['A', 'B', 'C'], features=features)
-
-    copied = text_manager._copy([0, 2])
-    text_manager._paste(**copied)
-
-    np.testing.assert_array_equal(
-        text_manager.values, ['A', 'B', 'C', 'A', 'C']
     )
