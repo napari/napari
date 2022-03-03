@@ -143,13 +143,7 @@ class QtLayerControls(QFrame):
                 add_item = self.grid_layout.addLayout
             add_item(*arg)
 
-        from rich import print
-
-        print(args)
-
         self.grid_layout.setRowStretch(previous_row + 1, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
