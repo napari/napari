@@ -48,7 +48,7 @@ It's common for napari documentation to include code that has some effect in the
 changing layer properties or using a plugin. These changes in the Viewer should be shown to the user, and this can
 be easily achieved in your notebook with napari's `nbscreenshot` utility. Follow these steps to include screenshots of the napari viewer and hide code cells.
 
-Note that wherever possible, auto-generated screenshots are *greatly* prefered to static images.
+Note that wherever possible, auto-generated screenshots are *greatly* preferred to static images.
 
 #### 1. Use `nbscreenshot` for screenshots of the viewer
 
