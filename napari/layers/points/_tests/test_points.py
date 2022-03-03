@@ -162,7 +162,7 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
 def test_empty_layer_with_text_properties():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'text': 'point_type', 'color': 'red'}
+    text_kwargs = {'string': {'feature': 'point_type'}, 'color': 'red'}
     layer = Points(
         property_choices=default_properties,
         text=text_kwargs,
@@ -436,7 +436,7 @@ def test_remove_selected_removes_corresponding_attributes():
     color = np.random.rand(shape[0], 4)
     feature = np.random.rand(shape[0])
     shown = np.random.randint(2, size=shape[0]).astype(bool)
-    text = 'feature'
+    text = {'string': {'feature': 'feature'}}
 
     layer = Points(
         data,
@@ -767,7 +767,11 @@ def test_text_from_property_value(properties):
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(data, properties=copy(properties), text='point_type')
+    layer = Points(
+        data,
+        properties=copy(properties),
+        text={'string': {'feature': 'point_type'}},
+    )
 
     np.testing.assert_equal(layer.text.values, properties['point_type'])
 
@@ -808,7 +812,7 @@ def test_text_from_property_fstring(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
-        'text': 'type: {point_type}',
+        'string': 'type: {point_type}',
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
@@ -825,7 +829,7 @@ def test_set_text_with_kwarg_dict(properties):
     np.testing.assert_equal(layer.text.values, expected_text)
 
     for property, value in text_kwargs.items():
-        if property == 'text':
+        if property == 'string':
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
@@ -858,7 +862,11 @@ def test_refresh_text():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'point_type': ['A'] * shape[0]}
-    layer = Points(data, properties=copy(properties), text='point_type')
+    layer = Points(
+        data,
+        properties=copy(properties),
+        text={'string': {'feature': 'point_type'}},
+    )
 
     new_properties = {'point_type': ['B'] * shape[0]}
     layer.properties = new_properties
@@ -2214,7 +2222,9 @@ def test_to_mask_3d_with_size_2():
 def test_set_properties_updates_text_values():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Points(points, properties=properties, text='class')
+    layer = Points(
+        points, properties=properties, text={'string': {'feature': 'class'}}
+    )
 
     layer.properties = {'class': np.array(['D', 'E', 'F'])}
 
@@ -2225,7 +2235,11 @@ def test_set_properties_with_invalid_shape_errors_safely():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    points = Points(
+        np.random.rand(3, 2),
+        text={'string': {'feature': 'class'}},
+        properties=properties,
+    )
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
@@ -2240,7 +2254,11 @@ def test_set_properties_with_missing_text_property_text_becomes_constant_empty_a
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(np.random.rand(3, 2), text='class', properties=properties)
+    points = Points(
+        np.random.rand(3, 2),
+        text={'string': {'feature': 'class'}},
+        properties=properties,
+    )
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
@@ -2257,7 +2275,7 @@ def test_text_param_and_setter_are_consistent():
     properties = {
         'accepted': np.random.choice([True, False], (5,)),
     }
-    text = {'text': 'accepted', 'color': 'black'}
+    text = {'string': {'feature': 'accepted'}, 'color': 'black'}
 
     points_init = Points(data, properties=properties, text=text)
 

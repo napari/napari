@@ -216,7 +216,7 @@ def test_setting_current_properties():
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'text': 'shape_type', 'color': 'red'}
+    text_kwargs = {'string': {'feature': 'shape_type'}, 'color': 'red'}
     layer = Shapes(
         property_choices=default_properties,
         text=text_kwargs,
@@ -250,7 +250,11 @@ def test_text_from_property_value(properties):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data, properties=copy(properties), text='shape_type')
+    layer = Shapes(
+        data,
+        properties=copy(properties),
+        text={'string': {'feature': 'shape_type'}},
+    )
 
     np.testing.assert_equal(layer.text.values, properties['shape_type'])
 
@@ -291,7 +295,7 @@ def test_text_from_property_fstring(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
-        'text': 'type: {shape_type}',
+        'string': 'type: {shape_type}',
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
@@ -308,7 +312,7 @@ def test_set_text_with_kwarg_dict(properties):
     np.testing.assert_equal(layer.text.values, expected_text)
 
     for property, value in text_kwargs.items():
-        if property == 'text':
+        if property == 'string':
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
@@ -355,7 +359,11 @@ def test_refresh_text():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'shape_type': ['A'] * shape[0]}
-    layer = Shapes(data, properties=copy(properties), text='shape_type')
+    layer = Shapes(
+        data,
+        properties=copy(properties),
+        text={'string': {'feature': 'shape_type'}},
+    )
 
     new_properties = {'shape_type': ['B'] * shape[0]}
     layer.properties = new_properties
@@ -369,7 +377,7 @@ def test_nd_text():
         [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
     ]
     properties = {'shape_type': ['A', 'B']}
-    text_kwargs = {'text': 'shape_type', 'anchor': 'center'}
+    text_kwargs = {'string': {'feature': 'shape_type'}, 'anchor': 'center'}
     layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
     assert layer.ndim == 4
 
@@ -388,7 +396,11 @@ def test_data_setter_with_text(properties):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data, properties=copy(properties), text='shape_type')
+    layer = Shapes(
+        data,
+        properties=copy(properties),
+        text={'string': {'feature': 'shape_type'}},
+    )
 
     # test setting to data with fewer shapes
     n_new_shapes = 4

@@ -7,6 +7,7 @@ from napari.layers.utils.string_encoding import ConstantStringEncoding
 from napari.layers.utils.text_manager import TextManager
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_text_manager_property():
     """Test creating an empty text manager in property mode.
     This is for creating an empty layer with text initialized.
@@ -23,6 +24,7 @@ def test_empty_text_manager_property():
     np.testing.assert_equal(text_manager.values, ['0.5'])
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_add_many_text_property():
     properties = {'confidence': np.empty(0, dtype=float)}
     text_manager = TextManager(
@@ -36,6 +38,7 @@ def test_add_many_text_property():
     np.testing.assert_equal(text_manager.values, ['0.5'] * 2)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_text_manager_format():
     """Test creating an empty text manager in formatted mode.
     This is for creating an empty layer with text initialized.
@@ -51,6 +54,7 @@ def test_empty_text_manager_format():
     np.testing.assert_equal(text_manager.values, ['confidence: 0.50'])
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_add_many_text_formatted():
     properties = {'confidence': np.empty(0, dtype=float)}
     text_manager = TextManager(
@@ -64,6 +68,7 @@ def test_add_many_text_formatted():
     np.testing.assert_equal(text_manager.values, ['confidence: 0.50'] * 2)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_text_manager_property():
     n_text = 3
     text = 'class'
@@ -83,6 +88,7 @@ def test_text_manager_property():
     np.testing.assert_equal(text_manager.values, expected_text_2[1::])
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_text_manager_format():
     n_text = 3
     text = 'confidence: {confidence:.2f}'
@@ -118,6 +124,7 @@ def test_text_manager_format():
     np.testing.assert_equal(text_manager.values, expected_text_2[1::])
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_refresh_text():
     n_text = 3
     text = 'class'
@@ -134,6 +141,7 @@ def test_refresh_text():
     np.testing.assert_equal(new_classes, text_manager.values)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_equality():
     n_text = 3
     text = 'class'
@@ -154,6 +162,7 @@ def test_equality():
     assert not (text_manager_1 == text_manager_2)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_blending_modes():
     n_text = 3
     text = 'class'
@@ -178,6 +187,7 @@ def test_blending_modes():
         assert text_manager.blending == 'translucent'
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_text_with_invalid_format_string_then_constant_text():
     n_text = 3
     text = 'confidence: {confidence:.2f'
@@ -188,6 +198,7 @@ def test_text_with_invalid_format_string_then_constant_text():
     np.testing.assert_array_equal(text_manager.values, [text] * n_text)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_text_with_format_string_missing_property_then_constant_empty_with_warning():
     n_text = 3
     text = 'score: {score:.2f}'
@@ -201,6 +212,7 @@ def test_text_with_format_string_missing_property_then_constant_empty_with_warni
     np.testing.assert_array_equal(text_manager.values, [''] * n_text)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_text_constant_then_repeat_values():
     n_text = 3
     properties = {'class': np.array(['A', 'B', 'C'])}
@@ -212,11 +224,13 @@ def test_text_constant_then_repeat_values():
     np.testing.assert_array_equal(text_manager.values, ['point'] * n_text)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_text_constant_with_no_properties_then_no_values():
     text_manager = TextManager(text='point', n_text=3)
     np.testing.assert_array_equal(text_manager.values, ['point'] * 3)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_add_with_text_constant_then_ignored():
     n_text = 3
     properties = {'class': np.array(['A', 'B', 'C'])}
@@ -230,6 +244,7 @@ def test_add_with_text_constant_then_ignored():
     np.testing.assert_array_equal(text_manager.values, ['point'] * 5)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_add_with_text_constant_init_empty_then_ignored():
     properties = {}
     text_manager = TextManager(text='point', n_text=0, properties=properties)
@@ -239,6 +254,7 @@ def test_add_with_text_constant_init_empty_then_ignored():
     np.testing.assert_array_equal(text_manager.values, ['point'] * 2)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_remove_with_text_constant_then_ignored():
     n_text = 5
     properties = {'class': np.array(['A', 'B', 'C', 'D', 'E'])}
@@ -253,7 +269,7 @@ def test_remove_with_text_constant_then_ignored():
 
 def test_from_layer():
     text = {
-        'text': 'class',
+        'string': {'feature': 'class'},
         'translation': [-0.5, 1],
         'visible': False,
     }
@@ -275,7 +291,7 @@ def test_from_layer():
 
 def test_update_from_layer():
     text = {
-        'text': 'class',
+        'string': {'feature': 'class'},
         'translation': [-0.5, 1],
         'visible': False,
     }
@@ -291,7 +307,7 @@ def test_update_from_layer():
     )
 
     text = {
-        'text': 'Conf: {confidence:.2f}',
+        'string': 'Conf: {confidence:.2f}',
         'translation': [1.5, -2],
         'size': 9000,
     }
@@ -313,13 +329,13 @@ def test_update_from_layer_with_invalid_value_fails_safely():
         }
     )
     text_manager = TextManager._from_layer(
-        text='class',
+        text={'feature': 'class'},
         features=features,
     )
     before = text_manager.copy(deep=True)
 
     text = {
-        'text': 'confidence',
+        'string': {'feature': 'confidence'},
         'size': -3,
     }
 
@@ -332,12 +348,12 @@ def test_update_from_layer_with_invalid_value_fails_safely():
 def test_update_from_layer_with_warning_only_one_emitted():
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
     text_manager = TextManager._from_layer(
-        text='class',
+        text={'feature': 'class'},
         features=features,
     )
 
     text = {
-        'text': 'class',
+        'string': {'feature': 'class'},
         'blending': 'opaque',
     }
 

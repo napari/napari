@@ -34,7 +34,7 @@ class TextManager(EventedModel):
     values : array-like
         The array of strings manually specified.
         .. deprecated:: 0.4.16
-            `values` is deprecated. Use a `ManualStringEncoding` with `string` instead.
+            `values` is deprecated. Use `string` instead.
     text : str
         A a property name or a format string containing property names.
         This will be used to fill out string values n_text times using the
@@ -93,19 +93,41 @@ class TextManager(EventedModel):
         self, text=None, properties=None, n_text=None, features=None, **kwargs
     ):
         if n_text is not None:
-            _warn_about_deprecated_n_text_parameter()
+            warnings.warn(
+                trans._(
+                    'n_text is a deprecated parameter. Use features instead.'
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if properties is not None:
-            _warn_about_deprecated_properties_parameter()
+            warnings.warn(
+                trans._(
+                    'properties is a deprecated parameter. Use features instead.'
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
             features = _validate_features(properties, num_data=n_text)
         else:
             features = _validate_features(features)
         if 'values' in kwargs:
-            _warn_about_deprecated_values_parameter()
+            warnings.warn(
+                trans._(
+                    'values is a deprecated parameter. Use string instead.'
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
             values = kwargs.pop('values')
             if 'string' not in kwargs:
                 kwargs['string'] = values
         if text is not None:
-            _warn_about_deprecated_text_parameter()
+            warnings.warn(
+                trans._('text is a deprecated parameter. Use string instead.'),
+                DeprecationWarning,
+                stacklevel=2,
+            )
             if 'string' not in kwargs:
                 if isinstance(text, str) and text in features:
                     kwargs['string'] = DirectStringEncoding(feature=text)
@@ -144,13 +166,13 @@ class TextManager(EventedModel):
         properties : Dict[str, np.ndarray]
             The new properties from the layer
         """
-        # warnings.warn(
-        #     trans._(
-        #         'TextManager.refresh_text is deprecated. Use TextManager.refresh instead.'
-        #     ),
-        #     DeprecationWarning,
-        #     stacklevel=2,
-        # )
+        warnings.warn(
+            trans._(
+                'TextManager.refresh_text is deprecated. Use TextManager.refresh instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         features = _validate_features(properties)
         self.refresh(features)
 
@@ -164,11 +186,13 @@ class TextManager(EventedModel):
         n_text : int
             The number of text elements to add
         """
-        # warnings.warn(
-        #    trans._('TextManager.add is deprecated. Use TextManager.fill instead.'),
-        #    DeprecationWarning,
-        #    stacklevel=2,
-        # )
+        warnings.warn(
+            trans._(
+                'TextManager.add is deprecated. Use TextManager.fill instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         features = pd.DataFrame(
             {
                 name: np.repeat(value, n_text, axis=0)
@@ -259,7 +283,7 @@ class TextManager(EventedModel):
         cls,
         *,
         text: Union['TextManager', dict, str, Sequence[str], None],
-        features: pd.DataFrame,
+        features: Any,
     ) -> 'TextManager':
         """Create a TextManager from a layer.
 
@@ -282,13 +306,13 @@ class TextManager(EventedModel):
             kwargs = deepcopy(text)
         else:
             if isinstance(text, str) and text in features:
-                # warnings.warn(
-                #    trans._(
-                #        'Using a feature name for text is deprecated. Use a DirectStringEncoding instead.'
-                #    ),
-                #    DeprecationWarning,
-                #    stacklevel=2,
-                # )
+                warnings.warn(
+                    trans._(
+                        'Using a feature name for text is deprecated. Use a `DirectStringEncoding` instead.'
+                    ),
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
                 kwargs = {'string': DirectStringEncoding(feature=text)}
             else:
                 kwargs = {'string': text}
@@ -299,7 +323,7 @@ class TextManager(EventedModel):
         self,
         *,
         text: Union['TextManager', dict, str, None],
-        features: pd.DataFrame,
+        features: Any,
     ):
         """Updates this in-place from a layer.
 
@@ -357,41 +381,3 @@ class TextManager(EventedModel):
             )
 
         return blending_mode
-
-
-def _warn_about_deprecated_values_parameter():
-    # warnings.warn(
-    #    trans._(
-    #        'values is a deprecated parameter. Use string instead.'
-    #    ),
-    #    DeprecationWarning,
-    #    stacklevel=2,
-    # )
-    pass
-
-
-def _warn_about_deprecated_text_parameter():
-    # warnings.warn(
-    #    trans._('text is a deprecated parameter. Use string instead.'),
-    #    DeprecationWarning,
-    #    stacklevel=2,
-    # )
-    pass
-
-
-def _warn_about_deprecated_properties_parameter():
-    # warnings.warn(
-    #    trans._('properties is a deprecated parameter. Use features instead.'),
-    #    DeprecationWarning,
-    #    stacklevel=2,
-    # )
-    pass
-
-
-def _warn_about_deprecated_n_text_parameter():
-    # warnings.warn(
-    #    trans._('n_text is a deprecated parameter. Use features instead.'),
-    #    DeprecationWarning,
-    #    stacklevel=2,
-    # )
-    pass
