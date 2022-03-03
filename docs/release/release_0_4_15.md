@@ -23,9 +23,18 @@ https://github.com/napari/napari
 
 This release is focused on documentation improvements and bug fixes, with few
 changes to napari's API. The napari documentation is now entirely contained,
-built, and deployed within the napari repository (#4047, #4147, #4154). This
-and ongoing work will make it easier for the community to contribute
-documentation to the project and help others use napari.
+built, and deployed from the napari repository (#4047, #4147, #4154, #4176,
+#4183). This and ongoing work will make it easier for the community to
+contribute documentation to the project and help others use napari. We have a
+new [documentation contributing guide](docs_contributing_guide) to help
+community members contribute documentation pages.
+
+Our volume display layers (`Image` and `Labels`) have gained a new slicing
+plane mode and user interface to view slices of the data embedded within a
+larger volume (#3759). This had been previously available as an experimental
+API, and is now much improved, with new user interface controls. See the
+[volume plane rendering](https://github.com/napari/napari/blob/e1ebbc20ccd3136dee1a7f1c051ea65d020b429c/examples/volume_plane_rendering.py)
+example for details.
 
 We have added completely optional, opt-in error reporting via the package
 [napari-error-reporter](https://github.com/tlambert03/napari-error-reporter/).
@@ -40,6 +49,7 @@ details.
 
 - Add edge_width per-point and edge_width_is_relative (#3999)
 - Support error reporting via napari-error-reporter (#4055)
+- volume plane interactive controls (#3759)
 
 ## Improvements
 
@@ -73,6 +83,9 @@ details.
 - Add new core developers (#4157)
 - Move most examples to use features instead of properties (#4162)
 - improve examples/add_points_on_nD_shapes.py camera/dims setup (#4161)
+- Add docs contributor's guide and docs template (#4168)
+- Adds calendar to docs  (#4176)
+
 
 ## Bug Fixes
 
@@ -88,6 +101,7 @@ details.
 - Fix style encoding tests on main (#4150)
 - Fix bug in continuous autocontrast button, add tests (#4152)
 - Tracks graph shader buffer order update (#4165)
+- block points add mode in 3D when layer.ndim == 2 (#4184)
 
 ## API Changes
 
@@ -102,6 +116,9 @@ details.
 - Don't pip install from github in comprehensive tests (avoid another LFS leak) (#4141)
 - fix make docs for non editable installs (#4156)
 - Deploy docs workflow (#4154)
+- Allow the calendar to build correctly in PR build docs (#4181)
+- Deploy to napari.github.io (#4183)
+
 
 ## Other Pull Requests
 
@@ -112,21 +129,23 @@ details.
 - bump magicgui dep (fix `_normalize_slot` AttributeError and minreqs test) (#4082)
 - Refactor dummy text data for vispy (#4097)
 - Add stateful StyleEncoding tests (#4113)
+- Remove print statement (#4178)
 
-
-## 17 authors added to this release (alphabetical)
+## 19 authors added to this release (alphabetical)
 
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [chili-chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
+- [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Jeremy Asuncion](https://github.com/napari/napari/commits?author=codemonkey800) - @codemonkey800
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
 - [Melissa Weber Mendonça](https://github.com/napari/napari/commits?author=melissawm) - @melissawm
@@ -134,8 +153,7 @@ details.
 - [pre-commit-ci[bot]](https://github.com/napari/napari/commits?author=pre-commit-ci[bot]) - @pre-commit-ci[bot]
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 
-
-## 20 reviewers added to this release (alphabetical)
+## 21 reviewers added to this release (alphabetical)
 
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
@@ -144,6 +162,7 @@ details.
 - [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Jackson Maxfield Brown](https://github.com/napari/napari/commits?author=JacksonMaxfield) - @JacksonMaxfield
+- [Jan-Hendrik Müller](https://github.com/napari/napari/commits?author=kolibril13) - @kolibril13
 - [Jeremy Asuncion](https://github.com/napari/napari/commits?author=codemonkey800) - @codemonkey800
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Justin Kiggins](https://github.com/napari/napari/commits?author=neuromusic) - @neuromusic

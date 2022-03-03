@@ -1,3 +1,4 @@
+(docs_contributing_guide)=
 # Contributing Documentation
 
 This guide will teach you how to submit new documents to napari's usage documentation.
