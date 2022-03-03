@@ -101,6 +101,10 @@ subtrees:
           - file: developers/testing
           - file: developers/docs
           - file: developers/translations
+          - file: developers/documentation/index
+            subtrees:
+            - entries:
+              - file: developers/documentation/docs_template
       - file: release/index
         subtrees:
         - entries:
