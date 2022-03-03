@@ -146,8 +146,6 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
         self._populate_grid(
             ('opacity:', self.opacitySlider),
             ('contrast limits:', self.contrastLimitsSlider),

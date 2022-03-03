@@ -172,8 +172,6 @@ class QtPointsControls(QtLayerControls):
         button_row.setContentsMargins(0, 0, 0, 5)
         button_row.setSpacing(4)
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
         self._populate_grid(
             (button_row,),
             (...,),

@@ -287,8 +287,6 @@ class QtShapesControls(QtLayerControls):
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
         self._populate_grid(
             (button_grid,),
             (...,),

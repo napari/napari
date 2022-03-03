@@ -261,8 +261,6 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
-        # grid_layout created in QtLayerControls
-        # addWidget(widget, row, column, [row_span, column_span])
         self._populate_grid(
             (button_row,),
             (...,),
