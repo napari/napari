@@ -1553,9 +1553,7 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.string._update(
-            self.features, indices=self._indices_view
-        )
+        return self.text.string._values[self._indices_view]
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
@@ -2861,9 +2859,7 @@ class Shapes(Layer):
                 'face_color': deepcopy(self._data_view._face_color[index]),
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
-                'text_strings': self.text.string._update(
-                    self.features, indices=index
-                ),
+                'text': self.text._copy(index),
             }
         else:
             self._clipboard = {}
@@ -2879,7 +2875,7 @@ class Shapes(Layer):
             ]
 
             self._feature_table.append(self._clipboard['features'])
-            self.text._paste(strings=self._clipboard['text_strings'])
+            self.text._paste(**self._clipboard['text'])
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):

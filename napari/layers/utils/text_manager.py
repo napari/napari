@@ -33,23 +33,23 @@ class TextManager(EventedModel):
         The features table of a layer.
     values : array-like
         The array of strings manually specified.
-        .. deprecated:: 0.4.15
+        .. deprecated:: 0.4.16
             `values` is deprecated. Use a `ManualStringEncoding` with `string` instead.
     text : str
         A a property name or a format string containing property names.
         This will be used to fill out string values n_text times using the
         data in properties.
-        .. deprecated:: 0.4.15
+        .. deprecated:: 0.4.16
             `text` is deprecated. Use `string` instead.
     n_text : int
         The number of text elements to initially display, which should match
         the number of elements (e.g. points) in a layer.
-        .. deprecated:: 0.4.15
+        .. deprecated:: 0.4.16
             `n_text` is deprecated. Its value is implied by `features` instead.
     properties: dict
         Stores properties data that will be used to generate strings from the
         given text. Typically comes from a layer.
-        .. deprecated:: 0.4.15
+        .. deprecated:: 0.4.16
             `properties` is deprecated. Use `features` instead.
 
     Attributes
@@ -187,6 +187,12 @@ class TextManager(EventedModel):
             The features table of a layer.
         """
         self.string._update(features)
+
+    def _copy(self, index) -> dict:
+        strings = self.string._values
+        if strings.ndim > 0:
+            strings = strings[index]
+        return {'strings': strings}
 
     def _paste(self, *, strings: StringArray):
         self.string._append(strings)
