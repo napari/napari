@@ -123,7 +123,9 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
     cursor_position = layer._world_to_displayed_data(
         position=viewer.cursor.position, dims_displayed=layer._dims_displayed
     )
-    view_direction = layer._world_to_data_ray(viewer.camera.view_direction)
+    view_direction = np.asarray(
+        layer._world_to_data_ray(viewer.camera.view_direction)
+    )[-3:]
     intersection = layer.plane.intersect_with_line(
         line_position=cursor_position, line_direction=view_direction
     )
@@ -136,4 +138,6 @@ def orient_plane_normal_around_cursor(layer: Image, plane_normal: tuple):
         layer.plane.position = intersection
 
     # update plane normal
-    layer.plane.normal = layer._world_to_data_ray(plane_normal)
+    layer.plane.normal = layer._world_to_displayed_data_ray(
+        plane_normal, layer._dims_displayed
+    )
