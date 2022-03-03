@@ -55,7 +55,7 @@ However, their [raw JSON format](https://numpy.org/numpy-tutorials/content/pairi
 Fork and clone [our repository](https://github.com/napari/napari), and make a copy of `napari/docs/developers/documentation/docs_template.md`. 
 You can edit the template directly in Jupyter notebook, or in your preferred text editor.
 
-```{admonition}
+```{admonition} Already have a notebook?
 :class: tip
 
 If you have an existing `.ipynb` Jupyter notebook that you'd like to contribute, you can convert it to MyST markdown
