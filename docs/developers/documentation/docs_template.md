@@ -17,6 +17,7 @@ theme:
 # Docs template
 
 This template will guide you to write a well formatted document and prepare it for contribution to napari.org.
+
 Edit this section to include a sentence or two introducing the tutorial, and include a time estimate for completion.
 
 ## Prerequisites
