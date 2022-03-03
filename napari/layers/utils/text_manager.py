@@ -130,6 +130,13 @@ class TextManager(EventedModel):
             )
             if 'string' not in kwargs:
                 if isinstance(text, str) and text in features:
+                    warnings.warn(
+                        trans._(
+                            'Using a feature name for text is deprecated. Use a `DirectStringEncoding` instead.'
+                        ),
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
                     kwargs['string'] = DirectStringEncoding(feature=text)
                 else:
                     kwargs['string'] = text
@@ -306,13 +313,6 @@ class TextManager(EventedModel):
             kwargs = deepcopy(text)
         else:
             if isinstance(text, str) and text in features:
-                warnings.warn(
-                    trans._(
-                        'Using a feature name for text is deprecated. Use a `DirectStringEncoding` instead.'
-                    ),
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
                 kwargs = {'string': DirectStringEncoding(feature=text)}
             else:
                 kwargs = {'string': text}

@@ -436,7 +436,7 @@ def test_remove_selected_removes_corresponding_attributes():
     color = np.random.rand(shape[0], 4)
     feature = np.random.rand(shape[0])
     shown = np.random.randint(2, size=shape[0]).astype(bool)
-    text = {'string': {'feature': 'feature'}}
+    text = 'feature'
 
     layer = Points(
         data,
@@ -770,7 +770,7 @@ def test_text_from_property_value(properties):
     layer = Points(
         data,
         properties=copy(properties),
-        text={'string': {'feature': 'point_type'}},
+        text='point_type',
     )
 
     np.testing.assert_equal(layer.text.values, properties['point_type'])
@@ -865,7 +865,7 @@ def test_refresh_text():
     layer = Points(
         data,
         properties=copy(properties),
-        text={'string': {'feature': 'point_type'}},
+        text='point_type',
     )
 
     new_properties = {'point_type': ['B'] * shape[0]}
@@ -2223,7 +2223,9 @@ def test_set_properties_updates_text_values():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(
-        points, properties=properties, text={'string': {'feature': 'class'}}
+        points,
+        properties=properties,
+        text='class',
     )
 
     layer.properties = {'class': np.array(['D', 'E', 'F'])}
@@ -2237,7 +2239,7 @@ def test_set_properties_with_invalid_shape_errors_safely():
     }
     points = Points(
         np.random.rand(3, 2),
-        text={'string': {'feature': 'class'}},
+        text='class',
         properties=properties,
     )
     np.testing.assert_equal(points.properties, properties)
@@ -2256,7 +2258,7 @@ def test_set_properties_with_missing_text_property_text_becomes_constant_empty_a
     }
     points = Points(
         np.random.rand(3, 2),
-        text={'string': {'feature': 'class'}},
+        text='class',
         properties=properties,
     )
     np.testing.assert_equal(points.properties, properties)
