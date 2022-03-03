@@ -1,8 +1,16 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout
+from qtpy.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QGridLayout,
+    QLabel,
+    QLayout,
+    QWidget,
+)
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
+from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
 
 
@@ -71,6 +79,77 @@ class QtLayerControls(QFrame):
 
         blend_comboBox.activated[str].connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
+
+    def _populate_grid(self, *grid_scheme):
+        """
+        Populate the layer control grid layout based on a scheme in the form:
+        [
+            (Qwidget, ..., QWidget),
+            (...,),
+            (None, QWidget,)
+        ]
+
+        Ellipsis means "increase the column span of the previous widget" if part of a row, and
+        "increase the row span of all the widgets in the previous row" if part of a column.
+        Trailing Ellipses are assumed for rows with fewer entries than others.
+
+        None leaves an empty space in the grid.
+        """
+        # arguments that will be passed to grid.addWidget
+        # list of tuples in the form (widget, row, column, row_span, column_span)
+        args = []
+
+        max_cols = max(len(row) for row in grid_scheme)
+        previous_row = -1
+        for row, widgets in enumerate(grid_scheme):
+            if widgets == (None,):
+                continue
+            if widgets == (Ellipsis,):
+                # increment row span of all widgets in the previous row
+                for arg in args:
+                    if arg[1] == previous_row:
+                        arg[3] += 1
+                continue
+            previous_row = row
+
+            previous_col = -1
+            for col, wdg in enumerate(widgets):
+                if wdg is None:
+                    continue
+                if wdg is Ellipsis:
+                    # increment column span of the previous widget
+                    for arg in args:
+                        if arg[1] == row and arg[2] == previous_col:
+                            arg[4] += 1
+                    continue
+                previous_col = col
+
+                # generate simple label with translation if only a string was passed
+                if isinstance(wdg, str):
+                    wdg = QLabel(trans._(wdg))
+
+                args.append([wdg, row, col, 1, 1])
+
+            # pad if necessary
+            empty_space = max_cols - col + 1
+            for arg in args:
+                if arg[1] == row and arg[2] == previous_col:
+                    arg[4] += empty_space
+
+        for arg in args:
+            if isinstance(arg[0], QWidget):
+                add_item = self.grid_layout.addWidget
+            elif isinstance(arg[0], QLayout):
+                add_item = self.grid_layout.addLayout
+            add_item(*arg)
+
+        from rich import print
+
+        print(args)
+
+        self.grid_layout.setRowStretch(previous_row + 1, 1)
+        self.grid_layout.setColumnStretch(1, 1)
+        self.grid_layout.setSpacing(4)
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.

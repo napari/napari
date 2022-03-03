@@ -148,32 +148,24 @@ class QtImageControls(QtBaseImageControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 0, 1)
-        self.grid_layout.addWidget(QLabel(trans._('contrast limits:')), 1, 0)
-        self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('auto-contrast:')), 2, 0)
-        self.grid_layout.addWidget(self.autoScaleBar, 2, 1)
-        self.grid_layout.addWidget(QLabel(trans._('gamma:')), 3, 0)
-        self.grid_layout.addWidget(self.gammaSlider, 3, 1)
-        self.grid_layout.addWidget(QLabel(trans._('colormap:')), 4, 0)
-        self.grid_layout.addLayout(colormap_layout, 4, 1)
-        self.grid_layout.addWidget(QLabel(trans._('blending:')), 5, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 5, 1)
-        self.grid_layout.addWidget(self.interpLabel, 6, 0)
-        self.grid_layout.addWidget(self.interpComboBox, 6, 1)
-        self.grid_layout.addWidget(self.renderLabel, 7, 0)
-        self.grid_layout.addWidget(self.renderComboBox, 7, 1)
-        self.grid_layout.addWidget(self.depictionLabel, 8, 0)
-        self.grid_layout.addWidget(self.depictionComboBox, 8, 1)
-        self.grid_layout.addWidget(self.planeControls, 9, 0, 2, 2)
-        self.grid_layout.addWidget(self.isoThresholdLabel, 11, 0)
-        self.grid_layout.addWidget(self.isoThresholdSlider, 11, 1)
-        self.grid_layout.addWidget(self.attenuationLabel, 12, 0)
-        self.grid_layout.addWidget(self.attenuationSlider, 12, 1)
-        self.grid_layout.setRowStretch(13, 1)
-        self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setSpacing(4)
+        self._populate_grid(
+            ('opacity:', self.opacitySlider),
+            ('contrast limits:', self.contrastLimitsSlider),
+            ('auto-contrast:', self.autoScaleBar),
+            ('gamma:', self.gammaSlider),
+            ('colormap:', colormap_layout),
+            ('blending:', self.blendComboBox),
+            (self.interpLabel, self.interpComboBox),
+            (self.renderLabel, self.renderComboBox),
+            (
+                self.depictionLabel,
+                self.depictionComboBox,
+            ),
+            (self.planeControls,),
+            (...,),
+            (self.isoThresholdLabel, self.isoThresholdSlider),
+            (self.attenuationLabel, self.attenuationSlider),
+        )
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
