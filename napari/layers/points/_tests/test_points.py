@@ -767,11 +767,7 @@ def test_text_from_property_value(properties):
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Points(
-        data,
-        properties=copy(properties),
-        text='point_type',
-    )
+    layer = Points(data, properties=copy(properties), text='point_type')
 
     np.testing.assert_equal(layer.text.values, properties['point_type'])
 
@@ -862,11 +858,7 @@ def test_refresh_text():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'point_type': ['A'] * shape[0]}
-    layer = Points(
-        data,
-        properties=copy(properties),
-        text='point_type',
-    )
+    layer = Points(data, properties=copy(properties), text='point_type')
 
     new_properties = {'point_type': ['B'] * shape[0]}
     layer.properties = new_properties
@@ -2222,11 +2214,7 @@ def test_to_mask_3d_with_size_2():
 def test_set_properties_updates_text_values():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    layer = Points(
-        points,
-        properties=properties,
-        text='class',
-    )
+    layer = Points(points, properties=properties, text='class')
 
     layer.properties = {'class': np.array(['D', 'E', 'F'])}
 
@@ -2237,11 +2225,7 @@ def test_set_properties_with_invalid_shape_errors_safely():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(
-        np.random.rand(3, 2),
-        text='class',
-        properties=properties,
-    )
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
@@ -2256,11 +2240,7 @@ def test_set_properties_with_missing_text_property_text_becomes_constant_empty_a
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
-    points = Points(
-        np.random.rand(3, 2),
-        text='class',
-        properties=properties,
-    )
+    points = Points(np.random.rand(3, 2), text='class', properties=properties)
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 

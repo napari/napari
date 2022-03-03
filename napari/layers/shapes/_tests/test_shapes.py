@@ -250,11 +250,7 @@ def test_text_from_property_value(properties):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(
-        data,
-        properties=copy(properties),
-        text='shape_type',
-    )
+    layer = Shapes(data, properties=copy(properties), text='shape_type')
 
     np.testing.assert_equal(layer.text.values, properties['shape_type'])
 
@@ -345,11 +341,7 @@ def test_refresh_text():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'shape_type': ['A'] * shape[0]}
-    layer = Shapes(
-        data,
-        properties=copy(properties),
-        text='shape_type',
-    )
+    layer = Shapes(data, properties=copy(properties), text='shape_type')
 
     new_properties = {'shape_type': ['B'] * shape[0]}
     layer.properties = new_properties
@@ -382,11 +374,7 @@ def test_data_setter_with_text(properties):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(
-        data,
-        properties=copy(properties),
-        text='shape_type',
-    )
+    layer = Shapes(data, properties=copy(properties), text='shape_type')
 
     # test setting to data with fewer shapes
     n_new_shapes = 4
