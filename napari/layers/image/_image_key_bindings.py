@@ -39,7 +39,7 @@ def orient_plane_normal_along_view_direction(layer: Image):
     if viewer.dims.ndisplay != 3:
         return
     layer.plane.normal = layer._world_to_displayed_data_ray(
-        viewer.camera.view_direction, [-3, -2, -1]
+        viewer.camera.view_direction, dims_displayed=[-3, -2, -1]
     )
 
 
