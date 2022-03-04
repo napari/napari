@@ -354,9 +354,8 @@ class TextManager(EventedModel):
         # Connected callbacks may raise errors, but those are bugs.
         self.update(new_manager, recurse=False)
 
-        # In general we get a new instance of string, so update its cached
-        # values for deprecated stateful behavior.
-        self.string._update(features)
+        # Some of the encodings may have changed, so ensure they are full.
+        self.fill(features)
 
     @validator('string', pre=True, always=True)
     def _check_string(cls, string: StringEncodingArgument):

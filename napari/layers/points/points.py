@@ -1341,7 +1341,8 @@ class Points(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return self.text.string._values[self._indices_view]
+        self.text.fill(self.features)
+        return self.text.view_text(self._indices_view)
 
     @property
     def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
