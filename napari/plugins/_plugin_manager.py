@@ -220,8 +220,10 @@ class NapariPluginManager(PluginManager):
                         # get the HookImplementation objects matching this entry
                         hook_impl = list(
                             filter(
+                                # plugin name has to match
                                 lambda impl: impl.plugin_name == plugin
                                 and (
+                                    # if we have a hook_impl_name it must match
                                     not hook_impl_name
                                     or impl.function.__name__ == hook_impl_name
                                 ),
