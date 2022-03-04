@@ -37,7 +37,6 @@ class PluginHookOption(TypedDict):
     """Custom type specifying plugin and enabled state."""
 
     plugin: str
-    hook_impl: str
     enabled: bool
 
 
@@ -183,8 +182,7 @@ class NapariPluginManager(PluginManager):
             if len(impls) > 1:
                 order[spec_name] = [
                     {
-                        'plugin': impl.plugin_name,
-                        'hook_impl': impl.function.__name__,
+                        'plugin': f'{impl.plugin_name}--{impl.function.__name__}',
                         'enabled': impl.enabled,
                     }
                     for impl in reversed(impls)
@@ -213,11 +211,15 @@ class NapariPluginManager(PluginManager):
                         hook_caller._set_plugin_enabled(
                             p['plugin'], p['enabled']
                         )
+                        plugin_name, hook_impl_name = tuple(
+                            p['plugin'].split('--')
+                        )
                         hook_impls = hook_caller.get_hookimpls()
+                        # get the HookImplementation object matching this entry
                         hook_impl = list(
                             filter(
-                                lambda impl: impl.plugin_name == p['plugin']
-                                and impl.function.__name__ == p['hook_impl'],
+                                lambda impl: impl.plugin_name == plugin_name
+                                and impl.function.__name__ == hook_impl_name,
                                 hook_impls,
                             )
                         )[0]
