@@ -401,8 +401,6 @@ def main():
     # and https://github.com/ContinuumIO/anaconda-issues/issues/199
     import platform
 
-    from .utils.misc import running_as_bundled_app
-
     _MACOS_AT_LEAST_CATALINA = (
         sys.platform == "darwin" and int(platform.release().split('.')[0]) > 19
     )
