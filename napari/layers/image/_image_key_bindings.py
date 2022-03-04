@@ -38,7 +38,9 @@ def orient_plane_normal_along_view_direction(layer: Image):
     viewer = napari.viewer.current_viewer()
     if viewer.dims.ndisplay != 3:
         return
-    layer.plane.normal = layer._world_to_data_ray(viewer.camera.view_direction)
+    layer.plane.normal = layer._world_to_displayed_data_ray(
+        viewer.camera.view_direction, dims_displayed=[-3, -2, -1]
+    )
 
 
 @Image.bind_key('o')
@@ -49,8 +51,8 @@ def synchronise_plane_normal_with_view_direction(layer: Image):
 
     def sync_plane_normal_with_view_direction(event=None):
         """Plane normal syncronisation mouse callback."""
-        layer.plane.normal = layer._world_to_data_ray(
-            viewer.camera.view_direction
+        layer.plane.normal = layer._world_to_displayed_data_ray(
+            viewer.camera.view_direction, [-3, -2, -1]
         )
 
     # update plane normal and add callback to mouse drag
