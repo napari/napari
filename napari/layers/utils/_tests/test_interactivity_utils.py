@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from napari.layers import Image
 from napari.layers.utils.interactivity_utils import (
     drag_data_to_projected_distance,
     orient_plane_normal_around_cursor,
@@ -33,27 +34,32 @@ def test_drag_data_to_projected_distance(
     assert np.allclose(result, expected_value)
 
 
-def test_orient_plane_normal_around_cursor(make_napari_viewer):
+@pytest.mark.parametrize(
+    'layer',
+    [
+        Image(np.zeros(shape=(28, 28, 28))),
+        Image(np.zeros(shape=(2, 28, 28, 28))),
+    ],
+)
+def test_orient_plane_normal_around_cursor(make_napari_viewer, layer):
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 3
     viewer.camera.angles = (0, 0, 90)
-    viewer.cursor.position = (14, 14, 14)
+    viewer.cursor.position = [14] * layer._ndim
 
-    image_layer = viewer.add_image(np.zeros(shape=(28, 28, 28)))
-    image_layer.depiction = 'plane'
-    image_layer.plane.normal = (1, 0, 0)
-    image_layer.plane.position = (14, 14, 14)
+    viewer.add_layer(layer)
+    layer.depiction = 'plane'
+    layer.plane.normal = (1, 0, 0)
+    layer.plane.position = (14, 14, 14)
 
     # apply simple transformation on the volume
-    image_layer.translate = [1, 1, 1]
+    layer.translate = [1] * layer._ndim
 
     # orient plane normal
-    orient_plane_normal_around_cursor(
-        layer=image_layer, plane_normal=(1, 0, 1)
-    )
+    orient_plane_normal_around_cursor(layer=layer, plane_normal=(1, 0, 1))
 
     # check that plane normal has been updated
     assert np.allclose(
-        image_layer.plane.normal, [1, 0, 1] / np.linalg.norm([1, 0, 1])
+        layer.plane.normal, [1, 0, 1] / np.linalg.norm([1, 0, 1])
     )
-    assert np.allclose(image_layer.plane.position, [14, 13, 13])
+    assert np.allclose(layer.plane.position, (14, 13, 13))
