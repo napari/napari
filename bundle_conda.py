@@ -38,11 +38,11 @@ import platform
 import re
 import subprocess
 import sys
-from tempfile import NamedTemporaryFile
 import zipfile
 from argparse import ArgumentParser
 from distutils.spawn import find_executable
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from ruamel import yaml
 
