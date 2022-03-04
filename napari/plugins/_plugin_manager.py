@@ -207,23 +207,28 @@ class NapariPluginManager(PluginManager):
                 order = []
                 for p in new_order.get(spec_name, []):
                     try:
+                        plugin = p['plugin']
+                        hook_impl_name = None
+                        if '--' in plugin:
+                            plugin, hook_impl_name = tuple(plugin.split('--'))
+
+                        enabled = p['enabled']
                         # the plugin may not be there if its been disabled.
-                        hook_caller._set_plugin_enabled(
-                            p['plugin'], p['enabled']
-                        )
-                        plugin_name, hook_impl_name = tuple(
-                            p['plugin'].split('--')
-                        )
+                        hook_caller._set_plugin_enabled(plugin, enabled)
+
                         hook_impls = hook_caller.get_hookimpls()
-                        # get the HookImplementation object matching this entry
+                        # get the HookImplementation objects matching this entry
                         hook_impl = list(
                             filter(
-                                lambda impl: impl.plugin_name == plugin_name
-                                and impl.function.__name__ == hook_impl_name,
+                                lambda impl: impl.plugin_name == plugin
+                                and (
+                                    not hook_impl_name
+                                    or impl.function.__name__ == hook_impl_name
+                                ),
                                 hook_impls,
                             )
-                        )[0]
-                        order.append(hook_impl)
+                        )
+                        order.extend(hook_impl)
                     except KeyError:
                         continue
                 if order:

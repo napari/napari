@@ -11,7 +11,6 @@ class PluginHookOption(TypedDict):
     """Custom type specifying plugin, hook implementation function name, and enabled state."""
 
     plugin: str
-    hook_impl: str
     enabled: bool
 
 
