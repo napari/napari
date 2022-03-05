@@ -1158,11 +1158,14 @@ class Window:
             if size is not None:
                 prev_size = canvas.size
                 canvas.size = size
-            img = self._qt_viewer.canvas.native.grabFramebuffer()
-            if flash:
-                add_flash_animation(self._qt_viewer._canvas_overlay)
-            if size is not None:
-                canvas.size = prev_size
+            try:
+                img = self._qt_viewer.canvas.native.grabFramebuffer()
+                if flash:
+                    add_flash_animation(self._qt_viewer._canvas_overlay)
+            finally:
+                # make sure we always go back to the right canvas size
+                if size is not None:
+                    canvas.size = prev_size
         else:
             img = self._qt_window.grab().toImage()
             if flash:
