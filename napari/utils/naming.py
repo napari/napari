@@ -46,6 +46,78 @@ def inc_name_count(name):
     return numbered_patt.sub(_inc_name_count_sub, name, count=1)
 
 
+class CallerFrame:
+    """
+    Context manager to access the namespace in one of the upper caller frames.
+
+    It is a context manager in order to be able to properly cleanup references
+    to some frame objects after it is gone.
+
+    Constructor takes a predicate taking a frame and returning whether to skip
+    this frame and keep walking up the stack.
+
+    For example to get the first caller frame which module is not napari::
+
+        def not_napari(frame):
+            return frame.f_globals.get("__name__", '').startswith('napari')
+
+        with CallerFrame(not_napari) as c:
+            print(c.namespace)
+
+    This will be used for two things:
+        - find the name of a value in caller frame.
+        - capture local namespace of `napari.run()` when starting the qt-console
+
+    """
+
+    def __init__(self, predicate):
+        self.predicate = predicate
+        self.namespace = {}
+        self.names = ()
+
+    def __enter__(self):
+
+        frame = inspect.currentframe().f_back
+        try:
+            # See issue #1635 regarding potential AttributeError
+            # since frame could be None.
+            # https://github.com/napari/napari/pull/1635
+            if inspect.isframe(frame):
+                frame = frame.f_back
+
+            # Iterate frames while filename starts with path_prefix (part of Napari)
+            while (
+                inspect.isframe(frame)
+                and inspect.isframe(frame.f_back)
+                and inspect.iscode(frame.f_code)
+                and (self.predicate(frame))
+            ):
+                frame = frame.f_back
+            self.frame = frame
+            if inspect.isframe(frame) and inspect.iscode(frame.f_code):
+                self.namespace = ChainMap(frame.f_locals, frame.f_globals)
+                self.names = (
+                    *frame.f_code.co_varnames,
+                    *frame.f_code.co_names,
+                )
+
+        finally:
+            # We need to delete the frame explicitly according to the inspect
+            # documentation for deterministic removal of the frame.
+            # Otherwise, proper deletion is dependent on a cycle detector and
+            # automatic garbage collection.
+            # See handle_stackframe_without_leak example at the following URLs:
+            # https://docs.python.org/3/library/inspect.html#the-interpreter-stack
+            # https://bugs.python.org/issue543148
+            del frame
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        del self.namespace
+        del self.names
+
+
 def magic_name(value, *, path_prefix=ROOT_DIR):
     """Fetch the name of the variable with the given value passed to the calling function.
 
@@ -61,40 +133,17 @@ def magic_name(value, *, path_prefix=ROOT_DIR):
     name : str or None
         Name of the variable, if found.
     """
-    frame = inspect.currentframe()
-    try:
-        # See issue #1635 regarding potential AttributeError
-        # since frame could be None.
-        # https://github.com/napari/napari/pull/1635
-        if inspect.isframe(frame):
-            frame = frame.f_back
-
-        # Iterate frames while filename starts with path_prefix (part of Napari)
-        while (
-            inspect.isframe(frame)
-            and inspect.iscode(frame.f_code)
-            and (frame.f_code.co_filename.startswith(path_prefix))
-        ):
-            frame = frame.f_back
-
-        if inspect.isframe(frame) and inspect.iscode(frame.f_code):
-            varmap = ChainMap(frame.f_locals, frame.f_globals)
-            names = (*frame.f_code.co_varnames, *frame.f_code.co_names)
-
-            for name in names:
-                if (
-                    name.isidentifier()
-                    and name in varmap
-                    and varmap[name] is value
-                ):
-                    return name
+    # Iterate frames while filename starts with path_prefix (part of Napari)
+    with CallerFrame(
+        lambda frame: frame.f_code.co_filename.startswith(path_prefix)
+    ) as w:
+        varmap = w.namespace
+        names = w.names
+        for name in names:
+            if (
+                name.isidentifier()
+                and name in varmap
+                and varmap[name] is value
+            ):
+                return name
         return None
-    finally:
-        # We need to delete the frame explicitly according to the inspect
-        # documentation for deterministic removal of the frame.
-        # Otherwise, proper deletion is dependent on a cycle detector and
-        # automatic garbage collection.
-        # See handle_stackframe_without_leak example at the following URLs:
-        # https://docs.python.org/3/library/inspect.html#the-interpreter-stack
-        # https://bugs.python.org/issue543148
-        del frame
