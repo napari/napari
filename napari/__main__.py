@@ -27,7 +27,7 @@ class InfoAction(argparse.Action):
         plugin_manager.discover_widgets()
         if errors := plugin_manager.get_errors():
             names = {e.plugin_name for e in errors}
-            print("\n‼️  Errors were detected in the following plugins:")
+            print("\n!!  Errors were detected in the following plugins:")
             print("(Run 'napari --plugin-info -v' for more details)")
             print("\n".join(f"  - {n}" for n in names))
         sys.exit()
@@ -43,7 +43,7 @@ class PluginInfoAction(argparse.Action):
         print(plugin_manager)
 
         if errors := plugin_manager.get_errors():
-            print("‼️  Some errors occurred:")
+            print("!!  Some errors occurred:")
             verbose = '-v' in sys.argv or '--verbose' in sys.argv
             if not verbose:
                 print("   (use '-v') to show full tracebacks")
