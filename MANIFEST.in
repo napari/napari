@@ -18,3 +18,4 @@ recursive-exclude resources *
 recursive-exclude binder *
 exclude bundle.py
 exclude dockerfile
+exclude EULA.md
