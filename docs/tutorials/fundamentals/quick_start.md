@@ -62,7 +62,7 @@ You will also see some examples of plugins. The core napari viewer focuses on do
     
     First, create a clean virtual environment:
 ```python
-conda create -y -n napari-env -c conda-forge python=3.9 pip
+conda create -y -n napari-env -c conda-forge python=3.9
 conda activate napari-env
 ```
     Once in napari-env,
