@@ -68,7 +68,7 @@ napari into a clean virtual environment using an environment manager like
 This should be set up *before* you install napari. For example, with `conda`:
 
 ```sh
-conda create -y -n napari-env -c conda-forge python=3.9
+conda create -y -n napari-env -c conda-forge python=3.9 pip
 conda activate napari-env
 ```
 ````
