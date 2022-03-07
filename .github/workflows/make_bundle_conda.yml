@@ -83,8 +83,9 @@ jobs:
           source_path="/home/conda/feedstock_root/napari-source"
 
           sed -i -e "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" \
-                 -e "s|  git_url:.*|  path: ${source_path}|" \
-                 -e "s|  git_rev:.*||"  \
+                 -e "s|  - url: https://pypi.*|  path: ${source_path}|" \
+                 -e "s|  - url: https://raw\.githubusercontent.*||"  \
+                 -e "s|  sha256:.*||g"  \
                  recipe/meta.yaml
 
           conda-smithy rerender
