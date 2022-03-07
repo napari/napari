@@ -127,7 +127,7 @@ jobs:
 
       - name: Upload to anaconda.org
         shell: bash -l {0}
-        # if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule'
         run: |
           anaconda \
             -t ${{ secrets.ANACONDA_TOKEN }} \
@@ -371,11 +371,12 @@ jobs:
           asset_content_type: application/octet-stream
           max_releases: 1
 
-      - name: Update latest tag
-        uses: EndBug/latest-tag@latest
-        if: ${{ github.event_name == 'schedule' }}
-        with:
-          description: latest code released from nightly build
-          tag-name: latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Choose which one to keep; the one in `make_bundle` or this one.
+      # - name: Update latest tag
+      #   uses: EndBug/latest-tag@latest
+      #   if: ${{ github.event_name == 'schedule' }}
+      #   with:
+      #     description: latest code released from nightly build
+      #     tag-name: latest
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
