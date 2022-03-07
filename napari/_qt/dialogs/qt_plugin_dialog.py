@@ -642,7 +642,7 @@ class QPluginList(QListWidget):
             widget = self.itemWidget(item)
             widget.show_warning(
                 trans._(
-                    "Package not yet available for installation within the bundle application"
+                    "Plugin not yet available for installation within the bundle application"
                 )
             )
             widget.setObjectName("unavailable")
