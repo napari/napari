@@ -83,8 +83,10 @@ jobs:
           source_path="/home/conda/feedstock_root/napari-source"
 
           sed -i -e "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" \
-                 -e "s|  git_url:.*|  path: ${source_path}|" \
-                 -e "s|  git_rev:.*||"  \
+                 -e "s|  - url: https://pypi.*|  path: ${source_path}|" \
+                 -e "s|  - url: https://raw\.github.*||" \
+                 -e "s|    folder:.*||" \
+                 -e "s|    sha256:.*||g"  \
                  recipe/meta.yaml
 
           conda-smithy rerender
@@ -127,7 +129,7 @@ jobs:
 
       - name: Upload to anaconda.org
         shell: bash -l {0}
-        # if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule'
         run: |
           anaconda \
             -t ${{ secrets.ANACONDA_TOKEN }} \
@@ -243,7 +245,7 @@ jobs:
       # https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development#add-a-step-to-your-workflow
       - name: Load signing certificate (MacOS)
         shell: bash -l {0}
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && github.event_name == 'schedule'
         env:
           APPLE_APPLICATION_CERTIFICATE_BASE64: ${{ secrets.APPLE_APPLICATION_CERTIFICATE_BASE64 }}
           APPLE_INSTALLER_CERTIFICATE_BASE64: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_BASE64 }}
@@ -277,10 +279,17 @@ jobs:
           echo "CONSTRUCTOR_NOTARIZATION_IDENTITY=${notarization_identity}" >> $GITHUB_ENV
 
       - name: Load signing certificate (Windows)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && github.event_name == 'schedule'
+        # We are signing with Apple's certificate to provide _something_
+        # This is not trusted by Windows so the warnings are still there, but curious users
+        # will be able to check it's actually us if necessary
         run: |
           Set-Content -Path "${{ runner.temp }}/certificate.b64.txt" -Value '${{ secrets.APPLE_APPLICATION_CERTIFICATE_BASE64 }}'
           certutil -decode "${{ runner.temp }}/certificate.b64.txt" "${{ runner.temp }}/certificate.pfx"
+
+          echo "CONSTRUCTOR_SIGNING_CERTIFICATE=${{ runner.temp }}/certificate.pfx" >> $Env:GITHUB_ENV
+          echo "CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD=${{ secrets.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}" >> $Env:GITHUB_ENV
+          echo "CONSTRUCTOR_SIGNTOOL_PATH=C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe" >> $Env:GITHUB_ENV
 
       # TODO: Consider a refactor here; maybe an org action we can reuse or at least a script
       - name: Make Bundle (Linux)
@@ -298,13 +307,6 @@ jobs:
       - name: Make Bundle (MacOS/Windows)
         shell: bash -l {0}
         if: runner.os != 'Linux'
-        env:
-          # We are signing with Apple's certificate to provide _something_
-          # This is not trusted by Windows so the warnings are still there, but curious users
-          # will be able to check it's actually us if necessary
-          CONSTRUCTOR_SIGNING_CERTIFICATE: "${{ runner.temp }}/certificate.pfx"
-          CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}
-          CONSTRUCTOR_SIGNTOOL_PATH: "C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe"
         run: python bundle_conda.py
 
       - name: Collect licenses
@@ -322,7 +324,7 @@ jobs:
           path: ${{ env.LICENSES_ARTIFACT_PATH }}
 
       - name: Notarize Bundle (macOS)
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && github.event_name == 'schedule'
         uses: devbotsxyz/xcode-notarize@v1
         with:
           product-path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
@@ -332,7 +334,7 @@ jobs:
           verbose: true
 
       - name: Staple Bundle (macOS)
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && github.event_name == 'schedule'
         uses: devbotsxyz/xcode-staple@v1
         with:
           product-path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
@@ -371,11 +373,12 @@ jobs:
           asset_content_type: application/octet-stream
           max_releases: 1
 
-      - name: Update latest tag
-        uses: EndBug/latest-tag@latest
-        if: ${{ github.event_name == 'schedule' }}
-        with:
-          description: latest code released from nightly build
-          tag-name: latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Choose which one to keep; the one in `make_bundle` or this one.
+      # - name: Update latest tag
+      #   uses: EndBug/latest-tag@latest
+      #   if: ${{ github.event_name == 'schedule' }}
+      #   with:
+      #     description: latest code released from nightly build
+      #     tag-name: latest
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
