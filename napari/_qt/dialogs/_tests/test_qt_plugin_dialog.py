@@ -12,7 +12,7 @@ def _hub_or_pypi(conda_forge):
         "home_page": "http://napari.org",
         "author": "test author",
         "license": "UNKNOWN",
-}
+    }
     for i in range(2):
         yield PackageMetadata(name=f"test-name-{i}", **base_data), bool(i)
 
