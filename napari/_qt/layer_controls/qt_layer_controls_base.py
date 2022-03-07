@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
@@ -12,6 +14,10 @@ from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
+
+GridWidget = namedtuple(
+    'GridWidget', ('widget', 'row', 'column', 'row_span', 'column_span')
+)
 
 
 class LayerListGridLayout(QGridLayout):
@@ -97,53 +103,75 @@ class QtLayerControls(QFrame):
         """
         # arguments that will be passed to grid.addWidget
         # list of tuples in the form (widget, row, column, row_span, column_span)
-        args = []
+        grid_widgets = []
 
         max_cols = max(len(row) for row in grid_scheme)
         previous_row = -1
-        for row, widgets in enumerate(grid_scheme):
-            if widgets == (None,):
+        for row_idx, row in enumerate(grid_scheme):
+            # special cases (a single None or a single Ellipsis)
+            if row == (None,):
                 continue
-            if widgets == (Ellipsis,):
+            if row == (Ellipsis,):
                 # increment row span of all widgets in the previous row
-                for arg in args:
-                    if arg[1] == previous_row:
-                        arg[3] += 1
+                for grid_widget in grid_widgets:
+                    if grid_widget['row'] == previous_row:
+                        grid_widget['row_span'] += 1
                 continue
-            previous_row = row
+            previous_row = row_idx
 
             previous_col = -1
-            for col, wdg in enumerate(widgets):
+            # loop over the widgets in this row and construct them as necessary
+            for col_idx, wdg in enumerate(row):
                 if wdg is None:
                     continue
                 if wdg is Ellipsis:
                     # increment column span of the previous widget
-                    for arg in args:
-                        if arg[1] == row and arg[2] == previous_col:
-                            arg[4] += 1
+                    for grid_widget in grid_widgets:
+                        if (
+                            grid_widget['row'] == row_idx
+                            and grid_widget['column'] == previous_col
+                        ):
+                            grid_widget['column_span'] += 1
                     continue
-                previous_col = col
+                previous_col = col_idx
 
                 # generate simple label with translation if only a string was passed
                 if isinstance(wdg, str):
                     wdg = QLabel(trans._(wdg))
+                if not isinstance(wdg, (QWidget, QLayout)):
+                    raise ValueError(
+                        'only strings, widgets and layouts can be added to the control grid'
+                    )
 
-                args.append([wdg, row, col, 1, 1])
+                grid_widgets.append(
+                    GridWidget(
+                        widget=wdg,
+                        row=row_idx,
+                        column=col_idx,
+                        row_span=1,
+                        column_span=1,
+                    )
+                )
 
             # pad if necessary
-            empty_space = max_cols - col + 1
-            for arg in args:
-                if arg[1] == row and arg[2] == previous_col:
-                    arg[4] += empty_space
+            empty_space = max_cols - col_idx + 1
+            for grid_widget in grid_widgets:
+                if (
+                    grid_widget['row'] == row_idx
+                    and grid_widget['column'] == previous_col
+                ):
+                    grid_widget['column_span'] += empty_space
 
-        for arg in args:
-            if isinstance(arg[0], QWidget):
+        for grid_widget in grid_widgets:
+            if isinstance(grid_widget['widget'], QWidget):
                 add_item = self.grid_layout.addWidget
-            elif isinstance(arg[0], QLayout):
+            elif isinstance(grid_widget['widget'], QLayout):
                 add_item = self.grid_layout.addLayout
-            add_item(*arg)
+            add_item(*grid_widget)
 
+        # stretch the last row so everything is compacted at the top
         self.grid_layout.setRowStretch(previous_row + 1, 1)
+        return grid_widgets
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.
