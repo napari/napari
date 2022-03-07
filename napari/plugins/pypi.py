@@ -6,7 +6,7 @@ import json
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
-from typing import Dict, Generator, List, Optional
+from typing import Dict, Generator, List, Optional, Tuple
 from urllib import error, parse, request
 
 from npe2.manifest.package_metadata import PackageMetadata
@@ -120,7 +120,7 @@ def ensure_published_at_pypi(
 
 def iter_napari_plugin_info(
     skip={'napari-plugin-engine'},
-) -> Generator[Optional[PackageMetadata], bool]:
+) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
     """Return a generator that yields ProjectInfo of available napari plugins.
 
     By default, requires that packages are at least "Alpha" stage of
@@ -140,4 +140,4 @@ def iter_napari_plugin_info(
             if info and info not in already_yielded:
                 already_yielded.append(info)
                 # `False` To match hub API on conda-forge availability
-                yield info, True
+                yield (info, True)

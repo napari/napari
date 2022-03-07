@@ -81,7 +81,7 @@ def hub_plugin_info(
 
 def iter_hub_plugin_info(
     skip={}, conda_forge=True
-) -> Generator[Optional[PackageMetadata], bool]:
+) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
     """Return a generator that yields ProjectInfo of available napari plugins."""
     with request.urlopen(NAPARI_HUB_PLUGINS) as resp:
         plugins = json.loads(resp.read().decode())
