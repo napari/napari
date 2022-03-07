@@ -1,9 +1,8 @@
 import os
 import sys
+from importlib.metadata import metadata
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
-
-from importlib.metadata import metadata
 
 from npe2.manifest.package_metadata import PackageMetadata
 from qtpy.QtCore import (
@@ -633,11 +632,18 @@ class QPluginList(QListWidget):
             )
 
     def tag_unavailable(self, project_info: PackageMetadata):
-        """ """
+        """
+        Tag list items as unavailable for install with conda-forge.
+
+        This will disable the item and the install button and add a warning
+        icon with a hover tooltip.
+        """
         for item in self.findItems(project_info.name, Qt.MatchStartsWith):
             widget = self.itemWidget(item)
             widget.show_warning(
-                trans._("Package not available on conda-forge")
+                trans._(
+                    "Package not yet available for installation within the bundle application"
+                )
             )
             widget.setObjectName("unavailable")
             widget.style().unpolish(widget)

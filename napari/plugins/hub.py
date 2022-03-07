@@ -5,7 +5,7 @@ retriving plugin information and related metadata.
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
-from typing import Generator, Tuple, Optional
+from typing import Generator, Optional, Tuple
 from urllib import error, request
 
 from npe2.manifest.package_metadata import PackageMetadata
