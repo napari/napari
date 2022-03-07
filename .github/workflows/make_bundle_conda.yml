@@ -84,8 +84,9 @@ jobs:
 
           sed -i -e "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" \
                  -e "s|  - url: https://pypi.*|  path: ${source_path}|" \
-                 -e "s|  - url: https://raw\.githubusercontent.*||"  \
-                 -e "s|  sha256:.*||g"  \
+                 -e "s|  - url: https://raw\.github.*||" \
+                 -e "s|    folder:.*||" \
+                 -e "s|    sha256:.*||g"  \
                  recipe/meta.yaml
 
           conda-smithy rerender
