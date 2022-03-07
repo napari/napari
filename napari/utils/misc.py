@@ -29,7 +29,6 @@ import numpy as np
 
 from ..utils.translations import trans
 
-
 if TYPE_CHECKING:
     import packaging.version
 
@@ -70,8 +69,10 @@ def running_as_bundled_app() -> bool:
 
 
 def running_as_constructor_app() -> bool:
-    """Infer whether we are running as a constructor bundle."""    
-    return (Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor").exists()
+    """Infer whether we are running as a constructor bundle."""
+    return (
+        Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
+    ).exists()
 
 
 def bundle_conda_dependencies() -> List[str]:
