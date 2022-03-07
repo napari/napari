@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
@@ -14,10 +12,6 @@ from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
 from ...utils.translations import trans
 from ..widgets._slider_compat import QDoubleSlider
-
-GridWidget = namedtuple(
-    'GridWidget', ('widget', 'row', 'column', 'row_span', 'column_span')
-)
 
 
 class LayerListGridLayout(QGridLayout):
@@ -144,13 +138,13 @@ class QtLayerControls(QFrame):
                     )
 
                 grid_widgets.append(
-                    GridWidget(
-                        widget=wdg,
-                        row=row_idx,
-                        column=col_idx,
-                        row_span=1,
-                        column_span=1,
-                    )
+                    {
+                        'widget': wdg,
+                        'row': row_idx,
+                        'column': col_idx,
+                        'row_span': 1,
+                        'column_span': 1,
+                    }
                 )
 
             # pad if necessary
@@ -167,7 +161,7 @@ class QtLayerControls(QFrame):
                 add_item = self.grid_layout.addWidget
             elif isinstance(grid_widget['widget'], QLayout):
                 add_item = self.grid_layout.addLayout
-            add_item(*grid_widget)
+            add_item(*grid_widget.values())
 
         # stretch the last row so everything is compacted at the top
         self.grid_layout.setRowStretch(previous_row + 1, 1)
