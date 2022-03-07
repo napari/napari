@@ -595,7 +595,7 @@ class Points(Layer):
         self, defaults: Union[Dict[str, np.ndarray], pd.DataFrame]
     ) -> None:
         self._feature_table.defaults = defaults
-        current_properties = self.current_properties
+        current_properties = self._feature_table.currents()
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
