@@ -1,12 +1,16 @@
 from magicgui.widgets import ComboBox, Container
 import napari
 import numpy as np
+import pandas as pd
 from skimage import data
 
 
-# set up the annotation values and text display properties
+# set up the categorical annotation values and text display properties
 box_annotations = ['person', 'sky', 'camera']
 text_property = 'box_label'
+features = pd.DataFrame({
+    text_property: pd.Series([], dtype=pd.CategoricalDtype(box_annotations))
+})
 text_color = 'green'
 text_size = 20
 
@@ -35,22 +39,25 @@ def create_label_menu(shapes_layer, label_property, labels):
 
     def update_label_menu(event):
         """This is a callback function that updates the label menu when
-        the current properties of the Shapes layer change
+        the default features of the Shapes layer change
         """
-        new_label = str(shapes_layer.current_properties[label_property][0])
+        new_label = str(shapes_layer.feature_defaults[label_property][0])
         if new_label != label_menu.value:
             label_menu.value = new_label
 
-    shapes_layer.events.current_properties.connect(update_label_menu)
+    shapes_layer.events.feature_defaults.connect(update_label_menu)
 
     def label_changed(event):
-        """This is a callback that update the current properties on the Shapes layer
+        """This is a callback that update the default features on the Shapes layer
         when the label menu selection changes
         """
         selected_label = event.value
-        current_properties = shapes_layer.current_properties
-        current_properties[label_property] = np.asarray([selected_label])
-        shapes_layer.current_properties = current_properties
+        feature_defaults = shapes_layer.feature_defaults
+        feature_defaults[label_property] = selected_label
+        shapes_layer.feature_defaults = feature_defaults
+        selected_indices = list(shapes_layer.selected_data)
+        if len(selected_indices) > 0:
+            shapes_layer.features.iloc[selected_indices] = feature_defaults
 
     label_menu.changed.connect(label_changed)
 
@@ -78,7 +85,7 @@ text_kwargs = {
 }
 shapes = viewer.add_shapes(
     face_color='black',
-    property_choices={text_property: box_annotations},
+    features=features,
     text=text_kwargs,
     ndim=3
 )

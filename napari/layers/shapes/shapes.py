@@ -26,7 +26,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import _FeatureTable
+from ..utils.layer_utils import _FeatureTable, coerce_current_properties
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -483,6 +483,8 @@ class Shapes(Layer):
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
+            features=Event,
+            feature_defaults=Event,
         )
 
         # Flag set to false to block thumbnail refresh
@@ -753,6 +755,7 @@ class Shapes(Layer):
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
+        self.events.features()
 
     @property
     def feature_defaults(self):
@@ -761,6 +764,14 @@ class Shapes(Layer):
         See `features` for more details on the type of this property.
         """
         return self._feature_table.defaults
+
+    @feature_defaults.setter
+    def feature_defaults(
+        self, defaults: Union[Dict[str, np.ndarray], pd.DataFrame]
+    ) -> None:
+        self._feature_table.defaults = defaults
+        self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -856,19 +867,14 @@ class Shapes(Layer):
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        update_indices = None
+        self.feature_defaults = coerce_current_properties(current_properties)
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         ):
-            update_indices = list(self.selected_data)
-        self._feature_table.set_currents(
-            current_properties, update_indices=update_indices
-        )
-        if update_indices is not None:
+            self._feature_table.set_values_to_default(self.selected_data)
             self.refresh_colors()
-        self.events.current_properties()
 
     @property
     def shape_type(self):
