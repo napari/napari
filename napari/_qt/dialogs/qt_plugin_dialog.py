@@ -45,6 +45,7 @@ from ...plugins.utils import normalized_name
 from ...settings import get_settings
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import (
+    bundle_conda_dependencies,
     parse_version,
     running_as_bundled_app,
     running_as_constructor_app,
@@ -186,7 +187,9 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         installer = installer or self._installer_type
+        extra_deps = []
         if installer != "pip":
+            extra_deps = bundle_conda_dependencies()
             cmd = [
                 'install',
                 '-y',
@@ -201,7 +204,7 @@ class Installer(QObject):
         if (
             running_as_bundled_app()
             and sys.platform.startswith('linux')
-            and not self._use_conda
+            and not self._conda_env_path
         ):
             cmd += [
                 '--no-warn-script-location',
@@ -210,7 +213,7 @@ class Installer(QObject):
             ]
 
         process = self._create_process(installer)
-        process.setArguments(cmd + list(pkg_list))
+        process.setArguments(cmd + list(pkg_list) + extra_deps)
         if self._output_widget and self._queue:
             self._output_widget.clear()
 
@@ -379,6 +382,7 @@ class PluginListItem(QFrame):
         self.v_lay.setContentsMargins(-1, 6, -1, 6)
         self.v_lay.setSpacing(0)
         self.row1 = QHBoxLayout()
+        self.row1.setSpacing(6)
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setChecked(enabled)
         self.enabled_checkbox.stateChanged.connect(self._on_enabled_checkbox)
@@ -653,10 +657,17 @@ class QPluginList(QListWidget):
 
     def filter(self, text: str):
         """Filter items to those containing `text`."""
-        shown = self.findItems(text, Qt.MatchContains)
-        for i in range(self.count()):
-            item = self.item(i)
-            item.setHidden(item not in shown)
+        if text:
+            # PySide has some issues, so we compare using id
+            # See: https://bugreports.qt.io/browse/PYSIDE-74
+            shown = [id(it) for it in self.findItems(text, Qt.MatchContains)]
+            for i in range(self.count()):
+                item = self.item(i)
+                item.setHidden(id(item) not in shown)
+        else:
+            for i in range(self.count()):
+                item = self.item(i)
+                item.setHidden(False)
 
 
 class QtPluginDialog(QDialog):

@@ -5,6 +5,7 @@ import collections.abc
 import importlib.metadata
 import inspect
 import itertools
+import json
 import os
 import re
 import sys
@@ -17,6 +18,7 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    List,
     Optional,
     Type,
     TypeVar,
@@ -26,6 +28,7 @@ from typing import (
 import numpy as np
 
 from ..utils.translations import trans
+
 
 if TYPE_CHECKING:
     import packaging.version
@@ -67,12 +70,24 @@ def running_as_bundled_app() -> bool:
 
 
 def running_as_constructor_app() -> bool:
-    """Infer whether we are running as a constructor bundle."""
-    return (
-        Path(sys.executable).parent / ".napari_is_constructor_bundled"
-    ).exists() or (
-        Path(sys.prefix).parent / ".napari_is_constructor_bundled"
-    ).exists()
+    """Infer whether we are running as a constructor bundle."""    
+    return (Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor").exists()
+
+
+def bundle_conda_dependencies() -> List[str]:
+    """Return a dict of the bundled napari dependencies."""
+    from .._version import version_tuple
+
+    version = ".".join(str(v) for v in version_tuple[:3])
+    dependencies = []
+    for item in (Path(sys.prefix) / "conda-meta").iterdir():
+        if item.name.startswith(f"napari-{version}"):
+            version = item.name.split("-")[-1]
+            data = json.loads(item.read_text())
+            dependencies = data.get("depends", [])
+            break
+
+    return [dep.replace(" ", "") for dep in dependencies]
 
 
 def bundle_bin_dir() -> Optional[str]:
