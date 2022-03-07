@@ -292,7 +292,7 @@ QtColorBox {
 
 /* ----------------- QtLayerControls -------------------- */
 
-QtLayerControls > QLabel, QtLayerControls > QLabeledSlider > QAbstractSpinBox {
+QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
   font-size: 11pt;
   color: {{ text }};
 }
@@ -307,6 +307,10 @@ AutoScaleButtons QPushButton {
   padding: 4;
 }
 
+PlaneNormalButtons QPushButton {
+    font-size: 9pt;
+    padding: 4;
+}
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
@@ -531,12 +535,17 @@ PluginListItem {
   border-radius: 3px;
 }
 
+PluginListItem#unavailable {
+  background: {{ lighten(foreground, 20) }};
+  padding: 0;
+  margin: 2px 4px;
+  border-radius: 3px;
+}
 
 PluginListItem QCheckBox::indicator:disabled {
   background-color: {{ opacity(foreground, 127) }};
   image: url(":/themes/{{ name }}/check_50.svg");
 }
-
 
 QPushButton#install_button {
   background-color: {{ current }}
@@ -548,6 +557,10 @@ QPushButton#install_button:hover {
 
 QPushButton#install_button:pressed {
   background-color: {{ darken(current, 10) }}
+}
+
+QPushButton#install_button:disabled {
+  background-color: {{ lighten(current, 20) }}
 }
 
 QPushButton#remove_button {
@@ -647,6 +660,7 @@ QPushButton#close_button:disabled {
   margin-left: 1px;
   padding: 2px;
 }
+
 
 QtPluginDialog QSplitter{
   padding-right: 2;

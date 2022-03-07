@@ -39,6 +39,65 @@ def test_rendering_combobox(qtbot):
     assert combo.findText('iso') == combo.currentIndex()
 
 
+def test_depiction_combobox_changes(qtbot):
+    """Changing the model attribute should update the view."""
+    layer = Image(np.random.rand(10, 15, 20))
+    layer._slice_dims(ndisplay=3)
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+    combo_box = qtctrl.depictionComboBox
+    opts = {combo_box.itemText(i) for i in range(combo_box.count())}
+    depiction_options = {
+        'volume',
+        'plane',
+    }
+    assert opts == depiction_options
+    layer.depiction = 'plane'
+    assert combo_box.findText('plane') == combo_box.currentIndex()
+    layer.depiction = 'volume'
+    assert combo_box.findText('volume') == combo_box.currentIndex()
+
+
+def test_plane_controls_show_hide_on_depiction_change(qtbot):
+    """Changing depiction mode should show/hide plane controls in 3D."""
+    layer = Image(np.random.rand(10, 15, 20))
+    layer._slice_dims(ndisplay=3)
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    layer.depiction = 'volume'
+    assert qtctrl.planeControls.isHidden()
+
+    layer.depiction = 'plane'
+    assert not qtctrl.planeControls.isHidden()  # isVisible() != not isHidden()
+
+
+def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
+    """Changing ndisplay should show/hide plane controls if depicting a plane."""
+    layer = Image(np.random.rand(10, 15, 20))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    layer._slice_dims(ndisplay=3)
+    layer.depiction = 'plane'
+    assert not qtctrl.planeControls.isHidden()  # isVisible() != not isHidden()
+
+    layer._slice_dims(ndisplay=2)
+    assert qtctrl.planeControls.isHidden()
+
+
+def test_plane_slider_value_change(qtbot):
+    """Changing the model should update the view."""
+    layer = Image(np.random.rand(10, 15, 20))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+    layer.plane.thickness *= 2
+    assert (
+        qtctrl.planeControls.planeThicknessSlider.value()
+        == layer.plane.thickness
+    )
+
+
 def test_auto_contrast_buttons(qtbot):
     layer = Image(np.arange(8**3).reshape(8, 8, 8), contrast_limits=(0, 1))
     qtctrl = QtImageControls(layer)

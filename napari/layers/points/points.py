@@ -1438,6 +1438,11 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
+        if self.ndim < 3 and self._ndisplay == 3:
+            # interaction currently does not work for 2D
+            # layers being rendered in 3D.
+            self.editable = False
+
     def _slice_data(
         self, dims_indices
     ) -> Tuple[List[int], Union[float, np.ndarray]]:

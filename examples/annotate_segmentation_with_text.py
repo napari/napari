@@ -91,16 +91,16 @@ def circularity(perimeter, area):
 image = data.coins()[50:-50, 50:-50]
 label_image = segment(image)
 
-# create the properties dictionary
-properties = regionprops_table(
+# create the features dictionary
+features = regionprops_table(
     label_image, properties=('label', 'bbox', 'perimeter', 'area')
 )
-properties['circularity'] = circularity(
-    properties['perimeter'], properties['area']
+features['circularity'] = circularity(
+    features['perimeter'], features['area']
 )
 
 # create the bounding box rectangles
-bbox_rects = make_bbox([properties[f'bbox-{i}'] for i in range(4)])
+bbox_rects = make_bbox([features[f'bbox-{i}'] for i in range(4)])
 
 # specify the display parameters for the text
 text_parameters = {
@@ -121,7 +121,7 @@ shapes_layer = viewer.add_shapes(
     bbox_rects,
     face_color='transparent',
     edge_color='green',
-    properties=properties,
+    features=features,
     text=text_parameters,
     name='bounding box',
 )

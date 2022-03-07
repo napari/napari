@@ -19,7 +19,7 @@ subtrees:
         - entries:
           - file: tutorials/annotation/index
             subtrees:
-            - entries: 
+            - entries:
               - file: tutorials/annotation/annotate_points
           - file: tutorials/processing/index
             subtrees:
@@ -101,9 +101,14 @@ subtrees:
           - file: developers/testing
           - file: developers/docs
           - file: developers/translations
+          - file: developers/documentation/index
+            subtrees:
+            - entries:
+              - file: developers/documentation/docs_template
       - file: release/index
         subtrees:
         - entries:
+          - file: release/release_0_4_15
           - file: release/release_0_4_14
           - file: release/release_0_4_13
           - file: release/release_0_4_12
@@ -149,6 +154,7 @@ subtrees:
           - file: roadmaps/0_4
           - file: roadmaps/0_3_retrospective
           - file: roadmaps/0_3
+      - file: community/licensing
   - file: api/index
     subtrees:
     - titlesonly: True
