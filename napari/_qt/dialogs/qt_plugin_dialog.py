@@ -3,10 +3,7 @@ import sys
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
-try:
-    from importlib.metadata import metadata
-except ImportError:
-    from importlib_metadata import metadata
+from importlib.metadata import metadata
 
 from npe2.manifest.package_metadata import PackageMetadata
 from qtpy.QtCore import (
