@@ -8,5 +8,4 @@ napari is distributed under the BSD-3-Clause license, a copy of which is availab
 ```
 
 ```{include} ../../EULA.md
-:literal: true
 ```
