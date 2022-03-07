@@ -30,4 +30,4 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 This installer bundles other packages, which are distributed under their own
 license terms. Check the full list here:
-https://github.com/napari/napari/blob/main/LICENSE
+https://github.com/napari/napari/blob/latest/EULA.md
