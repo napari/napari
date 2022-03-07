@@ -19,8 +19,6 @@ def _hub_or_pypi(conda_forge):
 
 @pytest.fixture
 def plugin_dialog(qtbot, monkeypatch):
-    """test that QtPluginErrReporter shows any instantiated PluginErrors."""
-
     for method_name in ["iter_hub_plugin_info", "iter_napari_plugin_info"]:
         monkeypatch.setattr(
             qt_plugin_dialog,
@@ -42,8 +40,6 @@ def plugin_dialog(qtbot, monkeypatch):
 
 @pytest.fixture
 def plugin_dialog_constructor(qtbot, monkeypatch):
-    """test that QtPluginErrReporter shows any instantiated PluginErrors."""
-
     for method_name in ["iter_hub_plugin_info", "iter_napari_plugin_info"]:
         monkeypatch.setattr(
             qt_plugin_dialog,
@@ -63,7 +59,6 @@ def plugin_dialog_constructor(qtbot, monkeypatch):
 
 
 def test_filter_not_available_plugins(plugin_dialog_constructor):
-    """test that filtering works."""
     item = plugin_dialog_constructor.available_list.item(0)
     widget = plugin_dialog_constructor.available_list.itemWidget(item)
     assert not widget.action_button.isEnabled()
@@ -76,7 +71,6 @@ def test_filter_not_available_plugins(plugin_dialog_constructor):
 
 
 def test_filter_available_plugins(plugin_dialog):
-    """test that filtering works."""
     plugin_dialog.filter("")
     assert plugin_dialog.available_list._count_visible() == 2
 
@@ -89,7 +83,6 @@ def test_filter_available_plugins(plugin_dialog):
 
 
 def test_filter_installed_plugins(plugin_dialog):
-    """test that filtering works."""
     plugin_dialog.filter("")
     assert plugin_dialog.installed_list._count_visible() >= 0
 
