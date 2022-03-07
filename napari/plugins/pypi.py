@@ -120,7 +120,7 @@ def ensure_published_at_pypi(
 
 def iter_napari_plugin_info(
     skip={'napari-plugin-engine'},
-) -> Generator[PackageMetadata, None, None]:
+) -> Generator[Optional[PackageMetadata], bool]:
     """Return a generator that yields ProjectInfo of available napari plugins.
 
     By default, requires that packages are at least "Alpha" stage of

@@ -409,8 +409,11 @@ class PluginListItem(QFrame):
 
         icon = QColoredSVGIcon.from_resources("warning")
         self.warning_tooltip = QtToolTipLabel(self)
-        # TODO: This color should come from the theme or should be
-        # centralized somewhere?
+        # TODO: This color should come from the theme but the theme needs
+        # to provide the right color. Default warning should be orange, not
+        # red. Code example:
+        # theme_name = get_settings().appearance.theme
+        # napari.utils.theme.get_theme(theme_name, as_dict=False).warning.as_hex()
         self.warning_tooltip.setPixmap(
             icon.colored(color="#E3B617").pixmap(15, 15)
         )
@@ -912,7 +915,7 @@ class QtPluginDialog(QDialog):
         if packages:
             self.installer.install(packages)
 
-    def _handle_yield(self, data):
+    def _handle_yield(self, data: Tuple[PackageMetadata, bool]):
         project_info, is_available = data
         if project_info.name in self.already_installed:
             self.installed_list.tag_outdated(project_info)
