@@ -52,12 +52,10 @@ def create_label_menu(shapes_layer, label_property, labels):
         when the label menu selection changes
         """
         selected_label = event.value
-        feature_defaults = shapes_layer.feature_defaults
-        feature_defaults[label_property] = selected_label
-        shapes_layer.feature_defaults = feature_defaults
+        shapes_layer.feature_defaults[label_property] = selected_label
+        shapes_layer.events.feature_defaults()
         selected_indices = list(shapes_layer.selected_data)
-        if len(selected_indices) > 0:
-            shapes_layer.features.iloc[selected_indices] = feature_defaults
+        shapes_layer.features[label_property].iloc[selected_indices] = selected_label
 
     label_menu.changed.connect(label_changed)
 
