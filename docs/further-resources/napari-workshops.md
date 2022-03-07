@@ -14,7 +14,7 @@ You can find more videos of talks, tutorials and demos on the
 
 * February 2022, Modern microscopy guest lecture at Berkerley
   * [Watch it here](https://drive.google.com/file/d/1EjJJZ3sy4mogcGwTao97sHzU9SDJeC3r/view?usp=sharing)
-  * [Slide available here](https://docs.google.com/presentation/d/1sqd_CYckEwmgQO6y9VffwnmT0RSlRYIAUBixRTMYcig/edit?usp=sharing)
+  * [Slide available here](https://docs.google.com/presentation/d/1sqd_CYckEwmgQO6y9VffwnmT0RSlRYIAUBixRTMYcig/view)
 
 * August 2021, [NDCN](https://chanzuckerberg.com/science/programs-resources/neurodegeneration-challenge/) Workshop / September 2021 [ZIDAS](https://www.zidas.org/) Workshop
   * [Read the workshop materials online](https://alisterburt.github.io/napari-workshops/home.html)
