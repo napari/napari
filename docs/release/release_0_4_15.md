@@ -45,6 +45,14 @@ miss. See the project's
 [README](https://github.com/tlambert03/napari-error-reporter/#readme) for
 details.
 
+Finally, we have made some updates to how our application works. We now provide
+a bundle based on conda, which should help with plugin installation on
+different platforms (#3555). Additionally, the plugin listing inside the app is
+now based on the napari hub API, which allows plugin authors to distribute
+plugins on PyPI but have them not be listed in the app (#4074).
+
+Keep reading below for the full list of changes!
+
 ## New Features
 
 - Add edge_width per-point and edge_width_is_relative (#3999)
@@ -65,6 +73,8 @@ details.
 - reduce NumPy overhead in ScaleTranslate and Affine transform calls (#4094)
 - Remove remaining references to requirements.txt (#4105)
 - Try to standardise API as list of strings. (#4107)
+- Prototype a conda-based bundle (#3555)
+- Use napari hub api to list plugins (#4074)
 
 ## Documentation
 
@@ -85,7 +95,11 @@ details.
 - improve examples/add_points_on_nD_shapes.py camera/dims setup (#4161)
 - Add docs contributor's guide and docs template (#4168)
 - Adds calendar to docs  (#4176)
-
+- add licensing page (#4185)
+- Update release notes for 0.4.15rc1 (#4193)
+- Fix plausible not added to docs (#4199)
+- Documentation for scale in layers documentation (#4204)
+- Fix EULA/licensing/signing issues post-merge (#4210)
 
 ## Bug Fixes
 
@@ -102,6 +116,10 @@ details.
 - Fix bug in continuous autocontrast button, add tests (#4152)
 - Tracks graph shader buffer order update (#4165)
 - block points add mode in 3D when layer.ndim == 2 (#4184)
+- fix bugs in setting plane orientation with nD data (#4197)
+- Add value method to extension2reader widget (#4179)
+- Add hook implementation name to order sorting (#4180)
+- Add dependencies helper and fix pyside issue when filtering plugins (#4214)
 
 ## API Changes
 
@@ -119,7 +137,6 @@ details.
 - Allow the calendar to build correctly in PR build docs (#4181)
 - Deploy to napari.github.io (#4183)
 
-
 ## Other Pull Requests
 
 - [pre-commit.ci] pre-commit autoupdate (#4032)
@@ -130,6 +147,7 @@ details.
 - Refactor dummy text data for vispy (#4097)
 - Add stateful StyleEncoding tests (#4113)
 - Remove print statement (#4178)
+- Adding tests missing from PR #4165 (#4170)
 
 ## 19 authors added to this release (alphabetical)
 
@@ -153,19 +171,22 @@ details.
 - [pre-commit-ci[bot]](https://github.com/napari/napari/commits?author=pre-commit-ci[bot]) - @pre-commit-ci[bot]
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 
-## 21 reviewers added to this release (alphabetical)
+## 25 reviewers added to this release (alphabetical)
 
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Andy Sweet](https://github.com/napari/napari/commits?author=andy-sweet) - @andy-sweet
 - [chili-chiu](https://github.com/napari/napari/commits?author=chili-chiu) - @chili-chiu
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
+- [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Gregory Lee](https://github.com/napari/napari/commits?author=grlee77) - @grlee77
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Jackson Maxfield Brown](https://github.com/napari/napari/commits?author=JacksonMaxfield) - @JacksonMaxfield
+- [Jaime Rodríguez-Guerra](https://github.com/napari/napari/commits?author=jaimergp) - @jaimergp
 - [Jan-Hendrik Müller](https://github.com/napari/napari/commits?author=kolibril13) - @kolibril13
 - [Jeremy Asuncion](https://github.com/napari/napari/commits?author=codemonkey800) - @codemonkey800
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Justin Kiggins](https://github.com/napari/napari/commits?author=neuromusic) - @neuromusic
+- [Justine Larsen](https://github.com/napari/napari/commits?author=justinelarsen) - @justinelarsen
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - @brisvag
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
@@ -176,4 +197,5 @@ details.
 - [Peter Sobolewski](https://github.com/napari/napari/commits?author=psobolewskiPhD) - @psobolewskiPhD
 - [shahidhaider](https://github.com/napari/napari/commits?author=shahidhaider) - @shahidhaider
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
+- [Ziyang Liu](https://github.com/napari/napari/commits?author=potating-potato) - @potating-potato
 
