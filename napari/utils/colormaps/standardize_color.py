@@ -442,10 +442,15 @@ def _check_color_dim(val):
     """
     val = np.atleast_2d(val)
     if val.shape[1] not in (3, 4):
+        strval = str(val)
+        if len(strval) > 100:
+            strval = strval[:97] + '...'
         raise RuntimeError(
             trans._(
-                'Value must have second dimension of size 3 or 4',
+                'Value must have second dimension of size 3 or 4. Got `{val}`, shape={shape}',
                 deferred=True,
+                shape=val.shape,
+                val=strval,
             )
         )
 
