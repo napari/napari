@@ -119,6 +119,7 @@ Keep reading below for the full list of changes!
 - fix bugs in setting plane orientation with nD data (#4197)
 - Add value method to extension2reader widget (#4179)
 - Add hook implementation name to order sorting (#4180)
+- Add dependencies helper and fix pyside issue when filtering plugins (#4214)
 
 ## API Changes
 
