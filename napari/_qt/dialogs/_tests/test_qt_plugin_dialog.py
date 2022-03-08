@@ -9,8 +9,7 @@ from napari._qt.dialogs import qt_plugin_dialog
 def _iter_napari_hub_or_pypi_plugin_info(
     conda_forge: bool,
 ) -> Generator[Tuple[Optional[PackageMetadata], bool], None, None]:
-    """This helper generator function is mocking the hub and pypi
-    methods used to collect the available plugins.
+    """Mock the hub and pypi methods to collect available plugins.
 
     This will mock `napari.plugins.hub.iter_hub_plugin_info` for napari-hub,
     and `napari.plugins.pypi.iter_napari_plugin_info` for pypi.
