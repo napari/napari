@@ -352,7 +352,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         # CI artifact uploads only for PRs and pushes to main
-        if: github.event_name == 'pull_request' || (github.event_name == 'push' and github.ref_name == 'main')
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == 'main')
         with:
           name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
           path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
