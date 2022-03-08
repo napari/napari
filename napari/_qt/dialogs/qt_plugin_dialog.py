@@ -719,19 +719,20 @@ class QtPluginDialog(QDialog):
         self.already_installed = set()
 
         def _add_to_installed(distname, enabled, npe_version=1):
+            norm_name = normalized_name(distname or '')
             if distname:
                 meta = metadata(distname)
                 if len(meta) == 0:
                     # will not add builtins.
                     return
-                self.already_installed.add(distname)
+                self.already_installed.add(norm_name)
             else:
                 meta = {}
 
             self.installed_list.addItem(
                 PackageMetadata(
                     metadata_version="1.0",
-                    name=normalized_name(distname or ''),
+                    name=norm_name,
                     version=meta.get('version', ''),
                     summary=meta.get('summary', ''),
                     home_page=meta.get('url', ''),
