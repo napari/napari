@@ -1,7 +1,4 @@
-from os import TMP_MAX
-from re import A
-from npe2 import PluginManager
-from npe2.types import FullLayerData
+
 from unittest.mock import Mock, patch
 
 from ...plugins._npe2 import (
