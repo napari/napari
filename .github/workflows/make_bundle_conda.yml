@@ -129,6 +129,8 @@ jobs:
 
       - name: Upload to anaconda.org
         shell: bash -l {0}
+        # Only upload to anaconda.org/napari if it's a nightly (version with *dev* suffix)
+        # or a tag event (either RC or final). Nightlies and RCs go to the nightly channel.
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/v')
         run: |
           label_args=""
@@ -249,6 +251,7 @@ jobs:
       # https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development#add-a-step-to-your-workflow
       - name: Load signing certificate (MacOS)
         shell: bash -l {0}
+        # We only sign pushes to main, nightlies, RCs and final releases
         if: runner.os == 'macOS' && (github.event_name == 'schedule' || github.event_name == 'push')
         env:
           APPLE_APPLICATION_CERTIFICATE_BASE64: ${{ secrets.APPLE_APPLICATION_CERTIFICATE_BASE64 }}
@@ -283,6 +286,7 @@ jobs:
           echo "CONSTRUCTOR_NOTARIZATION_IDENTITY=${notarization_identity}" >> $GITHUB_ENV
 
       - name: Load signing certificate (Windows)
+        # We only sign pushes to main, nightlies, RCs and final releases
         if: runner.os == 'Windows' && (github.event_name == 'schedule' || github.event_name == 'push')
         # We are signing with Apple's certificate to provide _something_
         # This is not trusted by Windows so the warnings are still there, but curious users
@@ -328,6 +332,7 @@ jobs:
           path: ${{ env.LICENSES_ARTIFACT_PATH }}
 
       - name: Notarize Bundle (macOS)
+        # We only sign pushes to main, nightlies, RCs and final releases
         if: runner.os == 'macOS' && (github.event_name == 'schedule' || github.event_name == 'push')
         uses: devbotsxyz/xcode-notarize@v1
         with:
@@ -338,6 +343,7 @@ jobs:
           verbose: true
 
       - name: Staple Bundle (macOS)
+        # We only sign pushes to main, nightlies, RCs and final releases
         if: runner.os == 'macOS' && (github.event_name == 'schedule' || github.event_name == 'push')
         uses: devbotsxyz/xcode-staple@v1
         with:
@@ -345,7 +351,8 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        if: github.event_name == 'pull_request'
+        # CI artifact uploads only for PRs and pushes to main
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' and github.ref_name == 'main')
         with:
           name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
           path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
