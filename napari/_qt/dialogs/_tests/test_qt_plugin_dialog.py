@@ -12,14 +12,13 @@ def _iter_napari_hub_or_pypi_plugin_info(
     """This helper generator function is mocking the hub and pypi
     methods used to collect the available plugins.
 
-    This will mocjk `napari.plugins.hub.iter_hub_plugin_info` for napari-hub,
+    This will mock `napari.plugins.hub.iter_hub_plugin_info` for napari-hub,
     and `napari.plugins.pypi.iter_napari_plugin_info` for pypi.
 
-    This generator will return two fake plugins that will populate the
-    available plugins list (the bottom one). The first plugin will not be
-    available on conda-forge so will be greyed out ("test-name-0"). The
-    second plugin will be available on conda-forge so will be enabled
-    ("test-name-1").
+    It will return two fake plugins that will populate the available plugins
+    list (the bottom one). The first plugin will not be available on
+    conda-forge so will be greyed out ("test-name-0"). The second plugin will
+    be available on conda-forge so will be enabled ("test-name-1").
     """
     # This mock `base_data`` will be the same for both fake plugins.
     base_data = {
