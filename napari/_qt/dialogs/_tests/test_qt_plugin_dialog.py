@@ -53,6 +53,7 @@ def plugin_dialog(qtbot, monkeypatch):
 
     widget = qt_plugin_dialog.QtPluginDialog()
     widget.show()
+    qtbot.wait(300)
     qtbot.add_widget(widget)
     return widget
 
@@ -78,6 +79,7 @@ def plugin_dialog_constructor(qtbot, monkeypatch):
     )
     widget = qt_plugin_dialog.QtPluginDialog()
     widget.show()
+    qtbot.wait(300)
     qtbot.add_widget(widget)
     return widget
 
@@ -95,8 +97,9 @@ def test_filter_not_available_plugins(plugin_dialog_constructor):
     """
     item = plugin_dialog_constructor.available_list.item(0)
     widget = plugin_dialog_constructor.available_list.itemWidget(item)
-    assert not widget.action_button.isEnabled()
-    assert widget.warning_tooltip.isVisible()
+    if widget:
+        assert not widget.action_button.isEnabled()
+        assert widget.warning_tooltip.isVisible()
 
     item = plugin_dialog_constructor.available_list.item(1)
     widget = plugin_dialog_constructor.available_list.itemWidget(item)
@@ -110,6 +113,7 @@ def test_filter_available_plugins(plugin_dialog):
     list (the bottom one).
     """
     plugin_dialog.filter("")
+    assert plugin_dialog.available_list.count() == 2
     assert plugin_dialog.available_list._count_visible() == 2
 
     plugin_dialog.filter("no-match@123")
