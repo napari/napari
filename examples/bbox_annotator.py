@@ -54,8 +54,10 @@ def create_label_menu(shapes_layer, label_property, labels):
         selected_label = event.value
         shapes_layer.feature_defaults[label_property] = selected_label
         shapes_layer.events.feature_defaults()
-        selected_indices = list(shapes_layer.selected_data)
-        shapes_layer.features[label_property].iloc[selected_indices] = selected_label
+        # Unlike current_properties, changing feature_defaults does not change
+        # the values of the currently selected shapes, so update those manually.
+        indices = list(shapes_layer.selected_data)
+        shapes_layer.features[label_property][indices] = selected_label
 
     label_menu.changed.connect(label_changed)
 
