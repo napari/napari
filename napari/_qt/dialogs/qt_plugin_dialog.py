@@ -45,7 +45,6 @@ from ...plugins.utils import normalized_name
 from ...settings import get_settings
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import (
-    bundle_conda_dependencies,
     parse_version,
     running_as_bundled_app,
     running_as_constructor_app,
@@ -187,9 +186,14 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         installer = installer or self._installer_type
-        extra_deps = []
+        process_environment = QProcessEnvironment.systemEnvironment()
         if installer != "pip":
-            extra_deps = bundle_conda_dependencies()
+            from ..._version import version_tuple
+
+            napari_version = ".".join(str(v) for v in version_tuple[:3])
+            process_environment.insert(
+                "CONDA_PINNED_PACKAGES", f"napari={napari_version}"
+            )
             cmd = [
                 'install',
                 '-y',
@@ -213,7 +217,8 @@ class Installer(QObject):
             ]
 
         process = self._create_process(installer)
-        process.setArguments(cmd + list(pkg_list) + extra_deps)
+        process.setProcessEnvironment(process_environment)
+        process.setArguments(cmd + list(pkg_list))
         if self._output_widget and self._queue:
             self._output_widget.clear()
 
