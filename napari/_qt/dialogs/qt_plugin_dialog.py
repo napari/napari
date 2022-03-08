@@ -190,6 +190,13 @@ class Installer(QObject):
         if installer != "pip":
             from ..._version import version_tuple
 
+            # To avoid napari version changing when installing a plugin, we
+            # add a pin to the current napari version, that way we can
+            # restrict any changes to the actual napari application.
+            # Conda/mamba also pin python by default, so we effectively
+            # constrain python and napari versions from changing, when
+            # installing plugins inside the constructor bundled application.
+            # See: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
             napari_version = ".".join(str(v) for v in version_tuple[:3])
             process_environment.insert(
                 "CONDA_PINNED_PACKAGES", f"napari={napari_version}"
