@@ -125,6 +125,7 @@ Keep reading below for the full list of changes!
 - Update napari pin for conda/mamba install in constructor bundle (#4220)
 - Adjust conditions that control package signing and artifact uploads (constructor installers) (#4221)
 - Fix name normalization of already installed plugins (#4223)
+- Use conda instead of mamba in windows conda-forge bundled app (#4225)
 
 ## API Changes
 
