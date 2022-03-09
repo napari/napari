@@ -1,6 +1,6 @@
 """
 This example generates a set of vectors in a spiral pattern.
-The color of the vectors is mapped to their 'angle' property.
+The color of the vectors is mapped to their 'angle' feature.
 
 """
 
@@ -28,14 +28,14 @@ pos[:, 0, 1] = radius_space * np.sin(phi_space) + 256
 pos[:, 1, 0] = 2 * radius_space * np.cos(phi_space)
 pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
-# make the angle property, range 0-2pi
+# make the angle feature, range 0-2pi
 angle = np.mod(phi_space, 2 * np.pi)
 
-# create a property that is true for all angles  > pi
+# create a feature that is true for all angles  > pi
 pos_angle = angle > np.pi
 
-# create the properties dictionary.
-properties = {
+# create the features dictionary.
+features = {
     'angle': angle,
     'pos_angle': pos_angle,
 }
@@ -44,7 +44,7 @@ properties = {
 layer = viewer.add_vectors(
     pos,
     edge_width=3,
-    properties=properties,
+    features=features,
     edge_color='angle',
     edge_colormap='husl',
     name='vectors'

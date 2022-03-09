@@ -19,14 +19,14 @@ polygons = [
     np.array([[111, 336], [220, 336], [220, 240], [111, 240]]),
 ]
 
-# create properties
-properties = {
+# create features
+features = {
     'likelihood': [21.23423, 51.2315, 100],
     'class': ['hand', 'face', 'camera'],
 }
 edge_color_cycle = ['blue', 'magenta', 'green']
 
-text_properties = {
+text = {
     'text': '{class}: {likelihood:0.1f}%',
     'anchor': 'upper_left',
     'translation': [-5, 0],
@@ -37,17 +37,17 @@ text_properties = {
 # add polygons
 shapes_layer = viewer.add_shapes(
     polygons,
-    properties=properties,
+    features=features,
     shape_type='polygon',
     edge_width=3,
     edge_color='class',
     edge_color_cycle=edge_color_cycle,
     face_color='transparent',
-    text=text_properties,
+    text=text,
     name='shapes',
 )
 
-# change some properties of the layer
+# change some attributes of the layer
 shapes_layer.opacity = 1
 
 # To save layers to svg:
