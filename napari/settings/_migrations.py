@@ -77,15 +77,17 @@ def migrator(from_: str, to_: str) -> Callable[[MigratorF], MigratorF]:
         _description_
     """
 
-    def decorator(migrate_func: MigratorF):
-        m = Migrator(Version.parse(from_), Version.parse(to_), migrate_func)
-        _MIGRATORS.append(m)
+    def decorator(migrate_func: MigratorF) -> MigratorF:
+        _from, _to = Version.parse(from_), Version.parse(to_)
+        assert _to >= _from, 'Migrator must increase the version.'
+        _MIGRATORS.append(Migrator(_from, _to, migrate_func))
+        return migrate_func
 
     return decorator
 
 
 @migrator('0.3.0', '0.4.0')
-def _(model: NapariSettings):
+def v030_v040(model: NapariSettings):
     """Migrate from v0.3.0 to v0.4.0.
 
     Prior to v0.4.0, npe2 plugins were automatically added to disabled plugins.
