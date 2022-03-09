@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import (
     TYPE_CHECKING,
-    Callable,
     DefaultDict,
     Dict,
-    Iterable,
     Iterator,
     List,
     Optional,
@@ -20,8 +18,8 @@ from npe2.manifest.schema import PluginManifest
 from ..utils.translations import trans
 
 if TYPE_CHECKING:
-    from npe2._types import LayerData, WidgetCallable
     from npe2.manifest.contributions import WriterContribution
+    from npe2.types import LayerData, SampleDataCreator, WidgetCreator
     from qtpy.QtWidgets import QMenu
 
     from ..layers import Layer
@@ -102,7 +100,7 @@ def write_layers(
 
 def get_widget_contribution(
     plugin_name: str, widget_name: Optional[str] = None
-) -> Optional[Tuple[WidgetCallable, str]]:
+) -> Optional[Tuple[WidgetCreator, str]]:
     widgets_seen = set()
     for contrib in npe2.PluginManager.instance().iter_widgets():
         if contrib.plugin_name == plugin_name:
@@ -205,8 +203,15 @@ def get_readers(path: str) -> Dict[str, str]:
     }
 
 
-def iter_manifests() -> Iterator[PluginManifest]:
-    yield from npe2.PluginManager.instance()._manifests.values()
+def iter_manifests(
+    disabled: Optional[bool] = None,
+) -> Iterator[PluginManifest]:
+    pm = npe2.PluginManager.instance()
+    if hasattr(pm, 'iter_manifests'):
+        yield from pm.iter_manifests(disabled=disabled)
+    else:
+        # npe < v0.1.3
+        yield from pm._manifests.values()
 
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
@@ -233,7 +238,7 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
 
 def get_sample_data(
     plugin: str, sample: str
-) -> Tuple[Optional[Callable[[], Iterable[LayerData]]], List[Tuple[str, str]]]:
+) -> Tuple[Optional[SampleDataCreator], List[Tuple[str, str]]]:
     """Get sample data opener from npe2.
 
     Parameters
@@ -251,8 +256,11 @@ def get_sample_data(
         - second item is a list of available samples (plugin_name, sample_name)
           if no data opener is found.
     """
+    avail = []
     pm = npe2.PluginManager.instance()
-    for c in pm._contrib._samples.get(plugin, []):
-        if c.key == sample:
-            return c.open, []
-    return None, [(p, x.key) for p, s in pm.iter_sample_data() for x in s]
+    for plugin_name, contribs in pm.iter_sample_data():
+        for contrib in contribs:
+            if plugin_name == plugin and contrib.key == sample:
+                return contrib.open, []
+            avail.append((plugin_name, contrib.key))
+    return None, avail
