@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ._napari_settings import NapariSettings
 
 _MIGRATORS: List[Migrator] = []
-MigratorF = Callable[[NapariSettings], None]
+MigratorF = Callable[['NapariSettings'], None]
 
 
 class Migrator(NamedTuple):
@@ -31,12 +31,16 @@ def do_migrations(model: NapariSettings):
                     migration.run(model)
                     model.schema_version = migration.to_
                 except Exception as e:
-                    model.update(backup)
-                    warnings.warn(
+                    msg = (
                         f"Failed to migrate settings from v{migration.from_} "
-                        f"to v{migration.to_}. You may need to reset your "
-                        f"settings with `napari --reset`. Error: {e}"
+                        f"to v{migration.to_}. Error: {e}. "
                     )
+                    try:
+                        model.update(backup)
+                        msg += 'You may need to reset your settings with `napari --reset`. '
+                    except Exception:
+                        msg += 'Settings rollback also failed. Please run `napari --reset`.'
+                    warnings.warn(msg)
                     return
 
 

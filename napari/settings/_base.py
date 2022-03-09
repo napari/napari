@@ -139,7 +139,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             self._remove_env_settings(data)
         return data
 
-    def _save_dict(self, **dict_kwargs):
+    def _save_dict(self, **dict_kwargs: Any) -> DictStrAny:
         """The minimal dict representation that will be persisted to disk.
 
         By default, this will exclude settings values that match the default

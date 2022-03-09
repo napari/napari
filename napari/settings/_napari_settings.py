@@ -8,7 +8,7 @@ from ..utils._base import _DEFAULT_CONFIG_PATH
 from ..utils.translations import trans
 from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
-from ._base import EventedConfigFileSettings, _remove_empty_dicts
+from ._base import _NOT_SET, EventedConfigFileSettings, _remove_empty_dicts
 from ._experimental import ExperimentalSettings
 from ._fields import Version
 from ._plugins import PluginsSettings
@@ -74,13 +74,17 @@ class NapariSettings(EventedConfigFileSettings):
         # (you can still mutate attributes in the subfields)
         allow_mutation = False
 
-    def __init__(self, config_path=..., **values: Any) -> None:
+    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
         super().__init__(config_path, **values)
         self._maybe_migrate()
 
-    def _save_dict(self):
-        # TODO: there must be a better way to always include this
-        return {'schema_version': self.schema_version, **super()._save_dict()}
+    def _save_dict(self, **kwargs):
+        # we always want schema_version written to the settings.yaml
+        # TODO: is there a better way to always include schema version?
+        return {
+            'schema_version': self.schema_version,
+            **super()._save_dict(**kwargs),
+        }
 
     def __str__(self):
         out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
