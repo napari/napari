@@ -510,6 +510,20 @@ class QPluginList(QListWidget):
         self.setSortingEnabled(True)
         self._remove_list = []
 
+    def _count_visible(self) -> int:
+        """Return the number of visible items.
+
+        Visible items are the result of the normal `count` method minus
+        any hidden items.
+        """
+        hidden = 0
+        count = self.count()
+        for i in range(count):
+            item = self.item(i)
+            hidden += item.isHidden()
+
+        return count - hidden
+
     @Slot(PackageMetadata)
     def addItem(
         self,
