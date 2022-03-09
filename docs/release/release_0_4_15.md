@@ -100,6 +100,7 @@ Keep reading below for the full list of changes!
 - Fix plausible not added to docs (#4199)
 - Documentation for scale in layers documentation (#4204)
 - Fix EULA/licensing/signing issues post-merge (#4210)
+- Add PRs made after 0.4.15rc1 to release notes (#4217)
 
 ## Bug Fixes
 
@@ -120,6 +121,11 @@ Keep reading below for the full list of changes!
 - Add value method to extension2reader widget (#4179)
 - Add hook implementation name to order sorting (#4180)
 - Add dependencies helper and fix pyside issue when filtering plugins (#4214)
+- Add plugin dialog initial tests (#4216)
+- Update napari pin for conda/mamba install in constructor bundle (#4220)
+- Adjust conditions that control package signing and artifact uploads (constructor installers) (#4221)
+- Fix name normalization of already installed plugins (#4223)
+- Use conda instead of mamba in windows conda-forge bundled app (#4225)
 
 ## API Changes
 
