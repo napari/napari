@@ -703,7 +703,7 @@ class QtPluginDialog(QDialog):
 
         installer_type = "pip"
         if running_as_constructor_app():
-            installer_type = "mamba"
+            installer_type = "mamba" if os.name != "nt" else "conda"
 
         self.installer = Installer(installer=installer_type)
         self.setup_ui()
