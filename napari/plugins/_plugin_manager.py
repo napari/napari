@@ -184,7 +184,7 @@ class NapariPluginManager(PluginManager):
         -------
         call_order : CallOrderDict
             mapping of hook_specification name, to a list of dicts with keys:
-            {'plugin', 'enabled'}.  Plugins earlier in the dict are called
+            {'plugin', 'hook_impl', 'enabled'}.  Plugins earlier in the dict are called
             sooner.
         """
 
@@ -197,7 +197,10 @@ class NapariPluginManager(PluginManager):
             # no need to save call order if there is only a single item
             if len(impls) > 1:
                 order[spec_name] = [
-                    {'plugin': impl.plugin_name, 'enabled': impl.enabled}
+                    {
+                        'plugin': f'{impl.plugin_name}--{impl.function.__name__}',
+                        'enabled': impl.enabled,
+                    }
                     for impl in reversed(impls)
                 ]
         return order
@@ -220,11 +223,30 @@ class NapariPluginManager(PluginManager):
                 order = []
                 for p in new_order.get(spec_name, []):
                     try:
+                        plugin = p['plugin']
+                        hook_impl_name = None
+                        if '--' in plugin:
+                            plugin, hook_impl_name = tuple(plugin.split('--'))
+
+                        enabled = p['enabled']
                         # the plugin may not be there if its been disabled.
-                        hook_caller._set_plugin_enabled(
-                            p['plugin'], p['enabled']
+                        hook_caller._set_plugin_enabled(plugin, enabled)
+
+                        hook_impls = hook_caller.get_hookimpls()
+                        # get the HookImplementation objects matching this entry
+                        hook_impl = list(
+                            filter(
+                                # plugin name has to match
+                                lambda impl: impl.plugin_name == plugin
+                                and (
+                                    # if we have a hook_impl_name it must match
+                                    not hook_impl_name
+                                    or impl.function.__name__ == hook_impl_name
+                                ),
+                                hook_impls,
+                            )
                         )
-                        order.append(p['plugin'])
+                        order.extend(hook_impl)
                     except KeyError:
                         continue
                 if order:
