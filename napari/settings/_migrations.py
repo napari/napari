@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from contextlib import contextmanager
+from importlib.metadata import distributions
 from typing import TYPE_CHECKING, Callable, List, NamedTuple
 
 from ._fields import Version
@@ -91,8 +92,6 @@ def _(model: NapariSettings):
     This migration removes any npe2 plugins discovered in the environment
     (at migration time) from the "disabled plugins" set.
     """
-    from importlib.metadata import distributions
-
     for dist in distributions():
         for ep in dist.entry_points:
             if ep.group == "napari.manifest":

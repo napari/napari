@@ -240,9 +240,15 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             return (  # type: ignore [return-value]
                 init_settings,
                 cls._env_settings,
-                config_file_settings_source,
+                cls._config_file_settings_source,
                 file_secret_settings,
             )
+
+        @classmethod
+        def _config_file_settings_source(
+            cls, settings: EventedConfigFileSettings
+        ) -> Dict[str, Any]:
+            return config_file_settings_source(settings)
 
 
 # Utility functions

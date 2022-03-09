@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import Field, validator
+from pydantic import Field
 
 from ..utils._base import _DEFAULT_CONFIG_PATH
 from ..utils.translations import trans
@@ -33,10 +33,6 @@ class NapariSettings(EventedConfigFileSettings):
         description=trans._("Napari settings schema version."),
     )
 
-    @validator('schema_version', pre=True)
-    def _handle_empty_schema(cls, value):
-        return '0.3.0' if not value else value
-
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings,
         title=trans._("Application"),
@@ -66,13 +62,21 @@ class NapariSettings(EventedConfigFileSettings):
     # private attributes and ClassVars will not appear in the schema
     _config_path: Optional[Path] = Path(_CFG_PATH) if _CFG_PATH else None
 
-    class Config:
+    class Config(EventedConfigFileSettings.Config):
         env_prefix = 'napari_'
         use_enum_values = False
         # all of these fields are evented models, so we don't want to break
         # connections by setting the top-level field itself
         # (you can still mutate attributes in the subfields)
         allow_mutation = False
+
+        @classmethod
+        def _config_file_settings_source(cls, settings) -> dict:
+            # before '0.4.0' we didn't write the schema_version in the file
+            # written to disk. so if it's missing, add schema_version of 0.3.0
+            d = super()._config_file_settings_source(settings)
+            d.setdefault('schema_version', '0.3.0')
+            return d
 
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
         super().__init__(config_path, **values)
