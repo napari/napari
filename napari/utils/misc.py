@@ -5,7 +5,6 @@ import collections.abc
 import importlib.metadata
 import inspect
 import itertools
-import json
 import os
 import re
 import sys
@@ -18,7 +17,6 @@ from typing import (
     Any,
     Callable,
     Iterable,
-    List,
     Optional,
     Type,
     TypeVar,
@@ -73,40 +71,6 @@ def running_as_constructor_app() -> bool:
     return (
         Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
     ).exists()
-
-
-def bundle_conda_dependencies() -> List[str]:
-    """Return a list of the constructor bundle napari dependencies.
-
-    We need to preserve the initial napari environment in the bundle app when
-    installing plugins as they are currently installed in the same
-    environment.
-
-    Since there will not always be a napari conda package available on PRs
-    or developmewnt, we grab the dependencies from the
-    `conda-meta/napari-x.x.x-zzz.json` file so that whenever a plugin is
-    installed inside the constructor bundled app, we also preserve the same
-    napari dependencies the bundle came with. This will prevent a plugin
-    from changing a dependency in an unexpected way.
-
-    A new `napari-pins` or `napari-constraints` package will be created for
-    the next release cycle of napari, so we can define some base constraints
-    we always need to preserve, e.g. numpy, scipy, dask, scikits, python etc.
-
-    This function is only used by the constructor bundle.
-    """
-    from .._version import version_tuple
-
-    version = ".".join(str(v) for v in version_tuple[:3])
-    dependencies = []
-    for item in (Path(sys.prefix) / "conda-meta").iterdir():
-        if item.name.startswith(f"napari-{version}"):
-            version = item.name.split("-")[-1]
-            data = json.loads(item.read_text())
-            dependencies = data.get("depends", [])
-            break
-
-    return [dep.replace(" ", "") for dep in dependencies]
 
 
 def bundle_bin_dir() -> Optional[str]:
