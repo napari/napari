@@ -527,6 +527,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
+        depiction='volume',
         iso_threshold=0.5,
         attenuation=0.05,
         name=None,
@@ -541,7 +542,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         visible=True,
         multiscale=None,
         cache=True,
-        experimental_slicing_plane=None,
+        plane=None,
         experimental_clipping_planes=None,
     ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
@@ -594,6 +595,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Rendering mode used by vispy. Must be one of our supported
             modes. If a list then must be same length as the axis that is being
             expanded as channels.
+        depiction : str
+            Selects a preset volume depiction mode in vispy
+              * volume: images are rendered as 3D volumes.
+              * plane: images are rendered as 2D planes embedded in 3D.
         iso_threshold : float or list
             Threshold for isosurface. If a list then must be same length as the
             axis that is being expanded as channels.
@@ -655,7 +660,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         cache : bool
             Whether slices of out-of-core datasets should be cached upon
             retrieval. Currently, this only applies to dask arrays.
-        experimental_slicing_plane : dict or SlicingPlane
+        plane : dict or SlicingPlane
             Properties defining plane rendering in 3D. Properties are defined in
             data coordinates. Valid dictionary keys are
             {'position', 'normal', 'thickness', and 'enabled'}.
@@ -688,6 +693,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'gamma': gamma,
             'interpolation': interpolation,
             'rendering': rendering,
+            'depiction': depiction,
             'iso_threshold': iso_threshold,
             'attenuation': attenuation,
             'name': name,
@@ -702,7 +708,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'visible': visible,
             'multiscale': multiscale,
             'cache': cache,
-            'experimental_slicing_plane': experimental_slicing_plane,
+            'plane': plane,
             'experimental_clipping_planes': experimental_clipping_planes,
         }
 
@@ -901,7 +907,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if stack:
             return self._add_layers_with_plugins(
-                paths, kwargs, plugin=plugin, layer_type=layer_type
+                paths,
+                kwargs=kwargs,
+                plugin=plugin,
+                layer_type=layer_type,
+                stack=stack,
             )
 
         added: List[Layer] = []  # for layers that get added
@@ -916,7 +926,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 if plugin:
                     added.extend(
                         self._add_layers_with_plugins(
-                            _path, kwargs, plugin=plugin, layer_type=layer_type
+                            [_path],
+                            kwargs,
+                            plugin=plugin,
+                            layer_type=layer_type,
+                            stack=stack,
                         )
                     )
                 # no plugin choice was made
@@ -946,7 +960,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return added
 
     def _open_or_get_error(
-        self, readers, _path, kwargs, layer_type, select_reader_helper
+        self, readers, _path, kwargs, layer_type, stack, select_reader_helper
     ):
         added = []
         if not readers:
@@ -969,10 +983,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             try:
                 added.extend(
                     self._add_layers_with_plugins(
-                        _path,
-                        kwargs,
+                        [_path],
+                        kwargs=kwargs,
                         plugin=plugin,
                         layer_type=layer_type,
+                        stack=stack,
                     )
                 )
                 # preferred plugin works
@@ -1007,6 +1022,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     kwargs,
                     plugin=plugin,
                     layer_type=layer_type,
+                    stack=stack,
                 )
             )
             # are we persisting an association?
@@ -1029,7 +1045,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _add_layers_with_plugins(
         self,
-        path_or_paths: Union[str, Sequence[str]],
+        paths: List[str],
+        *,
+        stack: bool,
         kwargs: Optional[dict] = None,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
@@ -1042,7 +1060,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Parameters
         ----------
-        path_or_paths : str or list of str
+        paths : list of str
             A filepath, directory, or URL (or a list of any) to open. If a
             list, the assumption is that the list is to be treated as a stack.
         kwargs : dict, optional
@@ -1058,6 +1076,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
+        stack : bool
+            See `open` method
+            Stack=False => path is unique string, and list of len(1)
+            Stack=True => path is list of path
 
         Returns
         -------
@@ -1066,23 +1088,31 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         from ..plugins.io import read_data_with_plugins
 
-        layer_data, hookimpl = read_data_with_plugins(
-            path_or_paths, plugin=plugin
-        )
+        assert stack is not None
+        assert isinstance(paths, list)
+        assert not isinstance(paths, str)
+
+        if stack:
+            layer_data, hookimpl = read_data_with_plugins(
+                paths, plugin=plugin, stack=stack
+            )
+        else:
+            assert len(paths) == 1
+            layer_data, hookimpl = read_data_with_plugins(
+                paths, plugin=plugin, stack=stack
+            )
 
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
         filenames = []
-        if isinstance(path_or_paths, str):
-            filenames = itertools.repeat(path_or_paths)
-        elif is_sequence(path_or_paths):
-            if len(path_or_paths) == len(layer_data):
-                filenames = iter(path_or_paths)
-            else:
-                # if a list of paths has been returned as a list of layer data
-                # without a 1:1 relationship between the two lists we iterate
-                # over the first name
-                filenames = itertools.repeat(path_or_paths[0])
+
+        if len(paths) == len(layer_data):
+            filenames = iter(paths)
+        else:
+            # if a list of paths has been returned as a list of layer data
+            # without a 1:1 relationship between the two lists we iterate
+            # over the first name
+            filenames = itertools.repeat(paths[0])
 
         # add each layer to the viewer
         added: List[Layer] = []  # for layers that get added

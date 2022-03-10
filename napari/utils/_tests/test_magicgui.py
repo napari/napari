@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 from typing import List
@@ -20,18 +19,6 @@ except ImportError:
 except RuntimeError:
     pytest.skip(
         'Cannot test magicgui without Qt bindings.', allow_module_level=True
-    )
-
-
-if (
-    os.getenv("CI")
-    and sys.platform.startswith("linux")
-    and sys.version_info[:2] == (3, 7)
-    and qtpy.API_NAME == 'PySide2'
-):
-    pytest.skip(
-        "magicgui tests and example tests causing segfault",
-        allow_module_level=True,
     )
 
 

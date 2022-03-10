@@ -11,12 +11,13 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Union,
 )
 
 import npe2
 from npe2.io_utils import read_get_reader
 from npe2.manifest.schema import PluginManifest
+
+from ..utils.translations import trans
 
 if TYPE_CHECKING:
     from npe2._types import LayerData, WidgetCallable
@@ -33,11 +34,20 @@ class _FakeHookimpl:
 
 
 def read(
-    path: Union[str, Sequence[str]], plugin: Optional[str] = None
+    paths: Sequence[str], plugin: Optional[str] = None, *, stack: bool
 ) -> Optional[Tuple[List[LayerData], _FakeHookimpl]]:
     """Try to return data for `path`, from reader plugins using a manifest."""
+    assert stack is not None
+    # the goal here would be to make read_get_reader of npe2 aware of "stack",
+    # and not have this conditional here.
+    # this would also allow the npe2-npe1 shim to do this transform as well
+    if stack:
+        npe1_path = paths
+    else:
+        assert len(paths) == 1
+        npe1_path = paths[0]
     try:
-        layer_data, reader = read_get_reader(path, plugin_name=plugin)
+        layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)
         return layer_data, _FakeHookimpl(reader.plugin_name)
     except ValueError as e:
         if 'No readers returned data' not in str(e):
@@ -93,11 +103,21 @@ def write_layers(
 def get_widget_contribution(
     plugin_name: str, widget_name: Optional[str] = None
 ) -> Optional[Tuple[WidgetCallable, str]]:
+    widgets_seen = set()
     for contrib in npe2.PluginManager.instance().iter_widgets():
-        if contrib.plugin_name == plugin_name and (
-            not widget_name or contrib.display_name == widget_name
-        ):
-            return contrib.get_callable(), contrib.display_name
+        if contrib.plugin_name == plugin_name:
+            if not widget_name or contrib.display_name == widget_name:
+                return contrib.get_callable(), contrib.display_name
+            widgets_seen.add(contrib.display_name)
+    if widget_name and widgets_seen:
+        msg = trans._(
+            'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {seen}',
+            plugin_name=plugin_name,
+            widget_name=widget_name,
+            seen=widgets_seen,
+            deferred=True,
+        )
+        raise KeyError(msg)
     return None
 
 
@@ -181,7 +201,7 @@ def get_readers(path: str) -> Dict[str, str]:
     pm = npe2.PluginManager.instance()
     return {
         pm.get_manifest(reader.command).display_name: reader.plugin_name
-        for reader in pm.iter_compatible_readers(path)
+        for reader in pm.iter_compatible_readers([path])
     }
 
 

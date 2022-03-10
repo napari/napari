@@ -156,6 +156,11 @@ def _get_field_dependents(cls: 'EventedModel') -> Dict[str, Set[str]]:
 
 
 class EventedModel(BaseModel, metaclass=EventedMetaclass):
+    """A Model subclass that emits an event whenever a field value is changed.
+
+    Note: As per the standard pydantic behavior, default Field values are
+    not validated (#4138) and should be correctly typed.
+    """
 
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
@@ -181,7 +186,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
         underscore_attrs_are_private = True
         # whether to validate field defaults (default: False)
-        validate_all = True
+        # see https://github.com/napari/napari/pull/4138 before changing.
+        validate_all = False
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
         # field declares a _json_encode method.
@@ -250,18 +256,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 and self.__fields__[name].field_info.allow_mutation
             ):
                 setattr(self, name, value)
-
-    def asdict(self) -> Dict[str, Any]:
-        """Convert a model to a dictionary."""
-        warnings.warn(
-            trans._(
-                "The `asdict` method has been renamed `dict` and is now deprecated. It will be removed in 0.4.7",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self.dict()
 
     def update(
         self, values: Union['EventedModel', dict], recurse: bool = True

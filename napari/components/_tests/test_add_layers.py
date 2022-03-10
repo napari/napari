@@ -28,7 +28,7 @@ def test_add_layers_with_plugins(layer_datum):
         MagicMock(return_value=([layer_datum], _testimpl)),
     ):
         v = ViewerModel()
-        v._add_layers_with_plugins('mock_path')
+        v._add_layers_with_plugins(['mock_path'], stack=False)
         layertypes = [layer._type_string for layer in v.layers]
         assert layertypes == [layer_datum[2]]
 
@@ -43,7 +43,7 @@ def test_add_layers_with_plugins(layer_datum):
 def test_plugin_returns_nothing():
     """Test that a plugin returning nothing adds nothing to the Viewer."""
     v = ViewerModel()
-    v._add_layers_with_plugins('mock_path')
+    v._add_layers_with_plugins(['mock_path'], stack=False)
     assert not v.layers
 
 
@@ -87,7 +87,7 @@ def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
     ):
 
         v = ViewerModel()
-        v._add_layers_with_plugins('mock_path', kwargs=kwargs)
+        v._add_layers_with_plugins(['mock_path'], kwargs=kwargs, stack=False)
         expected_source = Source(path='mock_path', reader_plugin='testimpl')
         for layer in v.layers:
             for key, val in kwargs.items():
