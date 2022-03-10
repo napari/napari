@@ -126,6 +126,7 @@ Keep reading below for the full list of changes!
 - Adjust conditions that control package signing and artifact uploads (constructor installers) (#4221)
 - Fix name normalization of already installed plugins (#4223)
 - Use conda instead of mamba in windows conda-forge bundled app (#4225)
+- Remove access to private npe2 plugin manager attributes (#4236)
 
 ## API Changes
 
