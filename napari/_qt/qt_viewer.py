@@ -438,6 +438,7 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
+                self._set_console_enabled(self.console.shell is not None)
             except ImportError:
                 warnings.warn(
                     trans._(
@@ -777,21 +778,36 @@ class QtViewer(QSplitter):
 
         self.canvas.native.setCursor(q_cursor)
 
+    def _set_console_enabled(self, enabled: bool) -> None:
+        """Set if the console is enabled.
+
+        The console is usually enabled, but may not be when napari is
+        launched from certain environments (e.g. ipython). In that
+        case, hide the console and the button that controls its visibility.
+        """
+        if not enabled:
+            self._set_console_visibility(False)
+        self.viewerButtons.consoleButton.setVisible(enabled)
+
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
 
         Imports the console the first time it is requested.
         """
         # force instantiation of console if not already instantiated
-        _ = self.console
+        # and skip toggle if there is no shell (e.g. launched from ipython)
+        if self.console.shell is None:
+            return
+        self._set_console_visibility(not self.dockConsole.isVisible())
 
-        viz = not self.dockConsole.isVisible()
+    def _set_console_visibility(self, visible) -> None:
+        """Sets if the console is visible."""
         # modulate visibility at the dock widget level as console is dockable
-        self.dockConsole.setVisible(viz)
+        self.dockConsole.setVisible(visible)
         if self.dockConsole.isFloating():
             self.dockConsole.setFloating(True)
 
-        if viz:
+        if visible:
             self.dockConsole.raise_()
 
         self.viewerButtons.consoleButton.setProperty(
