@@ -52,7 +52,7 @@ in our [`flake8` configuration](https://github.com/napari/napari/blob/main/setup
 [C901](https://lintlyci.github.io/Flake8Rules/rules/C901.html).  For information
 on any specific flake8 error code, see the [Flake8
 Rules](https://lintlyci.github.io/Flake8Rules/).  You may also wish to refer to
-the [PEP 8 style guide](https://www.python.org/dev/peps/pep-0008/).
+the [PEP 8 style guide](https://peps.python.org/pep-0008/).
 
 If you wish to tell the linter to ignore a specific line use the `# noqa`
 comment along with the specific error code (e.g. `import sys  # noqa: E402`) but

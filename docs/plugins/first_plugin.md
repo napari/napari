@@ -105,7 +105,7 @@ Next, we will populate `pyproject.toml` and `setup.cfg`
 
 ```{note}
 `pyproject.toml` is a standard file (introduced in
-[PEP518](https://www.python.org/dev/peps/pep-0518/), May 2016) that tells
+[PEP518](https://peps.python.org/pep-0518/), May 2016) that tells
 the Python package installer [pip](https://pip.pypa.io/en/stable/) how to
 build your package. For more background, see
 [Clarifying PEP 518](https://snarky.ca/clarifying-pep-518/) and
