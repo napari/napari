@@ -42,22 +42,10 @@ class MockQtReaderDialog:
         if self._cancelled:
             return
 
-        if len(self.readers) == 1:
-            return self._plugin_choice, False
-
         return self._plugin_choice, self._persist_choice
 
 
-def test_get_reader_choice_single_reader():
-    filename = './my_file.abc'
-    readers = {'disp-name': 'plugin_name'}
-    dialog = MockQtReaderDialog(filename, None, readers)
-    choice = get_preferred_reader(dialog, readers)
-
-    assert choice[0] == 'disp-name'
-    assert choice[1] is False
-
-
+# TODO: This all feels very futile... can we do this better or do we not need it maybe..., we should test it with the actual dialog?
 def test_get_reader_choice_cancel():
     filename = './my_file.abc'
     readers = {'disp-name': 'plugin_name', 'p1': 'p2'}
@@ -65,7 +53,8 @@ def test_get_reader_choice_cancel():
     dialog._set_user_cancelled()
 
     choice = get_preferred_reader(dialog, readers)
-    assert choice is None
+    assert choice[0] == ''
+    assert choice[1] is False
 
 
 def test_get_reader_choice_many_persist():
@@ -74,8 +63,8 @@ def test_get_reader_choice_many_persist():
     dialog = MockQtReaderDialog(filename, None, readers)
     dialog._set_plugin_choice('p1')
 
-    choice = get_preferred_reader(dialog, readers, False)
-    assert choice[0] == 'p1'
+    choice = get_preferred_reader(dialog, readers)
+    assert choice[0] == 'p2'
     assert choice[1] is True
 
 
@@ -86,6 +75,6 @@ def test_get_reader_choice_no_persist():
     dialog._set_plugin_choice('p1')
     dialog._set_persist_choice(False)
 
-    choice = get_preferred_reader(dialog, readers, False)
-    assert choice[0] == 'p1'
+    choice = get_preferred_reader(dialog, readers)
+    assert choice[0] == 'p2'
     assert choice[1] is False

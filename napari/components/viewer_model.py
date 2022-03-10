@@ -927,7 +927,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     added.extend(
                         self._add_layers_with_plugins(
                             [_path],
-                            kwargs,
+                            kwargs=kwargs,
                             plugin=plugin,
                             layer_type=layer_type,
                             stack=stack,
@@ -953,6 +953,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                             _path,
                             kwargs,
                             layer_type,
+                            stack,
                             select_reader_helper,
                         )
                     )
@@ -985,9 +986,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     self._add_layers_with_plugins(
                         [_path],
                         kwargs=kwargs,
+                        stack=stack,
                         plugin=plugin,
                         layer_type=layer_type,
-                        stack=stack,
                     )
                 )
                 # preferred plugin works
@@ -1018,11 +1019,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             # use plugin chosen by user
             added.extend(
                 self._add_layers_with_plugins(
-                    _path,
-                    kwargs,
+                    [_path],
+                    kwargs=kwargs,
+                    stack=stack,
                     plugin=plugin,
                     layer_type=layer_type,
-                    stack=stack,
                 )
             )
             # are we persisting an association?
