@@ -1,3 +1,4 @@
+import sys
 import typing
 from typing import TYPE_CHECKING, Optional
 from weakref import WeakSet
@@ -10,6 +11,11 @@ from .utils import _magicgui, config
 if TYPE_CHECKING:
     # helpful for IDE support
     from ._qt.qt_main_window import Window
+
+if sys.version_info < (3, 9):
+    _ViewerSet = typing.ClassVar[WeakSet]
+else:
+    _ViewerSet = typing.ClassVar[WeakSet['Viewer']]
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -33,7 +39,7 @@ class Viewer(ViewerModel):
     """
 
     _window: 'Window' = None  # type: ignore
-    _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
+    _instances: _ViewerSet = WeakSet()
 
     def __init__(
         self,
