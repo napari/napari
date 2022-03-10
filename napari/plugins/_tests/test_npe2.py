@@ -92,38 +92,40 @@ def test_get_widget_contribution():
 
 
 def test_populate_qmenu():
+    '''Tests for populate_qmenu.  '''
 
-
+    # Tests the whole method. the first run through, it will add a menu,
+    # but will then call populate_qmenu will call itself again to add the submenu
+    # to that menu added.
     with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock1:
         instance = Mock()
+
         class Item():
+            # Using this class to return an object for both the
+            # item and subm_contrib in the code.
             command = 'run plugin'
+            submenu = 'My submenu'
+            id = 'my plugin'
+            label = 'my label'
+
+        class Item2():
+            command = 'run plugin'
+
         item = Item()
-        
-        instance.iter_menu = Mock(return_value = [item])
-        
-        cmd = Mock()
-        instance.get_command = Mock(return_value = cmd)
+        item2 = Item2()
+        instance.iter_menu = Mock(side_effect = [[item], [item2]])
+        instance.get_submenu = Mock(return_value = Item())
         menu = Mock()
-        menu.addAction = Mock()
+        submenu = Mock()
+        submenu.addAction = Mock()
+        menu.addMenu = Mock(return_value=submenu)
+
         mock1.return_value = instance
-        # test menu.addAction with no submenu
         populate_qmenu(menu, 'my-plugin')
-        menu.addAction.assert_called_once()
 
-        # class Item2():
-        #     command = 'run plugin'
-        #     submenu = 'My submenu'
-            
-        # menu2 = Mock()
-        # menu2.addAction = Mock()
-        # # menu.addMenu = Mock(return_value = menu2)
-        # # instance.get_submenu = Mock()
-        # item2 = Item2()
-        # instance.iter_menu = Mock(return_value = [item2])
-        # mock1.return_value = instance
-        # populate_qmenu(menu, 'my-plugin')
-
+        submenu.addAction.assert_called_once()
+        assert instance.iter_menu.call_count == 2
+        menu.addMenu.assert_called_once()
 
 
         
