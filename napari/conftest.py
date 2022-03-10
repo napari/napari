@@ -4,10 +4,8 @@ except ImportError:
     pass
 
 import os
-import sys
 from functools import partial
 from multiprocessing.pool import ThreadPool
-from pathlib import Path
 from unittest.mock import patch
 
 import dask.threaded
@@ -15,7 +13,6 @@ import numpy as np
 import pooch
 import pytest
 from IPython.core.history import HistoryManager
-from npe2 import PluginManager, PluginManifest
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -412,29 +409,3 @@ def _no_error_reports():
             yield
     except (ModuleNotFoundError, AttributeError):
         yield
-
-
-@pytest.fixture
-def sample_path():
-    return Path(__file__).parent / "plugins/_tests/sample"
-
-
-@pytest.fixture
-def sample_manifest(sample_path):
-    return PluginManifest.from_file(sample_path / "my_plugin" / "napari.yaml")
-
-
-@pytest.fixture
-def uses_sample_plugin(sample_path):
-    sys.path.append(str(sample_path))
-    pm = PluginManager.instance()
-    pm.discover()
-    yield
-    sys.path.remove(str(sample_path))
-
-
-@pytest.fixture
-def plugin_manager():
-    pm = PluginManager()
-    pm.discover()
-    return pm
