@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import (
     TYPE_CHECKING,
-    Callable,
     DefaultDict,
     Dict,
-    Iterable,
     Iterator,
     List,
     Optional,
@@ -21,8 +19,8 @@ from npe2.manifest.schema import PluginManifest
 from ..utils.translations import trans
 
 if TYPE_CHECKING:
-    from npe2._types import LayerData, WidgetCallable
     from npe2.manifest.contributions import WriterContribution
+    from npe2.types import LayerData, SampleDataCreator, WidgetCreator
     from qtpy.QtWidgets import QMenu
 
     from ..layers import Layer
@@ -103,7 +101,7 @@ def write_layers(
 
 def get_widget_contribution(
     plugin_name: str, widget_name: Optional[str] = None
-) -> Optional[Tuple[WidgetCallable, str]]:
+) -> Optional[Tuple[WidgetCreator, str]]:
     widgets_seen = set()
     for contrib in npe2.PluginManager.instance().iter_widgets():
         if contrib.plugin_name == plugin_name:
@@ -234,7 +232,7 @@ def sample_iterator() -> Iterator[Tuple[str, Dict[str, SampleDict]]]:
 
 def get_sample_data(
     plugin: str, sample: str
-) -> Tuple[Optional[Callable[[], Iterable[LayerData]]], List[Tuple[str, str]]]:
+) -> Tuple[Optional[SampleDataCreator], List[Tuple[str, str]]]:
     """Get sample data opener from npe2.
 
     Parameters
@@ -252,14 +250,18 @@ def get_sample_data(
         - second item is a list of available samples (plugin_name, sample_name)
           if no data opener is found.
     """
+    avail = []
     pm = npe2.PluginManager.instance()
-    for c in pm._contrib._samples.get(plugin, []):
-        if c.key == sample:
-            return c.open, []
-    return None, [(p, x.key) for p, s in pm.iter_sample_data() for x in s]
+    for plugin_name, contribs in pm.iter_sample_data():
+        for contrib in contribs:
+            if plugin_name == plugin and contrib.key == sample:
+                return contrib.open, []
+            avail.append((plugin_name, contrib.key))
+    return None, avail
 
 
 def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
+    """Callback when any npe2 plugins are enabled or disabled"""
     from .. import Viewer
     from ..settings import get_settings
 
