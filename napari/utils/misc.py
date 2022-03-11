@@ -69,9 +69,7 @@ def running_as_bundled_app() -> bool:
 def running_as_constructor_app() -> bool:
     """Infer whether we are running as a constructor bundle."""
     return (
-        Path(sys.executable).parent / ".napari_is_constructor_bundled"
-    ).exists() or (
-        Path(sys.prefix).parent / ".napari_is_constructor_bundled"
+        Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
     ).exists()
 
 

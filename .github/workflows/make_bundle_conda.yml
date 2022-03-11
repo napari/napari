@@ -129,14 +129,20 @@ jobs:
 
       - name: Upload to anaconda.org
         shell: bash -l {0}
-        if: github.event_name == 'schedule'
+        # Only upload to anaconda.org/napari if it's a nightly (version with *dev* suffix)
+        # or a tag event (either RC or final). Nightlies and RCs go to the nightly channel.
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/v')
         run: |
+          label_args=""
+          if [[ $NAPARI_VERSION == *rc* || $NAPARI_VERSION == *dev* ]]; then
+            label_args="-l nightly"
+          fi
           anaconda \
             -t ${{ secrets.ANACONDA_TOKEN }} \
             upload \
             --skip-existing \
             -u napari \
-            -l nightly \
+            $label_args \
             ${GITHUB_WORKSPACE}${conda_bld_suffix}noarch/*.tar.bz2
 
   constructor-bundle:
@@ -234,7 +240,7 @@ jobs:
         run: |
           pkgs=$(shopt -s nullglob dotglob; echo "${CONDA_BLD_PATH}/noarch/*.tar.bz2")
           if (( ${#pkgs} )); then
-            conda index "${CONDA_BLD_PATH}/noarch"
+            conda index "${CONDA_BLD_PATH}"
             conda search -c local --override-channels
             echo CONSTRUCTOR_USE_LOCAL=1 >> $GITHUB_ENV
           else
@@ -245,7 +251,8 @@ jobs:
       # https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development#add-a-step-to-your-workflow
       - name: Load signing certificate (MacOS)
         shell: bash -l {0}
-        if: runner.os == 'macOS' && github.event_name == 'schedule'
+        # We only sign pushes to main, nightlies, RCs and final releases
+        if: runner.os == 'macOS' && (github.event_name == 'schedule' || github.event_name == 'push')
         env:
           APPLE_APPLICATION_CERTIFICATE_BASE64: ${{ secrets.APPLE_APPLICATION_CERTIFICATE_BASE64 }}
           APPLE_INSTALLER_CERTIFICATE_BASE64: ${{ secrets.APPLE_INSTALLER_CERTIFICATE_BASE64 }}
@@ -279,7 +286,8 @@ jobs:
           echo "CONSTRUCTOR_NOTARIZATION_IDENTITY=${notarization_identity}" >> $GITHUB_ENV
 
       - name: Load signing certificate (Windows)
-        if: runner.os == 'Windows' && github.event_name == 'schedule'
+        # We only sign pushes to main, nightlies, RCs and final releases
+        if: runner.os == 'Windows' && (github.event_name == 'schedule' || github.event_name == 'push')
         # We are signing with Apple's certificate to provide _something_
         # This is not trusted by Windows so the warnings are still there, but curious users
         # will be able to check it's actually us if necessary
@@ -324,7 +332,8 @@ jobs:
           path: ${{ env.LICENSES_ARTIFACT_PATH }}
 
       - name: Notarize Bundle (macOS)
-        if: runner.os == 'macOS' && github.event_name == 'schedule'
+        # We only sign pushes to main, nightlies, RCs and final releases
+        if: runner.os == 'macOS' && (github.event_name == 'schedule' || github.event_name == 'push')
         uses: devbotsxyz/xcode-notarize@v1
         with:
           product-path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
@@ -334,13 +343,16 @@ jobs:
           verbose: true
 
       - name: Staple Bundle (macOS)
-        if: runner.os == 'macOS' && github.event_name == 'schedule'
+        # We only sign pushes to main, nightlies, RCs and final releases
+        if: runner.os == 'macOS' && (github.event_name == 'schedule' || github.event_name == 'push')
         uses: devbotsxyz/xcode-staple@v1
         with:
           product-path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
+        # CI artifact uploads only for PRs and pushes to main
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == 'main')
         with:
           name: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
           path: napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }}
