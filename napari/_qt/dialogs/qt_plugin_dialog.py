@@ -45,7 +45,6 @@ from ...plugins.utils import normalized_name
 from ...settings import get_settings
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import (
-    bundle_conda_dependencies,
     parse_version,
     running_as_bundled_app,
     running_as_constructor_app,
@@ -187,9 +186,21 @@ class Installer(QObject):
         channels: Sequence[str] = ("conda-forge",),
     ):
         installer = installer or self._installer_type
-        extra_deps = []
+        process_environment = QProcessEnvironment.systemEnvironment()
         if installer != "pip":
-            extra_deps = bundle_conda_dependencies()
+            from ..._version import version_tuple
+
+            # To avoid napari version changing when installing a plugin, we
+            # add a pin to the current napari version, that way we can
+            # restrict any changes to the actual napari application.
+            # Conda/mamba also pin python by default, so we effectively
+            # constrain python and napari versions from changing, when
+            # installing plugins inside the constructor bundled application.
+            # See: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
+            napari_version = ".".join(str(v) for v in version_tuple[:3])
+            process_environment.insert(
+                "CONDA_PINNED_PACKAGES", f"napari={napari_version}"
+            )
             cmd = [
                 'install',
                 '-y',
@@ -213,7 +224,8 @@ class Installer(QObject):
             ]
 
         process = self._create_process(installer)
-        process.setArguments(cmd + list(pkg_list) + extra_deps)
+        process.setProcessEnvironment(process_environment)
+        process.setArguments(cmd + list(pkg_list))
         if self._output_widget and self._queue:
             self._output_widget.clear()
 
@@ -510,6 +522,20 @@ class QPluginList(QListWidget):
         self.setSortingEnabled(True)
         self._remove_list = []
 
+    def _count_visible(self) -> int:
+        """Return the number of visible items.
+
+        Visible items are the result of the normal `count` method minus
+        any hidden items.
+        """
+        hidden = 0
+        count = self.count()
+        for i in range(count):
+            item = self.item(i)
+            hidden += item.isHidden()
+
+        return count - hidden
+
     @Slot(PackageMetadata)
     def addItem(
         self,
@@ -677,7 +703,7 @@ class QtPluginDialog(QDialog):
 
         installer_type = "pip"
         if running_as_constructor_app():
-            installer_type = "mamba"
+            installer_type = "mamba" if os.name != "nt" else "conda"
 
         self.installer = Installer(installer=installer_type)
         self.setup_ui()
@@ -719,19 +745,20 @@ class QtPluginDialog(QDialog):
         self.already_installed = set()
 
         def _add_to_installed(distname, enabled, npe_version=1):
+            norm_name = normalized_name(distname or '')
             if distname:
                 meta = metadata(distname)
                 if len(meta) == 0:
                     # will not add builtins.
                     return
-                self.already_installed.add(distname)
+                self.already_installed.add(norm_name)
             else:
                 meta = {}
 
             self.installed_list.addItem(
                 PackageMetadata(
                     metadata_version="1.0",
-                    name=normalized_name(distname or ''),
+                    name=norm_name,
                     version=meta.get('version', ''),
                     summary=meta.get('summary', ''),
                     home_page=meta.get('url', ''),
