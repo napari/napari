@@ -11,8 +11,6 @@ from ...plugins._npe2 import (
     write_layers,
 )
 
-# from PyQt5.QtWidgets import QMenu
-
 
 def test_read():
 
@@ -31,35 +29,33 @@ def test_read():
 def test_write(layer_data_and_types):
 
     layers, layer_data, layer_types, filenames = layer_data_and_types
-    with patch('napari.plugins._npe2.npe2.write') as mock1:
-        mock1.side_effect = [[filenames[0]], []]
+    with patch('napari.plugins._npe2.npe2.write') as mock:
+        mock.side_effect = [[filenames[0]], []]
         result = write_layers(filenames[0], [layers[0]])
         assert result == [filenames[0]]
-        mock1.assert_called_once()
+        mock.assert_called_once()
         result = write_layers("something.test", [layers[0]])
         assert result == []
-        assert mock1.call_count == 2
+        assert mock.call_count == 2
 
     writer = Mock()
     ltc1 = Mock()
     ltc1.max = Mock(return_value=1)
-    ltc = Mock()
-    ltc.max = Mock(return_value=0)
+    ltc2 = Mock()
+    ltc2.max = Mock(return_value=0)
     writer.layer_type_constraints = Mock()
     writer.layer_type_constraints.return_value = [
         ltc1,
-        ltc,
-        ltc,
-        ltc,
-        ltc,
-        ltc,
-        ltc,
+        ltc2,
+        ltc2,
+        ltc2,
+        ltc2,
+        ltc2,
+        ltc2,
     ]
 
     # is the following cheating?
     writer.exec = Mock(return_value=[filenames[0]])
-    result = write_layers(filenames[0], [layers[0]], writer=writer)
-
     result = write_layers(filenames[0], [layers[0]], writer=writer)
 
     assert result == [filenames[0]]
@@ -67,7 +63,7 @@ def test_write(layer_data_and_types):
 
 def test_get_widget_contribution():
 
-    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock1:
+    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock:
 
         contrib = Mock()
         contrib.plugin_name = 'my-plugin'
@@ -77,7 +73,7 @@ def test_get_widget_contribution():
         instance = Mock()
         instance.iter_widgets = Mock(return_value=[contrib])
         # instance.iter_widgets.
-        mock1.return_value = instance
+        mock.return_value = instance
 
         result = get_widget_contribution('my-plugin')
         assert result[1] == 'My Widget'
@@ -100,10 +96,10 @@ def test_populate_qmenu():
     # Tests the whole method. the first run through, it will add a menu,
     # but will then call populate_qmenu will call itself again to add the submenu
     # to that menu added.
-    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock1:
+    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock:
         instance = Mock()
 
-        class Item:
+        class Item1:
             # Using this class to return an object for both the
             # item and subm_contrib in the code.
             command = 'run plugin'
@@ -114,41 +110,42 @@ def test_populate_qmenu():
         class Item2:
             command = 'run plugin'
 
-        item = Item()
+        item1 = Item1()
         item2 = Item2()
-        instance.iter_menu = Mock(side_effect=[[item], [item2]])
-        instance.get_submenu = Mock(return_value=Item())
+        side_effect = [[item1], [item2]]
+        instance.iter_menu = Mock(side_effect=side_effect)
+        instance.get_submenu = Mock(return_value=Item1())
         menu = Mock()
         submenu = Mock()
         submenu.addAction = Mock()
         menu.addMenu = Mock(return_value=submenu)
 
-        mock1.return_value = instance
+        mock.return_value = instance
         populate_qmenu(menu, 'my-plugin')
 
         submenu.addAction.assert_called_once()
-        assert instance.iter_menu.call_count == 2
+        assert instance.iter_menu.call_count == len(side_effect)
         menu.addMenu.assert_called_once()
 
 
 def test_file_extensions_string_for_layers(layer_data_and_types):
 
-    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock1:
+    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock:
         instance = Mock()
-        writer = Mock()
-        writer.display_name = 'image writer'
-        writer.command = None
-        writer.filename_extensions = ['.jpg', '.giff']
+        writer1 = Mock()
+        writer1.display_name = 'image writer'
+        writer1.command = None
+        writer1.filename_extensions = ['.jpg', '.giff']
         writer2 = Mock()
         writer2.display_name = 'text writer'
         writer2.command = None
         writer2.filename_extensions = ['.txt']
         instance.iter_compatible_writers = Mock()
-        instance.iter_compatible_writers.return_value = [writer, writer2]
+        instance.iter_compatible_writers.return_value = [writer1, writer2]
         manifest = Mock()
         manifest.display_name = 'my plugin'
         instance.get_manifest = Mock(return_value=manifest)
-        mock1.return_value = instance
+        mock.return_value = instance
 
         layers, layer_data, layer_types, filenames = layer_data_and_types
         ext_str, writers = file_extensions_string_for_layers(layers)
@@ -162,7 +159,7 @@ def test_file_extensions_string_for_layers(layer_data_and_types):
 
 def test_get_readers():
 
-    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock1:
+    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock:
 
         reader = Mock()
         reader.plugin_name = 'my-plugin'
@@ -173,8 +170,7 @@ def test_get_readers():
         manifest = Mock()
         manifest.display_name = 'My Plugin'
         instance.get_manifest = Mock(return_value=manifest)
-        # instance.get_manifest.
-        mock1.return_value = instance
+        mock.return_value = instance
 
         readers = get_readers("some.fzzy")
         assert readers['My Plugin'] == 'my-plugin'
@@ -184,42 +180,54 @@ def test_get_sample_data(layer_data_and_types):
     import numpy as np
 
     layers, layer_data, layer_types, filenames = layer_data_and_types
-    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock1:
-
-        c = Mock()
-        c.key = 'random_data'
-        # c.open needs (layer_data, reader)
-        c.open = Mock(return_value=(np.random.rand(10, 10), 'reader'))
+    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock:
 
         instance = Mock()
-        instance._contrib._samples.get = Mock()
-        instance._contrib._samples.get.return_value = [c]
-        mock1.return_value = instance
+        contrib = Mock()
+        contrib.key = 'random_data'
+        contrib.open = Mock(return_value=(np.random.rand(10, 10), 'reader'))
 
-        # test correct sample name
+        instance.iter_sample_data = Mock(
+            return_value=[('my-plugin', [contrib])]
+        )
+
+        mock.return_value = instance
+
         sample_data = get_sample_data('my-plugin', 'random_data')
-        output = sample_data[0]()
-        assert output[0].shape == (10, 10)
 
-        # test incorrect sample name
-        instance.iter_sample_data = Mock(return_value=[])
-        # instance.iter_sample_data.
-        sample_data = get_sample_data('my-plugin', 'random_data2')
-        assert sample_data[0] is None
+        assert sample_data == (contrib.open, [])
 
+        sample_data = get_sample_data('my-plugin', 'other_data')
+        avail = instance.iter_sample_data()
+        plugin_name = avail[0][0]
+        key = avail[0][1][0].key
+        assert sample_data == (None, [(plugin_name, key)])
 
-def test_iter_manifests():
-
-    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock1:
-        instance = Mock()
+    with patch('napari.plugins._npe2.npe2.PluginManager.instance') as mock:
+        # instance1 is to test for newer npe versions that have iter_manifests method
+        instance1 = Mock()
         manifest = Mock()
-        manifest.name = 'my-plugin'
-        instance._manifests = {'m1': manifest, 'm2': manifest}
-        mock1.return_value = instance
 
+        input_manifests = [manifest, manifest, manifest]
+        instance1.iter_manifests = Mock(return_value=input_manifests)
+
+        # instance2 is to test for older npe versions that have pm._manifests
+        instance2 = Mock()
+        instance2._manifests = {'m1': manifest, 'm2': manifest}
+
+        # need to have appropriate instances for mock at each call.
+        side_effects = []
+        for val in input_manifests:
+            side_effects.append(instance1)
+
+        for val in instance2._manifests.values():
+            side_effects.append(instance2)
+
+        mock.side_effect = side_effects
+
+        # test newer npe2 version
         manifests = []
-        for manifest in iter_manifests():
-            manifests.append(manifest)
+        for current_manifest in iter_manifests():
+            manifests.append(current_manifest)
 
-        assert len(manifests) == 2
-        assert manifests[0].name == 'my-plugin'
+        assert len(manifests) == len(input_manifests)
