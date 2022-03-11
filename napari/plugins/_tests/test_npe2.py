@@ -1,29 +1,117 @@
 from unittest.mock import Mock, patch
+from npe2 import PluginManager, PluginManifest
+from napari.plugins import _npe2
+import yaml
 
-from ...plugins._npe2 import (
-    file_extensions_string_for_layers,
-    get_readers,
-    get_sample_data,
-    get_widget_contribution,
-    iter_manifests,
-    populate_qmenu,
-    read,
-    write_layers,
-)
+import pytest
+
+YAML = """
+name: my-plugin
+display_name: My Plugin
+contributions:
+  commands:
+    - id: my-plugin.hello_world
+      title: Hello World
+    - id: my-plugin.another_command
+      title: Another Command
+    - id: my-plugin.some_reader
+      title: Some Reader
+    - id: my-plugin.url_reader
+      title: URL Reader
+    - id: my-plugin.my_writer
+      title: My Multi-layer Writer
+    - id: my-plugin.my_single_writer
+      title: My single-layer Writer
+    - id: my-plugin.generate_random_data
+      title: Generate uniform random data
+    - id: my-plugin.some_widget
+      title: Create my widget
+    - id: my-plugin.some_function_widget
+      title: Create widget from my function
+  configuration: # call it settings?
+    properties:
+      my_plugin.reader.lazy:
+        type: boolean
+        default: false
+        title: Load lazily
+        description: Whether to load images lazily with dask
+  readers:
+    - command: my-plugin.some_reader
+      filename_patterns: ["*.fzy", "*.fzzy"]
+      accepts_directories: true
+    - command: my-plugin.url_reader
+      filename_patterns: ["http://*", "https://*"]
+      accepts_directories: false
+  writers:
+    - command: my-plugin.my_writer
+      filename_extensions: ["*.tif", "*.tiff"]
+      layer_types: ["image{2,4}", "tracks?"]
+    - command: my-plugin.my_writer
+      filename_extensions: ["*.pcd", "*.e57"]
+      layer_types: ["points{1}", "surface+"]
+    - command: my-plugin.my_single_writer
+      filename_extensions: ["*.xyz"]
+      layer_types: ["labels"]
+
+  widgets:
+    - command: my-plugin.some_widget
+      display_name: My Widget
+    - command: my-plugin.some_function_widget
+      display_name: A Widget From a Function
+      autogenerate: true
+  menus:
+    /napari/layer_context:
+      - submenu: mysubmenu
+      - command: my-plugin.hello_world
+    mysubmenu:
+      - command: my-plugin.another_command
+      - command: my-plugin.affinder
+  submenus:
+    - id: mysubmenu
+      label: My SubMenu
+  themes:
+    - label: "SampleTheme"
+      id: "sample_theme"
+      type: "dark"
+      colors:
+        canvas: "#000000"
+        console: "#000000"
+        background: "#272822"
+        foreground: "#75715e"
+        primary: "#cfcfc2"
+        secondary: "#f8f8f2"
+        highlight: "#e6db74"
+        text: "#a1ef34"
+        warning: "#f92672"
+        current: "#66d9ef"
+  sample_data:
+    - display_name: Some Random Data (512 x 512)
+      key: random_data
+      command: my-plugin.generate_random_data
+    - display_name: Random internet image
+      key: internet_image
+      uri: https://picsum.photos/1024
+"""
 
 
-def test_read():
+@pytest.fixture
+def sample_plugin():
+    return PluginManifest(**yaml.safe_load(YAML))
 
-    with patch('napari.plugins._npe2.read_get_reader') as mock1, patch(
-        'napari.plugins._npe2._FakeHookimpl'
-    ) as mock2:
-        mock_reader = Mock()
-        mock_reader.plugin_name = 'some plugin'
-        mock1.return_value = (None, mock_reader())
-        mock2.return_value = 'some plugin'
-        assert read(["some.fzzy"], stack=False) == (None, 'some plugin')
-        mock1.assert_called_once()
-        mock2.assert_called_once()
+
+@pytest.fixture
+def mocked_npe2_pm(sample_plugin):
+    with patch.object(PluginManager, 'discover'):
+        _pm = PluginManager()
+    _pm.register(sample_plugin)
+    with patch('npe2.PluginManager.instance', return_value=_pm):
+        yield _pm
+
+
+def test_read(mocked_npe2_pm):
+    with patch()
+    assert _npe2.read(["some.fzzy"], stack=False) == (None, 'some plugin')
+
 
 
 def test_write(layer_data_and_types):
@@ -31,10 +119,10 @@ def test_write(layer_data_and_types):
     layers, layer_data, layer_types, filenames = layer_data_and_types
     with patch('napari.plugins._npe2.npe2.write') as mock:
         mock.side_effect = [[filenames[0]], []]
-        result = write_layers(filenames[0], [layers[0]])
+        result = _npe2.write_layers(filenames[0], [layers[0]])
         assert result == [filenames[0]]
         mock.assert_called_once()
-        result = write_layers("something.test", [layers[0]])
+        result = _npe2.write_layers("something.test", [layers[0]])
         assert result == []
         assert mock.call_count == 2
 
@@ -56,7 +144,7 @@ def test_write(layer_data_and_types):
 
     # is the following cheating?
     writer.exec = Mock(return_value=[filenames[0]])
-    result = write_layers(filenames[0], [layers[0]], writer=writer)
+    result = _npe2.write_layers(filenames[0], [layers[0]], writer=writer)
 
     assert result == [filenames[0]]
 
@@ -75,18 +163,18 @@ def test_get_widget_contribution():
         # instance.iter_widgets.
         mock.return_value = instance
 
-        result = get_widget_contribution('my-plugin')
+        result = _npe2.get_widget_contribution('my-plugin')
         assert result[1] == 'My Widget'
 
         try:
-            result = get_widget_contribution(
+            result = _npe2.get_widget_contribution(
                 'my-plugin', widget_name="test plugin"
             )
 
         except KeyError:
             assert True
 
-        result = get_widget_contribution('my-plugin2')
+        result = _npe2.get_widget_contribution('my-plugin2')
         assert result is None
 
 
@@ -121,7 +209,7 @@ def test_populate_qmenu():
         menu.addMenu = Mock(return_value=submenu)
 
         mock.return_value = instance
-        populate_qmenu(menu, 'my-plugin')
+        _npe2.populate_qmenu(menu, 'my-plugin')
 
         submenu.addAction.assert_called_once()
         assert instance.iter_menu.call_count == len(side_effect)
@@ -148,7 +236,7 @@ def test_file_extensions_string_for_layers(layer_data_and_types):
         mock.return_value = instance
 
         layers, layer_data, layer_types, filenames = layer_data_and_types
-        ext_str, writers = file_extensions_string_for_layers(layers)
+        ext_str, writers = _npe2.file_extensions_string_for_layers(layers)
 
         assert len(writers) == 2
         assert (
@@ -172,7 +260,7 @@ def test_get_readers():
         instance.get_manifest = Mock(return_value=manifest)
         mock.return_value = instance
 
-        readers = get_readers("some.fzzy")
+        readers = _npe2.get_readers("some.fzzy")
         assert readers['My Plugin'] == 'my-plugin'
 
 
@@ -193,11 +281,11 @@ def test_get_sample_data(layer_data_and_types):
 
         mock.return_value = instance
 
-        sample_data = get_sample_data('my-plugin', 'random_data')
+        sample_data = _npe2.get_sample_data('my-plugin', 'random_data')
 
         assert sample_data == (contrib.open, [])
 
-        sample_data = get_sample_data('my-plugin', 'other_data')
+        sample_data = _npe2.get_sample_data('my-plugin', 'other_data')
         avail = instance.iter_sample_data()
         plugin_name = avail[0][0]
         key = avail[0][1][0].key
@@ -227,7 +315,7 @@ def test_get_sample_data(layer_data_and_types):
 
         # test newer npe2 version
         manifests = []
-        for current_manifest in iter_manifests():
+        for current_manifest in _npe2.iter_manifests():
             manifests.append(current_manifest)
 
         assert len(manifests) == len(input_manifests)
