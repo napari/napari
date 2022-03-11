@@ -20,6 +20,7 @@ plugin_manager = NapariPluginManager()
 @lru_cache  # only call once
 def _initialize_plugins():
     _npe2pm = _PluginManager.instance()
+
     settings = get_settings()
     if settings.schema_version >= '0.4.0':
         for p in settings.plugins.disabled_plugins:

@@ -17,7 +17,7 @@ class Operation(enum.Enum):
 # Define our image_arithmetic function.
 # Note that we can use forward references for the napari type annotations.
 # You can read more about them here:
-# https://www.python.org/dev/peps/pep-0484/#forward-references
+# https://peps.python.org/pep-0484/#forward-references
 # In this example, because we have already imported napari anyway, it doesn't
 # really matter. But this syntax would let you specify that a parameter is a
 # napari object type without actually importing or depending on napari.

@@ -29,7 +29,7 @@ def get_packages_by_prefix(prefix: str) -> Dict[str, str]:
 
     Packages using naming convention: http://bit.ly/pynaming-convention
     can be autodiscovered on pypi using the SIMPLE API:
-    https://www.python.org/dev/peps/pep-0503/
+    https://peps.python.org/pep-0503/
 
     Returns
     -------
