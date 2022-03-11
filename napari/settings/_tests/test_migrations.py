@@ -1,3 +1,4 @@
+import os
 from importlib.metadata import distribution
 
 import pytest
@@ -63,6 +64,9 @@ def test_failed_migration_leaves_version(_test_migrator):
     assert 'Failed to migrate settings from v0.1.0 to v0.2.0' in str(e[0])
 
 
+@pytest.mark.skipif(
+    bool(os.environ.get('MIN_REQ')), reason='not relevant for MIN_REQ'
+)
 def test_030_to_040_migration():
     # Prior to v0.4.0, npe2 plugins were automatically "disabled"
     # 0.3.0 -> 0.4.0 should remove any installed npe2 plugins from the
