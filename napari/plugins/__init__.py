@@ -10,6 +10,7 @@ from ._plugin_manager import NapariPluginManager
 __all__ = ["plugin_manager", "menu_item_template"]
 
 _npe2pm = _PluginManager.instance()
+_npe2pm.discover()
 
 # this is a workaround for the fact that briefcase does not seem to
 # include napari's entry_points.txt in the bundled app, so the builtin plugins
