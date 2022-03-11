@@ -38,7 +38,7 @@ from ..settings import get_settings
 from ..utils import perf
 from ..utils._proxies import PublicOnlyProxy
 from ..utils.io import imsave
-from ..utils.misc import in_jupyter, running_as_bundled_app
+from ..utils.misc import in_ipython, in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
@@ -233,6 +233,9 @@ class _QtMainWindow(QMainWindow):
 
         if window_state:
             self.restoreState(str_to_qbytearray(window_state))
+
+        if in_ipython():
+            self._qt_viewer.dockConsole.setVisible(False)
 
         if window_fullscreen:
             self.setWindowState(Qt.WindowFullScreen)
