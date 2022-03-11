@@ -41,7 +41,7 @@ def _initialize_plugins():
         _npe2pm.register(mf)
 
     # Disable plugins listed as disabled in settings, or detected in npe2
-    _from_npe2 = {m.package_metadata.name for m in _npe2pm.iter_manifests()}
+    _from_npe2 = {m.name for m in _npe2pm.iter_manifests()}
     _from_npe2.add('napari')
     plugin_manager._skip_packages = _from_npe2
 
