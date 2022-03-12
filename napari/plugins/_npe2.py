@@ -8,6 +8,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
 )
 
@@ -206,15 +207,8 @@ def get_readers(path: str) -> Dict[str, str]:
     }
 
 
-def iter_manifests(
-    disabled: Optional[bool] = None,
-) -> Iterator[PluginManifest]:
-    pm = npe2.PluginManager.instance()
-    if hasattr(pm, 'iter_manifests'):
-        yield from pm.iter_manifests(disabled=disabled)
-    else:
-        # npe < v0.1.3
-        yield from pm._manifests.values()
+def iter_manifests(**kwargs) -> Iterator[PluginManifest]:
+    return npe2.PluginManager.instance().iter_manifests(**kwargs)
 
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
@@ -271,3 +265,19 @@ def get_sample_data(
 
 def index_npe1_shims():
     npe2.PluginManager.instance().index_npe1_shims()
+
+
+def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
+    """Callback when any npe2 plugins are enabled or disabled"""
+    from .. import Viewer
+    from ..settings import get_settings
+
+    plugin_settings = get_settings().plugins
+    to_disable = set(plugin_settings.disabled_plugins)
+    to_disable.difference_update(enabled)
+    to_disable.update(disabled)
+    plugin_settings.disabled_plugins = to_disable
+
+    for v in Viewer._instances:
+        v.window.plugins_menu._build()
+        v.window.file_menu._rebuild_samples_menu()
