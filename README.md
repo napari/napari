@@ -25,7 +25,7 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 It is recommended to install napari into a virtual environment, like this:
 
 ```sh
-conda create -y -n napari-env -c conda-forge python=3.9 pip
+conda create -y -n napari-env -c conda-forge python=3.9
 conda activate napari-env
 python -m pip install "napari[all]"
 ```
@@ -44,7 +44,7 @@ From inside an IPython shell, you can open up an interactive viewer by calling
 from skimage import data
 import napari
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -55,7 +55,7 @@ To use napari from inside a script, use `napari.run()`:
 from skimage import data
 import napari
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.view_image(data.cells3d(), channel_axis=1, ndisplay=3)
 napari.run()  # start the "event loop" and show the viewer
 ```
 

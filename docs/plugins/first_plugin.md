@@ -21,6 +21,14 @@ recommended**). If you are new to virtual environments, we recommend
 [installing miniconda][miniconda] and [creating a new environment with
 python][python_env].
 
+Even though plugins don't necessarily need to list `napari` as a direct dependency, and
+[should not depend on a specific Qt backend](best-practices-no-qt-backend),
+you will need a working installation of napari in your active Python
+environment to use and test your plugin.
+See the [installation guide](installation) if this is your first time
+installing napari.
+
+
 ## What is a plugin?
 
 Napari plugins are just Python packages. *Minimally*, they must:
@@ -97,7 +105,7 @@ Next, we will populate `pyproject.toml` and `setup.cfg`
 
 ```{note}
 `pyproject.toml` is a standard file (introduced in
-[PEP518](https://www.python.org/dev/peps/pep-0518/), May 2016) that tells
+[PEP518](https://peps.python.org/pep-0518/), May 2016) that tells
 the Python package installer [pip](https://pip.pypa.io/en/stable/) how to
 build your package. For more background, see
 [Clarifying PEP 518](https://snarky.ca/clarifying-pep-518/) and
@@ -257,7 +265,7 @@ napari
 Once napari starts, select `napari-hello: Hello World` from the
 `Plugins` menu, then click the `Run` button to see the message.
 
-![hello-example](../images/hello.png)
+% ![hello-example](../images/hello.png)
 
 ## Get going quickly with cookiecutter
 
@@ -271,7 +279,7 @@ management, and deployment hooks.
 
 ```sh
 pip install cookiecutter
-cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe2
+cookiecutter https://github.com/napari/cookiecutter-napari-plugin
 ```
 
 ## Next Steps

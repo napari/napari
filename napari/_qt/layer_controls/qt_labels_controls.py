@@ -28,7 +28,7 @@ from ..widgets._slider_compat import QSlider
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
-INT32_MAX = 2 ** 31 - 1
+INT32_MAX = 2**31 - 1
 
 
 class QtLabelsControls(QtLayerControls):

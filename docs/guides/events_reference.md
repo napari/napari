@@ -22,7 +22,14 @@ viewer.dims.events.ndim.connect(my_callback)
 ```{include} _viewer_events.md
 ```
 
+## LayerList events
+
+```{include} _layerlist_events.md
+```
+
 ## Layer events
+
+Events listed for the base class `Layer` are present on all layer types.
 
 ```{include} _layer_events.md
 ```

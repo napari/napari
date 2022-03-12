@@ -178,7 +178,7 @@ shows how many ideal chunks are "covered" by a chunk at a higher level:
 
 Although data 3 levels above will be quite blurry, it's pretty amazing you
 can load one chunk and it will cover 64 ideal chunks. This is the heart of
-the power of Octrees, Quadtrees or image pyramids.
+the power of Octrees, Quadtrees or multiscale images.
 
 (octree-config)=
 ### Octree configuration file

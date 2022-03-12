@@ -34,7 +34,7 @@ class OctreeLevelInfo:
         self.meta = meta
 
         self.level_index = level_index
-        self.scale = 2 ** self.level_index
+        self.scale = 2**self.level_index
 
         base = meta.base_shape
         self.image_shape = (

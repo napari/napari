@@ -36,14 +36,14 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-        python: [3.7, 3.8, 3.9]
+        python: ["3.8", "3.9", "3.10"]
         include:
           # test big sur on 3.9.0
           - python: 3.9
             platform: macos-11
             toxenv: py39-macos-pyqt
           # test with minimum specified requirements
-          - python: 3.7
+          - python: 3.8
             platform: ubuntu-18.04
             MIN_REQ: 1
           # test with --async_only
@@ -120,21 +120,24 @@ jobs:
           update_existing: true
 
   test_pip_install:
-    name: ubuntu-latest 3.8 pip install
+    name: ubuntu-latest 3.9 pip install
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python 3.8
+      - uses: actions/checkout@v2
+        with:
+          path: napari-from-github
+
+      - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - uses: tlambert03/setup-qt-libs@v1
 
       - name: Install this commit
         run: |
-          # pip install this git sha directly from github
           pip install --upgrade pip
-          pip install git+https://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
+          pip install ./napari-from-github[all,testing]
 
       - name: Test
         uses: GabrielBB/xvfb-action@v1

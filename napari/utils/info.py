@@ -63,7 +63,6 @@ def _sys_name():
                 return f"MacOS {res.stdout.decode().strip()}"
             except subprocess.CalledProcessError:
                 pass
-        print("c")
     except Exception:
         pass
     return ""

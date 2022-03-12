@@ -1,8 +1,9 @@
 import os
 import sys
 from pathlib import Path
-from typing import Callable, Dict, List, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
+from npe2.manifest.package_metadata import PackageMetadata
 from qtpy.QtCore import (
     QEvent,
     QObject,
@@ -37,13 +38,21 @@ from typing_extensions import Literal
 import napari.resources
 
 from ...plugins import _npe2
-from ...plugins.pypi import ProjectInfo, iter_napari_plugin_info
+from ...plugins.hub import iter_hub_plugin_info
+from ...plugins.pypi import iter_napari_plugin_info
+from ...plugins.utils import normalized_name
+from ...settings import get_settings
 from ...utils._appdirs import user_plugin_dir, user_site_packages
-from ...utils.misc import parse_version, running_as_bundled_app
+from ...utils.misc import (
+    parse_version,
+    running_as_bundled_app,
+    running_as_constructor_app,
+)
 from ...utils.translations import trans
 from ..qt_resources import QColoredSVGIcon
 from ..qthreading import create_worker
 from ..widgets.qt_message_popup import WarnPopup
+from ..widgets.qt_tooltip import QtToolTipLabel
 
 InstallerTypes = Literal['pip', 'conda', 'mamba']
 
@@ -63,6 +72,7 @@ class Installer(QObject):
         self._processes: Dict[Tuple[str, ...], QProcess] = {}
         self._exit_code = 0
         self._conda_env_path = None
+        self._installer_type = installer
 
         if installer != "pip" and (Path(sys.prefix) / "conda-meta").is_dir():
             self._conda_env_path = sys.prefix
@@ -151,9 +161,10 @@ class Installer(QObject):
     def install(
         self,
         pkg_list: Sequence[str],
-        installer: InstallerTypes = "pip",
+        installer: Optional[InstallerTypes] = None,
         channels: Sequence[str] = ("conda-forge",),
     ):
+        installer = installer or self._installer_type
         self._queue.insert(
             0,
             [
@@ -166,10 +177,25 @@ class Installer(QObject):
     def _install(
         self,
         pkg_list: Sequence[str],
-        installer: InstallerTypes = "pip",
+        installer: Optional[InstallerTypes] = None,
         channels: Sequence[str] = ("conda-forge",),
     ):
+        installer = installer or self._installer_type
+        process_environment = QProcessEnvironment.systemEnvironment()
         if installer != "pip":
+            from ..._version import version_tuple
+
+            # To avoid napari version changing when installing a plugin, we
+            # add a pin to the current napari version, that way we can
+            # restrict any changes to the actual napari application.
+            # Conda/mamba also pin python by default, so we effectively
+            # constrain python and napari versions from changing, when
+            # installing plugins inside the constructor bundled application.
+            # See: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-pkgs.html#preventing-packages-from-updating-pinning
+            napari_version = ".".join(str(v) for v in version_tuple[:3])
+            process_environment.insert(
+                "CONDA_PINNED_PACKAGES", f"napari={napari_version}"
+            )
             cmd = [
                 'install',
                 '-y',
@@ -184,7 +210,7 @@ class Installer(QObject):
         if (
             running_as_bundled_app()
             and sys.platform.startswith('linux')
-            and not self._use_conda
+            and not self._conda_env_path
         ):
             cmd += [
                 '--no-warn-script-location',
@@ -193,6 +219,7 @@ class Installer(QObject):
             ]
 
         process = self._create_process(installer)
+        process.setProcessEnvironment(process_environment)
         process.setArguments(cmd + list(pkg_list))
         if self._output_widget and self._queue:
             self._output_widget.clear()
@@ -203,9 +230,10 @@ class Installer(QObject):
     def uninstall(
         self,
         pkg_list: Sequence[str],
-        installer: InstallerTypes = "pip",
+        installer: Optional[InstallerTypes] = None,
         channels: Sequence[str] = ("conda-forge",),
     ):
+        installer = installer or self._installer_type
         self._queue.insert(
             0,
             [
@@ -218,9 +246,10 @@ class Installer(QObject):
     def _uninstall(
         self,
         pkg_list: Sequence[str],
-        installer: InstallerTypes = "pip",
+        installer: Optional[InstallerTypes] = None,
         channels: Sequence[str] = ("conda-forge",),
     ):
+        installer = installer or self._installer_type
         if installer != "pip":
             args = [
                 'remove',
@@ -360,6 +389,7 @@ class PluginListItem(QFrame):
         self.v_lay.setContentsMargins(-1, 6, -1, 6)
         self.v_lay.setSpacing(0)
         self.row1 = QHBoxLayout()
+        self.row1.setSpacing(6)
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setChecked(enabled)
         self.enabled_checkbox.stateChanged.connect(self._on_enabled_checkbox)
@@ -386,6 +416,19 @@ class PluginListItem(QFrame):
         font15.setPointSize(15)
         self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
+
+        icon = QColoredSVGIcon.from_resources("warning")
+        self.warning_tooltip = QtToolTipLabel(self)
+        # TODO: This color should come from the theme but the theme needs
+        # to provide the right color. Default warning should be orange, not
+        # red. Code example:
+        # theme_name = get_settings().appearance.theme
+        # napari.utils.theme.get_theme(theme_name, as_dict=False).warning.as_hex()
+        self.warning_tooltip.setPixmap(
+            icon.colored(color="#E3B617").pixmap(15, 15)
+        )
+        self.warning_tooltip.setVisible(False)
+        self.row1.addWidget(self.warning_tooltip)
 
         self.item_status = QLabel(self)
         self.item_status.setObjectName("small_italic_text")
@@ -461,6 +504,11 @@ class PluginListItem(QFrame):
         #     if distname and distname == current_distname:
         #         plugin_manager.set_blocked(plugin_name, not enabled)
 
+    def show_warning(self, message: str = ""):
+        """Show warning icon and tooltip."""
+        self.warning_tooltip.setVisible(bool(message))
+        self.warning_tooltip.setToolTip(message)
+
 
 class QPluginList(QListWidget):
     def __init__(self, parent: QWidget, installer: Installer):
@@ -469,10 +517,24 @@ class QPluginList(QListWidget):
         self.setSortingEnabled(True)
         self._remove_list = []
 
-    @Slot(ProjectInfo)
+    def _count_visible(self) -> int:
+        """Return the number of visible items.
+
+        Visible items are the result of the normal `count` method minus
+        any hidden items.
+        """
+        hidden = 0
+        count = self.count()
+        for i in range(count):
+            item = self.item(i)
+            hidden += item.isHidden()
+
+        return count - hidden
+
+    @Slot(PackageMetadata)
     def addItem(
         self,
-        project_info: ProjectInfo,
+        project_info: PackageMetadata,
         installed=False,
         plugin_name=None,
         enabled=True,
@@ -491,7 +553,12 @@ class QPluginList(QListWidget):
         item.version = project_info.version
         super().addItem(item)
         widg = PluginListItem(
-            *project_info,
+            package_name=project_info.name,
+            version=project_info.version,
+            url=project_info.home_page,
+            summary=project_info.summary,
+            author=project_info.author,
+            license=project_info.license,
             parent=self,
             plugin_name=plugin_name,
             enabled=enabled,
@@ -504,11 +571,11 @@ class QPluginList(QListWidget):
         item.setSizeHint(widg.sizeHint())
         self.setItemWidget(item, widg)
 
-        if project_info.url:
+        if project_info.home_page:
             import webbrowser
 
             widg.help_button.clicked.connect(
-                lambda: webbrowser.open(project_info.url)
+                lambda: webbrowser.open(project_info.home_page)
             )
         else:
             widg.help_button.setVisible(False)
@@ -571,8 +638,8 @@ class QPluginList(QListWidget):
             widget.set_busy(trans._("cancelling..."), update)
             method((pkg_name,))
 
-    @Slot(ProjectInfo)
-    def tag_outdated(self, project_info: ProjectInfo):
+    @Slot(PackageMetadata)
+    def tag_outdated(self, project_info: PackageMetadata):
         for item in self.findItems(project_info.name, Qt.MatchStartsWith):
             current = item.version
             latest = project_info.version
@@ -589,19 +656,51 @@ class QPluginList(QListWidget):
                 trans._("update (v{latest})", latest=latest)
             )
 
+    def tag_unavailable(self, project_info: PackageMetadata):
+        """
+        Tag list items as unavailable for install with conda-forge.
+
+        This will disable the item and the install button and add a warning
+        icon with a hover tooltip.
+        """
+        for item in self.findItems(project_info.name, Qt.MatchStartsWith):
+            widget = self.itemWidget(item)
+            widget.show_warning(
+                trans._(
+                    "Plugin not yet available for installation within the bundle application"
+                )
+            )
+            widget.setObjectName("unavailable")
+            widget.style().unpolish(widget)
+            widget.style().polish(widget)
+            widget.action_button.setEnabled(False)
+            widget.warning_tooltip.setVisible(True)
+
     def filter(self, text: str):
         """Filter items to those containing `text`."""
-        shown = self.findItems(text, Qt.MatchContains)
-        for i in range(self.count()):
-            item = self.item(i)
-            item.setHidden(item not in shown)
+        if text:
+            # PySide has some issues, so we compare using id
+            # See: https://bugreports.qt.io/browse/PYSIDE-74
+            shown = [id(it) for it in self.findItems(text, Qt.MatchContains)]
+            for i in range(self.count()):
+                item = self.item(i)
+                item.setHidden(id(item) not in shown)
+        else:
+            for i in range(self.count()):
+                item = self.item(i)
+                item.setHidden(False)
 
 
 class QtPluginDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.already_installed = set()
-        self.installer = Installer()
+
+        installer_type = "pip"
+        if running_as_constructor_app():
+            installer_type = "mamba" if os.name != "nt" else "conda"
+
+        self.installer = Installer(installer=installer_type)
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
         self.installer.started.connect(self._on_installer_start)
@@ -637,23 +736,14 @@ class QtPluginDialog(QDialog):
         self.already_installed = set()
 
         for manifest in _npe2.iter_manifests():
-            if manifest.name in self.already_installed.union("napari"):
+            distname = normalized_name(manifest.name or '')
+            if distname in self.already_installed or distname == 'napari':
                 continue
-            self.already_installed.add(manifest.name)
+            self.already_installed.add(distname)
+
+            npev = 1 if 'npe1' in type(manifest).__name__.lower() else 2
             self.installed_list.addItem(
-                # TODO: replace ProjectInfo with npe2s PackageMetadata object
-                ProjectInfo(
-                    manifest.name,
-                    manifest.package_metadata.version,
-                    manifest.package_metadata.project_url,
-                    manifest.package_metadata.summary,
-                    manifest.package_metadata.author,
-                    manifest.package_metadata.license,
-                ),
-                installed=True,
-                npe_version=1
-                if 'npe1' in type(manifest).__name__.lower()
-                else 2,
+                manifest.package_metadata, installed=True, npe_version=npev
             )
 
         self.installed_label.setText(
@@ -664,7 +754,19 @@ class QtPluginDialog(QDialog):
         )
 
         # fetch available plugins
-        self.worker = create_worker(iter_napari_plugin_info)
+        settings = get_settings()
+        use_hub = (
+            running_as_bundled_app()
+            or running_as_constructor_app()
+            or settings.plugins.plugin_api.name == "napari_hub"
+        )
+        if use_hub:
+            conda_forge = running_as_constructor_app()
+            self.worker = create_worker(
+                iter_hub_plugin_info, conda_forge=conda_forge
+            )
+        else:
+            self.worker = create_worker(iter_napari_plugin_info)
 
         self.worker.yielded.connect(self._handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)
@@ -729,12 +831,15 @@ class QtPluginDialog(QDialog):
         self.working_indicator.setMovie(mov)
         mov.start()
 
+        visibility_direct_entry = not running_as_constructor_app()
         self.direct_entry_edit = QLineEdit(self)
         self.direct_entry_edit.installEventFilter(self)
         self.direct_entry_edit.setPlaceholderText(
             trans._('install by name/url, or drop file...')
         )
+        self.direct_entry_edit.setVisible(visibility_direct_entry)
         self.direct_entry_btn = QPushButton(trans._("Install"), self)
+        self.direct_entry_btn.setVisible(visibility_direct_entry)
         self.direct_entry_btn.clicked.connect(self._install_packages)
 
         self.show_status_btn = QPushButton(trans._("Show Status"), self)
@@ -752,6 +857,8 @@ class QtPluginDialog(QDialog):
         buttonBox.addWidget(self.working_indicator)
         buttonBox.addWidget(self.direct_entry_edit)
         buttonBox.addWidget(self.direct_entry_btn)
+        if not visibility_direct_entry:
+            buttonBox.addStretch()
         buttonBox.addWidget(self.process_error_indicator)
         buttonBox.addSpacing(20)
         buttonBox.addWidget(self.cancel_all_btn)
@@ -808,11 +915,14 @@ class QtPluginDialog(QDialog):
         if packages:
             self.installer.install(packages)
 
-    def _handle_yield(self, project_info):
+    def _handle_yield(self, data: Tuple[PackageMetadata, bool]):
+        project_info, is_available = data
         if project_info.name in self.already_installed:
             self.installed_list.tag_outdated(project_info)
         else:
             self.available_list.addItem(project_info)
+            if not is_available:
+                self.available_list.tag_unavailable(project_info)
 
         self.filter()
 

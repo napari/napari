@@ -173,7 +173,7 @@ class FileMenu(NapariMenu):
                 menu = self.open_sample_menu
 
             for samp_name, samp_dict in samples.items():
-                display_name = samp_dict['display_name']
+                display_name = samp_dict['display_name'].replace("&", "&&")
                 if multiprovider:
                     action = QAction(display_name, parent=self)
                 else:

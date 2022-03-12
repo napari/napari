@@ -65,10 +65,10 @@ class PluginsMenu(NapariMenu):
         for wdg_name in widgets:
             key = (plugin_name, wdg_name)
             if multiprovider:
-                action = QAction(wdg_name, parent=self)
+                action = QAction(wdg_name.replace("&", "&&"), parent=self)
             else:
                 full_name = menu_item_template.format(*key)
-                action = QAction(full_name, parent=self)
+                action = QAction(full_name.replace("&", "&&"), parent=self)
 
             def _add_toggle_widget(*, key=key, hook_type=hook_type):
                 full_name = menu_item_template.format(*key)

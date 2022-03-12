@@ -22,6 +22,9 @@ class InfoAction(argparse.Action):
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
+
+        # TODO: plugins
+
         sys.exit()
 
 
@@ -34,9 +37,8 @@ class PluginInfoAction(argparse.Action):
         # plugin_manager.discover_widgets()
         print(plugin_manager)
 
-        errors = plugin_manager.get_errors()
-        if errors:
-            print("‼️  Some errors occurred:")
+        if errors := plugin_manager.get_errors():
+            print("!!  Some errors occurred:")
             verbose = '-v' in sys.argv or '--verbose' in sys.argv
             if not verbose:
                 print("   (use '-v') to show full tracebacks")
@@ -86,7 +88,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
     from napari.components.viewer_model import valid_add_kwargs
 
-    out: Dict[str, Any] = dict()
+    out: Dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
     for i, arg in enumerate(unknown):
         if not arg.startswith("--"):
@@ -432,7 +434,7 @@ def main():
             warnings.warn(msg)
 
     # Prevent https://github.com/napari/napari/issues/3415
-    if sys.platform == "darwin" and sys.version_info >= (3, 8):
+    if sys.platform == "darwin":
         import multiprocessing
 
         multiprocessing.set_start_method('fork')
