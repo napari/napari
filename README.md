@@ -25,7 +25,7 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 It is recommended to install napari into a virtual environment, like this:
 
 ```sh
-conda create -y -n napari-env -c conda-forge python=3.9 pip
+conda create -y -n napari-env -c conda-forge python=3.9
 conda activate napari-env
 python -m pip install "napari[all]"
 ```
