@@ -32,6 +32,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ..plugins import _npe2
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..settings import get_settings
 from ..utils import perf
@@ -397,6 +398,7 @@ class Window:
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
+        _npe2.index_npe1_shims()
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
@@ -414,9 +416,7 @@ class Window:
         _themes.events.removed.connect(self._remove_theme)
 
         # discover any themes provided by plugins
-        from npe2 import PluginManager
 
-        PluginManager.instance()._import_shims()
         self._setup_existing_themes()
 
         self._add_menus()

@@ -32,6 +32,8 @@ class PluginInfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
+
+        # TODO!
         from .plugins import plugin_manager
 
         # plugin_manager.discover_widgets()

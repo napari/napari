@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-import os
-import pathlib
 import warnings
 from logging import getLogger
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
-from napari_plugin_engine import HookImplementation, PluginCallError
+from napari_plugin_engine import HookImplementation
 
 from ..layers import Layer
 from ..types import LayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
-from . import _npe2, plugin_manager
+from . import _npe2
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
@@ -65,85 +63,85 @@ def read_data_with_plugins(
         assert len(paths) == 1
     hookimpl: Optional[HookImplementation]
 
+    paths = [abspath_or_url(p, must_exist=True) for p in paths]
     res = _npe2.read(paths, plugin, stack=stack)
     if res is not None:
         _ld, hookimpl = res
         return [] if _is_null_layer_sentinel(_ld) else _ld, hookimpl  # type: ignore [return-value]
 
-    hook_caller = plugin_manager.hook.napari_get_reader
-    paths = [abspath_or_url(p, must_exist=True) for p in paths]
-    if not plugin and not stack:
-        extension = os.path.splitext(paths[0])[-1]
-        plugin = plugin_manager.get_reader_for_extension(extension)
+    # hook_caller = plugin_manager.hook.napari_get_reader
+    # if not plugin and not stack:
+    #     extension = os.path.splitext(paths[0])[-1]
+    #     plugin = plugin_manager.get_reader_for_extension(extension)
 
-    # npe1 compact whether we are reading as stack or not is carried in the type
-    # of paths
-    npe1_path = paths if stack else paths[0]
-    hookimpl = None
-    if plugin:
-        if plugin not in plugin_manager.plugins:
-            names = {i.plugin_name for i in hook_caller.get_hookimpls()}
-            raise ValueError(
-                trans._(
-                    "There is no registered plugin named '{plugin}'.\nNames of plugins offering readers are: {names}",
-                    deferred=True,
-                    plugin=plugin,
-                    names=names,
-                )
-            )
-        reader = hook_caller._call_plugin(plugin, path=npe1_path)
-        if not callable(reader):
-            raise ValueError(
-                trans._(
-                    'Plugin {plugin!r} does not support file(s) {paths}',
-                    deferred=True,
-                    plugin=plugin,
-                    paths=paths,
-                )
-            )
+    # # npe1 compact whether we are reading as stack or not is carried in the type
+    # # of paths
+    # npe1_path = paths if stack else paths[0]
+    # hookimpl = None
+    # if plugin:
+    #     if plugin not in plugin_manager.plugins:
+    #         names = {i.plugin_name for i in hook_caller.get_hookimpls()}
+    #         raise ValueError(
+    #             trans._(
+    #                 "There is no registered plugin named '{plugin}'.\nNames of plugins offering readers are: {names}",
+    #                 deferred=True,
+    #                 plugin=plugin,
+    #                 names=names,
+    #             )
+    #         )
+    #     reader = hook_caller._call_plugin(plugin, path=npe1_path)
+    #     if not callable(reader):
+    #         raise ValueError(
+    #             trans._(
+    #                 'Plugin {plugin!r} does not support file(s) {paths}',
+    #                 deferred=True,
+    #                 plugin=plugin,
+    #                 paths=paths,
+    #             )
+    #         )
 
-        hookimpl = hook_caller.get_plugin_implementation(plugin)
-        layer_data = reader(npe1_path)
-        # if the reader returns a "null layer" sentinel indicating an empty
-        # file, return an empty list, otherwise return the result or None
-        if _is_null_layer_sentinel(layer_data):
-            return [], hookimpl
+    #     hookimpl = hook_caller.get_plugin_implementation(plugin)
+    #     layer_data = reader(npe1_path)
+    #     # if the reader returns a "null layer" sentinel indicating an empty
+    #     # file, return an empty list, otherwise return the result or None
+    #     if _is_null_layer_sentinel(layer_data):
+    #         return [], hookimpl
 
-        return layer_data or None, hookimpl
+    #     return layer_data or None, hookimpl
 
-    layer_data = None
-    result = hook_caller.call_with_result_obj(path=npe1_path)
-    reader = result.result  # will raise exceptions if any occurred
-    try:
-        layer_data = reader(npe1_path)  # try to read data
-        hookimpl = result.implementation
-    except Exception as exc:
-        raise PluginCallError(result.implementation, cause=exc)
+    # layer_data = None
+    # result = hook_caller.call_with_result_obj(path=npe1_path)
+    # reader = result.result  # will raise exceptions if any occurred
+    # try:
+    #     layer_data = reader(npe1_path)  # try to read data
+    #     hookimpl = result.implementation
+    # except Exception as exc:
+    #     raise PluginCallError(result.implementation, cause=exc)
 
-    if not layer_data:
-        # if layer_data is empty, it means no plugin could read path
-        # we just want to provide some useful feedback, which includes
-        # whether or not paths were passed to plugins as a list.
-        if stack:
-            message = trans._(
-                'No plugin found capable of reading [{repr_path!r}, ...] as stack.',
-                deferred=True,
-                repr_path=paths[0],
-            )
-        else:
-            message = trans._(
-                'No plugin found capable of reading {repr_path!r}.',
-                deferred=True,
-                repr_path=paths,
-            )
+    # if not layer_data:
+    #     # if layer_data is empty, it means no plugin could read path
+    #     # we just want to provide some useful feedback, which includes
+    #     # whether or not paths were passed to plugins as a list.
+    #     if stack:
+    #         message = trans._(
+    #             'No plugin found capable of reading [{repr_path!r}, ...] as stack.',
+    #             deferred=True,
+    #             repr_path=paths[0],
+    #         )
+    #     else:
+    #         message = trans._(
+    #             'No plugin found capable of reading {repr_path!r}.',
+    #             deferred=True,
+    #             repr_path=paths,
+    #         )
 
-        # TODO: change to a warning notification in a later PR
-        raise ValueError(message)
+    #     # TODO: change to a warning notification in a later PR
+    #     raise ValueError(message)
 
-    # if the reader returns a "null layer" sentinel indicating an empty file,
-    # return an empty list, otherwise return the result or None
-    _data = [] if _is_null_layer_sentinel(layer_data) else layer_data or None
-    return _data, hookimpl
+    # # if the reader returns a "null layer" sentinel indicating an empty file,
+    # # return an empty list, otherwise return the result or None
+    # _data = [] if _is_null_layer_sentinel(layer_data) else layer_data or None
+    # return _data, hookimpl
 
 
 def save_layers(
@@ -298,61 +296,61 @@ def _write_multiple_layers_with_plugins(
         return written_paths
     logger.debug("Falling back to original plugin engine.")
 
-    layer_data = [layer.as_layer_data_tuple() for layer in layers]
-    layer_types = [ld[2] for ld in layer_data]
+    # layer_data = [layer.as_layer_data_tuple() for layer in layers]
+    # layer_types = [ld[2] for ld in layer_data]
 
-    if not plugin_name and isinstance(path, (str, pathlib.Path)):
-        extension = os.path.splitext(path)[-1]
-        plugin_name = plugin_manager.get_writer_for_extension(extension)
+    # if not plugin_name and isinstance(path, (str, pathlib.Path)):
+    #     extension = os.path.splitext(path)[-1]
+    #     plugin_name = plugin_manager.get_writer_for_extension(extension)
 
-    hook_caller = plugin_manager.hook.napari_get_writer
-    path = abspath_or_url(path)
-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
-    if plugin_name:
-        # if plugin has been specified we just directly call napari_get_writer
-        # with that plugin_name.
-        if plugin_name not in plugin_manager.plugins:
-            names = {i.plugin_name for i in hook_caller.get_hookimpls()}
-            raise ValueError(
-                trans._(
-                    "There is no registered plugin named '{plugin_name}'.\nNames of plugins offering writers are: {names}",
-                    deferred=True,
-                    plugin_name=plugin_name,
-                    names=names,
-                )
-            )
-        implementation = hook_caller.get_plugin_implementation(plugin_name)
-        writer_function = hook_caller(
-            _plugin=plugin_name, path=path, layer_types=layer_types
-        )
-    else:
-        result = hook_caller.call_with_result_obj(
-            path=path, layer_types=layer_types, _return_impl=True
-        )
-        writer_function = result.result
-        implementation = result.implementation
+    # hook_caller = plugin_manager.hook.napari_get_writer
+    # path = abspath_or_url(path)
+    # logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
+    # if plugin_name:
+    #     # if plugin has been specified we just directly call napari_get_writer
+    #     # with that plugin_name.
+    #     if plugin_name not in plugin_manager.plugins:
+    #         names = {i.plugin_name for i in hook_caller.get_hookimpls()}
+    #         raise ValueError(
+    #             trans._(
+    #                 "There is no registered plugin named '{plugin_name}'.\nNames of plugins offering writers are: {names}",
+    #                 deferred=True,
+    #                 plugin_name=plugin_name,
+    #                 names=names,
+    #             )
+    #         )
+    #     implementation = hook_caller.get_plugin_implementation(plugin_name)
+    #     writer_function = hook_caller(
+    #         _plugin=plugin_name, path=path, layer_types=layer_types
+    #     )
+    # else:
+    #     result = hook_caller.call_with_result_obj(
+    #         path=path, layer_types=layer_types, _return_impl=True
+    #     )
+    #     writer_function = result.result
+    #     implementation = result.implementation
 
-    if not callable(writer_function):
-        if plugin_name:
-            msg = trans._(
-                'Requested plugin "{plugin_name}" is not capable of writing this combination of layer types: {layer_types}',
-                deferred=True,
-                plugin_name=plugin_name,
-                layer_types=layer_types,
-            )
-        else:
-            msg = trans._(
-                'Unable to find plugin capable of writing this combination of layer types: {layer_types}',
-                deferred=True,
-                layer_types=layer_types,
-            )
+    # if not callable(writer_function):
+    #     if plugin_name:
+    #         msg = trans._(
+    #             'Requested plugin "{plugin_name}" is not capable of writing this combination of layer types: {layer_types}',
+    #             deferred=True,
+    #             plugin_name=plugin_name,
+    #             layer_types=layer_types,
+    #         )
+    #     else:
+    #         msg = trans._(
+    #             'Unable to find plugin capable of writing this combination of layer types: {layer_types}',
+    #             deferred=True,
+    #             layer_types=layer_types,
+    #         )
 
-        raise ValueError(msg)
+    #     raise ValueError(msg)
 
-    try:
-        return writer_function(abspath_or_url(path), layer_data)
-    except Exception as exc:
-        raise PluginCallError(implementation, cause=exc)
+    # try:
+    #     return writer_function(abspath_or_url(path), layer_data)
+    # except Exception as exc:
+    #     raise PluginCallError(implementation, cause=exc)
 
 
 def _write_single_layer_with_plugins(
@@ -400,30 +398,30 @@ def _write_single_layer_with_plugins(
         return written_paths[0]
     logger.debug("Falling back to original plugin engine.")
 
-    hook_caller = getattr(
-        plugin_manager.hook, f'napari_write_{layer._type_string}'
-    )
+    # hook_caller = getattr(
+    #     plugin_manager.hook, f'napari_write_{layer._type_string}'
+    # )
 
-    if not plugin_name and isinstance(path, (str, pathlib.Path)):
-        extension = os.path.splitext(path)[-1]
-        plugin_name = plugin_manager.get_writer_for_extension(extension)
+    # if not plugin_name and isinstance(path, (str, pathlib.Path)):
+    #     extension = os.path.splitext(path)[-1]
+    #     plugin_name = plugin_manager.get_writer_for_extension(extension)
 
-    logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
-    if plugin_name and (plugin_name not in plugin_manager.plugins):
-        names = {i.plugin_name for i in hook_caller.get_hookimpls()}
-        raise ValueError(
-            trans._(
-                "There is no registered plugin named '{plugin_name}'.\nPlugins capable of writing layer._type_string layers are: {names}",
-                deferred=True,
-                plugin_name=plugin_name,
-                names=names,
-            )
-        )
+    # logger.debug(f"Writing to {path}.  Hook caller: {hook_caller}")
+    # if plugin_name and (plugin_name not in plugin_manager.plugins):
+    #     names = {i.plugin_name for i in hook_caller.get_hookimpls()}
+    #     raise ValueError(
+    #         trans._(
+    #             "There is no registered plugin named '{plugin_name}'.\nPlugins capable of writing layer._type_string layers are: {names}",
+    #             deferred=True,
+    #             plugin_name=plugin_name,
+    #             names=names,
+    #         )
+    #     )
 
-    # Call the hook_caller
-    return hook_caller(
-        _plugin=plugin_name,
-        path=abspath_or_url(path),
-        data=layer.data,
-        meta=layer._get_state(),
-    )
+    # # Call the hook_caller
+    # return hook_caller(
+    #     _plugin=plugin_name,
+    #     path=abspath_or_url(path),
+    #     data=layer.data,
+    #     meta=layer._get_state(),
+    # )

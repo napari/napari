@@ -267,3 +267,7 @@ def get_sample_data(
                 return contrib.open, []
             avail.append((plugin_name, contrib.key))
     return None, avail
+
+
+def index_npe1_shims():
+    npe2.PluginManager.instance().index_npe1_shims()
