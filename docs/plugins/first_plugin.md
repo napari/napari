@@ -76,7 +76,7 @@ Your project should now look like this:
 ```
 ~/napari-hello/
 ├── napari_hello/
-│   └── __init__.py
+│   ├── __init__.py
 │   └── napari.yaml
 ├── pyproject.toml
 ├── setup.cfg
