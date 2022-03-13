@@ -4,6 +4,7 @@ from importlib.metadata import metadata
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
+from npe2 import PluginManager
 from npe2.manifest.package_metadata import PackageMetadata
 from qtpy.QtCore import (
     QEvent,
@@ -368,12 +369,6 @@ class PluginListItem(QFrame):
         npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
         self.row1.insertWidget(2, QLabel('npe2'))
         self.row1.insertWidget(2, npe2_icon)
-        self.enabled_checkbox.setEnabled(False)
-        self.enabled_checkbox.setToolTip(
-            trans._(
-                'This is a npe2 plugin and cannot be enabled/disabled at this time.'
-            )
-        )
 
     def _get_dialog(self) -> QDialog:
         p = self.parent()
@@ -504,10 +499,15 @@ class PluginListItem(QFrame):
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
         enabled = bool(state)
-        current_distname = self.plugin_name.text()
-        for plugin_name, _, distname in plugin_manager.iter_available():
-            if distname and distname == current_distname:
-                plugin_manager.set_blocked(plugin_name, not enabled)
+        plugin_name = self.plugin_name.text()
+        pm2 = PluginManager.instance()
+        if plugin_name in pm2:
+            pm2.enable(plugin_name) if state else pm2.disable(plugin_name)
+            return
+
+        for npe1_name, _, distname in plugin_manager.iter_available():
+            if distname and (distname == plugin_name):
+                plugin_manager.set_blocked(npe1_name, not enabled)
 
     def show_warning(self, message: str = ""):
         """Show warning icon and tooltip."""
@@ -738,7 +738,9 @@ class QtPluginDialog(QDialog):
         self.available_list.clear()
 
         # fetch installed
-        from ...plugins import _npe2, plugin_manager
+        from npe2 import PluginManager
+
+        from ...plugins import plugin_manager
 
         plugin_manager.discover()  # since they might not be loaded yet
 
@@ -770,11 +772,13 @@ class QtPluginDialog(QDialog):
                 npe_version=npe_version,
             )
 
-        for manifest in _npe2.iter_manifests():
+        pm2 = PluginManager.instance()
+        for manifest in pm2.iter_manifests():
             distname = normalized_name(manifest.name or '')
             if distname in self.already_installed or distname == 'napari':
                 continue
-            _add_to_installed(distname, True, npe_version=2)
+            enabled = not pm2.is_disabled(manifest.name)
+            _add_to_installed(distname, enabled, npe_version=2)
 
         for (
             plugin_name,

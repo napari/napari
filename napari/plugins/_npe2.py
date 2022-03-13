@@ -8,6 +8,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
 )
 
@@ -269,3 +270,19 @@ def get_sample_data(
                 return contrib.open, []
             avail.append((plugin_name, contrib.key))
     return None, avail
+
+
+def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
+    """Callback when any npe2 plugins are enabled or disabled"""
+    from .. import Viewer
+    from ..settings import get_settings
+
+    plugin_settings = get_settings().plugins
+    to_disable = set(plugin_settings.disabled_plugins)
+    to_disable.difference_update(enabled)
+    to_disable.update(disabled)
+    plugin_settings.disabled_plugins = to_disable
+
+    for v in Viewer._instances:
+        v.window.plugins_menu._build()
+        v.window.file_menu._rebuild_samples_menu()
