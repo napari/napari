@@ -97,7 +97,9 @@ def write_layers(
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
     res = writer.exec(args=args)
-    if isinstance(res, str):  # it shouldn't be... bad plugin.
+    if isinstance(
+        res, str
+    ):  # pragma: no cover # it shouldn't be... bad plugin.
         return [res]
     return res or []
 
@@ -207,12 +209,19 @@ def get_readers(path: str) -> Dict[str, str]:
     }
 
 
-def iter_manifests(**kwargs) -> Iterator[PluginManifest]:
-    return npe2.PluginManager.instance().iter_manifests(**kwargs)
+def iter_manifests(
+    disabled: Optional[bool] = None,
+) -> Iterator[PluginManifest]:
+    pm = npe2.PluginManager.instance()
+    if hasattr(pm, 'iter_manifests'):
+        yield from pm.iter_manifests(disabled=disabled)
+    else:  # pragma: no cover
+        # npe < v0.1.3
+        yield from pm._manifests.values()
 
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
-    # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
+    # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
     for wdg_contrib in npe2.PluginManager.instance().iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
