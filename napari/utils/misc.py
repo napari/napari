@@ -459,6 +459,12 @@ def ensure_list_of_layer_data_tuple(val):
     )
 
 
+def _quiet_array_equal(*a, **k):
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "elementwise comparison")
+        return np.array_equal(*a, **k)
+
+
 def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     """Return a function that can check equality between ``obj`` and another.
 
@@ -483,11 +489,6 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     import operator
 
     type_ = type(obj) if not inspect.isclass(obj) else obj
-
-    def _quiet_array_equal(*a, **k):
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", "elementwise comparison")
-            return np.array_equal(*a, **k)
 
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
