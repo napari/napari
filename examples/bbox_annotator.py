@@ -37,7 +37,7 @@ def create_label_menu(shapes_layer, label_property, labels):
     label_menu = ComboBox(label='text label', choices=labels)
     label_widget = Container(widgets=[label_menu])
 
-    def update_label_menu(event):
+    def update_label_menu():
         """This is a callback function that updates the label menu when
         the default features of the Shapes layer change
         """
@@ -47,17 +47,21 @@ def create_label_menu(shapes_layer, label_property, labels):
 
     shapes_layer.events.feature_defaults.connect(update_label_menu)
 
-    def label_changed(event):
+    def set_selected_features_to_default():
+        """This is a callback that updates the feature values of the currently
+        selected shapes. This is a side-effect of the deprecated current_properties
+        setter, but does not occur when modifying feature_defaults."""
+        indices = list(shapes_layer.selected_data)
+        shapes_layer.features[label_property][indices] = shapes_layer.feature_defaults[label_property][0]
+
+    shapes_layer.events.feature_defaults.connect(set_selected_features_to_default)
+
+    def label_changed():
         """This is a callback that update the default features on the Shapes layer
         when the label menu selection changes
         """
-        selected_label = event.value
-        shapes_layer.feature_defaults[label_property] = selected_label
+        shapes_layer.feature_defaults[label_property] = label_menu.value
         shapes_layer.events.feature_defaults()
-        # Unlike current_properties, changing feature_defaults does not change
-        # the values of the currently selected shapes, so update those manually.
-        indices = list(shapes_layer.selected_data)
-        shapes_layer.features[label_property][indices] = selected_label
 
     label_menu.changed.connect(label_changed)
 
