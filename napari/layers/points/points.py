@@ -645,6 +645,9 @@ class Points(Layer):
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
         self.events.feature_defaults()
+        if update_indices is not None:
+            self.events.properties()
+            self.events.features()
 
     @property
     def text(self) -> TextManager:

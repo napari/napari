@@ -871,6 +871,8 @@ class Shapes(Layer):
         )
         if update_indices is not None:
             self.refresh_colors()
+            self.events.properties()
+            self.events.features()
         self.events.current_properties()
         self.events.feature_defaults()
 

@@ -52,9 +52,12 @@ def create_label_menu(shapes_layer, label_property, labels):
         selected shapes. This is a side-effect of the deprecated current_properties
         setter, but does not occur when modifying feature_defaults."""
         indices = list(shapes_layer.selected_data)
-        shapes_layer.features[label_property][indices] = shapes_layer.feature_defaults[label_property][0]
+        default_value = shapes_layer.feature_defaults[label_property][0]
+        shapes_layer.features[label_property][indices] = default_value
+        shapes_layer.events.features()
 
     shapes_layer.events.feature_defaults.connect(set_selected_features_to_default)
+    shapes_layer.events.features.connect(shapes_layer.refresh_text)
 
     def label_changed():
         """This is a callback that update the default features on the Shapes layer
