@@ -101,9 +101,9 @@ and [zarr arrays](https://zarr.readthedocs.io/en/stable/api/core.html). A
 0.
 
 Because the labels layer subclasses the image layer it inherits the great
-properties of the image layer, like supporting lazy loading and image pyramids
-for big data layers. For more information about both these concepts see the
-details in the [image layer guide](./image).
+properties of the image layer, like supporting lazy loading and multiscale
+images for big data layers. For more information about both these concepts see
+the details in the [image layer guide](./image).
 
 ## Creating a new labels layer
 
@@ -120,7 +120,7 @@ property of the layer to `False`.
 
 As note in the section on 3D rendering, when using 3D rendering the labels layer
 is not editable. Similarly, for now, a labels layer where the data is
-represented as an image pyramid is not editable.
+represented as a multiscale image is not editable.
 
 ## 3D rendering of labels
 
