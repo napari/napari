@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import dask
 import numpy as np
@@ -735,20 +735,6 @@ class _FeatureTable:
         """The default values one-row table."""
         return self._defaults
 
-    @defaults.setter
-    def defaults(
-        self, defaults: Union[Dict[str, np.ndarray], pd.DataFrame]
-    ) -> pd.DataFrame:
-        defaults = _validate_features(defaults, num_data=1)
-        if not np.array_equal(self._values.columns, defaults.columns):
-            raise ValueError(
-                trans._(
-                    'The column names of the defaults must match those of the feature values.',
-                    deferred=True,
-                )
-            )
-        self._defaults = defaults
-
     def properties(self) -> Dict[str, np.ndarray]:
         """Converts this to a deprecated properties dictionary.
 
@@ -782,16 +768,29 @@ class _FeatureTable:
         """Converts the defaults table to a deprecated current properties dictionary."""
         return _features_to_properties(self._defaults)
 
-    def set_values_to_default(self, indices: Set[int]) -> None:
-        """Sets some of the values to their defaults.
+    def set_currents(
+        self,
+        currents: Dict[str, np.ndarray],
+        *,
+        update_indices: Optional[List[int]] = None,
+    ) -> None:
+        """Sets the default values using the deprecated current properties dictionary.
+
+        May also update some of the feature values to be equal to the new default values.
 
         Parameters
         ----------
-        indices : Set[int]
-            The indices of the rows to set.
+        currents : Dict[str, np.ndarray]
+            The new current property values.
+        update_indices : Optional[List[int]]
+            If not None, the all features values at the given row indices will be set to
+            the corresponding new current/default feature values.
         """
-        if len(indices) > 0:
-            self._values.iloc[list(indices)] = self._defaults
+        currents = coerce_current_properties(currents)
+        self._defaults = _validate_features(currents, num_data=1)
+        if update_indices is not None:
+            for k in self._defaults:
+                self._values[k][update_indices] = self._defaults[k][0]
 
     def resize(
         self,

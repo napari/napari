@@ -375,13 +375,6 @@ class Vectors(Layer):
         """
         return self._feature_table.defaults
 
-    @feature_defaults.setter
-    def feature_defaults(
-        self, defaults: Union[Dict[str, np.ndarray], pd.DataFrame]
-    ) -> None:
-        self._feature_table.defaults = defaults
-        self.events.feature_defaults()
-
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
         return self._feature_table.choices()

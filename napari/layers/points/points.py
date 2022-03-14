@@ -24,11 +24,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.interactivity_utils import displayed_plane_from_nd_line_segment
-from ..utils.layer_utils import (
-    _features_to_properties,
-    _FeatureTable,
-    coerce_current_properties,
-)
+from ..utils.layer_utils import _features_to_properties, _FeatureTable
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Shading, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -590,17 +586,6 @@ class Points(Layer):
         """
         return self._feature_table.defaults
 
-    @feature_defaults.setter
-    def feature_defaults(
-        self, defaults: Union[Dict[str, np.ndarray], pd.DataFrame]
-    ) -> None:
-        self._feature_table.defaults = defaults
-        current_properties = self._feature_table.currents()
-        self._edge._update_current_properties(current_properties)
-        self._face._update_current_properties(current_properties)
-        self.events.current_properties()
-        self.events.feature_defaults()
-
     @property
     def property_choices(self) -> Dict[str, np.ndarray]:
         return self._feature_table.choices()
@@ -645,13 +630,21 @@ class Points(Layer):
 
     @current_properties.setter
     def current_properties(self, current_properties):
-        self.feature_defaults = coerce_current_properties(current_properties)
+        update_indices = None
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode != Mode.ADD
         ):
-            self._feature_table.set_values_to_default(self.selected_data)
+            update_indices = list(self.selected_data)
+        self._feature_table.set_currents(
+            current_properties, update_indices=update_indices
+        )
+        current_properties = self.current_properties
+        self._edge._update_current_properties(current_properties)
+        self._face._update_current_properties(current_properties)
+        self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def text(self) -> TextManager:
