@@ -113,12 +113,12 @@ def read_data_with_plugins(
 
     layer_data = None
     result = hook_caller.call_with_result_obj(path=npe1_path)
-    reader = result.result  # will raise exceptions if any occurred
-    try:
-        layer_data = reader(npe1_path)  # try to read data
-        hookimpl = result.implementation
-    except Exception as exc:
-        raise PluginCallError(result.implementation, cause=exc)
+    if reader := result.result:  # will raise exceptions if any occurred
+        try:
+            layer_data = reader(npe1_path)  # try to read data
+            hookimpl = result.implementation
+        except Exception as exc:
+            raise PluginCallError(result.implementation, cause=exc) from exc
 
     if not layer_data:
         # if layer_data is empty, it means no plugin could read path
