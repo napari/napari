@@ -8,6 +8,7 @@ import itertools
 import os
 import re
 import sys
+import warnings
 from enum import Enum, EnumMeta
 from os import fspath
 from os import path as os_path
@@ -485,12 +486,17 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
 
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
+    def _quiet_array_equal(*a, **k):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "elementwise comparison")
+            return np.array_equal(*a, **k)
+
     _known_arrays = {
-        'numpy.ndarray': np.array_equal,  # numpy.ndarray
+        'numpy.ndarray': _quiet_array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
         'zarr.Array': operator.is_,  # zarr.core.Array
-        'xarray.DataArray': np.array_equal,  # xarray.core.dataarray.DataArray
+        'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
     }
     for base in type_.mro():
         key = f'{base.__module__.split(".", maxsplit=1)[0]}.{base.__name__}'

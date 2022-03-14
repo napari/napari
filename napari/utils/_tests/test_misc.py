@@ -192,3 +192,6 @@ def test_equality_operator():
     assert (
         pick_equality_operator(xr.DataArray(np.ones((1, 1)))) == np.array_equal
     )
+    eq = pick_equality_operator(np.asarray([]))
+    # make sure this doesn't warn
+    assert not eq(np.asarray([]), np.asarray([], '<U32'))
