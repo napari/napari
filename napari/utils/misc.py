@@ -484,13 +484,13 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
 
     type_ = type(obj) if not inspect.isclass(obj) else obj
 
-    # yes, it's a little riskier, but we are checking namespaces instead of
-    # actual `issubclass` here to avoid slow import times
     def _quiet_array_equal(*a, **k):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", "elementwise comparison")
             return np.array_equal(*a, **k)
 
+    # yes, it's a little riskier, but we are checking namespaces instead of
+    # actual `issubclass` here to avoid slow import times
     _known_arrays = {
         'numpy.ndarray': _quiet_array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
