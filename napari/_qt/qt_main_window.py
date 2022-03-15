@@ -1156,8 +1156,12 @@ class Window:
         if canvas_only:
             canvas = self._qt_viewer.canvas
             if size is not None:
+                if len(size) != 2:
+                    raise ValueError(
+                        f'screenshot size must be 2 values, got {len(size)}'
+                    )
                 prev_size = canvas.size
-                canvas.size = size
+                canvas.size = size[::-1]  # invert x ad y for vispy
             try:
                 img = self._qt_viewer.canvas.native.grabFramebuffer()
                 if flash:
