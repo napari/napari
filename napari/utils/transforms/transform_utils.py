@@ -468,8 +468,25 @@ def is_matrix_triangular(matrix):
     )
 
 
-def is_diagonal(m, tol=1e-8):
-    if m.ndim != 2 or m.shape[0] != m.shape[1]:
-        raise ValueError("m must be square")
-    non_diag = m[~np.eye(m.shape[0], dtype=bool)]
-    return np.max(np.abs(non_diag)) <= tol
+def is_diagonal(affine, tol=1e-8):
+    """Determine whether affine is a diagonal matrix.
+
+    Parameters
+    ----------
+    affine : 2-D array
+        The affine matrix to test.
+    tol : float, optional
+        Consider any entries with magnitude < `tol` as 0.
+
+    Returns
+    -------
+    is_diag : bool
+        Boolean indicating whether affine is diagonal.
+    """
+    if affine.ndim != 2 or affine.shape[0] != affine.shape[1]:
+        raise ValueError("affine must be square")
+    non_diag = affine[~np.eye(affine.shape[0], dtype=bool)]
+    if tol == 0:
+        return np.count_nonzero(non_diag) > 0
+    else:
+        return np.max(np.abs(non_diag)) <= tol
