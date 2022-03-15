@@ -197,6 +197,9 @@ class ActionManager:
         calling `bind_button` can be done before an action with the
         corresponding name is registered, in which case the effect will be
         delayed until the corresponding action is registered.
+        
+        Note: this method cannot be used with generator functions,
+        see https://github.com/napari/napari/issues/4164 for details.
         """
         self._validate_action_name(name)
 
