@@ -466,3 +466,10 @@ def is_matrix_triangular(matrix):
     return is_matrix_upper_triangular(matrix) or is_matrix_lower_triangular(
         matrix
     )
+
+
+def is_diagonal(m, tol=1e-8):
+    if m.ndim != 2 or m.shape[0] != m.shape[1]:
+        raise ValueError("m must be square")
+    non_diag = m[~np.eye(m.shape[0], dtype=bool)]
+    return np.max(np.abs(non_diag)) <= tol

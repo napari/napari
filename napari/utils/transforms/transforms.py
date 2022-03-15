@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import Sequence
 
 import numpy as np
@@ -10,6 +11,7 @@ from .transform_utils import (
     decompose_linear_matrix,
     embed_in_identity_matrix,
     infer_ndim,
+    is_diagonal,
     is_matrix_triangular,
     is_matrix_upper_triangular,
     rotate_to_matrix,
@@ -120,6 +122,12 @@ class TransformChain(EventedList, Transform):
         return TransformChain([tf.inverse for tf in self[::-1]])
 
     @property
+    def is_diagonal(self):
+        if all(getattr(tf, 'is_diagonal', False) for tf in self):
+            return True
+        return getattr(self.simplified, 'is_diagonal', False)
+
+    @property
     def simplified(self) -> 'Transform':
         """Return the composite of the transforms inside the transform chain."""
         if len(self) == 0:
@@ -195,6 +203,7 @@ class ScaleTranslate(Transform):
 
         self.scale = np.array(scale)
         self.translate = np.array(translate)
+        self.is_diagonal = True
 
     def __call__(self, coords):
         coords = np.asarray(coords)
@@ -405,17 +414,25 @@ class Affine(Transform):
     @property
     def scale(self) -> np.array:
         """Return the scale of the transform."""
-        return decompose_linear_matrix(
-            self._linear_matrix, upper_triangular=self._upper_triangular
-        )[1]
+        if self.is_diagonal:
+            return np.diag(self._linear_matrix)
+        else:
+            return decompose_linear_matrix(
+                self._linear_matrix, upper_triangular=self._upper_triangular
+            )[1]
 
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        rotate, _, shear = decompose_linear_matrix(
-            self.linear_matrix, upper_triangular=self._upper_triangular
-        )
-        self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        if self.is_diagonal:
+            for i in range(len(scale)):
+                self._linear_matrix[i, i] = scale[i]
+        else:
+            rotate, _, shear = decompose_linear_matrix(
+                self.linear_matrix, upper_triangular=self._upper_triangular
+            )
+            self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        # self._clean_cache()
 
     @property
     def translate(self) -> np.array:
@@ -441,10 +458,13 @@ class Affine(Transform):
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
         self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        self._clean_cache()
 
     @property
     def shear(self) -> np.array:
         """Return the shear of the transform."""
+        if self.is_diagonal:
+            return np.zeros((self.ndim,))
         return decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
         )[2]
@@ -452,7 +472,8 @@ class Affine(Transform):
     @shear.setter
     def shear(self, shear):
         """Set the shear of the transform."""
-        if np.array(shear).ndim == 2:
+        shear = np.asarray(shear)
+        if shear.ndim == 2:
             if is_matrix_triangular(shear):
                 self._upper_triangular = is_matrix_upper_triangular(shear)
             else:
@@ -469,6 +490,7 @@ class Affine(Transform):
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
         self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        self._clean_cache()
 
     @property
     def linear_matrix(self) -> np.array:
@@ -481,6 +503,7 @@ class Affine(Transform):
         self._linear_matrix = embed_in_identity_matrix(
             linear_matrix, ndim=self.ndim
         )
+        self._clean_cache()
 
     @property
     def affine_matrix(self) -> np.array:
@@ -495,6 +518,7 @@ class Affine(Transform):
         """Set the affine matrix for the transform."""
         self._linear_matrix = affine_matrix[:-1, :-1]
         self._translate = affine_matrix[:-1, -1]
+        self._clean_cache()
 
     def __array__(self, *args, **kwargs):
         """NumPy __array__ protocol to get the affine transform matrix."""
@@ -597,6 +621,14 @@ class Affine(Transform):
             name=self.name,
         )
 
+    @cached_property
+    def is_diagonal(self):
+        return is_diagonal(self.linear_matrix, tol=1e-8)
+
+    def _clean_cache(self):
+        cached_properties = ('is_diagonal',)
+        [self.__dict__.pop(p, None) for p in cached_properties]
+
 
 class CompositeAffine(Affine):
     """n-dimensional affine transformation composed from more basic components.
@@ -678,6 +710,7 @@ class CompositeAffine(Affine):
         """Set the rotation of the transform."""
         self._rotate = rotate_to_matrix(rotate, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
+        self._clean_cache()
 
     @property
     def shear(self) -> np.array:
@@ -693,6 +726,7 @@ class CompositeAffine(Affine):
         """Set the shear of the transform."""
         self._shear = shear_to_matrix(shear, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
+        self._clean_cache()
 
     @Affine.linear_matrix.setter
     def linear_matrix(self, linear_matrix):
