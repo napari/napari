@@ -468,7 +468,7 @@ class Affine(Transform):
     @property
     def shear(self) -> np.array:
         """Return the shear of the transform."""
-        if self.is_diagonal:
+        if self.is_diagonal or self.is_permutation:
             return np.zeros((self.ndim,))
         return decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
