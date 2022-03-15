@@ -568,11 +568,16 @@ class Affine(Transform):
 
         Returns
         -------
-        Transform
+        Affine
             Resulting transform.
         """
+        axes = list(axes)
+        if self.is_diagonal or self.is_permutation:
+            linear_matrix = np.diag(self.scale[axes])
+        else:
+            linear_matrix = self.linear_matrix[np.ix_(axes, axes)]
         return Affine(
-            linear_matrix=self.linear_matrix[np.ix_(axes, axes)],
+            linear_matrix=linear_matrix,
             translate=self.translate[axes],
             ndim=len(axes),
             name=self.name,
@@ -658,7 +663,11 @@ class Affine(Transform):
         return get_permutation(self.linear_matrix, tol=1e-8)
 
     def _clean_cache(self):
-        cached_properties = ('is_diagonal', 'is_permutation', 'perm')
+        cached_properties = (
+            'is_diagonal',
+            'is_permutation',
+            'perm',
+        )
         [self.__dict__.pop(p, None) for p in cached_properties]
 
 

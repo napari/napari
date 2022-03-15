@@ -87,6 +87,29 @@ def test_affine_is_permutation(Transform):
     assert diag_transform.is_permutation
 
 
+@pytest.mark.parametrize('Transform', [Affine])
+def test_affine_permutation_set_slice(Transform):
+    translate = np.asarray([3, 4, 5], dtype=float)
+    m = np.asarray([[0, 0, 3.5], [2, 0, 0], [0, 1, 0]])
+    transform = Transform(linear_matrix=m, translate=translate, name='st')
+
+    axes = (0, 1)
+    sl = transform.set_slice(axes)
+    npt.assert_allclose(sl.linear_matrix, np.asarray([[3.5, 0], [0, 2]]))
+    npt.assert_allclose(sl.translate, translate[np.asarray(axes)])
+    assert sl.name == transform.name
+
+    axes = (1, 0)
+    sl = transform.set_slice(axes)
+    npt.assert_allclose(sl.linear_matrix, np.asarray([[2, 0], [0, 3.5]]))
+    npt.assert_allclose(sl.translate, translate[np.asarray(axes)])
+
+    axes = (2, 0)
+    sl = transform.set_slice(axes)
+    npt.assert_allclose(sl.linear_matrix, np.asarray([[1, 0], [0, 3.5]]))
+    npt.assert_allclose(sl.translate, translate[np.asarray(axes)])
+
+
 def test_composite_affine_is_permutation():
     # diagonal matrices are also considered a permutation
     diag_transform = CompositeAffine(scale=[2, 3], name='st')
