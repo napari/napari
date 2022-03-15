@@ -59,7 +59,7 @@ class CallerFrame:
     For example to get the first caller frame which module is not napari::
 
         def not_napari(frame):
-            return frame.f_globals.get("__name__", '').startswith('napari')
+            return not frame.f_globals.get("__name__", '').startswith('napari')
 
         with CallerFrame(not_napari) as c:
             print(c.namespace)
