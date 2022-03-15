@@ -82,7 +82,7 @@ You can see details of [the project roadmap here](https://napari.org/roadmaps/in
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](https://napari.org/docs/dev/developers/contributing.html) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](https://napari.org/developers/contributing.html) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
 ## code of conduct
 
