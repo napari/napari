@@ -20,6 +20,7 @@ def test_transform_chain(Transform):
 
     transform_chain = TransformChain([transform_a, transform_b])
     assert transform_chain.is_diagonal
+    assert transform_chain.is_permutation
 
     new_coord_1 = transform_c(coord)
     new_coord_2 = transform_chain(coord)
@@ -28,6 +29,7 @@ def test_transform_chain(Transform):
     if hasattr(transform_chain[1], 'rotate'):
         transform_chain[1].rotate = 15.0
         assert not transform_chain.is_diagonal
+        assert not transform_chain.is_permutation
 
 
 def test_transform_chain_diagonal_from_nondiagonal():

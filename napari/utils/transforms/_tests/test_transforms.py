@@ -30,6 +30,28 @@ def test_affine_is_diagonal(Transform):
     assert transform.is_diagonal
 
 
+@pytest.mark.parametrize('Transform', [Affine])
+def test_affine_is_permutation(Transform):
+    m = np.asarray([[0, 0, 3], [2, 0, 0], [0, 1, 0]])
+    transform = Transform(linear_matrix=m, name='st')
+    assert transform.is_permutation
+    transform.rotate = 10.0
+    assert not transform.is_permutation
+    # Rotation back to 0.0 will result in tiny non-zero off-diagonal values.
+    # is_diagonal assumes values below 1e-8 are equivalent to 0.
+    transform.rotate = 0.0
+    assert transform.is_permutation
+
+    diag_transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    assert diag_transform.is_permutation
+
+
+def test_composite_affine_is_permutation():
+    # diagonal matrices are also considered a permutation
+    diag_transform = CompositeAffine(scale=[2, 3], name='st')
+    assert diag_transform.is_permutation
+
+
 @pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_broadcast_scale(Transform):
     coord = [1, 10, 13]

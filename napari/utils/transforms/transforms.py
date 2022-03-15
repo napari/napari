@@ -14,6 +14,7 @@ from .transform_utils import (
     is_diagonal,
     is_matrix_triangular,
     is_matrix_upper_triangular,
+    is_permutation,
     rotate_to_matrix,
     scale_to_vector,
     shear_to_matrix,
@@ -128,6 +129,10 @@ class TransformChain(EventedList, Transform):
         return getattr(self.simplified, 'is_diagonal', False)
 
     @property
+    def is_permutation(self):
+        return getattr(self.simplified, 'is_permutation', False)
+
+    @property
     def simplified(self) -> 'Transform':
         """Return the composite of the transforms inside the transform chain."""
         if len(self) == 0:
@@ -204,6 +209,7 @@ class ScaleTranslate(Transform):
         self.scale = np.array(scale)
         self.translate = np.array(translate)
         self.is_diagonal = True
+        self.is_permutation = True
 
     def __call__(self, coords):
         coords = np.asarray(coords)
@@ -432,7 +438,6 @@ class Affine(Transform):
                 self.linear_matrix, upper_triangular=self._upper_triangular
             )
             self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
-        # self._clean_cache()
 
     @property
     def translate(self) -> np.array:
@@ -625,8 +630,14 @@ class Affine(Transform):
     def is_diagonal(self):
         return is_diagonal(self.linear_matrix, tol=1e-8)
 
+    @cached_property
+    def is_permutation(self):
+        return is_permutation(
+            self.linear_matrix, tol=1e-8, exclude_diagonal=False
+        )
+
     def _clean_cache(self):
-        cached_properties = ('is_diagonal',)
+        cached_properties = ('is_diagonal', 'is_permutation')
         [self.__dict__.pop(p, None) for p in cached_properties]
 
 
@@ -780,3 +791,6 @@ class CompositeAffine(Affine):
 
     def _make_linear_matrix(self):
         return self._rotate @ self._shear @ np.diag(self._scale)
+
+    def is_permutation(self):
+        return self.is_diagonal()
