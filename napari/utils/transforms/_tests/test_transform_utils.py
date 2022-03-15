@@ -1,12 +1,16 @@
+from itertools import permutations
+
 import numpy as np
 import pytest
 
 from napari.utils.transforms.transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
+    is_diagonal,
     is_matrix_lower_triangular,
     is_matrix_triangular,
     is_matrix_upper_triangular,
+    is_permutation,
     shear_matrix_from_angle,
 )
 
@@ -81,3 +85,32 @@ def test_is_matrix_triangular():
     assert is_matrix_triangular(upper)
     assert is_matrix_triangular(lower)
     assert not is_matrix_triangular(full)
+
+
+@pytest.mark.parametrize('ndim', [2, 3, 4])
+@pytest.mark.parametrize('tol', [1e-8, 0.0])
+@pytest.mark.parametrize('off_diag_value', [0.0, 1e-12, 1e-3])
+def test_is_permutation(ndim, off_diag_value, tol):
+    # empty affine matrix
+    blank = np.full((ndim + 1, ndim + 1), off_diag_value, dtype=float)
+    blank[-1, -1] = 1
+    # set non-zero translations
+    blank[:ndim, -1] = np.random.randn(ndim)
+
+    within_tolerance = off_diag_value <= tol
+
+    # test all possible axis permutations
+    perm_diag = tuple(range(ndim))
+    for perm in tuple(permutations(range(ndim), ndim)):
+        # initialize the affine with randomized positive scale values
+        affine = blank.copy()
+        for r, c in enumerate(perm):
+            affine[r, c] = 0.1 + abs(np.random.randn(1))
+
+        linear_matrix = affine[:ndim, :ndim]
+        if perm == perm_diag:
+            assert is_diagonal(linear_matrix, tol=tol) == within_tolerance
+            assert not is_permutation(
+                linear_matrix, tol=tol, exclude_diagonal=True
+            )
+        assert is_permutation(linear_matrix, tol=tol) == within_tolerance

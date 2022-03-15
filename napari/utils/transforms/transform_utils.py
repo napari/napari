@@ -468,13 +468,13 @@ def is_matrix_triangular(matrix):
     )
 
 
-def is_diagonal(affine, tol=1e-8):
+def is_diagonal(matrix, tol=1e-8):
     """Determine whether affine is a diagonal matrix.
 
     Parameters
     ----------
-    affine : 2-D array
-        The affine matrix to test.
+    matrix : 2-D array
+        The matrix to test.
     tol : float, optional
         Consider any entries with magnitude < `tol` as 0.
 
@@ -483,10 +483,69 @@ def is_diagonal(affine, tol=1e-8):
     is_diag : bool
         Boolean indicating whether affine is diagonal.
     """
-    if affine.ndim != 2 or affine.shape[0] != affine.shape[1]:
-        raise ValueError("affine must be square")
-    non_diag = affine[~np.eye(affine.shape[0], dtype=bool)]
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("matrix must be square")
+    non_diag = matrix[~np.eye(matrix.shape[0], dtype=bool)]
     if tol == 0:
-        return np.count_nonzero(non_diag) > 0
+        return np.count_nonzero(non_diag) == 0
     else:
         return np.max(np.abs(non_diag)) <= tol
+
+
+def get_permutation(matrix, tol=1e-8):
+    """Determine the axis permutation order for an affine.
+
+    Parameters
+    ----------
+    matrix : 2-D array
+        The matrix to check.
+    tol : float, optional
+        Consider any entries with magnitude < tol as 0.
+
+    Returns
+    -------
+    c : tuple of int
+        A tuple of integers where ``c[i]`` is the index of the column with a
+        non-zero entry for row ``i``. If we were to set the non-zero entries
+        in `affine` to 1 and remove any translation, the operation of the affine
+        on a data matrix would be equivalent to ``data.transpose(c)``.
+    """
+    n = matrix.shape[0]
+    if tol == 0:
+        r, c = np.nonzero(matrix)
+    else:
+        r, c = np.nonzero(np.abs(matrix) >= tol)
+    # permutation matrix will only have 1 entry per column
+    c = tuple(c)
+    c_check = len(list(set(c))) == n
+    if not c_check:
+        return None
+    # permutation matrix will have r = (0, 1, ..., ndim - 1)
+    if tuple(r) != tuple(range(n)):
+        return None
+    return c
+
+
+def is_permutation(matrix, tol=1e-8, exclude_diagonal=False):
+    """Determine if linear_matrix is a permutation matrix.
+
+    Parameters
+    ----------
+    matrix : 2-D array
+        The matrix to check.
+    tol : float, optional
+        Consider any entries with magnitude < tol as 0.
+    exclude_diagonal : bool, optional
+        If True, do not consider a diagonal matrix as a permutation.
+
+    Returns
+    -------
+    is_perm : bool
+        Boolean indicating if `affine` is a permuation.
+    """
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("matrix must be square")
+    perm = get_permutation(matrix, tol=tol)
+    if not exclude_diagonal:
+        return perm is not None
+    return perm is not None and tuple(perm) != tuple(range(matrix.shape[0]))
