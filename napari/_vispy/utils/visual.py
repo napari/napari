@@ -36,8 +36,8 @@ layer_to_visual = {
 
 
 if async_octree:
-    from ..layers.image.experimental.octree_image import _OctreeImageBase
-    from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
+    from ...layers.image.experimental.octree_image import _OctreeImageBase
+    from ..experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 
     # Insert _OctreeImageBase in front so it gets picked over plain Image.
     new_mapping = {_OctreeImageBase: VispyTiledImageLayer}
