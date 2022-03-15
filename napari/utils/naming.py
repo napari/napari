@@ -149,7 +149,7 @@ def magic_name(value, *, path_prefix=ROOT_DIR):
     """
     # Iterate frames while filename starts with path_prefix (part of Napari)
     with CallerFrame(
-        lambda frame: frame.f_code.co_filename.startswith(path_prefix)
+        lambda n, frame: frame.f_code.co_filename.startswith(path_prefix)
     ) as w:
         varmap = w.namespace
         names = w.names
