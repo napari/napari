@@ -53,25 +53,37 @@ class CallerFrame:
     It is a context manager in order to be able to properly cleanup references
     to some frame objects after it is gone.
 
-    Constructor takes a predicate taking a frame and returning whether to skip
-    this frame and keep walking up the stack.
+    Constructor takes a predicate taking a index and frame and returning whether
+    to skip this frame and keep walking up the stack. The index starts at 1
+    (caller frame), and increases.
 
-    For example to get the first caller frame which module is not napari::
+    For example the following gives you the caller:
+        - at least 5 Frames up
+        - at most 42 Frames up
+        - first one outside of Napari
 
-        def not_napari(frame):
-            return not frame.f_globals.get("__name__", '').startswith('napari')
+        def skip_napari_frames(index, frame):
+            if index < 5:
+                return True
+            if index > 42:
+                return False
+            return frame.f_globals.get("__name__", '').startswith('napari')
 
-        with CallerFrame(not_napari) as c:
+        with CallerFrame(skip_napari_frames) as c:
             print(c.namespace)
 
     This will be used for two things:
         - find the name of a value in caller frame.
         - capture local namespace of `napari.run()` when starting the qt-console
 
+    For more complex logic you could use a callable that keep track of
+    previous/state/frames, though be careful, the predicate is not guarantied to
+    be called on all subsequents frames.
+
     """
 
-    def __init__(self, predicate):
-        self.predicate = predicate
+    def __init__(self, skip_predicate):
+        self.predicate = skip_predicate
         self.namespace = {}
         self.names = ()
 
@@ -86,12 +98,14 @@ class CallerFrame:
                 frame = frame.f_back
 
             # Iterate frames while filename starts with path_prefix (part of Napari)
+            n = 1
             while (
                 inspect.isframe(frame)
                 and inspect.isframe(frame.f_back)
                 and inspect.iscode(frame.f_code)
-                and (self.predicate(frame))
+                and (self.predicate(n, frame))
             ):
+                n += 1
                 frame = frame.f_back
             self.frame = frame
             if inspect.isframe(frame) and inspect.iscode(frame.f_code):
