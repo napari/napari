@@ -32,15 +32,56 @@ def test_affine_is_diagonal(Transform):
 
 @pytest.mark.parametrize('Transform', [Affine])
 def test_affine_is_permutation(Transform):
-    m = np.asarray([[0, 0, 3], [2, 0, 0], [0, 1, 0]])
+    m = np.asarray([[0, 0, 3.5], [2, 0, 0], [0, 1, 0]])
     transform = Transform(linear_matrix=m, name='st')
     assert transform.is_permutation
-    transform.rotate = 10.0
-    assert not transform.is_permutation
-    # Rotation back to 0.0 will result in tiny non-zero off-diagonal values.
-    # is_diagonal assumes values below 1e-8 are equivalent to 0.
-    transform.rotate = 0.0
-    assert transform.is_permutation
+    assert transform.perm == (2, 0, 1)
+    rotate_orig = transform.rotate
+
+    # test scale getter/setter
+    npt.assert_allclose(transform.scale, (3.5, 2, 1))
+    transform.scale = (4.5, 3, 1.5)
+    npt.assert_allclose(transform.scale, (4.5, 3, 1.5))
+    npt.assert_allclose(
+        transform._linear_matrix,
+        np.asarray([[0, 0, 4.5], [3, 0, 0], [0, 1.5, 0]]),
+    )
+    assert transform.perm == (2, 0, 1)
+
+    # test translate getter/setter
+    npt.assert_allclose(transform.translate, (0, 0, 0))
+    transform.translate = (5.5, 3, 2.5)
+    npt.assert_allclose(transform.translate, (5.5, 3, 2.5))
+    npt.assert_allclose(
+        transform.affine_matrix[:3, :],
+        np.asarray([[0, 0, 4.5, 5.5], [3, 0, 0, 3], [0, 1.5, 0, 2.5]]),
+    )
+    assert transform.perm == (2, 0, 1)
+
+    # test shear getter/setter
+    npt.assert_allclose(transform.shear, (0, 0, 0))
+    transform.shear = (0.1, 0.2, 0.3)
+    npt.assert_allclose(transform.shear, (0.1, 0.2, 0.3))
+    transform.shear = (0, 0, 0)
+    npt.assert_allclose(transform.shear, (0, 0, 0))
+    assert transform.perm == (2, 0, 1)
+
+    # TODO: disallow setting rotate for permutation matrices?
+    if False:
+        # rotate property setter not available on permutation matrices
+        with pytest.raises(ValueError):
+            transform.rotate = 10.0
+    else:
+        transform.rotate = 10.0
+        assert not transform.is_permutation
+        assert transform.perm is None
+
+        # Rotation back to original value will result in tiny non-zero
+        # off-diagonal values.
+        # is_diagonal assumes values <= 1e-8 are equivalent to 0.
+        transform.rotate = rotate_orig
+        assert transform.is_permutation
+        assert transform.perm == (2, 0, 1)
 
     diag_transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
     assert diag_transform.is_permutation

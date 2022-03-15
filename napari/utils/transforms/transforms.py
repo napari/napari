@@ -10,6 +10,7 @@ from .transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
+    get_permutation,
     infer_ndim,
     is_diagonal,
     is_matrix_triangular,
@@ -422,6 +423,10 @@ class Affine(Transform):
         """Return the scale of the transform."""
         if self.is_diagonal:
             return np.diag(self._linear_matrix)
+        elif self.is_permutation:
+            m = self._linear_matrix
+            perm = self.perm
+            return np.asarray([m[i, perm[i]] for i in range(self.ndim)])
         else:
             return decompose_linear_matrix(
                 self._linear_matrix, upper_triangular=self._upper_triangular
@@ -433,6 +438,11 @@ class Affine(Transform):
         if self.is_diagonal:
             for i in range(len(scale)):
                 self._linear_matrix[i, i] = scale[i]
+        elif self.is_permutation:
+            # assumes scale[i] is the scaling on axis i AFTER the transform
+            perm = self.perm
+            for i in range(len(scale)):
+                self._linear_matrix[i, perm[i]] = scale[i]
         else:
             rotate, _, shear = decompose_linear_matrix(
                 self.linear_matrix, upper_triangular=self._upper_triangular
@@ -459,10 +469,16 @@ class Affine(Transform):
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotation of the transform."""
+        # if self.is_permutation and not self.is_diagonal:
+        #     raise ValueError(
+        #         "Rotation setter not supported on affines that permute "
+        #         "dimensions."
+        #     )
         _, scale, shear = decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
         self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        # previously cached properties may have changed
         self._clean_cache()
 
     @property
@@ -495,6 +511,7 @@ class Affine(Transform):
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
         self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        # previously cached properties may have changed
         self._clean_cache()
 
     @property
@@ -636,8 +653,12 @@ class Affine(Transform):
             self.linear_matrix, tol=1e-8, exclude_diagonal=False
         )
 
+    @cached_property
+    def perm(self):
+        return get_permutation(self.linear_matrix, tol=1e-8)
+
     def _clean_cache(self):
-        cached_properties = ('is_diagonal', 'is_permutation')
+        cached_properties = ('is_diagonal', 'is_permutation', 'perm')
         [self.__dict__.pop(p, None) for p in cached_properties]
 
 
@@ -792,5 +813,12 @@ class CompositeAffine(Affine):
     def _make_linear_matrix(self):
         return self._rotate @ self._shear @ np.diag(self._scale)
 
+    @cached_property
     def is_permutation(self):
-        return self.is_diagonal()
+        return self.is_diagonal
+
+    @cached_property
+    def perm(self):
+        if self.is_diagonal:
+            return (0, 1, 2)
+        return None

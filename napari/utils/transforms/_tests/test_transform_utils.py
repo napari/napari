@@ -6,6 +6,7 @@ import pytest
 from napari.utils.transforms.transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
+    get_permutation,
     is_diagonal,
     is_matrix_lower_triangular,
     is_matrix_triangular,
@@ -113,4 +114,10 @@ def test_is_permutation(ndim, off_diag_value, tol):
             assert not is_permutation(
                 linear_matrix, tol=tol, exclude_diagonal=True
             )
-        assert is_permutation(linear_matrix, tol=tol) == within_tolerance
+        is_perm = is_permutation(linear_matrix, tol=tol)
+        assert is_perm == within_tolerance
+        # test that get_permutation returns the expected axis order
+        if is_perm:
+            assert perm == get_permutation(linear_matrix, tol=tol)
+        else:
+            assert get_permutation(linear_matrix, tol=tol) is None
