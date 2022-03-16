@@ -234,6 +234,8 @@ class _QtMainWindow(QMainWindow):
         if window_state:
             self.restoreState(str_to_qbytearray(window_state))
 
+        # Toggling the console visibility is disabled when it is not
+        # available, so ensure that it is hidden.
         if in_ipython():
             self._qt_viewer.dockConsole.setVisible(False)
 
