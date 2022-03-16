@@ -930,7 +930,6 @@ def test_out_of_slice_display():
     assert layer.out_of_slice_display is True
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""

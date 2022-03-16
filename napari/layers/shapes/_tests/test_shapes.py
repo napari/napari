@@ -1342,7 +1342,6 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
