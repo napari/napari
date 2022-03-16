@@ -1,7 +1,7 @@
 # Your First Plugin
 
 In this tutorial, we'll step through the fundamental concepts for building a
-**bare minimum** "hello napari" plugin from scratch. 
+**bare minimum** "hello napari" plugin from scratch.
 
 At the end, we'll point you to a "cookiecutter" template
 repository that helps automate the creation of new plugins, and adds a number
@@ -57,7 +57,7 @@ then create a `napari_hello` directory with a single `__init__.py` file inside o
 ````{tabbed} macOS / Linux
 ```sh
 mkdir napari_hello
-touch napari_hello/__init__.py pyproject.toml setup.cfg
+touch napari_hello/__init__.py napari_hello/napari.yaml pyproject.toml setup.cfg
 ```
 ````
 
@@ -65,6 +65,7 @@ touch napari_hello/__init__.py pyproject.toml setup.cfg
 ```bat
 mkdir napari_hello
 copy /b napari_hello\__init__.py +,,
+copy /b napari_hello\napari.yaml +,,
 copy /b pyproject.toml +,,
 copy /b setup.cfg +,,
 ```
@@ -75,7 +76,8 @@ Your project should now look like this:
 ```
 ~/napari-hello/
 ├── napari_hello/
-│   └── __init__.py
+│   ├── __init__.py
+│   └── napari.yaml
 ├── pyproject.toml
 ├── setup.cfg
 ```
@@ -141,7 +143,7 @@ classifiers =
 packages = find:
 ```
 
-There is a *lot* more than can go in the package metadata. 
+There is a *lot* more than can go in the package metadata.
 See the [setuptools quickstart](https://setuptools.pypa.io/en/latest/userguide/quickstart.html)
 for more.
 
@@ -170,7 +172,8 @@ autogeneration capabilities to turn this function into a widget)*
 
 ### Add a `napari.yaml` manifest
 
-Create an empty [plugin manifest](./manifest) file at `napari_hello/napari.yaml`
+
+If you haven't already, create an empty [plugin manifest](./manifest) file at `napari_hello/napari.yaml`
 We will use this file to tell napari:
 
 1. That our plugin contributes a [**command**](contributions-commands)

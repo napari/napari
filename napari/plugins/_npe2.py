@@ -8,11 +8,13 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
 )
 
 import npe2
 from npe2.io_utils import read_get_reader
+from npe2.manifest.menus import Submenu
 from npe2.manifest.schema import PluginManifest
 
 from ..utils.translations import trans
@@ -45,11 +47,11 @@ def read(
         assert len(paths) == 1
         npe1_path = paths[0]
     try:
-        layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)
+        layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)  # type: ignore  # needs npe2 fix
         return layer_data, _FakeHookimpl(reader.plugin_name)
     except ValueError as e:
         if 'No readers returned data' not in str(e):
-            raise e
+            raise e from e
     return None
 
 
@@ -95,7 +97,11 @@ def write_layers(
     n = sum(ltc.max() for ltc in writer.layer_type_constraints())
     args = (path, *layer_data[0][:2]) if n <= 1 else (path, layer_data)
     res = writer.exec(args=args)
-    return [res] if isinstance(res, str) else res or []
+    if isinstance(
+        res, str
+    ):  # pragma: no cover # it shouldn't be... bad plugin.
+        return [res]
+    return res or []
 
 
 def get_widget_contribution(
@@ -124,7 +130,7 @@ def populate_qmenu(menu: QMenu, menu_key: str):
     # TODO: declare somewhere what menu_keys are valid.
     pm = npe2.PluginManager.instance()
     for item in pm.iter_menu(menu_key):
-        if hasattr(item, 'submenu'):
+        if isinstance(item, Submenu):
             subm_contrib = pm.get_submenu(item.submenu)
             subm = menu.addMenu(subm_contrib.label)
             populate_qmenu(subm, subm_contrib.id)
@@ -172,7 +178,7 @@ def file_extensions_string_for_layers(
     #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
 
     def _fmt_exts(es):
-        return " ".join("*" + e for e in es if e) if es else "*.*"
+        return " ".join(f"*{e}" for e in es if e) if es else "*.*"
 
     return (
         ";;".join(f"{name} ({_fmt_exts(exts)})" for name, exts in _items()),
@@ -209,13 +215,13 @@ def iter_manifests(
     pm = npe2.PluginManager.instance()
     if hasattr(pm, 'iter_manifests'):
         yield from pm.iter_manifests(disabled=disabled)
-    else:
+    else:  # pragma: no cover
         # npe < v0.1.3
         yield from pm._manifests.values()
 
 
 def widget_iterator() -> Iterator[Tuple[str, Tuple[str, Sequence[str]]]]:
-    # eg ('dock', ('my_plugin', {'My widget': MyWidget}))
+    # eg ('dock', ('my_plugin', ('My widget', MyWidget)))
     wdgs: DefaultDict[str, List[str]] = DefaultDict(list)
     for wdg_contrib in npe2.PluginManager.instance().iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
@@ -264,3 +270,19 @@ def get_sample_data(
                 return contrib.open, []
             avail.append((plugin_name, contrib.key))
     return None, avail
+
+
+def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
+    """Callback when any npe2 plugins are enabled or disabled"""
+    from .. import Viewer
+    from ..settings import get_settings
+
+    plugin_settings = get_settings().plugins
+    to_disable = set(plugin_settings.disabled_plugins)
+    to_disable.difference_update(enabled)
+    to_disable.update(disabled)
+    plugin_settings.disabled_plugins = to_disable
+
+    for v in Viewer._instances:
+        v.window.plugins_menu._build()
+        v.window.file_menu._rebuild_samples_menu()
