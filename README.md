@@ -86,7 +86,7 @@ Contributions are encouraged! Please read our [contributing guide](https://napar
 
 ## code of conduct
 
-`napari` has a [Code of Conduct](https://napari.org/docs/dev/developers/code_of_conduct.html) that should be honored by everyone who participates in the `napari` community.
+`napari` has a [Code of Conduct](https://napari.org/community/code_of_conduct.html) that should be honored by everyone who participates in the `napari` community.
 
 ## governance
 
