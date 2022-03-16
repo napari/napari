@@ -121,7 +121,8 @@ class QtViewerButtons(QFrame):
             'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        self.consoleButton.setVisible(not in_ipython())
+        if in_ipython():
+            self.consoleButton.setEnabled(False)
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
         self.rollDimsButton = rdb
