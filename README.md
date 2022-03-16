@@ -77,20 +77,20 @@ For more details on how to use `napari` checkout our [tutorials](https://napari.
 
 ## mission, values, and roadmap
 
-For more information about our plans for `napari` you can read our [mission and values statement](https://napari.org/docs/dev/developers/mission_and_values.html), which includes more details on our vision for supporting a plugin ecosystem around napari.
+For more information about our plans for `napari` you can read our [mission and values statement](https://napari.org/community/mission_and_values.html), which includes more details on our vision for supporting a plugin ecosystem around napari.
 You can see details of [the project roadmap here](https://napari.org/roadmaps/index.html).
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](https://napari.org/docs/dev/developers/contributing.html) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](https://napari.org/developers/contributing.html) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
 ## code of conduct
 
-`napari` has a [Code of Conduct](https://napari.org/docs/dev/developers/code_of_conduct.html) that should be honored by everyone who participates in the `napari` community.
+`napari` has a [Code of Conduct](https://napari.org/community/code_of_conduct.html) that should be honored by everyone who participates in the `napari` community.
 
 ## governance
 
-You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/docs/dev/developers/governance.html), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
+You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/community/governance.html), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
 
 ## citing napari
 
