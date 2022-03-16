@@ -2560,8 +2560,7 @@ class Shapes(Layer):
                 offset=offset[-2:],
                 max_shapes=self._max_shapes_thumbnail,
             )
-            # Set opacity to respect the layer setting
-            colormapped[..., 3] *= self.opacity
+
             self.thumbnail = colormapped
 
     def remove_selected(self):
