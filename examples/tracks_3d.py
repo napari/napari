@@ -1,3 +1,9 @@
+"""
+Tracks 3D
+=========
+
+"""
+
 import napari
 import numpy as np
 

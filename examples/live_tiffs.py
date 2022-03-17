@@ -1,4 +1,8 @@
-"""Loads and Displays tiffs as they get generated in the specific directory.
+"""
+Live tiffs
+==========
+
+Loads and Displays tiffs as they get generated in the specific directory.
 Trying to simulate the live display of data as it gets acquired by microscope.
 This script should be run together with live_tiffs_generator.py
 """
@@ -63,14 +67,14 @@ def watch_path(path):
 
     Notes
     -----
-    Currently, there is no proper way to know if the file has written 
-    entirely. So the workaround is we assume that files are generating 
-    serially (in most microscopes it common), and files are name in 
-    alphanumeric sequence We start loading the total number of minus the 
-    last file (`total__files - last`). In other words, once we see the new 
+    Currently, there is no proper way to know if the file has written
+    entirely. So the workaround is we assume that files are generating
+    serially (in most microscopes it common), and files are name in
+    alphanumeric sequence We start loading the total number of minus the
+    last file (`total__files - last`). In other words, once we see the new
     file in the directory, it means the file before it has completed so load
-    that file. For this example, we also assume that the microscope is 
-    generating a `final.log` file at the end of the acquisition, this file 
+    that file. For this example, we also assume that the microscope is
+    generating a `final.log` file at the end of the acquisition, this file
     is an indicator to stop monitoring the directory.
 
     Parameters

@@ -1,4 +1,7 @@
 """
+Surface normals wireframe
+=========================
+
 Display a 3D mesh with normals and wireframe
 """
 

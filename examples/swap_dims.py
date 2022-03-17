@@ -1,4 +1,7 @@
 """
+Swap dims
+=========
+
 Display a 4-D image and points layer and swap the displayed dimensions
 """
 

@@ -1,4 +1,11 @@
-"""Basic example of using magicgui to create an Image Arithmetic GUI in napari."""
+"""
+magicgui Image Arithmetic
+=========================
+
+Basic example of using magicgui to create an Image Arithmetic GUI in napari.
+
+"""
+
 import enum
 import numpy as np
 import napari

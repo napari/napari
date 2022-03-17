@@ -1,3 +1,9 @@
+"""
+bbox annotator
+==============
+
+"""
+
 from magicgui.widgets import ComboBox, Container
 import napari
 import numpy as np

@@ -1,4 +1,7 @@
 """
+Interactive move point
+======================
+
 3D click and drag interactivity demo
 """
 from copy import copy

@@ -1,4 +1,7 @@
 """
+Interaction box image
+=====================
+
 Demonstrate interaction box on image layer
 """
 

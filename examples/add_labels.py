@@ -1,6 +1,9 @@
 """
-Display a labels layer above of an image layer using the add_labels and
-add_image APIs
+Add labels
+==========
+
+Display a labels layer above of an image layer using the ``add_labels`` and
+``add_image`` APIs
 """
 
 from skimage import data

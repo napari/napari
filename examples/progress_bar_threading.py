@@ -1,5 +1,10 @@
-"""This file provides a minimal working example using a progress bar alongside
-@thread_worker to report progress.
+"""
+Progress bar threading
+======================
+
+This file provides a minimal working example using a progress bar alongside
+``@thread_worker`` to report progress.
+
 """
 from time import sleep
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget

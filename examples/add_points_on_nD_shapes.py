@@ -1,4 +1,11 @@
-"""Add points on nD shapes in 3D using a mouse callback"""
+"""
+Add points on nD shapes
+=======================
+
+Add points on nD shapes in 3D using a mouse callback
+
+"""
+
 import napari
 import numpy as np
 

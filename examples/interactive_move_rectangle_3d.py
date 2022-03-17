@@ -1,4 +1,11 @@
-"""Shift a rectangle along its normal vector in 3D"""
+"""
+Interactive move rectangle
+==========================
+
+Shift a rectangle along its normal vector in 3D
+
+"""
+
 import napari
 import numpy as np
 

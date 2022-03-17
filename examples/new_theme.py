@@ -1,5 +1,9 @@
 """
+New theme
+=========
+
 Displays an image and sets the theme to new custom theme.
+
 """
 
 from skimage import data

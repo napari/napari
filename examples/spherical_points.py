@@ -1,3 +1,8 @@
+"""
+Spherical points
+================
+
+"""
 import napari
 import numpy as np
 

@@ -1,4 +1,7 @@
 """
+Mixed dimensions labels
+=======================
+
 Overlay a 3D segmentation on a 4D time series.
 
 Sometimes, our data have mixed dimensionality. napari "right-aligns" the

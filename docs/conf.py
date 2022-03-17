@@ -54,6 +54,7 @@ extensions = [
     #    "sphinx_comments",
     "sphinx_panels",
     "sphinx.ext.viewcode",
+    "sphinx_gallery.gen_gallery",
 ]
 
 external_toc_path = "_toc.yml"
@@ -81,6 +82,10 @@ html_static_path = ['_static']
 html_logo = "images/logo.png"
 html_sourcelink_suffix = ''
 html_title = 'napari'
+
+html_css_files = [
+    'custom.css',
+]
 
 intersphinx_mapping = {
     'python': ['https://docs.python.org/3', None],
@@ -124,3 +129,15 @@ exclude_patterns = [
     '.jupyter_cache',
     'jupyter_execute',
 ]
+
+sphinx_gallery_conf = {
+    'examples_dirs': '../examples',   # path to your example scripts
+    'gallery_dirs': 'gallery',  # path to where to save gallery generated output
+    'filename_pattern': '/*.py',
+    'ignore_pattern': 'README.rst',
+    'default_thumb_file': 'napari/resources/logo.png',
+    'plot_gallery': False,
+    'download_all_examples': False,
+    'min_reported_time': 10,
+    'only_warn_on_example_error': True,
+}

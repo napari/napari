@@ -1,4 +1,7 @@
 """
+Scale bar
+=========
+
 Display a 3D volume and the scale bar
 """
 import numpy as np

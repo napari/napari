@@ -1,3 +1,9 @@
+"""
+Image depth
+===========
+
+"""
+
 import napari
 import numpy as np
 

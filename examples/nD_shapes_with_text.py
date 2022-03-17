@@ -1,3 +1,8 @@
+"""
+nD shapes with text
+===================
+
+"""
 from skimage import data
 import napari
 

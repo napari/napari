@@ -1,5 +1,8 @@
 """
-Display one image using the add_image API.
+Add image
+=========
+
+Display one image using the ``add_image`` API.
 """
 
 from skimage import data

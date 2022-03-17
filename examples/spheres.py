@@ -1,4 +1,7 @@
 """
+Spheres
+=======
+
 Display two spheres with Surface layers
 """
 

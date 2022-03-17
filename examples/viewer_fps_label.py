@@ -1,4 +1,7 @@
 """
+Viewer FPS label
+================
+
 Display a 3D volume and the fps label.
 """
 import numpy as np

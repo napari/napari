@@ -1,3 +1,9 @@
+"""
+Interactive scripting
+=====================
+
+"""
+
 import numpy as np
 import napari
 from napari.qt import thread_worker

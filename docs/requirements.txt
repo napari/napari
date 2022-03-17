@@ -5,3 +5,5 @@ sphinx-panels
 myst-nb
 napari-sphinx-theme
 sphinx-external-toc
+sphinx-gallery
+matplotlib

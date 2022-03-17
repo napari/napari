@@ -1,4 +1,7 @@
 """
+Tiled rendering 2D
+==================
+
 This example shows how to display tiled, chunked data in napari using the
 experimental octree support.
 

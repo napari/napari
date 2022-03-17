@@ -1,4 +1,7 @@
 """
+nD multiscale image
+===================
+
 Displays an nD multiscale image
 """
 

@@ -1,4 +1,7 @@
 """
+nD multiscale image non-uniform
+===============================
+
 Displays an nD multiscale image
 """
 

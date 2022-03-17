@@ -1,4 +1,7 @@
 """
+Interaction box points
+======================
+
 Demonstrate interaction box on points layer
 """
 
@@ -13,7 +16,7 @@ def on_selection_box_drag(event):
     points = viewer.layers.selection.active._data_to_world(viewer.layers.selection.active._view_data)
     sel_i = points_in_box(event.value,points,viewer.layers.selection.active._view_size)
     viewer.layers.selection.active.selected_data = sel_i
-    
+
 def on_selection_box_final(event):
     sel_i = viewer.layers.selection.active.selected_data
     if len(sel_i) > 0:

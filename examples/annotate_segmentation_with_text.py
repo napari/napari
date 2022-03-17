@@ -1,4 +1,7 @@
 """
+Annotate segmentation with text
+===============================
+
 Perform a segmentation and annotate the results with
 bounding boxes and text
 """

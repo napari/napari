@@ -1,4 +1,7 @@
 """
+Add grayscale image
+===================
+
 Display one grayscale image using the add_image API.
 """
 

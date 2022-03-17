@@ -1,4 +1,7 @@
 """
+Add multiscale image
+====================
+
 Displays a multiscale image
 """
 

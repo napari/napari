@@ -1,4 +1,7 @@
 """
+Set colormaps
+=============
+
 Add named or unnamed vispy colormaps to existing layers.
 """
 

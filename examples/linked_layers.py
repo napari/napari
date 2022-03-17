@@ -1,4 +1,8 @@
-"""Demonstrates the `link_layers` function.
+"""
+Linked layers
+=============
+
+Demonstrates the `link_layers` function.
 
 This function takes a list of layers and an optional list of attributes, and
 links them such that when one of the linked attributes changes on any of the

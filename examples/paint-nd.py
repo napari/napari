@@ -1,7 +1,11 @@
 """
+Paint nD
+========
+
 Display a 4D labels layer and paint only in 3D.
 
 This is useful e.g. when proofreading segmentations within a time series.
+
 """
 
 import numpy as np

@@ -1,4 +1,7 @@
 """
+Add vectors color by angle
+==========================
+
 This example generates a set of vectors in a spiral pattern.
 The color of the vectors is mapped to their 'angle' feature.
 

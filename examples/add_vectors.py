@@ -1,9 +1,12 @@
 """
+Add vectors
+===========
+
 This example generates an image of vectors
 Vector data is an array of shape (N, 4)
-Each vector position is defined by an (x, y, x-proj, y-proj) element
-    where x and y are the center points
-    where x-proj and y-proj are the vector projections at each center
+Each vector position is defined by an (x, y, x-proj, y-proj) element where
+* x and y are the center points
+* x-proj and y-proj are the vector projections at each center
 
 """
 

@@ -1,4 +1,7 @@
 """
+Xarray example
+==============
+
 Displays an xarray
 """
 

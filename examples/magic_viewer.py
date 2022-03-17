@@ -1,6 +1,12 @@
-"""Example showing how to access the current viewer from a function widget."""
-import napari
+"""
+magicgui viewer
+===============
 
+Example showing how to access the current viewer from a function widget.
+
+"""
+
+import napari
 
 # annotating a paramater as `napari.Viewer` will automatically provide
 # the viewer that the function is embedded in, when the function is added to

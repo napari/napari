@@ -1,3 +1,8 @@
+"""
+Show points based on feature
+============================
+
+"""
 #!/usr/bin/env python3
 
 import napari

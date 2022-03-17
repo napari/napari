@@ -1,4 +1,7 @@
 """
+Cursor ray
+==========
+
 Depict a ray through a layer in 3D to demonstrate interactive 3D functionality
 """
 import numpy as np

@@ -1,4 +1,8 @@
-"""An example of calling a threaded function from a magicgui dock_widget.
+"""
+magicgui dask delayed
+=====================
+
+An example of calling a threaded function from a magicgui dock_widget.
 Note: this example requires python >= 3.9
 """
 import time

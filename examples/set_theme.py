@@ -1,4 +1,7 @@
 """
+Set theme
+=========
+
 Displays an image and sets the theme to 'light'.
 """
 

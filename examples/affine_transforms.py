@@ -1,4 +1,7 @@
 """
+Affine transforms
+=================
+
 Display an image and its corners before and after an affine transform
 """
 import numpy as np

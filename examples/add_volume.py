@@ -1,4 +1,7 @@
 """
+Add volume
+==========
+
 Display one 3-D volume layer using the add_volume API
 """
 

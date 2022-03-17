@@ -1,6 +1,9 @@
 """
-Display one shapes layer ontop of one image layer using the add_shapes and
-add_image APIs. When the window is closed it will print the coordinates of
+To screenshot
+=============
+
+Display one shapes layer ontop of one image layer using the ``add_shapes`` and
+``add_image`` APIs. When the window is closed it will print the coordinates of
 your shapes.
 """
 

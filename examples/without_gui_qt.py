@@ -1,6 +1,10 @@
-"""Alternative to using napari.gui_qt() context manager.
+"""
+napari without gui_qt
+=====================
 
-This is here for historical purposes, to the transition away from 
+Alternative to using napari.gui_qt() context manager.
+
+This is here for historical purposes, to the transition away from
 the "gui_qt()" context manager.
 """
 

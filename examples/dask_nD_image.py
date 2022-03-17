@@ -1,4 +1,7 @@
 """
+Dask nD image
+=============
+
 Display a dask array
 """
 

@@ -1,5 +1,9 @@
 """
+Pass colormaps
+==============
+
 Add named or unnamed vispy colormaps to existing layers.
+
 """
 
 import numpy as np

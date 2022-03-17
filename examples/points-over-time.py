@@ -1,3 +1,8 @@
+"""
+Points over time
+================
+
+"""
 import napari
 import numpy as np
 import dask.array as da

@@ -1,4 +1,7 @@
 """
+Custom mouse functions
+======================
+
 Display one 4-D image layer using the add_image API
 """
 

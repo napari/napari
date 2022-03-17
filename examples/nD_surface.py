@@ -1,4 +1,7 @@
 """
+nD surface
+==========
+
 Display a 3D surface
 """
 

@@ -1,4 +1,7 @@
 """
+Add labels with features
+========================
+
 Display a labels layer with various features
 """
 

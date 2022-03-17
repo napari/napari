@@ -1,4 +1,7 @@
 """
+Add image transformed
+=====================
+
 Display one image using the add_image API.
 """
 

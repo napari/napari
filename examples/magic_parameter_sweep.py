@@ -1,4 +1,8 @@
-"""Example showing how to accomplish a napari parameter sweep with magicgui.
+"""
+magicgui parameter sweep
+========================
+
+Example showing how to accomplish a napari parameter sweep with magicgui.
 
 It demonstrates:
 1. overriding the default widget type with a custom class

@@ -1,4 +1,7 @@
 """
+Zarr array
+==========
+
 Display a zarr array
 """
 

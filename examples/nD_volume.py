@@ -1,5 +1,9 @@
 """
+nD volume
+=========
+
 Slide through 3D Volume series in 4D data using the add_volume API
+
 """
 
 from skimage.data import binary_blobs
