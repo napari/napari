@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import MutableSequence
-from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, Optional, Tuple, TypeVar, Union
 
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 
@@ -273,12 +273,12 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Must be called after move operation to update model."""
         self.endMoveRows()
 
-    def getItem(self, index: QModelIndex) -> ItemType:
+    def getItem(self, index: QModelIndex) -> Optional[ItemType]:
         """Return python object for a given `QModelIndex`.
 
-        An invalid `QModelIndex` will return the root object.
+        An invalid `QModelIndex` will return None.
         """
-        return self._root[index.row()] if index.isValid() else self._root
+        return self._root[index.row()] if index.isValid() else None
 
     def _process_event(self, event):
         # for subclasses to handle ItemType-specific data
