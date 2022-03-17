@@ -82,7 +82,7 @@ viewer = napari.view_image(
 :tags: [remove-input]
 
 from napari.utils import nbscreenshot
-viewer.camera.angle = (-30, 30, -135)
+viewer.camera.angles = (-30, 30, -135)
 viewer.camera.zoom = 6.5
 nbscreenshot(viewer)
 ```
