@@ -634,6 +634,49 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         order = sorted(range(len(displayed)), key=lambda x: displayed[x])
         return tuple(order)
 
+    @property
+    def _data_dims_order(self):
+        if self._data_to_world.is_permutation:
+            perm = self._data_to_world.perm
+            return [perm[d] for d in self._dims_order]
+        return self._dims_order
+
+    @property
+    def _data_dims_displayed(self):
+        """To be removed displayed dimensions."""
+        # Ultimately we aim to remove all slicing information from the layer
+        # itself so that layers can be sliced in different ways for multiple
+        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
+        # for additional discussion.
+        return self._data_dims_order[-self._ndisplay :]
+
+    @property
+    def _data_dims_not_displayed(self):
+        """To be removed not displayed dimensions."""
+        # Ultimately we aim to remove all slicing information from the layer
+        # itself so that layers can be sliced in different ways for multiple
+        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
+        # for additional discussion.
+        return self._data_dims_order[: -self._ndisplay]
+
+    @property
+    def _data_dims_displayed_order(self):
+        """To be removed order of displayed dimensions."""
+        # Ultimately we aim to remove all slicing information from the layer
+        # itself so that layers can be sliced in different ways for multiple
+        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
+        # for additional discussion.
+        displayed = self._data_dims_displayed
+        # equivalent to: order = np.argsort(displayed)
+        order = sorted(range(len(displayed)), key=lambda x: displayed[x])
+        if self._data_to_world.is_permutation:
+            # keep permuted order in displayed, but relabel sequentially
+            temp = list(displayed)
+            for val, idx in zip(range(len(temp)), order):
+                temp[idx] = val
+            order = temp
+        return tuple(order)
+
     def _update_dims(self, event=None):
         """Update the dims model and clear the extent cache.
 
@@ -725,8 +768,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             # all dims are displayed dimensions
             return (slice(None),) * self.ndim
 
-        if self.ndim > self._ndisplay:
-            inv_transform = self._data_to_world.inverse
+        inv_transform = self._data_to_world.inverse
+
+        if (self.ndim > self._ndisplay) and not inv_transform.is_permutation:
+
             # Subspace spanned by non displayed dimensions
             non_displayed_subspace = np.zeros(self.ndim)
             for d in self._dims_not_displayed:
@@ -752,7 +797,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     category=UserWarning,
                 )
 
-        slice_inv_transform = inv_transform.set_slice(self._dims_not_displayed)
+        slice_inv_transform = inv_transform.set_slice(
+            self._data_dims_not_displayed
+        )
+
+        # _dims_point is already permuted so don't use _permuted_dims_not_displayed
         world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
         data_pts = slice_inv_transform(world_pts)
         if getattr(self, "_round_index", True):
@@ -1174,6 +1223,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._update_thumbnail()
             self._set_highlight(force=True)
 
+    def _prepare_coords(self, position):
+        if len(position) >= self.ndim:
+            coords = list(position[-self.ndim :])
+        else:
+            coords = [0] * (self.ndim - len(position)) + list(position)
+        return coords
+
     def world_to_data(self, position):
         """Convert from world coordinates to data coordinates.
 
@@ -1189,11 +1245,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         tuple
             Position in data coordinates.
         """
-        if len(position) >= self.ndim:
-            coords = list(position[-self.ndim :])
-        else:
-            coords = [0] * (self.ndim - len(position)) + list(position)
-
+        coords = self._prepare_coords(position)
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
     def data_to_world(self, position):
@@ -1211,11 +1263,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         tuple
             Position in world coordinates.
         """
-        if len(position) >= self.ndim:
-            coords = list(position[-self.ndim :])
-        else:
-            coords = [0] * (self.ndim - len(position)) + list(position)
-
+        coords = self._prepare_coords(position)
         return tuple(self._transforms[1:].simplified(coords))
 
     def _world_to_displayed_data(

@@ -375,16 +375,28 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             return np.zeros((1,) * self._ndisplay)
 
     def _get_order(self):
-        """Return the order of the displayed dimensions."""
+        """Return the order of the displayed dimensions (in data space).
+
+        Returns
+        -------
+        order : tuple of int
+
+        Notes
+        -----
+        The order desired here is for the indices into the ``self.data`` array,
+        so ``self._data_dims_displayed_order`` is used here. When
+        ``self._data_to_world`` does not permute dimensions, this is equivalent
+        to ``self._dims_displayed_order``.
+        """
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return self._dims_displayed_order + (
-                max(self._dims_displayed_order) + 1,
+            return self._data_dims_displayed_order + (
+                max(self._data_dims_displayed_order) + 1,
             )
         else:
-            return self._dims_displayed_order
+            return self._data_dims_displayed_order
 
     @property
     def _data_view(self):
@@ -445,9 +457,22 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Returns
         -------
         extent_data : array, shape (2, D)
+
+        Notes
+        -----
+        The extent is in data space coordinates, but the axis order takes into
+        account any permutation that may occur due to the
+        ``self._data_to_world`` transform.
         """
         shape = self.level_shapes[0]
-        return np.vstack([np.zeros(len(shape)), shape])
+        ndim = len(shape)
+        data_to_world = self._data_to_world
+        if data_to_world.is_permutation and not data_to_world.is_diagonal:
+            perm = data_to_world.perm
+            shape = tuple(shape[perm[d]] for d in range(ndim))
+        extent = np.zeros((2, ndim))
+        extent[1, :] = shape
+        return extent
 
     @property
     def data_level(self):
@@ -648,6 +673,21 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         image = raw
         return image
 
+    def _permute_indices(self, indices):
+        """Permute order of indices from Dims to self.data
+
+        Used only when ``self._data_to_world`` is a permutation. Otherwise
+        the indices are returned unmodified.
+        """
+        data_to_world = self._data_to_world
+        if data_to_world.is_permutation:
+            _dims = range(self.ndim)
+            perm = data_to_world.perm
+            # faster equivalent of ``perm = data_to_world.inverse.perm``
+            perm = tuple(perm.index(ax) for ax in _dims)
+            return tuple(indices[perm[ax]] for ax in _dims)
+        return indices
+
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         self._new_empty_slice()
@@ -712,7 +752,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                     self.corner_pixels[0] * self._transforms['tile2data'].scale
                 )
             image = self.data[level][tuple(indices)]
-            image_indices = indices
+
+            image_indices = self._permute_indices(indices)
 
             # Slice thumbnail
             indices = np.array(self._slice_indices)
@@ -729,11 +770,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 self.level_shapes[self._thumbnail_level, not_disp] - 1,
             )
             indices[not_disp] = downsampled_indices
+            thumb_indices = self._permute_indices(indices)
 
-            thumbnail_source = self.data[self._thumbnail_level][tuple(indices)]
+            thumbnail_source = self.data[self._thumbnail_level][thumb_indices]
         else:
             self._transforms['tile2data'].scale = np.ones(self.ndim)
-            image_indices = self._slice_indices
+            image_indices = self._permute_indices(self._slice_indices)
             image = self.data[image_indices]
 
             # For single-scale we don't request a separate thumbnail_source

@@ -123,9 +123,11 @@ class VispyBaseLayer(ABC):
         self.node.update()
 
     def _on_matrix_change(self):
-        transform = self.layer._transforms.simplified.set_slice(
-            self.layer._dims_displayed
-        )
+
+        transform = self.layer._transforms.simplified
+        dims_displayed = self.layer._dims_displayed
+        transform = transform.set_slice(dims_displayed)
+
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
         # matrix
