@@ -186,6 +186,21 @@ def test_scale_translate_expand_dims(Transform):
     assert transform_a.expand_dims([1]).name == 'st'
 
 
+def test_affine_permutation_expand_dims():
+    m = np.asarray([[0, 3.5], [2, 0]])
+    transform_a = Affine(linear_matrix=m, name='st')
+    expanded_m = np.asarray([[0, 0, 3.5], [0, 1, 0], [2, 0, 0]])
+    transform_b = Affine(linear_matrix=expanded_m)
+
+    transform_expanded = transform_a.expand_dims([1])
+    npt.assert_allclose(transform_expanded.scale, transform_b.scale)
+    npt.assert_allclose(transform_expanded.translate, transform_b.translate)
+    npt.assert_allclose(
+        transform_expanded.linear_matrix, transform_b.linear_matrix
+    )
+    assert transform_expanded.name == 'st'
+
+
 @pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_identity_default(Transform):
     coord = [10, 13]
