@@ -7,24 +7,24 @@ from skimage import data
 
 # set up the categorical annotation values and text display properties
 box_annotations = ['person', 'sky', 'camera']
-text_property = 'box_label'
+text_feature = 'box_label'
 features = pd.DataFrame({
-    text_property: pd.Series([], dtype=pd.CategoricalDtype(box_annotations))
+    text_feature: pd.Series([], dtype=pd.CategoricalDtype(box_annotations))
 })
 text_color = 'green'
 text_size = 20
 
 
 # create the GUI for selecting the values
-def create_label_menu(shapes_layer, label_property, labels):
+def create_label_menu(shapes_layer, label_feature, labels):
     """Create a label menu widget that can be added to the napari viewer dock
 
     Parameters
     ----------
     shapes_layer : napari.layers.Shapes
         a napari shapes layer
-    label_property : str
-        the name of the shapes property to use the displayed text
+    label_feature : str
+        the name of the shapes feature to use the displayed text
     labels : List[str]
         list of the possible text labels values.
 
@@ -41,7 +41,7 @@ def create_label_menu(shapes_layer, label_property, labels):
         """This is a callback function that updates the label menu when
         the default features of the Shapes layer change
         """
-        new_label = str(shapes_layer.feature_defaults[label_property][0])
+        new_label = str(shapes_layer.feature_defaults[label_feature][0])
         if new_label != label_menu.value:
             label_menu.value = new_label
 
@@ -52,18 +52,18 @@ def create_label_menu(shapes_layer, label_property, labels):
         selected shapes. This is a side-effect of the deprecated current_properties
         setter, but does not occur when modifying feature_defaults."""
         indices = list(shapes_layer.selected_data)
-        default_value = shapes_layer.feature_defaults[label_property][0]
-        shapes_layer.features[label_property][indices] = default_value
+        default_value = shapes_layer.feature_defaults[label_feature][0]
+        shapes_layer.features[label_feature][indices] = default_value
         shapes_layer.events.features()
 
     shapes_layer.events.feature_defaults.connect(set_selected_features_to_default)
     shapes_layer.events.features.connect(shapes_layer.refresh_text)
 
-    def label_changed():
+    def label_changed(value: str):
         """This is a callback that update the default features on the Shapes layer
         when the label menu selection changes
         """
-        shapes_layer.feature_defaults[label_property] = label_menu.value
+        shapes_layer.feature_defaults[label_feature] = value
         shapes_layer.events.feature_defaults()
 
     label_menu.changed.connect(label_changed)
@@ -86,7 +86,7 @@ viewer = napari.view_image(image)
 # create an empty shapes layer initialized with
 # text set to display the box label
 text_kwargs = {
-    'text': text_property,
+    'text': text_feature,
     'size': text_size,
     'color': text_color
 }
@@ -100,7 +100,7 @@ shapes = viewer.add_shapes(
 # create the label section gui
 label_widget = create_label_menu(
     shapes_layer=shapes,
-    label_property=text_property,
+    label_feature=text_feature,
     labels=box_annotations
 )
 # add the label selection gui to the viewer as a dock widget
