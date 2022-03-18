@@ -596,7 +596,7 @@ csv_reader_functions = {
 }
 
 
-URL_REGEX = re.compile(r'http://|https://|ftp://|file://|file:\\')
+URL_REGEX = re.compile(r'https?://|ftps?://|file://|file:\\')
 
 
 def is_url(filename):
