@@ -33,7 +33,7 @@ def _make_cycled_properties(values, length):
 S = np.array([[-1, -1], [1, -1], [1, 1], [-1, 1]]).T
 
 
-def _random_rectangle():
+def _one_random_rectangle():
 
     t = np.random.rand() * np.pi * 2
     X = np.random.randn() * 50
@@ -42,6 +42,13 @@ def _random_rectangle():
     c, s = np.cos(t), np.sin(t)
     R = np.array(((X * c, -Y * s), (X * s, Y * c)))
     return (R @ S + center).T
+
+
+def _random_rectangles(shape):
+    n, four, two = shape
+    assert four == 4
+    assert two == 2
+    return np.stack([_one_random_rectangle() for i in range(n)])
 
 
 def test_empty_shapes():
@@ -58,7 +65,7 @@ def test_properties(properties):
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data, properties=copy(properties))
+    layer = Shapes(data, properties=copy(properties), shape_type='polygon')
     np.testing.assert_equal(layer.properties, properties)
 
     current_prop = {'shape_type': np.array(['B'])}
@@ -78,7 +85,7 @@ def test_properties(properties):
     assert selected_annotation[0] == 'A'
 
     # test adding shapes with properties
-    new_data = np.random.random((1, 4, 2))
+    new_data = _random_rectangles((1, 4, 2))
     new_shape_type = ['rectangle']
     layer.add(new_data, shape_type=new_shape_type)
     add_properties = np.concatenate((remove_properties, ['A']), axis=0)
@@ -105,10 +112,10 @@ def test_properties(properties):
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_adding_properties(attribute):
     """Test adding properties to an existing layer"""
-    shape = (10, 4, 2)
+    shape = (10, 7, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data)
+    layer = Shapes(data, shape_type='polygon')
 
     # add properties
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
@@ -137,9 +144,11 @@ def test_adding_properties(attribute):
 
 
 def test_colormap_scale_change():
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random((10, 7, 2))
     properties = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
-    layer = Shapes(data, properties=properties, edge_color='b')
+    layer = Shapes(
+        data, properties=properties, edge_color='b', shape_type='polygon'
+    )
 
     assert not np.allclose(
         layer.edge_color[0], layer.edge_color[1], atol=0.001
@@ -157,11 +166,11 @@ def test_colormap_scale_change():
 
 def test_data_setter_with_properties():
     """Test layer data on a layer with properties via the data setter"""
-    shape = (10, 4, 2)
+    shape = (10, 7, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Shapes(data, properties=properties)
+    layer = Shapes(data, properties=properties, shape_type='polygon')
 
     # test setting to data with fewer shapes
     n_new_shapes = 4
@@ -189,7 +198,7 @@ def test_properties_dataframe():
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
     properties_df = pd.DataFrame(properties)
     properties_df = properties_df.astype(properties['shape_type'].dtype)
-    layer = Shapes(data, properties=properties_df)
+    layer = Shapes(data, properties=properties_df, shape_type='polygon')
     np.testing.assert_equal(layer.properties, properties)
 
 
@@ -203,7 +212,7 @@ def test_setting_current_properties():
         'annotator': ['jane', 'ash'],
         'model': ['worst', 'best'],
     }
-    layer = Shapes(data, properties=copy(properties))
+    layer = Shapes(data, properties=copy(properties), shape_type='polygon')
     current_properties = {
         'annotation': ['leg'],
         'confidence': 1,
@@ -239,7 +248,7 @@ def test_empty_layer_with_text_property_choices():
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
     # add a shape and check that the appropriate text value was added
-    layer.add(np.random.random((1, 4, 2)))
+    layer.add(np.random.random((1, 4, 2)), shape_type='polygon')
     np.testing.assert_equal(layer.text.values, ['1.5'])
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
@@ -255,17 +264,22 @@ def test_empty_layer_with_text_formatted():
     assert layer.text.values.size == 0
 
     # add a shape and check that the appropriate text value was added
-    layer.add(np.random.random((1, 4, 2)))
+    layer.add(_random_rectangles((1, 4, 2)))
     np.testing.assert_equal(layer.text.values, ['shape_type: 1.50'])
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_text_from_property_value(properties):
     """Test setting text from a property value"""
-    shape = (10, 4, 2)
+    shape = (10, 7, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data, properties=copy(properties), text='shape_type')
+    layer = Shapes(
+        data,
+        properties=copy(properties),
+        text='shape_type',
+        shape_type='polygon',
+    )
 
     np.testing.assert_equal(layer.text.values, properties['shape_type'])
 
@@ -273,11 +287,14 @@ def test_text_from_property_value(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_text_from_property_fstring(properties):
     """Test setting text with an f-string from the property value"""
-    shape = (10, 4, 2)
+    shape = (10, 7, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(
-        data, properties=copy(properties), text='type: {shape_type}'
+        data,
+        properties=copy(properties),
+        text='type: {shape_type}',
+        shape_type='polygon',
     )
 
     expected_text = ['type: ' + v for v in properties['shape_type']]
@@ -297,8 +314,8 @@ def test_text_from_property_fstring(properties):
 
     # add shape
     layer.selected_data = {0}
-    new_shape = np.random.random((1, 4, 2))
-    layer.add(new_shape)
+    new_shape = np.random.random((1, 7, 2))
+    layer.add(new_shape, shape_type='polygon')
     expected_text_4 = expected_text_3 + ['type-ish: A']
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
@@ -314,10 +331,15 @@ def test_set_text_with_kwarg_dict(properties):
         'size': 10,
         'visible': True,
     }
-    shape = (10, 4, 2)
+    shape = (10, 7, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data, properties=copy(properties), text=text_kwargs)
+    layer = Shapes(
+        data,
+        properties=copy(properties),
+        text=text_kwargs,
+        shape_type='polygon',
+    )
 
     expected_text = ['type: ' + v for v in properties['shape_type']]
     np.testing.assert_equal(layer.text.values, expected_text)
@@ -332,12 +354,14 @@ def test_set_text_with_kwarg_dict(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_text_error(properties):
     """creating a layer with text as the wrong type should raise an error"""
-    shape = (10, 4, 2)
+    shape = (10, 7, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
     with pytest.raises(TypeError):
-        Shapes(data, properties=copy(properties), text=123)
+        Shapes(
+            data, properties=copy(properties), text=123, shape_type='polygon'
+        )
 
 
 def test_select_properties_object_dtype():
@@ -352,11 +376,16 @@ def test_select_properties_object_dtype():
 
 def test_refresh_text():
     """Test refreshing the text after setting new properties"""
-    shape = (10, 4, 2)
+    shape = (10, 7, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'shape_type': ['A'] * shape[0]}
-    layer = Shapes(data, properties=copy(properties), text='shape_type')
+    layer = Shapes(
+        data,
+        properties=copy(properties),
+        text='shape_type',
+        shape_type='polygon',
+    )
 
     new_properties = {'shape_type': ['B'] * shape[0]}
     layer.properties = new_properties
@@ -560,21 +589,19 @@ def test_3D_rectangles():
     assert np.all([s == 'rectangle' for s in layer2.shape_type])
 
 
-def make_shapes():
+def make_shapes_1():
     np.random.seed(0)
     return [
-        # 4 corner
-        _random_rectangle(),
-        np.stack([random_rectangle() for i in range(10)]),
+        (_random_rectangles(shape), shape) for shape in [(1, 4, 2), (10, 4, 2)]
     ]
 
 
-def make_shapes():
+def make_shapes_2():
     np.random.seed(0)
     return [
         # center radii (axis alligned)
-        20 * np.random.srandom((1, 2, 2)),
-        20 * np.random.srandom((10, 2, 2)),
+        (20 * np.random.random((1, 2, 2)), (1, 2, 2)),
+        (20 * np.random.random((10, 2, 2)), (10, 2, 2)),
     ]
 
 
@@ -583,17 +610,18 @@ _ellipses_radii = make_shapes_2()
 
 
 @pytest.mark.parametrize(
-    "data",
+    "data_shape",
     _ellipse_corners + _ellipses_radii,
 )
-def test_ellipses(shape):
+def test_ellipses(data_shape):
     """Test instantiating Shapes layer with random 2D ellipses."""
+    data, shape = data_shape
 
     layer = Shapes(data, shape_type='ellipse')
     assert layer.nshapes == shape[0]
     # 4 corner bounding box passed, assert vertices the same
     if shape[1] == 4:
-        assert np.all([layer.data[i] == data[i] for i in range(layer.nshapes)])
+        assert np.allclose(layer.data, data)
     # (center, radii) passed, assert 4 vertices in layer
     else:
         assert [len(rect) == 4 for rect in layer.data]
@@ -628,7 +656,7 @@ def test_ellipses_with_shape_type():
     # Test single four corner (vertices, shape_type) tuple
     shape = (1, 4, 2)
     np.random.seed(0)
-    vertices = 20 * np.random.random(shape)
+    vertices = _random_rectangles(shape)
     data = (vertices, "ellipse")
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -639,7 +667,7 @@ def test_ellipses_with_shape_type():
     # Test multiple four corner (list of vertices, shape_type) tuple
     shape = (10, 4, 2)
     np.random.seed(0)
-    vertices = 20 * np.random.random(shape)
+    vertices = _random_rectangles(shape)
     data = (vertices, "ellipse")
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -649,8 +677,7 @@ def test_ellipses_with_shape_type():
 
     # Test list of four corner (vertices, shape_type) tuples
     shape = (10, 4, 2)
-    np.random.seed(0)
-    vertices = 20 * np.random.random(shape)
+    vertices = _random_rectangles(shape)
     data = [(vertices[i], "ellipse") for i in range(shape[0])]
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -724,7 +751,7 @@ def test_ellipses_roundtrip():
     """Test a full roundtrip with ellipss data."""
     shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = _random_rectangles(shape)
     layer = Shapes(data, shape_type='ellipse')
     new_layer = Shapes(layer.data, shape_type='ellipse')
     assert np.all([nd == d for nd, d in zip(new_layer.data, layer.data)])
@@ -1009,7 +1036,7 @@ def test_mixed_shapes():
     np.random.seed(0)
     shape_vertices = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
-    ] + list(np.random.random((5, 4, 2)))
+    ] + list(_random_rectangles((5, 4, 2)))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(shape_vertices, shape_type=shape_type)
     assert layer.nshapes == len(shape_vertices)
@@ -1034,7 +1061,7 @@ def test_mixed_shapes_with_shape_type():
     np.random.seed(0)
     shape_vertices = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
-    ] + list(np.random.random((5, 4, 2)))
+    ] + list(_random_rectangles((5, 4, 2)))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
 
     # Test multiple (shape, shape_type) tuples
@@ -1052,7 +1079,7 @@ def test_data_shape_type_overwrites_meta():
     """Test shape type passed through data property overwrites metadata shape type"""
     shape = (10, 4, 2)
     np.random.seed(0)
-    vertices = 20 * np.random.random(shape)
+    vertices = _random_rectangles(shape)
     data = (vertices, "ellipse")
     layer = Shapes(data, shape_type='rectangle')
     assert np.all([s == 'ellipse' for s in layer.shape_type])
@@ -1067,8 +1094,8 @@ def test_changing_shapes():
     shape_a = (10, 4, 2)
     shape_b = (20, 4, 2)
     np.random.seed(0)
-    vertices_a = 20 * np.random.random(shape_a)
-    vertices_b = 20 * np.random.random(shape_b)
+    vertices_a = _random_rectangles(shape_a)
+    vertices_b = _random_rectangles(shape_b)
     layer = Shapes(vertices_a)
     assert layer.nshapes == shape_a[0]
     layer.data = vertices_b
@@ -1117,7 +1144,7 @@ def test_changing_shapes():
 def test_changing_shape_type():
     """Test changing shape type"""
     np.random.seed(0)
-    rectangles = 20 * np.random.random((10, 4, 2))
+    rectangles = _random_rectangles((10, 4, 2))
     layer = Shapes(rectangles, shape_type='rectangle')
     layer.shape_type = "ellipse"
     assert np.all([s == 'ellipse' for s in layer.shape_type])
@@ -1132,7 +1159,7 @@ def test_adding_shapes():
     ]
     # shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(data, shape_type='polygon')
-    new_data = np.random.random((5, 4, 2))
+    new_data = _random_rectangles((5, 4, 2))
     new_shape_type = ['rectangle'] * 3 + ['ellipse'] * 2
     layer.add(new_data, shape_type=new_shape_type)
     all_data = data + list(new_data)
@@ -1143,7 +1170,7 @@ def test_adding_shapes():
     assert np.all([s == so for s, so in zip(layer.shape_type, all_shape_type)])
 
     # test adding data with shape_type
-    new_vertices = np.random.random((5, 4, 2))
+    new_vertices = _random_rectangles((5, 4, 2))
     new_shape_type2 = ['ellipse'] * 3 + ['rectangle'] * 2
     new_data2 = list(zip(new_vertices, new_shape_type2))
     layer.add(new_data2)
@@ -1164,7 +1191,7 @@ def test_adding_shapes_to_empty():
 
     data = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
-    ] + list(np.random.random((5, 4, 2)))
+    ] + list(_random_rectangles((5, 4, 2)))
     shape_type = ['path'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
 
     layer.add(data, shape_type=shape_type)
@@ -1216,7 +1243,7 @@ def test_removing_selected_shapes():
     np.random.seed(0)
     data = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
-    ] + list(np.random.random((5, 4, 2)))
+    ] + list(_random_rectangles((5, 4, 2)))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(data, shape_type=shape_type)
 
@@ -1242,8 +1269,8 @@ def test_removing_selected_shapes():
 def test_changing_modes():
     """Test changing modes."""
     np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
-    layer = Shapes(data)
+    data = 20 * np.random.random((10, 5, 2))
+    layer = Shapes(data, shape_type='polygon')
     assert layer.mode == 'pan_zoom'
     assert layer.interactive is True
 

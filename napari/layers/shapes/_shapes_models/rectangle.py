@@ -2,7 +2,7 @@ import numpy as np
 
 from ....utils.translations import trans
 from .._shapes_utils import find_corners, rectangle_to_box
-from .shape import Shape
+from .shape import Shape, _is_rectangle
 
 
 class Rectangle(Shape):
@@ -39,7 +39,11 @@ class Rectangle(Shape):
             dims_order=dims_order,
             ndisplay=ndisplay,
         )
-
+        if data.shape[0] == 4:
+            assert _is_rectangle(data)
+            assert data.shape == (4, 2), data.shape
+        else:
+            assert data.shape == (2, 2)
         self._closed = True
         self.data = data
         self.name = 'rectangle'

@@ -7,7 +7,7 @@ from .._shapes_utils import (
     triangulate_edge,
     triangulate_ellipse,
 )
-from .shape import Shape
+from .shape import Shape, _is_rectangle
 
 
 class Ellipse(Shape):
@@ -77,13 +77,7 @@ class Ellipse(Shape):
                 )
             )
 
-        # verify we have a rectangle: All points are same distance from the barycenter.
-        # That 1) is necessary and 2) should be sufficient as an ellipse equation has 5
-        # parameters, we get 8 (4 corner *2), and this give us 3 extra constraints:
-        # d1 == d2 == d3 == d4
-        # and 5 +3 = 8
-        d2 = ((data - data.mean(axis=0)) ** 2).sum(axis=1)
-        if not np.allclose(d2 - d2.mean(), 0):
+        if not _is_rectangle(data):
             raise ValueError(
                 trans._(
                     "Data values for ellipse does not seem to form a rectangle.",
