@@ -946,7 +946,7 @@ class QtPluginDialog(QDialog):
     def _end_refresh(self):
         refresh_state = self.refresh_state
         self.refresh_state = RefreshState.DONE
-        if refresh_state == RefreshState.Outdated:
+        if refresh_state == RefreshState.OUTDATED:
             self.refresh()
 
     def eventFilter(self, watched, event):
