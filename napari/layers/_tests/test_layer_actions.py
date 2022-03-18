@@ -105,4 +105,4 @@ def test_convert_layer(input, type_):
     assert ll[0]._type_string != type_
     _convert(ll, type_)
     assert ll[0]._type_string == type_
-    assert (ll[0].scale == original_scale).all()
+    assert np.array_equal(ll[0].scale, original_scale)
