@@ -3,6 +3,7 @@ import sys
 from importlib.metadata import metadata
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from enum import Enum, auto
 
 from npe2 import PluginManager
 from npe2.manifest.package_metadata import PackageMetadata
@@ -696,9 +697,16 @@ class QPluginList(QListWidget):
                 item.setHidden(False)
 
 
+class RefreshState(Enum):
+    REFRESHING = auto()
+    OUTDATED = auto()
+    DONE = auto()
+
+
 class QtPluginDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
         installer_type = "pip"
@@ -734,6 +742,10 @@ class QtPluginDialog(QDialog):
         event.ignore()
 
     def refresh(self):
+        if self.refresh_state != RefreshState.DONE:
+            self.refresh_state = RefreshState.OUTDATED
+            return
+        self.refresh_state = RefreshState.REFRESHING
         self.installed_list.clear()
         self.available_list.clear()
 
@@ -819,6 +831,7 @@ class QtPluginDialog(QDialog):
         self.worker.yielded.connect(self._handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)
         self.worker.finished.connect(self._update_count_in_label)
+        self.worker.finished.connect(self._end_refresh)
         self.worker.start()
 
     def setup_ui(self):
@@ -929,6 +942,12 @@ class QtPluginDialog(QDialog):
         self.avail_label.setText(
             trans._("Available Plugins ({count})", count=count)
         )
+
+    def _end_refresh(self):
+        refresh_state = self.refresh_state
+        self.refresh_state = RefreshState.DONE
+        if refresh_state == RefreshState.Outdated:
+            self.refresh()
 
     def eventFilter(self, watched, event):
         if event.type() == QEvent.DragEnter:
