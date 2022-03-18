@@ -4,6 +4,7 @@ import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
+from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
 from ..utils.events import EmitterGroup
@@ -196,13 +197,23 @@ class ActionManager:
         calling `bind_button` can be done before an action with the
         corresponding name is registered, in which case the effect will be
         delayed until the corresponding action is registered.
+
+        Note: this method cannot be used with generator functions,
+        see https://github.com/napari/napari/issues/4164 for details.
         """
         self._validate_action_name(name)
+
+        if action := self._actions.get(name):
+            if isgeneratorfunction(action):
+                raise ValueError(
+                    'bind_button cannot be used with generator functions'
+                )
+
         button.clicked.connect(lambda: self.trigger(name))
 
         def _update_tt(event: ShortcutEvent):
             if event.name == name:
-                button.setToolTip(event.tooltip + ' ' + extra_tooltip_text)
+                button.setToolTip(f'{event.tooltip} {extra_tooltip_text}')
 
         # if it's a QPushbutton, we'll remove it when it gets destroyed
         until = getattr(button, 'destroyed', None)

@@ -2537,9 +2537,14 @@ class Shapes(Layer):
 
     def _update_thumbnail(self, event=None):
         """Update thumbnail with current shapes and colors."""
-
+        # Set the thumbnail to black, opacity 1
+        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped[..., 3] = 1
+        # if the shapes layer is empty, don't update, just leave it black
+        if len(self.data) == 0:
+            self.thumbnail = colormapped
         # don't update the thumbnail if dragging a shape
-        if self._is_moving is False and self._allow_thumbnail_update is True:
+        elif self._is_moving is False and self._allow_thumbnail_update is True:
             # calculate min vals for the vertices and pad with 0.5
             # the offset is needed to ensure that the top left corner of the shapes
             # corresponds to the top left corner of the thumbnail
