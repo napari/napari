@@ -1,7 +1,7 @@
 import os
 import sys
 from enum import Enum, auto
-from importlib.metadata import metadata
+from importlib.metadata import metadata, PackageNotFoundError
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -761,7 +761,11 @@ class QtPluginDialog(QDialog):
         def _add_to_installed(distname, enabled, npe_version=1):
             norm_name = normalized_name(distname or '')
             if distname:
-                meta = metadata(distname)
+                try:
+                    meta = metadata(distname)
+                except PackageNotFoundError:
+                    self.refresh_state = RefreshState.OUTDATED
+                    return # a race condition has occurred and the package is uninstalled by another thread
                 if len(meta) == 0:
                     # will not add builtins.
                     return
