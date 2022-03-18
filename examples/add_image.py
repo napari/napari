@@ -13,3 +13,4 @@ import napari
 viewer = napari.view_image(data.astronaut(), rgb=True)
 
 napari.run()
+napari.utils.nbscreenshot(viewer)

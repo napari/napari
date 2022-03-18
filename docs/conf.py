@@ -16,6 +16,7 @@
 
 
 import napari
+import qtgallery
 
 release = napari.__version__
 if "dev" in release:
@@ -130,14 +131,22 @@ exclude_patterns = [
     'jupyter_execute',
 ]
 
+def reset_nbscreenshot(gallery_conf, fname, when):
+    if when == 'after':
+        from napari.utils import nbscreenshot
+        nbscreenshot(viewer)
+        viewer.close()
+
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',   # path to your example scripts
     'gallery_dirs': 'gallery',  # path to where to save gallery generated output
     'filename_pattern': '/*.py',
-    'ignore_pattern': 'README.rst',
+    'ignore_pattern': 'README.rst|/*_.py',
     'default_thumb_file': 'napari/resources/logo.png',
-    'plot_gallery': False,
+    'plot_gallery': True,
     'download_all_examples': False,
     'min_reported_time': 10,
     'only_warn_on_example_error': True,
+    #'image_scrapers': (qtgallery.qtscraper,),
+    #'reset_modules': (reset_nbscreenshot,),
 }
