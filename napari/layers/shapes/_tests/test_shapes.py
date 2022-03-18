@@ -30,6 +30,20 @@ def _make_cycled_properties(values, length):
     return cycled_properties
 
 
+S = np.array([[-1, -1], [1, -1], [1, 1], [-1, 1]]).T
+
+
+def _random_rectangle():
+
+    t = np.random.rand() * np.pi * 2
+    X = np.random.randn() * 50
+    Y = np.random.randn() * 50
+    center = np.random.randn(2, 1) * 50
+    c, s = np.cos(t), np.sin(t)
+    R = np.array(((X * c, -Y * s), (X * s, Y * c)))
+    return (R @ S + center).T
+
+
 def test_empty_shapes():
     shp = Shapes()
     assert shp.ndim == 2
@@ -546,23 +560,35 @@ def test_3D_rectangles():
     assert np.all([s == 'rectangle' for s in layer2.shape_type])
 
 
+def make_shapes():
+    np.random.seed(0)
+    return [
+        # 4 corner
+        _random_rectangle(),
+        np.stack([random_rectangle() for i in range(10)]),
+    ]
+
+
+def make_shapes():
+    np.random.seed(0)
+    return [
+        # center radii (axis alligned)
+        20 * np.random.srandom((1, 2, 2)),
+        20 * np.random.srandom((10, 2, 2)),
+    ]
+
+
+_ellipse_corners = make_shapes_1()
+_ellipses_radii = make_shapes_2()
+
+
 @pytest.mark.parametrize(
-    "shape",
-    [
-        # single & multiple four corner ellipses
-        (1, 4, 2),
-        (10, 4, 2),
-        # single & multiple center, radii ellipses
-        (1, 2, 2),
-        (10, 2, 2),
-    ],
+    "data",
+    _ellipse_corners + _ellipses_radii,
 )
 def test_ellipses(shape):
     """Test instantiating Shapes layer with random 2D ellipses."""
 
-    # Test instantiating with data
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='ellipse')
     assert layer.nshapes == shape[0]
     # 4 corner bounding box passed, assert vertices the same
