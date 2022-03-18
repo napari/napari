@@ -1,7 +1,7 @@
 import os
 import sys
 from enum import Enum, auto
-from importlib.metadata import metadata, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -765,7 +765,7 @@ class QtPluginDialog(QDialog):
                     meta = metadata(distname)
                 except PackageNotFoundError:
                     self.refresh_state = RefreshState.OUTDATED
-                    return # a race condition has occurred and the package is uninstalled by another thread
+                    return  # a race condition has occurred and the package is uninstalled by another thread
                 if len(meta) == 0:
                     # will not add builtins.
                     return
