@@ -1,9 +1,9 @@
 import os
 import sys
+from enum import Enum, auto
 from importlib.metadata import metadata
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
-from enum import Enum, auto
 
 from npe2 import PluginManager
 from npe2.manifest.package_metadata import PackageMetadata
