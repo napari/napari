@@ -93,41 +93,19 @@ class TextManager(EventedModel):
         self, text=None, properties=None, n_text=None, features=None, **kwargs
     ):
         if n_text is not None:
-            warnings.warn(
-                trans._(
-                    'n_text is a deprecated parameter. Use features instead.'
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
+            _warn_about_deprecated_n_text_parameter()
         if properties is not None:
-            warnings.warn(
-                trans._(
-                    'properties is a deprecated parameter. Use features instead.'
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
+            _warn_about_deprecated_properties_parameter()
             features = _validate_features(properties, num_data=n_text)
         else:
             features = _validate_features(features)
         if 'values' in kwargs:
-            warnings.warn(
-                trans._(
-                    'values is a deprecated parameter. Use string instead.'
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
+            _warn_about_deprecated_values_parameter()
             values = kwargs.pop('values')
             if 'string' not in kwargs:
                 kwargs['string'] = values
         if text is not None:
-            warnings.warn(
-                trans._('text is a deprecated parameter. Use string instead.'),
-                DeprecationWarning,
-                stacklevel=2,
-            )
+            _warn_about_deprecated_text_parameter()
             if 'string' not in kwargs:
                 if isinstance(text, str) and text in features:
                     warnings.warn(
@@ -382,3 +360,35 @@ class TextManager(EventedModel):
             )
 
         return blending_mode
+
+
+def _warn_about_deprecated_text_parameter():
+    warnings.warn(
+        trans._('text is a deprecated parameter. Use string instead.'),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_properties_parameter():
+    warnings.warn(
+        trans._('properties is a deprecated parameter. Use features instead.'),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_n_text_parameter():
+    warnings.warn(
+        trans._('n_text is a deprecated parameter. Use features instead.'),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_values_parameter():
+    warnings.warn(
+        trans._('values is a deprecated parameter. Use string instead.'),
+        DeprecationWarning,
+        stacklevel=2,
+    )
