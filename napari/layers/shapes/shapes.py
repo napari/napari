@@ -1553,7 +1553,7 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        self.text.fill(self.features)
+        self.text.resize(self.features)
         return self.text.view_text(self._indices_view)
 
     @property
@@ -2006,7 +2006,7 @@ class Shapes(Layer):
         if n_new_shapes > 0:
             total_shapes = n_new_shapes + self.nshapes
             self._feature_table.resize(total_shapes)
-            self.text.string._update(self.features)
+            self.text.resize(self.features)
             self._add_shapes(
                 data,
                 shape_type=shape_type,

@@ -471,7 +471,7 @@ class Points(Layer):
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
                     self._feature_table.resize(len(data))
-                    self.text.string._update(self.features)
+                    self.text.resize(self.features)
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones
@@ -1341,7 +1341,7 @@ class Points(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        self.text.fill(self.features)
+        self.text.resize(self.features)
         return self.text.view_text(self._indices_view)
 
     @property

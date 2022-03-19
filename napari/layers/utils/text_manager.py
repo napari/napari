@@ -197,8 +197,9 @@ class TextManager(EventedModel):
         self.string._delete(indices_to_remove)
         self.events.values()
 
-    def fill(self, features: Any):
-        """Fills any encoded values to the same length as the given features.
+    def resize(self, features: Any):
+        """Resizes any encoded arrays to the same length as the given features
+        generating new values as needed.
 
         Parameters
         ----------
@@ -333,7 +334,7 @@ class TextManager(EventedModel):
         self.update(new_manager, recurse=False)
 
         # Some of the encodings may have changed, so ensure they are full.
-        self.fill(features)
+        self.resize(features)
 
     @validator('string', pre=True, always=True)
     def _check_string(cls, string: StringEncodingArgument):
