@@ -108,13 +108,7 @@ class TextManager(EventedModel):
             _warn_about_deprecated_text_parameter()
             if 'string' not in kwargs:
                 if isinstance(text, str) and text in features:
-                    warnings.warn(
-                        trans._(
-                            'Using a feature name for text is deprecated. Use a `DirectStringEncoding` instead.'
-                        ),
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
+                    _warn_about_deprecated_text_feature()
                     kwargs['string'] = DirectStringEncoding(feature=text)
                 else:
                     kwargs['string'] = text
@@ -389,6 +383,16 @@ def _warn_about_deprecated_n_text_parameter():
 def _warn_about_deprecated_values_parameter():
     warnings.warn(
         trans._('values is a deprecated parameter. Use string instead.'),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
+def _warn_about_deprecated_text_feature():
+    warnings.warn(
+        trans._(
+            'Using a feature name for text is deprecated. Use a `DirectStringEncoding` instead.'
+        ),
         DeprecationWarning,
         stacklevel=2,
     )
