@@ -8,6 +8,7 @@ import itertools
 import os
 import re
 import sys
+import warnings
 from enum import Enum, EnumMeta
 from os import fspath
 from os import path as os_path
@@ -45,23 +46,32 @@ def parse_version(v) -> 'packaging.version._BaseVersion':
 
 
 def running_as_bundled_app() -> bool:
-    """Infer whether we are running as a briefcase bundle"""
+    """Infer whether we are running as a briefcase bundle."""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # note that a module may not have a __package__ attribute
     # From 0.4.12 we add a sentinel file next to the bundled sys.executable
     if (Path(sys.executable).parent / ".napari_is_bundled").exists():
         return True
+
     try:
         app_module = sys.modules['__main__'].__package__
     except AttributeError:
         return False
+
     try:
         metadata = importlib.metadata.metadata(app_module)
     except importlib.metadata.PackageNotFoundError:
         return False
 
     return 'Briefcase-Version' in metadata
+
+
+def running_as_constructor_app() -> bool:
+    """Infer whether we are running as a constructor bundle."""
+    return (
+        Path(sys.prefix).parent.parent / ".napari_is_bundled_constructor"
+    ).exists()
 
 
 def bundle_bin_dir() -> Optional[str]:
@@ -449,6 +459,12 @@ def ensure_list_of_layer_data_tuple(val):
     )
 
 
+def _quiet_array_equal(*a, **k):
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "elementwise comparison")
+        return np.array_equal(*a, **k)
+
+
 def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     """Return a function that can check equality between ``obj`` and another.
 
@@ -477,11 +493,11 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     # yes, it's a little riskier, but we are checking namespaces instead of
     # actual `issubclass` here to avoid slow import times
     _known_arrays = {
-        'numpy.ndarray': np.array_equal,  # numpy.ndarray
+        'numpy.ndarray': _quiet_array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
         'dask.Delayed': operator.is_,  # dask.delayed.Delayed
         'zarr.Array': operator.is_,  # zarr.core.Array
-        'xarray.DataArray': np.array_equal,  # xarray.core.dataarray.DataArray
+        'xarray.DataArray': _quiet_array_equal,  # xarray.core.dataarray.DataArray
     }
     for base in type_.mro():
         key = f'{base.__module__.split(".", maxsplit=1)[0]}.{base.__name__}'

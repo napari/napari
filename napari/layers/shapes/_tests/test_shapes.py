@@ -36,6 +36,13 @@ def test_empty_shapes():
     assert shp.ndim == 2
 
 
+def test_update_thumbnail_empty_shapes():
+    """Test updating the thumbnail with an empty shapes layer."""
+    layer = Shapes()
+    layer._allow_thumbnail_update = True
+    layer._update_thumbnail()
+
+
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
 properties_list = {'shape_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
@@ -1341,7 +1348,6 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
