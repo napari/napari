@@ -333,7 +333,8 @@ class TextManager(EventedModel):
         # Connected callbacks may raise errors, but those are bugs.
         self.update(new_manager, recurse=False)
 
-        # Some of the encodings may have changed, so ensure they are full.
+        # Some of the encodings may have changed, so ensure they encode new
+        # values if needed.
         self.resize(features)
 
     @validator('string', pre=True, always=True)

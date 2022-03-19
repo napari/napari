@@ -1341,7 +1341,9 @@ class Points(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        self.text.resize(self.features)
+        # This is needed if this function was triggered when updating
+        # the string encoding, which would be empty at this point.
+        self.text.string._update(self.features)
         return self.text.view_text(self._indices_view)
 
     @property
