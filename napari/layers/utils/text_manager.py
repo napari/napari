@@ -7,7 +7,7 @@ import pandas as pd
 from pydantic import PositiveInt, validator
 
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import EventedModel
+from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
@@ -113,6 +113,7 @@ class TextManager(EventedModel):
                 else:
                     kwargs['string'] = text
         super().__init__(**kwargs)
+        self.events.add(values=Event)
         self.string._update(features)
 
     @property
@@ -136,6 +137,7 @@ class TextManager(EventedModel):
         self.string._clear()
         self.string._update(features)
         self.events.string()
+        self.events.values()
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
@@ -180,6 +182,7 @@ class TextManager(EventedModel):
         )
         values = self.string(features)
         self.string._append(values)
+        self.events.values()
 
     def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
         """Remove the indicated text elements
@@ -192,6 +195,7 @@ class TextManager(EventedModel):
         if isinstance(indices_to_remove, set):
             indices_to_remove = list(indices_to_remove)
         self.string._delete(indices_to_remove)
+        self.events.values()
 
     def fill(self, features: Any):
         """Fills any encoded values to the same length as the given features.
@@ -202,6 +206,7 @@ class TextManager(EventedModel):
             The features table of a layer.
         """
         self.string._update(features)
+        self.events.values()
 
     def _copy(self, indices: List[int]) -> dict:
         """Copies all encoded values at the given indices."""
@@ -213,6 +218,7 @@ class TextManager(EventedModel):
     def _paste(self, *, string: StringArray):
         """Pastes encoded values to the end of the existing values."""
         self.string._append(string)
+        self.events.values()
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
