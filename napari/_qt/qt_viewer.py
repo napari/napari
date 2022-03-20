@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import warnings
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 from weakref import WeakSet
@@ -9,6 +10,8 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+
+from napari.plugins.utils import get_potential_readers
 
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
@@ -1058,10 +1061,42 @@ class QtViewer(QSplitter):
             return
 
         for filename in filenames:
-            select_reader_helper = get_reader_helper(filename, self)
-            self.viewer.open(
-                filename, select_reader_helper=select_reader_helper
+            # select_reader_helper = get_reader_helper(filename, self)
+            # self.viewer.open(
+            #     filename, select_reader_helper=select_reader_helper
+            # )
+            layers, error = self.viewer._open_or_get_error(
+                filename, {}, None, bool(shift_down)
             )
+            # TODO: Use custom error instance?
+            if error:
+                readers = get_potential_readers(filename)
+                if not readers:
+                    raise error
+                if 'Multiple plugins found' in str(error):
+                    error = None
+                select_reader_helper = get_reader_helper(filename, self)
+                display_name, persist = select_reader_helper(
+                    filename, readers, error
+                )
+
+                if display_name:
+                    # TODO: disambiguate with reader title
+                    plugin_name = [
+                        p_name
+                        for d_name, p_name in readers.items()
+                        if d_name == display_name
+                    ][0]
+                    self.viewer._add_layers_with_plugins(
+                        [filename], stack=bool(shift_down), plugin=plugin_name
+                    )
+
+                    if persist:
+                        extension = os.path.splitext(filename)[1]
+                        get_settings().plugins.extension2reader = {
+                            **get_settings().plugins.extension2reader,
+                            extension: display_name,
+                        }
 
     def closeEvent(self, event):
         """Cleanup and close.

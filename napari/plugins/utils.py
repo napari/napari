@@ -14,7 +14,7 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
     Returns
     -------
     Dict[str, str]
-        dictionary of display_name to registered name
+        dictionary of registered name to display_name
     """
     readers = _npe2.get_readers(filename)
 

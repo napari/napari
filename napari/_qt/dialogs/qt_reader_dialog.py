@@ -70,7 +70,7 @@ class QtReaderDialog(QDialog):
 
     def add_reader_buttons(self, layout, readers):
         """Add radio button to layout for each reader in readers"""
-        for display_name in sorted(readers):
+        for display_name in sorted(readers.values()):
             button = QRadioButton(f"{display_name}")
             self.reader_btn_group.addButton(button)
             layout.addWidget(button)
@@ -132,12 +132,12 @@ def get_preferred_reader(readerDialog, readers):
     readerDialog : QtReaderDialog
         dialog for user to select their preferences
     readers : Dict[str, str]
-        dictionary of display_name:display_name of available readers
+        dictionary of plugin_name:display_name of available readers
     """
     display_name = ''
     persist_choice = False
 
     res = readerDialog.get_user_choices()
     if res:
-        display_name, persist_choice = readers[res[0]], res[1]
+        display_name, persist_choice = res[0], res[1]
     return display_name, persist_choice

@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
     List,
     Optional,
@@ -852,9 +851,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         stack: bool = False,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
-        select_reader_helper: Callable[
-            [str, Dict[str, str], Exception], Tuple[str, bool]
-        ] = None,
+        # select_reader_helper: Callable[
+        #     [str, Dict[str, str], Exception], Tuple[str, bool]
+        # ] = None,
         **kwargs,
     ) -> List[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
@@ -935,35 +934,30 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     )
                 # no plugin choice was made
                 else:
-                    readers = get_potential_readers(_path)
-                    if select_reader_helper is None:
+                    # if select_reader_helper is None:
 
-                        def _default_helper(_path, readers, exception):
-                            if exception:
-                                raise exception
-                            raise RuntimeError(
-                                f"Multiple plugins found capable of reading {_path}. Select plugin from {list(readers.values())} and use `viewer.open(..., plugin=...)`."
-                            )
+                    #     def _default_helper(_path, readers, exception):
+                    #         if exception:
+                    #             raise exception
+                    #         raise RuntimeError(
+                    #             f"Multiple plugins found capable of reading {_path}. Select plugin from {list(readers.values())} and use `viewer.open(..., plugin=...)`."
+                    #         )
 
-                        select_reader_helper = _default_helper
+                    #     select_reader_helper = _default_helper
 
-                    added.extend(
-                        self._open_or_get_error(
-                            readers,
-                            _path,
-                            kwargs,
-                            layer_type,
-                            stack,
-                            select_reader_helper,
-                        )
+                    layers, exception = self._open_or_get_error(
+                        _path, kwargs, layer_type, stack
                     )
+                    if not exception:
+                        added.extend(layers)
+                    else:
+                        raise exception
 
         return added
 
-    def _open_or_get_error(
-        self, readers, _path, kwargs, layer_type, stack, select_reader_helper
-    ):
+    def _open_or_get_error(self, _path, kwargs, layer_type, stack):
         added = []
+        readers = get_potential_readers(_path)
         if not readers:
             warnings.warn(
                 trans._(
@@ -972,77 +966,45 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     filename=_path,
                 )
             )
-            return added
+            return added, None
 
         plugin = _get_preferred_reader(_path)
-        is_ambiguous = False
-        persist_choice = False
         error = None
 
-        # preferred plugin exists
-        if plugin in readers.values():
+        # preferred plugin exists, or we just have one plugin available
+        if plugin in readers or (not plugin and len(readers) == 1):
+            error_msg = (
+                ''
+                if not plugin
+                else f'Tried opening with associated reader {readers[plugin]}, but failed:\n'
+            )
             try:
-                added.extend(
-                    self._add_layers_with_plugins(
-                        [_path],
-                        kwargs=kwargs,
-                        stack=stack,
-                        plugin=plugin,
-                        layer_type=layer_type,
-                    )
-                )
-                # preferred plugin works
-                return added
-
-            # preferred plugin failed
-            except Exception as e:
-                is_ambiguous = True
-                error = e
-        # preferred plugin doesn't exist
-        elif plugin:
-            error = RuntimeError(
-                f"Can't find {plugin} plugin associated with {os.path.splitext(_path)[1]} files."
-            )
-            is_ambiguous = True
-        # plugin is None (no preferred plugin) but we only have one option available
-        elif len(readers) == 1:
-            plugin = next(iter(readers.values()))
-        else:
-            is_ambiguous = True
-
-        if is_ambiguous:
-            # multiple potential readers OR can't find preferred plugin OR preferred plugin failed
-            plugin, persist_choice = select_reader_helper(
-                _path, readers, error
-            )
-        if plugin:
-            # use plugin chosen by user
-            added.extend(
-                self._add_layers_with_plugins(
+                added = self._add_layers_with_plugins(
                     [_path],
                     kwargs=kwargs,
                     stack=stack,
                     plugin=plugin,
                     layer_type=layer_type,
                 )
-            )
-            # are we persisting an association?
-            if persist_choice:
-                _, extension = os.path.splitext(_path)
-                display_name = next(
-                    (
-                        disp_name
-                        for disp_name, plugin_name in readers.items()
-                        if plugin_name == plugin
-                    ),
-                    None,
-                )
-                get_settings().plugins.extension2reader = {
-                    **get_settings().plugins.extension2reader,
-                    extension: display_name,
-                }
+            # plugin failed
+            except Exception as e:
+                # TODO: we're changing the error type here and we shouldn't maybe
+                error = RuntimeError(error_msg + str(e))
 
-        return added
+        # preferred plugin doesn't exist
+        elif plugin:
+            error = RuntimeError(
+                f"Can't find {readers[plugin]} plugin associated with {os.path.splitext(_path)[1]} files."
+            )
+        # multiple plugins
+        else:
+            error = RuntimeError(
+                f"Multiple plugins found capable of reading {_path}. Select plugin from {list(readers)} and pass to reading function e.g. `viewer.open(..., plugin=...)`."
+            )
+
+        # where are we handling these
+        # we'll need to differentiate the different errors
+        return added, error
 
     def _add_layers_with_plugins(
         self,
