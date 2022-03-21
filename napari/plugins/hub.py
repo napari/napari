@@ -16,7 +16,7 @@ NAPARI_HUB_PLUGINS = 'https://api.napari-hub.org/plugins'
 ANACONDA_ORG = 'https://api.anaconda.org/package/{channel}/{package_name}'
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=1024)
 def hub_plugin_info(
     name: str,
     min_dev_status=3,
