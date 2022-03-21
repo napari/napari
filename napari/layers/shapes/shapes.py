@@ -1555,7 +1555,7 @@ class Shapes(Layer):
         """
         # This may be triggered when the string encoding instance changed,
         # in which case it has no cached values, so generate them here.
-        self.text.string._update(self.features)
+        self.text.string._apply(self.features)
         return self.text.view_text(self._indices_view)
 
     @property
@@ -2008,7 +2008,7 @@ class Shapes(Layer):
         if n_new_shapes > 0:
             total_shapes = n_new_shapes + self.nshapes
             self._feature_table.resize(total_shapes)
-            self.text.resize(self.features)
+            self.text.apply(self.features)
             self._add_shapes(
                 data,
                 shape_type=shape_type,

@@ -471,7 +471,7 @@ class Points(Layer):
             with self._edge.events.blocker_all():
                 with self._face.events.blocker_all():
                     self._feature_table.resize(len(data))
-                    self.text.resize(self.features)
+                    self.text.apply(self.features)
                     if len(data) < cur_npoints:
                         # If there are now fewer points, remove the size and colors of the
                         # extra ones
@@ -1343,7 +1343,7 @@ class Points(Layer):
         """
         # This may be triggered when the string encoding instance changed,
         # in which case it has no cached values, so generate them here.
-        self.text.string._update(self.features)
+        self.text.string._apply(self.features)
         return self.text.view_text(self._indices_view)
 
     @property

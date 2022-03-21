@@ -116,7 +116,7 @@ class TextManager(EventedModel):
                     kwargs['string'] = text
         super().__init__(**kwargs)
         self.events.add(values=Event)
-        self.string._update(features)
+        self.string._apply(features)
 
     @property
     def values(self):
@@ -137,7 +137,7 @@ class TextManager(EventedModel):
             The features table of a layer.
         """
         self.string._clear()
-        self.string._update(features)
+        self.string._apply(features)
         self.events.string()
         self.events.values()
 
@@ -199,16 +199,16 @@ class TextManager(EventedModel):
         self.string._delete(indices_to_remove)
         self.events.values()
 
-    def resize(self, features: Any):
-        """Resizes any encoded arrays to the same length as the given features
-        generating new values as needed.
+    def apply(self, features: Any):
+        """Applies any encodings to be the same length as the given features,
+        generating new values or removing extra values only as needed.
 
         Parameters
         ----------
         features : Any
             The features table of a layer.
         """
-        self.string._update(features)
+        self.string._apply(features)
         self.events.values()
 
     def _copy(self, indices: List[int]) -> dict:
@@ -331,7 +331,7 @@ class TextManager(EventedModel):
 
         # Some of the encodings may have changed, so ensure they encode new
         # values if needed.
-        self.resize(features)
+        self.apply(features)
 
     @validator('string', pre=True, always=True)
     def _check_string(cls, string: StringEncodingArgument):

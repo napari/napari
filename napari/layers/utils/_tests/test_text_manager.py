@@ -404,17 +404,17 @@ def test_init_with_format_string():
     )
 
 
-def test_resize_with_constant_string():
+def test_apply_with_constant_string():
     features = pd.DataFrame(index=range(3))
     text_manager = TextManager(string='A')
 
     features = pd.DataFrame(index=range(5))
-    text_manager.resize(features)
+    text_manager.apply(features)
 
     np.testing.assert_array_equal(text_manager.values, 'A')
 
 
-def test_resize_with_manual_string():
+def test_apply_with_manual_string():
     string = {
         'array': ['A', 'B', 'C'],
         'default': 'D',
@@ -423,19 +423,19 @@ def test_resize_with_manual_string():
     text_manager = TextManager(string=string, features=features)
 
     features = pd.DataFrame(index=range(5))
-    text_manager.resize(features)
+    text_manager.apply(features)
 
     np.testing.assert_array_equal(
         text_manager.values, ['A', 'B', 'C', 'D', 'D']
     )
 
 
-def test_resize_with_derived_string():
+def test_apply_with_derived_string():
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
     text_manager = TextManager(string='class: {class}', features=features)
 
     features = pd.DataFrame({'class': ['A', 'B', 'C', 'D', 'E']})
-    text_manager.resize(features)
+    text_manager.apply(features)
 
     np.testing.assert_array_equal(
         text_manager.values,
