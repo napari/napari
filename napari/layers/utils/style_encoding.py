@@ -244,6 +244,14 @@ class _DerivedStyleEncoding(
         return self.dict()
 
 
+def _get_style_values(
+    encoding: StyleEncoding[StyleValue, StyleArray], indices: IndicesType
+):
+    """Indexes cached style values or broadcasts them length of the given indices."""
+    values = encoding._values
+    return values if values.ndim == 0 else values[indices]
+
+
 def _empty_array_like(value: StyleValue) -> StyleArray:
     """Returns an empty array with the same type and remaining shape of the given value."""
     shape = (0,) + value.shape

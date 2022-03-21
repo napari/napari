@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from pydantic import PositiveInt, validator
 
+from napari.layers.utils.style_encoding import _get_style_values
+
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
@@ -211,10 +213,7 @@ class TextManager(EventedModel):
 
     def _copy(self, indices: List[int]) -> dict:
         """Copies all encoded values at the given indices."""
-        string = self.string._values
-        if string.ndim > 0:
-            string = string[indices]
-        return {'string': string}
+        return {'string': _get_style_values(self.string, indices)}
 
     def _paste(self, *, string: StringArray):
         """Pastes encoded values to the end of the existing values."""
@@ -261,10 +260,7 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        values = self.values
-        if values.ndim == 0:
-            return np.broadcast_to(values, len(indices_view))
-        return values[indices_view]
+        return _get_style_values(self.string, indices_view)
 
     @classmethod
     def _from_layer(
