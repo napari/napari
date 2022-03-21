@@ -72,7 +72,7 @@ viewer = napari.view_image(image)
 # create an empty shapes layer initialized with
 # text set to display the box label
 text_kwargs = {
-    'text': text_property,
+    'string': {'feature': text_property},
     'size': text_size,
     'color': text_color
 }
