@@ -1183,7 +1183,9 @@ class Window:
                 add_flash_animation(self._qt_window)
         return img
 
-    def screenshot(self, path=None, size=None, flash=True, canvas_only=False):
+    def screenshot(
+        self, path=None, size=None, scale=None, flash=True, canvas_only=False
+    ):
         """Take currently displayed viewer and convert to an image array.
 
         Parameters
@@ -1192,6 +1194,9 @@ class Window:
             Filename for saving screenshot image.
         size : tuple (int, int)
             Size (resolution) of the screenshot. By default, the currently displayed size.
+            Only used if `canvas_only` is True.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
         flash : bool
             Flag to indicate whether flash animation should be shown after
@@ -1207,7 +1212,7 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = QImg2array(self._screenshot(size, flash, canvas_only))
+        img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
         if path is not None:
             imsave(path, img)  # scikit-image imsave method
         return img
