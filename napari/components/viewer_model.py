@@ -969,6 +969,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             return added, None
 
         plugin = _get_preferred_reader(_path)
+        # TODO: Use custom error instance?
         error = None
 
         # preferred plugin exists, or we just have one plugin available

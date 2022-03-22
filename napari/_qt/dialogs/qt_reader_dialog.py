@@ -12,6 +12,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari.plugins.utils import get_potential_readers
+from napari.settings import get_settings
+
 from ...utils.translations import trans
 
 
@@ -102,26 +105,46 @@ class QtReaderDialog(QDialog):
         return display_name, persist_choice
 
 
-def get_reader_helper(_pth, viewer):
+def handle_gui_reading(_pth, viewer, stack, plugin, error):
     _, extension = os.path.splitext(_pth)
 
-    def select_reader_helper(_path, readers, exception):
-        error_message = ''
-        if exception:
-            error_message += f"{str(exception)}\n"
-        readerDialog = QtReaderDialog(
-            parent=viewer,
-            pth=_path,
-            extension=extension,
-            error_message=error_message,
-            readers=readers,
-        )
-        display_name, persist_choice = get_preferred_reader(
-            readerDialog, readers
-        )
-        return display_name, persist_choice
+    readers = get_potential_readers(_pth)
+    # remove the plugin we already tried
+    if plugin in readers:
+        del readers[plugin]
+    # if there's no other readers left, raise error
+    if not readers:
+        raise error
 
-    return select_reader_helper
+    # we don't need to show this message
+    if 'Multiple plugins found' in str(error):
+        error = ''
+
+    readerDialog = QtReaderDialog(
+        parent=viewer,
+        pth=_pth,
+        extension=extension,
+        error_message=error,
+        readers=readers,
+    )
+    display_name, persist = get_preferred_reader(readerDialog, readers)
+    if display_name:
+        # TODO: disambiguate with reader title
+        plugin_name = [
+            p_name
+            for d_name, p_name in readers.items()
+            if d_name == display_name
+        ][0]
+        viewer.viewer._add_layers_with_plugins(
+            [_pth], stack=stack, plugin=plugin_name
+        )
+
+        if persist:
+            extension = os.path.splitext(_pth)[1]
+            get_settings().plugins.extension2reader = {
+                **get_settings().plugins.extension2reader,
+                extension: display_name,
+            }
 
 
 def get_preferred_reader(readerDialog, readers):
