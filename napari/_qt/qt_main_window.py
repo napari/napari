@@ -1165,7 +1165,7 @@ class Window:
                     )
                 prev_size = canvas.size
                 canvas.size = size[::-1]  # invert x ad y for vispy
-            elif scale is not None:
+            if scale is not None:
                 prev_size = canvas.size
                 # multiply canvas dimensions by the scale factor to get new size
                 canvas.size = tuple(dim * scale for dim in canvas.size)
