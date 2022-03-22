@@ -1065,12 +1065,15 @@ class QtViewer(QSplitter):
             # self.viewer.open(
             #     filename, select_reader_helper=select_reader_helper
             # )
-            layers, error = self.viewer._open_or_get_error(
+            layers, plugin, error = self.viewer._open_or_get_error(
                 filename, {}, None, bool(shift_down)
             )
             # TODO: Use custom error instance?
             if error:
                 readers = get_potential_readers(filename)
+                # remove the plugin we already tried
+                if plugin in readers:
+                    del readers[plugin]
                 if not readers:
                     raise error
                 if 'Multiple plugins found' in str(error):

@@ -976,7 +976,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             error_msg = (
                 ''
                 if not plugin
-                else f'Tried opening with associated reader {readers[plugin]}, but failed:\n'
+                else f'Tried opening with reader {readers[plugin]}, but failed:\n'
             )
             try:
                 added = self._add_layers_with_plugins(
@@ -994,7 +994,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # preferred plugin doesn't exist
         elif plugin:
             error = RuntimeError(
-                f"Can't find {readers[plugin]} plugin associated with {os.path.splitext(_path)[1]} files."
+                f"Can't find {plugin} plugin associated with {os.path.splitext(_path)[1]} files."
             )
         # multiple plugins
         else:
@@ -1004,7 +1004,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # where are we handling these
         # we'll need to differentiate the different errors
-        return added, error
+        return added, plugin, error
 
     def _add_layers_with_plugins(
         self,
