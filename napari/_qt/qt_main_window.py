@@ -1130,7 +1130,7 @@ class Window:
         self._qt_window.restart()
 
     def _screenshot(
-        self, size=None, flash=True, canvas_only=False
+        self, size=None, scale=None, flash=True, canvas_only=False
     ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
@@ -1141,6 +1141,9 @@ class Window:
             the screenshot was captured.
         size : tuple (int, int)
             Size (resolution) of the screenshot. By default, the currently displayed size.
+            Only used if `canvas_only` is True.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
             Only used if `canvas_only` is True.
         canvas_only : bool
             If True, screenshot shows only the image display canvas, and
@@ -1162,6 +1165,10 @@ class Window:
                     )
                 prev_size = canvas.size
                 canvas.size = size[::-1]  # invert x ad y for vispy
+            elif scale is not None:
+                prev_size = canvas.size
+                # multiply canvas dimensions by the scale factor to get new size
+                canvas.size = tuple(dim * scale for dim in canvas.size)
             try:
                 img = self._qt_viewer.canvas.native.grabFramebuffer()
                 if flash:
