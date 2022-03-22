@@ -1158,15 +1158,14 @@ class Window:
 
         if canvas_only:
             canvas = self._qt_viewer.canvas
+            prev_size = canvas.size
             if size is not None:
                 if len(size) != 2:
                     raise ValueError(
                         f'screenshot size must be 2 values, got {len(size)}'
                     )
-                prev_size = canvas.size
                 canvas.size = size[::-1]  # invert x ad y for vispy
             if scale is not None:
-                prev_size = canvas.size
                 # multiply canvas dimensions by the scale factor to get new size
                 canvas.size = tuple(dim * scale for dim in canvas.size)
             try:
