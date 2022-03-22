@@ -1164,6 +1164,10 @@ class Window:
                     raise ValueError(
                         f'screenshot size must be 2 values, got {len(size)}'
                     )
+                # Scale the requested size to account for HiDPI
+                size = tuple(
+                    dim / self._qt_window.devicePixelRatio() for dim in size
+                )
                 canvas.size = size[::-1]  # invert x ad y for vispy
             if scale is not None:
                 # multiply canvas dimensions by the scale factor to get new size
