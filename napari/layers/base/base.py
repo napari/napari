@@ -1088,6 +1088,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Value of the data. If the layer is not visible return None.
         """
         if self.visible:
+            perm = None
             if world:
                 ndim_world = len(position)
 
@@ -1101,6 +1102,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                         ndim_layer=self.ndim,
                     )
                 position = self.world_to_data(position)
+                if self._data_to_world.is_permutation:
+                    # At this point `position` is in data coordinate units.
+                    # We now change the axis order back to the world space
+                    # because both `dims_displayed` (and
+                    # `self._slice.image.raw` as used in
+                    # `get_ray_intersections`) correspond to axes ordered as in
+                    # the world space, not the original data space.
+                    perm = self._data_to_world.perm
+                    position = tuple(position[idx] for idx in perm)
 
             if (dims_displayed is not None) and (view_direction is not None):
                 if len(dims_displayed) == 2 or self.ndim == 2:
@@ -1110,6 +1120,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     view_direction = self._world_to_data_ray(
                         list(view_direction)
                     )
+
+                    if perm is not None:
+                        # permute `view_direction` to match the axis order of
+                        # `position` and `dims_displayed`.
+                        view_direction = tuple(
+                            view_direction[idx] for idx in perm
+                        )
+
                     start_point, end_point = self.get_ray_intersections(
                         position=position,
                         view_direction=view_direction,
@@ -1453,6 +1471,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
+        if not world:
+            # need 0 to be the corner of a pixel rather than its center
+            position = tuple(p + 0.5 for p in position)
         start_point, end_point = self._get_ray_intersections(
             position=position,
             view_direction=view_direction,
