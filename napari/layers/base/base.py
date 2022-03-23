@@ -636,6 +636,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def _data_dims_order(self):
+        """Order of the axes into the raw data array.
+
+        For affines without permutation, it will be the same as _dims_order.
+        """
         if self._data_to_world.is_permutation:
             perm = self._data_to_world.perm
             return [perm[d] for d in self._dims_order]
@@ -643,20 +647,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def _data_dims_displayed(self):
-        """To be removed displayed dimensions."""
-        # Ultimately we aim to remove all slicing information from the layer
-        # itself so that layers can be sliced in different ways for multiple
-        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
-        # for additional discussion.
+        """The dimensions in the raw data that are being displayed.
+
+        For affines without permutation, it will be the same as
+        _dims_displayed.
+        """
         return self._data_dims_order[-self._ndisplay :]
 
     @property
     def _data_dims_not_displayed(self):
-        """To be removed not displayed dimensions."""
-        # Ultimately we aim to remove all slicing information from the layer
-        # itself so that layers can be sliced in different ways for multiple
-        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
-        # for additional discussion.
+        """The dimensions in the raw data that are not being displayed.
+
+        For affines without permutation, it will be the same as
+        _dims_not displayed.
+        """
         return self._data_dims_order[: -self._ndisplay]
 
     @property
