@@ -97,6 +97,12 @@ class FileMenu(NapariMenu):
             },
             {},
             {
+                'text': trans._('Check for updates...'),
+                'slot': lambda: print(""),
+                'menuRole': QAction.ApplicationSpecificRole,
+            },
+            {},
+            {
                 'text': trans._('Close Window'),
                 'slot': window._qt_window.close_window,
                 'shortcut': 'Ctrl+W',

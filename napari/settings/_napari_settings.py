@@ -13,6 +13,7 @@ from ._experimental import ExperimentalSettings
 from ._fields import Version
 from ._plugins import PluginsSettings
 from ._shortcuts import ShortcutsSettings
+from ._updates import UpdateSettings
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
@@ -57,6 +58,11 @@ class NapariSettings(EventedConfigFileSettings):
         default_factory=ExperimentalSettings,
         title=trans._("Experimental"),
         description=trans._("Experimental settings."),
+    )
+    updates: UpdateSettings = Field(
+        default_factory=UpdateSettings,
+        title=trans._("Updates"),
+        description=trans._("Update settings."),
     )
 
     # private attributes and ClassVars will not appear in the schema
