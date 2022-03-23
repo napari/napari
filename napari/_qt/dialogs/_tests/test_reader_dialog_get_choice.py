@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Tuple
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
-from napari._qt.dialogs.qt_reader_dialog import get_preferred_reader
+from napari._qt.dialogs.qt_reader_dialog import get_reader_from_dialog
 
 
 class MockQtReaderDialog:
@@ -52,7 +52,7 @@ def test_get_reader_choice_cancel():
     dialog = MockQtReaderDialog(filename, None, readers)
     dialog._set_user_cancelled()
 
-    choice = get_preferred_reader(dialog, readers)
+    choice = get_reader_from_dialog(dialog)
     assert choice[0] == ''
     assert choice[1] is False
 
@@ -63,7 +63,7 @@ def test_get_reader_choice_many_persist():
     dialog = MockQtReaderDialog(filename, None, readers)
     dialog._set_plugin_choice('p1')
 
-    choice = get_preferred_reader(dialog, readers)
+    choice = get_reader_from_dialog(dialog)
     assert choice[0] == 'p2'
     assert choice[1] is True
 
@@ -75,6 +75,6 @@ def test_get_reader_choice_no_persist():
     dialog._set_plugin_choice('p1')
     dialog._set_persist_choice(False)
 
-    choice = get_preferred_reader(dialog, readers)
+    choice = get_reader_from_dialog(dialog)
     assert choice[0] == 'p2'
     assert choice[1] is False

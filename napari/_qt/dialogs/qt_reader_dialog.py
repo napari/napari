@@ -127,7 +127,7 @@ def handle_gui_reading(_pth, viewer, stack, plugin, error):
         error_message=error,
         readers=readers,
     )
-    display_name, persist = get_preferred_reader(readerDialog, readers)
+    display_name, persist = get_reader_from_dialog(readerDialog)
     if display_name:
         # TODO: disambiguate with reader title
         plugin_name = [
@@ -147,15 +147,13 @@ def handle_gui_reading(_pth, viewer, stack, plugin, error):
             }
 
 
-def get_preferred_reader(readerDialog, readers):
+def get_reader_from_dialog(readerDialog):
     """Get preferred reader from user through dialog
 
     Parameters
     ----------
     readerDialog : QtReaderDialog
         dialog for user to select their preferences
-    readers : Dict[str, str]
-        dictionary of plugin_name:display_name of available readers
     """
     display_name = ''
     persist_choice = False
