@@ -955,8 +955,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         return added
 
-    def _open_or_get_error(self, _path, kwargs, layer_type, stack):
+    def _open_or_get_error(
+        self, _path, kwargs={}, layer_type=None, stack=False
+    ):
         added = []
+        error = None
+
         readers = get_potential_readers(_path)
         if not readers:
             warnings.warn(
@@ -969,16 +973,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             return added, None
 
         plugin = _get_preferred_reader(_path)
-        # TODO: Use custom error instance?
-        error = None
 
+        # TODO: Use custom error instance?
         # preferred plugin exists, or we just have one plugin available
         if plugin in readers or (not plugin and len(readers) == 1):
-            error_msg = (
-                ''
-                if not plugin
-                else f'Tried opening with reader {readers[plugin]}, but failed:\n'
-            )
+            plugin = plugin or next(iter(readers.values()))
             try:
                 added = self._add_layers_with_plugins(
                     [_path],
@@ -990,7 +989,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             # plugin failed
             except Exception as e:
                 # TODO: we're changing the error type here and we shouldn't maybe
-                error = RuntimeError(error_msg + str(e))
+                error = RuntimeError(
+                    f'Tried opening with reader {readers[plugin]}, but failed:\n'
+                    + str(e)
+                )
 
         # preferred plugin doesn't exist
         elif plugin:
