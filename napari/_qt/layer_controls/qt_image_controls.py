@@ -18,7 +18,7 @@ from ...layers.image._image_constants import (
 from ...utils.action_manager import action_manager
 from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
-from .qt_layer_controls_base import LayerListGridLayout
+from .qt_layer_controls_base import LayerGridLayout
 
 
 class QtImageControls(QtBaseImageControls):
@@ -146,24 +146,20 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
-        self._populate_grid(
-            ('opacity:', self.opacitySlider),
-            ('contrast limits:', self.contrastLimitsSlider),
-            ('auto-contrast:', self.autoScaleBar),
-            ('gamma:', self.gammaSlider),
-            ('colormap:', colormap_layout),
-            ('blending:', self.blendComboBox),
-            (self.interpLabel, self.interpComboBox),
-            (self.renderLabel, self.renderComboBox),
-            (
-                self.depictionLabel,
-                self.depictionComboBox,
-            ),
-            (self.planeControls,),
-            (...,),
-            (self.isoThresholdLabel, self.isoThresholdSlider),
-            (self.attenuationLabel, self.attenuationSlider),
+        self.grid_layout.addRow('opacity:', self.opacitySlider)
+        self.grid_layout.addRow('contrast limits:', self.contrastLimitsSlider)
+        self.grid_layout.addRow('auto-contrast:', self.autoScaleBar)
+        self.grid_layout.addRow('gamma:', self.gammaSlider)
+        self.grid_layout.addRow('colormap:', colormap_layout)
+        self.grid_layout.addRow('blending:', self.blendComboBox)
+        self.grid_layout.addRow(self.interpLabel, self.interpComboBox)
+        self.grid_layout.addRow(self.renderLabel, self.renderComboBox)
+        self.grid_layout.addRow(self.depictionLabel, self.depictionComboBox)
+        self.grid_layout.addRow(self.planeControls)
+        self.grid_layout.addRow(
+            self.isoThresholdLabel, self.isoThresholdSlider
         )
+        self.grid_layout.addRow(self.attenuationLabel, self.attenuationSlider)
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
@@ -380,19 +376,19 @@ class QtPlaneControls(QWidget):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.grid_layout = LayerListGridLayout(self)
+        self.grid_layout = LayerGridLayout(self)
         self.setLayout(self.grid_layout)
 
-        self.planeNormalLabel = QLabel(trans._('plane normal:'))
         self.planeNormalButtons = PlaneNormalButtons(parent=self)
 
         self.planeThicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
         self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
         self.planeThicknessSlider.setMinimum(1)
         self.planeThicknessSlider.setMaximum(50)
-        self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
 
-        self.grid_layout.addWidget(self.planeNormalLabel, 1, 0)
-        self.grid_layout.addWidget(self.planeNormalButtons, 1, 1)
-        self.grid_layout.addWidget(self.planeThicknessLabel, 2, 0)
-        self.grid_layout.addWidget(self.planeThicknessSlider, 2, 1)
+        self.grid_layout.addRow(
+            trans._('plane normal:'), self.planeNormalButtons
+        )
+        self.grid_layout.addRow(
+            trans._('plane thickness:'), self.planeThicknessSlider
+        )
