@@ -4,6 +4,7 @@ from weakref import ref
 import numpy as np
 
 from ..layers.utils.layer_utils import dims_displayed_world_to_layer
+from ..settings._napari_settings import NapariSettings
 from ..utils.action_manager import action_manager
 from ..utils.transforms import Affine
 from ..utils.translations import trans
@@ -50,6 +51,8 @@ class InteractionBoxMouseBindings:
         self._fixed_vertex: int = None
         self._fixed_aspect: float = None
         self._layer_listening_for_affine = None
+        self._ini_transf = None
+        self._ini_transf_inv = None
         self._ref_viewer = ref(viewer)
         self._interaction_box_model = viewer.overlays.interaction_box
         self._ref_interaction_box_visual = ref(interaction_box_visual)
@@ -77,9 +80,16 @@ class InteractionBoxMouseBindings:
         if hasattr(layer, 'mode'):
             layer.events.mode.connect(self._on_mode_change)
 
-    def _on_active(self, event):
+    def _on_active(self, event=None):
         """Gets called when active layer is changed"""
-        active_layer = event.value
+        viewer = self._ref_viewer()
+        active_layer = viewer.layers.selection.active
+        if active_layer is not None:
+            active_layer.events.rotate.connect(self._on_active)
+            active_layer.events.translate.connect(self._on_active)
+            active_layer.events.scale.connect(self._on_active)
+            active_layer.events.shear.connect(self._on_active)
+
         if getattr(active_layer, 'mode', None) == 'transform':
             self._couple_interaction_box_to_active()
             self._interaction_box_model.show = True
@@ -99,6 +109,7 @@ class InteractionBoxMouseBindings:
     def _couple_interaction_box_to_active(self, event=None):
         viewer = self._ref_viewer()
         active_layer = viewer.layers.selection.active
+
         # This is necessary in case the current layer has fewer dims than the viewer
 
         layer_dims = dims_displayed_world_to_layer(
@@ -111,8 +122,15 @@ class InteractionBoxMouseBindings:
         viewer.overlays.interaction_box.points = (
             active_layer.extent.data[:, layer_dims] - 0.5
         )
+        self._ini_transf = Affine(
+            rotate=active_layer.rotate,
+            translate=active_layer.translate,
+            scale=active_layer.scale,
+            shear=active_layer.shear,
+        ).set_slice(layer_dims)
+        self._ini_transf_inv = self._ini_transf.inverse
         viewer.overlays.interaction_box.transform = (
-            active_layer.affine.set_slice(layer_dims)
+            active_layer.affine.set_slice(layer_dims).compose(self._ini_transf)
         )
 
     def _on_dim_change(self, event):
@@ -168,7 +186,7 @@ class InteractionBoxMouseBindings:
         )
         self._ref_viewer().layers.selection.active.affine = (
             self._ref_viewer().layers.selection.active.affine.replace_slice(
-                layer_dims_displayed, event.value
+                layer_dims_displayed, event.value.compose(self._ini_transf_inv)
             )
         )
 
@@ -188,7 +206,12 @@ class InteractionBoxMouseBindings:
             self._ref_viewer(),
         )
 
-        @viewer.bind_key('Shift')
+        transform_active_layer_key = NapariSettings().shortcuts.shortcuts[
+            "napari:transform_active_layer"
+        ][0]
+        hold_to_lock_aspect_ratio_key = 'Shift-' + transform_active_layer_key
+
+        @viewer.bind_key(hold_to_lock_aspect_ratio_key)
         def hold_to_lock_aspect_ratio(viewer):
             """Hold to lock aspect ratio when resizing a shape."""
             # on key press
@@ -318,6 +341,7 @@ class InteractionBoxMouseBindings:
 
         if np.linalg.norm(mouse_offset) < 1:
             angle = 0
+
         elif self._fixed_aspect:
             angle = np.round(angle / 45) * 45
 
