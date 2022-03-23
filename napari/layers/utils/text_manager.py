@@ -18,7 +18,6 @@ from ._text_utils import get_text_anchors
 from .layer_utils import _validate_features
 from .string_encoding import (
     ConstantStringEncoding,
-    DirectStringEncoding,
     StringArray,
     StringEncoding,
     StringEncodingArgument,
@@ -284,10 +283,7 @@ class TextManager(EventedModel):
         elif isinstance(text, dict):
             kwargs = deepcopy(text)
         else:
-            if isinstance(text, str) and text in features:
-                kwargs = {'string': DirectStringEncoding(feature=text)}
-            else:
-                kwargs = {'string': text}
+            kwargs = {'string': text}
         kwargs['features'] = features
         return cls(**kwargs)
 
@@ -382,16 +378,6 @@ def _warn_about_deprecated_n_text_parameter():
 def _warn_about_deprecated_values_parameter():
     warnings.warn(
         trans._('values is a deprecated parameter. Use string instead.'),
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-
-def _warn_about_deprecated_text_feature():
-    warnings.warn(
-        trans._(
-            'Using a feature name for text is deprecated. Use a `DirectStringEncoding` instead.'
-        ),
         DeprecationWarning,
         stacklevel=2,
     )
