@@ -486,18 +486,17 @@ def test_world_extent_mixed_ndim():
 
 def test_world_extent_mixed_flipped():
     """Test world extent after adding data with a flip."""
-    # Flipped data results in a negative scale value which should be
-    # made positive when taking into consideration for the step size
-    # calculation
     np.random.seed(0)
     layers = LayerList()
 
     layer = Image(
-        np.random.random((15, 15)), affine=[[0, 1, 0], [1, 0, 0], [0, 0, 1]]
+        np.random.random((15, 15)), affine=[[0, 1, 0], [2, 0, 0], [0, 0, 1]]
     )
     layers.append(layer)
-    np.testing.assert_allclose(layer._data_to_world.scale, (1, -1))
-    np.testing.assert_allclose(layers.extent.step, (1, 1))
+    # scale and step reflect the values AFTER the affine has been applied.
+    # i.e. axis 0 of the data is axis 1 after application of the affine
+    np.testing.assert_allclose(layer._data_to_world.scale, (1, 2))
+    np.testing.assert_allclose(layers.extent.step, (1, 2))
 
 
 def test_ndim():
