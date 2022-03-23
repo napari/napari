@@ -223,7 +223,7 @@ def test_setting_current_properties():
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'string': {'feature': 'shape_type'}, 'color': 'red'}
+    text_kwargs = {'string': 'shape_type', 'color': 'red'}
     layer = Shapes(
         property_choices=default_properties,
         text=text_kwargs,
@@ -362,7 +362,7 @@ def test_nd_text():
         [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
     ]
     properties = {'shape_type': ['A', 'B']}
-    text_kwargs = {'string': {'feature': 'shape_type'}, 'anchor': 'center'}
+    text_kwargs = {'string': 'shape_type', 'anchor': 'center'}
     layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
     assert layer.ndim == 4
 

@@ -192,18 +192,21 @@ def test_blending_modes():
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_text_with_invalid_format_string_then_constant_text():
+def test_text_with_invalid_format_string_then_fallback_with_warning():
     n_text = 3
     text = 'confidence: {confidence:.2f'
     properties = {'confidence': np.array([0.5, 0.3, 1])}
 
-    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
+    with pytest.warns(RuntimeWarning):
+        text_manager = TextManager(
+            text=text, n_text=n_text, properties=properties
+        )
 
-    np.testing.assert_array_equal(text_manager.values, [text] * n_text)
+    np.testing.assert_array_equal(text_manager.values, [''] * n_text)
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_text_with_format_string_missing_property_then_constant_empty_with_warning():
+def test_text_with_format_string_missing_property_then_fallback_with_warning():
     n_text = 3
     text = 'score: {score:.2f}'
     properties = {'confidence': np.array([0.5, 0.3, 1])}
@@ -222,24 +225,24 @@ def test_text_constant_then_repeat_values():
     properties = {'class': np.array(['A', 'B', 'C'])}
 
     text_manager = TextManager(
-        text='point', n_text=n_text, properties=properties
+        text={'constant': 'point'}, n_text=n_text, properties=properties
     )
 
     np.testing.assert_array_equal(text_manager.values, ['point'] * n_text)
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_text_constant_with_no_properties_then_no_values():
-    text_manager = TextManager(text='point', n_text=3)
+def test_text_constant_with_no_properties():
+    text_manager = TextManager(text={'constant': 'point'}, n_text=3)
     np.testing.assert_array_equal(text_manager.values, ['point'] * 3)
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_add_with_text_constant_then_ignored():
+def test_add_with_text_constant():
     n_text = 3
     properties = {'class': np.array(['A', 'B', 'C'])}
     text_manager = TextManager(
-        text='point', n_text=n_text, properties=properties
+        text={'constant': 'point'}, n_text=n_text, properties=properties
     )
     np.testing.assert_array_equal(text_manager.values, ['point'] * 3)
 
@@ -249,9 +252,11 @@ def test_add_with_text_constant_then_ignored():
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_add_with_text_constant_init_empty_then_ignored():
+def test_add_with_text_constant_init_empty():
     properties = {}
-    text_manager = TextManager(text='point', n_text=0, properties=properties)
+    text_manager = TextManager(
+        text={'constant': 'point'}, n_text=0, properties=properties
+    )
 
     text_manager.add({'class': np.array(['C'])}, 2)
 
@@ -263,7 +268,7 @@ def test_remove_with_text_constant_then_ignored():
     n_text = 5
     properties = {'class': np.array(['A', 'B', 'C', 'D', 'E'])}
     text_manager = TextManager(
-        text='point', n_text=n_text, properties=properties
+        text={'constant': 'point'}, n_text=n_text, properties=properties
     )
 
     text_manager.remove([1, 3])
@@ -378,7 +383,7 @@ def test_init_with_no_string():
 
 
 def test_init_with_constant_string():
-    text_manager = TextManager(string='A')
+    text_manager = TextManager(string={'constant': 'A'})
 
     assert text_manager.string == ConstantStringEncoding(constant='A')
     np.testing.assert_array_equal(text_manager.values, 'A')
@@ -406,7 +411,7 @@ def test_init_with_format_string():
 
 def test_apply_with_constant_string():
     features = pd.DataFrame(index=range(3))
-    text_manager = TextManager(string='A')
+    text_manager = TextManager(string={'constant': 'A'})
 
     features = pd.DataFrame(index=range(5))
     text_manager.apply(features)
@@ -445,9 +450,9 @@ def test_apply_with_derived_string():
 
 def test_refresh_with_constant_string():
     features = pd.DataFrame(index=range(3))
-    text_manager = TextManager(string='A')
+    text_manager = TextManager(string={'constant': 'A'})
 
-    text_manager.string = 'B'
+    text_manager.string = {'constant': 'B'}
     text_manager.refresh(features)
 
     np.testing.assert_array_equal(text_manager.values, 'B')
@@ -478,7 +483,7 @@ def test_refresh_with_derived_string():
 
 def test_copy_paste_with_constant_string():
     features = pd.DataFrame(index=range(3))
-    text_manager = TextManager(string='A', features=features)
+    text_manager = TextManager(string={'constant': 'A'}, features=features)
 
     copied = text_manager._copy([0, 2])
     text_manager._paste(**copied)

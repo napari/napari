@@ -128,7 +128,7 @@ def test_validate_from_format_string():
 
 def test_validate_from_non_format_string():
     argument = 'abc'
-    expected = ConstantStringEncoding(constant=argument)
+    expected = DirectStringEncoding(feature=argument)
 
     actual = validate_string_encoding(argument)
 

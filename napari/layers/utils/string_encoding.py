@@ -168,7 +168,7 @@ def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
     if isinstance(value, str):
         if _is_format_string(value):
             return FormatStringEncoding(format=value)
-        return ConstantStringEncoding(constant=value)
+        return DirectStringEncoding(feature=value)
     if isinstance(value, Sequence):
         return ManualStringEncoding(array=value, default=DEFAULT_STRING)
     raise TypeError(
