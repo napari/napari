@@ -269,8 +269,8 @@ class TextManager(EventedModel):
         ----------
         text : Union[TextManager, dict, str, Sequence[str], None]
             An instance of TextManager, a dict that contains some of its state,
-            a string that may be a format string, a constant string, or sequence
-            of strings specified manually.
+            a string that may be a format string or a feature name, or a
+            sequence of strings specified manually.
         features : Any
             The features table of a layer.
 

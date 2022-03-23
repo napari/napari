@@ -137,7 +137,7 @@ def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
         If this is already a StringEncoding, it is returned as is.
         If this is a dict, then it should represent one of the built-in string encodings.
         If this a valid format string, then a FormatStringEncoding is returned.
-        If this is any other string, a ConstantStringEncoding is returned.
+        If this is any other string, a DirectStringEncoding is returned.
         If this is a sequence of strings, a ManualStringEncoding is returned.
 
     Returns
