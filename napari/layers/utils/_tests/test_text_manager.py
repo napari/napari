@@ -278,7 +278,7 @@ def test_remove_with_text_constant_then_ignored():
 
 def test_from_layer():
     text = {
-        'string': {'feature': 'class'},
+        'string': 'class',
         'translation': [-0.5, 1],
         'visible': False,
     }
@@ -300,7 +300,7 @@ def test_from_layer():
 
 def test_update_from_layer():
     text = {
-        'string': {'feature': 'class'},
+        'string': 'class',
         'translation': [-0.5, 1],
         'visible': False,
     }
@@ -338,13 +338,13 @@ def test_update_from_layer_with_invalid_value_fails_safely():
         }
     )
     text_manager = TextManager._from_layer(
-        text={'feature': 'class'},
+        text='class',
         features=features,
     )
     before = text_manager.copy(deep=True)
 
     text = {
-        'string': {'feature': 'confidence'},
+        'string': 'confidence',
         'size': -3,
     }
 
@@ -357,12 +357,12 @@ def test_update_from_layer_with_invalid_value_fails_safely():
 def test_update_from_layer_with_warning_only_one_emitted():
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
     text_manager = TextManager._from_layer(
-        text={'feature': 'class'},
+        text='class',
         features=features,
     )
 
     text = {
-        'string': {'feature': 'class'},
+        'string': 'class',
         'blending': 'opaque',
     }
 

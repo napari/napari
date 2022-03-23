@@ -2256,7 +2256,7 @@ def test_text_param_and_setter_are_consistent():
     properties = {
         'accepted': np.random.choice([True, False], (5,)),
     }
-    text = {'string': {'feature': 'accepted'}, 'color': 'black'}
+    text = {'string': 'accepted', 'color': 'black'}
 
     points_init = Points(data, properties=properties, text=text)
 

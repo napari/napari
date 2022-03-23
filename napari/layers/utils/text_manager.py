@@ -108,12 +108,7 @@ class TextManager(EventedModel):
                 kwargs['string'] = values
         if text is not None:
             _warn_about_deprecated_text_parameter()
-            if 'string' not in kwargs:
-                if isinstance(text, str) and text in features:
-                    _warn_about_deprecated_text_feature()
-                    kwargs['string'] = DirectStringEncoding(feature=text)
-                else:
-                    kwargs['string'] = text
+            kwargs['string'] = text
         super().__init__(**kwargs)
         self.events.add(values=Event)
         self.string._apply(features)
