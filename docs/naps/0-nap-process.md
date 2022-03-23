@@ -1,0 +1,272 @@
+---
+Author: "Juan Nunez-Iglesias <mailto:jni@fastmail.com>"
+Created: '2022-03-23'
+Status: Active
+Type: Process
+---
+
+(nap0)=
+
+# NAP 0 — Purpose and Process
+
+## What is a NAP?
+
+NAP stands for Napari Advancement Proposal. A NAP is a design document
+providing information to the community, or describing a new feature for
+napari or its processes or environment. The NAP should provide a rationale
+for the proposed change as well as a concise technical specification, if
+applicable.
+
+We intend NAPs to be the primary mechanisms for proposing major new
+features, for collecting community input on an issue, and for documenting
+the design decisions that have gone into napari. The NAP author is
+responsible for building consensus within the community and documenting
+dissenting opinions.
+
+Because the NAPs are maintained as text files in a versioned repository,
+their revision history is the historical record of the feature proposal
+[^id3].
+
+### Types
+
+There are three kinds of NAPs:
+
+1. A **Standards Track** NAP describes a new feature or implementation
+   for napari.
+2. An **Informational** NAP describes a napari design issue, or provides
+   general guidelines or information to the Python community, but does not
+   propose a new feature. Informational NAPs do not necessarily represent a
+   napari community consensus or recommendation, so users and
+   implementers are free to ignore Informational NAPs.
+3. A **Process** NAP describes a process surrounding napari, or
+   proposes a change to (or an event in) a process. Process NAPs are
+   like Standards Track NAPs but apply to areas other than the napari
+   library itself. They may propose an implementation, but not to
+   napari's codebase; they require community consensus. Examples include
+   procedures, guidelines, changes to the decision-making process, and
+   changes to the tools or environment used in scikit-image development.
+   Any meta-NAP is also considered a Process NAP.
+
+## NAP Workflow
+
+The NAP process begins with a new idea for napari. A NAP should contain a
+single key proposal or new idea. Small enhancements or patches often don't
+need a NAP and can be injected into the napari development workflow with a
+pull request to the napari [repo]. The more focused the NAP, the more
+likely it is to be accepted.
+
+Each NAP must have a champion---someone who writes the NAP using the style
+and format described below, shepherds the discussions in the appropriate
+forums, and attempts to build community consensus around the idea. The NAP
+champion (a.k.a. Author) should first attempt to ascertain whether the idea
+is suitable for a NAP. Posting to the napari [issues list] is the best
+way to do this.
+
+The proposal should be submitted as a draft NAP via a [GitHub pull
+request][github pull request] to the `docs/source/naps` directory with the
+name `nap-<n>-<short-title>.md` where `<n>` is an appropriately assigned
+number and `<short-title>` is a one or two word title for the idea (e.g.,
+`nap-35-lazy-slicing.md`). The draft must use the {ref}`nap_template` file.
+
+Once the PR is in place, the NAP should be announced on various channels
+for discussion, including the [#naps channel on Zulip]() and, if the NAP
+has significant user implications, on the [image.sc forum]().
+
+At the earliest convenience, the PR should be merged (regardless of whether
+it is accepted during discussion). A NAP that outlines a coherent argument
+and that is considered reasonably complete should be merged optimistically,
+regardless of whether it is accepted during discussion. Additional PRs may
+be made by the author to update or expand the NAP, or by maintainers to set
+its status, discussion URL, etc.
+
+Standards Track NAPs consist of two parts, a design document and a
+reference implementation. It is generally recommended that at least a
+prototype implementation be co-developed with the NAP, as ideas that sound
+good in principle sometimes turn out to be impractical. Often it makes
+sense for the prototype implementation to be made available as PR to the
+napari repo, as long as it is properly marked as WIP (work in progress).
+
+### Review and Resolution
+
+NAPs are discussed in Zulip, on image.sc, and on GitHub. The possible paths
+of the status of NAPs are as follows:
+
+```{image} _static/nap-flowchart.png
+```
+
+All NAPs should be created with the `Draft` status.
+
+The author of the NAP should periodically update the NAP with new points
+both against and in favor of the NAP raised in discussion.
+
+Eventually, after discussion, there may be a consensus that the NAP
+should be accepted – see the next section for details. At this point
+the status becomes `Accepted`.
+
+Once a NAP has been `Accepted`, the reference implementation must be
+completed. When the reference implementation is complete and incorporated
+into the main source code repository, the status will be changed to
+`Final`.
+
+To allow gathering of additional design and interface feedback before
+committing to long term stability for a language feature or standard
+library API, a NAP may also be marked as "Provisional". This is short for
+"Provisionally Accepted", and indicates that the proposal has been accepted
+for inclusion in the reference implementation, but additional user feedback
+is needed before the full design can be considered "Final". Unlike regular
+accepted NAPs, provisionally accepted NAPs may still be Rejected or
+Withdrawn even after the related changes have been included in a release.
+
+Wherever possible, it is considered preferable to reduce the scope of a
+proposal to avoid the need to rely on the "Provisional" status (e.g. by
+deferring some features to later NAPs), as this status can lead to version
+compatibility challenges in the wider ecosystem.
+
+A NAP can also be assigned status `Deferred`. The NAP author or a core
+developer can assign the NAP this status when no progress is being made on
+the NAP.
+
+A NAP can also be `Rejected`. Perhaps after all is said and done it
+was not a good idea. It is still important to have a record of this
+fact. The `Withdrawn` status is similar---it means that the NAP author
+themselves has decided that the NAP is actually a bad idea, or has
+accepted that a competing proposal is a better alternative.
+
+When a NAP is `Accepted`, `Rejected`, or `Withdrawn`, the NAP should be
+updated accordingly. In addition to updating the status field, at the very
+least the `Resolution` header should be added with a link to the relevant
+post on the discussion forum.
+
+NAPs can also be `Superseded` by a different NAP, rendering the
+original obsolete. The `Replaced-By` and `Replaces` headers
+should be added to the original and new NAPs respectively.
+
+Process NAPs may also have a status of `Active` if they are never
+meant to be completed, e.g. NAP 0 (this NAP).
+
+### How a NAP becomes Accepted
+
+A NAP is `Accepted` by consensus of all interested contributors. We need a
+concrete way to tell whether consensus has been reached. When you think a
+NAP is ready to accept, start a topic on the developer forum with a subject
+like:
+
+> Proposal to accept NAP #\<number>: \<title>
+
+In the body of the topic, you should:
+
+- link to the latest version of the NAP,
+- briefly describe any major points of contention and how they were
+  resolved,
+- include a sentence like: "If there are no substantive objections
+  within 7 days from this email, then the NAP will be accepted; see
+  NAP 0 for more details."
+
+For an equivalent example in the NumPy library, see: <https://mail.python.org/pipermail/numpy-discussion/2018-June/078345.html>
+
+After you send the email, you should make sure to link to the email
+thread from the `Discussion` section of the NAP, so that people can
+find it later.
+
+Generally the NAP author will be the one to send this email, but
+anyone can do it – the important thing is to make sure that everyone
+knows when a NAP is on the verge of acceptance, and give them a final
+chance to respond. If there's some special reason to extend this final
+comment period beyond 7 days, then that's fine, just say so in the
+email. You shouldn't do less than 7 days, because sometimes people are
+travelling or similar and need some time to respond.
+
+In general, the goal is to make sure that the community has consensus,
+not provide a rigid policy for people to try to game. When in doubt,
+err on the side of asking for more feedback and looking for
+opportunities to compromise.
+
+If the final comment period passes without any substantive objections,
+then the NAP can officially be marked `Accepted`. You should send a
+followup email notifying the list (celebratory emoji optional but
+encouraged 🎉✨), and then update the NAP by setting its `:Status:`
+to `Accepted`, and its `:Resolution:` header to a link to your
+followup email.
+
+If there *are* substantive objections, then the NAP remains in
+`Draft` state, discussion continues as normal, and it can be
+proposed for acceptance again later once the objections are resolved.
+
+In unusual cases, when no consensus can be reached between core developers,
+the [scikit-image Steering Council] may be asked to decide whether a
+controversial NAP is `Accepted`.
+
+### Maintenance
+
+In general, Standards track NAPs are no longer modified after they have
+reached the Final state, as the code and project documentation are
+considered the ultimate reference for the implemented feature. They may,
+however, be updated under special circumstances.
+
+Process NAPs may be updated over time to reflect changes
+to development practices and other details. The precise process followed in
+these cases will depend on the nature and purpose of the NAP being updated.
+
+## Format and Template
+
+NAPs are UTF-8 encoded text files using the [MyST markdown] format.  Please
+see the {ref}`nap_template` file and the [MyST markdown cheat sheet] for
+more information.  We use [Sphinx] to convert NAPs to HTML for viewing on
+the web [^id4].
+
+### Header Preamble
+
+Each NAP must begin with a header preamble.  The headers
+must appear in the following order.  Headers marked with `*` are
+optional.  All other headers are required.
+
+```
+  :Author: <list of authors' real names and optionally, email addresses>
+  :Status: <Draft | Active | Accepted | Deferred | Rejected |
+           Withdrawn | Final | Superseded>
+  :Type: <Standards Track | Process>
+  :Created: <date created on, in dd-mmm-yyyy format>
+* :Requires: <nap numbers>
+* :skimage-Version: <version number>
+* :Replaces: <nap number>
+* :Replaced-By: <nap number>
+* :Resolution: <url>
+```
+
+The Author header lists the names, and optionally the email addresses of
+all the authors of the NAP. The format of the Author header value must be
+
+> Random J. User \<<mailto:address@dom.ain>>
+
+if the email address is included, and just
+
+> Random J. User
+
+if the address is not given.  If there are multiple authors, each should be
+on a separate line.
+
+## Discussion
+
+- <https://github.com/napari/napari/pull/4299>
+
+## References and Footnotes
+
+[^id3]: This historical record is available by the normal git commands
+    for retrieving older revisions, and can also be browsed on
+    [GitHub](https://github.com/napari/napari/tree/main/docs/naps).
+
+[^id4]: The URL for viewing NAPs on the web is
+    <https://napari.org/naps/>
+
+## Copyright
+
+This document has been placed in the public domain.
+
+[developer forum]: https://forum.image.sc/tag/napari
+[github pull request]: https://github.com/napari/napari/pulls
+[issue tracker]: https://github.com/napari/napari/issues
+[repo]: https://github.com/napari/napari
+[MyST markdown]: https://myst-parser.readthedocs.io/en/latest/index.html
+[MyST markdown cheat sheet]: https://myst-parser.readthedocs.io/en/latest/syntax/syntax.html
+[napari steering council]: https://napari.org/community/governance.html
+[sphinx]: http://www.sphinx-doc.org/en/stable/
