@@ -686,7 +686,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # faster equivalent of ``perm = data_to_world.inverse.perm``
             perm = tuple(perm.index(ax) for ax in _dims)
             return tuple(indices[perm[ax]] for ax in _dims)
-        return indices
+        return tuple(indices)
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
@@ -751,8 +751,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 self._transforms['tile2data'].translate = (
                     self.corner_pixels[0] * self._transforms['tile2data'].scale
                 )
-            image = self.data[level][tuple(indices)]
-
+            indices = tuple(indices)
+            image = self.data[level][indices]
             image_indices = self._permute_indices(indices)
 
             # Slice thumbnail
@@ -771,7 +771,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             )
             indices[not_disp] = downsampled_indices
             thumb_indices = self._permute_indices(indices)
-
             thumbnail_source = self.data[self._thumbnail_level][thumb_indices]
         else:
             self._transforms['tile2data'].scale = np.ones(self.ndim)
