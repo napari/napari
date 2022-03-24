@@ -51,8 +51,8 @@ class InteractionBoxMouseBindings:
         self._fixed_vertex: int = None
         self._fixed_aspect: float = None
         self._layer_listening_for_affine = None
-        self._ini_transf = None
-        self._ini_transf_inv = None
+        self._initial_transform = None
+        self._initial_transform_inverse = None
         self._ref_viewer = ref(viewer)
         self._interaction_box_model = viewer.overlays.interaction_box
         self._ref_interaction_box_visual = ref(interaction_box_visual)
@@ -84,11 +84,6 @@ class InteractionBoxMouseBindings:
         """Gets called when active layer is changed"""
         viewer = self._ref_viewer()
         active_layer = viewer.layers.selection.active
-        if active_layer is not None:
-            active_layer.events.rotate.connect(self._on_active)
-            active_layer.events.translate.connect(self._on_active)
-            active_layer.events.scale.connect(self._on_active)
-            active_layer.events.shear.connect(self._on_active)
 
         if getattr(active_layer, 'mode', None) == 'transform':
             self._couple_interaction_box_to_active()
@@ -122,15 +117,18 @@ class InteractionBoxMouseBindings:
         viewer.overlays.interaction_box.points = (
             active_layer.extent.data[:, layer_dims] - 0.5
         )
-        self._ini_transf = Affine(
+        self._initial_transform = Affine(
             rotate=active_layer.rotate,
             translate=active_layer.translate,
             scale=active_layer.scale,
             shear=active_layer.shear,
         ).set_slice(layer_dims)
-        self._ini_transf_inv = self._ini_transf.inverse
+        self._initial_transform_inverse = self._initial_transform.inverse
+
         viewer.overlays.interaction_box.transform = (
-            active_layer.affine.set_slice(layer_dims).compose(self._ini_transf)
+            active_layer.affine.set_slice(layer_dims).compose(
+                self._initial_transform
+            )
         )
 
     def _on_dim_change(self, event):
@@ -143,10 +141,18 @@ class InteractionBoxMouseBindings:
 
     def _layer_affine_event_helper(self, layer):
         """Helper function to connect listener to the transform of active layer and removes previous callbacks"""
-
         if self._layer_listening_for_affine is not None:
             self._layer_listening_for_affine.events.affine.disconnect(self)
+            self._layer_listening_for_affine.events.rotate.disconnect(self)
+            self._layer_listening_for_affine.events.translate.disconnect(self)
+            self._layer_listening_for_affine.events.scale.disconnect(self)
+            self._layer_listening_for_affine.events.shear.disconnect(self)
+
         layer.events.affine.connect(self._couple_interaction_box_to_active)
+        layer.events.translate.connect(self._couple_interaction_box_to_active)
+        layer.events.rotate.connect(self._couple_interaction_box_to_active)
+        layer.events.scale.connect(self._couple_interaction_box_to_active)
+        layer.events.shear.connect(self._couple_interaction_box_to_active)
         self._layer_listening_for_affine = layer
 
     def _on_mode_change(self, event):
@@ -184,9 +190,14 @@ class InteractionBoxMouseBindings:
             self._ref_viewer().dims.ndim,
             self._ref_viewer().layers.selection.active.ndim,
         )
+
+        layer_affine_transform = event.value.compose(
+            self._initial_transform_inverse
+        )
+
         self._ref_viewer().layers.selection.active.affine = (
             self._ref_viewer().layers.selection.active.affine.replace_slice(
-                layer_dims_displayed, event.value.compose(self._ini_transf_inv)
+                layer_dims_displayed, layer_affine_transform
             )
         )
 
