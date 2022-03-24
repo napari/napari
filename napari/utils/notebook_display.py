@@ -74,14 +74,14 @@ class NotebookScreenshot:
 
     def _clean_alt_text(self, alt_text):
         """Clean user input to prevent script injection."""
-        if lxml_unavailable:
-            warn(
-                'The lxml library is not installed, and is required to '
-                'sanitize alt text for napari screenshots. Alt-text will '
-                'be stripped altogether without lxml.'
-            )
-            alt_text = None
         if alt_text is not None:
+            if lxml_unavailable:
+                warn(
+                    'The lxml library is not installed, and is required to '
+                    'sanitize alt text for napari screenshots. Alt-text '
+                    'will be stripped altogether without lxml.'
+                )
+                return None
             alt_text = html.unescape(
                 str(alt_text)
             )  # cleaner won't recognize unescaped script tags
