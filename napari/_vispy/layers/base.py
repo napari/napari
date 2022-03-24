@@ -123,10 +123,8 @@ class VispyBaseLayer(ABC):
         self.node.update()
 
     def _on_matrix_change(self):
-
-        transform = self.layer._transforms.simplified
         dims_displayed = self.layer._dims_displayed
-        transform = transform.set_slice(dims_displayed)
+        transform = self.layer._transforms.simplified.set_slice(dims_displayed)
 
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
@@ -145,7 +143,7 @@ class VispyBaseLayer(ABC):
             # Note this offset is only required for array like data in
             # 2D.
             offset_matrix = self.layer._data_to_world.set_slice(
-                self.layer._dims_displayed
+                dims_displayed
             ).linear_matrix
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
             # Convert NumPy axis ordering to VisPy axis ordering
