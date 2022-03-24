@@ -1,9 +1,15 @@
 import base64
 import html
 from io import BytesIO
+from warnings import warn
 
-from lxml.html import document_fromstring
-from lxml.html.clean import Cleaner
+try:
+    from lxml.html import document_fromstring
+    from lxml.html.clean import Cleaner
+
+    lxml_unavailable = False
+except ImportError:
+    lxml_unavailable = True
 
 __all__ = ['nbscreenshot']
 
@@ -68,6 +74,13 @@ class NotebookScreenshot:
 
     def _clean_alt_text(self, alt_text):
         """Clean user input to prevent script injection."""
+        if lxml_unavailable:
+            warn(
+                'The lxml library is not installed, and is required to '
+                'sanitize alt text for napari screenshots. Alt-text will '
+                'be stripped altogether without lxml.'
+            )
+            alt_text = None
         if alt_text is not None:
             alt_text = html.unescape(
                 str(alt_text)
