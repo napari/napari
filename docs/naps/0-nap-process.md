@@ -172,8 +172,8 @@ meant to be completed, e.g. NAP 0 (this NAP).
 
 A NAP is `Accepted` by consensus of all interested contributors. We need a
 concrete way to tell whether consensus has been reached. When you think a
-NAP is ready to accept, start a topic on the developer forum with a subject
-like:
+NAP is ready to accept, start a topic on the Zulip naps channel with a
+subject like:
 
 > Proposal to accept NAP #\<number>: \<title>
 
@@ -188,7 +188,7 @@ In the body of the topic, you should:
 
 For an equivalent example in the NumPy library, see: <https://mail.python.org/pipermail/numpy-discussion/2018-June/078345.html>
 
-After you send the email, you should make sure to link to the developer forum
+After you write the post, you should make sure to link to the specific
 thread from the `Discussion` section of the NAP, so that people can
 find it later.
 
