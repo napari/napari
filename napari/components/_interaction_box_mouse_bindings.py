@@ -80,10 +80,9 @@ class InteractionBoxMouseBindings:
         if hasattr(layer, 'mode'):
             layer.events.mode.connect(self._on_mode_change)
 
-    def _on_active(self, event=None):
+    def _on_active(self, event):
         """Gets called when active layer is changed"""
-        viewer = self._ref_viewer()
-        active_layer = viewer.layers.selection.active
+        active_layer = event.value
 
         if getattr(active_layer, 'mode', None) == 'transform':
             self._couple_interaction_box_to_active()
