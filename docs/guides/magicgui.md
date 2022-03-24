@@ -57,7 +57,7 @@ when using `magicgui` with napari-specific type annotations.
 
 ## magicgui and type annotations
 
-`magicgui` uses [type hints](https://www.python.org/dev/peps/pep-0484/) to infer
+`magicgui` uses [type hints](https://peps.python.org/pep-0484/) to infer
 the appropriate widget type for a given function parameter, and to indicate a
 context-dependent action for the object returned from the function (in the
 absence of a type hint, the type of the default value will be used).  Third
@@ -414,7 +414,7 @@ Sometimes, it is undesirable to import and/or depend on `napari` directly just
 to provide type annotations.  It is possible to avoid importing `napari`
 entirely by annotating with the string form of the napari type.  This is called
 a [Forward
-reference](https://www.python.org/dev/peps/pep-0484/#forward-references):
+reference](https://peps.python.org/pep-0484/#forward-references):
 
 ```python
 @magicgui

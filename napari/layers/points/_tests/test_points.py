@@ -440,6 +440,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer = Points(
         data,
         size=size,
+        edge_width=size,
         features={'feature': feature},
         face_color=color,
         edge_color=color,
@@ -450,6 +451,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer_expected = Points(
         data[1:],
         size=size[1:],
+        edge_width=size[1:],
         features={'feature': feature[1:]},
         face_color=color[1:],
         edge_color=color[1:],
@@ -879,13 +881,27 @@ def test_edge_width():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.edge_width == 1
+    np.testing.assert_array_equal(layer.edge_width, 0.1)
 
+    layer.edge_width = 0.5
+    np.testing.assert_array_equal(layer.edge_width, 0.5)
+
+    # fail outside of range 0, 1 if relative is enabled (default)
+    with pytest.raises(ValueError):
+        layer.edge_width = 2
+
+    layer.edge_width_is_relative = False
     layer.edge_width = 2
-    assert layer.edge_width == 2
+    np.testing.assert_array_equal(layer.edge_width, 2)
 
-    layer = Points(data, edge_width=3)
-    assert layer.edge_width == 3
+    # fail if we try to come back again
+    with pytest.raises(ValueError):
+        layer.edge_width_is_relative = True
+
+    # all should work on instantiation too
+    layer = Points(data, edge_width=3, edge_width_is_relative=False)
+    np.testing.assert_array_equal(layer.edge_width, 3)
+    assert layer.edge_width_is_relative is False
 
 
 def test_out_of_slice_display():
@@ -914,7 +930,6 @@ def test_out_of_slice_display():
     assert layer.out_of_slice_display is True
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -2254,6 +2269,40 @@ def test_text_param_and_setter_are_consistent():
     np.testing.assert_array_equal(
         points_init.text.color, points_set.text.color
     )
+
+
+def test_editable_2d_layer_ndisplay_3():
+    """Interactivity doesn't work for 2D points layers
+    being rendered in 3D. Verify that layer.editable is set
+    to False upon switching to 3D rendering mode.
+
+    See: https://github.com/napari/napari/pull/4184
+    """
+    data = np.random.random((10, 2))
+    layer = Points(data, size=5)
+    assert layer.editable is True
+
+    # simulate switching to 3D rendering
+    # layer should no longer b editable
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    assert layer.editable is False
+
+
+def test_editable_3d_layer_ndisplay_3():
+    """Interactivity works for 3D points layers
+    being rendered in 3D. Verify that layer.editable remains
+    True upon switching to 3D rendering mode.
+
+    See: https://github.com/napari/napari/pull/4184
+    """
+    data = np.random.random((10, 3))
+    layer = Points(data, size=5)
+    assert layer.editable is True
+
+    # simulate switching to 3D rendering
+    # layer should no longer b editable
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    assert layer.editable is True
 
 
 def test_shown():

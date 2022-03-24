@@ -35,6 +35,13 @@ def test_empty_shapes():
     assert shp.ndim == 2
 
 
+def test_update_thumbnail_empty_shapes():
+    """Test updating the thumbnail with an empty shapes layer."""
+    layer = Shapes()
+    layer._allow_thumbnail_update = True
+    layer._update_thumbnail()
+
+
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
 properties_list = {'shape_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
@@ -120,6 +127,25 @@ def test_adding_properties(attribute):
     }
     with pytest.warns(RuntimeWarning):
         layer.properties = properties_2
+
+
+def test_colormap_scale_change():
+    data = 20 * np.random.random((10, 4, 2))
+    properties = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
+    layer = Shapes(data, properties=properties, edge_color='b')
+
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
+
+    layer.edge_color = 'a'
+
+    # note that VisPy colormaps linearly interpolate by default, so
+    # non-rescaled colors are not identical, but they are closer than 24-bit
+    # color precision can distinguish!
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
 
 
 def test_data_setter_with_properties():
@@ -1323,7 +1349,6 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""

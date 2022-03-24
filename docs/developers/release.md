@@ -4,10 +4,47 @@ This guide documents `napari`'s release process.
 Currently, it only handles distribution, but as the project matures,
 it will include generating release notes, documentation, etc.
 
-This is mainly meant for the core developers who will actually be performing the release.
-They will need to have a [PyPI](https://pypi.org) account with upload permissions to the `napari` package.
+# Timeline
+New versions of `napari` will be released every two months. The first release candidate will be available one week prior to release for testing purposes. Multiple release candidates may become available during the week prior to release. Upcoming releases can be found in our public calendar.
 
-You will also need the additional `release` dependencies (`pip install -e .[release]`) to complete the release process.
+The latest release candidate can be installed with 
+
+`pip install --pre napari`
+
+# Release management
+The release will be coordinated by a release manager whose responsibilities include...
+
+## Two weeks before release (one week before release candidate)
+- Look through currently open PRs and get a sense of what would be good to merge before the first release candidate 
+- Create a zulip thread in the release channel letting people know the release candidate is coming and pointing out PRs that would be nice to merge before release
+
+At this stage, bug fixes and features that are close to landing should be prioritized. The release manager will follow up with PR authors, reviewing and merging as needed.
+  
+## Nine days before release (two days before release candidate)
+- Generate release notes with the script in the release folder
+- Fill in the release highlights and make a PR with the release notes
+
+At this point the release manager should ideally be the only person merging PRs on the repo for the next week.
+
+## One week before release 
+- Add any recently merged PRs to release notes
+- Merge release notes
+- Make the release candidate
+- Announce to release stream on zulip that the first release candidate is available for testing
+
+## The week before release
+- Merge any PRs and update release notes accordingly
+- Make new release candidates as necessary and announce them on zulip
+
+At this stage PRs merged should focus mainly on regressions and bug fixes. New features should wait until after release.
+
+## The day of release
+- make sure final rc has been tested
+- ensure all PRs have been added to release notes and then make release and announce on zulip
+
+# Release process
+
+Additional `release` dependencies (`pip install -e .[release]`) are required to complete the release process.
 
 > [`MANIFEST.in`](https://github.com/napari/napari/blob/main/MANIFEST.in) determines which non-Python files are included.
 > Make sure to check that all necessary ones are listed before beginning the release process.

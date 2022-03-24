@@ -108,3 +108,13 @@ class Extension2ReaderTable(QWidget):
             if row_widg_name == extension_to_remove:
                 self._table.removeRow(i)
                 return
+
+    def value(self):
+        """Return extension:reader mapping from settings.
+
+        Returns
+        -------
+        Dict[str, str]
+            mapping of extension to reader plugin display name
+        """
+        return get_settings().plugins.extension2reader

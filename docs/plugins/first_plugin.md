@@ -1,7 +1,7 @@
 # Your First Plugin
 
 In this tutorial, we'll step through the fundamental concepts for building a
-**bare minimum** "hello napari" plugin from scratch. 
+**bare minimum** "hello napari" plugin from scratch.
 
 At the end, we'll point you to a "cookiecutter" template
 repository that helps automate the creation of new plugins, and adds a number
@@ -20,6 +20,14 @@ environment instead of a global python installation is **highly
 recommended**). If you are new to virtual environments, we recommend
 [installing miniconda][miniconda] and [creating a new environment with
 python][python_env].
+
+Even though plugins don't necessarily need to list `napari` as a direct dependency, and
+[should not depend on a specific Qt backend](best-practices-no-qt-backend),
+you will need a working installation of napari in your active Python
+environment to use and test your plugin.
+See the [installation guide](installation) if this is your first time
+installing napari.
+
 
 ## What is a plugin?
 
@@ -49,7 +57,7 @@ then create a `napari_hello` directory with a single `__init__.py` file inside o
 ````{tabbed} macOS / Linux
 ```sh
 mkdir napari_hello
-touch napari_hello/__init__.py pyproject.toml setup.cfg
+touch napari_hello/__init__.py napari_hello/napari.yaml pyproject.toml setup.cfg
 ```
 ````
 
@@ -57,6 +65,7 @@ touch napari_hello/__init__.py pyproject.toml setup.cfg
 ```bat
 mkdir napari_hello
 copy /b napari_hello\__init__.py +,,
+copy /b napari_hello\napari.yaml +,,
 copy /b pyproject.toml +,,
 copy /b setup.cfg +,,
 ```
@@ -67,7 +76,8 @@ Your project should now look like this:
 ```
 ~/napari-hello/
 ├── napari_hello/
-│   └── __init__.py
+│   ├── __init__.py
+│   └── napari.yaml
 ├── pyproject.toml
 ├── setup.cfg
 ```
@@ -97,7 +107,7 @@ Next, we will populate `pyproject.toml` and `setup.cfg`
 
 ```{note}
 `pyproject.toml` is a standard file (introduced in
-[PEP518](https://www.python.org/dev/peps/pep-0518/), May 2016) that tells
+[PEP518](https://peps.python.org/pep-0518/), May 2016) that tells
 the Python package installer [pip](https://pip.pypa.io/en/stable/) how to
 build your package. For more background, see
 [Clarifying PEP 518](https://snarky.ca/clarifying-pep-518/) and
@@ -133,7 +143,7 @@ classifiers =
 packages = find:
 ```
 
-There is a *lot* more than can go in the package metadata. 
+There is a *lot* more than can go in the package metadata.
 See the [setuptools quickstart](https://setuptools.pypa.io/en/latest/userguide/quickstart.html)
 for more.
 
@@ -162,7 +172,8 @@ autogeneration capabilities to turn this function into a widget)*
 
 ### Add a `napari.yaml` manifest
 
-Create an empty [plugin manifest](./manifest) file at `napari_hello/napari.yaml`
+
+If you haven't already, create an empty [plugin manifest](./manifest) file at `napari_hello/napari.yaml`
 We will use this file to tell napari:
 
 1. That our plugin contributes a [**command**](contributions-commands)
@@ -257,7 +268,7 @@ napari
 Once napari starts, select `napari-hello: Hello World` from the
 `Plugins` menu, then click the `Run` button to see the message.
 
-![hello-example](../images/hello.png)
+% ![hello-example](../images/hello.png)
 
 ## Get going quickly with cookiecutter
 
@@ -271,7 +282,7 @@ management, and deployment hooks.
 
 ```sh
 pip install cookiecutter
-cookiecutter https://github.com/napari/cookiecutter-napari-plugin --checkout npe2
+cookiecutter https://github.com/napari/cookiecutter-napari-plugin
 ```
 
 ## Next Steps

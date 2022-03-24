@@ -1,6 +1,8 @@
+from collections import OrderedDict
 from enum import auto
 
 from ...utils.misc import StringEnum
+from ...utils.translations import trans
 
 
 class Interpolation(StringEnum):
@@ -88,3 +90,23 @@ class ImageRendering(StringEnum):
     MINIP = auto()
     ATTENUATED_MIP = auto()
     AVERAGE = auto()
+
+
+class VolumeDepiction(StringEnum):
+    """Depiction: 3D depiction mode for images.
+
+    Selects a preset depiction mode in vispy
+            * volume: images are rendered as 3D volumes.
+            * plane: images are rendered as 2D planes embedded in 3D.
+    """
+
+    VOLUME = auto()
+    PLANE = auto()
+
+
+VOLUME_DEPICTION_TRANSLATION = OrderedDict(
+    [
+        (VolumeDepiction.VOLUME, trans._('volume')),
+        (VolumeDepiction.PLANE, trans._('plane')),
+    ]
+)

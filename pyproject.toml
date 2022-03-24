@@ -27,7 +27,7 @@ icon = "napari/resources/icon"
 requires = []
 
 [tool.black]
-target-version = ['py36', 'py37', 'py38']
+target-version = ['py38', 'py39', 'py310']
 skip-string-normalization = true
 line-length = 79
 exclude = '''

@@ -69,7 +69,7 @@ def sphere_indices(radius, scale):
     indices = np.mgrid[slices].T.reshape(-1, ndim)
     distances_sq = np.sum((indices * scale_normalized) ** 2, axis=1)
     # Use distances within desired radius to mask indices in grid
-    mask_indices = indices[distances_sq <= radius ** 2].astype(int)
+    mask_indices = indices[distances_sq <= radius**2].astype(int)
 
     return mask_indices
 
@@ -162,10 +162,7 @@ def first_nonzero_coordinate(data, start_point, end_point):
     coords = np.linspace(start_point, end_point, length_int + 1, endpoint=True)
     clipped_coords = np.clip(np.round(coords), 0, shape - 1).astype(int)
     nonzero = np.flatnonzero(data[tuple(clipped_coords.T)])
-    if len(nonzero) == 0:
-        return None
-    else:
-        return clipped_coords[nonzero[0]]
+    return None if len(nonzero) == 0 else clipped_coords[nonzero[0]]
 
 
 def mouse_event_to_labels_coordinate(layer, event):
