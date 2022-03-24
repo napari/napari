@@ -159,22 +159,22 @@ In the body of the topic, you should:
 - briefly describe any major points of contention and how they were
   resolved,
 - include a sentence like: "If there are no substantive objections
-  within 7 days from this email, then the NAP will be accepted; see
+  within 7 days from this post, then the NAP will be accepted; see
   NAP 0 for more details."
 
 For an equivalent example in the NumPy library, see: <https://mail.python.org/pipermail/numpy-discussion/2018-June/078345.html>
 
-After you send the email, you should make sure to link to the email
+After you send the email, you should make sure to link to the developer forum
 thread from the `Discussion` section of the NAP, so that people can
 find it later.
 
-Generally the NAP author will be the one to send this email, but
+Generally the NAP author will be the one to make this post, but
 anyone can do it – the important thing is to make sure that everyone
 knows when a NAP is on the verge of acceptance, and give them a final
 chance to respond. If there's some special reason to extend this final
 comment period beyond 7 days, then that's fine, just say so in the
-email. You shouldn't do less than 7 days, because sometimes people are
-travelling or similar and need some time to respond.
+post. You shouldn't do less than 7 days, because sometimes people are
+traveling or similar and need some time to respond.
 
 In general, the goal is to make sure that the community has consensus,
 not provide a rigid policy for people to try to game. When in doubt,
@@ -183,17 +183,17 @@ opportunities to compromise.
 
 If the final comment period passes without any substantive objections,
 then the NAP can officially be marked `Accepted`. You should send a
-followup email notifying the list (celebratory emoji optional but
+followup post notifying the thread (celebratory emoji optional but
 encouraged 🎉✨), and then update the NAP by setting its `:Status:`
 to `Accepted`, and its `:Resolution:` header to a link to your
-followup email.
+followup post.
 
 If there *are* substantive objections, then the NAP remains in
 `Draft` state, discussion continues as normal, and it can be
 proposed for acceptance again later once the objections are resolved.
 
 In unusual cases, when no consensus can be reached between core developers,
-the [scikit-image Steering Council] may be asked to decide whether a
+the [napari Steering Council] may be asked to decide whether a
 controversial NAP is `Accepted`.
 
 ### Maintenance
@@ -227,7 +227,7 @@ optional.  All other headers are required.
   :Type: <Standards Track | Process>
   :Created: <date created on, in dd-mmm-yyyy format>
 * :Requires: <nap numbers>
-* :skimage-Version: <version number>
+* :napari-Version: <version number>
 * :Replaces: <nap number>
 * :Replaced-By: <nap number>
 * :Resolution: <url>

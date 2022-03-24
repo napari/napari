@@ -1,5 +1,5 @@
 (nap_list)=
-# napari advancement proposals (NAPs)
+# napari Advancement Proposals (NAPs)
 
 NAPs document any major changes or proposals to the napari project.
 

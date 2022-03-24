@@ -25,7 +25,7 @@ the existing problem, who it affects, what it is trying to solve, and why.
 This section should explicitly address the scope of and key requirements
 for the proposed change.
 
-## Detailed description
+## Detailed Description
 
 This section should provide a detailed description of the proposed change. It
 should include examples of how the new functionality would be used, intended
@@ -48,7 +48,7 @@ Any pull requests or development branches containing work on this NAP
 should be linked to from here. (A NAP does not need to be implemented in a
 single pull request if it makes sense to implement it in discrete phases).
 
-## Backward compatibility
+## Backward Compatibility
 
 This section describes the ways in which the NAP breaks backward
 compatibility.
