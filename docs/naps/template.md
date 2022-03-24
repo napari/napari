@@ -53,6 +53,12 @@ single pull request if it makes sense to implement it in discrete phases).
 This section describes the ways in which the NAP breaks backward
 compatibility.
 
+## Future Work
+
+This section describes work that is out of scope for the NAP, but that the
+NAP might suggest, or that the NAP author envisions as potential future
+expansion of the work or related work.
+
 ## Alternatives
 
 If there were any alternative solutions to solving the same problem, they
