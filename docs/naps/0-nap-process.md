@@ -27,7 +27,31 @@ Because the NAPs are maintained as text files in a versioned repository,
 their revision history is the historical record of the feature proposal
 [^id3].
 
-### Types
+### When is a NAP warranted?
+
+Most contributions to napari should go through the standard [contributing
+process](napari-contributing), that is, opening a pull request to the main
+repository. They will typically be uncontroversial improvements, and
+require little design discussion. The git commit and the pull request
+itself serve as an adequate record of the contribution's history.
+
+In some cases, contributions will require extensive discussions around any
+new APIs, breaking of existing APIs, changing of governance, build, or
+contributing mechanisms, or other aspects of the project. These might
+happen both on the PR itself and on other channels, such as Zulip,
+community meetings, or even one on one discussions. In such situations, the
+PR will not contain sufficient information to document all the
+considerations that went into a decision. Core developers may at their
+discretion then call for a NAP to summarize the discussion to date.
+
+In addition to the above situation, napari is the product of many
+historical decisions that were *not* explained by a NAP. In situations
+where community members might be confused about parts of napari's design,
+and whether alternate designs were considered and rejected, or simply not
+considered. It might then be useful to write a retrospective informational
+NAP to explain that aspect of the project.
+
+### Types of NAPs
 
 There are three kinds of NAPs:
 
