@@ -387,16 +387,17 @@ jobs:
 
       - name: Test installation (Linux)
         if: runner.os == 'Linux'
-        shell: bash -l {0}
         run: |
           bash napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} -bfp "${{ runner.temp }}/napari-${{ env.version }}"
-          conda activate "${{ runner.temp }}/napari-${{ env.version }}/envs/napari-${{ env.version }}"
+          . "${{ runner.temp }}/napari-${{ env.version }}/etc/profile.d/conda.sh"
+          conda activate "${{ runner.temp }}/napari-${{ env.version }}envs/napari-${{ env.version }}"
           xvfb-run --auto-servernum napari --info
 
       - name: Test installation (macOS)
         if: runner.os == 'macOS' && matrix.target-platform == 'osx-64'
         run: |
           installer -pkg napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} -target CurrentUserHomeDirectory -verbose
+          . "~/Library/napari-${{ env.version }}/etc/profile.d/conda.sh"
           conda activate "~/Library/napari-${{ env.version }}/envs/napari-${{ env.version }}"
           napari --info
 
@@ -405,7 +406,7 @@ jobs:
         shell: cmd /C call {0}
         run: |
           cmd.exe /c start /wait napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} /S /D="${{ runner.temp }}\napari-${{ env.version }}"
-          conda activate ${{ runner.temp }}\napari-${{ env.version }}
+          "${{ runner.temp }}\napari-${{ env.version }}\Scripts\activate" "${{ runner.temp }}\napari-${{ env.version }}\envs\napari-${{ env.version }}"
           napari --info
 
       # Choose which one to keep; the one in `make_bundle` or this one.
