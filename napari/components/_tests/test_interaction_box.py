@@ -61,7 +61,7 @@ def test_interaction_box_changes_with_layer_transform():
         viewer.overlays.interaction_box.transform.affine_matrix
     )
     image_layer.scale = [5, 5]
-    assert not np.allclose(
+    assert np.allclose(
         initial_selection_box,
         viewer.overlays.interaction_box.transform.affine_matrix,
     )
