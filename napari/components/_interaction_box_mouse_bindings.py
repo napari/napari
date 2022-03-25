@@ -4,7 +4,6 @@ from weakref import ref
 import numpy as np
 
 from ..layers.utils.layer_utils import dims_displayed_world_to_layer
-from ..settings import get_settings
 from ..utils.action_manager import action_manager
 from ..utils.transforms import Affine
 from ..utils.translations import trans
@@ -215,13 +214,8 @@ class InteractionBoxMouseBindings:
             trans._("Activate transform mode for the active layer"),
             self._ref_viewer(),
         )
-        settings = get_settings()
-        transform_active_layer_key = settings.shortcuts.shortcuts[
-            "napari:transform_active_layer"
-        ][0]
-        hold_to_lock_aspect_ratio_key = 'Shift-' + transform_active_layer_key
 
-        @viewer.bind_key(hold_to_lock_aspect_ratio_key)
+        @viewer.bind_key('Shift')
         def hold_to_lock_aspect_ratio(viewer):
             """Hold to lock aspect ratio when resizing a shape."""
             # on key press
