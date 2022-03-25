@@ -100,6 +100,17 @@ def test_builtin_reader_plugin_stacks():
         os.unlink(tmp.name)
 
 
+def test_builtin_reader_plugin_url():
+    layer_data, _ = io.read_data_with_plugins(
+        ['https://samples.fiji.sc/FakeTracks.tif']
+    )
+
+    assert layer_data is not None
+    assert isinstance(layer_data, list)
+    assert len(layer_data) == 1
+    assert isinstance(layer_data[0], tuple)
+
+
 def test_reader_plugin_can_return_null_layer_sentinel(
     napari_plugin_manager, monkeypatch
 ):
