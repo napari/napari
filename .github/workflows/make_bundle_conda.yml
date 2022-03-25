@@ -36,9 +36,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          # TODO: Match upstream, not fork!
-          repository: jaimergp/napari-feedstock
-          ref: menuinst-cep
+          repository: conda-forge/napari-feedstock
           path: napari-feedstock
 
       - name: Create environment.yml
