@@ -1,13 +1,13 @@
 from pydantic import Field
 
 from ..utils.events.evented_model import EventedModel
-from ..utils.theme import available_themes
+from ..utils.theme import DEFAULT_THEME, available_themes
 from ..utils.translations import trans
 
 
 class AppearanceSettings(EventedModel):
     theme: str = Field(
-        "dark",
+        DEFAULT_THEME,
         title=trans._("Theme"),
         description=trans._("Select the user interface theme."),
         env="napari_theme",

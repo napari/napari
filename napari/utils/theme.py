@@ -21,6 +21,8 @@ from ..utils.translations import trans
 from .events import EventedModel
 from .events.containers._evented_dict import EventedDict
 
+DEFAULT_THEME = 'dark'
+
 
 class Theme(EventedModel):
     """Theme model.
@@ -168,12 +170,12 @@ def get_system_theme():
     try:
         name = darkdetect.theme().lower()
     except Exception:
-        name = "dark"
+        name = DEFAULT_THEME
 
     return name
 
 
-def get_theme(name, as_dict=None, fallback='dark') -> Theme:
+def get_theme(name, as_dict=None, fallback=DEFAULT_THEME) -> Theme:
     """Get a copy of theme based on it's name.
 
     If you get a copy of the theme, changes to the theme model will not be
