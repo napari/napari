@@ -60,7 +60,7 @@ def test_interaction_box_changes_with_layer_transform():
     initial_selection_box = np.copy(
         viewer.overlays.interaction_box.transform.affine_matrix
     )
-    image_layer.scale = [5, 5]
+    image_layer.scale = [3, 3]
     assert np.allclose(
         initial_selection_box,
         viewer.overlays.interaction_box.transform.affine_matrix,
