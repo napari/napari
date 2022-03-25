@@ -4,7 +4,7 @@ import pytest
 import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
-from napari.layers import Image
+from napari.layers import Image, Labels
 from napari.layers.image._image_constants import ImageRendering
 from napari.layers.utils.plane import ClippingPlaneList, SlicingPlane
 from napari.utils import Colormap
@@ -538,6 +538,52 @@ def test_value_3d(position, view_direction, dims_displayed, world):
         world=world,
     )
     assert value is None
+
+
+@pytest.mark.parametrize('ImageClass', [Image, Labels])
+@pytest.mark.parametrize('ndim', [2, 3])
+def test_get_value_at_subpixel_offsets(ImageClass, ndim):
+    """check value at various shifts within a pixel/voxel's extent"""
+    if ndim == 3:
+        data = np.arange(1, 9).reshape(2, 2, 2)
+    elif ndim == 2:
+        data = np.arange(1, 5).reshape(2, 2)
+
+    layer = ImageClass(data)
+    layer._slice_dims([0] * ndim, ndisplay=ndim)
+
+    # dictionary of values at each voxel center coordinate
+    val_dict = {
+        (0, 0): data[(0,) * (ndim - 2) + (0, 0)],
+        (0, 1): data[(0,) * (ndim - 2) + (0, 1)],
+        (1, 0): data[(0,) * (ndim - 2) + (1, 0)],
+        (1, 1): data[(0,) * (ndim - 2) + (1, 1)],
+    }
+    for center, expected_value in val_dict.items():
+        # ensure positions across the pixel extent report the same value
+        # note: world=False so do not multiply offsets by the layer scale
+        for offset_0 in [-0.4999, 0, 0.4999]:
+            for offset_1 in [-0.4999, 0, 0.4999]:
+                if ndim == 3:
+                    position = [0, center[0] + offset_0, center[1] + offset_1]
+                else:
+                    position = [center[0] + offset_0, center[1] + offset_1]
+
+                if ndim == 3 and isinstance(layer, Labels):
+                    # Labels implements _get_value_3d, Image does not
+                    view_direction = np.asarray([1.0, 0, 0])
+                    dims_displayed = [0, 1, 2]
+                else:
+                    view_direction = None
+                    dims_displayed = None
+
+                val = layer.get_value(
+                    position=position,
+                    view_direction=view_direction,
+                    dims_displayed=dims_displayed,
+                    world=False,
+                )
+                assert val == expected_value
 
 
 def test_message():

@@ -1403,6 +1403,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
+        # Since coordinate 0 corresponds to a pixel center, in order to
+        # correctly get the data value under the mouse at the pixel
+        # edges, we need to shift by 0.5 pixels on each axis here.
+        if not world:
+            position = tuple(p + 0.5 for p in position)
         start_point, end_point = self._get_ray_intersections(
             position=position,
             view_direction=view_direction,
@@ -1470,7 +1475,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         front_face_normal, back_face_normal = find_front_back_face(
             click_pos_data, bounding_box, view_dir
         )
-
         if front_face_normal is None and back_face_normal is None:
             # click does not intersect the data bounding box
             return None, None
