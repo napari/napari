@@ -32,6 +32,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ..plugins import _npe2
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
@@ -407,6 +408,9 @@ class Window:
     def __init__(self, viewer: 'Viewer', *, show: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
+        # discover any themes provided by plugins
+        _npe2.install_themes()
+        plugin_manager.discover_themes()
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[
@@ -423,8 +427,6 @@ class Window:
         _themes.events.added.connect(register_napari_themes)
         _themes.events.removed.connect(self._remove_theme)
 
-        # discover any themes provided by plugins
-        plugin_manager.discover_themes()
         self._setup_existing_themes()
 
         self._add_menus()
@@ -656,13 +658,11 @@ class Window:
             A 2-tuple containing (the DockWidget instance, the plugin widget
             instance).
         """
-        from ..plugins import _npe2
 
         Widget = None
         dock_kwargs = {}
 
-        result = _npe2.get_widget_contribution(plugin_name, widget_name)
-        if result:
+        if result := _npe2.get_widget_contribution(plugin_name, widget_name):
             Widget, widget_name = result
 
         if Widget is None:

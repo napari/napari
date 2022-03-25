@@ -3,11 +3,10 @@ from pydantic import Field
 from ..utils.events.evented_model import EventedModel
 from ..utils.theme import available_themes
 from ..utils.translations import trans
-from ._fields import Theme
 
 
 class AppearanceSettings(EventedModel):
-    theme: Theme = Field(
+    theme: str = Field(
         "dark",
         title=trans._("Theme"),
         description=trans._("Select the user interface theme."),

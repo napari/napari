@@ -173,7 +173,7 @@ def get_system_theme():
     return name
 
 
-def get_theme(name, as_dict=None):
+def get_theme(name, as_dict=None, fallback='dark') -> Theme:
     """Get a copy of theme based on it's name.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -199,14 +199,18 @@ def get_theme(name, as_dict=None):
         name = get_system_theme()
 
     if name not in _themes:
-        raise ValueError(
-            trans._(
-                "Unrecognized theme {name}. Available themes are {themes}",
-                deferred=True,
-                name=name,
-                themes=available_themes(),
-            )
+        msg = trans._(
+            "Unrecognized theme {name}. Available themes are {themes}",
+            deferred=True,
+            name=name,
+            themes=available_themes(),
         )
+        if not fallback:
+            raise ValueError(msg)
+        msg += trans._('. Using fallback {name}', name=fallback)
+        name = fallback
+        warnings.warn(msg)
+
     theme = _themes[name]
     _theme = theme.copy()
     if as_dict is None:
@@ -319,19 +323,5 @@ _themes: EventedDict[str, Theme] = EventedDict(
     basetype=Theme,
 )
 
-
-# this function here instead of plugins._npe2 to avoid circular import
-def _install_npe2_themes(_themes):
-    import npe2
-
-    for theme in npe2.PluginManager.instance().iter_themes():
-        # `theme.type` is dark/light and supplies defaults for keys that
-        # are not provided by the plugin
-        d = _themes[theme.type].dict()
-        d.update(theme.colors.dict(exclude_unset=True))
-        _themes[theme.id] = Theme(**d)
-
-
-_install_npe2_themes(_themes)
 _themes.events.added.connect(rebuild_theme_settings)
 _themes.events.removed.connect(rebuild_theme_settings)

@@ -286,3 +286,15 @@ def _on_plugin_enablement_change(enabled: Set[str], disabled: Set[str]):
     for v in Viewer._instances:
         v.window.plugins_menu._build()
         v.window.file_menu._rebuild_samples_menu()
+
+
+def install_themes():
+    """Callback when any npe2 plugins are enabled or disabled"""
+    from ..utils import theme
+
+    for thm in npe2.PluginManager.instance().iter_themes():
+        # `thm.type` is dark/light and supplies defaults for keys that
+        # are not provided by the plugin
+        d = theme._themes[thm.type].dict()
+        d.update(thm.colors.dict(exclude_unset=True))
+        theme._themes[thm.id] = theme.Theme(**d)
