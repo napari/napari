@@ -943,7 +943,7 @@ def points_in_poly(points, vertices):
         cond_3 = np.logical_or(cond_1, cond_2)
         d = vertices[j] - vertices[i]
         # Prevents floating point imprecision from generating false positives
-        tolerance = 1e-14
+        tolerance = 1e-12
         d = np.where(abs(d) < tolerance, 0, d)
         if d[1] == 0:
             # If y vertices are aligned avoid division by zero
