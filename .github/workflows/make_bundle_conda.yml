@@ -385,6 +385,21 @@ jobs:
           asset_content_type: application/octet-stream
           max_releases: 1
 
+      - name: Test installation (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          bash napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} -bfp "${{ runner.temp }}/napari-${{ env.version }}"
+
+      - name: Test installation (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          installer -pkg napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} -target CurrentUserHomeDirectory -verbose
+
+      - name: Test installation (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmd.exe /c start /wait napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} /S /D="${{ runner.temp }}\napari-${{ env.version }}"
+
       # Choose which one to keep; the one in `make_bundle` or this one.
       # - name: Update latest tag
       #   uses: EndBug/latest-tag@latest
