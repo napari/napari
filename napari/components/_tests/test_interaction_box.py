@@ -2,6 +2,7 @@ import numpy as np
 
 from napari.components.interaction_box import InteractionBox
 from napari.utils.transforms import Affine
+from napari.viewer import ViewerModel
 
 
 def test_creation():
@@ -52,8 +53,8 @@ def test_transform():
     np.testing.assert_equal(interaction_box._box, resulting_box)
 
 
-def test_interaction_box_changes_with_layer_transform(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_interaction_box_changes_with_layer_transform():
+    viewer = ViewerModel()
     image_layer = viewer.add_image(np.random.random((28, 28)))
     image_layer.mode = 'transform'
     initial_selection_box = np.copy(
