@@ -1382,3 +1382,17 @@ def test_get_status_with_custom_index():
     assert layer.get_status((0, 0)) == 'Labels [0 0]: 0; [No Properties]'
     assert layer.get_status((3, 3)) == 'Labels [3 3]: 1; text1: 1, text2: 7'
     assert layer.get_status((6, 6)) == 'Labels [6 6]: 2; text1: 3, text2: -2'
+
+
+def test_ndarray_fill():
+    """See https://github.com/napari/napari/issues/2374"""
+    data = np.zeros((50, 512, 512), dtype=np.uint16)
+    layer = Labels(data)
+    layer.fill((0.0, 179.95039820946852, 71.67612463520015), 1)
+
+
+def test_xarray_fill():
+    """See https://github.com/napari/napari/issues/2374"""
+    data = xr.DataArray(np.zeros((50, 512, 512), dtype=np.uint16))
+    layer = Labels(data)
+    layer.fill((0.0, 179.95039820946852, 71.67612463520015), 1)

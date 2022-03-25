@@ -1196,9 +1196,10 @@ class Labels(_ImageBase):
                     j += 1
                 else:
                     match_indices.append(np.full(n_idx, d, dtype=np.intp))
-            match_indices = tuple(match_indices)
         else:
             match_indices = match_indices_local
+
+        match_indices = _get_vectorized_indices(self.data, match_indices)
 
         self._save_history(
             (
@@ -1268,18 +1269,7 @@ class Labels(_ImageBase):
         else:
             slice_coord = slice_coord_temp
 
-        slice_coord = tuple(slice_coord)
-
-        # Fix indexing for xarray if necessary
-        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
-        # for difference from indexing numpy
-        try:
-            import xarray as xr
-
-            if isinstance(self.data, xr.DataArray):
-                slice_coord = tuple(xr.DataArray(i) for i in slice_coord)
-        except ImportError:
-            pass
+        slice_coord = _get_vectorized_indices(self.data, slice_coord)
 
         # slice coord is a tuple of coordinate arrays per dimension
         # subset it if we want to only paint into background/only erase
@@ -1435,3 +1425,17 @@ if config.async_octree:
 
     class Labels(Labels, _OctreeImageBase):
         pass
+
+
+def _get_vectorized_indices(data, indices):
+    # Fix indexing for xarray if necessary
+    # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
+    # for difference from indexing numpy
+    try:
+        import xarray as xr
+
+        if isinstance(data, xr.DataArray):
+            return tuple(xr.DataArray(i) for i in indices)
+    except ImportError:
+        pass
+    return tuple(indices)
