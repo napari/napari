@@ -4,7 +4,7 @@ from weakref import ref
 import numpy as np
 
 from ..layers.utils.layer_utils import dims_displayed_world_to_layer
-from ..settings._napari_settings import NapariSettings
+from ..settings import get_settings
 from ..utils.action_manager import action_manager
 from ..utils.transforms import Affine
 from ..utils.translations import trans
@@ -215,8 +215,8 @@ class InteractionBoxMouseBindings:
             trans._("Activate transform mode for the active layer"),
             self._ref_viewer(),
         )
-
-        transform_active_layer_key = NapariSettings().shortcuts.shortcuts[
+        settings = get_settings()
+        transform_active_layer_key = settings.shortcuts.shortcuts[
             "napari:transform_active_layer"
         ][0]
         hold_to_lock_aspect_ratio_key = 'Shift-' + transform_active_layer_key
