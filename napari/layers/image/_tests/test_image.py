@@ -540,36 +540,19 @@ def test_value_3d(position, view_direction, dims_displayed, world):
     assert value is None
 
 
-@pytest.mark.parametrize('ImageClass', [Image, Labels])
-@pytest.mark.parametrize('ndim', [2, 3])
-def test_get_value_at_subpixel_offsets(ImageClass, ndim):
-    """check value at various shifts within a pixel/voxel's extent"""
-    if ndim == 3:
-        data = np.arange(1, 9).reshape(2, 2, 2)
-    elif ndim == 2:
-        data = np.arange(1, 5).reshape(2, 2)
-
-    layer = ImageClass(data)
-    layer._slice_dims([0] * ndim, ndisplay=ndim)
-
-    # dictionary of values at each voxel center coordinate
-    val_dict = {
-        (0, 0): data[(0,) * (ndim - 2) + (0, 0)],
-        (0, 1): data[(0,) * (ndim - 2) + (0, 1)],
-        (1, 0): data[(0,) * (ndim - 2) + (1, 0)],
-        (1, 1): data[(0,) * (ndim - 2) + (1, 1)],
-    }
+def _check_subpixel_values(layer, val_dict):
+    ndisplay = layer._ndisplay
     for center, expected_value in val_dict.items():
-        # ensure positions across the pixel extent report the same value
+        # ensure all positions within the pixel extent report the same value
         # note: world=False so do not multiply offsets by the layer scale
         for offset_0 in [-0.4999, 0, 0.4999]:
             for offset_1 in [-0.4999, 0, 0.4999]:
-                if ndim == 3:
+                if ndisplay == 3:
                     position = [0, center[0] + offset_0, center[1] + offset_1]
                 else:
                     position = [center[0] + offset_0, center[1] + offset_1]
 
-                if ndim == 3 and isinstance(layer, Labels):
+                if ndisplay == 3 and isinstance(layer, Labels):
                     # Labels implements _get_value_3d, Image does not
                     view_direction = np.asarray([1.0, 0, 0])
                     dims_displayed = [0, 1, 2]
@@ -584,6 +567,49 @@ def test_get_value_at_subpixel_offsets(ImageClass, ndim):
                     world=False,
                 )
                 assert val == expected_value
+
+
+@pytest.mark.parametrize('ImageClass', [Image, Labels])
+@pytest.mark.parametrize('ndim', [2, 3])
+def test_get_value_at_subpixel_offsets(ImageClass, ndim):
+    """check value at various shifts within a pixel/voxel's extent"""
+    if ndim == 3:
+        data = np.arange(1, 9).reshape(2, 2, 2)
+    elif ndim == 2:
+        data = np.arange(1, 5).reshape(2, 2)
+
+    # test using non-uniform scale per-axis
+    layer = ImageClass(data, scale=(0.5, 1, 2)[:ndim])
+    layer._slice_dims([0] * ndim, ndisplay=ndim)
+
+    # dictionary of expected values at each voxel center coordinate
+    val_dict = {
+        (0, 0): data[(0,) * (ndim - 2) + (0, 0)],
+        (0, 1): data[(0,) * (ndim - 2) + (0, 1)],
+        (1, 0): data[(0,) * (ndim - 2) + (1, 0)],
+        (1, 1): data[(0,) * (ndim - 2) + (1, 1)],
+    }
+    _check_subpixel_values(layer, val_dict)
+
+
+@pytest.mark.parametrize('ImageClass', [Image, Labels])
+def test_get_value_3d_view_of_2d_data(ImageClass):
+    """check value at various shifts within a pixel/voxel's extent"""
+    data = np.arange(1, 5).reshape(2, 2)
+
+    ndisplay = 3
+    # test using non-uniform scale per-axis
+    layer = ImageClass(data, scale=(0.5, 1))
+    layer._slice_dims([0] * ndisplay, ndisplay=ndisplay)
+
+    # dictionary of expected values at each voxel center coordinate
+    val_dict = {
+        (0, 0): data[(0, 0)],
+        (0, 1): data[(0, 1)],
+        (1, 0): data[(1, 0)],
+        (1, 1): data[(1, 1)],
+    }
+    _check_subpixel_values(layer, val_dict)
 
 
 def test_message():
