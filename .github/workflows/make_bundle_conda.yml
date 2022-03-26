@@ -398,8 +398,6 @@ jobs:
         run: |
           set -x
           installer -pkg napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} -target CurrentUserHomeDirectory -dumplog
-          ls -alh /Users/runner/Library/
-          ls -alh /Users/runner/Library/napari-${{ env.version }}
           . "/Users/runner/Library/napari-${{ env.version }}/etc/profile.d/conda.sh"
           conda activate "/Users/runner/Library/napari-${{ env.version }}/envs/napari-${{ env.version }}"
           napari --info
@@ -408,7 +406,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd /C call {0}
         run: |
-          cmd.exe /c start /wait napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} /D=${{ runner.temp }}\napari-${{ env.version }}
+          cmd.exe /c start /wait napari-${{ env.version }}-${{ runner.os }}-${{ env.arch-suffix }}.${{ env.extension }} /S /D=${{ runner.temp }}\napari-${{ env.version }}
           CALL ${{ runner.temp }}\napari-${{ env.version }}\Scripts\activate ${{ runner.temp }}\napari-${{ env.version }}\envs\napari-${{ env.version }}
           napari --info
 
