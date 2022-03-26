@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
+from napari.utils.misc import _is_array_type
+
 from ...utils import config
 from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
@@ -1429,16 +1431,16 @@ if config.async_octree:
         pass
 
 
-def _coerce_indices_for_vectorization(data, indices: list) -> tuple:
+def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
     """Coerces indices so that they can be used for vectorized indexing in the given data array."""
-    # Fix indexing for xarray if necessary
-    # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
-    # for difference from indexing numpy
-    try:
-        import xarray as xr
+    if _is_array_type(array, 'xarray.DataArray'):
+        # Fix indexing for xarray if necessary
+        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
+        # for difference from indexing numpy
+        try:
+            import xarray as xr
 
-        if isinstance(data, xr.DataArray):
             return tuple(xr.DataArray(i) for i in indices)
-    except ImportError:
-        pass
+        except ImportError:
+            pass
     return tuple(indices)
