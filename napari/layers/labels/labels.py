@@ -1199,7 +1199,9 @@ class Labels(_ImageBase):
         else:
             match_indices = match_indices_local
 
-        match_indices = _get_vectorized_indices(self.data, match_indices)
+        match_indices = _coerce_indices_for_vectorization(
+            self.data, match_indices
+        )
 
         self._save_history(
             (
@@ -1269,7 +1271,7 @@ class Labels(_ImageBase):
         else:
             slice_coord = slice_coord_temp
 
-        slice_coord = _get_vectorized_indices(self.data, slice_coord)
+        slice_coord = _coerce_indices_for_vectorization(self.data, slice_coord)
 
         # slice coord is a tuple of coordinate arrays per dimension
         # subset it if we want to only paint into background/only erase
@@ -1427,7 +1429,8 @@ if config.async_octree:
         pass
 
 
-def _get_vectorized_indices(data, indices):
+def _coerce_indices_for_vectorization(data, indices: list) -> tuple:
+    """Coerces indices so that they can be used for vectorized indexing in the given data array."""
     # Fix indexing for xarray if necessary
     # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
     # for difference from indexing numpy
