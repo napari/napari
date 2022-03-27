@@ -1,5 +1,5 @@
 # Tracking
 
-This section contains tutorials for [tracking layers](../tutorials/tracking).
+This section contains tutorials showing how to work with object tracking data and how to format it for display as a napari [tracks layer](../tutorials/tracking).
 
 * [Single cell tracking with napari](cell_tracking)
