@@ -10,6 +10,7 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from superqt.utils import qthrottled
 
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
@@ -358,7 +359,9 @@ class QtViewer(QSplitter):
         self.canvas.events.mouse_double_click.connect(
             self.on_mouse_double_click
         )
-        self.canvas.events.mouse_move.connect(self.on_mouse_move)
+        self.canvas.events.mouse_move.connect(
+            qthrottled(self.on_mouse_move, timeout=20)
+        )
         self.canvas.events.mouse_press.connect(self.on_mouse_press)
         self.canvas.events.mouse_release.connect(self.on_mouse_release)
         self.canvas.events.key_press.connect(
