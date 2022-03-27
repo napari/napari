@@ -1,7 +1,7 @@
 # YAML 1.2
 # Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
 cff-version: 1.0.3
-message: If you use this software, please cite it using these metadata
+message: If you use this software, please cite it using these metadata.
 title: 'napari: a multi-dimensional image viewer for Python'
 doi: 10.5281/zenodo.3555620
 authors:
