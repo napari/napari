@@ -43,7 +43,7 @@ class QtReaderDialog(QDialog):
         # add instruction label
         layout = QVBoxLayout()
         label = QLabel(
-            f"{error_message}Choose reader for {self._current_file}:"
+            f"{error_message}\nChoose reader for {self._current_file}:"
         )
         layout.addWidget(label)
 
@@ -73,7 +73,7 @@ class QtReaderDialog(QDialog):
 
     def add_reader_buttons(self, layout, readers):
         """Add radio button to layout for each reader in readers"""
-        for display_name in sorted(readers.values()):
+        for display_name in sorted(readers.keys()):
             button = QRadioButton(f"{display_name}")
             self.reader_btn_group.addButton(button)
             layout.addWidget(button)
@@ -105,26 +105,29 @@ class QtReaderDialog(QDialog):
         return display_name, persist_choice
 
 
-def handle_gui_reading(_pth, viewer, stack, plugin, error):
-    _, extension = os.path.splitext(_pth)
+def handle_gui_reading(_paths, viewer, stack, plugin, error):
+    _path = _paths[0]
+    _, extension = os.path.splitext(_path)
 
-    readers = get_potential_readers(_pth)
-    # remove the plugin we already tried
+    readers = get_potential_readers(_path)
+    # remove plugin we already tried e.g. prefered plugin
     if plugin in readers:
         del readers[plugin]
-    # if there's no other readers left, raise error
+    # if there's no other readers left, raise the exception
     if not readers:
         raise error
 
-    # we don't need to show this message
-    if 'Multiple plugins found' in str(error):
-        error = ''
+    error_message = str(error)
+    # showing this message in the GUI would be redundant so we clear it
+    if 'Multiple plugins found' in error_message:
+        error_message = ''
 
     readerDialog = QtReaderDialog(
         parent=viewer,
-        pth=_pth,
+        # TODO: we probably want the reader dialog to take all paths and just display them nicely somehow
+        pth=_path,
         extension=extension,
-        error_message=error,
+        error_message=error_message,
         readers=readers,
     )
     display_name, persist = get_reader_from_dialog(readerDialog)
@@ -135,12 +138,12 @@ def handle_gui_reading(_pth, viewer, stack, plugin, error):
             for d_name, p_name in readers.items()
             if d_name == display_name
         ][0]
+        # may throw error, but we let it this time
         viewer.viewer._add_layers_with_plugins(
-            [_pth], stack=stack, plugin=plugin_name
+            _paths, stack=stack, plugin=plugin_name
         )
 
         if persist:
-            extension = os.path.splitext(_pth)[1]
             get_settings().plugins.extension2reader = {
                 **get_settings().plugins.extension2reader,
                 extension: display_name,
