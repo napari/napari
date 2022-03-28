@@ -483,6 +483,8 @@ class Shapes(Layer):
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
+            features=Event,
+            feature_defaults=Event,
         )
 
         # Flag set to false to block thumbnail refresh
@@ -753,6 +755,7 @@ class Shapes(Layer):
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
+        self.events.features()
 
     @property
     def feature_defaults(self):
@@ -868,7 +871,10 @@ class Shapes(Layer):
         )
         if update_indices is not None:
             self.refresh_colors()
+            self.events.properties()
+            self.events.features()
         self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def shape_type(self):

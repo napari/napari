@@ -782,6 +782,9 @@ class QtViewer(QSplitter):
 
         Imports the console the first time it is requested.
         """
+        if in_ipython():
+            return
+
         # force instantiation of console if not already instantiated
         _ = self.console
 

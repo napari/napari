@@ -218,6 +218,8 @@ class Vectors(Layer):
             edge_color_mode=Event,
             properties=Event,
             out_of_slice_display=Event,
+            features=Event,
+            feature_defaults=Event,
         )
 
         # Save the vector style params
@@ -354,6 +356,7 @@ class Vectors(Layer):
                     'current_value': self.feature_defaults[edge_color_name][0],
                 }
         self.events.properties()
+        self.events.features()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

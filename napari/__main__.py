@@ -12,8 +12,6 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-import napari.plugins._npe2 as _npe2
-
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
@@ -282,7 +280,7 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import plugin_manager
+            from .plugins import _npe2, plugin_manager
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
