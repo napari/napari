@@ -106,22 +106,12 @@ class QtReaderDialog(QDialog):
 
 
 def handle_gui_reading(_paths, viewer, stack, plugin, error):
-    _path = _paths[0]
+
+    _path, readers, error_message = prepare_readers_before_dialog(
+        _paths, plugin, error
+    )
+
     _, extension = os.path.splitext(_path)
-
-    readers = get_potential_readers(_path)
-    # remove plugin we already tried e.g. prefered plugin
-    if plugin in readers:
-        del readers[plugin]
-    # if there's no other readers left, raise the exception
-    if not readers:
-        raise error
-
-    error_message = str(error)
-    # showing this message in the GUI would be redundant so we clear it
-    if 'Multiple plugins found' in error_message:
-        error_message = ''
-
     readerDialog = QtReaderDialog(
         parent=viewer,
         # TODO: we probably want the reader dialog to take all paths and just display them nicely somehow
@@ -132,22 +122,9 @@ def handle_gui_reading(_paths, viewer, stack, plugin, error):
     )
     display_name, persist = get_reader_from_dialog(readerDialog)
     if display_name:
-        # TODO: disambiguate with reader title
-        plugin_name = [
-            p_name
-            for d_name, p_name in readers.items()
-            if d_name == display_name
-        ][0]
-        # may throw error, but we let it this time
-        viewer.viewer._add_layers_with_plugins(
-            _paths, stack=stack, plugin=plugin_name
+        handle_dialog_choices(
+            display_name, persist, extension, readers, _paths, stack, viewer
         )
-
-        if persist:
-            get_settings().plugins.extension2reader = {
-                **get_settings().plugins.extension2reader,
-                extension: display_name,
-            }
 
 
 def get_reader_from_dialog(readerDialog):
@@ -165,3 +142,41 @@ def get_reader_from_dialog(readerDialog):
     if res:
         display_name, persist_choice = res[0], res[1]
     return display_name, persist_choice
+
+
+def prepare_readers_before_dialog(_paths, plugin, error):
+    _path = _paths[0]
+
+    readers = get_potential_readers(_path)
+    # remove plugin we already tried e.g. prefered plugin
+    if plugin in readers:
+        del readers[plugin]
+    # if there's no other readers left, raise the exception
+    if not readers:
+        raise error
+
+    error_message = str(error)
+    # showing this message in the GUI would be redundant so we clear it
+    if 'Multiple plugins found' in error_message:
+        error_message = ''
+
+    return _path, readers, error_message
+
+
+def handle_dialog_choices(
+    display_name, persist, extension, readers, _paths, stack, viewer
+):
+    # TODO: disambiguate with reader title
+    plugin_name = [
+        p_name for d_name, p_name in readers.items() if d_name == display_name
+    ][0]
+    # may throw error, but we let it this time
+    viewer.viewer._add_layers_with_plugins(
+        _paths, stack=stack, plugin=plugin_name
+    )
+
+    if persist:
+        get_settings().plugins.extension2reader = {
+            **get_settings().plugins.extension2reader,
+            extension: display_name,
+        }
