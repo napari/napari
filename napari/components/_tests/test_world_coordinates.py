@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pytest
 
@@ -78,17 +76,19 @@ def test_both_scaled_and_translated_images():
         assert viewer.dims.current_step[0] == i
 
 
+@pytest.mark.filterwarnings('ignore:.*is a deprecated alias for the builtin.*')
+@pytest.mark.filterwarnings('error')
 def test_no_warning_non_affine_slicing():
     """Test no warning if not slicing into an affine."""
     viewer = ViewerModel()
     np.random.seed(0)
     data = np.random.random((10, 10, 10))
     viewer.add_image(data, scale=[2, 1, 1], translate=[10, 15, 20])
-    with warnings.catch_warnings(record=True) as recorded_warnings:
-        viewer.layers[0].refresh()
-    assert len(recorded_warnings) == 0
+    viewer.layers[0].refresh()
 
 
+@pytest.mark.filterwarnings('ignore:.*is a deprecated alias for the builtin.*')
+@pytest.mark.filterwarnings('error')
 def test_warning_affine_slicing():
     """Test warning if slicing into an affine."""
     viewer = ViewerModel()
@@ -105,4 +105,9 @@ def test_warning_affine_slicing():
     with pytest.warns(UserWarning) as recorded_warnings:
         viewer.layers[0].refresh()
     # note right now refresh tiggers two `_slice_indices` calls
-    assert len(recorded_warnings) == 2
+    if len(recorded_warnings) != 2:
+        for r in recorded_warnings:
+            assert str(r.message)[:20] in (
+                "Non-orthogonal slici",
+                "`np.int` is a deprec",
+            )
