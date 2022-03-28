@@ -24,7 +24,9 @@ class ImageLayerNode:
 
         self._custom_node = custom_node
         self._image_node = ImageNode(
-            None,
+            None
+            if (texture_format is None or texture_format == 'auto')
+            else np.array([[0.0]], dtype=np.float32),
             method='auto',
             texture_format=texture_format,
         )
