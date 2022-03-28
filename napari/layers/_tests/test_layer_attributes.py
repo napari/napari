@@ -60,7 +60,7 @@ def _check_subpixel_values(layer, val_dict):
     ndisplay = layer._ndisplay
     for center, expected_value in val_dict.items():
         # ensure all positions within the pixel extent report the same value
-        # note: world=False so do not multiply offsets by the layer scale
+        # note: values are checked in data coordinates in this function
         for offset_0 in [-0.4999, 0, 0.4999]:
             for offset_1 in [-0.4999, 0, 0.4999]:
                 position = [center[0] + offset_0, center[1] + offset_1]
