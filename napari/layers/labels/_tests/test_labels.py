@@ -916,7 +916,7 @@ def test_ndim_paint():
 
 
 def test_switching_display_func():
-    label_data = np.random.randint(2 ** 25, 2 ** 25 + 5, size=(50, 50))
+    label_data = np.random.randint(2**25, 2**25 + 5, size=(50, 50))
     layer = Labels(label_data)
     assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
 
@@ -984,6 +984,22 @@ def test_fill_tensorstore():
         layer.fill((1, 4, 6, 7), 4)
         modified_labels = np.where(labels == 2, 4, labels)
         np.testing.assert_array_equal(modified_labels, np.asarray(data))
+
+
+def test_fill_with_xarray():
+    """See https://github.com/napari/napari/issues/2374"""
+    data = xr.DataArray(np.zeros((5, 4, 4), dtype=int))
+    layer = Labels(data)
+
+    layer.fill((0, 2, 2), 1)
+
+    np.testing.assert_array_equal(layer.data[0, :, :], np.ones((4, 4)))
+    np.testing.assert_array_equal(layer.data[1:, :, :], np.zeros((4, 4, 4)))
+    # In the associated issue, using xarray.DataArray caused memory allocation
+    # problems due to different read indexing rules, so check that the data
+    # saved for undo has the expected vectorized shape and values.
+    undo_data = layer._undo_history[0][0][1]
+    np.testing.assert_array_equal(undo_data, np.zeros((16,)))
 
 
 @pytest.mark.parametrize(

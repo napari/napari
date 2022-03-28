@@ -1,6 +1,5 @@
 import functools
 import inspect
-import sys
 
 from napari.utils.naming import (
     inc_name_count,
@@ -51,7 +50,6 @@ def eval_with_filename(source, filename=__file__):
     return eval(code, frame.f_globals, frame.f_locals)
 
 
-walrus = sys.version_info >= (3, 8)
 magic_name = functools.partial(
     magic_name, path_prefix=magic_name.__code__.co_filename
 )
@@ -64,8 +62,7 @@ def test_basic():
     z = 5
     assert magic_name(z) == 'z'
 
-    if walrus:
-        assert eval_with_filename("magic_name(y:='SPAM')") == 'y'
+    assert eval_with_filename("magic_name(y:='SPAM')") == 'y'
 
 
 globalval = 42
@@ -94,9 +91,8 @@ def test_assignment():
     result = magic_name(t)
     assert result == 't'
 
-    if walrus:
-        result = eval_with_filename('magic_name(d:=42)')
-        assert result == 'd'
+    result = eval_with_filename('magic_name(d:=42)')
+    assert result == 'd'
 
 
 def test_path_prefix():
@@ -114,8 +110,7 @@ def test_path_prefix():
     r = 8  # noqa
     assert eval_with_filename('foo(r)', 'bye.py') == 'r'
 
-    if walrus:
-        assert eval_with_filename('foo(i:=33)', 'rye.py') == 'i'
+    assert eval_with_filename('foo(i:=33)', 'rye.py') == 'i'
 
 
 def test_empty_path_prefix():
@@ -136,5 +131,4 @@ def test_empty_path_prefix():
     r = 8  # noqa
     assert eval_with_filename('foo(r)', 'bye.py') is None
 
-    if walrus:
-        assert eval_with_filename('foo(i:=33)', 'rye.py') is None
+    assert eval_with_filename('foo(i:=33)', 'rye.py') is None

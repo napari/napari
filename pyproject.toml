@@ -27,7 +27,7 @@ icon = "napari/resources/icon"
 requires = []
 
 [tool.black]
-target-version = ['py36', 'py37', 'py38']
+target-version = ['py38', 'py39', 'py310']
 skip-string-normalization = true
 line-length = 79
 exclude = '''
@@ -60,7 +60,6 @@ ignore = [
   "asv.conf.json",
   "codecov.yml",
   "Makefile",
-  "mypy.ini",
   "napari/_version.py",  # added during build by setuptools_scm
   "tools/minreq.py",
   "tox.ini",
@@ -91,6 +90,7 @@ addopts = "--maxfail=5 --durations=10 -rXxs"
 # That way we can clean them up when no longer necessary
 filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
+  "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
   "ignore:Restart required for this change:UserWarning:napari",  # triggered by a lot of async tests
   "ignore::DeprecationWarning:shibokensupport",
@@ -104,9 +104,25 @@ filterwarnings = [
   "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
   "ignore:.*Themes were changed to use evented model",  # specifying the full is not working here so glob pattern is used instead
-  "ignore:.*distutils Version classes are deprecated::napari._vendor.darkdetect",  # vendor darkdetect still use distutils
+  "ignore:distutils Version classes are deprecated::",
 ]
 markers = [
     "sync_only: Test should only be run synchronously",
     "async_only: Test should only be run asynchronously",
 ]
+
+[tool.mypy]
+files = "napari"
+ignore_missing_imports = true
+exclude = [
+  "_tests",
+]
+show_error_codes = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+# # maybe someday :)
+# disallow_any_generics = true
+# no_implicit_reexport = true
+# disallow_untyped_defs = true

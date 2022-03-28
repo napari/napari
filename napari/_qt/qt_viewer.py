@@ -226,6 +226,7 @@ class QtViewer(QSplitter):
             area='left',
             allowed_areas=['left', 'right'],
             object_name='layer list',
+            close_btn=False,
         )
         self.dockLayerControls = QtViewerDockWidget(
             self,
@@ -234,6 +235,7 @@ class QtViewer(QSplitter):
             area='left',
             allowed_areas=['left', 'right'],
             object_name='layer controls',
+            close_btn=False,
         )
         self.dockConsole = QtViewerDockWidget(
             self,
@@ -242,6 +244,7 @@ class QtViewer(QSplitter):
             area='bottom',
             allowed_areas=['top', 'bottom'],
             object_name='console',
+            close_btn=False,
         )
         self.dockConsole.setVisible(False)
         # because the console is loaded lazily in the @getter, this line just
@@ -779,6 +782,9 @@ class QtViewer(QSplitter):
 
         Imports the console the first time it is requested.
         """
+        if in_ipython():
+            return
+
         # force instantiation of console if not already instantiated
         _ = self.console
 

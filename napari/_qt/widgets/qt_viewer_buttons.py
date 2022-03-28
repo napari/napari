@@ -15,6 +15,7 @@ from qtpy.QtWidgets import (
 
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
+from ...utils.misc import in_ipython
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from .qt_dims_sorter import QtDimsSorter
@@ -120,6 +121,8 @@ class QtViewerButtons(QFrame):
             'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
+        if in_ipython():
+            self.consoleButton.setEnabled(False)
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
         self.rollDimsButton = rdb
@@ -413,14 +416,18 @@ def _omit_viewer_args(constructor):
     def _func(*args, **kwargs):
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
-                "viewer argument is deprecated and should not be used",
+                trans._(
+                    "viewer argument is deprecated and should not be used"
+                ),
                 category=FutureWarning,
                 stacklevel=2,
             )
             args = args[:1] + args[2:]
         if "viewer" in kwargs:
             warnings.warn(
-                "viewer argument is deprecated and should not be used",
+                trans._(
+                    "viewer argument is deprecated and should not be used"
+                ),
                 category=FutureWarning,
                 stacklevel=2,
             )
@@ -495,7 +502,9 @@ class QtStateButton(QtViewerPushButton):
         offstate=False,
     ):
         warnings.warn(
-            "QtStateButton is deprecated and will be removed in 0.4.14",
+            trans._(
+                "QtStateButton is deprecated and will be removed in 0.4.14"
+            ),
             stacklevel=2,
             category=FutureWarning,
         )

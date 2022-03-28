@@ -6,12 +6,14 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - [@AhmetCanSolak](https://github.com/AhmetCanSolak)
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - [@alisterburt](https://github.com/alisterburt)
+- [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - [@DragaDoncila](https://github.com/DragaDoncila)
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - [@GenevieveBuckley](https://github.com/GenevieveBuckley)
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - [@jni](https://github.com/jni)*
 - [Justine Larsen](https://github.com/napari/napari/commits?author=justinelarsen) - [@justinelarsen](https://github.com/justinelarsen)
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - [@kevinyamauchi](https://github.com/kevinyamauchi)
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - [@kne42](https://github.com/kne42)
 - [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - [@royerloic](https://github.com/royerloic)*
+- [Lorenzo Gaifas](https://github.com/napari/napari/commits?author=brisvag) - [@brisvag](https://github.com/brisvag)
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - [@sofroniewn](https://github.com/sofroniewn)*
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - [@tlambert03](https://github.com/tlambert03)
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - [@ziyangczi](https://github.com/ziyangczi)
