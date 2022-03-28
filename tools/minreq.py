@@ -10,6 +10,7 @@ other than '1'.
 """
 
 import os
+import sys
 from configparser import ConfigParser
 
 
@@ -18,10 +19,18 @@ def pin_config_minimum_requirements(config_filename):
     config = ConfigParser()
     config.read(config_filename)
 
+    NUMMIN = 'numpy>=1.18.5'
+
+    if NUMMIN not in config['options']['install_requires']:
+        sys.exit('numpy min version updated, please update minreq.py')
     # swap out >= requirements for ==
-    config['options']['install_requires'] = config['options'][
-        'install_requires'
-    ].replace('>=', '==')
+    config['options']['install_requires'] = (
+        config['options']['install_requires']
+        # meshzoo 10+ only support nu,py 1.20+, all older version of meshzoo
+        # have been deleted.
+        .replace(NUMMIN, 'numpy==1.20.0').replace('>=', '==')
+    )
+
     config['options.extras_require']['pyside2'] = config[
         'options.extras_require'
     ]['pyside2'].replace('>=', '==')
