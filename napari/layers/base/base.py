@@ -1403,10 +1403,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
-        # Since coordinate 0 corresponds to a pixel center, in order to
-        # correctly get the data value under the mouse at the pixel
-        # edges, we need to shift by 0.5 pixels on each axis here.
         if not world:
+            # VisPy considers the coordinate system origin to be the canvas
+            # corner, while napari considers the origin to be the **center** of
+            # the corner pixel. To get the correct value under the mouse
+            # cursor, we need to shift the position by 0.5 pixels on each
+            # axis.
             position = tuple(p + 0.5 for p in position)
         start_point, end_point = self._get_ray_intersections(
             position=position,
