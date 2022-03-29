@@ -43,13 +43,21 @@ def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
         if (t == 0) {
             return vec4(0.0,0.0,0.0,0.0);
         }
+        if (t == 1) {
+            return vec4(1.0, 0.0, 0.0, 1.0);
+        }
+        if (t == 2) {
+            return vec4(0.0, 1.0, 0.0, 1.0);
+        }
+        if (t == 3) {
+            return vec4(0.0, 0.0, 1.0, 1.0);
+        }
 
-        t = (t * phi_mod + $seed);
-        t = mod(value, 1.0);
+        value = mod((t * phi_mod + $seed), 1.0);
 
         return texture2D(
             texture2D_LUT,
-            vec2(0.0, clamp(t, 0.0, 1.0))
+            vec2(0.0, clamp(value, 0.0, 1.0))
         );
     }
     """
