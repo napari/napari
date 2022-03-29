@@ -70,7 +70,7 @@ labels_layer = viewer.add_labels(label_image, name='segmentation')
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -146,7 +146,7 @@ viewer.dims.ndisplay = 3
 # programmatically adjust the camera angle
 viewer.camera.zoom = 2
 viewer.camera.angles = (3, 38, 53)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 Note though that when entering 3D rendering mode the colorpicker, paintbrush,

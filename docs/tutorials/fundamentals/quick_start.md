@@ -130,7 +130,7 @@ viewer = napari.Viewer()
 
 from skimage import data
 viewer.add_image(data.cell(), name='cell')
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ### Image display adjustment
@@ -147,7 +147,7 @@ viewer.layers['cell'].colormap = "yellow"
 :tags: [remove-input]
 
 viewer.layers['cell'].colormap = "yellow"
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ### Manually label the cell

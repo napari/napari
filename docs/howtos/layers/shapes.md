@@ -67,7 +67,7 @@ shapes_layer = viewer.add_shapes(polygons, shape_type='polygon', edge_width=5,
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -201,7 +201,7 @@ shapes_layer.add(
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -247,7 +247,7 @@ shapes_layer.add_ellipses(
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python

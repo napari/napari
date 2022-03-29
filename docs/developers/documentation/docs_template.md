@@ -65,7 +65,7 @@ viewer = napari.Viewer()
 viewer.open_sample('napari', 'cells3d')
 
 # takes a screenshot and produces it as output for this cell
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 #### 2. Remove input cells
@@ -106,7 +106,7 @@ from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
 viewer.dims.current_step = (25, 0, 1)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python3
@@ -116,7 +116,7 @@ from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
 viewer.dims.current_step = (25, 0, 1)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 Note how we've included the `nbscreenshot` import in this removed cell. Even though in the

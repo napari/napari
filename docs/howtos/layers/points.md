@@ -59,7 +59,7 @@ points_layer = viewer.add_points(points, size=30)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -246,7 +246,7 @@ points_layer = viewer.add_points(
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -289,7 +289,7 @@ points_layer = viewer.add_points(
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
