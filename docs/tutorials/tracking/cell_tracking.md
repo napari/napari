@@ -176,7 +176,7 @@ viewer.add_tracks(data, properties=properties, graph=graph, scale=SCALE, name='t
 napari.run()
 ```
 
-![image: tracks isbi](../assets/tutorials/tracks_isbi.gif)
+![image: tracks isbi](../assets/tutorials/tracks_isbi.webm)
 
 ---
 

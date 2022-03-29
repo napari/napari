@@ -7,7 +7,7 @@ import pytest
 from yaml import safe_load
 
 from napari import settings
-from napari.settings import NapariSettings
+from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
 
@@ -93,7 +93,10 @@ def test_settings_load_invalid_key(tmp_path, monkeypatch):
     s.save()
     text = fake_path.read_text()
     # removed bad key
-    assert safe_load(text) == {'application': {'first_time': False}}
+    assert safe_load(text) == {
+        'application': {'first_time': False},
+        'schema_version': CURRENT_SCHEMA_VERSION,
+    }
 
 
 def test_settings_load_invalid_section(tmp_path):
@@ -283,8 +286,10 @@ def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):
     # load that yaml file and resave
     NapariSettings(fake_path).save()
 
-    # make sure that it's now just an empty dict
-    assert not safe_load(fake_path.read_text())
+    # make sure that the only value is now the schema version
+    assert safe_load(fake_path.read_text()) == {
+        'schema_version': CURRENT_SCHEMA_VERSION
+    }
 
 
 def test_get_settings(tmp_path):

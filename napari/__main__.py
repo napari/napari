@@ -12,8 +12,6 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-import napari.plugins._npe2 as _npe2
-
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
@@ -27,7 +25,7 @@ class InfoAction(argparse.Action):
         plugin_manager.discover_widgets()
         if errors := plugin_manager.get_errors():
             names = {e.plugin_name for e in errors}
-            print("\n‼️  Errors were detected in the following plugins:")
+            print("\n!!  Errors were detected in the following plugins:")
             print("(Run 'napari --plugin-info -v' for more details)")
             print("\n".join(f"  - {n}" for n in names))
         sys.exit()
@@ -43,7 +41,7 @@ class PluginInfoAction(argparse.Action):
         print(plugin_manager)
 
         if errors := plugin_manager.get_errors():
-            print("‼️  Some errors occurred:")
+            print("!!  Some errors occurred:")
             verbose = '-v' in sys.argv or '--verbose' in sys.argv
             if not verbose:
                 print("   (use '-v') to show full tracebacks")
@@ -282,7 +280,7 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import plugin_manager
+            from .plugins import _npe2, plugin_manager
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.

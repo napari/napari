@@ -118,7 +118,7 @@ performant. You can also return to the original zoom level by clicking the
 
 +++
 
-![image: pan and zoom with napari](../assets/tutorials/viewer_pan_zoom.gif)
+![image: pan and zoom with napari](../assets/tutorials/viewer_pan_zoom.webm)
 
 +++
 
