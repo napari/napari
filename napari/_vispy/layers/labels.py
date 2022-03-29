@@ -33,26 +33,27 @@ def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
     colors_rgba = ColorArray(colors[:])._rgba
     LUT[:, 0, :] = colors_rgba[j]
 
-    low_disc = """
-    float low_disc(float t) {
+    low_disc_plus_cmap = """
+    uniform sampler2D texture2D_LUT;
+
+    vec4 low_disc_plus_cmap(float t) {
         float phi_mod = 0.6180339887498948482;  // phi - 1
         float value = 0.0;
 
         if (t == 0) {
-            return t;
+            return vec4(0.0,0.0,0.0,0.0);
         }
 
         t = (t * phi_mod + $seed);
         t = mod(value, 1.0);
 
-        return t;
+        return texture2D(
+            texture2D_LUT,
+            vec2(0.0, clamp(t, 0.0, 1.0))
+        );
     }
     """
-    s2 = "uniform sampler2D texture2D_LUT;"
-    s = "{\n return texture2D(texture2D_LUT, \
-           vec2(0.0, clamp(low_disc(t), 0.0, 1.0)));\n} "
-
-    return f"{low_disc}\n{s2}\nvec4 colormap(float t) {{\n{s}\n}}"
+    return low_disc_plus_cmap
 
 
 class LabelColormap(VispyColormap):
@@ -76,6 +77,7 @@ class LabelColormap(VispyColormap):
 class VispyLabelsLayer(VispyImageLayer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, texture_format='r32f', **kwargs)
+        self._on_colormap_change()
 
     def _on_colormap_change(self, event=None):
         # self.layer.colormap is a labels_colormap, which is an evented model
