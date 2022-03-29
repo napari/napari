@@ -261,22 +261,21 @@ class QtLabelsControls(QtLayerControls):
         color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
-        self._populate_grid(
-            (button_row,),
-            (...,),
-            ('label:', color_layout),
-            ('opacity:', self.opacitySlider),
-            ('brush size:', self.brushSizeSlider),
-            ('blending:', self.blendComboBox),
-            (self.renderLabel, self.renderComboBox),
-            ('color mode:', self.colorModeComboBox),
-            ('contour:', self.contourSpinBox),
-            ('n edit dim:', self.ndimSpinBox),
-            ('contiguous:', self.contigCheckBox),
-            ('preserve\nlabels:', self.preserveLabelsCheckBox),
-            (...,),
-            ('show\nselected:', self.selectedColorCheckbox),
-            (...,),
+        self.grid_layout.addRow(button_row)
+        self.grid_layout.addRow(trans._('label:'), color_layout)
+        self.grid_layout.addRow(trans._('opacity:'), self.opacitySlider)
+        self.grid_layout.addRow(trans._('brush size:'), self.brushSizeSlider)
+        self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
+        self.grid_layout.addRow(self.renderLabel, self.renderComboBox)
+        self.grid_layout.addRow(trans._('color mode:'), self.colorModeComboBox)
+        self.grid_layout.addRow(trans._('contour:'), self.contourSpinBox)
+        self.grid_layout.addRow(trans._('n edit dim:'), self.ndimSpinBox)
+        self.grid_layout.addRow(trans._('contiguous:'), self.contigCheckBox)
+        self.grid_layout.addRow(
+            trans._('preserve\nlabels:'), self.preserveLabelsCheckBox
+        )
+        self.grid_layout.addRow(
+            trans._('show\nselected:'), self.selectedColorCheckbox
         )
 
     def _on_mode_change(self, event):

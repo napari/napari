@@ -287,15 +287,14 @@ class QtShapesControls(QtLayerControls):
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
 
-        self._populate_grid(
-            (button_grid,),
-            (...,),
-            ('opacity:', self.opacitySlider),
-            ('edge width:', self.widthSlider),
-            ('blending:', self.blendComboBox),
-            ('face color:', self.faceColorEdit),
-            ('edge color:', self.edgeColorEdit),
-            ('display text:', self.textDispCheckBox),
+        self.grid_layout.addRow(button_grid)
+        self.grid_layout.addRow(trans._('opacity:'), self.opacitySlider)
+        self.grid_layout.addRow(trans._('edge width:'), self.widthSlider)
+        self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
+        self.grid_layout.addRow(trans._('face color:'), self.faceColorEdit)
+        self.grid_layout.addRow(trans._('edge color:'), self.edgeColorEdit)
+        self.grid_layout.addRow(
+            trans._('display text:'), self.textDispCheckBox
         )
 
     def _on_mode_change(self, event):

@@ -108,15 +108,17 @@ class QtVectorsControls(QtLayerControls):
         out_of_slice_cb.stateChanged.connect(self.change_out_of_slice)
         self.outOfSliceCheckBox = out_of_slice_cb
 
-        self._populate_grid(
-            ('opacity:', self.opacitySlider),
-            ('width:', self.widthSpinBox),
-            ('length:', self.lengthSpinBox),
-            ('blending:', self.blendComboBox),
-            ('edge color mode:', self.color_mode_comboBox),
-            (self.edge_color_label, self.edgeColorEdit),
-            (self.edge_prop_label, self.color_prop_box),
-            ('out of slice:', self.outOfSliceCheckBox),
+        self.grid_layout.addRow(trans._('opacity:'), self.opacitySlider)
+        self.grid_layout.addRow(trans._('width:'), self.widthSpinBox)
+        self.grid_layout.addRow(trans._('length:'), self.lengthSpinBox)
+        self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
+        self.grid_layout.addRow(
+            trans._('edge color mode:'), self.color_mode_comboBox
+        )
+        self.grid_layout.addRow(self.edge_color_label, self.edgeColorEdit)
+        self.grid_layout.addRow(self.edge_prop_label, self.color_prop_box)
+        self.grid_layout.addRow(
+            trans._('out of slice:'), self.outOfSliceCheckBox
         )
 
     def change_edge_color_property(self, property: str):

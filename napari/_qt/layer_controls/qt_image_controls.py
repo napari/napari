@@ -146,12 +146,14 @@ class QtImageControls(QtBaseImageControls):
             colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
-        self.grid_layout.addRow('opacity:', self.opacitySlider)
-        self.grid_layout.addRow('contrast limits:', self.contrastLimitsSlider)
-        self.grid_layout.addRow('auto-contrast:', self.autoScaleBar)
-        self.grid_layout.addRow('gamma:', self.gammaSlider)
-        self.grid_layout.addRow('colormap:', colormap_layout)
-        self.grid_layout.addRow('blending:', self.blendComboBox)
+        self.grid_layout.addRow(trans._('opacity:'), self.opacitySlider)
+        self.grid_layout.addRow(
+            trans._('contrast limits:'), self.contrastLimitsSlider
+        )
+        self.grid_layout.addRow(trans._('auto-contrast:'), self.autoScaleBar)
+        self.grid_layout.addRow(trans._('gamma:'), self.gammaSlider)
+        self.grid_layout.addRow(trans._('colormap:'), colormap_layout)
+        self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
         self.grid_layout.addRow(self.interpLabel, self.interpComboBox)
         self.grid_layout.addRow(self.renderLabel, self.renderComboBox)
         self.grid_layout.addRow(self.depictionLabel, self.depictionComboBox)

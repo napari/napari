@@ -2,6 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
+from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from .qt_layer_controls_base import QtLayerControls
 
@@ -81,18 +82,20 @@ class QtTracksControls(QtLayerControls):
         self.color_by_combobox.currentTextChanged.connect(self.change_color_by)
         self.colormap_combobox.currentTextChanged.connect(self.change_colormap)
 
-        self._populate_grid(
-            ('color by:', self.color_by_combobox),
-            ('colormap:', self.colormap_combobox),
-            ('blending:', self.blendComboBox),
-            ('opacity:', self.opacitySlider),
-            ('tail width:', self.tail_width_slider),
-            ('tail length:', self.tail_length_slider),
-            ('head length:', self.head_length_slider),
-            ('tail:', self.tail_checkbox),
-            ('show ID:', self.id_checkbox),
-            ('graph:', self.graph_checkbox),
+        self.grid_layout.addRow(trans._('color by:'), self.color_by_combobox)
+        self.grid_layout.addRow(trans._('colormap:'), self.colormap_combobox)
+        self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
+        self.grid_layout.addRow(trans._('opacity:'), self.opacitySlider)
+        self.grid_layout.addRow(trans._('tail width:'), self.tail_width_slider)
+        self.grid_layout.addRow(
+            trans._('tail length:'), self.tail_length_slider
         )
+        self.grid_layout.addRow(
+            trans._('head length:'), self.head_length_slider
+        )
+        self.grid_layout.addRow(trans._('tail:'), self.tail_checkbox)
+        self.grid_layout.addRow(trans._('show ID:'), self.id_checkbox)
+        self.grid_layout.addRow(trans._('graph:'), self.graph_checkbox)
 
         self._on_tail_length_change()
         self._on_tail_width_change()
