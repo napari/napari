@@ -89,7 +89,7 @@ stack.shape  # (nfiles, nz, ny, nx)
 stack
 ```
 
-![image: dask array html representation](../assets/tutorials/dask_repr.png)
+![image: dask array html representation ](../assets/tutorials/dask_repr.png)
 
 *No data has been read from disk yet!*
 
@@ -128,7 +128,7 @@ stack = imread("/path/to/experiment/*.tif")
 napari.view_image(stack, contrast_limits=[0,2000], multiscale=False)
 ```
 
-![image: mCherry-H2B showing chromosome separation during mitosis. Collected on a lattice light sheet microscope](../assets/tutorials/dask1.webm)
+![image: mCherry-H2B showing chromosome separation during mitosis. Collected on a lattice light sheet microscope ](../assets/tutorials/dask1.webm)
 
 ### **Side note regarding higher-dimensional datasets**
 
@@ -248,7 +248,7 @@ but it's surprisingly usable,
 and allows you to preview the result of a relatively complex processing pipeline *on-the-fly*,
 for arbitrary timepoints/channels, while storing *only* the raw data on disk.
 
-![image: same dataset, demonstrating on-the-fly read → deskew → deconvolve → crop](../assets/tutorials/dask2.webm)
+![image: same dataset, demonstrating on-the-fly read → deskew → deconvolve → crop ](../assets/tutorials/dask2.webm)
 
 This workflow is very much patterned after [another great post by John Kirkham, Matthew Rocklin, and Matthew McCormick](https://blog.dask.org/2019/08/09/image-itk)
 that describes a similar image processing pipeline using [ITK](https://itk.org/).

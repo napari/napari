@@ -69,7 +69,7 @@ colors.
 
 For example:
 
-![image: blending](./images/blending.png)
+![image: blending ](./images/blending.png)
 
 ## 3D rendering of images
 
@@ -79,7 +79,7 @@ or 3 less than the total number of dimensions of the layer, allowing you to
 browse volumetric timeseries data and other high dimensional data. See for
 example these cells undergoing mitosis in this volumetric timeseries:
 
-![image: mitosis](./images/mitosis.gif)
+![image: mitosis ](./images/mitosis.gif)
 
 ```{note}
 Switching to 3D mode for a very large data set could trigger computation that
@@ -105,7 +105,7 @@ distances from the camera according to a maximum intensity projection to create
 the 2D image that is then displayed on the screen. This mode works well for many
 biological images such as these cells growing in culture:
 
-![image: rendering](./images/rendering.png)
+![image: rendering ](./images/rendering.png)
 
 When viewing 2D slices the rendering mode has no effect.
 
@@ -134,7 +134,7 @@ napari.view_image(retina, name='retina', scale=[1,10,1,1])
 viewer.layers['retina'].scale = [1,10,1,1]
 ```
 
-![image](images/scaling.gif)
+![image ](images/scaling.gif)
 
 
 ## Translating layers
