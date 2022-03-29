@@ -514,3 +514,15 @@ def test_copy_paste_with_derived_string():
         text_manager.values,
         ['class: A', 'class: B', 'class: C', 'class: A', 'class: C'],
     )
+
+
+def test_serialization():
+    features = pd.DataFrame(
+        {'class': ['A', 'B', 'C'], 'confidence': [0.5, 0.3, 1]}
+    )
+    original = TextManager(features=features, string='class', color='red')
+
+    serialized = original.dict()
+    deserialized = TextManager(**serialized)
+
+    assert original == deserialized
