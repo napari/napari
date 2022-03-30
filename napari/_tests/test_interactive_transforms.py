@@ -142,13 +142,13 @@ def test_transform_coupling(make_napari_viewer):
 
 def test_interaction_box_changes_with_layer_transform(make_napari_viewer):
     viewer = make_napari_viewer()
-    image_layer = viewer.add_image(np.random.random((28, 28)))
-    image_layer.mode = 'transform'
+    layer = viewer.add_image(np.random.random((28, 28)))
+    layer.mode = 'transform'
     initial_selection_box = np.copy(
-        viewer.overlays.interaction_box.transform.affine_matrix
+        viewer.overlays.interaction_box.transform.scale
     )
-    viewer.layers[0].scale = [5, 5]
-    assert not np.allclose(
-        initial_selection_box,
-        viewer.overlays.interaction_box.transform.affine_matrix,
+    layer.scale = [5, 5]
+    np.testing.assert_almost_equal(
+        initial_selection_box * 5,
+        viewer.overlays.interaction_box.transform.scale,
     )
