@@ -73,7 +73,7 @@ class QtReaderDialog(QDialog):
 
     def add_reader_buttons(self, layout, readers):
         """Add radio button to layout for each reader in readers"""
-        for display_name in sorted(readers.keys()):
+        for display_name in sorted(readers.values()):
             button = QRadioButton(f"{display_name}")
             self.reader_btn_group.addButton(button)
             layout.addWidget(button)
@@ -168,7 +168,7 @@ def handle_dialog_choices(
 ):
     # TODO: disambiguate with reader title
     plugin_name = [
-        p_name for d_name, p_name in readers.items() if d_name == display_name
+        p_name for p_name, d_name in readers.items() if d_name == display_name
     ][0]
     # may throw error, but we let it this time
     viewer.viewer._add_layers_with_plugins(
@@ -178,5 +178,5 @@ def handle_dialog_choices(
     if persist:
         get_settings().plugins.extension2reader = {
             **get_settings().plugins.extension2reader,
-            extension: display_name,
+            extension: plugin_name,
         }

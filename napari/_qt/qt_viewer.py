@@ -1162,6 +1162,7 @@ def _create_remote_manager(
 
 
 def gui_open(qt_viewer, filenames, stack):
+    # TODO: private method
     layers, plugin, error = qt_viewer.viewer._open_or_get_error(
         filenames, stack=stack
     )

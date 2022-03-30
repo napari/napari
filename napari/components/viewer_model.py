@@ -968,7 +968,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # TODO: Use custom error instance?
         # preferred plugin exists, or we just have one plugin available
         if plugin in readers or (not plugin and len(readers) == 1):
-            plugin = plugin or next(iter(readers.values()))
+            plugin = plugin or next(iter(readers.keys()))
             try:
                 added = self._add_layers_with_plugins(
                     _paths,
@@ -981,7 +981,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             except Exception as e:
                 # TODO: we're changing the error type here and we shouldn't maybe
                 error = RuntimeError(
-                    f'Tried opening with reader {readers[plugin]}, but failed:\n'
+                    f'Tried opening with reader {plugin}, but failed:\n'
                     + str(e)
                 )
 
@@ -993,7 +993,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # multiple plugins
         else:
             error = RuntimeError(
-                f"Multiple plugins found capable of reading {_paths}. Select plugin from {list(readers)} and pass to reading function e.g. `viewer.open(..., plugin=...)`."
+                f"Multiple plugins found capable of reading {_paths}. Select plugin from {list(readers.keys())} and pass to reading function e.g. `viewer.open(..., plugin=...)`."
             )
 
         # where are we handling these
