@@ -225,7 +225,9 @@ class Dims(EventedModel):
     ):
         axis, value = self._sanitize_input(axis, value, value_is_sequence=True)
         full_span = list(self.span)
-        for ax, val, (min_val, max_val, _) in zip(axis, value, self.range):
+        range = list(self.range)
+        for ax, val in zip(axis, value):
+            min_val, max_val, _ = range[ax]
             low, high = sorted(val)
             span = max(min_val, low), min(max_val, high)
             full_span[ax] = span
@@ -237,8 +239,10 @@ class Dims(EventedModel):
         value: Union[Sequence[int], Sequence[Sequence[int]]],
     ):
         axis, value = self._sanitize_input(axis, value, value_is_sequence=True)
+        range = list(self.range)
         value_world = []
-        for ax, val, (min_val, _, step_size) in zip(axis, value, self.range):
+        for ax, val in zip(axis, value):
+            min_val, _, step_size = range[ax]
             value_world.append([min_val + v * step_size for v in val])
         self.set_span(axis, value_world)
 
@@ -263,11 +267,12 @@ class Dims(EventedModel):
             axis, value, value_is_sequence=False
         )
         full_span = list(self.span)
-        for ax, val, (min_val, max_val, _), point in zip(
-            axis, value, self.range, self.point
-        ):
-            shift = val - point
-            low, high = (v + shift for v in full_span[ax])
+        point = list(self.point)
+        range = list(self.range)
+        for ax, val in zip(axis, value):
+            shift = val - point[ax]
+            min_val, max_val, _ = range[ax]
+            low, high = tuple(v + shift for v in full_span[ax])
             span = max(min_val, low), min(max_val, high)
             full_span[ax] = span
         self.span = full_span
@@ -280,8 +285,10 @@ class Dims(EventedModel):
         axis, value = self._sanitize_input(
             axis, value, value_is_sequence=False
         )
+        range = list(self.range)
         value_world = []
-        for ax, val, (min_val, _, step_size) in zip(axis, value, self.range):
+        for ax, val in zip(axis, value):
+            min_val, _, step_size = range[ax]
             value_world.append(min_val + val * step_size)
         self.set_point(axis, value_world)
 
@@ -325,14 +332,14 @@ class Dims(EventedModel):
             axis, value, value_is_sequence=False
         )
         full_span = list(self.span)
-        for ax, val, (min_val, max_val, _), (low, high) in zip(
-            axis, value, self.range, self.span
-        ):
+        range = list(self.range)
+        for ax, val in zip(axis, value):
+            min_val, max_val, _ = range[ax]
+            low, high = full_span[ax]
             thickness_change = (val - (high - low)) / 2
-            span = max(min_val, low - thickness_change), min(
-                max_val, high + thickness_change
-            )
-            full_span[ax] = span
+            new_low = max(min_val, low - thickness_change)
+            new_high = min(max_val, high + thickness_change)
+            full_span[ax] = new_low, new_high
         self.span = full_span
 
     def set_thickness_step(
@@ -343,8 +350,10 @@ class Dims(EventedModel):
         axis, value = self._sanitize_input(
             axis, value, value_is_sequence=False
         )
+        range = list(self.range)
         value_world = []
-        for ax, val, (min_val, _, step_size) in zip(axis, value, self.range):
+        for ax, val in zip(axis, value):
+            min_val, _, step_size = range[ax]
             value_world.append(min_val + val * step_size)
         self.set_thickness(axis, value_world)
 
