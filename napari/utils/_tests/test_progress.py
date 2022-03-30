@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 
+import dask.array as da
 import numpy as np
+from tqdm.dask import TqdmCallback
 
 from napari.utils import progrange, progress
 
@@ -94,3 +96,13 @@ def test_progrange():
         with progress(range(10)) as pbr2:
             assert pbr.iterable == pbr2.iterable
     assert pbr not in progress._all_instances
+
+
+def test_progress_with_dask():
+    """Test that update works as expected"""
+    with TqdmCallback(tqdm_class=progress, desc="description") as cb:
+        array0 = da.from_array(np.random.random((10, 10)))
+        array1 = array0 * 1.0
+        array1.compute()
+        assert cb.pbar.total > 0
+        assert cb.pbar.n == cb.pbar.total
