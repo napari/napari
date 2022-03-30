@@ -18,7 +18,6 @@ from ...layers.image._image_constants import (
 from ...utils.action_manager import action_manager
 from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
-from .qt_layer_controls_base import LayerGridLayout
 
 
 class QtImageControls(QtBaseImageControls):
@@ -91,28 +90,34 @@ class QtImageControls(QtBaseImageControls):
         self.depictionComboBox.activated[str].connect(self.changeDepiction)
         self.depictionLabel = QLabel(trans._('depiction:'))
 
-        self.planeControls = QtPlaneControls()
-        self.planeControls.planeThicknessSlider.setValue(
-            self.layer.plane.thickness
-        )
-        self.planeControls.planeThicknessSlider.valueChanged.connect(
-            self.changePlaneThickness
-        )
+        # plane controls
+        self.planeNormalButtons = PlaneNormalButtons(self)
+        self.planeNormalLabel = QLabel(trans._('plane normal:'))
         action_manager.bind_button(
             'napari:orient_plane_normal_along_z',
-            self.planeControls.planeNormalButtons.zButton,
+            self.planeNormalButtons.zButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_y',
-            self.planeControls.planeNormalButtons.yButton,
+            self.planeNormalButtons.yButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_x',
-            self.planeControls.planeNormalButtons.xButton,
+            self.planeNormalButtons.xButton,
         )
         action_manager.bind_button(
             'napari:orient_plane_normal_along_view_direction',
-            self.planeControls.planeNormalButtons.obliqueButton,
+            self.planeNormalButtons.obliqueButton,
+        )
+
+        self.planeThicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
+        self.planeThicknessLabel = QLabel(trans._('plane thickness:'))
+        self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
+        self.planeThicknessSlider.setMinimum(1)
+        self.planeThicknessSlider.setMaximum(50)
+        self.planeThicknessSlider.setValue(self.layer.plane.thickness)
+        self.planeThicknessSlider.valueChanged.connect(
+            self.changePlaneThickness
         )
 
         sld = QSlider(Qt.Horizontal, parent=self)
@@ -156,12 +161,15 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
         self.grid_layout.addRow(self.interpLabel, self.interpComboBox)
         self.grid_layout.addRow(self.renderLabel, self.renderComboBox)
+        self.grid_layout.addRow(self.attenuationLabel, self.attenuationSlider)
         self.grid_layout.addRow(self.depictionLabel, self.depictionComboBox)
-        self.grid_layout.addRow(self.planeControls)
+        self.grid_layout.addRow(self.planeNormalLabel, self.planeNormalButtons)
+        self.grid_layout.addRow(
+            self.planeThicknessLabel, self.planeThicknessSlider
+        )
         self.grid_layout.addRow(
             self.isoThresholdLabel, self.isoThresholdSlider
         )
-        self.grid_layout.addRow(self.attenuationLabel, self.attenuationSlider)
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
@@ -279,9 +287,7 @@ class QtImageControls(QtBaseImageControls):
 
     def _on_plane_thickness_change(self):
         with self.layer.plane.events.blocker():
-            self.planeControls.planeThicknessSlider.setValue(
-                self.layer.plane.thickness
-            )
+            self.planeThicknessSlider.setValue(self.layer.plane.thickness)
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
@@ -303,9 +309,15 @@ class QtImageControls(QtBaseImageControls):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self.layer.depiction)
         if depiction == VolumeDepiction.VOLUME or self.layer._ndisplay == 2:
-            self.planeControls.hide()
+            self.planeNormalButtons.hide()
+            self.planeNormalLabel.hide()
+            self.planeThicknessSlider.hide()
+            self.planeThicknessLabel.hide()
         if depiction == VolumeDepiction.PLANE and self.layer._ndisplay == 3:
-            self.planeControls.show()
+            self.planeNormalButtons.show()
+            self.planeNormalLabel.show()
+            self.planeThicknessSlider.show()
+            self.planeThicknessLabel.show()
 
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
@@ -371,26 +383,3 @@ class PlaneNormalButtons(QWidget):
         self.layout().addWidget(self.yButton)
         self.layout().addWidget(self.zButton)
         self.layout().addWidget(self.obliqueButton)
-
-
-class QtPlaneControls(QWidget):
-    """Qt widget encapsulating plane controls for an image layer."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.grid_layout = LayerGridLayout(self)
-        self.setLayout(self.grid_layout)
-
-        self.planeNormalButtons = PlaneNormalButtons(parent=self)
-
-        self.planeThicknessSlider = QLabeledDoubleSlider(Qt.Horizontal, self)
-        self.planeThicknessSlider.setFocusPolicy(Qt.NoFocus)
-        self.planeThicknessSlider.setMinimum(1)
-        self.planeThicknessSlider.setMaximum(50)
-
-        self.grid_layout.addRow(
-            trans._('plane normal:'), self.planeNormalButtons
-        )
-        self.grid_layout.addRow(
-            trans._('plane thickness:'), self.planeThicknessSlider
-        )
