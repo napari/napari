@@ -13,7 +13,7 @@ class LayerGridLayout(QFormLayout):
         super().__init__(QWidget)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
-        self.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
 
 class QtLayerControls(QFrame):
