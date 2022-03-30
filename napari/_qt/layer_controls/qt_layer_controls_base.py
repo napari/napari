@@ -14,7 +14,6 @@ class LayerGridLayout(QFormLayout):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
         self.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-        # self.setRowWrapPolicy(QFormLayout.WrapLongRows)
 
 
 class QtLayerControls(QFrame):
