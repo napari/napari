@@ -164,7 +164,7 @@ class TextManager(EventedModel):
         """
         warnings.warn(
             trans._(
-                'TextManager.add is deprecated. Use TextManager.fill instead.'
+                'TextManager.add is deprecated. Use TextManager.apply instead.'
             ),
             DeprecationWarning,
             stacklevel=2,
