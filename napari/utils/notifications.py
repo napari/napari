@@ -31,6 +31,16 @@ name2num = {
     'none': 0,
 }
 
+__all__ = [
+    'NotificationSeverity',
+    'Notification',
+    'ErrorNotification',
+    'WarningNotification',
+    'NotificationManager',
+    'show_info',
+    'show_console_notification',
+]
+
 
 class NotificationSeverity(StringEnum):
     """Severity levels for the notification dialog.  Along with icons for each."""
