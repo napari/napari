@@ -104,6 +104,7 @@ subtrees:
           - file: developers/testing
           - file: developers/profiling
           - file: developers/benchmarks
+          - file: developers/packaging
       - file: release/index
         subtrees:
         - entries:

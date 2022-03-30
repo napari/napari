@@ -122,9 +122,9 @@ signing_identity_name: "Apple Developer ID: ..."  # Name of our installer signin
 welcome_image: resources/napari_164x314.png  # logo image for the first screen
 header_image:  resources/napari_150x57.png  # logo image (top left) for the rest of the installer
 icon_image: napari/resources/icon.ico  # favicon for the taskbar and title bar
-default_prefix: %USERPROFILE%/napari-0.4.12  # default location for user installs
-default_prefix_domain_user: %LOCALAPPDATA%/napari-0.4.12  # default location for network installs
-default_prefix_all_users: %ALLUSERSPROFILE%/napari-0.4.12  # default location for admin installs
+default_prefix: '%USERPROFILE%/napari-0.4.12'  # default location for user installs
+default_prefix_domain_user: '%LOCALAPPDATA%/napari-0.4.12'  # default location for network installs
+default_prefix_all_users: '%ALLUSERSPROFILE%/napari-0.4.12'  # default location for admin installs
 signing_certificate: certificate.pfx  # path to signing certificate
 ```
 
