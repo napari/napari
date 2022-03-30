@@ -5,7 +5,7 @@ import numpy as np
 from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
-from ..utils.events import EventedModel
+from ..utils.events import Event, EventedModel
 from ..utils.translations import trans
 
 
@@ -150,6 +150,11 @@ class Dims(EventedModel):
             values['axis_labels'] = values['axis_labels'][-ndim:]
 
         return values
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.events.add(current_step=Event)
+        self.events.span.connect(self.events.current_step)
 
     @property
     def nsteps(self) -> Tuple[int, ...]:
@@ -374,7 +379,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_current_step(axis, self.current_step[axis] + 1)
+        self.set_point_step(axis, self.current_step[axis] + 1)
 
     def _increment_dims_left(self, axis: int = None):
         """Increment dimensions to the left along given axis, or last used axis if None
@@ -386,7 +391,7 @@ class Dims(EventedModel):
         """
         if axis is None:
             axis = self.last_used
-        self.set_current_step(axis, self.current_step[axis] - 1)
+        self.set_point_step(axis, self.current_step[axis] - 1)
 
     def _focus_up(self):
         """Shift focused dimension slider to be the next slider above."""
