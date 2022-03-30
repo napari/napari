@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 from pydantic import PositiveInt, validator
 
-from napari.layers.utils.style_encoding import _get_style_values
-
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
@@ -23,6 +21,7 @@ from .string_encoding import (
     StringEncodingArgument,
     validate_string_encoding,
 )
+from .style_encoding import _get_style_values
 
 
 class TextManager(EventedModel):

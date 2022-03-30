@@ -5,9 +5,8 @@ import numpy as np
 from pydantic import parse_obj_as
 from typing_extensions import Literal, Protocol, runtime_checkable
 
-from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
-
+from ...utils.events.custom_types import Array
+from ...utils.translations import trans
 from .style_encoding import (
     StyleEncoding,
     _ConstantStyleEncoding,
