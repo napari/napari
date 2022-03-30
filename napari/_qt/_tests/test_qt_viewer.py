@@ -32,7 +32,7 @@ try:
 
     BUILTINS_DISP = 'napari'
     BUILTINS_NAME = 'builtins'
-except ImportError:
+except ModuleNotFoundError:
     BUILTINS_DISP = BUILTINS_NAME = 'builtins'
 
 

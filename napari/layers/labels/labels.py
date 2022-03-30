@@ -1441,6 +1441,6 @@ def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
             import xarray as xr
 
             return tuple(xr.DataArray(i) for i in indices)
-        except ImportError:
+        except ModuleNotFoundError:
             pass
     return tuple(indices)
