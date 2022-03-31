@@ -15,6 +15,7 @@ points = viewer.add_points(
         points, face_color=colors, features={'confidence': confidence}
         )
 
+
 # create a simple widget with magicgui which provides a slider that controls the visilibility
 # of individual points based on their "confidence" value
 @magicgui(
