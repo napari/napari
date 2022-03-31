@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+import npe2
 import numpy as np
 import pytest
 from npe2 import DynamicPlugin, PluginManager
@@ -824,6 +825,10 @@ def mock_pm():
         yield _pm
 
 
+@pytest.mark.skipif(
+    npe2.__version__ <= '0.2.1',
+    reason='Cannot use DynamicPlugin until next npe2 release.',
+)
 def test_open_or_get_error_multiple_readers(mock_pm, tmp_reader):
     """Assert error is returned when multiple plugins are available to read."""
     viewer = ViewerModel()
@@ -837,6 +842,10 @@ def test_open_or_get_error_multiple_readers(mock_pm, tmp_reader):
     assert 'Multiple plugins found' in str(error)
 
 
+@pytest.mark.skipif(
+    npe2.__version__ <= '0.2.1',
+    reason='Cannot use DynamicPlugin until next npe2 release.',
+)
 def test_open_or_get_error_no_plugin(mock_pm):
     """Assert user is warned when no plugin is available."""
     viewer = ViewerModel()
