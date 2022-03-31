@@ -15,8 +15,9 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 
-import napari
 import qtgallery
+
+import napari
 
 release = napari.__version__
 if "dev" in release:
@@ -131,14 +132,17 @@ exclude_patterns = [
     'jupyter_execute',
 ]
 
+
 def reset_napari_theme(gallery_conf, fname):
     from napari.settings import get_settings
+
     settings = get_settings()
     settings.appearance.theme = 'dark'
     qtgallery.reset_qapp(gallery_conf, fname)
 
+
 sphinx_gallery_conf = {
-    'examples_dirs': '../examples',   # path to your example scripts
+    'examples_dirs': '../examples',  # path to your example scripts
     'gallery_dirs': 'gallery',  # path to where to save gallery generated output
     'filename_pattern': '/*.py',
     'ignore_pattern': 'README.rst|/*_.py',
