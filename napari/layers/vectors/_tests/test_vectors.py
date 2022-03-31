@@ -475,7 +475,6 @@ def test_edge_color_map_non_numeric_property():
         layer.edge_color_mode = 'colormap'
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparis:FutureWarning:numpy")
 def test_switching_edge_color_mode():
     """Test transitioning between all color modes"""
     np.random.seed(0)

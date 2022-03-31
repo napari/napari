@@ -23,15 +23,15 @@ pts_layer = viewer.add_points(
         )
 
 
-def set_pts_properties(pts_layer, values_table, step):
+def set_pts_features(pts_layer, values_table, step):
     # step is a 4D coordinate with the current slider position for each dim
     column = step[0]  # grab the leading ("time") coordinate
     pts_layer.features['value'] = np.asarray(values_table[:, column])
-    pts_layer.face_color = 'value'  # force properties refresh
+    pts_layer.face_color = 'value'  # force features refresh
 
 
 viewer.dims.events.current_step.connect(
-        lambda event: set_pts_properties(pts_layer, pts_values, event.value)
+        lambda event: set_pts_features(pts_layer, pts_values, event.value)
         )
 
 

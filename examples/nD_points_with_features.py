@@ -19,7 +19,7 @@ points = []
 for z in range(blobs.shape[0]):
     points += [[z, 25, 25], [z, 25, 75], [z, 75, 25], [z, 75, 75]]
 
-# create the feature for setting the face and edge color.
+# create the features for setting the face and edge color.
 face_feature = np.array(
     [True, True, True, True, False, False, False, False]
     * int(blobs.shape[0] / 2)

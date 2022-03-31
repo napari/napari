@@ -322,7 +322,7 @@ class OctreeLoader:
         # If all children are in memory and are already drawn just return them
         # as they will cover the whole chunk.
         ndim = 2  # right now we only support a 2D quadtree
-        if len(children) == 2 ** ndim:
+        if len(children) == 2**ndim:
             return children + best_in_memory_chunk
 
         # Get the closest ancestor that is already in memory that

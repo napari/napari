@@ -57,7 +57,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
         import traceback
 
         # cgitb does not support error chaining...
-        # see https://www.python.org/dev/peps/pep-3134/#enhanced-reporting
+        # see https://peps.python.org/pep-3134/#enhanced-reporting
         # this is a workaround
         def cgitb_chain(exc: Exception) -> Generator[str, None, None]:
             """Recurse through exception stack and chain cgitb_html calls."""

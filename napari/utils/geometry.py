@@ -127,7 +127,7 @@ def rotation_matrix_from_vectors_3d(vec_1, vec_2):
             ]
         )
         rotation_matrix = (
-            np.eye(3) + kmat + kmat.dot(kmat) * ((1 - dot_prod) / (s ** 2))
+            np.eye(3) + kmat + kmat.dot(kmat) * ((1 - dot_prod) / (s**2))
         )
 
     else:
@@ -171,6 +171,22 @@ def rotate_points(
     rotated_points = points @ rotation_matrix.T
 
     return rotated_points, rotation_matrix
+
+
+def point_in_bounding_box(point: np.ndarray, bounding_box: np.ndarray) -> bool:
+    """Determine whether an nD point is inside an nD bounding box.
+
+    Parameters
+    ----------
+    point : np.ndarray
+        (n,) array containing nD point coordinates to check.
+    bounding_box : np.ndarray
+        (2, n) array containing the min and max of the nD bounding box.
+        As returned by `Layer._extent_data`.
+    """
+    if np.all(point >= bounding_box[0]) and np.all(point <= bounding_box[1]):
+        return True
+    return False
 
 
 def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):

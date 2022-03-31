@@ -12,7 +12,7 @@ class TextManagerSuite:
 
     param_names = ['n', 'text']
     params = [
-        [2 ** i for i in range(4, 18, 2)],
+        [2**i for i in range(4, 18, 2)],
         [
             None,
             'constant',
