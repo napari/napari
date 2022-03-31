@@ -42,8 +42,10 @@ class QtReaderDialog(QDialog):
 
         # add instruction label
         layout = QVBoxLayout()
+        if error_message:
+            error_message += "\n"
         label = QLabel(
-            f"{error_message}\nChoose reader for {self._current_file}:"
+            f"{error_message}Choose reader for {self._current_file}:"
         )
         layout.addWidget(label)
 

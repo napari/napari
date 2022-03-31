@@ -907,7 +907,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         if stack:
-            layers, exception = self._open_or_get_error(
+            layers, plugin, exception = self._open_or_get_error(
                 paths, kwargs, layer_type, stack
             )
             if not exception:
@@ -935,7 +935,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     )
                 # no plugin choice was made
                 else:
-                    layers, exception = self._open_or_get_error(
+                    layers, plugin, exception = self._open_or_get_error(
                         [_path], kwargs, layer_type, stack
                     )
                     if not exception:
