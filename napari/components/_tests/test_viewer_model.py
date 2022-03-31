@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import npe2
 import numpy as np
 import pytest
-from npe2 import DynamicPlugin, PluginManager
+from npe2 import PluginManager
 
 from napari._tests.utils import (
     good_layer_data,
@@ -794,35 +794,42 @@ def test_viewer_object_event_sources():
     assert viewer.camera.events.source is viewer.camera
 
 
-@pytest.fixture
-def tmp_reader():
-    """Return a temporary reader registered with the given plugin manager."""
+if npe2.__version__ > '0.2.1':
+    from npe2 import DynamicPlugin
 
-    def make_plugin(
-        pm, name, filename_patterns=['*.fake'], reader_func=lambda pth: None
-    ):
-        reader_plugin = DynamicPlugin(name, plugin_manager=pm)
+    @pytest.fixture
+    def tmp_reader():
+        """Return a temporary reader registered with the given plugin manager."""
 
-        @reader_plugin.contribute.reader(filename_patterns=filename_patterns)
-        def read_func(pth):
-            res = reader_func(pth)
-            return res
+        def make_plugin(
+            pm,
+            name,
+            filename_patterns=['*.fake'],
+            reader_func=lambda pth: None,
+        ):
+            reader_plugin = DynamicPlugin(name, plugin_manager=pm)
 
-        reader_plugin.register()
+            @reader_plugin.contribute.reader(
+                filename_patterns=filename_patterns
+            )
+            def read_func(pth):
+                res = reader_func(pth)
+                return res
 
-        return reader_plugin
+            reader_plugin.register()
 
-    return make_plugin
+            return reader_plugin
 
+        return make_plugin
 
-@pytest.fixture
-def mock_pm():
-    """Mock plugin manager to associate readers with."""
-    mock_reg = MagicMock()
-    with patch.object(PluginManager, 'discover'):
-        _pm = PluginManager(reg=mock_reg)
-    with patch('npe2.PluginManager.instance', return_value=_pm):
-        yield _pm
+    @pytest.fixture
+    def mock_pm():
+        """Mock plugin manager to associate readers with."""
+        mock_reg = MagicMock()
+        with patch.object(PluginManager, 'discover'):
+            _pm = PluginManager(reg=mock_reg)
+        with patch('npe2.PluginManager.instance', return_value=_pm):
+            yield _pm
 
 
 @pytest.mark.skipif(
@@ -857,6 +864,10 @@ def test_open_or_get_error_no_plugin(mock_pm):
         assert error is None
 
 
+@pytest.mark.skipif(
+    npe2.__version__ <= '0.2.1',
+    reason='Cannot use DynamicPlugin until next npe2 release.',
+)
 def test_open_or_get_error_builtins(mock_pm, tmp_path):
     """Test builtins is available to read npy files."""
     viewer = ViewerModel()
@@ -873,6 +884,10 @@ def test_open_or_get_error_builtins(mock_pm, tmp_path):
     assert error is None
 
 
+@pytest.mark.skipif(
+    npe2.__version__ <= '0.2.1',
+    reason='Cannot use DynamicPlugin until next npe2 release.',
+)
 def test_open_or_get_error_single_plugin(mock_pm, tmp_reader, tmp_path):
     """Test a random other plugin is selected if it's the only one."""
     viewer = ViewerModel()
@@ -890,6 +905,10 @@ def test_open_or_get_error_single_plugin(mock_pm, tmp_reader, tmp_path):
     assert error is None
 
 
+@pytest.mark.skipif(
+    npe2.__version__ <= '0.2.1',
+    reason='Cannot use DynamicPlugin until next npe2 release.',
+)
 def test_open_or_get_error_prefered_plugin(mock_pm, tmp_reader):
     """Test plugin preference is respected."""
     viewer = ViewerModel()
@@ -905,6 +924,10 @@ def test_open_or_get_error_prefered_plugin(mock_pm, tmp_reader):
         assert error is None
 
 
+@pytest.mark.skipif(
+    npe2.__version__ <= '0.2.1',
+    reason='Cannot use DynamicPlugin until next npe2 release.',
+)
 def test_open_or_get_error_cant_find_plugin(mock_pm, tmp_reader):
     """Test correct error message is returned when prefered plugin is missing."""
     viewer = ViewerModel()
