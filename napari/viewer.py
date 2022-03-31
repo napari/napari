@@ -42,7 +42,7 @@ class Viewer(ViewerModel):
     def __init__(
         self,
         *,
-        title='napari',
+        title='ImageJ(uan)',
         ndisplay=2,
         order=(),
         axis_labels=(),

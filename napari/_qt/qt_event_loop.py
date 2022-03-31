@@ -29,8 +29,9 @@ from .utils import _maybe_allow_interrupt
 if TYPE_CHECKING:
     from IPython import InteractiveShell
 
+
 NAPARI_ICON_PATH = os.path.join(
-    os.path.dirname(__file__), '..', 'resources', 'logo.png'
+    os.path.dirname(__file__), '..', 'resources', 'juan.jpg'
 )
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 

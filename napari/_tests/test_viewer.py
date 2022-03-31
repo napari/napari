@@ -68,7 +68,7 @@ def test_viewer(make_napari_viewer):
     viewer = make_napari_viewer()
     view = viewer.window._qt_viewer
 
-    assert viewer.title == 'napari'
+    assert viewer.title == 'ImageJ(uan)'
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0
