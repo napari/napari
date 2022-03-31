@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import warnings
 from collections import deque
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -29,6 +31,9 @@ from ..utils.layer_utils import _FeatureTable
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
+
+if TYPE_CHECKING:
+    from ..image import Image
 
 _REV_SHAPE_HELP = {
     trans._('enter paint or fill mode to edit labels'): {
@@ -315,6 +320,7 @@ class Labels(_ImageBase):
         self._status = self.mode
         self._preserve_labels = False
         self._help = trans._('enter paint or fill mode to edit labels')
+        self._experimental_linked_image_layer = None
 
         self._block_saving = False
         self._reset_history()
@@ -1422,6 +1428,26 @@ class Labels(_ImageBase):
             and v[idx] is not None
             and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
+
+    @property
+    def experimental_linked_image_layer(self) -> Image:
+        """A linked image layer"""
+        return self._experimental_linked_image_layer
+
+    @experimental_linked_image_layer.setter
+    def experimental_linked_image_layer(self, layer: Image):
+        data_has_different_shape = layer.data.shape != self.data.shape
+        if data_has_different_shape:
+            e = 'Support for linking data of different shapes is not implemented.'
+            raise NotImplementedError(e)
+        self._experimental_linked_image_layer = layer
+
+    @property
+    def can_paint_on_plane(self) -> bool:
+        if self.experimental_linked_image_layer is None:
+            return False
+        if self.experimental_linked_image_layer.depiction == 'plane':
+            return True
 
 
 if config.async_octree:

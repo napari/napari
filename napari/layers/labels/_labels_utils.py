@@ -190,6 +190,8 @@ def mouse_event_to_labels_coordinate(layer, event):
     ndim = len(layer._dims_displayed)
     if ndim == 2:
         coordinates = layer.world_to_data(event.position)
+    elif ndim == 3 and layer.can_paint_on_plane:
+        return mouse_event_to_nd_line_plane_intersection(layer, event)
     else:  # 3d
         start, end = layer.get_ray_intersections(
             position=event.position,
@@ -201,3 +203,18 @@ def mouse_event_to_labels_coordinate(layer, event):
             return None
         coordinates = first_nonzero_coordinate(layer.data, start, end)
     return coordinates
+
+
+def mouse_event_to_nd_line_plane_intersection(layer, event):
+    painting_plane = layer.experimental_linked_image_layer.plane
+    intersection_3d = painting_plane.intersect_with_line(
+        line_position=layer._world_to_displayed_data(
+            position=event.position, dims_displayed=event.dims_displayed
+        ),
+        line_direction=layer._world_to_displayed_data_ray(
+            event.view_direction, event.dims_displayed
+        ),
+    )
+    intersection_nd = np.copy(event.position)
+    intersection_nd[event.dims_displayed] = intersection_3d
+    return intersection_nd
