@@ -1,5 +1,8 @@
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pytest
+from npe2 import DynamicPlugin, PluginManager
 
 from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
@@ -782,3 +785,41 @@ def test_viewer_object_event_sources():
     viewer = ViewerModel()
     assert viewer.cursor.events.source is viewer.cursor
     assert viewer.camera.events.source is viewer.camera
+
+
+@pytest.fixture
+def tmp_reader():
+    def make_plugin(
+        pm, name, filename_patterns=['*.fake'], reader_func=lambda pth: None
+    ):
+        reader_plugin = DynamicPlugin(name, plugin_manager=pm)
+        reader_plugin.register()
+
+        @reader_plugin.contribute.reader(filename_patterns=filename_patterns)
+        def read_func(pth):
+            return reader_func(pth)
+
+        return reader_plugin
+
+    return make_plugin
+
+
+@pytest.fixture
+def mock_pm():
+    mock_reg = MagicMock()
+    with patch.object(PluginManager, 'discover'):
+        _pm = PluginManager(reg=mock_reg)
+    with patch('npe2.PluginManager.instance', return_value=_pm):
+        yield _pm
+
+
+def test_open_or_get_error_multiple_readers(mock_pm, tmp_reader):
+    viewer = ViewerModel()
+
+    tmp_reader(mock_pm, 'p1')
+    tmp_reader(mock_pm, 'p2')
+
+    added, plugin, error = viewer._open_or_get_error(['my_file.fake'])
+    assert added == []
+    assert plugin is None
+    assert 'Multiple plugins found' in str(error)
