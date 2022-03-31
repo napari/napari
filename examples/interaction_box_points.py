@@ -46,4 +46,5 @@ viewer.overlays.interaction_box.events.selection_box_drag.connect(on_selection_b
 viewer.overlays.interaction_box.events.selection_box_final.connect(on_selection_box_final)
 viewer.overlays.interaction_box.events.transform_drag.connect(on_transform_changed_drag)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

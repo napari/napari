@@ -27,4 +27,5 @@ surface1 = viewer.add_surface(sphere1)
 surface2 = viewer.add_surface(sphere2)
 viewer.reset_view()
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

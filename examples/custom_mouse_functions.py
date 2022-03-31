@@ -76,4 +76,5 @@ def on_second_click_of_double_click(layer, event):
     print('note that a click event was also triggered', event.type)
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

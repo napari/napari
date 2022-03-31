@@ -55,4 +55,5 @@ label_layer = viewer.add_labels(
     color=color,
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

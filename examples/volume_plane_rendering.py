@@ -49,4 +49,5 @@ press and hold 'o' then click and drag to make the plane normal follow the camer
 """
 )
 viewer.text_overlay.visible = True
-napari.run()
+if __name__ == '__main__':
+    napari.run()

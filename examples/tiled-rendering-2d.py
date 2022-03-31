@@ -42,4 +42,5 @@ viewer.add_image(data, contrast_limits=[0, 255])
 viewer.camera.zoom = 0.75
 
 # run the example — try to pan around!
-napari.run()
+if __name__ == '__main__':
+    napari.run()

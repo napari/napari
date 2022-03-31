@@ -26,4 +26,5 @@ blayer = v.add_image(
     bch, name='blue channel', colormap='blue', blending='additive'
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

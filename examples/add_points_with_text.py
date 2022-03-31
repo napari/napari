@@ -50,4 +50,5 @@ points_layer = viewer.add_points(
 # set the edge_color mode to colormap
 points_layer.edge_color_mode = 'colormap'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

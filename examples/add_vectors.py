@@ -37,4 +37,5 @@ pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 # add the vectors
 layer = viewer.add_vectors(pos, edge_width=3)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

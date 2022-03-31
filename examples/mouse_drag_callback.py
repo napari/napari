@@ -48,4 +48,5 @@ def profile_lines_drag(layer, event):
         yield
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -115,4 +115,5 @@ viewer.window.add_dock_widget(label_widget, area='right', name='label_widget')
 # set the shapes layer mode to adding rectangles
 shapes.mode = 'add_rectangle'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

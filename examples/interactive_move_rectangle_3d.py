@@ -67,4 +67,5 @@ def move_rectangle_along_normal(layer, event):
     layer.interactive = True
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

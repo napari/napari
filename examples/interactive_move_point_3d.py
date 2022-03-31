@@ -96,4 +96,6 @@ viewer.text_overlay.visible = True
 viewer.text_overlay.text = """'shift' + click and drag to move the pink point
 normal click and drag to rotate the scene
 """
-napari.run()
+
+if __name__ == '__main__':
+    napari.run()

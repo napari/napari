@@ -125,4 +125,5 @@ viewer.add_image(screenshot, rgb=True, name='screenshot')
 # from skimage.io import imsave
 # imsave('screenshot.png', screenshot)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

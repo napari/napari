@@ -30,4 +30,5 @@ image_layer = viewer.add_image(blobs3dt)
 labels_layer = viewer.add_labels(labels)
 viewer.dims.current_step = (5, 0, 0, 0)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

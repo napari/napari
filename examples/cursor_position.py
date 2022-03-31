@@ -26,4 +26,5 @@ viewer.add_shapes(rect, shape_type='rectangle', edge_width=0.1)
 vect = np.array([[[3, 2], [-1, 1]]])
 viewer.add_vectors(vect, edge_width=0.1)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

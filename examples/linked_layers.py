@@ -26,5 +26,5 @@ link_layers(viewer.layers, ('contrast_limits', 'gamma'))
 # with napari.experimental.layers_linked([layers]):
 #     ...
 
-
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -131,11 +131,11 @@ exclude_patterns = [
     'jupyter_execute',
 ]
 
-def reset_nbscreenshot(gallery_conf, fname, when):
-    if when == 'after':
-        from napari.utils import nbscreenshot
-        nbscreenshot(viewer)
-        viewer.close()
+def reset_napari_theme(gallery_conf, fname):
+    from napari.settings import get_settings
+    settings = get_settings()
+    settings.appearance.theme = 'dark'
+    qtgallery.reset_qapp(gallery_conf, fname)
 
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',   # path to your example scripts
@@ -147,6 +147,6 @@ sphinx_gallery_conf = {
     'download_all_examples': False,
     'min_reported_time': 10,
     'only_warn_on_example_error': True,
-    #'image_scrapers': (qtgallery.qtscraper,),
-    #'reset_modules': (reset_nbscreenshot,),
+    'image_scrapers': (qtgallery.qtscraper,),
+    'reset_modules': (reset_napari_theme,),
 }

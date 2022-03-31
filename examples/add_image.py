@@ -12,5 +12,5 @@ import napari
 # create the viewer with an image
 viewer = napari.view_image(data.astronaut(), rgb=True)
 
-napari.run()
-napari.utils.nbscreenshot(viewer)
+if __name__ == '__main__':
+    napari.run()

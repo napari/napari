@@ -12,4 +12,5 @@ import napari
 # create the viewer with an image
 viewer = napari.view_image(data.astronaut(), rgb=True, rotate=45)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

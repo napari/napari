@@ -27,4 +27,5 @@ shapes_layer = viewer.add_shapes(
     text=text,
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

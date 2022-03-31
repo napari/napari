@@ -16,4 +16,5 @@ viewer = napari.Viewer(ndisplay=3)
 # add the volume
 viewer.add_image(blobs, scale=[3, 1, 1])
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

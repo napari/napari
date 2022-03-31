@@ -40,4 +40,5 @@ viewer.dims.events.current_step.connect(
         )
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

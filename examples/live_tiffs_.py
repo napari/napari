@@ -116,4 +116,5 @@ def watch_path(path):
 
 
 worker = watch_path(path)
-napari.run()
+if __name__ == '__main__':
+    napari.run()

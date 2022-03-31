@@ -32,4 +32,5 @@ viewer = napari.view_image(image, name='coins', rgb=False)
 # add the labels
 label_layer = viewer.add_labels(label_image, name='segmentation')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -21,4 +21,5 @@ blobs = np.stack(
 )
 viewer = napari.view_image(blobs.astype(float))
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

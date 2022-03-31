@@ -129,4 +129,5 @@ shapes_layer = viewer.add_shapes(
     name='bounding box',
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

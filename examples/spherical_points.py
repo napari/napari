@@ -28,4 +28,5 @@ pts_layer._antialias = 0
 
 viewer.reset_view()
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -61,4 +61,5 @@ def toggle_point_annotation(viewer):
         points_layer.refresh_colors(update_color_mapping=False)
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

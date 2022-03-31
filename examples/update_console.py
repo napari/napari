@@ -75,4 +75,5 @@ shapes_layer = viewer.add_shapes(
 # Send local variables to the console
 viewer.update_console(locals())
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

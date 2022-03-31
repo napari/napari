@@ -98,4 +98,5 @@ layer.add(
 # To save layers to svg:
 # viewer.layers.save('viewer.svg', plugin='svg')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

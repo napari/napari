@@ -37,4 +37,5 @@ viewer.add_points(
     points, size=[0, 6, 10, 10], face_color='blue', out_of_slice_display=True
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

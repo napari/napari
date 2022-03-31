@@ -19,4 +19,5 @@ viewer = napari.Viewer()
 # Add our magic function to napari
 viewer.window.add_function_widget(my_function)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

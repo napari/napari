@@ -29,4 +29,5 @@ labels.brush_size = 15
 labels.mode = 'paint'
 labels.n_dimensional = True
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

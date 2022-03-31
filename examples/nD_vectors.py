@@ -51,4 +51,5 @@ layer = viewer.add_vectors(
 
 viewer.dims.ndisplay = 3
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

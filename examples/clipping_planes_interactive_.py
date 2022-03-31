@@ -198,4 +198,6 @@ viewer.text_overlay.update(dict(
     font_size=20,
     visible=True,
 ))
-napari.run()
+
+if __name__ == '__main__':
+    napari.run()

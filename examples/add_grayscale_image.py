@@ -15,4 +15,5 @@ image = data.astronaut().mean(-1) * 100 + 100
 image += np.random.rand(*image.shape) * 3000
 viewer = napari.view_image(image.astype(np.uint16))
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

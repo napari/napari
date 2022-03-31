@@ -17,7 +17,8 @@ viewer = napari.view_image(data.astronaut(), rgb=True)
 points = viewer.add_points(np.zeros((0, 2)))
 points.mode = 'add'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
 
-print("you clicked on:")
-print(points.data)
+    print("you clicked on:")
+    print(points.data)

@@ -56,4 +56,5 @@ layer = viewer.add_vectors(
 # set the edge color mode to colormap
 layer.edge_color_mode = 'colormap'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

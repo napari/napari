@@ -50,4 +50,5 @@ layer.out_of_slice_display = True
 # change the layer mode
 layer.mode = 'add'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

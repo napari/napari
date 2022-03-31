@@ -26,4 +26,5 @@ label_layer = viewer.add_labels(labels, name='segmentation')
 label_layer.mode = 'PICK'
 print(f'The color of label 5 is {label_layer.get_color(5)}')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

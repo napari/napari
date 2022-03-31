@@ -111,4 +111,5 @@ for action, key in settings.items():
    _old_shortcut = action_manager.unbind_shortcut(action)
    action_manager.bind_shortcut(action, key)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

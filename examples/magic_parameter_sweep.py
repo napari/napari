@@ -42,4 +42,5 @@ viewer.add_image(skimage.data.grass().astype("float"), name="grass")
 # Add our magic function to napari
 viewer.window.add_function_widget(gaussian_blur)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

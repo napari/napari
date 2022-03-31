@@ -106,4 +106,5 @@ viewer.window.add_dock_widget(pbar_widget)
 # showing the activity dock so we can see the progress bars
 viewer.window._status_bar._toggle_activity_dock(True)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

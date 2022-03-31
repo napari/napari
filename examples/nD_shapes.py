@@ -53,4 +53,5 @@ print(
     f'labels_shape {labels.shape}, array_shape, {shape_array.shape}'
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -21,4 +21,5 @@ viewer.add_points(points_data, size=4)
 
 viewer.dims.ndisplay = 3
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -16,4 +16,5 @@ values = np.linspace(0, 1, len(data))
 # add the surface
 viewer = napari.view_surface((data, faces, values))
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

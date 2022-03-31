@@ -29,7 +29,8 @@ blobs_dask_windows = np.squeeze(
 blobs_sum = np.sum(blobs_dask_windows, axis=1)
 viewer = napari.view_image(blobs_sum)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
 
 ##############################################################################
 # Part 2: using magicgui to vary the slice thickness.
@@ -62,4 +63,5 @@ viewer = napari.view_image(blobs_dask, colormap='green')
 viewer.window.add_dock_widget(magicgui(sliding_window_mean, auto_call=True))
 viewer.dims.current_step = (32, 0, 0)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

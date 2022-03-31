@@ -38,4 +38,5 @@ vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
 
 print(image.shape, pos.shape)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -23,4 +23,5 @@ surface.normals.face.visible = True
 surface.normals.vertex.visible = True
 surface.wireframe.visible = True
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

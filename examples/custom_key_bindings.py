@@ -53,4 +53,5 @@ def hello(viewer):
 # change viewer title
 viewer.title = 'quality control images'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
