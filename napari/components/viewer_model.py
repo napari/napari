@@ -950,6 +950,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     ):
         added = []
         error = None
+        plugin = None
         _path = _paths[0]
 
         readers = get_potential_readers(_path)
@@ -961,7 +962,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     filenames=_paths,
                 )
             )
-            return added, None
+            return added, plugin, error
 
         plugin = _get_preferred_reader(_path)
 
