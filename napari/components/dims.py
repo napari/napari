@@ -366,7 +366,7 @@ class Dims(EventedModel):
         """Reset dims values to initial states."""
         # Don't reset axis labels
         self.range = ((0, 2, 1),) * self.ndim
-        self.current_step = (0,) * self.ndim
+        self.span = ((0, 0),) * self.ndim
         self.order = tuple(range(self.ndim))
 
     def _increment_dims_right(self, axis: int = None):
