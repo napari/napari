@@ -153,7 +153,7 @@ def test_file_extensions_string_for_layers(mock_pm):
 
 
 def test_get_readers(mock_pm):
-    assert _npe2.get_readers("some.fzzy") == {'My Plugin': PLUGIN_NAME}
+    assert _npe2.get_readers("some.fzzy") == {PLUGIN_NAME: 'My Plugin'}
 
 
 def test_iter_manifest(mock_pm):
