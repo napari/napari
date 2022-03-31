@@ -11,16 +11,18 @@ from napari.utils.notifications import notification_manager
 
 # not testing these examples
 skip = [
-    'surface_timeseries.py',  # needs nilearn
-    '3d_kymograph.py',  # needs tqdm
-    'live_tiffs.py',  # requires files
-    'tiled-rendering-2d.py',  # too slow
-    'live_tiffs_generator.py',
+    'surface_timeseries_.py',  # needs nilearn
+    '3d_kymograph_.py',  # needs tqdm
+    'live_tiffs_.py',  # requires files
+    'tiled-rendering-2d_.py',  # too slow
+    'live_tiffs_generator_.py',
     'points-over-time.py',  # too resource hungry
-    'embed_ipython.py',  # fails without monkeypatch
+    'embed_ipython_.py',  # fails without monkeypatch
     'custom_key_bindings.py',  # breaks EXPECTED_NUMBER_OF_VIEWER_METHODS later
     'new_theme.py',  # testing theme is extremely slow on CI
     'dynamic-projections-dask.py',  # extremely slow / does not finish
+    'spheres_.py',  # needs meshzoo
+    'clipping_planes_interactive_.py',  # needs meshzoo
 ]
 
 try:
