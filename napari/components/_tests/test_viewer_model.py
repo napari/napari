@@ -4,8 +4,14 @@ import numpy as np
 import pytest
 from npe2 import DynamicPlugin, PluginManager
 
-from napari._tests.utils import good_layer_data, layer_test_data
+from napari._tests.utils import (
+    good_layer_data,
+    layer_test_data,
+    restore_settings_on_exit,
+)
 from napari.components import ViewerModel
+from napari.layers import Image
+from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
 
@@ -789,15 +795,19 @@ def test_viewer_object_event_sources():
 
 @pytest.fixture
 def tmp_reader():
+    """Return a temporary reader registered with the given plugin manager."""
+
     def make_plugin(
         pm, name, filename_patterns=['*.fake'], reader_func=lambda pth: None
     ):
         reader_plugin = DynamicPlugin(name, plugin_manager=pm)
-        reader_plugin.register()
 
         @reader_plugin.contribute.reader(filename_patterns=filename_patterns)
         def read_func(pth):
-            return reader_func(pth)
+            res = reader_func(pth)
+            return res
+
+        reader_plugin.register()
 
         return reader_plugin
 
@@ -806,6 +816,7 @@ def tmp_reader():
 
 @pytest.fixture
 def mock_pm():
+    """Mock plugin manager to associate readers with."""
     mock_reg = MagicMock()
     with patch.object(PluginManager, 'discover'):
         _pm = PluginManager(reg=mock_reg)
@@ -814,6 +825,7 @@ def mock_pm():
 
 
 def test_open_or_get_error_multiple_readers(mock_pm, tmp_reader):
+    """Assert error is returned when multiple plugins are available to read."""
     viewer = ViewerModel()
 
     tmp_reader(mock_pm, 'p1')
@@ -823,3 +835,76 @@ def test_open_or_get_error_multiple_readers(mock_pm, tmp_reader):
     assert added == []
     assert plugin is None
     assert 'Multiple plugins found' in str(error)
+
+
+def test_open_or_get_error_no_plugin(mock_pm):
+    """Assert user is warned when no plugin is available."""
+    viewer = ViewerModel()
+
+    with pytest.warns(match="No readers found to try reading"):
+        added, plugin, error = viewer._open_or_get_error(['my_file.fake'])
+        assert added == []
+        assert plugin is None
+        assert error is None
+
+
+def test_open_or_get_error_builtins(mock_pm, tmp_path):
+    """Test builtins is available to read npy files."""
+    viewer = ViewerModel()
+
+    f_pth = tmp_path / 'my-file.npy'
+    data = np.random.random((10, 10))
+    np.save(f_pth, data)
+
+    added, plugin, error = viewer._open_or_get_error([str(f_pth)])
+    assert len(added) == 1
+    assert isinstance(added[0], Image)
+    np.testing.assert_allclose(added[0].data, data)
+    assert plugin == 'builtins'
+    assert error is None
+
+
+def test_open_or_get_error_single_plugin(mock_pm, tmp_reader, tmp_path):
+    """Test a random other plugin is selected if it's the only one."""
+    viewer = ViewerModel()
+
+    f_pth = tmp_path / 'my-file.fake'
+    data = np.random.random((10, 10))
+    np.save(f_pth, data)
+
+    tmp_reader(
+        mock_pm, 'fake-reader', reader_func=lambda pth: [(np.load(pth),)]
+    )
+
+    added, plugin, error = viewer._open_or_get_error([str(f_pth)])
+    assert plugin == 'fake-reader'
+    assert error is None
+
+
+def test_open_or_get_error_prefered_plugin(mock_pm, tmp_reader):
+    """Test plugin preference is respected."""
+    viewer = ViewerModel()
+
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {'.fake': 'fake-reader'}
+
+        tmp_reader(mock_pm, 'fake-reader')
+        tmp_reader(mock_pm, 'other-fake-reader')
+
+        _, plugin, error = viewer._open_or_get_error(['my_file.fake'])
+        assert plugin == 'fake-reader'
+        assert error is None
+
+
+def test_open_or_get_error_cant_find_plugin(mock_pm, tmp_reader):
+    """Test correct error message is returned when prefered plugin is missing."""
+    viewer = ViewerModel()
+
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {'.fake': 'fake-reader'}
+
+        tmp_reader(mock_pm, 'other-fake-reader')
+
+        _, plugin, error = viewer._open_or_get_error(['my_file.fake'])
+        assert plugin == 'fake-reader'
+        assert "Can't find fake-reader plugin" in str(error)
