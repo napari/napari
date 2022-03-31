@@ -3,9 +3,9 @@ from typing import Any, Optional, Union, cast
 
 from ..utils.translations import trans
 from ._base import _NOT_SET
-from ._napari_settings import NapariSettings
+from ._napari_settings import CURRENT_SCHEMA_VERSION, NapariSettings
 
-__all__ = ['NapariSettings', 'get_settings']
+__all__ = ['NapariSettings', 'get_settings', 'CURRENT_SCHEMA_VERSION']
 
 
 class _SettingsProxy:

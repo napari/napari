@@ -358,6 +358,8 @@ class Points(Layer):
             shading=Event,
             _antialias=Event,
             experimental_canvas_size_limits=Event,
+            features=Event,
+            feature_defaults=Event,
         )
 
         self._colors = get_color_namelist()
@@ -574,6 +576,7 @@ class Points(Layer):
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
+        self.events.features()
 
     @property
     def feature_defaults(self):
@@ -641,6 +644,10 @@ class Points(Layer):
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
+        self.events.feature_defaults()
+        if update_indices is not None:
+            self.events.properties()
+            self.events.features()
 
     @property
     def text(self) -> TextManager:

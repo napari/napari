@@ -1,9 +1,11 @@
 import os
 import sys
-from importlib.metadata import metadata
+from enum import Enum, auto
+from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
+from npe2 import PluginManager
 from npe2.manifest.package_metadata import PackageMetadata
 from qtpy.QtCore import (
     QEvent,
@@ -368,12 +370,6 @@ class PluginListItem(QFrame):
         npe2_icon.setPixmap(icon.colored(color='#33F0FF').pixmap(20, 20))
         self.row1.insertWidget(2, QLabel('npe2'))
         self.row1.insertWidget(2, npe2_icon)
-        self.enabled_checkbox.setEnabled(False)
-        self.enabled_checkbox.setToolTip(
-            trans._(
-                'This is a npe2 plugin and cannot be enabled/disabled at this time.'
-            )
-        )
 
     def _get_dialog(self) -> QDialog:
         p = self.parent()
@@ -504,10 +500,15 @@ class PluginListItem(QFrame):
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
         enabled = bool(state)
-        current_distname = self.plugin_name.text()
-        for plugin_name, _, distname in plugin_manager.iter_available():
-            if distname and distname == current_distname:
-                plugin_manager.set_blocked(plugin_name, not enabled)
+        plugin_name = self.plugin_name.text()
+        pm2 = PluginManager.instance()
+        if plugin_name in pm2:
+            pm2.enable(plugin_name) if state else pm2.disable(plugin_name)
+            return
+
+        for npe1_name, _, distname in plugin_manager.iter_available():
+            if distname and (distname == plugin_name):
+                plugin_manager.set_blocked(npe1_name, not enabled)
 
     def show_warning(self, message: str = ""):
         """Show warning icon and tooltip."""
@@ -696,9 +697,16 @@ class QPluginList(QListWidget):
                 item.setHidden(False)
 
 
+class RefreshState(Enum):
+    REFRESHING = auto()
+    OUTDATED = auto()
+    DONE = auto()
+
+
 class QtPluginDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
         installer_type = "pip"
@@ -734,11 +742,17 @@ class QtPluginDialog(QDialog):
         event.ignore()
 
     def refresh(self):
+        if self.refresh_state != RefreshState.DONE:
+            self.refresh_state = RefreshState.OUTDATED
+            return
+        self.refresh_state = RefreshState.REFRESHING
         self.installed_list.clear()
         self.available_list.clear()
 
         # fetch installed
-        from ...plugins import _npe2, plugin_manager
+        from npe2 import PluginManager
+
+        from ...plugins import plugin_manager
 
         plugin_manager.discover()  # since they might not be loaded yet
 
@@ -747,7 +761,11 @@ class QtPluginDialog(QDialog):
         def _add_to_installed(distname, enabled, npe_version=1):
             norm_name = normalized_name(distname or '')
             if distname:
-                meta = metadata(distname)
+                try:
+                    meta = metadata(distname)
+                except PackageNotFoundError:
+                    self.refresh_state = RefreshState.OUTDATED
+                    return  # a race condition has occurred and the package is uninstalled by another thread
                 if len(meta) == 0:
                     # will not add builtins.
                     return
@@ -770,11 +788,13 @@ class QtPluginDialog(QDialog):
                 npe_version=npe_version,
             )
 
-        for manifest in _npe2.iter_manifests():
+        pm2 = PluginManager.instance()
+        for manifest in pm2.iter_manifests():
             distname = normalized_name(manifest.name or '')
             if distname in self.already_installed or distname == 'napari':
                 continue
-            _add_to_installed(distname, True, npe_version=2)
+            enabled = not pm2.is_disabled(manifest.name)
+            _add_to_installed(distname, enabled, npe_version=2)
 
         for (
             plugin_name,
@@ -815,6 +835,7 @@ class QtPluginDialog(QDialog):
         self.worker.yielded.connect(self._handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)
         self.worker.finished.connect(self._update_count_in_label)
+        self.worker.finished.connect(self._end_refresh)
         self.worker.start()
 
     def setup_ui(self):
@@ -925,6 +946,12 @@ class QtPluginDialog(QDialog):
         self.avail_label.setText(
             trans._("Available Plugins ({count})", count=count)
         )
+
+    def _end_refresh(self):
+        refresh_state = self.refresh_state
+        self.refresh_state = RefreshState.DONE
+        if refresh_state == RefreshState.OUTDATED:
+            self.refresh()
 
     def eventFilter(self, watched, event):
         if event.type() == QEvent.DragEnter:

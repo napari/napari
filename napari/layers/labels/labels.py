@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
+from napari.utils.misc import _is_array_type
+
 from ...utils import config
 from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
@@ -1196,9 +1198,12 @@ class Labels(_ImageBase):
                     j += 1
                 else:
                     match_indices.append(np.full(n_idx, d, dtype=np.intp))
-            match_indices = tuple(match_indices)
         else:
             match_indices = match_indices_local
+
+        match_indices = _coerce_indices_for_vectorization(
+            self.data, match_indices
+        )
 
         self._save_history(
             (
@@ -1268,18 +1273,7 @@ class Labels(_ImageBase):
         else:
             slice_coord = slice_coord_temp
 
-        slice_coord = tuple(slice_coord)
-
-        # Fix indexing for xarray if necessary
-        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
-        # for difference from indexing numpy
-        try:
-            import xarray as xr
-
-            if isinstance(self.data, xr.DataArray):
-                slice_coord = tuple(xr.DataArray(i) for i in slice_coord)
-        except ImportError:
-            pass
+        slice_coord = _coerce_indices_for_vectorization(self.data, slice_coord)
 
         # slice coord is a tuple of coordinate arrays per dimension
         # subset it if we want to only paint into background/only erase
@@ -1435,3 +1429,18 @@ if config.async_octree:
 
     class Labels(Labels, _OctreeImageBase):
         pass
+
+
+def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
+    """Coerces indices so that they can be used for vectorized indexing in the given data array."""
+    if _is_array_type(array, 'xarray.DataArray'):
+        # Fix indexing for xarray if necessary
+        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
+        # for difference from indexing numpy
+        try:
+            import xarray as xr
+
+            return tuple(xr.DataArray(i) for i in indices)
+        except ImportError:
+            pass
+    return tuple(indices)

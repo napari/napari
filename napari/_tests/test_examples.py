@@ -23,9 +23,12 @@ skip = [
     'dynamic-projections-dask.py',  # extremely slow / does not finish
 ]
 
-
-if os.environ.get('MIN_REQ', '') == '1':
+try:
+    import meshzoo
+except ModuleNotFoundError:
+    # this should be restored once numpy min req is
     skip.extend(['spheres.py', 'clipping_planes_interactive.py'])
+
 
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
