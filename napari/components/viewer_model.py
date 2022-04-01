@@ -879,9 +879,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
-        select_reader_helper: Callable[[str, Dict[str, str], Exception], Tuple[str, bool]]
-            When plugin choice is ambiguous allows for function to facilitate
-            selection of reader from available readers.
         ``**kwargs``
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
@@ -892,16 +889,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             A list of any layers that were added to the viewer.
         """
 
-        # TODO: maybe bring this into _open_or_get_error?
         paths = [path] if isinstance(path, (Path, str)) else path
-        paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-        if not isinstance(paths, (tuple, list)):
-            raise ValueError(
-                trans._(
-                    "'path' argument must be a string, list, or tuple",
-                    deferred=True,
-                )
-            )
 
         if stack:
             layers, plugin, exception = self._open_or_get_error(
@@ -943,12 +931,21 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return added
 
     def _open_or_get_error(
-        self, _paths, kwargs={}, layer_type=None, stack=False
+        self, paths, kwargs={}, layer_type=None, stack=False
     ):
+        paths = [os.fspath(path) for path in paths]  # PathObjects -> str
+        if not isinstance(paths, (tuple, list)):
+            raise ValueError(
+                trans._(
+                    "'path' argument must be a string, list, or tuple",
+                    deferred=True,
+                )
+            )
+
         added = []
         error = None
         plugin = None
-        _path = _paths[0]
+        _path = paths[0]
 
         readers = get_potential_readers(_path)
         if not readers:
@@ -956,7 +953,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 trans._(
                     'No readers found to try reading {filenames}.',
                     deferred=True,
-                    filenames=_paths,
+                    filenames=paths,
                 )
             )
             return added, plugin, error
@@ -969,7 +966,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             plugin = plugin or next(iter(readers.keys()))
             try:
                 added = self._add_layers_with_plugins(
-                    _paths,
+                    paths,
                     kwargs=kwargs,
                     stack=stack,
                     plugin=plugin,
@@ -991,7 +988,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # multiple plugins
         else:
             error = RuntimeError(
-                f"Multiple plugins found capable of reading {_paths}. Select plugin from {list(readers.keys())} and pass to reading function e.g. `viewer.open(..., plugin=...)`."
+                f"Multiple plugins found capable of reading {paths}. Select plugin from {list(readers.keys())} and pass to reading function e.g. `viewer.open(..., plugin=...)`."
             )
 
         # where are we handling these
