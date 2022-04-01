@@ -21,7 +21,7 @@ from typing import (
 import numpy as np
 from pydantic import Extra, Field, validator
 
-from napari.plugins.utils import get_potential_readers
+from napari.plugins.utils import get_potential_readers, get_preferred_reader
 
 from .. import layers
 from ..layers import Image, Layer
@@ -851,9 +851,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         stack: bool = False,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
-        # select_reader_helper: Callable[
-        #     [str, Dict[str, str], Exception], Tuple[str, bool]
-        # ] = None,
         **kwargs,
     ) -> List[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
@@ -964,7 +961,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
             return added, plugin, error
 
-        plugin = _get_preferred_reader(_path)
+        plugin = get_preferred_reader(_path)
 
         # TODO: Use custom error instance?
         # preferred plugin exists, or we just have one plugin available
@@ -1348,14 +1345,6 @@ def valid_add_kwargs() -> Dict[str, Set[str]]:
         params = inspect.signature(getattr(ViewerModel, meth)).parameters
         valid[meth[4:]] = set(params) - {'self', 'kwargs'}
     return valid
-
-
-def _get_preferred_reader(_path):
-    """Return preferred reader for _path from settings, if one exists."""
-    _, extension = os.path.splitext(_path)
-    if extension:
-        reader_settings = get_settings().plugins.extension2reader
-        return reader_settings.get(extension)
 
 
 for _layer in (

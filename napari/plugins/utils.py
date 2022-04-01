@@ -1,7 +1,18 @@
+import os
 import re
 from typing import Dict
 
+from napari.settings import get_settings
+
 from . import _npe2, plugin_manager
+
+
+def _get_preferred_reader(_path):
+    """Return preferred reader for _path from settings, if one exists."""
+    _, extension = os.path.splitext(_path)
+    if extension:
+        reader_settings = get_settings().plugins.extension2reader
+        return reader_settings.get(extension)
 
 
 def get_potential_readers(filename: str) -> Dict[str, str]:
