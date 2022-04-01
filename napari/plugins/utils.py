@@ -7,7 +7,7 @@ from napari.settings import get_settings
 from . import _npe2, plugin_manager
 
 
-def _get_preferred_reader(_path):
+def get_preferred_reader(_path):
     """Return preferred reader for _path from settings, if one exists."""
     _, extension = os.path.splitext(_path)
     if extension:
