@@ -12,7 +12,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari._qt.qt_viewer import QtViewer
 from napari.plugins.utils import get_potential_readers
 from napari.settings import get_settings
 
@@ -111,7 +110,7 @@ class QtReaderDialog(QDialog):
 
 def handle_gui_reading(
     paths: List[str],
-    qt_viewer: QtViewer,
+    qt_viewer,
     stack: bool,
     plugin_name: str,
     error: RuntimeError,
@@ -205,7 +204,7 @@ def open_with_dialog_choices(
     readers: Dict[str, str],
     paths: List[str],
     stack: bool,
-    qt_viewer: QtViewer,
+    qt_viewer,
 ):
     """Open paths with chosen plugin from reader dialog, persisting if chosen.
 
