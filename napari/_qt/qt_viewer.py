@@ -735,8 +735,19 @@ class QtViewer(QSplitter):
             self._qt_open([folder], stack=False)
             update_open_history(folder)
 
-    def _qt_open(self, filenames, stack):
-        # TODO: private method
+    def _qt_open(self, filenames: List[str], stack: bool):
+        """Open files, potentially popping reader dialog for plugin selection.
+
+        Call ViewerModel._open_or_get_error and if an error is returned, pass
+        to gui handling method.
+
+        Parameters
+        ----------
+        filenames : List[str]
+            paths to open
+        stack : bool
+            whether to stack files or not
+        """
         layers, plugin, error = self.viewer._open_or_get_error(
             filenames, stack=stack
         )

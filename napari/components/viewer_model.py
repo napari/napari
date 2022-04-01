@@ -931,8 +931,55 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return added
 
     def _open_or_get_error(
-        self, paths, kwargs={}, layer_type=None, stack=False
+        self,
+        paths: List[Path | str],
+        kwargs: Dict[str, Any] = {},
+        layer_type: Optional[str] = None,
+        stack: bool = False,
     ):
+        """Open paths if plugin choice is unambiguous, capturing any errors.
+
+        This function will open paths if there is no plugin choice to be made
+        i.e. there is a preferred reader associated with this file extension,
+        or there is only one plugin available. Any errors that occur during
+        the opening process are captured and returned. If multiple plugins
+        are available to read these paths, an error is returned specifying
+        this.
+
+        Errors *are* raised by this function, when the given paths are not
+        a list or tuple, or if no plugins are available to read the files.
+        This assumes all files have the same extension, as other cases
+        are not yet supported.
+
+        This function is called from ViewerModel.open, which raises any
+        errors returned. The QtViewer also calls this method but handles
+        errors by raising a dialog for users to make a plugin choice.
+
+        Parameters
+        ----------
+        paths : List[Path | str]
+            list of file paths to open
+        kwargs : Dict[str, Any], optional
+            keyword arguments to pass to layer adding method, by default {}
+        layer_type : Optional[str], optional
+            layer type for paths, by default None
+        stack : bool, optional
+            True if files should be opened as a stack, by default False
+
+        Returns
+        -------
+        added
+            list of layers added
+        plugin
+            plugin used to try opening paths, if any
+        error
+            errors from trying to open layers
+
+        Raises
+        ------
+        ValueError
+            when paths is *not* a list or tuple, or no plugins are available
+        """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
             raise ValueError(
@@ -949,14 +996,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         readers = get_potential_readers(_path)
         if not readers:
-            warnings.warn(
+            raise ValueError(
                 trans._(
-                    'No readers found to try reading {filenames}.',
+                    'No plugin found capable of reading {paths}.',
                     deferred=True,
-                    filenames=paths,
+                    paths=paths,
                 )
             )
-            return added, plugin, error
 
         plugin = get_preferred_reader(_path)
 
@@ -974,7 +1020,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 )
             # plugin failed
             except Exception as e:
-                # TODO: we're changing the error type here and we shouldn't maybe
+                # TODO: we're changing the error type here and we shouldn't maybe?
                 error = RuntimeError(
                     f'Tried opening with reader {plugin}, but failed:\n'
                     + str(e)
