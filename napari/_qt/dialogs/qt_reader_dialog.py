@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari._qt.qt_viewer import QtViewer
 from napari.plugins.utils import get_potential_readers
 from napari.settings import get_settings
 
@@ -108,14 +109,41 @@ class QtReaderDialog(QDialog):
         return display_name, persist_choice
 
 
-def handle_gui_reading(_paths, viewer, stack, plugin, error):
+def handle_gui_reading(
+    paths: List[str],
+    qt_viewer: QtViewer,
+    stack: bool,
+    plugin_name: str,
+    error: RuntimeError,
+):
+    """Present reader dialog to choose reader and open paths based on result.
 
-    _path = _paths[0]
-    readers, error_message = prepare_dialog_options(_path, plugin, error)
+    This function is called whenever ViewerModel._open_or_get_error returns
+    an error from a GUI interaction e.g. dragging & dropping a file or using
+    the File -> Open dialogs. It prepares remaining readers and error message
+    for display, opens the reader dialog and based on user entry opens
+    paths using the chosen plugin. Any errors raised in the process of reading
+    with vhosen plugin are reraised.
+
+    Parameters
+    ----------
+    _paths : list[str]
+        list of paths to open, as strings
+    viewer : QtViewer
+        QtViewer to associate dialog with
+    stack : bool
+        True if list of paths should be stacked, otherwise False
+    plugin_name : str | None
+        name of plugin already tried, if any
+    error : RuntimeError
+        previous error raised in the process of opening
+    """
+    _path = paths[0]
+    readers, error_message = prepare_dialog_options(_path, plugin_name, error)
 
     _, extension = os.path.splitext(_path)
     readerDialog = QtReaderDialog(
-        parent=viewer,
+        parent=qt_viewer,
         pth=_path,
         extension=extension,
         error_message=error_message,
@@ -124,15 +152,40 @@ def handle_gui_reading(_paths, viewer, stack, plugin, error):
     display_name, persist = readerDialog.get_user_choices()
     if display_name:
         open_with_dialog_choices(
-            display_name, persist, extension, readers, _paths, stack, viewer
+            display_name, persist, extension, readers, paths, stack, qt_viewer
         )
 
 
-def prepare_dialog_options(_path, plugin, error):
+def prepare_dialog_options(_path: str, plugin_name: str, error: RuntimeError):
+    """Remove tried plugin from readers and reformat error message.
+
+    Raises error if no readers are left to try.
+
+    Parameters
+    ----------
+    _path : str
+        path to open
+    plugin_name : str
+        name of plugin previously tried, if any
+    error : RuntimeError
+        previous error raised in the process of opening
+
+    Returns
+    -------
+    readers: Dict[str, str]
+        remaining readers to present to user
+    error_message: str
+        formatted error message for dialog
+
+    Raises
+    ------
+    error
+        raises previous error if no readers are left to try
+    """
     readers = get_potential_readers(_path)
     # remove plugin we already tried e.g. prefered plugin
-    if plugin in readers:
-        del readers[plugin]
+    if plugin_name in readers:
+        del readers[plugin_name]
     # if there's no other readers left, raise the exception
     if not readers:
         raise error
@@ -146,15 +199,40 @@ def prepare_dialog_options(_path, plugin, error):
 
 
 def open_with_dialog_choices(
-    display_name, persist, extension, readers, _paths, stack, viewer
+    display_name: str,
+    persist: bool,
+    extension: str,
+    readers: Dict[str, str],
+    paths: List[str],
+    stack: bool,
+    qt_viewer: QtViewer,
 ):
+    """Open paths with chosen plugin from reader dialog, persisting if chosen.
+
+    Parameters
+    ----------
+    display_name : str
+        display name of plugin to use
+    persist : bool
+        True if user chose to persist plugin association, otherwise False
+    extension : str
+        file extension for association of preferences
+    readers : Dict[str, str]
+        plugin-name: display-name dictionary of remaining readers
+    _paths : List[str]
+        paths to open
+    stack : bool
+        True if files should be opened as a stack, otherwise False
+    qt_viewer : QtViewer
+        viewer to add layers to
+    """
     # TODO: disambiguate with reader title
     plugin_name = [
         p_name for p_name, d_name in readers.items() if d_name == display_name
     ][0]
     # may throw error, but we let it this time
-    viewer.viewer._add_layers_with_plugins(
-        _paths, stack=stack, plugin=plugin_name
+    qt_viewer.viewer._add_layers_with_plugins(
+        paths, stack=stack, plugin=plugin_name
     )
 
     if persist:
