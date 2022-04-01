@@ -109,9 +109,8 @@ class QtReaderDialog(QDialog):
 
 def handle_gui_reading(_paths, viewer, stack, plugin, error):
 
-    _path, readers, error_message = prepare_readers_before_dialog(
-        _paths, plugin, error
-    )
+    _path = _paths[0]
+    readers, error_message = prepare_dialog_options(_path, plugin, error)
 
     _, extension = os.path.splitext(_path)
     readerDialog = QtReaderDialog(
@@ -124,7 +123,7 @@ def handle_gui_reading(_paths, viewer, stack, plugin, error):
     )
     display_name, persist = get_reader_from_dialog(readerDialog)
     if display_name:
-        handle_dialog_choices(
+        open_with_dialog_choices(
             display_name, persist, extension, readers, _paths, stack, viewer
         )
 
@@ -146,9 +145,7 @@ def get_reader_from_dialog(readerDialog):
     return display_name, persist_choice
 
 
-def prepare_readers_before_dialog(_paths, plugin, error):
-    _path = _paths[0]
-
+def prepare_dialog_options(_path, plugin, error):
     readers = get_potential_readers(_path)
     # remove plugin we already tried e.g. prefered plugin
     if plugin in readers:
@@ -162,10 +159,10 @@ def prepare_readers_before_dialog(_paths, plugin, error):
     if 'Multiple plugins found' in error_message:
         error_message = ''
 
-    return _path, readers, error_message
+    return readers, error_message
 
 
-def handle_dialog_choices(
+def open_with_dialog_choices(
     display_name, persist, extension, readers, _paths, stack, viewer
 ):
     # TODO: disambiguate with reader title

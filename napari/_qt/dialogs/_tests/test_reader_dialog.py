@@ -1,7 +1,11 @@
+import npe2
 import pytest
 from qtpy.QtWidgets import QLabel, QRadioButton
 
-from napari._qt.dialogs.qt_reader_dialog import QtReaderDialog
+from napari._qt.dialogs.qt_reader_dialog import (
+    QtReaderDialog,
+    prepare_dialog_options,
+)
 
 
 @pytest.fixture
@@ -63,3 +67,41 @@ def test_get_persist_choice(tmpdir, reader_dialog):
 
     widg.persist_checkbox.toggle()
     assert not widg._get_persist_choice()
+
+
+def test_prepare_dialog_options_no_readers(mock_pm):
+    pth = 'my-file.fake'
+
+    with pytest.raises(RuntimeError) as e:
+        prepare_dialog_options(
+            pth, 'fake-reader', RuntimeError('Reading failed')
+        )
+    assert 'Reading failed' in str(e.value)
+
+
+def test_prepare_dialog_options_multiple_plugins(mock_pm):
+    pth = 'my-file.tif'
+
+    readers, error_message = prepare_dialog_options(
+        pth,
+        None,
+        RuntimeError(f'Multiple plugins found capable of reading {pth}'),
+    )
+    assert 'builtins' in readers
+    assert error_message == ''
+
+
+@pytest.mark.skipif(
+    npe2.__version__ <= '0.2.1',
+    reason='Cannot use DynamicPlugin until next npe2 release.',
+)
+def test_prepare_dialog_options_removes_plugin(mock_pm, tmp_reader):
+    pth = 'my-file.fake'
+
+    tmp_reader(mock_pm, 'fake-reader')
+    tmp_reader(mock_pm, 'other-fake-reader')
+    readers, _ = prepare_dialog_options(
+        pth, 'fake-reader', RuntimeError('Reader failed')
+    )
+    assert 'other-fake-reader' in readers
+    assert 'fake-reader' not in readers
