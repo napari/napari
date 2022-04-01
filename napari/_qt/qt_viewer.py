@@ -690,7 +690,7 @@ class QtViewer(QSplitter):
 
         if (filenames != []) and (filenames is not None):
             for filename in filenames:
-                gui_open(self, [filename], stack=False)
+                self._qt_open([filename], stack=False)
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self):
@@ -711,7 +711,7 @@ class QtViewer(QSplitter):
         )
 
         if (filenames != []) and (filenames is not None):
-            gui_open(self, filenames, stack=True)
+            self._qt_open(filenames, stack=True)
             update_open_history(filenames[0])
 
     def _open_folder_dialog(self):
@@ -732,8 +732,16 @@ class QtViewer(QSplitter):
         )
 
         if folder not in {'', None}:
-            gui_open(self, [folder], stack=False)
+            self._qt_open([folder], stack=False)
             update_open_history(folder)
+
+    def _qt_open(self, filenames, stack):
+        # TODO: private method
+        layers, plugin, error = self.viewer._open_or_get_error(
+            filenames, stack=stack
+        )
+        if error:
+            handle_gui_reading(filenames, self, stack, plugin, error)
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""
@@ -1057,11 +1065,11 @@ class QtViewer(QSplitter):
 
         # if trying to open as a stack, open with any available reader
         if shift_down:
-            gui_open(self, filenames, stack=bool(shift_down))
+            self._qt_open(filenames, stack=bool(shift_down))
             return
 
         for filename in filenames:
-            gui_open(self, [filename], stack=bool(shift_down))
+            self._qt_open([filename], stack=bool(shift_down))
 
     def closeEvent(self, event):
         """Cleanup and close.
@@ -1162,12 +1170,3 @@ def _create_remote_manager(
     qt_poll.events.poll.connect(monitor.on_poll)
 
     return manager
-
-
-def gui_open(qt_viewer, filenames, stack):
-    # TODO: private method
-    layers, plugin, error = qt_viewer.viewer._open_or_get_error(
-        filenames, stack=stack
-    )
-    if error:
-        handle_gui_reading(filenames, qt_viewer, stack, plugin, error)
