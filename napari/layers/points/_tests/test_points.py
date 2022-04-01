@@ -42,41 +42,6 @@ def test_empty_points():
     assert pts.data.shape == (0, 2)
 
 
-def test_empty_points_with_features_check_feature_defaults():
-    label_dtype = pd.CategoricalDtype(['label1', 'label2'])
-    features = pd.DataFrame(
-        {
-            'label': pd.Series([], dtype=label_dtype),
-            'cont_prop': pd.Series([], dtype=float),
-        }
-    )
-
-    points = Points(features=features)
-
-    assert points.feature_defaults['label'][0] == 'label1'
-    assert np.isnan(points.feature_defaults['cont_prop'][0])
-
-
-def test_add_to_empty_points_with_features_check_values():
-    label_dtype = pd.CategoricalDtype(['label1', 'label2'])
-    features = pd.DataFrame(
-        {
-            'label': pd.Series([], dtype=label_dtype),
-            'cont_prop': pd.Series([], dtype=float),
-        }
-    )
-    points = Points(features=features)
-
-    points.add([[10, 10], [20, 20]])
-
-    np.testing.assert_array_equal(
-        points.features['label'], ['label1', 'label1']
-    )
-    np.testing.assert_array_equal(
-        points.features['cont_prop'], [np.nan, np.nan]
-    )
-
-
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_points_with_properties():
     """Test instantiating an empty Points layer with properties
@@ -104,6 +69,29 @@ def test_empty_points_with_properties():
     np.testing.assert_equal(pts.properties, props)
 
 
+def test_empty_points_with_features():
+    """See: https://github.com/napari/napari/pull/1069"""
+    label_dtype = pd.CategoricalDtype(['label1', 'label2'])
+    features = pd.DataFrame(
+        {
+            'label': pd.Series([], dtype=label_dtype),
+            'cont_prop': np.array([], dtype=float),
+        }
+    )
+    pts = Points(features=features)
+    assert pts.feature_defaults['label'][0] == 'label1'
+    assert np.isnan(pts.feature_defaults['cont_prop'][0])
+
+    # verify the feature datatype is correct
+    assert pts.features['cont_prop'].dtype == float
+
+    # add two points and verify the default property was applied
+    pts.add([10, 10])
+    pts.add([20, 20])
+    np.testing.assert_array_equal(pts.features['label'], ['label1', 'label1'])
+    np.testing.assert_array_equal(pts.features['cont_prop'], [np.nan, np.nan])
+
+
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_empty_points_with_properties_list():
     """Test instantiating an empty Points layer with properties
@@ -127,7 +115,7 @@ def test_empty_points_with_properties_list():
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_empty_layer_with_face_colormap():
+def test_empty_layer_with_face_colormap_deprecated():
     """Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
@@ -141,6 +129,26 @@ def test_empty_layer_with_face_colormap():
     assert layer.face_color_mode == 'colormap'
 
     # verify the current_face_color is correct
+    face_color = np.array([1, 1, 1, 1])
+    np.testing.assert_allclose(layer._face.current_color, face_color)
+
+
+def test_empty_layer_with_face_colormap():
+    """See: https://github.com/napari/napari/pull/1069"""
+    features = {'point_type': np.empty((0,), dtype=float)}
+    # TODO: currently failing because property_choices no longer
+    # exists to provide a current_value for a property.
+    # Consider passing through FeatureTable through to ColorManager.
+    layer = Points(
+        features=features,
+        face_color='point_type',
+        face_colormap='gray',
+    )
+
+    assert layer.face_color_mode == 'colormap'
+
+    # verify the current_face_color is correct
+    layer.feature_defaults['point_type'] = 1.5
     face_color = np.array([1, 1, 1, 1])
     np.testing.assert_allclose(layer._face.current_color, face_color)
 
@@ -191,6 +199,37 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
 
     layer.add([10, 10])
     colors = getattr(layer, color_name)
+    np.testing.assert_allclose(colors, [color_cycle[1]])
+    assert len(layer.data) == 1
+    cm = getattr(layer, f'_{feature_name}')
+    assert cm.color_properties.current_value == 'paw'
+
+
+@pytest.mark.parametrize('feature_name', ('edge', 'face'))
+def test_set_feature_defaults_on_empty_layer_with_color_cycle(feature_name):
+    """See: https://github.com/napari/napari/pull/3110"""
+    annotation_dtype = pd.CategoricalDtype(['tail', 'nose', 'paw'])
+    features = {'annotation': pd.Series([], dtype=annotation_dtype)}
+    color_cycle = [[0, 1, 0, 1], [1, 0, 1, 1]]
+    color_parameters = {
+        'colors': 'annotation',
+        'categorical_colormap': color_cycle,
+        'mode': 'cycle',
+    }
+    color_name = f'{feature_name}_color'
+    points_kwargs = {
+        'features': features,
+        color_name: color_parameters,
+    }
+    layer = Points(**points_kwargs)
+
+    color_mode = getattr(layer, f'{feature_name}_color_mode')
+    assert color_mode == 'cycle'
+    layer.feature_defaults['annotation'] = 'paw'
+
+    layer.add([10, 10])
+    colors = getattr(layer, color_name)
+    # TODO: fails because changing the feature default value does not update ColorManager
     np.testing.assert_allclose(colors, [color_cycle[1]])
     assert len(layer.data) == 1
     cm = getattr(layer, f'_{feature_name}')
@@ -464,7 +503,6 @@ def test_remove_selected_updates_value():
     assert layer._value == 2
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_remove_selected_removes_corresponding_attributes():
     """Test that removing points at specific indices also removes any per-point
     attribute at the same index"""
