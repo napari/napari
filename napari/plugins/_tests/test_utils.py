@@ -32,7 +32,7 @@ def test_get_preferred_reader_no_extension():
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_get_potential_readers_finds_npe1(mock_pm):
+def test_get_potential_readers_finds_npe1(mock_npe2_pm):
     pth = 'my_file.tif'
     readers = get_potential_readers(pth)
     assert 'builtins' in readers
@@ -42,10 +42,10 @@ def test_get_potential_readers_finds_npe1(mock_pm):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_get_potential_readers_gives_napari(mock_pm, tmp_reader):
+def test_get_potential_readers_gives_napari(mock_npe2_pm, tmp_reader):
     pth = 'my_file.tif'
 
-    tmp_reader(mock_pm, 'napari', ['*.tif'])
+    tmp_reader(mock_npe2_pm, 'napari', ['*.tif'])
     readers = get_potential_readers(pth)
     assert 'napari' in readers
     assert 'builtins' not in readers
@@ -55,11 +55,11 @@ def test_get_potential_readers_gives_napari(mock_pm, tmp_reader):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_get_potential_readers_finds_readers(mock_pm, tmp_reader):
+def test_get_potential_readers_finds_readers(mock_npe2_pm, tmp_reader):
     pth = 'my_file.tif'
 
-    tmp_reader(mock_pm, 'tif-reader', ['*.tif'])
-    tmp_reader(mock_pm, 'all-reader', ['*.*'])
+    tmp_reader(mock_npe2_pm, 'tif-reader', ['*.tif'])
+    tmp_reader(mock_npe2_pm, 'all-reader', ['*.*'])
 
     readers = get_potential_readers(pth)
     assert len(readers) == 3
@@ -69,7 +69,7 @@ def test_get_potential_readers_finds_readers(mock_pm, tmp_reader):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_get_potential_readers_none_available(mock_pm):
+def test_get_potential_readers_none_available(mock_npe2_pm):
     pth = 'my_file.fake'
 
     readers = get_potential_readers(pth)
@@ -80,10 +80,10 @@ def test_get_potential_readers_none_available(mock_pm):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_get_potential_readers_plugin_name_disp_name(mock_pm, tmp_reader):
+def test_get_potential_readers_plugin_name_disp_name(mock_npe2_pm, tmp_reader):
     pth = 'my_file.fake'
 
-    fake_reader = tmp_reader(mock_pm, 'fake-reader')
+    fake_reader = tmp_reader(mock_npe2_pm, 'fake-reader')
     fake_reader.manifest.display_name = 'Fake Reader'
     readers = get_potential_readers(pth)
 

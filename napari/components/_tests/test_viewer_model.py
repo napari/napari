@@ -795,12 +795,12 @@ def test_viewer_object_event_sources():
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_open_or_get_error_multiple_readers(mock_pm, tmp_reader):
+def test_open_or_get_error_multiple_readers(mock_npe2_pm, tmp_reader):
     """Assert error is returned when multiple plugins are available to read."""
     viewer = ViewerModel()
 
-    tmp_reader(mock_pm, 'p1')
-    tmp_reader(mock_pm, 'p2')
+    tmp_reader(mock_npe2_pm, 'p1')
+    tmp_reader(mock_npe2_pm, 'p2')
 
     added, plugin, error = viewer._open_or_get_error(['my_file.fake'])
     assert added == []
@@ -812,7 +812,7 @@ def test_open_or_get_error_multiple_readers(mock_pm, tmp_reader):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_open_or_get_error_no_plugin(mock_pm):
+def test_open_or_get_error_no_plugin(mock_npe2_pm):
     """Assert user is warned when no plugin is available."""
     viewer = ViewerModel()
 
@@ -827,7 +827,7 @@ def test_open_or_get_error_no_plugin(mock_pm):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_open_or_get_error_builtins(mock_pm, tmp_path):
+def test_open_or_get_error_builtins(mock_npe2_pm, tmp_path):
     """Test builtins is available to read npy files."""
     viewer = ViewerModel()
 
@@ -847,7 +847,7 @@ def test_open_or_get_error_builtins(mock_pm, tmp_path):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_open_or_get_error_single_plugin(mock_pm, tmp_reader, tmp_path):
+def test_open_or_get_error_single_plugin(mock_npe2_pm, tmp_reader, tmp_path):
     """Test a random other plugin is selected if it's the only one."""
     viewer = ViewerModel()
 
@@ -856,7 +856,7 @@ def test_open_or_get_error_single_plugin(mock_pm, tmp_reader, tmp_path):
     np.save(f_pth, data)
 
     tmp_reader(
-        mock_pm, 'fake-reader', reader_func=lambda pth: [(np.load(pth),)]
+        mock_npe2_pm, 'fake-reader', reader_func=lambda pth: [(np.load(pth),)]
     )
 
     added, plugin, error = viewer._open_or_get_error([str(f_pth)])
@@ -868,15 +868,15 @@ def test_open_or_get_error_single_plugin(mock_pm, tmp_reader, tmp_path):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_open_or_get_error_prefered_plugin(mock_pm, tmp_reader):
+def test_open_or_get_error_prefered_plugin(mock_npe2_pm, tmp_reader):
     """Test plugin preference is respected."""
     viewer = ViewerModel()
 
     with restore_settings_on_exit():
         get_settings().plugins.extension2reader = {'.fake': 'fake-reader'}
 
-        tmp_reader(mock_pm, 'fake-reader')
-        tmp_reader(mock_pm, 'other-fake-reader')
+        tmp_reader(mock_npe2_pm, 'fake-reader')
+        tmp_reader(mock_npe2_pm, 'other-fake-reader')
 
         _, plugin, error = viewer._open_or_get_error(['my_file.fake'])
         assert plugin == 'fake-reader'
@@ -887,14 +887,14 @@ def test_open_or_get_error_prefered_plugin(mock_pm, tmp_reader):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_open_or_get_error_cant_find_plugin(mock_pm, tmp_reader):
+def test_open_or_get_error_cant_find_plugin(mock_npe2_pm, tmp_reader):
     """Test correct error message is returned when prefered plugin is missing."""
     viewer = ViewerModel()
 
     with restore_settings_on_exit():
         get_settings().plugins.extension2reader = {'.fake': 'fake-reader'}
 
-        tmp_reader(mock_pm, 'other-fake-reader')
+        tmp_reader(mock_npe2_pm, 'other-fake-reader')
 
         _, plugin, error = viewer._open_or_get_error(['my_file.fake'])
         assert plugin == 'fake-reader'

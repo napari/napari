@@ -66,7 +66,6 @@ class Extension2ReaderTable(QWidget):
                 plugin_widg.setLayout(QHBoxLayout())
                 plugin_widg.layout().setContentsMargins(0, 0, 0, 0)
 
-                # TODO: need to get display name here
                 plugin_label = QLabel(plugin_name)
                 # need object name to easily work out which button was clicked
                 remove_btn = QPushButton('x', objectName=f'{extension}')

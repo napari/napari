@@ -68,7 +68,7 @@ def sample_plugin():
 
 
 @pytest.fixture
-def mock_pm_with_plugin(sample_plugin):
+def mock_pm(sample_plugin):
     mock_reg = MagicMock()
     with patch.object(PluginManager, 'discover'):
         _pm = PluginManager(reg=mock_reg)
@@ -77,60 +77,50 @@ def mock_pm_with_plugin(sample_plugin):
         yield _pm
 
 
-def test_read(mock_pm_with_plugin):
+def test_read(mock_pm):
     _, hookimpl = _npe2.read(["some.fzzy"], stack=False)
-    mock_pm_with_plugin.commands.get.assert_called_once_with(
-        f'{PLUGIN_NAME}.some_reader'
-    )
+    mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
     assert hookimpl.plugin_name == PLUGIN_NAME
 
-    mock_pm_with_plugin.commands.get.reset_mock()
+    mock_pm.commands.get.reset_mock()
     _, hookimpl = _npe2.read(["some.fzzy"], stack=True)
-    mock_pm_with_plugin.commands.get.assert_called_once_with(
-        f'{PLUGIN_NAME}.some_reader'
-    )
+    mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
 
-    mock_pm_with_plugin.commands.get.reset_mock()
+    mock_pm.commands.get.reset_mock()
     assert _npe2.read(["some.randomext"], stack=True) is None
-    mock_pm_with_plugin.commands.get.assert_not_called()
+    mock_pm.commands.get.assert_not_called()
 
 
-def test_write(mock_pm_with_plugin: PluginManager):
+def test_write(mock_pm: PluginManager):
     # saving an image without a writer goes straight to npe2.write
     # it will use our plugin writer
     image = Image(np.random.rand(20, 20), name='ex_img')
     _npe2.write_layers('some_file.tif', [image])
-    mock_pm_with_plugin.commands.get.assert_called_once_with(
-        f'{PLUGIN_NAME}.my_writer'
-    )
+    mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.my_writer')
 
     # points won't trigger our sample writer
-    mock_pm_with_plugin.commands.get.reset_mock()
+    mock_pm.commands.get.reset_mock()
     points = Points(np.random.rand(20, 2), name='ex_points')
     _npe2.write_layers('some_file.tif', [points])
-    mock_pm_with_plugin.commands.get.assert_not_called()
+    mock_pm.commands.get.assert_not_called()
 
     # calling _npe2.write_layers with a specific writer contribution should
     # directly execute the writer.exec with arguments appropriate for the
     # writer spec (single or multi-writer)
-    mock_pm_with_plugin.commands.get.reset_mock()
-    writer = mock_pm_with_plugin.get_manifest(
-        PLUGIN_NAME
-    ).contributions.writers[0]
+    mock_pm.commands.get.reset_mock()
+    writer = mock_pm.get_manifest(PLUGIN_NAME).contributions.writers[0]
     writer = MagicMock(wraps=writer)
     writer.exec.return_value = ['']
     assert _npe2.write_layers('some_file.tif', [points], writer=writer) == ['']
-    mock_pm_with_plugin.commands.get.assert_not_called()
+    mock_pm.commands.get.assert_not_called()
     expected_args = ('some_file.tif', *points.as_layer_data_tuple()[:2])
     writer.exec.assert_called_once_with(args=expected_args)
 
 
-def test_get_widget_contribution(mock_pm_with_plugin):
+def test_get_widget_contribution(mock_pm):
     # calling with plugin alone
     (_, display_name) = _npe2.get_widget_contribution(PLUGIN_NAME)
-    mock_pm_with_plugin.commands.get.assert_called_once_with(
-        'my-plugin.some_widget'
-    )
+    mock_pm.commands.get.assert_called_once_with('my-plugin.some_widget')
     assert display_name == 'My Widget'
 
     # calling with plugin but wrong widget name provides a useful error msg
@@ -142,41 +132,37 @@ def test_get_widget_contribution(mock_pm_with_plugin):
     )
 
     # calling with a non-existent plugin just returns None
-    mock_pm_with_plugin.commands.get.reset_mock()
+    mock_pm.commands.get.reset_mock()
     assert not _npe2.get_widget_contribution('not-a-thing')
-    mock_pm_with_plugin.commands.get.assert_not_called()
+    mock_pm.commands.get.assert_not_called()
 
 
-def test_populate_qmenu(mock_pm_with_plugin):
+def test_populate_qmenu(mock_pm):
     menu = MagicMock()
     _npe2.populate_qmenu(menu, '/napari/layer_context')
     assert menu.addMenu.called_once_with('My SubMenu')
     assert menu.addAction.called_once_with('Hello World')
 
 
-def test_file_extensions_string_for_layers(mock_pm_with_plugin):
+def test_file_extensions_string_for_layers(mock_pm):
     layers = [Image(np.random.rand(20, 20), name='ex_img')]
     label, writers = _npe2.file_extensions_string_for_layers(layers)
     assert label == 'My Plugin (*.tif *.tiff)'
-    writer = mock_pm_with_plugin.get_manifest(
-        PLUGIN_NAME
-    ).contributions.writers[0]
+    writer = mock_pm.get_manifest(PLUGIN_NAME).contributions.writers[0]
     assert writers == [writer]
 
 
-def test_get_readers(mock_pm_with_plugin):
+def test_get_readers(mock_pm):
     assert _npe2.get_readers("some.fzzy") == {PLUGIN_NAME: 'My Plugin'}
 
 
-def test_iter_manifest(mock_pm_with_plugin):
+def test_iter_manifest(mock_pm):
     for i in _npe2.iter_manifests():
         assert isinstance(i, PluginManifest)
 
 
-def test_get_sample_data(mock_pm_with_plugin):
-    samples = mock_pm_with_plugin.get_manifest(
-        PLUGIN_NAME
-    ).contributions.sample_data
+def test_get_sample_data(mock_pm):
+    samples = mock_pm.get_manifest(PLUGIN_NAME).contributions.sample_data
 
     opener, _ = _npe2.get_sample_data(PLUGIN_NAME, 'random_data')
     assert isinstance(opener, MethodType) and opener.__self__ is samples[0]
@@ -192,7 +178,7 @@ def test_get_sample_data(mock_pm_with_plugin):
     ]
 
 
-def test_sample_iterator(mock_pm_with_plugin):
+def test_sample_iterator(mock_pm):
     samples = list(_npe2.sample_iterator())
     assert samples
     for plugin, contribs in samples:
@@ -204,6 +190,6 @@ def test_sample_iterator(mock_pm_with_plugin):
             assert 'display_name' in i
 
 
-def test_widget_iterator(mock_pm_with_plugin):
+def test_widget_iterator(mock_pm):
     wdgs = list(_npe2.widget_iterator())
     assert wdgs == [('dock', ('my-plugin', ['My Widget']))]
