@@ -1,9 +1,6 @@
-from unittest.mock import MagicMock, patch
-
 import npe2
 import numpy as np
 import pytest
-from npe2 import PluginManager
 
 from napari._tests.utils import (
     good_layer_data,
@@ -792,44 +789,6 @@ def test_viewer_object_event_sources():
     viewer = ViewerModel()
     assert viewer.cursor.events.source is viewer.cursor
     assert viewer.camera.events.source is viewer.camera
-
-
-if npe2.__version__ > '0.2.1':
-    from npe2 import DynamicPlugin
-
-    @pytest.fixture
-    def tmp_reader():
-        """Return a temporary reader registered with the given plugin manager."""
-
-        def make_plugin(
-            pm,
-            name,
-            filename_patterns=['*.fake'],
-            reader_func=lambda pth: None,
-        ):
-            reader_plugin = DynamicPlugin(name, plugin_manager=pm)
-
-            @reader_plugin.contribute.reader(
-                filename_patterns=filename_patterns
-            )
-            def read_func(pth):
-                res = reader_func(pth)
-                return res
-
-            reader_plugin.register()
-
-            return reader_plugin
-
-        return make_plugin
-
-    @pytest.fixture
-    def mock_pm():
-        """Mock plugin manager to associate readers with."""
-        mock_reg = MagicMock()
-        with patch.object(PluginManager, 'discover'):
-            _pm = PluginManager(reg=mock_reg)
-        with patch('npe2.PluginManager.instance', return_value=_pm):
-            yield _pm
 
 
 @pytest.mark.skipif(
