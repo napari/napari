@@ -1,11 +1,15 @@
 import npe2
+import numpy as np
 import pytest
 from qtpy.QtWidgets import QLabel, QRadioButton
 
 from napari._qt.dialogs.qt_reader_dialog import (
     QtReaderDialog,
+    open_with_dialog_choices,
     prepare_dialog_options,
 )
+from napari._tests.utils import restore_settings_on_exit
+from napari.settings import get_settings
 
 
 @pytest.fixture
@@ -105,3 +109,54 @@ def test_prepare_dialog_options_removes_plugin(mock_pm, tmp_reader):
     )
     assert 'other-fake-reader' in readers
     assert 'fake-reader' not in readers
+
+
+def test_open_with_dialog_choices_persist(make_napari_viewer, tmp_path):
+    pth = tmp_path / 'my-file.npy'
+    np.save(pth, np.random.random((10, 10)))
+    display_name = 'builtins'
+    persist = True
+    extension = '.npy'
+    readers = {'builtins': 'builtins'}
+    paths = [str(pth)]
+    stack = False
+
+    with restore_settings_on_exit():
+        viewer = make_napari_viewer()
+        open_with_dialog_choices(
+            display_name,
+            persist,
+            extension,
+            readers,
+            paths,
+            stack,
+            viewer.window._qt_viewer,
+        )
+        assert len(viewer.layers) == 1
+        assert get_settings().plugins.extension2reader['.npy'] == 'builtins'
+
+
+def test_open_with_dialog_choices_raises(make_napari_viewer):
+    pth = 'my-file.fake'
+    display_name = 'Fake Plugin'
+    persist = True
+    extension = '.fake'
+    readers = {'fake-plugin': 'Fake Plugin'}
+    paths = [str(pth)]
+    stack = False
+
+    with restore_settings_on_exit():
+        viewer = make_napari_viewer()
+        get_settings().plugins.extension2reader = {}
+        with pytest.raises(ValueError):
+            open_with_dialog_choices(
+                display_name,
+                persist,
+                extension,
+                readers,
+                paths,
+                stack,
+                viewer.window._qt_viewer,
+            )
+        # settings weren't saved because reading failed
+        get_settings().plugins.extension2reader == {}
