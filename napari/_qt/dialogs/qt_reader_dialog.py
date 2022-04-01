@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -93,17 +93,18 @@ class QtReaderDialog(QDialog):
             and self.persist_checkbox.isChecked()
         )
 
-    def get_user_choices(self) -> Optional[Tuple[str, bool]]:
+    def get_user_choices(self) -> Tuple[str, bool]:
         """Execute dialog and get user choices"""
+        display_name = ''
+        persist_choice = False
+
         dialog_result = self.exec_()
         # user pressed cancel
-        if not dialog_result:
-            return None
-
-        # grab the selected radio button text
-        display_name = self._get_plugin_choice()
-        # grab the persistence checkbox choice
-        persist_choice = self._get_persist_choice()
+        if dialog_result:
+            # grab the selected radio button text
+            display_name = self._get_plugin_choice()
+            # grab the persistence checkbox choice
+            persist_choice = self._get_persist_choice()
         return display_name, persist_choice
 
 
@@ -115,34 +116,16 @@ def handle_gui_reading(_paths, viewer, stack, plugin, error):
     _, extension = os.path.splitext(_path)
     readerDialog = QtReaderDialog(
         parent=viewer,
-        # TODO: we probably want the reader dialog to take all paths and just display them nicely somehow
         pth=_path,
         extension=extension,
         error_message=error_message,
         readers=readers,
     )
-    display_name, persist = get_reader_from_dialog(readerDialog)
+    display_name, persist = readerDialog.get_user_choices()
     if display_name:
         open_with_dialog_choices(
             display_name, persist, extension, readers, _paths, stack, viewer
         )
-
-
-def get_reader_from_dialog(readerDialog):
-    """Get preferred reader from user through dialog
-
-    Parameters
-    ----------
-    readerDialog : QtReaderDialog
-        dialog for user to select their preferences
-    """
-    display_name = ''
-    persist_choice = False
-
-    res = readerDialog.get_user_choices()
-    if res:
-        display_name, persist_choice = res[0], res[1]
-    return display_name, persist_choice
 
 
 def prepare_dialog_options(_path, plugin, error):
