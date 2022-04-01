@@ -443,7 +443,7 @@ if npe2.__version__ > '0.2.1':
 
 
 @pytest.fixture
-def mock_pm():
+def mock_npe2_pm():
     """Mock plugin manager with no registered plugins."""
     mock_reg = MagicMock()
     with patch.object(PluginManager, 'discover'):

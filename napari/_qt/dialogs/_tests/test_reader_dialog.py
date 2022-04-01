@@ -73,7 +73,7 @@ def test_get_persist_choice(tmpdir, reader_dialog):
     assert not widg._get_persist_choice()
 
 
-def test_prepare_dialog_options_no_readers(mock_pm):
+def test_prepare_dialog_options_no_readers(mock_npe2_pm):
     pth = 'my-file.fake'
 
     with pytest.raises(RuntimeError) as e:
@@ -83,7 +83,7 @@ def test_prepare_dialog_options_no_readers(mock_pm):
     assert 'Reading failed' in str(e.value)
 
 
-def test_prepare_dialog_options_multiple_plugins(mock_pm):
+def test_prepare_dialog_options_multiple_plugins(mock_npe2_pm):
     pth = 'my-file.tif'
 
     readers, error_message = prepare_dialog_options(
@@ -99,11 +99,11 @@ def test_prepare_dialog_options_multiple_plugins(mock_pm):
     npe2.__version__ <= '0.2.1',
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
-def test_prepare_dialog_options_removes_plugin(mock_pm, tmp_reader):
+def test_prepare_dialog_options_removes_plugin(mock_npe2_pm, tmp_reader):
     pth = 'my-file.fake'
 
-    tmp_reader(mock_pm, 'fake-reader')
-    tmp_reader(mock_pm, 'other-fake-reader')
+    tmp_reader(mock_npe2_pm, 'fake-reader')
+    tmp_reader(mock_npe2_pm, 'other-fake-reader')
     readers, _ = prepare_dialog_options(
         pth, 'fake-reader', RuntimeError('Reader failed')
     )
