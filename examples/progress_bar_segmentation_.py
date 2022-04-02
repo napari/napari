@@ -1,6 +1,10 @@
 """
+Progress bar segmentation
+=========================
+
 Use napari's tqdm wrapper to display the progress of long-running operations
-in the viewer.  
+in the viewer.
+
 """
 import numpy as np
 import napari
@@ -88,7 +92,7 @@ def segment_binarised_ims():
     with progress(binarised_data, miniters=0) as pbar:
         for i, binarised_cells in enumerate(pbar):
             # this allows us to manipulate the pbar object within the loop
-            # e.g. setting the description. 
+            # e.g. setting the description.
             pbar.set_description(all_thresholds[i].__name__.split("_")[1])
             labelled_im = label(binarised_cells)
             segmented_nuclei.append(labelled_im)
@@ -157,4 +161,5 @@ viewer.window.add_dock_widget(action_widget)
 # showing the activity dock so we can see the progress bars
 viewer.window._status_bar._toggle_activity_dock(True)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

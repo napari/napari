@@ -1,3 +1,11 @@
+"""
+3D Kymographs
+=============
+
+This example demonstrates that the volume rendering capabilities of napari
+can also be used to render 2d timelapse acquisitions as kymographs.
+
+"""
 from typing import Dict, List, Tuple
 import numpy as np
 import napari
@@ -66,26 +74,26 @@ description = """
 About
 =====
 This example demonstrates that the volume rendering capabilities of napari
-can also be used to render 2d timelapse acquisitions as kymographs. 
+can also be used to render 2d timelapse acquisitions as kymographs.
 Kymographs, also called space-time images, are a powerful tool to visualize
-the dynamics of processes.  
+the dynamics of processes.
 The most common way to visualize kymographs is to pick a single line through
-a 2D image and visualize the time domain along a second axes. 
+a 2D image and visualize the time domain along a second axes.
 Napari is not limited to 2D visualization an by harnessing its volume
-volume rendering capabilities, we can create a 3D kymograph, 
-a powerful visualization that provides an overview of the complete 
+volume rendering capabilities, we can create a 3D kymograph,
+a powerful visualization that provides an overview of the complete
 spatial and temporal data from a single view.
 
 Using napari's grid mode we can juxtapose multiple such 3D kymographs to
-highlight the differences in cell dynamics under different siRNA treatments. 
+highlight the differences in cell dynamics under different siRNA treatments.
 
-The selected samples are from the Mitocheck screen and demonstrate siRNA 
-knockdowns of several genes. 
+The selected samples are from the Mitocheck screen and demonstrate siRNA
+knockdowns of several genes.
 The date is timelapse fluorescence microscopy of HeLa cells, with GFP-
 tagged histone revealing the chromosomes.
 
-In the juxtaposed kymographs the reduced branching for the mitotitic 
-phenotypes caused by INCENP, AURKB and KIF11 knockdown compared to 
+In the juxtaposed kymographs the reduced branching for the mitotitic
+phenotypes caused by INCENP, AURKB and KIF11 knockdown compared to
 TMPRSS11A knockdown is immediately obvious.
 
 Data Source
@@ -98,14 +106,14 @@ Reference
 The data comes from the Mitocheck screen:
 
 Phenotypic profiling of the human genome by time-lapse microscopy reveals cell
-division genes. 
+division genes.
 
 Neumann B, Walter T, Hériché JK, Bulkescher J, Erfle H, Conrad C, Rogers P,
 Poser I, Held M, Liebel U, Cetin C, Sieckmann F, Pau G, Kabbe R, Wünsche A,
 Satagopam V, Schmitz MH, Chapuis C, Gerlich DW, Schneider R, Eils R, Huber W,
 Peters JM, Hyman AA, Durbin R, Pepperkok R, Ellenberg J.
-Nature. 2010 Apr 1;464(7289):721-7. 
-doi: 10.1038/nature08869. 
+Nature. 2010 Apr 1;464(7289):721-7.
+doi: 10.1038/nature08869.
 
 Acknowledgements
 ================

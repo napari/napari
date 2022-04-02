@@ -1,4 +1,7 @@
 """
+Xarray example
+==============
+
 Displays an xarray
 """
 
@@ -20,4 +23,5 @@ viewer = napari.Viewer()
 # add the xarray
 layer = viewer.add_image(xdata, name='xarray')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

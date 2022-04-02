@@ -1,3 +1,9 @@
+"""
+bbox annotator
+==============
+
+"""
+
 from magicgui.widgets import ComboBox, Container
 import napari
 import numpy as np
@@ -109,4 +115,5 @@ viewer.window.add_dock_widget(label_widget, area='right', name='label_widget')
 # set the shapes layer mode to adding rectangles
 shapes.mode = 'add_rectangle'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

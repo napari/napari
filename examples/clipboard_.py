@@ -1,14 +1,17 @@
-"""Copy screenshot of the canvas or the whole viewer to clipboard."""
+"""
+Clipboard
+=========
+
+Copy screenshot of the canvas or the whole viewer to clipboard.
+
+"""
+
 from skimage import data
-
 from qtpy.QtWidgets import QVBoxLayout, QPushButton, QWidget
-
 import napari
-
 
 # create the viewer with an image
 viewer = napari.view_image(data.moon())
-
 
 class Grabber(QWidget):
     def __init__(self):
@@ -37,4 +40,5 @@ def create_grabber_widget():
 widget = create_grabber_widget()
 viewer.window.add_dock_widget(widget)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

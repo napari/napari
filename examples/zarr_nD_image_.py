@@ -1,4 +1,7 @@
 """
+Zarr array
+==========
+
 Display a zarr array
 """
 
@@ -19,4 +22,5 @@ print(data.shape)
 # to find the min and max of the full image.
 viewer = napari.view_image(data, contrast_limits=[0, 1], rgb=False)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
