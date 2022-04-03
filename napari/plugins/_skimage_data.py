@@ -89,13 +89,4 @@ _DATA = {
 }
 
 
-try:
-    import npe2  # noqa: F401
-
-    globals().update({k: v['data'] for k, v in _DATA.items()})
-except ImportError:
-    from napari_plugin_engine import napari_hook_implementation
-
-    @napari_hook_implementation
-    def napari_provide_sample_data():
-        return _DATA
+globals().update({k: v['data'] for k, v in _DATA.items()})

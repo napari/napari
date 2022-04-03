@@ -1,4 +1,5 @@
 import warnings
+from weakref import ref
 
 import numpy as np
 
@@ -49,9 +50,11 @@ class InteractionBoxMouseBindings:
         self._fixed_vertex: int = None
         self._fixed_aspect: float = None
         self._layer_listening_for_affine = None
-        self._viewer = viewer
+        self._initial_transform = None
+        self._initial_transform_inverse = None
+        self._ref_viewer = ref(viewer)
         self._interaction_box_model = viewer.overlays.interaction_box
-        self._interaction_box_visual = interaction_box_visual
+        self._ref_interaction_box_visual = ref(interaction_box_visual)
         viewer.layers.events.inserted.connect(self._on_add_layer)
         viewer.layers.events.removed.connect(self._on_remove_layer)
         viewer.layers.selection.events.active.connect(self._on_active)
@@ -79,6 +82,7 @@ class InteractionBoxMouseBindings:
     def _on_active(self, event):
         """Gets called when active layer is changed"""
         active_layer = event.value
+
         if getattr(active_layer, 'mode', None) == 'transform':
             self._couple_interaction_box_to_active()
             self._interaction_box_model.show = True
@@ -89,15 +93,16 @@ class InteractionBoxMouseBindings:
     def _on_ndisplay_change(self):
         """Gets called on ndisplay change to disable interaction box in 3D"""
         if (
-            getattr(self._viewer.layers.selection.active, 'mode', None)
+            getattr(self._ref_viewer().layers.selection.active, 'mode', None)
             == 'transform'
-            and self._viewer.dims.ndisplay > 2
+            and self._ref_viewer().dims.ndisplay > 2
         ):
-            self._viewer.layers.selection.active.mode = 'pan_zoom'
+            self._ref_viewer().layers.selection.active.mode = 'pan_zoom'
 
     def _couple_interaction_box_to_active(self, event=None):
-        viewer = self._viewer
+        viewer = self._ref_viewer()
         active_layer = viewer.layers.selection.active
+
         # This is necessary in case the current layer has fewer dims than the viewer
 
         layer_dims = dims_displayed_world_to_layer(
@@ -110,29 +115,47 @@ class InteractionBoxMouseBindings:
         viewer.overlays.interaction_box.points = (
             active_layer.extent.data[:, layer_dims] - 0.5
         )
+        self._initial_transform = Affine(
+            rotate=active_layer.rotate,
+            translate=active_layer.translate,
+            scale=active_layer.scale,
+            shear=active_layer.shear,
+        ).set_slice(layer_dims)
+        self._initial_transform_inverse = self._initial_transform.inverse
+
         viewer.overlays.interaction_box.transform = (
-            active_layer.affine.set_slice(layer_dims)
+            active_layer.affine.set_slice(layer_dims).compose(
+                self._initial_transform
+            )
         )
 
     def _on_dim_change(self, event):
         """Gets called when changing order of dims to make sure interaction box is using right extent and transform"""
         if (
-            getattr(self._viewer.layers.selection.active, 'mode', None)
+            getattr(self._ref_viewer().layers.selection.active, 'mode', None)
             == 'transform'
         ):
             self._couple_interaction_box_to_active()
 
     def _layer_affine_event_helper(self, layer):
         """Helper function to connect listener to the transform of active layer and removes previous callbacks"""
-
         if self._layer_listening_for_affine is not None:
             self._layer_listening_for_affine.events.affine.disconnect(self)
+            self._layer_listening_for_affine.events.rotate.disconnect(self)
+            self._layer_listening_for_affine.events.translate.disconnect(self)
+            self._layer_listening_for_affine.events.scale.disconnect(self)
+            self._layer_listening_for_affine.events.shear.disconnect(self)
+
         layer.events.affine.connect(self._couple_interaction_box_to_active)
+        layer.events.translate.connect(self._couple_interaction_box_to_active)
+        layer.events.rotate.connect(self._couple_interaction_box_to_active)
+        layer.events.scale.connect(self._couple_interaction_box_to_active)
+        layer.events.shear.connect(self._couple_interaction_box_to_active)
         self._layer_listening_for_affine = layer
 
     def _on_mode_change(self, event):
         """Gets called on mode change to enable interaction box in transform mode"""
-        viewer = self._viewer
+        viewer = self._ref_viewer()
         if event.mode == 'transform':
             if viewer.dims.ndisplay > 2:
                 warnings.warn(
@@ -161,13 +184,18 @@ class InteractionBoxMouseBindings:
         """Gets called when the interaction box is transformed to update transform of the layer"""
 
         layer_dims_displayed = dims_displayed_world_to_layer(
-            list(self._viewer.dims.displayed),
-            self._viewer.dims.ndim,
-            self._viewer.layers.selection.active.ndim,
+            list(self._ref_viewer().dims.displayed),
+            self._ref_viewer().dims.ndim,
+            self._ref_viewer().layers.selection.active.ndim,
         )
-        self._viewer.layers.selection.active.affine = (
-            self._viewer.layers.selection.active.affine.replace_slice(
-                layer_dims_displayed, event.value
+
+        layer_affine_transform = event.value.compose(
+            self._initial_transform_inverse
+        )
+
+        self._ref_viewer().layers.selection.active.affine = (
+            self._ref_viewer().layers.selection.active.affine.replace_slice(
+                layer_dims_displayed, layer_affine_transform
             )
         )
 
@@ -177,14 +205,14 @@ class InteractionBoxMouseBindings:
             "napari:reset_active_layer_affine",
             self._reset_active_layer_affine,
             trans._("Reset the affine transform of the active layer"),
-            self._viewer,
+            self._ref_viewer(),
         )
 
         action_manager.register_action(
             "napari:transform_active_layer",
             self._transform_active_layer,
             trans._("Activate transform mode for the active layer"),
-            self._viewer,
+            self._ref_viewer(),
         )
 
         @viewer.bind_key('Shift')
@@ -208,14 +236,14 @@ class InteractionBoxMouseBindings:
                 return
 
             # The _box of the visual model has the handle
-            box = self._interaction_box_visual._box
+            box = self._ref_interaction_box_visual()._box
             coord = [event.position[i] for i in viewer.dims.displayed]
             distances = abs(box - coord)
 
             # Get the vertex sizes
             sizes = (
-                self._interaction_box_visual._vertex_size / 2
-            ) / self._viewer.camera.zoom
+                self._ref_interaction_box_visual()._vertex_size / 2
+            ) / self._ref_viewer().camera.zoom
 
             # Check if any matching vertices
             matches = np.all(distances <= sizes, axis=1).nonzero()
@@ -290,7 +318,7 @@ class InteractionBoxMouseBindings:
         """Gets called whenever a drag is started to remember starting values"""
 
         self._drag_start_coordinates = np.array(position)
-        self._drag_start_box = np.copy(self._interaction_box_visual._box)
+        self._drag_start_box = np.copy(self._ref_interaction_box_visual()._box)
         self._interaction_box_model.transform_start = (
             self._interaction_box_model.transform
         )
@@ -317,6 +345,7 @@ class InteractionBoxMouseBindings:
 
         if np.linalg.norm(mouse_offset) < 1:
             angle = 0
+
         elif self._fixed_aspect:
             angle = np.round(angle / 45) * 45
 
@@ -419,12 +448,12 @@ class InteractionBoxMouseBindings:
             )
 
     def _reset_active_layer_affine(self, event=None):
-        active_layer = self._viewer.layers.selection.active
+        active_layer = self._ref_viewer().layers.selection.active
         if active_layer is not None:
             active_layer.affine = Affine(ndim=active_layer.ndim)
 
     def _transform_active_layer(self, event=None):
-        active_layer = self._viewer.layers.selection.active
+        active_layer = self._ref_viewer().layers.selection.active
         if active_layer is not None and hasattr(active_layer, 'mode'):
             if active_layer.mode != 'transform':
                 active_layer.mode = 'transform'

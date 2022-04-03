@@ -165,14 +165,6 @@ def get_app(
         # to allow for text wrapping of tooltips
         app.installEventFilter(QtToolTipEventFilter())
 
-    if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(
-            NapariQtNotification.show_notification
-        )
-        notification_manager.notification_ready.connect(
-            show_console_notification
-        )
-
     if app.windowIcon().isNull():
         app.setWindowIcon(QIcon(kwargs.get('icon')))
 
@@ -180,6 +172,14 @@ def get_app(
         ipy_interactive = get_settings().application.ipy_interactive
     if _IPYTHON_WAS_HERE_FIRST:
         _try_enable_ipython_gui('qt' if ipy_interactive else None)
+
+    if not _ipython_has_eventloop():
+        notification_manager.notification_ready.connect(
+            NapariQtNotification.show_notification
+        )
+        notification_manager.notification_ready.connect(
+            show_console_notification
+        )
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.

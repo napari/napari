@@ -122,9 +122,11 @@ def QImg2array(img):
 @contextmanager
 def qt_signals_blocked(obj):
     """Context manager to temporarily block signals from `obj`"""
-    obj.blockSignals(True)
-    yield
-    obj.blockSignals(False)
+    previous = obj.blockSignals(True)
+    try:
+        yield
+    finally:
+        obj.blockSignals(previous)
 
 
 @contextmanager

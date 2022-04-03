@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
 
+from napari.utils.misc import _is_array_type
+
 from ...utils import config
 from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
@@ -23,11 +25,7 @@ from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import (
-    _features_from_properties,
-    _features_to_properties,
-    _validate_features,
-)
+from ..utils.layer_utils import _FeatureTable
 from ._labels_constants import LabelColorMode, LabelsRendering, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -117,6 +115,9 @@ class Labels(_ImageBase):
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
         rendering to calculate lighting effects on labeled surfaces.
         The default value is 'iso_categorical'.
+    depiction : str
+        3D Depiction mode. Must be one of {'volume', 'plane'}.
+        The default value is 'volume'.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -130,7 +131,7 @@ class Labels(_ImageBase):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    experimental_slicing_plane : dict or SlicingPlane
+    plane : dict or SlicingPlane
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
@@ -205,7 +206,7 @@ class Labels(_ImageBase):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
-    experimental_slicing_plane : SlicingPlane
+    plane : SlicingPlane
         Properties defining plane rendering in 3D.
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
@@ -238,10 +239,11 @@ class Labels(_ImageBase):
         opacity=0.7,
         blending='translucent',
         rendering='iso_categorical',
+        depiction='volume',
         visible=True,
         multiscale=None,
         cache=True,
-        experimental_slicing_plane=None,
+        plane=None,
         experimental_clipping_planes=None,
     ):
         if name is None and data is not None:
@@ -266,6 +268,7 @@ class Labels(_ImageBase):
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
             rendering=rendering,
+            depiction=depiction,
             iso_threshold=0,
             name=name,
             metadata=metadata,
@@ -279,7 +282,7 @@ class Labels(_ImageBase):
             visible=visible,
             multiscale=multiscale,
             cache=cache,
-            experimental_slicing_plane=experimental_slicing_plane,
+            plane=plane,
             experimental_clipping_planes=experimental_clipping_planes,
         )
 
@@ -295,10 +298,10 @@ class Labels(_ImageBase):
             contour=Event,
         )
 
-        if properties is not None:
-            self.properties = properties
-        else:
-            self.features = features
+        self._feature_table = _FeatureTable.from_layer(
+            features=features, properties=properties
+        )
+        self._label_index = self._make_label_index()
 
         self._n_edit_dimensions = 2
         self._contiguous = True
@@ -451,29 +454,28 @@ class Labels(_ImageBase):
         ----------
         .. [1]: https://data-apis.org/dataframe-protocol/latest/API.html
         """
-        return self._features
+        return self._feature_table.values
 
     @features.setter
     def features(
         self,
         features: Union[Dict[str, np.ndarray], pd.DataFrame],
     ) -> None:
-        self._features = _validate_features(features)
-        self._label_index = self._make_label_index(self._features)
+        self._feature_table.set_values(features)
+        self._label_index = self._make_label_index()
+        self.events.properties()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
-        return _features_to_properties(self._features)
+        return self._feature_table.properties()
 
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
-        self._features = _features_from_properties(properties=properties)
-        self._label_index = self._make_label_index(self._features)
-        self.events.properties()
+        self.features = properties
 
-    @classmethod
-    def _make_label_index(cls, features: pd.DataFrame) -> Dict[int, int]:
+    def _make_label_index(self) -> Dict[int, int]:
+        features = self._feature_table.values
         label_index = {}
         if 'index' in features:
             label_index = {i: k for k, i in enumerate(features['index'])}
@@ -589,7 +591,8 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self.properties,
                 'rendering': self.rendering,
-                'experimental_slicing_plane': self.experimental_slicing_plane.dict(),
+                'depiction': self.depiction,
+                'plane': self.plane.dict(),
                 'experimental_clipping_planes': [
                     plane.dict() for plane in self.experimental_clipping_planes
                 ],
@@ -1195,9 +1198,12 @@ class Labels(_ImageBase):
                     j += 1
                 else:
                     match_indices.append(np.full(n_idx, d, dtype=np.intp))
-            match_indices = tuple(match_indices)
         else:
             match_indices = match_indices_local
+
+        match_indices = _coerce_indices_for_vectorization(
+            self.data, match_indices
+        )
 
         self._save_history(
             (
@@ -1267,18 +1273,7 @@ class Labels(_ImageBase):
         else:
             slice_coord = slice_coord_temp
 
-        slice_coord = tuple(slice_coord)
-
-        # Fix indexing for xarray if necessary
-        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
-        # for difference from indexing numpy
-        try:
-            import xarray as xr
-
-            if isinstance(self.data, xr.DataArray):
-                slice_coord = tuple(xr.DataArray(i) for i in slice_coord)
-        except ImportError:
-            pass
+        slice_coord = _coerce_indices_for_vectorization(self.data, slice_coord)
 
         # slice coord is a tuple of coordinate arrays per dimension
         # subset it if we want to only paint into background/only erase
@@ -1434,3 +1429,18 @@ if config.async_octree:
 
     class Labels(Labels, _OctreeImageBase):
         pass
+
+
+def _coerce_indices_for_vectorization(array, indices: list) -> tuple:
+    """Coerces indices so that they can be used for vectorized indexing in the given data array."""
+    if _is_array_type(array, 'xarray.DataArray'):
+        # Fix indexing for xarray if necessary
+        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
+        # for difference from indexing numpy
+        try:
+            import xarray as xr
+
+            return tuple(xr.DataArray(i) for i in indices)
+        except ImportError:
+            pass
+    return tuple(indices)

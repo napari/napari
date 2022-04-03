@@ -1,10 +1,15 @@
 import csv
 import os
 import re
+import tempfile
+import urllib.parse
+import urllib.request
 import warnings
+from contextlib import contextmanager
 from glob import glob
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
+from urllib.error import HTTPError, URLError
 
 import imageio
 import numpy as np
@@ -54,9 +59,9 @@ def imsave(filename: str, data: np.ndarray):
         if compression_instead_of_compress:
             # 'compression' scheme is more complex. See:
             # https://forum.image.sc/t/problem-saving-generated-labels-in-cellpose-napari/54892/8
-            tifffile.imsave(filename, data, compression=('zlib', 1))
+            tifffile.imwrite(filename, data, compression=('zlib', 1))
         else:  # older version of tifffile since 2021.6.6  this is deprecated
-            tifffile.imsave(filename, data, compress=1)
+            tifffile.imwrite(filename, data, compress=1)
     else:
         import imageio
 
@@ -134,7 +139,9 @@ def imread(filename: str) -> np.ndarray:
     if ext.lower() in [".tif", ".tiff", ".lsm"]:
         import tifffile
 
-        return tifffile.imread(filename)
+        # Pre-download urls before loading them with tifffile
+        with file_or_url_context(filename) as filename:
+            return tifffile.imread(filename)
     else:
         import imageio
 
@@ -204,7 +211,11 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     filenames_expanded = []
     for filename in filenames:
         # zarr files are folders, but should be read as 1 file
-        if os.path.isdir(filename) and not guess_zarr_path(filename):
+        if (
+            os.path.isdir(filename)
+            and not guess_zarr_path(filename)
+            and not is_url(filename)
+        ):
             dir_contents = sorted(
                 glob(os.path.join(filename, '*.*')), key=_alphanumeric_key
             )
@@ -583,3 +594,47 @@ csv_reader_functions = {
     'points': _points_csv_to_layerdata,
     'shapes': _shapes_csv_to_layerdata,
 }
+
+
+URL_REGEX = re.compile(r'https?://|ftps?://|file://|file:\\')
+
+
+def is_url(filename):
+    """Return True if string is an http or ftp path.
+
+    Originally vendored from scikit-image/skimage/io/util.py
+    """
+    return isinstance(filename, str) and URL_REGEX.match(filename) is not None
+
+
+@contextmanager
+def file_or_url_context(resource_name):
+    """Yield name of file from the given resource (i.e. file or url).
+
+    Originally vendored from scikit-image/skimage/io/util.py
+    """
+    if is_url(resource_name):
+        url_components = urllib.parse.urlparse(resource_name)
+        _, ext = os.path.splitext(url_components.path)
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as f:
+                u = urllib.request.urlopen(resource_name)
+                f.write(u.read())
+            # f must be closed before yielding
+            yield f.name
+        except (URLError, HTTPError):
+            # could not open URL
+            os.remove(f.name)
+            raise
+        except (
+            FileNotFoundError,
+            FileExistsError,
+            PermissionError,
+            BaseException,
+        ):
+            # could not create temporary file
+            raise
+        else:
+            os.remove(f.name)
+    else:
+        yield resource_name

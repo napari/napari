@@ -2,11 +2,11 @@
 
 docs:
 	rm -rf docs/_build/
-	find docs/api ! -name 'index.rst' -type f -exec rm -f {} +
+	rm -rf docs/api/napari*.rst
+	rm -rf docs/gallery/*
 	pip install -qr docs/requirements.txt
-	python docs/_scripts/update_preference_docs.py
-	python docs/_scripts/update_event_docs.py
-	NAPARI_APPLICATION_IPY_INTERACTIVE=0 jb build docs
+	python docs/_scripts/prep_docs.py
+	NAPARI_APPLICATION_IPY_INTERACTIVE=0 sphinx-build -b html docs/ docs/_build
 
 typestubs:
 	python -m napari.utils.stubgen
@@ -15,7 +15,7 @@ typestubs:
 # dmypy run -- ...
 # https://mypy.readthedocs.io/en/stable/mypy_daemon.html
 typecheck:
-	mypy napari/settings napari/types.py napari/plugins napari/utils/context	
+	mypy napari/settings napari/types.py napari/plugins napari/utils/context
 
 dist:
 	pip install -U check-manifest build

@@ -153,6 +153,7 @@ class QtActivityDialog(QDialog):
         prog.events.description.connect(pbar._set_description)
         prog.events.overflow.connect(pbar._make_indeterminate)
         prog.events.eta.connect(pbar._set_eta)
+        prog.events.total.connect(pbar._set_total)
 
         # connect pbar close method if we're closed
         self.destroyed.connect(prog.close)
@@ -237,6 +238,8 @@ class QtActivityDialog(QDialog):
             progress object whose QtLabeledProgressBar to close
         """
         current_pbar = self.get_pbar_from_prog(prog)
+        if not current_pbar:
+            return
         parent_widget = current_pbar.parent()
         current_pbar.close()
         current_pbar.deleteLater()

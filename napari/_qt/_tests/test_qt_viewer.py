@@ -10,10 +10,14 @@ import pytest
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import QMessageBox
 
+from napari._qt.dialogs._tests.test_reader_dialog_get_choice import (
+    MockQtReaderDialog,
+)
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
     layer_test_data,
+    restore_settings_on_exit,
     skip_local_popups,
     skip_on_win_ci,
 )
@@ -22,6 +26,14 @@ from napari.settings import get_settings
 from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
 from napari.utils.theme import available_themes
+
+try:
+    import npe2  # noqa: F401
+
+    BUILTINS_DISP = 'napari'
+    BUILTINS_NAME = 'builtins'
+except ImportError:
+    BUILTINS_DISP = BUILTINS_NAME = 'builtins'
 
 
 def test_qt_viewer(make_napari_viewer):
@@ -226,7 +238,7 @@ def test_screenshot(make_napari_viewer):
 
     # Take screenshot
     with pytest.warns(FutureWarning):
-        screenshot = viewer.window._qt_viewer.screenshot(flash=False)
+        screenshot = viewer.window.qt_viewer.screenshot(flash=False)
     screenshot = viewer.window.screenshot(flash=False, canvas_only=True)
     assert screenshot.ndim == 3
 
@@ -290,7 +302,7 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
 def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     """Test that the viewer doesn't change the underlying array."""
     image = np.random.rand(10, 32, 32)
-    image *= 200 if dtype.endswith('8') else 2 ** 14
+    image *= 200 if dtype.endswith('8') else 2**14
     image = image.astype(dtype)
     imean = image.mean()
 
@@ -334,7 +346,7 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
 
     # capture screenshot
     with pytest.warns(FutureWarning):
-        viewer.window._qt_viewer.clipboard(flash=True)
+        viewer.window.qt_viewer.clipboard(flash=True)
 
     viewer.window.clipboard(flash=False, canvas_only=True)
 
@@ -381,7 +393,7 @@ def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
 
     # capture screenshot
     with pytest.warns(FutureWarning):
-        viewer.window._qt_viewer.clipboard(flash=False)
+        viewer.window.qt_viewer.clipboard(flash=False)
 
     viewer.window.clipboard(flash=False, canvas_only=True)
 
@@ -618,3 +630,105 @@ def test_qt_viewer_multscale_image_out_of_view(make_napari_viewer):
         shape_type=['polygon'],
     )
     viewer.add_image([np.eye(1024), np.eye(512), np.eye(256)])
+
+
+def test_surface_mixed_dim(make_napari_viewer):
+    """Test that adding a layer that changes the world ndim
+    when ndisplay=3 before the mouse cursor has been updated
+    doesn't raise an error.
+
+    See PR: https://github.com/napari/napari/pull/3881
+    """
+    viewer = make_napari_viewer(ndisplay=3)
+
+    verts = np.array([[0, 0, 0], [0, 20, 10], [10, 0, -10], [10, 10, -10]])
+    faces = np.array([[0, 1, 2], [1, 2, 3]])
+    values = np.linspace(0, 1, len(verts))
+    data = (verts, faces, values)
+    viewer.add_surface(data)
+
+    timeseries_values = np.vstack([values, values])
+    timeseries_data = (verts, faces, timeseries_values)
+    viewer.add_surface(timeseries_data)
+
+
+def test_try_reader_from_settings(make_napari_viewer, tmpdir, layers):
+    """Test opening file with reader saved in settings"""
+    viewer = make_napari_viewer()
+    im_pth = os.path.join(tmpdir, 'layer.png')
+    extension = '.png'
+    layers[0].save(im_pth, plugin=BUILTINS_DISP)
+
+    readers = {BUILTINS_DISP: BUILTINS_NAME}
+    with restore_settings_on_exit():
+        # read successfully with settings
+        get_settings().plugins.extension2reader = {extension: BUILTINS_DISP}
+        error_message = viewer.window._qt_viewer._try_reader_from_settings(
+            readers, extension, im_pth
+        )
+        assert error_message is None
+        assert len(viewer.layers) == 1
+        assert viewer.layers[0].source.reader_plugin == BUILTINS_NAME
+
+        # find plugin from settings but it fails to read
+        os.remove(im_pth)
+        error_message = viewer.window._qt_viewer._try_reader_from_settings(
+            readers, extension, im_pth
+        )
+        assert error_message.startswith(
+            f"Tried to open file with {BUILTINS_DISP}, but reading failed"
+        )
+
+    # fail to find plugin from settings
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {
+            extension: 'not-a-real-name'
+        }
+        error_message = viewer.window._qt_viewer._try_reader_from_settings(
+            readers, extension, im_pth
+        )
+        assert error_message.startswith(
+            "Can't find not-a-real-name plugin associated with .png files."
+        )
+
+
+def test_get_and_try_preferred_reader(make_napari_viewer, tmpdir, layers):
+    """Test opening file with user preference and persisting preference"""
+    viewer = make_napari_viewer()
+    im_pth = os.path.join(tmpdir, 'layer.png')
+    layers[0].save(im_pth, plugin=BUILTINS_DISP)
+    error_message = 'Test error message'
+    readers = {BUILTINS_DISP: BUILTINS_NAME, 'not-a-plugin': 'not-a-plugin'}
+
+    # open successfully without persisting
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {}
+        reader_dialog = MockQtReaderDialog(
+            im_pth, readers=readers, error_message=error_message
+        )
+        reader_dialog._set_plugin_choice(BUILTINS_DISP)
+        reader_dialog._set_persist_choice(False)
+        viewer.window._qt_viewer._get_and_try_preferred_reader(
+            reader_dialog, readers, error_message
+        )
+        assert len(viewer.layers) == 1
+        assert viewer.layers[0].source.reader_plugin == BUILTINS_NAME
+        assert get_settings().plugins.extension2reader == {}
+
+    # open successfully and persist choice
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {}
+        reader_dialog = MockQtReaderDialog(
+            im_pth,
+            readers=readers,
+            error_message=error_message,
+            extension='.png',
+        )
+        reader_dialog._set_plugin_choice(BUILTINS_DISP)
+        reader_dialog._set_persist_choice(True)
+        viewer.window._qt_viewer._get_and_try_preferred_reader(
+            reader_dialog, readers, error_message
+        )
+        assert get_settings().plugins.extension2reader == {
+            '.png': BUILTINS_DISP
+        }

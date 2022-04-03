@@ -5,12 +5,12 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
+from functools import cached_property
 from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
 
-from ..._vendor.cpython.functools import cached_property
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.events import EmitterGroup, Event
@@ -386,10 +386,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             callback_list.append(mode_dict[mode])
         self.cursor = self._cursor_modes[mode]
 
-        if mode == Modeclass.PAN_ZOOM:
-            self.interactive = True
-        else:
-            self.interactive = False
+        self.interactive = mode == Modeclass.PAN_ZOOM
         return mode, True
 
     @classmethod
@@ -487,10 +484,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._visible = visibility
         self.refresh()
         self.events.visible()
-        if self.visible:
-            self.editable = self._set_editable()
-        else:
-            self.editable = False
+        self.editable = self._set_editable() if self.visible else False
 
     @property
     def editable(self):
@@ -512,6 +506,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @scale.setter
     def scale(self, scale):
+        if scale is None:
+            scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
         self._update_dims()
         self.events.scale()
@@ -672,7 +668,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if 'extent' in self.__dict__:
             del self.extent
 
-        self.refresh()
+        self.refresh()  # This call is need for invalidate cache of extent in LayerList. If you remove it pleas ad another workaround.
 
     @property
     @abstractmethod
@@ -726,23 +722,30 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        inv_transform = self._data_to_world.inverse
+
+        if len(self._dims_not_displayed) == 0:
+            # all dims are displayed dimensions
+            return (slice(None),) * self.ndim
 
         if self.ndim > self._ndisplay:
+            inv_transform = self._data_to_world.inverse
             # Subspace spanned by non displayed dimensions
             non_displayed_subspace = np.zeros(self.ndim)
             for d in self._dims_not_displayed:
                 non_displayed_subspace[d] = 1
             # Map subspace through inverse transform, ignoring translation
-            mapped_nd_subspace = inv_transform(
-                non_displayed_subspace
-            ) - inv_transform(np.zeros(self.ndim))
+            _inv_transform = Affine(
+                ndim=self.ndim,
+                linear_matrix=inv_transform.linear_matrix,
+                translate=None,
+            )
+            mapped_nd_subspace = _inv_transform(non_displayed_subspace)
             # Look at displayed subspace
-            displayed_mapped_subspace = [
+            displayed_mapped_subspace = (
                 mapped_nd_subspace[d] for d in self._dims_displayed
-            ]
+            )
             # Check that displayed subspace is null
-            if not np.allclose(displayed_mapped_subspace, 0):
+            if any(abs(v) > 1e-8 for v in displayed_mapped_subspace):
                 warnings.warn(
                     trans._(
                         'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
@@ -752,10 +755,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 )
 
         slice_inv_transform = inv_transform.set_slice(self._dims_not_displayed)
-
         world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
         data_pts = slice_inv_transform(world_pts)
-        if not hasattr(self, "_round_index") or self._round_index:
+        if getattr(self, "_round_index", True):
             # A round is taken to convert these values to slicing integers
             data_pts = np.round(data_pts).astype(int)
 
@@ -954,12 +956,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # or -> [1, 0, 2] for a layer with three as that corresponds to
         # the relative order of the last two and three dimensions
         # respectively
-        offset = ndim - self.ndim
-        order = np.array(order)
-        if offset <= 0:
-            order = list(range(-offset)) + list(order - offset)
-        else:
-            order = list(order[order >= offset] - offset)
+        order = self._world_to_data_dims_displayed(order, ndim_world=ndim)
 
         if point is None:
             point = [0] * ndim
@@ -970,6 +967,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             point = list(point)
 
         # If no slide data has changed, then do nothing
+        offset = ndim - self.ndim
         if (
             np.all(order == self._dims_order)
             and ndisplay == self._ndisplay
@@ -1053,7 +1051,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     )
                 position = self.world_to_data(position)
 
-            if dims_displayed is not None:
+            if (dims_displayed is not None) and (view_direction is not None):
                 if len(dims_displayed) == 2 or self.ndim == 2:
                     value = self._get_value(position=tuple(position))
 
@@ -1153,9 +1151,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @contextmanager
     def block_update_properties(self):
+        previous = self._update_properties
         self._update_properties = False
-        yield
-        self._update_properties = True
+        try:
+            yield
+        finally:
+            self._update_properties = previous
 
     def _set_highlight(self, force=False):
         """Render layer highlights when appropriate.
@@ -1171,7 +1172,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
-            self.events.set_data()
+            self.events.set_data()  # refresh is called in _update_dims which means that extent cache is invalidated. Then, base on this event extent cache in layerlist is invalidated.
             self._update_thumbnail()
             self._set_highlight(force=True)
 
@@ -1294,6 +1295,36 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         vector_data_ndisplay = vector_data_nd[dims_displayed]
         vector_data_ndisplay /= np.linalg.norm(vector_data_ndisplay)
         return vector_data_ndisplay
+
+    def _world_to_data_dims_displayed(
+        self, dims_displayed: List[int], ndim_world: int
+    ) -> List[int]:
+        """Convert indices of displayed dims from world to data coordinates.
+
+        This accounts for differences in dimensionality between the world
+        and the data coordinates. For example a world dims order of
+        [2, 1, 0, 3] would be [0, 1] for a layer that only has two dimensions
+        or [1, 0, 2] for a layer with three as that corresponds to the
+        relative order of the last two and three dimensions respectively
+
+        Parameters
+        ----------
+        dims_displayed : List[int]
+            The world displayed dimensions.
+        ndim_world : int
+            The number of dimensions in the world coordinate system.
+
+        Returns
+        -------
+        dims_displayed_data : List[int]
+            The displayed dimensions in data coordinates.
+        """
+        offset = ndim_world - self.ndim
+        order = np.array(dims_displayed)
+        if offset <= 0:
+            return list(range(-offset)) + list(order - offset)
+        else:
+            return list(order[order >= offset] - offset)
 
     def _display_bounding_box(self, dims_displayed: np.ndarray):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""

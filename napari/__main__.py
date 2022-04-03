@@ -23,10 +23,9 @@ class InfoAction(argparse.Action):
         from .plugins import plugin_manager
 
         plugin_manager.discover_widgets()
-        errors = plugin_manager.get_errors()
-        if errors:
+        if errors := plugin_manager.get_errors():
             names = {e.plugin_name for e in errors}
-            print("\n‼️  Errors were detected in the following plugins:")
+            print("\n!!  Errors were detected in the following plugins:")
             print("(Run 'napari --plugin-info -v' for more details)")
             print("\n".join(f"  - {n}" for n in names))
         sys.exit()
@@ -41,9 +40,8 @@ class PluginInfoAction(argparse.Action):
         plugin_manager.discover_widgets()
         print(plugin_manager)
 
-        errors = plugin_manager.get_errors()
-        if errors:
-            print("‼️  Some errors occurred:")
+        if errors := plugin_manager.get_errors():
+            print("!!  Some errors occurred:")
             verbose = '-v' in sys.argv or '--verbose' in sys.argv
             if not verbose:
                 print("   (use '-v') to show full tracebacks")
@@ -93,7 +91,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
     from napari.components.viewer_model import valid_add_kwargs
 
-    out: Dict[str, Any] = dict()
+    out: Dict[str, Any] = {}
     valid = set.union(*valid_add_kwargs().values())
     for i, arg in enumerate(unknown):
         if not arg.startswith("--"):
@@ -282,7 +280,7 @@ def _run():
 
     else:
         if args.with_:
-            from .plugins import plugin_manager
+            from .plugins import _npe2, plugin_manager
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
@@ -290,9 +288,13 @@ def _run():
             pname, *wnames = args.with_
             if wnames:
                 for wname in wnames:
-                    plugin_manager.get_widget(pname, wname)
+                    _npe2.get_widget_contribution(
+                        pname, wname
+                    ) or plugin_manager.get_widget(pname, wname)
             else:
-                plugin_manager.get_widget(pname)
+                _npe2.get_widget_contribution(
+                    pname
+                ) or plugin_manager.get_widget(pname)
 
         from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
@@ -396,14 +398,13 @@ def main():
     # https://github.com/napari/napari/issues/380#issuecomment-659656775
     # and https://github.com/ContinuumIO/anaconda-issues/issues/199
     import platform
-    from distutils.version import StrictVersion
 
-    _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
-        platform.release()
-    ) > StrictVersion('19.0.0')
-    _MACOS_AT_LEAST_BIG_SUR = sys.platform == "darwin" and StrictVersion(
-        platform.release()
-    ) > StrictVersion('20.0.0')
+    _MACOS_AT_LEAST_CATALINA = (
+        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 19
+    )
+    _MACOS_AT_LEAST_BIG_SUR = (
+        sys.platform == "darwin" and int(platform.release().split('.')[0]) > 20
+    )
 
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
@@ -436,7 +437,7 @@ def main():
             warnings.warn(msg)
 
     # Prevent https://github.com/napari/napari/issues/3415
-    if sys.platform == "darwin" and sys.version_info >= (3, 8):
+    if sys.platform == "darwin":
         import multiprocessing
 
         multiprocessing.set_start_method('fork')
