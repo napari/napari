@@ -1,9 +1,15 @@
 import numpy as np
 from vispy.color import ColorArray
 from vispy.color import Colormap as VispyColormap
+from vispy.scene.node import Node
+from vispy.scene.visuals import create_visual_node
+from vispy.visuals.image import ImageVisual
+from vispy.visuals.shaders import Function, FunctionChain
 
 from ...utils.colormaps import low_discrepancy_image
-from .image import VispyImageLayer
+
+# from ..visuals.volume import Volume as VolumeNode
+from .image import ImageLayerNode, VispyImageLayer
 
 
 def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
@@ -83,9 +89,45 @@ class LabelColormap(VispyColormap):
 
 
 class VispyLabelsLayer(VispyImageLayer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, texture_format='r32f', **kwargs)
-        self._on_colormap_change()
+    # def __init__(self, *args, **kwargs):
+    #    super().__init__(*args, texture_format='r32f', **kwargs)
+    #    self._on_colormap_change()
+    def __init__(self, layer, node=None, texture_format='r32f'):
+
+        # Use custom node from caller, or our standard image/volume nodes.
+        self._layer_node = LabelLayerNode(node, texture_format=texture_format)
+
+        # Default to 2D (image) node.
+        super().__init__(layer, self._layer_node.get_node(2))
+
+        self._array_like = True
+
+        self.layer.events.rendering.connect(self._on_rendering_change)
+        self.layer.events.depiction.connect(self._on_depiction_change)
+        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.colormap.connect(self._on_colormap_change)
+        self.layer.events.contrast_limits.connect(
+            self._on_contrast_limits_change
+        )
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
+        self.layer.events.attenuation.connect(self._on_attenuation_change)
+        self.layer.plane.events.position.connect(
+            self._on_plane_position_change
+        )
+        self.layer.plane.events.thickness.connect(
+            self._on_plane_thickness_change
+        )
+        self.layer.plane.events.normal.connect(self._on_plane_normal_change)
+
+        # display_change is special (like data_change) because it requires a self.reset()
+        # this means that we have to call it manually. Also, it must be called before reset
+        # in order to set the appropriate node first
+        self._on_display_change()
+        self.reset()
+        self._on_data_change()
+
+        # Labels = create_visual_node(LabelVisual)
 
     def _on_colormap_change(self, event=None):
         # self.layer.colormap is a labels_colormap, which is an evented model
@@ -97,3 +139,64 @@ class VispyLabelsLayer(VispyImageLayer):
             controls=colormap.controls,
             seed=colormap.seed,
         )
+
+
+class LabelVisual(ImageVisual):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _build_color_transform(self):
+        if self._data.ndim == 2 or self._data.shape[2] == 1:
+            fun = FunctionChain(
+                None,
+                [
+                    Function(self._func_templates['red_to_luminance']),
+                    Function(self.cmap.glsl_map),
+                ],
+            )
+        else:
+            # RGB/A image data (no colormap)
+            raise Exception("TODO: RGB/A lookups")
+            fclim = Function(self._func_templates['clim'])
+            fgamma = Function(self._func_templates['gamma'])
+            fun = FunctionChain(
+                None,
+                [
+                    Function(self._func_templates['null_color_transform']),
+                    fclim,
+                    fgamma,
+                ],
+            )
+        return fun
+
+
+class LabelLayerNode(ImageLayerNode):
+    def __init__(self, custom_node: Node = None, texture_format=None):
+        self._custom_node = custom_node
+        self._image_node = LabelNode(
+            None
+            if (texture_format is None or texture_format == 'auto')
+            else np.array([[0.0]], dtype=np.float32),
+            method='auto',
+            texture_format=texture_format,
+        )
+
+        # TODO
+        # self._volume_node = VolumeNode(
+        #    np.zeros((1, 1, 1), dtype=np.float32),
+        #    clim=[0, 1],
+        #    texture_format=texture_format,
+        # )
+
+
+BaseLabel = create_visual_node(LabelVisual)
+
+
+class LabelNode(BaseLabel):
+    def _compute_bounds(self, axis, view):
+        if self._data is None:
+            return None
+        elif axis > 1:
+            return (0, 0)
+        else:
+            return (0, self.size[axis])

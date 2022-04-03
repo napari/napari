@@ -265,7 +265,7 @@ class Labels(_ImageBase):
             data,
             rgb=False,
             colormap=self._random_colormap,
-            contrast_limits=[0.0, 1.0],
+            contrast_limits=[0.0, 2**23 - 1.0],
             interpolation='nearest',
             rendering=rendering,
             depiction=depiction,
@@ -747,22 +747,6 @@ class Labels(_ImageBase):
     def preserve_labels(self, preserve_labels: bool):
         self._preserve_labels = preserve_labels
         self.events.preserve_labels(preserve_labels=preserve_labels)
-
-    @property
-    def contrast_limits(self):
-        return self._contrast_limits
-
-    @contrast_limits.setter
-    def contrast_limits(self, value):
-        # Setting contrast_limits of labels layers leads to wrong visualization of the layer
-        if tuple(value) != (0, 1):
-            raise AttributeError(
-                trans._(
-                    "Setting contrast_limits on labels layers is not allowed.",
-                    deferred=True,
-                )
-            )
-        self._contrast_limits = (0, 1)
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
