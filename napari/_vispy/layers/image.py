@@ -4,6 +4,8 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
+from napari.layers.base.base import LayerSlice
+
 from ...utils.translations import trans
 from ..utils.gl import fix_data_dtype, get_gl_extensions
 from ..visuals.image import Image as ImageNode
@@ -82,6 +84,10 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
+    def _set_slice(self, slice: LayerSlice) -> None:
+        print('_set_slice')
+        self._set_node_data(self.node, slice.data)
+
     def _on_display_change(self, data=None):
         parent = self.node.parent
         self.node.parent = None
@@ -104,6 +110,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
 
     def _on_data_change(self):
+        print('_on_data_change')
         if not self.layer.loaded:
             # Do nothing if we are not yet loaded. Calling astype below could
             # be very expensive. Lets not do it until our data has been loaded.

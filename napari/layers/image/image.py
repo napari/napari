@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Sequence, Union
 import numpy as np
 from scipy import ndimage as ndi
 
+from napari.layers.base.base import LayerSlice
+
 from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
@@ -647,6 +649,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         image = raw
         return image
+
+    def _get_slice(self, data_point: np.ndarray) -> LayerSlice:
+        # print(f'{data_point}')
+        indices = list(np.rint(data_point).astype(int))
+        # Hack for 2D presentation
+        indices[-1] = slice(None)
+        indices[-2] = slice(None)
+        # print(f'{indices}')
+        data = np.asarray(self.data[tuple(indices)])
+        # print(f'{data}')
+        return LayerSlice(data=data)
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""

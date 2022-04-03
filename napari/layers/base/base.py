@@ -6,10 +6,12 @@ from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import cached_property
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
+
+from napari.utils.events.evented_model import EventedModel
 
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
@@ -60,6 +62,10 @@ def no_op(layer: Layer, event: Event) -> None:
 
     """
     return None
+
+
+class LayerSlice(EventedModel):
+    data: Any
 
 
 @mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -927,7 +933,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
-    def _slice_dims(self, point=None, ndisplay=2, order=None):
+    def get_slice(self, world_point) -> LayerSlice:
+        data_point = self.world_to_data(world_point)
+        return self._get_slice(data_point)
+
+    @abstractmethod
+    def _get_slice(self, point=None) -> LayerSlice:
+        raise NotImplementedError()
+
+    def _slice_dims(self, point=None, ndisplay=2, order=None) -> Any:
         """Slice data with values from a global dims model.
 
         Note this will likely be moved off the base layer soon.

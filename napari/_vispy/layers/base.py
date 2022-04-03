@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
+from concurrent.futures import Executor, Future, ThreadPoolExecutor
+from typing import Optional
 
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
+
+from napari.layers.base.base import LayerSlice
 
 from ...utils.events import disconnect_events
 from ..utils.gl import BLENDING_MODES, get_max_texture_sizes
@@ -48,6 +52,9 @@ class VispyBaseLayer(ABC):
         self.layer = layer
         self._array_like = False
         self.node = node
+
+        self.slice_executor: Executor = ThreadPoolExecutor(max_workers=1)
+        self.slice_task: Optional[Future[LayerSlice]] = None
 
         (
             self.MAX_TEXTURE_SIZE_2D,
@@ -107,6 +114,21 @@ class VispyBaseLayer(ABC):
     @abstractmethod
     def _on_data_change(self):
         raise NotImplementedError()
+
+    def set_slice_point(self, world_point) -> None:
+        if self.slice_task is not None:
+            self.slice_task.cancel()
+        task = self.slice_executor.submit(self.layer.get_slice, world_point)
+        task.add_done_callback(self._on_slice_done)
+        self.slice_task = task
+
+    # @abstractmethod
+    def _set_slice(self, slice: LayerSlice) -> None:
+        raise NotImplementedError()
+
+    def _on_slice_done(self, task: Future[LayerSlice]) -> None:
+        if not task.cancelled():
+            self._set_slice(task.result())
 
     def _on_refresh_change(self):
         self.node.update()

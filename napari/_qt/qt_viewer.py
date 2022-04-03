@@ -298,6 +298,8 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
 
+        self.viewer.dims.events.current_step.connect(self._slice_layers)
+
         self.setAcceptDrops(True)
 
         for layer in self.viewer.layers:
@@ -333,6 +335,11 @@ class QtViewer(QSplitter):
 
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
+
+    def _slice_layers(self) -> None:
+        for layer in self.viewer.layers:
+            vispy_layer = self.layer_to_visual[layer]
+            vispy_layer.set_slice_point(self.viewer.dims.point)
 
     def _ensure_connect(self):
         # lazy load console
