@@ -113,7 +113,7 @@ bbox_rects = make_bbox([properties[f'bbox-{i}'] for i in range(4)])
 
 # specify the display parameters for the text
 text_parameters = {
-    'text': 'label: {label}\ncirc: {circularity:.2f}',
+    'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
     'color': 'green',
     'anchor': 'upper_left',
@@ -347,7 +347,7 @@ Each bounding box can be annotated with text drawn from the layer `properties`. 
 
 ```python
 text_parameters = {
-    'text': 'label: {label}\ncirc: {circularity:.2f}',
+    'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
     'color': 'green',
     'anchor': 'upper_left',
@@ -377,7 +377,7 @@ properties = {
 
 # specify the display parameters for the text
 text_kwargs = {
-    'text': 'label: {label}\ncirc: {circularity:.2f}',
+    'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
     'color': 'green',
     'anchor': 'upper_left',

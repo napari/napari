@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from napari.layers.utils._string_encoding import (
+from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
     FormatStringEncoding,
@@ -128,7 +128,7 @@ def test_validate_from_format_string():
 
 def test_validate_from_non_format_string():
     argument = 'abc'
-    expected = ConstantStringEncoding(constant=argument)
+    expected = DirectStringEncoding(feature=argument)
 
     actual = validate_string_encoding(argument)
 
