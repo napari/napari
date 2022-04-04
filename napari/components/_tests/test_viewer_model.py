@@ -813,7 +813,7 @@ def test_open_or_get_error_multiple_readers(mock_npe2_pm, tmp_reader):
     reason='Cannot use DynamicPlugin until next npe2 release.',
 )
 def test_open_or_get_error_no_plugin(mock_npe2_pm):
-    """Assert user is warned when no plugin is available."""
+    """Assert error is raised when no plugin is available."""
     viewer = ViewerModel()
 
     with pytest.raises(ValueError, match='No plugin found capable of reading'):
