@@ -232,7 +232,7 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
     if isinstance(value, str):
         return DirectColorEncoding(feature=value, fallback=DEFAULT_COLOR)
     try:
-        color_array = transform_color(value)
+        color_array = ColorArray.validate_type(value)
     except (ValueError, AttributeError, KeyError):
         raise TypeError(
             trans._(
@@ -240,10 +240,9 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
                 deferred=True,
             )
         )
-    # TODO: distinguish between single color and array of length one as constant vs. manual.
-    if color_array.shape[0] > 1:
-        return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)
-    return ConstantColorEncoding(constant=value)
+    if color_array.shape[0] == 1:
+        return ConstantColorEncoding(constant=value)
+    return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)
 
 
 def _calculate_contrast_limits(
