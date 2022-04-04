@@ -197,11 +197,11 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
     ----------
     value : ColorEncodingArgument
         The value to validate and coerce.
-        If this is already a StringEncoding, it is returned as is.
-        If this is a dict, then it should represent one of the built-in string encodings.
-        If this a valid format string, then a FormatStringEncoding is returned.
-        If this is any other string, a DirectStringEncoding is returned.
-        If this is a sequence of strings, a ManualStringEncoding is returned.
+        If this is already a ColorEncoding, it is returned as is.
+        If this is a dict, then it should represent one of the built-in color encodings.
+        If this a string, then a DirectColorEncoding is returned.
+        If this a single color, a ConstantColorEncoding is returned.
+        If this is a sequence of colors, a ManualColorEncoding is returned.
 
     Returns
     -------

@@ -8,6 +8,7 @@ from napari.layers.utils._color_encoding import (
     DirectColorEncoding,
     ManualColorEncoding,
     NominalColorEncoding,
+    QuantitativeColorEncoding,
     validate_color_encoding,
 )
 
@@ -21,7 +22,7 @@ def features() -> pd.DataFrame:
     return pd.DataFrame(
         {
             'class': ['a', 'b', 'c'],
-            'confidence': [0.5, 1, 0.25],
+            'confidence': [0.5, 1, 0],
             'custom_colors': ['red', 'green', 'cyan'],
         }
     )
@@ -95,7 +96,7 @@ def test_direct(features):
     assert_colors_equal(values, list(features['custom_colors']))
 
 
-def test_direct_with_a_missing_feature(features):
+def test_direct_with_missing_feature(features):
     encoding = DirectColorEncoding(feature='not_class', fallback='cyan')
     with pytest.raises(KeyError):
         encoding(features)
@@ -123,8 +124,55 @@ def test_nominal_with_dict_cycle(features):
     assert_colors_equal(values, ['red', 'yellow', 'green'])
 
 
-def test_nominal_with_a_missing_feature(features):
+def test_nominal_with_missing_feature(features):
     encoding = DirectColorEncoding(feature='not_class', fallback='cyan')
+    with pytest.raises(KeyError):
+        encoding(features)
+
+
+def test_quantitative_with_colormap_name(features):
+    colormap = 'gray'
+    encoding = QuantitativeColorEncoding(
+        feature='confidence', colormap=colormap, fallback='cyan'
+    )
+
+    values = encoding(features)
+
+    assert encoding.contrast_limits == (0, 1)
+    assert_colors_equal(values, [[c] * 3 for c in features['confidence']])
+
+
+def test_quantitative_with_colormap_values(features):
+    colormap = ['black', 'red']
+    encoding = QuantitativeColorEncoding(
+        feature='confidence', colormap=colormap, fallback='cyan'
+    )
+    values = encoding(features)
+    assert encoding.contrast_limits == (0, 1)
+    assert_colors_equal(values, [[c, 0, 0] for c in features['confidence']])
+
+
+def test_quantitative_with_contrast_limits(features):
+    colormap = 'gray'
+    encoding = QuantitativeColorEncoding(
+        feature='confidence',
+        colormap=colormap,
+        contrast_limits=(0, 2),
+        fallback='cyan',
+    )
+
+    values = encoding(features)
+
+    assert encoding.contrast_limits == (0, 2)
+    assert_colors_equal(values, [[c / 2] * 3 for c in features['confidence']])
+
+
+def test_quantitative_with_missing_feature(features):
+    colormap = 'gray'
+    encoding = QuantitativeColorEncoding(
+        feature='not_confidence', colormap=colormap, fallback='cyan'
+    )
+
     with pytest.raises(KeyError):
         encoding(features)
 
@@ -182,8 +230,30 @@ def test_validate_from_nominal_dict():
     feature = 'class'
     colormap = ['red', 'green', 'cyan']
     argument = {'feature': feature, 'colormap': colormap, 'fallback': 'cyan'}
-    expected = DirectColorEncoding(
+    expected = NominalColorEncoding(
         feature=feature, colormap=colormap, fallback='cyan'
+    )
+
+    actual = validate_color_encoding(argument)
+
+    assert actual == expected
+
+
+def test_validate_from_quantitative_dict(features):
+    feature = 'confidence'
+    colormap = 'gray'
+    contrast_limits = (0, 2)
+    argument = {
+        'feature': feature,
+        'colormap': colormap,
+        'contrast_limits': contrast_limits,
+        'fallback': 'cyan',
+    }
+    expected = QuantitativeColorEncoding(
+        feature=feature,
+        colormap=colormap,
+        contrast_limits=contrast_limits,
+        fallback='cyan',
     )
 
     actual = validate_color_encoding(argument)

@@ -100,7 +100,15 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
         """
 
 
-class _ConstantStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
+class _StyleEncodingModel(EventedModel):
+    class Config:
+        # Want to match the fields exactly so that dicts can be sensibly parsed.
+        extra = 'forbid'
+
+
+class _ConstantStyleEncoding(
+    _StyleEncodingModel, Generic[StyleValue, StyleArray]
+):
     """Encodes a constant style value.
 
     Attributes
@@ -134,7 +142,9 @@ class _ConstantStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
         return self.dict()
 
 
-class _ManualStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
+class _ManualStyleEncoding(
+    _StyleEncodingModel, Generic[StyleValue, StyleArray]
+):
     """Encodes style values manually.
 
     The style values are encoded manually in the array attribute, so that
@@ -181,7 +191,7 @@ class _ManualStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
 
 
 class _DerivedStyleEncoding(
-    EventedModel, Generic[StyleValue, StyleArray], ABC
+    _StyleEncodingModel, Generic[StyleValue, StyleArray], ABC
 ):
     """Encodes style values by deriving them from feature values.
 
