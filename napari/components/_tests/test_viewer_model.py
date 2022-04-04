@@ -816,11 +816,8 @@ def test_open_or_get_error_no_plugin(mock_npe2_pm):
     """Assert user is warned when no plugin is available."""
     viewer = ViewerModel()
 
-    with pytest.warns(match="No readers found to try reading"):
-        added, plugin, error = viewer._open_or_get_error(['my_file.fake'])
-        assert added == []
-        assert plugin is None
-        assert error is None
+    with pytest.raises(ValueError, match='No plugin found capable of reading'):
+        viewer._open_or_get_error(['my_file.fake'])
 
 
 @pytest.mark.skipif(
