@@ -91,7 +91,7 @@ def test_manual_with_more_rows():
 def test_direct(features):
     encoding = DirectColorEncoding(feature='custom_colors', fallback='cyan')
     values = encoding(features)
-    assert_colors_equal(values, features['custom_colors'])
+    assert_colors_equal(values, list(features['custom_colors']))
 
 
 def test_direct_with_a_missing_feature(features):

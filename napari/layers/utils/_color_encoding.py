@@ -29,9 +29,6 @@ class ColorValue(np.ndarray):
     def validate_type(cls, val):
         return transform_color(val)[0]
 
-    def __eq__(self, other) -> bool:
-        return np.all(self == other)
-
 
 class ColorArray(np.ndarray):
     """An Nx4 array where each row of N represents one RGBA color value."""
@@ -47,9 +44,6 @@ class ColorArray(np.ndarray):
             if len(val) == 0
             else transform_color(val)
         )
-
-    def __eq__(self, other) -> bool:
-        return np.all(self == other)
 
 
 @runtime_checkable
@@ -109,7 +103,9 @@ class DirectColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     fallback: ColorValue = DEFAULT_COLOR
 
     def __call__(self, features: Any) -> ColorArray:
-        return ColorArray.validate_type(np.asarray(features[self.feature]))
+        # A column-like may be a series or have an object dtype (e.g. color names),
+        # neither of which transform_color handles, so convert to a list.
+        return ColorArray.validate_type(list(features[self.feature]))
 
 
 class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
@@ -232,7 +228,6 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
             value,
         )
     if isinstance(value, str):
-        # Should we guess a nominal/quantitative encoding instead?
         return DirectColorEncoding(feature=value, fallback=DEFAULT_COLOR)
     try:
         color_array = transform_color(value)
@@ -243,7 +238,7 @@ def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
                 deferred=True,
             )
         )
-    # TODO: distinguish between single color and array of length one as constant vs. direct.
+    # TODO: distinguish between single color and array of length one as constant vs. manual.
     if color_array.shape[0] > 1:
         return ManualColorEncoding(array=color_array, default=DEFAULT_COLOR)
     return ConstantColorEncoding(constant=value)
