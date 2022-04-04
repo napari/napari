@@ -102,7 +102,7 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
 
 class _StyleEncodingModel(EventedModel):
     class Config:
-        # Want to match the fields exactly so that dicts can be sensibly parsed.
+        # Match fields exactly so that dicts can be sensibly parsed.
         extra = 'forbid'
 
 

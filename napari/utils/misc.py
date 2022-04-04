@@ -494,14 +494,6 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
         An operation that can be called as ``operator(obj, other)`` to check
         equality between objects of type ``type(obj)``.
     """
-    # TODO: consider special case for numpy given we always import it.
-    # This allows subclasses of ndarray (e.g. ColorArray) to also use the same
-    # logic without having to be explicitly added to the dict below.
-    if isinstance(obj, np.ndarray) or (
-        isinstance(obj, type) and issubclass(obj, np.ndarray)
-    ):
-        return _quiet_array_equal
-
     import operator
 
     # yes, it's a little riskier, but we are checking namespaces instead of
