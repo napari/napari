@@ -127,7 +127,8 @@ def test_nominal_with_dict_cycle(features):
 
 
 def test_nominal_with_missing_feature(features):
-    encoding = DirectColorEncoding(feature='not_class')
+    colormap = {'a': 'red', 'b': 'yellow', 'c': 'green'}
+    encoding = NominalColorEncoding(feature='not_class', colormap=colormap)
     with pytest.raises(KeyError):
         encoding(features)
 
