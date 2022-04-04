@@ -86,7 +86,7 @@ class ManualColorEncoding(_ManualStyleEncoding[ColorValue, ColorArray]):
 
 
 class DirectColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
-    """Encodes color values directly from a nominal feature column.
+    """Encodes color values directly from a feature column.
 
     Attributes
     ----------
