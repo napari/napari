@@ -1,7 +1,7 @@
 from typing import Any, Literal, Optional, Tuple, Union
 
 import numpy as np
-from pydantic import parse_obj_as, validator
+from pydantic import Field, parse_obj_as, validator
 from typing_extensions import Protocol, runtime_checkable
 
 from ...utils import Colormap
@@ -52,8 +52,7 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
 
 
 """The default color to use, which may also be used a safe fallback color."""
-# DEFAULT_COLOR = ColorValue.validate_type('cyan')
-DEFAULT_COLOR = 'cyan'
+DEFAULT_COLOR = ColorValue.validate_type('cyan')
 
 
 class ConstantColorEncoding(_ConstantStyleEncoding[ColorValue, ColorArray]):
@@ -83,7 +82,7 @@ class ManualColorEncoding(_ManualStyleEncoding[ColorValue, ColorArray]):
 
     encoding_type: Literal['ManualColorEncoding'] = 'ManualColorEncoding'
     array: ColorArray
-    default: ColorValue = DEFAULT_COLOR
+    default: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
 
 
 class DirectColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
@@ -100,7 +99,7 @@ class DirectColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
 
     encoding_type: Literal['DirectColorEncoding'] = 'DirectColorEncoding'
     feature: str
-    fallback: ColorValue = DEFAULT_COLOR
+    fallback: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
 
     def __call__(self, features: Any) -> ColorArray:
         # A column-like may be a series or have an object dtype (e.g. color names),
@@ -125,7 +124,7 @@ class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     encoding_type: Literal['NominalColorEncoding'] = 'NominalColorEncoding'
     feature: str
     colormap: CategoricalColormap
-    fallback: ColorValue = DEFAULT_COLOR
+    fallback: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
 
     def __call__(self, features: Any) -> ColorArray:
         # map is not expecting some column-likes (e.g. pandas.Series), so ensure
@@ -159,7 +158,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     feature: str
     colormap: Colormap
     contrast_limits: Optional[Tuple[float, float]] = None
-    fallback: ColorValue = DEFAULT_COLOR
+    fallback: ColorValue = Field(default_factory=lambda: DEFAULT_COLOR)
 
     def __call__(self, features: Any) -> ColorArray:
         values = features[self.feature]

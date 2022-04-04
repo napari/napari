@@ -91,13 +91,13 @@ def test_manual_with_more_rows():
 
 
 def test_direct(features):
-    encoding = DirectColorEncoding(feature='custom_colors', fallback='cyan')
+    encoding = DirectColorEncoding(feature='custom_colors')
     values = encoding(features)
     assert_colors_equal(values, list(features['custom_colors']))
 
 
 def test_direct_with_missing_feature(features):
-    encoding = DirectColorEncoding(feature='not_class', fallback='cyan')
+    encoding = DirectColorEncoding(feature='not_class')
     with pytest.raises(KeyError):
         encoding(features)
 
@@ -105,7 +105,8 @@ def test_direct_with_missing_feature(features):
 def test_nominal_with_dict_colormap(features):
     colormap = {'a': 'red', 'b': 'yellow', 'c': 'green'}
     encoding = NominalColorEncoding(
-        feature='class', colormap=colormap, fallback='cyan'
+        feature='class',
+        colormap=colormap,
     )
 
     values = encoding(features)
@@ -116,7 +117,8 @@ def test_nominal_with_dict_colormap(features):
 def test_nominal_with_dict_cycle(features):
     colormap = ['red', 'yellow', 'green']
     encoding = NominalColorEncoding(
-        feature='class', colormap=colormap, fallback='cyan'
+        feature='class',
+        colormap=colormap,
     )
 
     values = encoding(features)
@@ -125,7 +127,7 @@ def test_nominal_with_dict_cycle(features):
 
 
 def test_nominal_with_missing_feature(features):
-    encoding = DirectColorEncoding(feature='not_class', fallback='cyan')
+    encoding = DirectColorEncoding(feature='not_class')
     with pytest.raises(KeyError):
         encoding(features)
 
@@ -133,7 +135,7 @@ def test_nominal_with_missing_feature(features):
 def test_quantitative_with_colormap_name(features):
     colormap = 'gray'
     encoding = QuantitativeColorEncoding(
-        feature='confidence', colormap=colormap, fallback='cyan'
+        feature='confidence', colormap=colormap
     )
 
     values = encoding(features)
@@ -145,7 +147,7 @@ def test_quantitative_with_colormap_name(features):
 def test_quantitative_with_colormap_values(features):
     colormap = ['black', 'red']
     encoding = QuantitativeColorEncoding(
-        feature='confidence', colormap=colormap, fallback='cyan'
+        feature='confidence', colormap=colormap
     )
     values = encoding(features)
     assert encoding.contrast_limits == (0, 1)
@@ -158,7 +160,6 @@ def test_quantitative_with_contrast_limits(features):
         feature='confidence',
         colormap=colormap,
         contrast_limits=(0, 2),
-        fallback='cyan',
     )
 
     values = encoding(features)
@@ -170,7 +171,7 @@ def test_quantitative_with_contrast_limits(features):
 def test_quantitative_with_missing_feature(features):
     colormap = 'gray'
     encoding = QuantitativeColorEncoding(
-        feature='not_confidence', colormap=colormap, fallback='cyan'
+        feature='not_confidence', colormap=colormap
     )
 
     with pytest.raises(KeyError):
@@ -179,7 +180,7 @@ def test_quantitative_with_missing_feature(features):
 
 def test_validate_from_string():
     argument = 'class'
-    expected = DirectColorEncoding(feature=argument, fallback='cyan')
+    expected = DirectColorEncoding(feature=argument)
 
     actual = validate_color_encoding(argument)
 
@@ -188,7 +189,7 @@ def test_validate_from_string():
 
 def test_validate_from_sequence():
     argument = ['red', 'green', 'cyan']
-    expected = ManualColorEncoding(array=argument, default='cyan')
+    expected = ManualColorEncoding(array=argument)
 
     actual = validate_color_encoding(argument)
 
@@ -218,8 +219,8 @@ def test_validate_from_manual_dict():
 
 def test_validate_from_direct_dict():
     feature = 'class'
-    argument = {'feature': feature, 'fallback': 'cyan'}
-    expected = DirectColorEncoding(feature=feature, fallback='cyan')
+    argument = {'feature': feature}
+    expected = DirectColorEncoding(feature=feature)
 
     actual = validate_color_encoding(argument)
 
@@ -229,9 +230,10 @@ def test_validate_from_direct_dict():
 def test_validate_from_nominal_dict():
     feature = 'class'
     colormap = ['red', 'green', 'cyan']
-    argument = {'feature': feature, 'colormap': colormap, 'fallback': 'cyan'}
+    argument = {'feature': feature, 'colormap': colormap}
     expected = NominalColorEncoding(
-        feature=feature, colormap=colormap, fallback='cyan'
+        feature=feature,
+        colormap=colormap,
     )
 
     actual = validate_color_encoding(argument)
@@ -247,13 +249,11 @@ def test_validate_from_quantitative_dict(features):
         'feature': feature,
         'colormap': colormap,
         'contrast_limits': contrast_limits,
-        'fallback': 'cyan',
     }
     expected = QuantitativeColorEncoding(
         feature=feature,
         colormap=colormap,
         contrast_limits=contrast_limits,
-        fallback='cyan',
     )
 
     actual = validate_color_encoding(argument)
