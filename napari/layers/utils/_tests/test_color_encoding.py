@@ -7,6 +7,7 @@ from napari.layers.utils._color_encoding import (
     ConstantColorEncoding,
     DirectColorEncoding,
     ManualColorEncoding,
+    NominalColorEncoding,
     validate_color_encoding,
 )
 
@@ -100,6 +101,34 @@ def test_direct_with_a_missing_feature(features):
         encoding(features)
 
 
+def test_nominal_with_dict_colormap(features):
+    colormap = {'a': 'red', 'b': 'yellow', 'c': 'green'}
+    encoding = NominalColorEncoding(
+        feature='class', colormap=colormap, fallback='cyan'
+    )
+
+    values = encoding(features)
+
+    assert_colors_equal(values, ['red', 'yellow', 'green'])
+
+
+def test_nominal_with_dict_cycle(features):
+    colormap = ['red', 'yellow', 'green']
+    encoding = NominalColorEncoding(
+        feature='class', colormap=colormap, fallback='cyan'
+    )
+
+    values = encoding(features)
+
+    assert_colors_equal(values, ['red', 'yellow', 'green'])
+
+
+def test_nominal_with_a_missing_feature(features):
+    encoding = DirectColorEncoding(feature='not_class', fallback='cyan')
+    with pytest.raises(KeyError):
+        encoding(features)
+
+
 def test_validate_from_string():
     argument = 'class'
     expected = DirectColorEncoding(feature=argument, fallback='cyan')
@@ -143,6 +172,19 @@ def test_validate_from_direct_dict():
     feature = 'class'
     argument = {'feature': feature, 'fallback': 'cyan'}
     expected = DirectColorEncoding(feature=feature, fallback='cyan')
+
+    actual = validate_color_encoding(argument)
+
+    assert actual == expected
+
+
+def test_validate_from_nominal_dict():
+    feature = 'class'
+    colormap = ['red', 'green', 'cyan']
+    argument = {'feature': feature, 'colormap': colormap, 'fallback': 'cyan'}
+    expected = DirectColorEncoding(
+        feature=feature, colormap=colormap, fallback='cyan'
+    )
 
     actual = validate_color_encoding(argument)
 

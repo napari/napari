@@ -127,8 +127,10 @@ class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     colormap: CategoricalColormap
     fallback: ColorValue = DEFAULT_COLOR
 
-    def _apply(self, features: Any) -> ColorArray:
-        values = features[self.feature]
+    def __call__(self, features: Any) -> ColorArray:
+        # map is not expecting some column-likes (e.g. pandas.Series), so ensure
+        # this is a numpy array first.
+        values = np.asarray(features[self.feature])
         return self.colormap.map(values)
 
 
@@ -159,7 +161,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     contrast_limits: Optional[Tuple[float, float]] = None
     fallback: ColorValue = DEFAULT_COLOR
 
-    def _apply(self, features: Any) -> ColorArray:
+    def __call__(self, features: Any) -> ColorArray:
         values = features[self.feature]
         if self.contrast_limits is None:
             self.contrast_limits = _calculate_contrast_limits(values)
