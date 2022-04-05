@@ -23,6 +23,8 @@ For those wishing to add custom functionality to their project.
    napari.plugins
    napari.components
    napari.qt.threading
+   napari.utils.events
+   napari.utils.notifications
    napari.utils.perf
 
 .. autosummary::

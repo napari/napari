@@ -5,7 +5,7 @@ repos:
     - id: isort
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/psf/black
-    rev: 22.1.0
+    rev: 22.3.0
     hooks:
     - id: black
       pass_filenames: true
@@ -19,7 +19,7 @@ repos:
       # this seems to need to be here in addition to setup.cfg
       exclude: _vendor|vendored|__init__.py|examples
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.0
+    rev: v2.31.1
     hooks:
     - id: pyupgrade
       args: ["--py38-plus", "--keep-runtime-typing"]

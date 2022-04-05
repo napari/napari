@@ -45,7 +45,7 @@ Here's what can go wrong if you *also* declare one of these backends in the
     layer](https://github.com/spyder-ide/qtpy) that will import from whatever
     backend is installed in the environment.
 
-## Try not to depend on packages that require C compilation, but do not offer "wheels"
+## Try not to depend on packages that require C compilation if these packages do not offer wheels
 
 ````{tip}
 This requires some awareness of how your dependencies are built and distributed...

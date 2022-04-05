@@ -1,3 +1,9 @@
+"""
+Tracks 3D
+=========
+
+"""
+
 import napari
 import numpy as np
 
@@ -60,12 +66,14 @@ def tracks_3d(num_tracks=10, track_length=200):
     return data, features, graph
 
 
-if __name__ == '__main__':
-    tracks, properties, graph = tracks_3d(num_tracks=100)
-    vertices = tracks[:, 1:]
+tracks, properties, graph = tracks_3d(num_tracks=100)
+vertices = tracks[:, 1:]
 
-    viewer = napari.Viewer()
-    viewer.add_points(vertices, size=1, name='points', opacity=0.3)
-    viewer.add_tracks(tracks, properties=properties, name='tracks')
+viewer = napari.Viewer()
+viewer.add_points(vertices, size=1, name='points', opacity=0.3)
+viewer.add_tracks(tracks, properties=properties, name='tracks')
+
+
+if __name__ == '__main__':
 
     napari.run()

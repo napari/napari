@@ -19,7 +19,7 @@ subtrees:
         - entries:
           - file: tutorials/annotation/index
             subtrees:
-            - entries: 
+            - entries:
               - file: tutorials/annotation/annotate_points
           - file: tutorials/processing/index
             subtrees:
@@ -59,14 +59,18 @@ subtrees:
           - file: guides/magicgui
           - file: guides/event_loop
           - file: guides/threading
+          - file: guides/3D_interactivity
           - file: guides/rendering-explanation
           - file: guides/rendering
           - file: guides/performance
-          - file: guides/3D_interactivity
-          - file: guides/events_reference
-          - file: guides/contexts_expressions
           - file: guides/preferences
+          - file: guides/contexts_expressions
+          - file: guides/events_reference
       - file: further-resources/glossary
+      - file: gallery
+        subtrees:
+        - entries:
+          - glob: gallery/*
   - file: plugins/index
     subtrees:
     - entries:
@@ -93,14 +97,18 @@ subtrees:
       - file: developers/index
         subtrees:
         - entries:
-          - file: developers/benchmarks
           - file: developers/contributing
+          - file: developers/documentation/index
+            subtrees:
+            - entries:
+              - file: developers/documentation/docs_template
+          - file: developers/translations
           - file: developers/core_dev_guide
-          - file: developers/profiling
           - file: developers/release
           - file: developers/testing
-          - file: developers/docs
-          - file: developers/translations
+          - file: developers/profiling
+          - file: developers/benchmarks
+          - file: developers/packaging
       - file: release/index
         subtrees:
         - entries:
@@ -150,6 +158,7 @@ subtrees:
           - file: roadmaps/0_4
           - file: roadmaps/0_3_retrospective
           - file: roadmaps/0_3
+      - file: community/licensing
   - file: api/index
     subtrees:
     - titlesonly: True

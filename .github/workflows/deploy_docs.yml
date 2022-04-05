@@ -47,7 +47,8 @@ jobs:
       - name: Deploy Docs
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          external_repository: napari/napari.github.io
           publish_dir: docs/_build
           publish_branch: gh-pages
           cname: napari.org

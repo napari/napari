@@ -506,6 +506,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @scale.setter
     def scale(self, scale):
+        if scale is None:
+            scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
         self._update_dims()
         self.events.scale()
@@ -1401,6 +1403,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
+        if not world:
+            # VisPy considers the coordinate system origin to be the canvas
+            # corner, while napari considers the origin to be the **center** of
+            # the corner pixel. To get the correct value under the mouse
+            # cursor, we need to shift the position by 0.5 pixels on each
+            # axis.
+            position = tuple(p + 0.5 for p in position)
         start_point, end_point = self._get_ray_intersections(
             position=position,
             view_direction=view_direction,
@@ -1468,7 +1477,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         front_face_normal, back_face_normal = find_front_back_face(
             click_pos_data, bounding_box, view_dir
         )
-
         if front_face_normal is None and back_face_normal is None:
             # click does not intersect the data bounding box
             return None, None

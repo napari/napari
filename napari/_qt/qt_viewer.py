@@ -782,6 +782,9 @@ class QtViewer(QSplitter):
 
         Imports the console the first time it is requested.
         """
+        if in_ipython():
+            return
+
         # force instantiation of console if not already instantiated
         _ = self.console
 
@@ -822,6 +825,11 @@ class QtViewer(QSplitter):
         transform = self.view.scene.transform
         mapped_position = transform.imap(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
+
+        # handle position for 3D views of 2D data
+        nd_point = len(self.viewer.dims.point)
+        if nd_point < nd:
+            position_world_slice = position_world_slice[-nd_point:]
 
         position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
