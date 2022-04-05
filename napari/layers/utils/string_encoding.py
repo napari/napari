@@ -115,7 +115,7 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
 
     def __call__(self, features: Any) -> StringArray:
         values = [
-            self.format.format(**(features.iloc[[i]].to_dict('records')[0]))
+            self.format.format(**_get_feature_row(features, i))
             for i in range(len(features))
         ]
         return np.array(values, dtype=str)
@@ -175,6 +175,11 @@ def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
             deferred=True,
         )
     )
+
+
+def _get_feature_row(features: Any, index: int) -> dict[str, Any]:
+    """Returns one row of the features table as a dictionary."""
+    return {name: values[index] for name, values in features.items()}
 
 
 def _is_format_string(string: str) -> bool:
