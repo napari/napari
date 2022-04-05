@@ -3,6 +3,7 @@
 # or the napari documentation on benchmarking
 # https://napari.org/developers/benchmarks.html
 import numpy as np
+import pandas as pd
 
 from napari.layers.utils.text_manager import TextManager
 
@@ -15,7 +16,7 @@ class TextManagerSuite:
         [2**i for i in range(4, 18, 2)],
         [
             None,
-            'constant',
+            {'constant': 'constant'},
             'string_property',
             'float_property',
             '{string_property}: {float_property:.2f}',
@@ -24,23 +25,27 @@ class TextManagerSuite:
 
     def setup(self, n, text):
         np.random.seed(0)
-        self.properties = {
-            'string_property': np.random.choice(('cat', 'car'), n),
-            'float_property': np.random.rand(n),
-        }
-        self.current_properties = {
-            k: np.array([v[-1]]) for k, v in self.properties.items()
-        }
-        self.manager = TextManager(
-            n_text=n, properties=self.properties, text=text
+        categories = ('cat', 'car')
+        self.features = pd.DataFrame(
+            {
+                'string_property': pd.Series(
+                    np.random.choice(categories, n),
+                    dtype=pd.CategoricalDtype(categories),
+                ),
+                'float_property': np.random.rand(n),
+            }
         )
+        self.current_properties = {
+            k: np.array([v.iloc[-1]]) for k, v in self.features.items()
+        }
+        self.manager = TextManager(n_text=n, features=self.features, text=text)
         self.indices_to_remove = list(range(0, n, 2))
 
     def time_create(self, n, text):
-        TextManager(n_text=n, properties=self.properties, text=text)
+        TextManager(n_text=n, features=self.features, text=text)
 
     def time_refresh(self, n, text):
-        self.manager.refresh_text(self.properties)
+        self.manager.refresh_text(self.features)
 
     def time_add_iteratively(self, n, text):
         for _ in range(512):
