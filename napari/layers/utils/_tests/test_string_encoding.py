@@ -25,6 +25,16 @@ def features() -> pd.DataFrame:
     )
 
 
+@pytest.fixture
+def numeric_features() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            'label': [1, 2, 3],
+            'confidence': [0.5, 1, 0.25],
+        }
+    )
+
+
 def test_constant_call_with_no_rows():
     features = make_features_with_no_columns(num_rows=0)
     encoding = ConstantStringEncoding(constant='abc')
@@ -115,6 +125,12 @@ def test_format_with_missing_field(features):
     encoding = FormatStringEncoding(format='{class}: {score:.2f}')
     with pytest.raises(KeyError):
         encoding(features)
+
+
+def test_format_with_mixed_feature_numeric_types(numeric_features):
+    encoding = FormatStringEncoding(format='{label:d}: {confidence:.2f}')
+    values = encoding(numeric_features)
+    np.testing.assert_array_equal(values, ['1: 0.50', '2: 1.00', '3: 0.25'])
 
 
 def test_validate_from_format_string():

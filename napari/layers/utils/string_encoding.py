@@ -114,11 +114,10 @@ class FormatStringEncoding(_DerivedStyleEncoding[StringValue, StringArray]):
     encoding_type: Literal['FormatStringEncoding'] = 'FormatStringEncoding'
 
     def __call__(self, features: Any) -> StringArray:
-        values = features.apply(
-            lambda row: self.format.format(**row),
-            axis='columns',
-            result_type='reduce',
-        )
+        values = [
+            self.format.format(**(features.iloc[[i]].to_dict('records')[0]))
+            for i in range(len(features))
+        ]
         return np.array(values, dtype=str)
 
 
