@@ -222,7 +222,7 @@ class _DerivedStyleEncoding(
         except (KeyError, ValueError) as e:
             warnings.warn(
                 trans._(
-                    f'Applying the encoding failed with the following error. Using the safe fallback value instead. Error:\n{e}',
+                    f'Applying the encoding failed with the following error. Using the safe fallback value instead.\n\n{e}',
                     deferred=True,
                 ),
                 category=RuntimeWarning,
