@@ -35,9 +35,7 @@ class TextManagerSuite:
                 'float_property': np.random.rand(n),
             }
         )
-        self.current_properties = {
-            k: np.array([v.iloc[-1]]) for k, v in self.features.items()
-        }
+        self.current_properties = self.features.iloc[[-1]].to_dict('list')
         self.manager = TextManager(n_text=n, features=self.features, text=text)
         self.indices_to_remove = list(range(0, n, 2))
 
