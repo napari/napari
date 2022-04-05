@@ -219,10 +219,10 @@ class _DerivedStyleEncoding(
         """Calls this without raising encoding errors, warning instead."""
         try:
             array = self(features)
-        except (KeyError, ValueError):
+        except (KeyError, ValueError) as e:
             warnings.warn(
                 trans._(
-                    'Applying the encoding failed. Using the safe fallback value instead.',
+                    f'Applying the encoding failed with the following error. Using the safe fallback value instead. Error:\n{e}',
                     deferred=True,
                 ),
                 category=RuntimeWarning,
