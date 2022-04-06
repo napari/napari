@@ -645,7 +645,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if self._data_to_world.is_permutation:
             perm = self._data_to_world.perm
             return [perm[d] for d in self._dims_order]
-        return self._dims_order
+        else:
+            return self._dims_order
 
     @property
     def _data_dims_displayed(self):

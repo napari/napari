@@ -517,7 +517,7 @@ def get_permutation(matrix, tol=1e-8):
         r, c = np.nonzero(np.abs(matrix) >= tol)
     # permutation matrix will only have 1 entry per column
     c = tuple(c)
-    c_check = len(list(set(c))) == n
+    c_check = len(set(c)) == n
     if not c_check:
         return None
     # permutation matrix will have r = (0, 1, ..., ndim - 1)
