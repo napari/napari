@@ -436,11 +436,13 @@ class Affine(Transform):
     def scale(self, scale):
         """Set the scale of the transform."""
         if self.is_diagonal:
+            scale = scale_to_vector(scale, ndim=self.ndim)
             for i in range(len(scale)):
                 self._linear_matrix[i, i] = scale[i]
         elif self.is_permutation:
             # assumes scale[i] is the scaling on axis i AFTER the transform
             perm = self.perm
+            scale = scale_to_vector(scale, ndim=self.ndim)
             for i in range(len(scale)):
                 self._linear_matrix[i, perm[i]] = scale[i]
         else:

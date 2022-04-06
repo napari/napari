@@ -116,6 +116,22 @@ def test_composite_affine_is_permutation():
     assert diag_transform.is_permutation
 
 
+def test_diagonal_scale_setter():
+    # diagonal matrices are also considered a permutation
+    diag_transform = Affine(scale=[2, 3], name='st')
+    assert diag_transform.is_diagonal
+    diag_transform.scale = [1]
+    npt.assert_allclose(diag_transform.scale, [1.0, 1.0])
+
+
+def test_permutation_scale_setter():
+    # diagonal matrices are also considered a permutation
+    perm_transform = Affine(linear_matrix=[[0, 2], [3, 0]], name='st')
+    perm_transform.scale = [1]
+    assert perm_transform.is_permutation and not perm_transform.is_diagonal
+    npt.assert_allclose(perm_transform.scale, [1.0, 1.0])
+
+
 @pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_broadcast_scale(Transform):
     coord = [1, 10, 13]
