@@ -32,14 +32,14 @@ def test_affine_is_diagonal(Transform):
 
 @pytest.mark.parametrize('Transform', [Affine])
 def test_affine_is_permutation(Transform):
-    m = np.asarray([[0, 0, 3.5], [2, 0, 0], [0, 1, 0]])
+    m = np.asarray([[0, 0, 3.5], [-2, 0, 0], [0, 1, 0]])
     transform = Transform(linear_matrix=m, name='st')
     assert transform.is_permutation
     assert transform.perm == (2, 0, 1)
     rotate_orig = transform.rotate
 
     # test scale getter/setter
-    npt.assert_allclose(transform.scale, (3.5, 2, 1))
+    npt.assert_allclose(transform.scale, (3.5, -2, 1))
     transform.scale = (4.5, 3, 1.5)
     npt.assert_allclose(transform.scale, (4.5, 3, 1.5))
     npt.assert_allclose(
