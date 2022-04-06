@@ -76,7 +76,7 @@ def test_update_property_value_then_refresh_text_updates_node_strings():
     np.testing.assert_array_equal(text_node.text, ['A', 'D', 'C'])
 
 
-def test_text_with_non_empty_string():
+def test_text_with_non_empty_constant_string():
     shapes = np.random.rand(3, 4, 2)
     layer = Shapes(shapes, text={'string': {'constant': 'a'}})
 
@@ -86,4 +86,4 @@ def test_text_with_non_empty_string():
     # Vispy cannot broadcast a constant string and assert_array_equal
     # automatically broadcasts, so explicitly check length.
     assert len(text_node.text) == 3
-    np.testing.assert_equal(text_node.text, ['a', 'a', 'a'])
+    np.testing.assert_array_equal(text_node.text, ['a', 'a', 'a'])
