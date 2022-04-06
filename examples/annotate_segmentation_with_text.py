@@ -1,4 +1,7 @@
 """
+Annotate segmentation with text
+===============================
+
 Perform a segmentation and annotate the results with
 bounding boxes and text
 """
@@ -126,4 +129,5 @@ shapes_layer = viewer.add_shapes(
     name='bounding box',
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

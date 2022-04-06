@@ -506,6 +506,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @scale.setter
     def scale(self, scale):
+        if scale is None:
+            scale = [1] * self.ndim
         self._transforms['data2physical'].scale = np.array(scale)
         self._update_dims()
         self.events.scale()
@@ -1471,9 +1473,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
-        if not world:
-            # need 0 to be the corner of a pixel rather than its center
-            position = tuple(p + 0.5 for p in position)
+
         start_point, end_point = self._get_ray_intersections(
             position=position,
             view_direction=view_direction,
@@ -1482,6 +1482,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             bounding_box=bounding_box,
         )
         return start_point, end_point
+
+    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+        """Adjust position for offset between viewer and data coordinates."""
+        return position
 
     def _get_ray_intersections(
         self,
@@ -1534,6 +1538,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 position, dims_displayed
             )
         else:
+
+            # adjust for any offset between viewer and data coordinates
+            position = self._get_offset_data_position(position)
+
             view_dir = np.asarray(view_direction)[dims_displayed]
             click_pos_data = np.asarray(position)[dims_displayed]
 
@@ -1541,7 +1549,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         front_face_normal, back_face_normal = find_front_back_face(
             click_pos_data, bounding_box, view_dir
         )
-
         if front_face_normal is None and back_face_normal is None:
             # click does not intersect the data bounding box
             return None, None

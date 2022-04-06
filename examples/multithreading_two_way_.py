@@ -1,3 +1,8 @@
+"""
+Multithreading two-way
+======================
+
+"""
 import time
 
 from qtpy.QtWidgets import (

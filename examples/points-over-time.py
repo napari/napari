@@ -1,3 +1,8 @@
+"""
+Points over time
+================
+
+"""
 import napari
 import numpy as np
 import dask.array as da
@@ -35,4 +40,5 @@ viewer.dims.events.current_step.connect(
         )
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

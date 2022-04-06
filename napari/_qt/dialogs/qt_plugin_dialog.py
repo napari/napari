@@ -1,6 +1,7 @@
 import os
 import sys
-from importlib.metadata import metadata
+from enum import Enum, auto
+from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -696,9 +697,16 @@ class QPluginList(QListWidget):
                 item.setHidden(False)
 
 
+class RefreshState(Enum):
+    REFRESHING = auto()
+    OUTDATED = auto()
+    DONE = auto()
+
+
 class QtPluginDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.refresh_state = RefreshState.DONE
         self.already_installed = set()
 
         installer_type = "pip"
@@ -734,6 +742,10 @@ class QtPluginDialog(QDialog):
         event.ignore()
 
     def refresh(self):
+        if self.refresh_state != RefreshState.DONE:
+            self.refresh_state = RefreshState.OUTDATED
+            return
+        self.refresh_state = RefreshState.REFRESHING
         self.installed_list.clear()
         self.available_list.clear()
 
@@ -749,7 +761,11 @@ class QtPluginDialog(QDialog):
         def _add_to_installed(distname, enabled, npe_version=1):
             norm_name = normalized_name(distname or '')
             if distname:
-                meta = metadata(distname)
+                try:
+                    meta = metadata(distname)
+                except PackageNotFoundError:
+                    self.refresh_state = RefreshState.OUTDATED
+                    return  # a race condition has occurred and the package is uninstalled by another thread
                 if len(meta) == 0:
                     # will not add builtins.
                     return
@@ -819,6 +835,7 @@ class QtPluginDialog(QDialog):
         self.worker.yielded.connect(self._handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)
         self.worker.finished.connect(self._update_count_in_label)
+        self.worker.finished.connect(self._end_refresh)
         self.worker.start()
 
     def setup_ui(self):
@@ -929,6 +946,12 @@ class QtPluginDialog(QDialog):
         self.avail_label.setText(
             trans._("Available Plugins ({count})", count=count)
         )
+
+    def _end_refresh(self):
+        refresh_state = self.refresh_state
+        self.refresh_state = RefreshState.DONE
+        if refresh_state == RefreshState.OUTDATED:
+            self.refresh()
 
     def eventFilter(self, watched, event):
         if event.type() == QEvent.DragEnter:

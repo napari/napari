@@ -220,8 +220,6 @@ The docs will be built at `docs/_build/html`.
 Most web browsers will allow you to preview HTML pages.
 Try entering `file:///absolute/path/to/napari/docs/_build/html/index.html` in your address bar.
 
-To read more about the docs, how they're organized, and built, read {ref}`docs-dev`.
-
 ## Code of Conduct
 
 `napari` has a [Code of Conduct](napari-coc) that should be honored by everyone who participates in the `napari` community.

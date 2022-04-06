@@ -112,7 +112,7 @@ class progress(tqdm):
         etas = str(self).split('|')[-1] if self.total != 0 else ""
         self.events.eta(value=etas)
 
-    def update(self, n):
+    def update(self, n=1):
         """Update progress value by n and emit value event"""
         super().update(n)
         self.events.value(value=self.n)

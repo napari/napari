@@ -483,6 +483,8 @@ class Shapes(Layer):
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
+            features=Event,
+            feature_defaults=Event,
         )
 
         # Flag set to false to block thumbnail refresh
@@ -753,6 +755,7 @@ class Shapes(Layer):
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
+        self.events.features()
 
     @property
     def feature_defaults(self):
@@ -868,7 +871,10 @@ class Shapes(Layer):
         )
         if update_indices is not None:
             self.refresh_colors()
+            self.events.properties()
+            self.events.features()
         self.events.current_properties()
+        self.events.feature_defaults()
 
     @property
     def shape_type(self):
@@ -2531,9 +2537,14 @@ class Shapes(Layer):
 
     def _update_thumbnail(self, event=None):
         """Update thumbnail with current shapes and colors."""
-
+        # Set the thumbnail to black, opacity 1
+        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped[..., 3] = 1
+        # if the shapes layer is empty, don't update, just leave it black
+        if len(self.data) == 0:
+            self.thumbnail = colormapped
         # don't update the thumbnail if dragging a shape
-        if self._is_moving is False and self._allow_thumbnail_update is True:
+        elif self._is_moving is False and self._allow_thumbnail_update is True:
             # calculate min vals for the vertices and pad with 0.5
             # the offset is needed to ensure that the top left corner of the shapes
             # corresponds to the top left corner of the thumbnail

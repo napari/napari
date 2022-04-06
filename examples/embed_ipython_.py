@@ -1,4 +1,7 @@
 """
+Embed IPython
+=============
+
 Start napari and land directly in an embedded ipython console with qt event loop.
 
 A similar effect can be achieved more simply with `viewer.update_console(locals())`,
