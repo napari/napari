@@ -470,6 +470,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             ranges = self.layers._ranges
             midpoint = [self.rounded_division(*_range) for _range in ranges]
             self.dims.set_point(range(len(ranges)), midpoint)
+        elif isinstance(layer, layers.Image):
+            self.dims.set_point(0, layer.data.shape[0] // 2)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
