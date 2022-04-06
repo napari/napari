@@ -643,8 +643,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         For affines without permutation, it will be the same as _dims_order.
         """
         if self._data_to_world.is_permutation:
-            perm = self._data_to_world.perm
-            return [perm[d] for d in self._dims_order]
+            permutation = self._data_to_world.permutation
+            return [permutation[d] for d in self._dims_order]
         else:
             return self._dims_order
 
@@ -1091,7 +1091,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             Value of the data. If the layer is not visible return None.
         """
         if self.visible:
-            perm = None
+            permutation = None
             if world:
                 ndim_world = len(position)
 
@@ -1112,8 +1112,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     # `self._slice.image.raw` as used in
                     # `get_ray_intersections`) correspond to axes ordered as in
                     # the world space, not the original data space.
-                    perm = self._data_to_world.perm
-                    position = tuple(position[idx] for idx in perm)
+                    permutation = self._data_to_world.permutation
+                    position = tuple(position[idx] for idx in permutation)
 
             if (dims_displayed is not None) and (view_direction is not None):
                 if len(dims_displayed) == 2 or self.ndim == 2:
@@ -1124,11 +1124,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                         list(view_direction)
                     )
 
-                    if perm is not None:
+                    if permutation is not None:
                         # permute `view_direction` to match the axis order of
                         # `position` and `dims_displayed`.
                         view_direction = tuple(
-                            view_direction[idx] for idx in perm
+                            view_direction[idx] for idx in permutation
                         )
 
                     start_point, end_point = self.get_ray_intersections(

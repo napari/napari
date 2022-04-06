@@ -425,8 +425,8 @@ class Affine(Transform):
             return np.diag(self._linear_matrix)
         elif self.is_permutation:
             m = self._linear_matrix
-            perm = self.perm
-            return np.asarray([m[i, perm[i]] for i in range(self.ndim)])
+            permutation = self.permutation
+            return np.asarray([m[i, permutation[i]] for i in range(self.ndim)])
         else:
             return decompose_linear_matrix(
                 self._linear_matrix, upper_triangular=self._upper_triangular
@@ -441,10 +441,10 @@ class Affine(Transform):
                 self._linear_matrix[i, i] = scale[i]
         elif self.is_permutation:
             # assumes scale[i] is the scaling on axis i AFTER the transform
-            perm = self.perm
+            permutation = self.permutation
             scale = scale_to_vector(scale, ndim=self.ndim)
             for i in range(len(scale)):
-                self._linear_matrix[i, perm[i]] = scale[i]
+                self._linear_matrix[i, permutation[i]] = scale[i]
         else:
             rotate, _, shear = decompose_linear_matrix(
                 self.linear_matrix, upper_triangular=self._upper_triangular
@@ -661,14 +661,14 @@ class Affine(Transform):
         )
 
     @cached_property
-    def perm(self):
+    def permutation(self):
         return get_permutation(self.linear_matrix, tol=1e-8)
 
     def _clean_cache(self):
         cached_properties = (
             'is_diagonal',
             'is_permutation',
-            'perm',
+            'permutation',
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
 
@@ -829,7 +829,7 @@ class CompositeAffine(Affine):
         return self.is_diagonal
 
     @cached_property
-    def perm(self):
+    def permutation(self):
         if self.is_diagonal:
             return (0, 1, 2)
         return None

@@ -540,12 +540,16 @@ def is_permutation(matrix, tol=1e-8, exclude_diagonal=False):
 
     Returns
     -------
-    is_perm : bool
+    is_permutation : bool
         Boolean indicating if `affine` is a permuation.
     """
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError("matrix must be square")
-    perm = get_permutation(matrix, tol=tol)
+    permutation = get_permutation(matrix, tol=tol)
+    is_permutation = permutation is not None
     if not exclude_diagonal:
-        return perm is not None
-    return perm is not None and tuple(perm) != tuple(range(matrix.shape[0]))
+        return is_permutation
+    else:
+        return is_permutation and tuple(permutation) != tuple(
+            range(matrix.shape[0])
+        )

@@ -650,8 +650,8 @@ def get_extent_world(data_extent, data_to_world, centered=False):
     """
     ndim = data_extent.shape[1]
     if data_to_world.is_permutation and not data_to_world.is_diagonal:
-        perm = data_to_world.perm
-        original_order = tuple(perm.index(d) for d in range(ndim))
+        permutation = data_to_world.permutation
+        original_order = tuple(permutation.index(d) for d in range(ndim))
         data_extent = data_extent[:, original_order]
 
     # subtract 0.5 to get from pixel center to pixel edge
