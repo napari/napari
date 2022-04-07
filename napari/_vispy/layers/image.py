@@ -49,10 +49,18 @@ class ImageLayerNode:
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, node=None, texture_format='auto'):
+    def __init__(
+        self,
+        layer,
+        node=None,
+        texture_format='auto',
+        layer_node_class=ImageLayerNode,
+    ):
 
         # Use custom node from caller, or our standard image/volume nodes.
-        self._layer_node = ImageLayerNode(node, texture_format=texture_format)
+        self._layer_node = layer_node_class(
+            node, texture_format=texture_format
+        )
 
         # Default to 2D (image) node.
         super().__init__(layer, self._layer_node.get_node(2))

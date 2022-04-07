@@ -7,9 +7,10 @@ from vispy.visuals.image import ImageVisual
 from vispy.visuals.shaders import Function, FunctionChain
 
 from ...utils.colormaps import low_discrepancy_image
-
-# from ..visuals.volume import Volume as VolumeNode
+from ..visuals.volume import Volume as VolumeNode
 from .image import ImageLayerNode, VispyImageLayer
+
+# from napari._vispy.layers.base import VispyBaseLayer
 
 
 def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
@@ -93,41 +94,12 @@ class VispyLabelsLayer(VispyImageLayer):
     #    super().__init__(*args, texture_format='r32f', **kwargs)
     #    self._on_colormap_change()
     def __init__(self, layer, node=None, texture_format='r32f'):
-
-        # Use custom node from caller, or our standard image/volume nodes.
-        self._layer_node = LabelLayerNode(node, texture_format=texture_format)
-
-        # Default to 2D (image) node.
-        super().__init__(layer, self._layer_node.get_node(2))
-
-        self._array_like = True
-
-        self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.depiction.connect(self._on_depiction_change)
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
-        self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.contrast_limits.connect(
-            self._on_contrast_limits_change
+        super().__init__(
+            layer,
+            node=node,
+            texture_format=texture_format,
+            layer_node_class=LabelLayerNode,
         )
-        self.layer.events.gamma.connect(self._on_gamma_change)
-        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
-        self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.plane.events.position.connect(
-            self._on_plane_position_change
-        )
-        self.layer.plane.events.thickness.connect(
-            self._on_plane_thickness_change
-        )
-        self.layer.plane.events.normal.connect(self._on_plane_normal_change)
-
-        # display_change is special (like data_change) because it requires a self.reset()
-        # this means that we have to call it manually. Also, it must be called before reset
-        # in order to set the appropriate node first
-        self._on_display_change()
-        self.reset()
-        self._on_data_change()
-
-        # Labels = create_visual_node(LabelVisual)
 
     def _on_colormap_change(self, event=None):
         # self.layer.colormap is a labels_colormap, which is an evented model
@@ -182,11 +154,11 @@ class LabelLayerNode(ImageLayerNode):
         )
 
         # TODO
-        # self._volume_node = VolumeNode(
-        #    np.zeros((1, 1, 1), dtype=np.float32),
-        #    clim=[0, 1],
-        #    texture_format=texture_format,
-        # )
+        self._volume_node = VolumeNode(
+            np.zeros((1, 1, 1), dtype=np.float32),
+            clim=[0, 1],
+            texture_format=texture_format,
+        )
 
 
 BaseLabel = create_visual_node(LabelVisual)
