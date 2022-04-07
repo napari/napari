@@ -122,10 +122,10 @@ class TransformChain(EventedList, Transform):
         return TransformChain([tf.inverse for tf in self[::-1]])
 
     @property
-    def is_diagonal(self):
-        if all(getattr(tf, 'is_diagonal', False) for tf in self):
+    def _is_diagonal(self):
+        if all(getattr(tf, '_is_diagonal', False) for tf in self):
             return True
-        return getattr(self.simplified, 'is_diagonal', False)
+        return getattr(self.simplified, '_is_diagonal', False)
 
     @property
     def simplified(self) -> 'Transform':
@@ -203,7 +203,7 @@ class ScaleTranslate(Transform):
 
         self.scale = np.array(scale)
         self.translate = np.array(translate)
-        self.is_diagonal = True
+        self._is_diagonal = True
 
     def __call__(self, coords):
         coords = np.asarray(coords)
@@ -414,7 +414,7 @@ class Affine(Transform):
     @property
     def scale(self) -> np.array:
         """Return the scale of the transform."""
-        if self.is_diagonal:
+        if self._is_diagonal:
             return np.diag(self._linear_matrix)
         else:
             return decompose_linear_matrix(
@@ -424,7 +424,7 @@ class Affine(Transform):
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        if self.is_diagonal:
+        if self._is_diagonal:
             scale = scale_to_vector(scale, ndim=self.ndim)
             for i in range(len(scale)):
                 self._linear_matrix[i, i] = scale[i]
@@ -464,7 +464,7 @@ class Affine(Transform):
     @property
     def shear(self) -> np.array:
         """Return the shear of the transform."""
-        if self.is_diagonal:
+        if self._is_diagonal:
             return np.zeros((self.ndim,))
         return decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
@@ -552,7 +552,7 @@ class Affine(Transform):
             Resulting transform.
         """
         axes = list(axes)
-        if self.is_diagonal:
+        if self._is_diagonal:
             linear_matrix = np.diag(self.scale[axes])
         else:
             linear_matrix = self.linear_matrix[np.ix_(axes, axes)]
@@ -629,11 +629,16 @@ class Affine(Transform):
         )
 
     @cached_property
-    def is_diagonal(self):
+    def _is_diagonal(self):
+        """Determine whether linear_matrix is diagonal up to some tolerance.
+
+        Since only `self.linear_matrix` is checked, affines with a translation
+        component can still be considered diagonal.
+        """
         return is_diagonal(self.linear_matrix, tol=1e-8)
 
     def _clean_cache(self):
-        cached_properties = ('is_diagonal',)
+        cached_properties = ('_is_diagonal',)
         [self.__dict__.pop(p, None) for p in cached_properties]
 
 
