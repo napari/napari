@@ -216,7 +216,6 @@ class ScaleTranslate(Transform):
 
         self.scale = np.array(scale)
         self.translate = np.array(translate)
-        self._is_diagonal = True
 
     def __call__(self, coords):
         coords = np.asarray(coords)
