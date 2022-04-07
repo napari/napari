@@ -5,10 +5,9 @@ import numpy as np
 from pydantic import parse_obj_as
 from typing_extensions import Literal, Protocol, runtime_checkable
 
-from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
-
-from ._style_encoding import (
+from ...utils.events.custom_types import Array
+from ...utils.translations import trans
+from .style_encoding import (
     StyleEncoding,
     _ConstantStyleEncoding,
     _DerivedStyleEncoding,
@@ -137,7 +136,7 @@ def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
         If this is already a StringEncoding, it is returned as is.
         If this is a dict, then it should represent one of the built-in string encodings.
         If this a valid format string, then a FormatStringEncoding is returned.
-        If this is any other string, a ConstantStringEncoding is returned.
+        If this is any other string, a DirectStringEncoding is returned.
         If this is a sequence of strings, a ManualStringEncoding is returned.
 
     Returns
@@ -168,7 +167,7 @@ def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
     if isinstance(value, str):
         if _is_format_string(value):
             return FormatStringEncoding(format=value)
-        return ConstantStringEncoding(constant=value)
+        return DirectStringEncoding(feature=value)
     if isinstance(value, Sequence):
         return ManualStringEncoding(array=value, default=DEFAULT_STRING)
     raise TypeError(

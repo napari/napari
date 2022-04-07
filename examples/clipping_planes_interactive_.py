@@ -1,4 +1,7 @@
 """
+Clipping planes interactive
+===========================
+
 Display a 3D image (plus labels) with a clipping plane and interactive controls
 for moving the plane
 """
@@ -195,4 +198,6 @@ viewer.text_overlay.update(dict(
     font_size=20,
     visible=True,
 ))
-napari.run()
+
+if __name__ == '__main__':
+    napari.run()

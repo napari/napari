@@ -33,7 +33,7 @@ You can create a new viewer and add a set of tracks in one go using the
 `napari.view_tracks` method, or if you already have an existing viewer, you can
 add tracks to it using `viewer.add_tracks`. The API of both methods is the same.
 
-In this example of we will overlay some tracks on an image from the Hubble space
+In this example, we will overlay some tracks on an image from the Hubble space
 telescope:
 
 ```python

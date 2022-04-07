@@ -1,6 +1,9 @@
 """
-Display a points layer on top of an image layer using the add_points and
-add_image APIs
+Add points
+==========
+
+Display a points layer on top of an image layer using the ``add_points`` and
+``add_image`` APIs
 """
 
 import numpy as np
@@ -47,4 +50,5 @@ layer.out_of_slice_display = True
 # change the layer mode
 layer.mode = 'add'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

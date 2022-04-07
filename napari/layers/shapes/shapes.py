@@ -584,8 +584,7 @@ class Shapes(Layer):
 
         self._text = TextManager._from_layer(
             text=text,
-            n_text=self.nshapes,
-            properties=self.properties,
+            features=self.features,
         )
 
         # Trigger generation of view slice and thumbnail
@@ -752,8 +751,8 @@ class Shapes(Layer):
                 RuntimeWarning,
             )
 
-        if self.text.values is not None:
-            self.refresh_text()
+        self.text.refresh(self.features)
+
         self.events.properties()
         self.events.features()
 
@@ -1560,6 +1559,9 @@ class Shapes(Layer):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
+        # This may be triggered when the string encoding instance changed,
+        # in which case it has no cached values, so generate them here.
+        self.text.string._apply(self.features)
         return self.text.view_text(self._indices_view)
 
     @property
@@ -2010,23 +2012,9 @@ class Shapes(Layer):
             z_index = z_index or 0
 
         if n_new_shapes > 0:
-            if len(self.properties) > 0:
-                first_prop_key = next(iter(self.properties))
-                n_prop_values = len(self.properties[first_prop_key])
-            else:
-                n_prop_values = 0
             total_shapes = n_new_shapes + self.nshapes
             self._feature_table.resize(total_shapes)
-            if total_shapes > n_prop_values:
-                n_props_to_add = total_shapes - n_prop_values
-                self.text.add(self.current_properties, n_props_to_add)
-            if total_shapes < n_prop_values:
-                n_props_to_remove = n_prop_values - total_shapes
-                indices_to_remove = np.arange(n_prop_values)[
-                    -n_props_to_remove:
-                ]
-                self.text.remove(indices_to_remove)
-
+            self.text.apply(self.features)
             self._add_shapes(
                 data,
                 shape_type=shape_type,
@@ -2266,8 +2254,7 @@ class Shapes(Layer):
     def text(self, text):
         self._text._update_from_layer(
             text=text,
-            n_text=self.nshapes,
-            properties=self.properties,
+            features=self.features,
         )
 
     def refresh_text(self):
@@ -2275,7 +2262,7 @@ class Shapes(Layer):
 
         This is generally used if the properties were updated without changing the data
         """
-        self.text.refresh_text(self.properties)
+        self.text.refresh(self.features)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
@@ -2886,11 +2873,8 @@ class Shapes(Layer):
                 'face_color': deepcopy(self._data_view._face_color[index]),
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._slice_indices,
+                'text': self.text._copy(index),
             }
-            if len(self.text.values) == 0:
-                self._clipboard['text'] = np.empty(0)
-            else:
-                self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
             self._clipboard = {}
 
@@ -2905,6 +2889,7 @@ class Shapes(Layer):
             ]
 
             self._feature_table.append(self._clipboard['features'])
+            self.text._paste(**self._clipboard['text'])
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):
@@ -2918,11 +2903,6 @@ class Shapes(Layer):
                 edge_color = self._clipboard['edge_color'][i]
                 self._data_view.add(
                     shape, face_color=face_color, edge_color=edge_color
-                )
-
-            if len(self._clipboard['text']) > 0:
-                self.text.values = np.concatenate(
-                    (self.text.values, self._clipboard['text']), axis=0
                 )
 
             self.selected_data = set(

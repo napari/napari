@@ -1,5 +1,9 @@
 """
-Simulation of microscope acquisition. This code generates time series tiffs in a output directory.
+Live tiffs generator
+====================
+
+Simulation of microscope acquisition. This code generates time series tiffs in
+an output directory (must be supplied by the user).
 """
 
 

@@ -38,7 +38,7 @@ def test_change_text_updates_node_string():
 def test_change_text_color_updates_node_color():
     shapes = np.random.rand(3, 4, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
-    text = {'text': 'class', 'color': [1, 0, 0]}
+    text = {'string': 'class', 'color': [1, 0, 0]}
     layer = Shapes(shapes, properties=properties, text=text)
     vispy_layer = VispyShapesLayer(layer)
     text_node = vispy_layer._get_text_node()
