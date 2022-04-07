@@ -70,7 +70,12 @@ subtrees:
       - file: gallery
         subtrees:
         - entries:
-          - glob: gallery/*
+          - glob: gallery/analysis/*
+          - glob: gallery/bigdata/*
+          - glob: gallery/experimental/*
+          - glob: gallery/gui/*
+          - glob: gallery/historical/*
+          - glob: gallery/visualization/*
   - file: plugins/index
     subtrees:
     - entries:
