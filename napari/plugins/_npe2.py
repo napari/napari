@@ -14,8 +14,8 @@ from typing import (
 
 import npe2
 from npe2.io_utils import read_get_reader
-from npe2.manifest.menus import Submenu
-from npe2.manifest.schema import PluginManifest
+from npe2.manifest import PluginManifest
+from npe2.manifest.contributions import Submenu
 
 from ..utils.translations import trans
 
