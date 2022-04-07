@@ -18,6 +18,26 @@ def test_scale_translate(Transform):
     npt.assert_allclose(new_coord, target_coord)
 
 
+@pytest.mark.parametrize('Transform', [Affine, CompositeAffine])
+def test_affine_is_diagonal(Transform):
+    transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    assert transform.is_diagonal
+    transform.rotate = 5.0
+    assert not transform.is_diagonal
+    # Rotation back to 0.0 will result in tiny non-zero off-diagonal values.
+    # is_diagonal assumes values below 1e-8 are equivalent to 0.
+    transform.rotate = 0.0
+    assert transform.is_diagonal
+
+
+def test_diagonal_scale_setter():
+    # diagonal matrices are also considered a permutation
+    diag_transform = Affine(scale=[2, 3], name='st')
+    assert diag_transform.is_diagonal
+    diag_transform.scale = [1]
+    npt.assert_allclose(diag_transform.scale, [1.0, 1.0])
+
+
 @pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_broadcast_scale(Transform):
     coord = [1, 10, 13]
