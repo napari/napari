@@ -255,11 +255,13 @@ class _DerivedStyleEncoding(
 
 
 def _get_style_values(
-    encoding: StyleEncoding[StyleValue, StyleArray], indices: IndicesType
+    encoding: StyleEncoding[StyleValue, StyleArray],
+    indices: IndicesType,
+    value_ndim: int = 0,
 ):
     """Indexes cached style values or broadcasts them length of the given indices."""
     values = encoding._values
-    return values if values.ndim == 0 else values[indices]
+    return values if values.ndim == value_ndim else values[indices]
 
 
 def _empty_array_like(value: StyleValue) -> StyleArray:

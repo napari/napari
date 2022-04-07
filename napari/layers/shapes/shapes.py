@@ -1593,6 +1593,11 @@ class Shapes(Layer):
         )
 
     @property
+    def _view_text_face_color(self) -> np.ndarray:
+        self.text.face_color._apply(self.features)
+        return self.text._view_face_color(self._indices_view)
+
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.

@@ -116,6 +116,11 @@ class TextManager(EventedModel):
         if text is not None:
             _warn_about_deprecated_text_parameter()
             kwargs['string'] = text
+        if 'color' in kwargs:
+            # TODO: deprecate color parameter
+            color = kwargs.pop('color')
+            if 'face_color' not in kwargs:
+                kwargs['face_color'] = ConstantColorEncoding(constant=color)
         super().__init__(**kwargs)
         self.events.add(values=Event)
         # TODO: maybe make this a WarningEmitter to deprecate this event.
@@ -294,6 +299,9 @@ class TextManager(EventedModel):
             Array of text strings for the N text elements in view
         """
         return _get_style_values(self.string, indices_view)
+
+    def _view_face_color(self, indices_view: np.ndarray) -> np.ndarray:
+        return _get_style_values(self.face_color, indices_view, value_ndim=1)
 
     @classmethod
     def _from_layer(
