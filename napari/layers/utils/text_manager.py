@@ -6,11 +6,16 @@ import numpy as np
 import pandas as pd
 from pydantic import PositiveInt, validator
 
-from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import Event, EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
+from ._color_encoding import (
+    ColorArray,
+    ColorEncoding,
+    ConstantColorEncoding,
+    validate_color_encoding,
+)
 from ._text_constants import Anchor
 from ._text_utils import get_text_anchors
 from .layer_utils import _validate_features
@@ -21,7 +26,7 @@ from .string_encoding import (
     StringEncodingArgument,
     validate_string_encoding,
 )
-from .style_encoding import _get_style_values
+from .style_encoding import StyleEncoding, _get_style_values
 
 
 class TextManager(EventedModel):
@@ -62,9 +67,8 @@ class TextManager(EventedModel):
         True if the text should be displayed, false otherwise.
     size : float
         Font size of the text, which must be positive. Default value is 12.
-    color : array
-        Font color for the text as an [R, G, B, A] array. Can also be expressed
-        as a string on construction or setting.
+    face_color : ColorEncoding
+        Defines the color for each color element.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
@@ -77,12 +81,17 @@ class TextManager(EventedModel):
         Offset from the anchor point.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
+    color : array
+        Font color for the text as an [R, G, B, A] array. Can also be expressed
+        as a string on construction or setting.
+        .. deprecated:: 0.4.16
+            `color` is deprecated. Use `face_color` instead.
     """
 
     string: StringEncoding = ConstantStringEncoding(constant='')
+    face_color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
     size: PositiveInt = 12
-    color: Array[float, (4,)] = 'cyan'
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
@@ -109,17 +118,37 @@ class TextManager(EventedModel):
             kwargs['string'] = text
         super().__init__(**kwargs)
         self.events.add(values=Event)
-        self.string._apply(features)
+        # TODO: maybe make this a WarningEmitter to deprecate this event.
+        self.events.add(color=Event)
+        self.apply(features)
 
     @property
     def values(self):
         return self.string._values
 
+    @property
+    def color(self) -> np.ndarray:
+        # TODO: deprecate color getter.
+        if isinstance(self.face_color, ConstantColorEncoding):
+            return self.face_color.constant
+        raise NotImplementedError(
+            'color is deprecated and only supported when face_color is a constant color encoding. Use face_color instead.'
+        )
+
     def __setattr__(self, key, value):
         if key == 'values':
             self.string = value
+        elif key == 'color':
+            # TODO: deprecate color setter
+            self.face_color = ConstantColorEncoding(constant=value)
         else:
             super().__setattr__(key, value)
+        if key == 'face_color':
+            self.events.color()
+
+    @property
+    def _encodings(self) -> tuple[StyleEncoding, ...]:
+        return self.string, self.face_color
 
     def refresh(self, features: Any) -> None:
         """Refresh all encoded values using new layer features.
@@ -130,9 +159,12 @@ class TextManager(EventedModel):
             The features table of a layer.
         """
         self.string._clear()
+        self.face_color._clear()
         self.string._apply(features)
-        self.events.string()
         self.events.values()
+        self.face_color._apply(features)
+        # Trigger the main event for vispy layers.
+        self.events(Event(type='refresh'))
 
     def refresh_text(self, properties: Dict[str, np.ndarray]):
         """Refresh all of the current text elements using updated properties values
@@ -178,6 +210,8 @@ class TextManager(EventedModel):
         values = self.string(features)
         self.string._append(values)
         self.events.values()
+        face_colors = self.face_color(features)
+        self.face_color._append(face_colors)
 
     def remove(self, indices_to_remove: Union[range, set, list, np.ndarray]):
         """Remove the indicated text elements
@@ -191,6 +225,7 @@ class TextManager(EventedModel):
             indices_to_remove = list(indices_to_remove)
         self.string._delete(indices_to_remove)
         self.events.values()
+        self.face_color._delete(indices_to_remove)
 
     def apply(self, features: Any):
         """Applies any encodings to be the same length as the given features,
@@ -203,15 +238,20 @@ class TextManager(EventedModel):
         """
         self.string._apply(features)
         self.events.values()
+        self.face_color._apply(features)
 
     def _copy(self, indices: List[int]) -> dict:
         """Copies all encoded values at the given indices."""
-        return {'string': _get_style_values(self.string, indices)}
+        return {
+            'string': _get_style_values(self.string, indices),
+            'face_color': _get_style_values(self.face_color, indices),
+        }
 
-    def _paste(self, *, string: StringArray):
+    def _paste(self, *, string: StringArray, face_color: ColorArray):
         """Pastes encoded values to the end of the existing values."""
         self.string._append(string)
         self.events.values()
+        self.face_color._append(face_color)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -327,9 +367,9 @@ class TextManager(EventedModel):
     def _check_string(cls, string: StringEncodingArgument):
         return validate_string_encoding(string)
 
-    @validator('color', pre=True, always=True)
-    def _check_color(cls, color):
-        return transform_color(color)[0]
+    @validator('face_color', pre=True, always=True)
+    def _check_face_color(cls, face_color):
+        return validate_color_encoding(face_color)
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):

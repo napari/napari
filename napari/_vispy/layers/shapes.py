@@ -130,7 +130,7 @@ class VispyShapesLayer(VispyBaseLayer):
             if event.type == 'blending':
                 self._on_blending_change(event)
                 return
-            if event.type == 'values':
+            if event.type in ('values', 'color'):
                 return
         self._update_text()
 

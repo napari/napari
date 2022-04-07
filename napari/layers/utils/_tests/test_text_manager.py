@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
+from napari.layers.utils._color_encoding import ColorArray
 from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     FormatStringEncoding,
@@ -526,3 +527,66 @@ def test_serialization():
     deserialized = TextManager(**serialized)
 
     assert original == deserialized
+
+
+def test_init_with_constant_face_color():
+    face_color = {'constant': 'red'}
+    features = pd.DataFrame({'class': ['A', 'B', 'C']})
+
+    text_manager = TextManager(
+        string='class', features=features, face_color=face_color
+    )
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, 'red')
+
+
+def test_init_with_manual_face_color():
+    face_color = ['red', 'green', 'blue']
+    features = pd.DataFrame({'class': ['A', 'B', 'C']})
+
+    text_manager = TextManager(
+        string='class', features=features, face_color=face_color
+    )
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, ['red', 'green', 'blue'])
+
+
+def test_init_with_derived_face_color():
+    features = pd.DataFrame(
+        {
+            'class': ['A', 'B', 'C'],
+            'colors': ['red', 'green', 'blue'],
+        }
+    )
+
+    text_manager = TextManager(
+        string='class', features=features, face_color='colors'
+    )
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, ['red', 'green', 'blue'])
+
+
+def test_init_with_derived_face_color_missing_feature():
+    features = pd.DataFrame(
+        {
+            'class': ['A', 'B', 'C'],
+            'colors': ['red', 'green', 'blue'],
+        }
+    )
+
+    with pytest.warns(RuntimeWarning):
+        text_manager = TextManager(
+            string='class', features=features, face_color='not_a_feature'
+        )
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, ['cyan'] * 3)
+
+
+def _assert_colors_equal(actual, expected):
+    actual_array = ColorArray.validate_type(actual)
+    expected_array = ColorArray.validate_type(expected)
+    np.testing.assert_allclose(actual_array, expected_array)
