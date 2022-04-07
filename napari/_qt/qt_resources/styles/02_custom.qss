@@ -18,7 +18,6 @@ QtViewer {
 
 QtLayerButtons, QtViewerButtons, QtLayerList {
   min-width: 242px;
-  max-width: 242px;
 }
 
 /* ------------- QMainWindow --------- */
@@ -130,7 +129,6 @@ QtDivider {
   border: 0px;
   margin: 0px 3px 0px 3px;
   min-width: 214px;
-  max-width: 214px;
   min-height: 1px;
   max-height: 1px;
 }
@@ -153,7 +151,6 @@ QtLayerWidget {
   min-height: 32px;
   max-height: 32px;
   min-width: 228px;
-  max-width: 228px;
 }
 
 QtLayerWidget[selected="true"] {
@@ -264,9 +261,7 @@ QtLayerControlsContainer {
     padding: 0px;
     margin: 10px;
     min-height: 295px;
-    max-height: 295px;
     min-width: 240px;
-    max-width: 240px;
     margin-left: 10px;
     margin-right: 8px;
     margin-bottom: 4px;
