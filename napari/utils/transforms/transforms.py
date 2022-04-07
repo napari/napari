@@ -458,7 +458,6 @@ class Affine(Transform):
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
         self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
-        # previously cached properties may have changed
         self._clean_cache()
 
     @property
@@ -491,7 +490,6 @@ class Affine(Transform):
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
         self._linear_matrix = compose_linear_matrix(rotate, scale, shear)
-        # previously cached properties may have changed
         self._clean_cache()
 
     @property
