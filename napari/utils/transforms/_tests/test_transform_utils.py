@@ -87,3 +87,13 @@ def test_is_matrix_triangular():
 def test_is_diagonal():
     assert is_diagonal(np.eye(3))
     assert not is_diagonal(np.asarray([[0, 1, 0], [1, 0, 0], [0, 0, 1]]))
+
+    # affine with tiny off-diagonal elements will be considered diagonal
+    m = np.full((3, 3), 1e-10)
+    m[0, 0] = 1
+    m[1, 1] = 1
+    m[2, 2] = 1
+    assert is_diagonal(m)
+
+    # will be considered non-diagonal with stricter tolerance
+    assert not is_diagonal(m, tol=1e-12)
