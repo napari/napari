@@ -12,6 +12,7 @@ transform_types = [Affine, CompositeAffine, ScaleTranslate]
 def test_scale_translate(Transform):
     coord = [10, 13]
     transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    assert transform._is_diagonal
     new_coord = transform(coord)
     target_coord = [2 * 10 + 8, 3 * 13 - 5]
     assert transform.name == 'st'

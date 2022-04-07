@@ -95,6 +95,19 @@ class Transform:
             trans._('Cannot subset arbitrary transforms.', deferred=True)
         )
 
+    @cached_property
+    def _is_diagonal(self):
+        """Indicate when a transform does not mix or permute dimensions.
+
+        Can be overriden in subclasses to enable performance optimizations
+        that are specific to this case.
+        """
+        return False
+
+    def _clean_cache(self):
+        cached_properties = ('_is_diagonal',)
+        [self.__dict__.pop(p, None) for p in cached_properties]
+
 
 class TransformChain(EventedList, Transform):
     def __init__(self, transforms=None):
@@ -280,6 +293,11 @@ class ScaleTranslate(Transform):
         translate = np.zeros(n)
         translate[not_axes] = self.translate
         return ScaleTranslate(scale, translate, name=self.name)
+
+    @cached_property
+    def _is_diagonal(self):
+        """Indicate that this transform does not mix or permute dimensions."""
+        return True
 
 
 class Affine(Transform):
@@ -634,10 +652,6 @@ class Affine(Transform):
         component can still be considered diagonal.
         """
         return is_diagonal(self.linear_matrix, tol=1e-8)
-
-    def _clean_cache(self):
-        cached_properties = ('_is_diagonal',)
-        [self.__dict__.pop(p, None) for p in cached_properties]
 
 
 class CompositeAffine(Affine):
