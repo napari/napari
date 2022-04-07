@@ -469,7 +469,7 @@ def is_matrix_triangular(matrix):
 
 
 def is_diagonal(matrix, tol=1e-8):
-    """Determine whether affine is a diagonal matrix.
+    """Determine whether a matrix is diagonal up to some tolerance.
 
     Parameters
     ----------
@@ -481,7 +481,7 @@ def is_diagonal(matrix, tol=1e-8):
     Returns
     -------
     is_diag : bool
-        Boolean indicating whether affine is diagonal.
+        True if matrix is diagonal, False otherwise.
     """
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError("matrix must be square")
