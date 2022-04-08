@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import traceback
 import warnings
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 from weakref import WeakSet
@@ -438,11 +439,19 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
-            except ImportError:
+            except ModuleNotFoundError:
                 warnings.warn(
                     trans._(
                         'napari-console not found. It can be installed with'
                         ' "pip install napari_console"'
+                    )
+                )
+                self._console = None
+            except ImportError:
+                traceback.print_exc()
+                warnings.warn(
+                    trans._(
+                        'error importing napari-console. See console for full error.'
                     )
                 )
                 self._console = None

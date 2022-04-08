@@ -1,9 +1,9 @@
 from functools import lru_cache
 from pathlib import Path
 
+from npe2 import PackageMetadata
 from npe2 import PluginManager as _PluginManager
 from npe2 import PluginManifest
-from npe2.manifest.package_metadata import PackageMetadata
 
 from ..settings import get_settings
 from . import _npe2

@@ -1403,13 +1403,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # create the bounding box in data coordinates
         bounding_box = self._display_bounding_box(dims_displayed)
-        if not world:
-            # VisPy considers the coordinate system origin to be the canvas
-            # corner, while napari considers the origin to be the **center** of
-            # the corner pixel. To get the correct value under the mouse
-            # cursor, we need to shift the position by 0.5 pixels on each
-            # axis.
-            position = tuple(p + 0.5 for p in position)
+
         start_point, end_point = self._get_ray_intersections(
             position=position,
             view_direction=view_direction,
@@ -1418,6 +1412,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             bounding_box=bounding_box,
         )
         return start_point, end_point
+
+    def _get_offset_data_position(self, position: List[float]) -> List[float]:
+        """Adjust position for offset between viewer and data coordinates."""
+        return position
 
     def _get_ray_intersections(
         self,
@@ -1470,6 +1468,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 position, dims_displayed
             )
         else:
+
+            # adjust for any offset between viewer and data coordinates
+            position = self._get_offset_data_position(position)
+
             view_dir = np.asarray(view_direction)[dims_displayed]
             click_pos_data = np.asarray(position)[dims_displayed]
 
