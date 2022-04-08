@@ -640,6 +640,43 @@ def test_apply_with_derived_face_color():
     _assert_colors_equal(actual, ['red', 'green', 'blue', 'yellow', 'cyan'])
 
 
+def test_refresh_with_constant_face_color():
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(
+        face_color={'constant': 'red'}, features=features
+    )
+
+    text_manager.face_color = {'constant': 'yellow'}
+    text_manager.refresh(features)
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, 'yellow')
+
+
+def test_refresh_with_manual_face_color():
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(
+        face_color=['red', 'green', 'blue'], features=features
+    )
+
+    text_manager.face_color = ['green', 'cyan', 'yellow']
+    text_manager.refresh(features)
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, ['green', 'cyan', 'yellow'])
+
+
+def test_refresh_with_derived_face_color():
+    features = pd.DataFrame({'colors': ['red', 'green', 'blue']})
+    text_manager = TextManager(face_color='colors', features=features)
+
+    features = pd.DataFrame({'colors': ['green', 'yellow', 'magenta']})
+    text_manager.refresh(features)
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, ['green', 'yellow', 'magenta'])
+
+
 def _assert_colors_equal(actual, expected):
     actual_array = ColorArray.validate_type(actual)
     expected_array = ColorArray.validate_type(expected)
