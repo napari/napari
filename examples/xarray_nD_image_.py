@@ -7,9 +7,11 @@ Displays an xarray
 
 try:
     import xarray as xr
-except ImportError:
-    raise ImportError("""This example uses a xarray but xarray is not
-    installed. To install try 'pip install xarray'.""")
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        """This example uses a xarray but xarray is not
+    installed. To install try 'pip install xarray'."""
+    )
 
 import numpy as np
 import napari

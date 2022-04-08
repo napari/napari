@@ -7,8 +7,8 @@ Display two spheres with Surface layers
 
 try:
     from meshzoo import icosa_sphere
-except ImportError as e:
-    raise ImportError(
+except ModuleNotFoundError as e:
+    raise ModuleNotFoundError(
         "This example uses a meshzoo but meshzoo is not installed. "
         "To install try 'pip install meshzoo'."
     ) from e
