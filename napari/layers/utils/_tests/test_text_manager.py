@@ -531,11 +531,9 @@ def test_serialization():
 
 def test_init_with_constant_face_color():
     face_color = {'constant': 'red'}
-    features = pd.DataFrame({'class': ['A', 'B', 'C']})
+    features = pd.DataFrame(index=range(3))
 
-    text_manager = TextManager(
-        string='class', features=features, face_color=face_color
-    )
+    text_manager = TextManager(face_color=face_color, features=features)
 
     actual = text_manager.face_color._values
     _assert_colors_equal(actual, 'red')
@@ -545,41 +543,27 @@ def test_init_with_manual_face_color():
     face_color = ['red', 'green', 'blue']
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
 
-    text_manager = TextManager(
-        string='class', features=features, face_color=face_color
-    )
+    text_manager = TextManager(face_color=face_color, features=features)
 
     actual = text_manager.face_color._values
     _assert_colors_equal(actual, ['red', 'green', 'blue'])
 
 
 def test_init_with_derived_face_color():
-    features = pd.DataFrame(
-        {
-            'class': ['A', 'B', 'C'],
-            'colors': ['red', 'green', 'blue'],
-        }
-    )
+    features = pd.DataFrame({'colors': ['red', 'green', 'blue']})
 
-    text_manager = TextManager(
-        string='class', features=features, face_color='colors'
-    )
+    text_manager = TextManager(face_color='colors', features=features)
 
     actual = text_manager.face_color._values
     _assert_colors_equal(actual, ['red', 'green', 'blue'])
 
 
 def test_init_with_derived_face_color_missing_feature():
-    features = pd.DataFrame(
-        {
-            'class': ['A', 'B', 'C'],
-            'colors': ['red', 'green', 'blue'],
-        }
-    )
+    features = pd.DataFrame({'colors': ['red', 'green', 'blue']})
 
     with pytest.warns(RuntimeWarning):
         text_manager = TextManager(
-            string='class', features=features, face_color='not_a_feature'
+            face_color='not_a_feature', features=features
         )
 
     actual = text_manager.face_color._values
@@ -589,9 +573,7 @@ def test_init_with_derived_face_color_missing_feature():
 def test_apply_with_constant_face_color():
     face_color = {'constant': 'red'}
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
-    text_manager = TextManager(
-        string='class', face_color=face_color, features=features
-    )
+    text_manager = TextManager(face_color=face_color, features=features)
 
     features = pd.DataFrame({'class': ['A', 'B', 'C', 'D', 'E']})
     text_manager.apply(features)
@@ -606,9 +588,7 @@ def test_apply_with_manual_face_color():
         'default': 'yellow',
     }
     features = pd.DataFrame({'class': ['A', 'B', 'C']})
-    text_manager = TextManager(
-        string='class', face_color=face_color, features=features
-    )
+    text_manager = TextManager(face_color=face_color, features=features)
 
     features = pd.DataFrame({'class': ['A', 'B', 'C', 'D', 'E']})
     text_manager.apply(features)
@@ -618,21 +598,11 @@ def test_apply_with_manual_face_color():
 
 
 def test_apply_with_derived_face_color():
-    features = pd.DataFrame(
-        {
-            'class': ['A', 'B', 'C'],
-            'colors': ['red', 'green', 'blue'],
-        }
-    )
-    text_manager = TextManager(
-        string='class', face_color='colors', features=features
-    )
+    features = pd.DataFrame({'colors': ['red', 'green', 'blue']})
+    text_manager = TextManager(face_color='colors', features=features)
 
     features = pd.DataFrame(
-        {
-            'class': ['A', 'B', 'C', 'D', 'E'],
-            'colors': ['red', 'green', 'blue', 'yellow', 'cyan'],
-        }
+        {'colors': ['red', 'green', 'blue', 'yellow', 'cyan']}
     )
     text_manager.apply(features)
 
