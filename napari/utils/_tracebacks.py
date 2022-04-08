@@ -52,7 +52,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
             np.set_string_function(None)
             return tb_text
 
-    except ImportError:
+    except ModuleNotFoundError:
         import cgitb
         import traceback
 

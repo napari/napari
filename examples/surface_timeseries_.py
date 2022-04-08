@@ -8,8 +8,8 @@ Display a surface timeseries using data from nilearn
 try:
     from nilearn import datasets
     from nilearn import surface
-except ImportError:
-    raise ImportError(
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
         "You must have nilearn installed to run this example."
     )
 
