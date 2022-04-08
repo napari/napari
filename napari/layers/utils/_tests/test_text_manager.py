@@ -647,6 +647,47 @@ def test_refresh_with_derived_face_color():
     _assert_colors_equal(actual, ['green', 'yellow', 'magenta'])
 
 
+def test_copy_paste_with_constant_face_color():
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(
+        face_color={'constant': 'blue'}, features=features
+    )
+
+    copied = text_manager._copy([0, 2])
+    text_manager._paste(**copied)
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, 'blue')
+
+
+def test_copy_paste_with_manual_face_color():
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(
+        face_color=['magenta', 'red', 'yellow'], features=features
+    )
+
+    copied = text_manager._copy([0, 2])
+    text_manager._paste(**copied)
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(
+        actual, ['magenta', 'red', 'yellow', 'magenta', 'yellow']
+    )
+
+
+def test_copy_paste_with_derived_face_color():
+    features = pd.DataFrame({'colors': ['green', 'red', 'magenta']})
+    text_manager = TextManager(face_color='colors', features=features)
+
+    copied = text_manager._copy([0, 2])
+    text_manager._paste(**copied)
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(
+        actual, ['green', 'red', 'magenta', 'green', 'magenta']
+    )
+
+
 def _assert_colors_equal(actual, expected):
     actual_array = ColorArray.validate_type(actual)
     expected_array = ColorArray.validate_type(expected)
