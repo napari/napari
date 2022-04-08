@@ -47,7 +47,7 @@ def read(
         assert len(paths) == 1
         npe1_path = paths[0]
     try:
-        layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)  # type: ignore  # needs npe2 fix
+        layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)
         return layer_data, _FakeHookimpl(reader.plugin_name)
     except ValueError as e:
         if 'No readers returned data' not in str(e):
