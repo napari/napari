@@ -691,4 +691,4 @@ def test_copy_paste_with_derived_face_color():
 def _assert_colors_equal(actual, expected):
     actual_array = ColorArray.validate_type(actual)
     expected_array = ColorArray.validate_type(expected)
-    np.testing.assert_allclose(actual_array, expected_array)
+    np.testing.assert_array_equal(actual_array, expected_array)
