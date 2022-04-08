@@ -310,17 +310,17 @@ def test_view_centering_with_points_add():
 
 
 def test_view_centering_with_new_image():
-    """Test if the viewer is  recentered when new ImageLayer is added"""
+    """Test if the viewer is  recentered when new ImageLayer is added with smaller 0-axis"""
     image_3d = np.zeros((10, 10, 10))
 
     viewer = ViewerModel()
     viewer.add_image(image_3d)
     assert tuple(viewer.dims.point) == (5, 5, 5)
 
-    image_2d = np.ones((10, 10))
-    viewer.add_image(image_2d)
-    # 2D image should set to 0-slice
-    assert tuple(viewer.dims.point) == (0, 5, 5)
+    image_3d = np.ones((10, 10, 10))
+    viewer.add_image(image_3d)
+    # should not re-center
+    assert tuple(viewer.dims.point) == (5, 5, 5)
 
     # Check with new, but reduced 3D layer
     image_3d = np.zeros((5, 10, 10))
