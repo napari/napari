@@ -159,7 +159,7 @@ viewer = napari.view_image(data.astronaut(), rgb=True)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="napari viewer with the left sidebar layer controls and an image of astronaut Eileen Collins. In the layer controls, the colormap is fixed to RGB")
 ```
 
 ```{code-cell} python

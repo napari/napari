@@ -69,7 +69,7 @@ colors.
 
 For example:
 
-![image: blending ](./images/blending.png)
+![napari viewer with an image of a cell with layer controls open in left sidebar and blending set to additive.](./images/blending.png)
 
 ## 3D rendering of images
 

@@ -89,7 +89,7 @@ stack.shape  # (nfiles, nz, ny, nx)
 stack
 ```
 
-![image: dask array html representation ](../assets/tutorials/dask_repr.png)
+![html representation of a dask array as seen in jupyter notebook. The image is split into two main regions: a table showing the bytes, shape, count and data type attributes of the array and of each chunk, and a visual representation of the shape of the chunks that make up the array (a rectangle of 1200x1) and each individual chunk (a 65*256*256 cube).](../assets/tutorials/dask_repr.png)
 
 *No data has been read from disk yet!*
 
@@ -128,7 +128,7 @@ stack = imread("/path/to/experiment/*.tif")
 napari.view_image(stack, contrast_limits=[0,2000], multiscale=False)
 ```
 
-![image: mCherry-H2B showing chromosome separation during mitosis. Collected on a lattice light sheet microscope ](../assets/tutorials/dask1.webm)
+![napari viewer with image loaded from dask array showing mCherry-H2B showing chromosome separation during mitosis. Collected on a lattice light sheet microscope ](../assets/tutorials/dask1.webm)
 
 ### **Side note regarding higher-dimensional datasets**
 
@@ -248,7 +248,7 @@ but it's surprisingly usable,
 and allows you to preview the result of a relatively complex processing pipeline *on-the-fly*,
 for arbitrary timepoints/channels, while storing *only* the raw data on disk.
 
-![image: same dataset, demonstrating on-the-fly read → deskew → deconvolve → crop ](../assets/tutorials/dask2.webm)
+![napari viewer showing same dataset as previous video, demonstrating on-the-fly processing of dask array with sliding through dimensions still preforming reasonably well considering the amount of processing going on as you slice.](../assets/tutorials/dask2.webm)
 
 This workflow is very much patterned after [another great post by John Kirkham, Matthew Rocklin, and Matthew McCormick](https://blog.dask.org/2019/08/09/image-itk)
 that describes a similar image processing pipeline using [ITK](https://itk.org/).
