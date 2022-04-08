@@ -1,6 +1,6 @@
 try:
     __import__('dotenv').load_dotenv()
-except ImportError:
+except ModuleNotFoundError:
     pass
 
 import os
