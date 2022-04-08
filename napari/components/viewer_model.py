@@ -21,13 +21,13 @@ from typing import (
 import numpy as np
 from pydantic import Extra, Field, validator
 
-from napari.plugins.utils import get_potential_readers, get_preferred_reader
-
 from .. import layers
+from .._errors.reader_errors import MultiplePluginError, ReaderPluginError
 from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..plugins.utils import get_potential_readers, get_preferred_reader
 from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
@@ -892,12 +892,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths = [path] if isinstance(path, (Path, str)) else path
 
         if stack:
-            layers, plugin, exception = self._open_or_get_error(
+            layers = self._open_or_raise_error(
                 paths, kwargs, layer_type, stack
             )
-            if not exception:
-                return
-            raise exception
+            return layers
 
         added: List[Layer] = []  # for layers that get added
         with progress(
@@ -920,40 +918,37 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     )
                 # no plugin choice was made
                 else:
-                    layers, plugin, exception = self._open_or_get_error(
+                    layers = self._open_or_raise_error(
                         [_path], kwargs, layer_type, stack
                     )
-                    if not exception:
-                        added.extend(layers)
-                    else:
-                        raise exception
+                    added.extend(layers)
 
         return added
 
-    def _open_or_get_error(
+    def _open_or_raise_error(
         self,
         paths: List[Path | str],
         kwargs: Dict[str, Any] = {},
         layer_type: Optional[str] = None,
         stack: bool = False,
     ):
-        """Open paths if plugin choice is unambiguous, capturing any errors.
+        """Open paths if plugin choice is unambiguous, raising any errors.
 
         This function will open paths if there is no plugin choice to be made
         i.e. there is a preferred reader associated with this file extension,
         or there is only one plugin available. Any errors that occur during
-        the opening process are captured and returned. If multiple plugins
-        are available to read these paths, an error is returned specifying
+        the opening process are raised. If multiple plugins
+        are available to read these paths, an error is raised specifying
         this.
 
-        Errors *are* raised by this function, when the given paths are not
+        Errors are also raised by this function when the given paths are not
         a list or tuple, or if no plugins are available to read the files.
         This assumes all files have the same extension, as other cases
         are not yet supported.
 
         This function is called from ViewerModel.open, which raises any
-        errors returned. The QtViewer also calls this method but handles
-        errors by raising a dialog for users to make a plugin choice.
+        errors returned. The QtViewer also calls this method but catches
+        exceptions and opens a dialog for users to make a plugin choice.
 
         Parameters
         ----------
@@ -972,13 +967,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             list of layers added
         plugin
             plugin used to try opening paths, if any
-        error
-            errors from trying to open layers
 
         Raises
         ------
         ValueError
-            when paths is *not* a list or tuple, or no plugins are available
+            when paths is *not* a list or tuple, prefered plugin is missing,
+            or no plugins are available
+        RuntimeError
+            when multiple plugins are available or the prefered plugin failed
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
@@ -990,7 +986,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
         added = []
-        error = None
         plugin = None
         _path = paths[0]
 
@@ -1006,7 +1001,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         plugin = get_preferred_reader(_path)
 
-        # TODO: Use custom error instance?
         # preferred plugin exists, or we just have one plugin available
         if plugin in readers or (not plugin and len(readers) == 1):
             plugin = plugin or next(iter(readers.keys()))
@@ -1020,26 +1014,23 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 )
             # plugin failed
             except Exception as e:
-                # TODO: we're changing the error type here and we shouldn't maybe?
-                error = RuntimeError(
-                    f'Tried opening with reader {plugin}, but failed:\n'
-                    + str(e)
-                )
+                raise ReaderPluginError(
+                    plugin, f'Tried opening with {plugin}, but failed.'
+                ) from e
 
         # preferred plugin doesn't exist
         elif plugin:
-            error = RuntimeError(
-                f"Can't find {plugin} plugin associated with {os.path.splitext(_path)[1]} files."
+            raise ReaderPluginError(
+                plugin,
+                f"Can't find {plugin} plugin associated with {os.path.splitext(_path)[1]} files.",
             )
         # multiple plugins
         else:
-            error = RuntimeError(
+            raise MultiplePluginError(
                 f"Multiple plugins found capable of reading {paths}. Select plugin from {list(readers.keys())} and pass to reading function e.g. `viewer.open(..., plugin=...)`."
             )
 
-        # where are we handling these
-        # we'll need to differentiate the different errors
-        return added, plugin, error
+        return added
 
     def _add_layers_with_plugins(
         self,

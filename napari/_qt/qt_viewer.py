@@ -10,6 +10,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+from .._errors.reader_errors import MultiplePluginError, ReaderPluginError
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
@@ -738,8 +739,8 @@ class QtViewer(QSplitter):
     def _qt_open(self, filenames: List[str], stack: bool):
         """Open files, potentially popping reader dialog for plugin selection.
 
-        Call ViewerModel._open_or_get_error and if an error is returned, pass
-        to gui handling method.
+        Call ViewerModel._open_or_raise_error and catch errors that could
+        be fixed by user making a plugin choice.
 
         Parameters
         ----------
@@ -748,11 +749,12 @@ class QtViewer(QSplitter):
         stack : bool
             whether to stack files or not
         """
-        layers, plugin, error = self.viewer._open_or_get_error(
-            filenames, stack=stack
-        )
-        if error:
-            handle_gui_reading(filenames, self, stack, plugin, error)
+        try:
+            self.viewer._open_or_raise_error(filenames, stack=stack)
+        except ReaderPluginError as e:
+            handle_gui_reading(filenames, self, stack, e._reader_plugin, e)
+        except MultiplePluginError:
+            handle_gui_reading(filenames, self, stack)
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""

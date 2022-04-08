@@ -6,7 +6,7 @@ from qtpy.QtWidgets import QLabel, QRadioButton
 from napari._qt.dialogs.qt_reader_dialog import (
     QtReaderDialog,
     open_with_dialog_choices,
-    prepare_dialog_options,
+    prepare_remaining_readers,
 )
 from napari._tests.utils import restore_settings_on_exit
 from napari.settings import get_settings
@@ -77,7 +77,7 @@ def test_prepare_dialog_options_no_readers(mock_npe2_pm):
     pth = 'my-file.fake'
 
     with pytest.raises(RuntimeError) as e:
-        prepare_dialog_options(
+        prepare_remaining_readers(
             pth, 'fake-reader', RuntimeError('Reading failed')
         )
     assert 'Reading failed' in str(e.value)
@@ -86,13 +86,12 @@ def test_prepare_dialog_options_no_readers(mock_npe2_pm):
 def test_prepare_dialog_options_multiple_plugins(mock_npe2_pm):
     pth = 'my-file.tif'
 
-    readers, error_message = prepare_dialog_options(
+    readers = prepare_remaining_readers(
         pth,
         None,
         RuntimeError(f'Multiple plugins found capable of reading {pth}'),
     )
     assert 'builtins' in readers
-    assert error_message == ''
 
 
 @pytest.mark.skipif(
@@ -104,7 +103,7 @@ def test_prepare_dialog_options_removes_plugin(mock_npe2_pm, tmp_reader):
 
     tmp_reader(mock_npe2_pm, 'fake-reader')
     tmp_reader(mock_npe2_pm, 'other-fake-reader')
-    readers, _ = prepare_dialog_options(
+    readers = prepare_remaining_readers(
         pth, 'fake-reader', RuntimeError('Reader failed')
     )
     assert 'other-fake-reader' in readers

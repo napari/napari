@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari._errors.reader_errors import ReaderPluginError
 from napari.plugins.utils import get_potential_readers
 from napari.settings import get_settings
 
@@ -112,8 +113,8 @@ def handle_gui_reading(
     paths: List[str],
     qt_viewer,
     stack: bool,
-    plugin_name: str,
-    error: RuntimeError,
+    plugin_name: Optional[str] = None,
+    error: Optional[ReaderPluginError] = None,
 ):
     """Present reader dialog to choose reader and open paths based on result.
 
@@ -134,11 +135,13 @@ def handle_gui_reading(
         True if list of paths should be stacked, otherwise False
     plugin_name : str | None
         name of plugin already tried, if any
-    error : RuntimeError
+    error : ReaderPluginError | None
         previous error raised in the process of opening
     """
     _path = paths[0]
-    readers, error_message = prepare_dialog_options(_path, plugin_name, error)
+    readers = prepare_remaining_readers(_path, plugin_name, error)
+    # TODO: fix tests
+    error_message = str(error) if error else ''
 
     _, extension = os.path.splitext(_path)
     readerDialog = QtReaderDialog(
@@ -155,26 +158,26 @@ def handle_gui_reading(
         )
 
 
-def prepare_dialog_options(_path: str, plugin_name: str, error: RuntimeError):
-    """Remove tried plugin from readers and reformat error message.
-
-    Raises error if no readers are left to try.
+def prepare_remaining_readers(
+    _path: str,
+    plugin_name: Optional[str] = None,
+    error: Optional[ReaderPluginError] = None,
+):
+    """Remove tried plugin from readers and raise error if no readers remain.
 
     Parameters
     ----------
     _path : str
         path to open
-    plugin_name : str
+    plugin_name : str | None
         name of plugin previously tried, if any
-    error : RuntimeError
+    error : ReaderPluginError | None
         previous error raised in the process of opening
 
     Returns
     -------
     readers: Dict[str, str]
         remaining readers to present to user
-    error_message: str
-        formatted error message for dialog
 
     Raises
     ------
@@ -186,15 +189,10 @@ def prepare_dialog_options(_path: str, plugin_name: str, error: RuntimeError):
     if plugin_name in readers:
         del readers[plugin_name]
     # if there's no other readers left, raise the exception
-    if not readers:
+    if not readers and error:
         raise error
 
-    error_message = str(error)
-    # showing this message in the GUI would be redundant so we clear it
-    if 'Multiple plugins found' in error_message:
-        error_message = ''
-
-    return readers, error_message
+    return readers
 
 
 def open_with_dialog_choices(
