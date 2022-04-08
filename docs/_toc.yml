@@ -67,6 +67,10 @@ subtrees:
           - file: guides/contexts_expressions
           - file: guides/events_reference
       - file: further-resources/glossary
+      - file: gallery
+        subtrees:
+        - entries:
+          - glob: gallery/*
   - file: plugins/index
     subtrees:
     - entries:

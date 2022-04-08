@@ -55,11 +55,11 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
     def _values(self) -> Union[StyleValue, StyleArray]:
         """The previously generated and cached values."""
 
-    def _update(self, features: Any) -> None:
-        """Updates cached values by applying this to the tail of the given features.
+    def _apply(self, features: Any) -> None:
+        """Applies this to the tail of the given features and updates cached values.
 
-        If the cached values have the same length as the given features, this may
-        return the existing cached value array.
+        If the cached values are longer than the given features, this will remove
+        the extra cached values. If they are the same length, this may do nothing.
 
         Parameters
         ----------
@@ -118,7 +118,7 @@ class _ConstantStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
     def _values(self) -> Union[StyleValue, StyleArray]:
         return self.constant
 
-    def _update(self, features: Any) -> None:
+    def _apply(self, features: Any) -> None:
         pass
 
     def _append(self, array: StyleArray) -> None:
@@ -164,7 +164,7 @@ class _ManualStyleEncoding(EventedModel, Generic[StyleValue, StyleArray]):
     def _values(self) -> Union[StyleValue, StyleArray]:
         return self.array
 
-    def _update(self, features: Any) -> None:
+    def _apply(self, features: Any) -> None:
         self.array = self(features)
 
     def _append(self, array: StyleArray) -> None:
@@ -206,17 +206,17 @@ class _DerivedStyleEncoding(
     def _values(self) -> Union[StyleValue, StyleArray]:
         return self._cached
 
-    def _update(self, features: Any) -> None:
+    def _apply(self, features: Any) -> None:
         n_cached = self._cached.shape[0]
         n_rows = features.shape[0]
         if n_cached < n_rows:
-            tail_array = self._apply_safely(features.iloc[n_cached:n_rows])
+            tail_array = self._call_safely(features.iloc[n_cached:n_rows])
             self._append(tail_array)
         elif n_cached > n_rows:
             self._cached = self._cached[:n_rows]
 
-    def _apply_safely(self, features: Any) -> StyleArray:
-        """Applies this without raising encoding errors, warning instead."""
+    def _call_safely(self, features: Any) -> StyleArray:
+        """Calls this without raising encoding errors, warning instead."""
         try:
             array = self(features)
         except (KeyError, ValueError):
@@ -242,6 +242,14 @@ class _DerivedStyleEncoding(
 
     def _json_encode(self) -> dict:
         return self.dict()
+
+
+def _get_style_values(
+    encoding: StyleEncoding[StyleValue, StyleArray], indices: IndicesType
+):
+    """Indexes cached style values or broadcasts them length of the given indices."""
+    values = encoding._values
+    return values if values.ndim == 0 else values[indices]
 
 
 def _empty_array_like(value: StyleValue) -> StyleArray:

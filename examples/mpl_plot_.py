@@ -1,3 +1,9 @@
+"""
+Matplotlib plot
+===============
+
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -33,4 +39,5 @@ def profile_lines_drag(layer, event):
         pass
 
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

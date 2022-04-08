@@ -41,7 +41,7 @@ add points to it using `viewer.add_points`. The api of both methods is the same.
 In these examples we'll mainly use `add_points` to overlay points onto on an
 existing image.
 
-In this example of we will overlay some points on the image of an astronaut:
+In this example, we will overlay some points on the image of an astronaut:
 
 ```{code-cell} python
 import napari

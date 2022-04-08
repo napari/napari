@@ -1,7 +1,11 @@
 """
+Paint nD
+========
+
 Display a 4D labels layer and paint only in 3D.
 
 This is useful e.g. when proofreading segmentations within a time series.
+
 """
 
 import numpy as np
@@ -25,4 +29,5 @@ labels.brush_size = 15
 labels.mode = 'paint'
 labels.n_dimensional = True
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
