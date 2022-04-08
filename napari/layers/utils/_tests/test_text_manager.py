@@ -586,6 +586,60 @@ def test_init_with_derived_face_color_missing_feature():
     _assert_colors_equal(actual, ['cyan'] * 3)
 
 
+def test_apply_with_constant_face_color():
+    face_color = {'constant': 'red'}
+    features = pd.DataFrame({'class': ['A', 'B', 'C']})
+    text_manager = TextManager(
+        string='class', face_color=face_color, features=features
+    )
+
+    features = pd.DataFrame({'class': ['A', 'B', 'C', 'D', 'E']})
+    text_manager.apply(features)
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, 'red')
+
+
+def test_apply_with_manual_face_color():
+    face_color = {
+        'array': ['red', 'green', 'blue'],
+        'default': 'yellow',
+    }
+    features = pd.DataFrame({'class': ['A', 'B', 'C']})
+    text_manager = TextManager(
+        string='class', face_color=face_color, features=features
+    )
+
+    features = pd.DataFrame({'class': ['A', 'B', 'C', 'D', 'E']})
+    text_manager.apply(features)
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, ['red', 'green', 'blue', 'yellow', 'yellow'])
+
+
+def test_apply_with_derived_face_color():
+    features = pd.DataFrame(
+        {
+            'class': ['A', 'B', 'C'],
+            'colors': ['red', 'green', 'blue'],
+        }
+    )
+    text_manager = TextManager(
+        string='class', face_color='colors', features=features
+    )
+
+    features = pd.DataFrame(
+        {
+            'class': ['A', 'B', 'C', 'D', 'E'],
+            'colors': ['red', 'green', 'blue', 'yellow', 'cyan'],
+        }
+    )
+    text_manager.apply(features)
+
+    actual = text_manager.face_color._values
+    _assert_colors_equal(actual, ['red', 'green', 'blue', 'yellow', 'cyan'])
+
+
 def _assert_colors_equal(actual, expected):
     actual_array = ColorArray.validate_type(actual)
     expected_array = ColorArray.validate_type(expected)
