@@ -282,7 +282,7 @@ or 3 less than the total number of dimensions of the layer. See for example the
 [`examples/nD_shapes.py`](https://github.com/napari/napari/blob/main/examples/nD_shapes.py)
 to see shapes in both 2D and 3D:
 
-![image: nD shapes ] (../../images/nD_shapes.gif)
+![image: nD shapes] (../../images/nD_shapes.gif)
 
 Note though that when entering 3D rendering mode the shape editing tools are all
 disabled. Those options are only supported when viewing a layer using 2D
@@ -296,7 +296,7 @@ For paths that are defined by coordinates spanning more than two dimensions, it
 is possible to visualize them as 3D cylinders, see for example the
 [`examples/3D_paths.py`](https://github.com/napari/napari/blob/main/examples/3D_paths.py)
 
-![image: 3D paths ](../../images/3D_paths.png)
+![image: 3D paths](../../images/3D_paths.png)
 
 ```{note}
 Right now, it is not possible to display 3D cuboids or 3D spheroids, but will be
@@ -340,7 +340,7 @@ key if you are in select mode.
 Once selected you can delete the selected shapes by clicking on the delete
 button in the layer controls panel or pressing the delete key.
 
-For example see below: ![image: shape resizing ](../../images/shape_resizing.gif)
+For example see below: ![image: shape resizing](../../images/shape_resizing.gif)
 
 ## Adding, moving, and deleting individual vertices
 
@@ -358,7 +358,7 @@ can be selected either clicking on the vertex deletion tool in the layer
 controls panel or pressing the `X` key while the shapes layer is selected.
 
 For example see below: ![image: shape vertex
-editing ](../../images/shape_vertex_editing.gif)
+editing](../../images/shape_vertex_editing.gif)
 
 ## Changing shape edge and face colors
 
@@ -421,4 +421,4 @@ added.
 Here you can see an example of adding, selecting, and editing shapes and change
 their properties:
 
-![image: editing shapes ](../../images/editing_shapes.gif)
+![image: editing shapes](../../images/editing_shapes.gif)
