@@ -95,7 +95,7 @@ class Transform:
             trans._('Cannot subset arbitrary transforms.', deferred=True)
         )
 
-    @cached_property
+    @property
     def _is_diagonal(self):
         """Indicate when a transform does not mix or permute dimensions.
 
@@ -293,7 +293,7 @@ class ScaleTranslate(Transform):
         translate[not_axes] = self.translate
         return ScaleTranslate(scale, translate, name=self.name)
 
-    @cached_property
+    @property
     def _is_diagonal(self):
         """Indicate that this transform does not mix or permute dimensions."""
         return True
