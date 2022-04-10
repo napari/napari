@@ -315,7 +315,7 @@ Next, we will use the Shapes layer to overlay the bounding boxes for each detect
     )
 ```
 
-![napari viewer showing eight roughly circular shapes, each colored differently. Each shape has a bounding box automatically generated around it. ](../assets/tutorials/segmentation_bbox.png)
+![napari viewer showing eight roughly circular shapes, each colored differently. Each shape has a bounding box automatically generated around it.](../assets/tutorials/segmentation_bbox.png)
 
 The first positional argument (`bbox_rects`) contains the bounding boxes we created above. We specified that the face of each bounding box has no color (`face_color='transparent'`) and the edges of the bounding box are green (`edge_color='green'`). Finally, the name of the layer displayed in the layer list in the napari GUI is `bounding box` (`name='bounding box'`).
 
