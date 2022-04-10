@@ -69,7 +69,7 @@ colors.
 
 For example:
 
-![napari viewer with an image of a cell with layer controls open in left sidebar and blending set to additive.](./images/blending.png)
+![napari viewer with an image of a cell. Layer controls are open in left sidebar and blending set to additive.](./images/blending.png)
 
 ## 3D rendering of images
 
@@ -134,7 +134,7 @@ napari.view_image(retina, name='retina', scale=[1,10,1,1])
 viewer.layers['retina'].scale = [1,10,1,1]
 ```
 
-![napari viewer with an image where all layers are scalred equally; when rotated, the image appears flat. By using console below the canvas and applying a scale factor to one of the dimensions, the image's volume becomes apparent.](images/scaling.gif)
+![napari viewer with an image where all layers are scaled equally; when rotated, the image appears flat. By using console below the canvas and applying a scale factor to one of the dimensions, the image's volume becomes apparent.](images/scaling.gif)
 
 
 ## Translating layers

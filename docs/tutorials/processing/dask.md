@@ -89,7 +89,7 @@ stack.shape  # (nfiles, nz, ny, nx)
 stack
 ```
 
-![html representation of a dask array as seen in jupyter notebook. The image is split into two main regions: a table showing the bytes, shape, count and data type attributes of the array and of each chunk, and a visual representation of the shape of the chunks that make up the array (a rectangle of 1200x1) and each individual chunk (a 65*256*256 cube).](../assets/tutorials/dask_repr.png)
+![HTML representation of a Dask array as seen in Jupyter notebook. The image is split into two main regions: a table showing the bytes, shape, count and data type attributes of the array and of each chunk, and a visual representation of the shape of the chunks that make up the array (a rectangle of 1200x1) and each individual chunk (a 65*256*256 cube).](../assets/tutorials/dask_repr.png)
 
 *No data has been read from disk yet!*
 
@@ -128,7 +128,7 @@ stack = imread("/path/to/experiment/*.tif")
 napari.view_image(stack, contrast_limits=[0,2000], multiscale=False)
 ```
 
-![napari viewer with image loaded from dask array showing mCherry-H2B showing chromosome separation during mitosis. Collected on a lattice light sheet microscope ](../assets/tutorials/dask1.webm)
+![napari viewer with image loaded from dask array showing mCherry-H2B showing chromosome separation during mitosis. Collected on a lattice light sheet microscope.](../assets/tutorials/dask1.webm)
 
 ### **Side note regarding higher-dimensional datasets**
 
