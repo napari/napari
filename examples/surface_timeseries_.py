@@ -1,12 +1,15 @@
 """
+Surface timeseries
+==================
+
 Display a surface timeseries using data from nilearn
 """
 
 try:
     from nilearn import datasets
     from nilearn import surface
-except ImportError:
-    raise ImportError(
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
         "You must have nilearn installed to run this example."
     )
 
@@ -35,4 +38,5 @@ viewer.add_surface((brain_vertices, brain_faces, timeseries),
                     colormap='turbo', opacity=0.9,
                     contrast_limits=[-1.5, 3.5], name='timeseries')
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

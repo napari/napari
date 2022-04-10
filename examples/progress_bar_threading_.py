@@ -1,5 +1,10 @@
-"""This file provides a minimal working example using a progress bar alongside
-@thread_worker to report progress.
+"""
+Progress bar threading
+======================
+
+This file provides a minimal working example using a progress bar alongside
+``@thread_worker`` to report progress.
+
 """
 from time import sleep
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
@@ -86,4 +91,5 @@ viewer.window.add_dock_widget(pbar_widget, allowed_areas=["right"])
 # showing the activity dock so we can see the progress bars
 viewer.window._status_bar._toggle_activity_dock(True)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

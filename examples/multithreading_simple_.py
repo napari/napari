@@ -1,3 +1,9 @@
+"""
+Multithreading simple
+=====================
+
+"""
+
 from qtpy.QtWidgets import QApplication, QWidget, QHBoxLayout, QLabel
 import time
 from napari.qt import thread_worker

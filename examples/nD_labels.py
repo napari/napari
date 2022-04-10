@@ -1,4 +1,7 @@
 """
+nD labels
+=========
+
 Display a labels layer above of an image layer using the add_labels and
 add_image APIs
 """
@@ -13,4 +16,5 @@ viewer = napari.view_image(blobs[::2].astype(float), name='blobs', scale=(2, 1, 
 labeled = ndi.label(blobs)[0]
 viewer.add_labels(labeled[::2], name='blob ID', scale=(2, 1, 1))
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

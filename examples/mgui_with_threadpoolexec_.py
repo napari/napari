@@ -1,6 +1,10 @@
-"""An example of calling a threaded function from a magicgui dock_widget.
+"""
+magicgui with threadpoolexec
+============================
 
-using ThreadPoolExecutor
+An example of calling a threaded function from a magicgui ``dock_widget``.
+
+using ``ThreadPoolExecutor``
 Note: this example requires python >= 3.9
 """
 import sys

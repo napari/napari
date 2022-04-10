@@ -1,12 +1,17 @@
 """
+Zarr array
+==========
+
 Display a zarr array
 """
 
 try:
     import zarr
-except ImportError:
-    raise ImportError("""This example uses a zarr array but zarr is not
-    installed. To install try 'pip install zarr'.""")
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        """This example uses a zarr array but zarr is not
+    installed. To install try 'pip install zarr'."""
+    )
 
 import napari
 
@@ -19,4 +24,5 @@ print(data.shape)
 # to find the min and max of the full image.
 viewer = napari.view_image(data, contrast_limits=[0, 1], rgb=False)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

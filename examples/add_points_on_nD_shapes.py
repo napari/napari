@@ -1,4 +1,11 @@
-"""Add points on nD shapes in 3D using a mouse callback"""
+"""
+Add points on nD shapes
+=======================
+
+Add points on nD shapes in 3D using a mouse callback
+
+"""
+
 import napari
 import numpy as np
 
@@ -60,4 +67,6 @@ viewer.dims.ndisplay = 3
 viewer.dims.set_point(axis=0, value=0)
 viewer.camera.angles = (70, 30, 150)
 viewer.camera.zoom = 2.5
-napari.run()
+
+if __name__ == '__main__':
+    napari.run()
