@@ -14,10 +14,7 @@ from .image import ImageLayerNode, VispyImageLayer
 
 
 def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
-    assert (controls[0], controls[-1]) == (0.0, 1.0)
     ncolors = len(controls) - 1
-    assert ncolors >= 2
-    assert texture_map_data is not None
 
     LUT = texture_map_data
     texture_len = texture_map_data.shape[0]
@@ -50,15 +47,6 @@ def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
         if (t == 0) {
             return vec4(0.0,0.0,0.0,0.0);
         }
-        if (t == 1) {
-            return vec4(1.0, 0.0, 0.0, 1.0);
-        }
-        if (t == 2) {
-            return vec4(0.0, 1.0, 0.0, 1.0);
-        }
-        if (t == 3) {
-            return vec4(0.0, 0.0, 1.0, 1.0);
-        }
 
         value = mod((t * phi_mod + $seed), 1.0);
 
@@ -82,17 +70,12 @@ class LabelColormap(VispyColormap):
             self._controls, self.colors, self.texture_map_data
         ).replace('$seed', str(self.seed))
 
-        print(self.glsl_map)
-
     def map(self, x):
         tp = np.where(x == 0, 0, low_discrepancy_image(x, self.seed))
         return super().map(tp)
 
 
 class VispyLabelsLayer(VispyImageLayer):
-    # def __init__(self, *args, **kwargs):
-    #    super().__init__(*args, texture_format='r32f', **kwargs)
-    #    self._on_colormap_change()
     def __init__(self, layer, node=None, texture_format='r32f'):
         super().__init__(
             layer,
