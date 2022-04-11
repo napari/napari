@@ -881,5 +881,14 @@ def test_open_or_get_error_cant_find_plugin(mock_npe2_pm, tmp_reader):
             viewer._open_or_raise_error(['my_file.fake'])
 
 
-# TODO: fix tmp_reader to actually load functions
-# TODO: test tmp_reader fails
+def test_open_or_get_error_preferred_fails(tmp_path):
+    viewer = ViewerModel()
+    pth = tmp_path / 'my-file.npy'
+
+    with restore_settings_on_exit():
+        get_settings().plugins.extension2reader = {'.npy': 'napari'}
+
+        with pytest.raises(
+            ReaderPluginError, match='Tried opening with napari, but failed.'
+        ):
+            viewer._open_or_raise_error([str(pth)])

@@ -424,7 +424,6 @@ if npe2.__version__ > '0.2.1':
             pm,
             name,
             filename_patterns=['*.fake'],
-            reader_func=lambda pth: None,
         ):
             reader_plugin = DynamicPlugin(name, plugin_manager=pm)
 
@@ -432,11 +431,9 @@ if npe2.__version__ > '0.2.1':
                 filename_patterns=filename_patterns
             )
             def read_func(pth):
-                res = reader_func(pth)
-                return res
+                ...
 
             reader_plugin.register()
-
             return reader_plugin
 
         return make_plugin
