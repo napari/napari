@@ -881,6 +881,10 @@ def test_open_or_get_error_cant_find_plugin(mock_npe2_pm, tmp_reader):
             viewer._open_or_raise_error(['my_file.fake'])
 
 
+@pytest.mark.skipif(
+    npe2.__version__ <= '0.2.1',
+    reason='Cannot use DynamicPlugin until next npe2 release.',
+)
 def test_open_or_get_error_preferred_fails(tmp_path):
     viewer = ViewerModel()
     pth = tmp_path / 'my-file.npy'
