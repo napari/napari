@@ -70,18 +70,16 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
     layer = cast('Image', layer)
     # get the meta data of the layer, but without transforms
-    layer_meta = {
+    meta = {
         key: layer._get_base_state()[key]
         for key in layer._get_base_state()
         if key not in ('scale', 'translate', 'rotate', 'shear', 'affine')
     }
-    # make metadata for the projection without transforms--will add them back later
-    proj_meta = {
-        **layer_meta,
+    meta.update({
         'name': f'{layer} {mode}-proj',
         'colormap': layer.colormap.name,
         'rendering': layer.rendering,
-    }
+    })
     new = Layer.create(data, proj_meta, layer._type_string)
     # add transforms from original layer, but drop the axis of the projection
     new._transforms = layer._transforms.set_slice(
