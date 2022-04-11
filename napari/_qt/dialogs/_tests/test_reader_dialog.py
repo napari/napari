@@ -1,4 +1,3 @@
-import npe2
 import numpy as np
 import pytest
 from qtpy.QtWidgets import QLabel, QRadioButton
@@ -94,10 +93,6 @@ def test_prepare_dialog_options_multiple_plugins(mock_npe2_pm):
     assert 'builtins' in readers
 
 
-@pytest.mark.skipif(
-    npe2.__version__ <= '0.2.1',
-    reason='Cannot use DynamicPlugin until next npe2 release.',
-)
 def test_prepare_dialog_options_removes_plugin(mock_npe2_pm, tmp_reader):
     pth = 'my-file.fake'
 

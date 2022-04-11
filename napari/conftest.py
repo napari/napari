@@ -9,12 +9,11 @@ from multiprocessing.pool import ThreadPool
 from unittest.mock import MagicMock, patch
 
 import dask.threaded
-import npe2
 import numpy as np
 import pooch
 import pytest
 from IPython.core.history import HistoryManager
-from npe2 import PluginManager
+from npe2 import DynamicPlugin, PluginManager
 
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
@@ -413,30 +412,25 @@ def _no_error_reports():
         yield
 
 
-if npe2.__version__ > '0.2.1':
-    from npe2 import DynamicPlugin
+@pytest.fixture
+def tmp_reader():
+    """Return a temporary reader registered with the given plugin manager."""
 
-    @pytest.fixture
-    def tmp_reader():
-        """Return a temporary reader registered with the given plugin manager."""
+    def make_plugin(
+        pm,
+        name,
+        filename_patterns=['*.fake'],
+    ):
+        reader_plugin = DynamicPlugin(name, plugin_manager=pm)
 
-        def make_plugin(
-            pm,
-            name,
-            filename_patterns=['*.fake'],
-        ):
-            reader_plugin = DynamicPlugin(name, plugin_manager=pm)
+        @reader_plugin.contribute.reader(filename_patterns=filename_patterns)
+        def read_func(pth):
+            ...
 
-            @reader_plugin.contribute.reader(
-                filename_patterns=filename_patterns
-            )
-            def read_func(pth):
-                ...
+        reader_plugin.register()
+        return reader_plugin
 
-            reader_plugin.register()
-            return reader_plugin
-
-        return make_plugin
+    return make_plugin
 
 
 @pytest.fixture

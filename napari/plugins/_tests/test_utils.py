@@ -1,6 +1,3 @@
-import npe2
-import pytest
-
 from napari._tests.utils import restore_settings_on_exit
 from napari.plugins.utils import get_potential_readers, get_preferred_reader
 from napari.settings import get_settings
@@ -28,20 +25,12 @@ def test_get_preferred_reader_no_extension():
     assert reader is None
 
 
-@pytest.mark.skipif(
-    npe2.__version__ <= '0.2.1',
-    reason='Cannot use DynamicPlugin until next npe2 release.',
-)
 def test_get_potential_readers_finds_npe1(mock_npe2_pm):
     pth = 'my_file.tif'
     readers = get_potential_readers(pth)
     assert 'builtins' in readers
 
 
-@pytest.mark.skipif(
-    npe2.__version__ <= '0.2.1',
-    reason='Cannot use DynamicPlugin until next npe2 release.',
-)
 def test_get_potential_readers_gives_napari(mock_npe2_pm, tmp_reader):
     pth = 'my_file.tif'
 
@@ -51,10 +40,6 @@ def test_get_potential_readers_gives_napari(mock_npe2_pm, tmp_reader):
     assert 'builtins' not in readers
 
 
-@pytest.mark.skipif(
-    npe2.__version__ <= '0.2.1',
-    reason='Cannot use DynamicPlugin until next npe2 release.',
-)
 def test_get_potential_readers_finds_readers(mock_npe2_pm, tmp_reader):
     pth = 'my_file.tif'
 
@@ -65,10 +50,6 @@ def test_get_potential_readers_finds_readers(mock_npe2_pm, tmp_reader):
     assert len(readers) == 3
 
 
-@pytest.mark.skipif(
-    npe2.__version__ <= '0.2.1',
-    reason='Cannot use DynamicPlugin until next npe2 release.',
-)
 def test_get_potential_readers_none_available(mock_npe2_pm):
     pth = 'my_file.fake'
 
@@ -76,10 +57,6 @@ def test_get_potential_readers_none_available(mock_npe2_pm):
     assert len(readers) == 0
 
 
-@pytest.mark.skipif(
-    npe2.__version__ <= '0.2.1',
-    reason='Cannot use DynamicPlugin until next npe2 release.',
-)
 def test_get_potential_readers_plugin_name_disp_name(mock_npe2_pm, tmp_reader):
     pth = 'my_file.fake'
 
