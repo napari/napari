@@ -336,7 +336,7 @@ class Tracks(Layer):
 
     def _pad_display_data(self, vertices):
         """pad display data when moving between 2d and 3d"""
-        if vertices is None:
+        if vertices is None or len(vertices) == 0:
             return
 
         data = vertices[:, self._dims_displayed]

@@ -14,7 +14,7 @@ INVALID_TIME_SLICE = (0, -1)
 
 @dataclass
 class Node:
-    """Node class corresponding to each indivisual row of tracks' data.
+    """Node class corresponding to each individual row of tracks' data.
        The indexing (`data_index`) is used to query the data information from the input data.
 
     Attributes
@@ -188,11 +188,10 @@ class InteractiveTrackManager(BaseTrackManager):
         self._features: pd.DataFrame = ...
         self._is_serialized = False
 
-        # it assumes 3D+t data by default
-        self._extent_vertices = np.full((2, 4), np.nan)
-
         if data is None:
+            # it assumes 3D+t data by default
             assert len(graph) == 0 and features is None
+            self._extent_vertices = np.full((2, 4), np.nan)
         else:
             self.set_data(data, graph, features)
 
@@ -238,6 +237,7 @@ class InteractiveTrackManager(BaseTrackManager):
 
         # convert features dataframe to dict
         if features is not None:
+            data.index = features.index
             features = features.to_dict('index')
 
         for track_id, track in data.groupby('TrackID', sort=False):
@@ -272,6 +272,10 @@ class InteractiveTrackManager(BaseTrackManager):
                 parent.children.append(node)
 
         self._max_node_index = max(self._id_to_nodes.keys())
+
+        self._extent_vertices = np.empty((2, self._ndim))
+        self._extent_vertices[0] = data[columns[1:]].min()
+        self._extent_vertices[1] = data[columns[1:]].min()
 
     @property
     def ndim(self) -> int:
@@ -900,7 +904,11 @@ class InteractiveTrackManager(BaseTrackManager):
         return self._view_track_connex
 
     @update_view
-    def view_track_times(self, time_start: int, time_end: int) -> np.ndarray:
+    def view_track_times(
+        self, time_start: int, time_end: int
+    ) -> Optional[np.ndarray]:
+        if len(self._view_track_vertices) == 0:
+            return np.empty(0, dtype=int)
         return self._view_track_vertices[:, 0]
 
     @update_view
@@ -947,6 +955,7 @@ class InteractiveTrackManager(BaseTrackManager):
         return self._extent_vertices
 
     def _find_root(self, node_index: int) -> int:
+        # FIXME: this doesn't work with merging tracks
         node = self._get_node(node_index)
 
         while len(node.parents) > 0:
@@ -958,6 +967,7 @@ class InteractiveTrackManager(BaseTrackManager):
         self, node_index: int, return_df: bool = False
     ) -> Union[List, pd.DataFrame]:
         # connected component starts from root to guarantee it's sorted
+        # FIXME: this doesn't work with merging tracks
         root_index = self._find_root(node_index)
         root = self._get_node(root_index)
 

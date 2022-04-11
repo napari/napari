@@ -26,6 +26,9 @@ class VispyTracksLayer(VispyBaseLayer):
         self.layer.events.color_by.connect(self._on_appearance_change)
         self.layer.events.colormap.connect(self._on_appearance_change)
 
+        self.layer.events.editable.connect(self._on_appearance_change)
+        self.layer.events.editable.connect(self._on_graph_change)
+
         # these events are fired when changes occur to the tracks or the
         # graph - as the vertex buffer of the shader needs to be updated
         # alongside the actual vertex data
@@ -70,9 +73,13 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node._subvisuals[1].visible = self.layer.display_id
         self.node._subvisuals[2].visible = self.layer.display_graph
 
+        data = self.layer._view_data
+        # vispy components crash with length zero data, this disables the visual until there's data to display
+        self.node._subvisuals[0].visible = data is not None and len(data) > 0
+
         # set the width of the track tails
         self.node._subvisuals[0].set_data(
-            pos=self.layer._view_data,
+            pos=data,
             connect=self.layer._view_track_connex,
             width=self.layer.tail_width,
             color=self.layer.track_colors,
@@ -87,6 +94,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node.tracks_filter.use_fade = self.layer.use_fade
         self.node.tracks_filter.tail_length = self.layer.tail_length
         self.node.tracks_filter.vertex_time = self.layer._view_track_times
+        self.node._subvisuals[0].visible = True
 
         # change the data to the vispy line visual
         self.node._subvisuals[0].set_data(
