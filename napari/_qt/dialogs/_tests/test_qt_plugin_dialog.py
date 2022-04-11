@@ -1,7 +1,7 @@
 from typing import Generator, Optional, Tuple
 
 import pytest
-from npe2.manifest.package_metadata import PackageMetadata
+from npe2 import PackageMetadata
 
 from napari._qt.dialogs import qt_plugin_dialog
 

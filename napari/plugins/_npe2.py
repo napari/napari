@@ -14,8 +14,8 @@ from typing import (
 
 import npe2
 from npe2.io_utils import read_get_reader
-from npe2.manifest.menus import Submenu
-from npe2.manifest.schema import PluginManifest
+from npe2.manifest import PluginManifest
+from npe2.manifest.contributions import Submenu
 
 from ..utils.translations import trans
 
@@ -47,7 +47,7 @@ def read(
         assert len(paths) == 1
         npe1_path = paths[0]
     try:
-        layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)  # type: ignore  # needs npe2 fix
+        layer_data, reader = read_get_reader(npe1_path, plugin_name=plugin)
         return layer_data, _FakeHookimpl(reader.plugin_name)
     except ValueError as e:
         if 'No readers returned data' not in str(e):
