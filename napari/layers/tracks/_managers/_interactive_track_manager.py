@@ -482,8 +482,10 @@ class InteractiveTrackManager(BaseTrackManager):
                     break
 
         r"""
-        since we transverse the graph backwardly the parents (p) are indexed by their track_id
-        and the children (c) are indexed by the sliced node (s). Thus, p is at the track split / merge
+        tracks are indexed by the first node (starting from latest time points), since we have slicing when visualizing
+        a window of the tracks and splits and merges, tracks are not guaranteed to be indexed by their leafs.
+        For example, parent `p` track index is the node at the split / merge by and the children `c` tracks
+        are indexed by the node ids `s`, respectively.
 
                               |  time window   |
                               |     _c_________|_s__
