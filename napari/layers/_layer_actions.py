@@ -75,12 +75,14 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
         for key in layer._get_base_state()
         if key not in ('scale', 'translate', 'rotate', 'shear', 'affine')
     }
-    meta.update({
-        'name': f'{layer} {mode}-proj',
-        'colormap': layer.colormap.name,
-        'rendering': layer.rendering,
-    })
-    new = Layer.create(data, proj_meta, layer._type_string)
+    meta.update(
+        {
+            'name': f'{layer} {mode}-proj',
+            'colormap': layer.colormap.name,
+            'rendering': layer.rendering,
+        }
+    )
+    new = Layer.create(data, meta, layer._type_string)
     # add transforms from original layer, but drop the axis of the projection
     new._transforms = layer._transforms.set_slice(
         [ax for ax in range(0, layer.ndim) if ax != axis]
