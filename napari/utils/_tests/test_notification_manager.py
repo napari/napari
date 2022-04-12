@@ -45,7 +45,7 @@ def test_notification_manager_no_gui(monkeypatch):
         from napari._qt.dialogs.qt_notification import NapariQtNotification
 
         monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
-    except ImportError:
+    except ModuleNotFoundError:
         pass
     previous_exhook = sys.excepthook
     with notification_manager:

@@ -7,9 +7,11 @@ Display a zarr array
 
 try:
     import zarr
-except ImportError:
-    raise ImportError("""This example uses a zarr array but zarr is not
-    installed. To install try 'pip install zarr'.""")
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        """This example uses a zarr array but zarr is not
+    installed. To install try 'pip install zarr'."""
+    )
 
 import napari
 

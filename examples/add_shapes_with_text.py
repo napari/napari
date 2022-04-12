@@ -30,7 +30,7 @@ features = {
 edge_color_cycle = ['blue', 'magenta', 'green']
 
 text = {
-    'text': '{class}: {likelihood:0.1f}%',
+    'string': '{class}: {likelihood:0.1f}%',
     'anchor': 'upper_left',
     'translation': [-5, 0],
     'size': 8,
