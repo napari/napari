@@ -17,9 +17,12 @@ from ..widgets._slider_compat import QSlider
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
+from .qt_tabs import QtTabsWidget
+
+icons_path = '/Users/pwadhwa/Documents/repos/napari/napari/resources/icons/'
 
 
-class QtPointsControls(QtLayerControls):
+class QtBasePointsControls(QtLayerControls):
     """Qt view and controls for the napari Points layer.
 
     Parameters
@@ -328,3 +331,72 @@ class QtPointsControls(QtLayerControls):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.text.events, self)
         super().close()
+
+
+class QtPointsControls(QtTabsWidget):
+    def __init__(self, layer):
+        super().__init__(layer)
+        baseWidget1 = QtBasePointsControls(layer)
+        # from .tabs_example2 import tabdemo
+        from ..layer_controls.qt_transform_controls import QtTransformControls
+
+        wdg = QtTransformControls(layer)
+        self.tabdict = {
+            'Points': {
+                'widget': baseWidget1,
+                'icon': icons_path + 'new_points.svg',
+            },
+            'Translate': {'widget': wdg, 'icon': icons_path + 'path.svg'},
+        }
+
+        self.addTabs(self.tabdict)
+
+        # self.setStyleSheet("""
+        #     QTabWidget::tab-bar {
+        #     left: 0px; /* move to the right by 5px */
+        #     }
+        # """)
+
+        # self.setStyleSheet("""
+        #     QTabWidget::pane { /* The tab widget frame */
+        #     border-top: 0px solid #C2C7CB;
+        #     border: 5px solid #C2C7CB;
+        #     background-color: #C2C7CB;
+        #     }
+
+        #     QTabWidget::tab-bar {
+        #     left: 0px; /* move to the right by 5px */
+        #     }
+
+        #     /* Style the tab using the tab sub-control. Note that
+        #     it reads QTabBar _not_ QTabWidget */
+
+        #     QTabBar::tab {
+        #     background: gray;
+        #     border: 0px solid red;
+        #     border-bottom-color: transparent; /* same as the pane color */
+        #     border-top-left-radius: 0px;
+        #     border-top-right-radius: 0px;
+        #     height: 30px;
+        #     width:  30px;
+        #     min-width: 4ex;
+        #     padding: 0px;
+        # }
+
+        #     QTabBar::tab:selected {
+        #         background: #313131;
+        #     }
+        #     QTabBar::tab:hover {
+        #         background: #212121;
+        #     }
+
+        #     QTabBar::tab:selected {
+        #         border-color: white;
+        #         border-bottom-color: none;
+        #     }
+
+        #     QTabBar::tab:!selected {
+        #         margin-right: 0px; /* make non-selected tabs look smaller */
+        #     }
+
+        # """)

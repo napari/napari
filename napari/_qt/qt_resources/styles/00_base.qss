@@ -613,6 +613,9 @@ QTabBar::tab {
   background: vgradient({{ lighten(foreground, 15) }} - {{ foreground }});
 }
 
+QTabWidget::tab-bar {
+  left: 0px;
+}
 
 QWidget[emphasized="true"] QTabBar::tab {
   background-color: {{ primary }};
