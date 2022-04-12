@@ -88,6 +88,21 @@ def test_is_matrix_triangular():
     assert not is_matrix_triangular(full)
 
 
+def test_is_diagonal():
+    assert is_diagonal(np.eye(3))
+    assert not is_diagonal(np.asarray([[0, 1, 0], [1, 0, 0], [0, 0, 1]]))
+
+    # affine with tiny off-diagonal elements will be considered diagonal
+    m = np.full((3, 3), 1e-10)
+    m[0, 0] = 1
+    m[1, 1] = 1
+    m[2, 2] = 1
+    assert is_diagonal(m)
+
+    # will be considered non-diagonal with stricter tolerance
+    assert not is_diagonal(m, tol=1e-12)
+
+
 @pytest.mark.parametrize('ndim', [2, 3, 4])
 @pytest.mark.parametrize('tol', [1e-8, 0.0])
 @pytest.mark.parametrize('off_diag_value', [0.0, 1e-12, 1e-3])
