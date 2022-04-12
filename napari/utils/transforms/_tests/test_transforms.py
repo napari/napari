@@ -35,8 +35,8 @@ def test_affine_is_diagonal(Transform):
 def test_affine_is_permutation(Transform):
     m = np.asarray([[0, 0, 3.5], [-2, 0, 0], [0, 1, 0]])
     transform = Transform(linear_matrix=m, name='st')
-    assert transform.is_permutation
-    assert transform.permutation == (2, 0, 1)
+    assert transform._is_permutation
+    assert transform._permutation == (2, 0, 1)
     rotate_orig = transform.rotate
 
     # test scale getter/setter
@@ -47,7 +47,7 @@ def test_affine_is_permutation(Transform):
         transform._linear_matrix,
         np.asarray([[0, 0, 4.5], [3, 0, 0], [0, 1.5, 0]]),
     )
-    assert transform.permutation == (2, 0, 1)
+    assert transform._permutation == (2, 0, 1)
 
     # test translate getter/setter
     npt.assert_allclose(transform.translate, (0, 0, 0))
@@ -57,7 +57,7 @@ def test_affine_is_permutation(Transform):
         transform.affine_matrix[:3, :],
         np.asarray([[0, 0, 4.5, 5.5], [3, 0, 0, 3], [0, 1.5, 0, 2.5]]),
     )
-    assert transform.permutation == (2, 0, 1)
+    assert transform._permutation == (2, 0, 1)
 
     # test shear getter/setter
     npt.assert_allclose(transform.shear, (0, 0, 0))
@@ -65,7 +65,7 @@ def test_affine_is_permutation(Transform):
     npt.assert_allclose(transform.shear, (0.1, 0.2, 0.3))
     transform.shear = (0, 0, 0)
     npt.assert_allclose(transform.shear, (0, 0, 0))
-    assert transform.permutation == (2, 0, 1)
+    assert transform._permutation == (2, 0, 1)
 
     # TODO: disallow setting rotate for permutation matrices?
     if False:
@@ -74,18 +74,18 @@ def test_affine_is_permutation(Transform):
             transform.rotate = 10.0
     else:
         transform.rotate = 10.0
-        assert not transform.is_permutation
-        assert transform.permutation is None
+        assert not transform._is_permutation
+        assert transform._permutation is None
 
         # Rotation back to original value will result in tiny non-zero
         # off-diagonal values.
         # is_diagonal assumes values <= 1e-8 are equivalent to 0.
         transform.rotate = rotate_orig
-        assert transform.is_permutation
-        assert transform.permutation == (2, 0, 1)
+        assert transform._is_permutation
+        assert transform._permutation == (2, 0, 1)
 
     diag_transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
-    assert diag_transform.is_permutation
+    assert diag_transform._is_permutation
 
 
 @pytest.mark.parametrize('Transform', [Affine])
@@ -114,7 +114,7 @@ def test_affine_permutation_set_slice(Transform):
 def test_composite_affine_is_permutation():
     # diagonal matrices are also considered a permutation
     diag_transform = CompositeAffine(scale=[2, 3], name='st')
-    assert diag_transform.is_permutation
+    assert diag_transform._is_permutation
 
 
 def test_diagonal_scale_setter():
@@ -128,7 +128,7 @@ def test_permutation_scale_setter():
     # diagonal matrices are also considered a permutation
     perm_transform = Affine(linear_matrix=[[0, 2], [3, 0]], name='st')
     perm_transform.scale = [1]
-    assert perm_transform.is_permutation and not perm_transform.is_diagonal
+    assert perm_transform._is_permutation and not perm_transform._is_diagonal
     npt.assert_allclose(perm_transform.scale, [1.0, 1.0])
 
 

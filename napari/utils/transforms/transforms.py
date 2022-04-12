@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Sequence
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 import toolz as tz
@@ -98,7 +98,7 @@ class Transform:
         )
 
     @property
-    def _is_diagonal(self):
+    def _is_diagonal(self) -> bool:
         """Indicate when a transform does not mix or permute dimensions.
 
         Can be overriden in subclasses to enable performance optimizations
@@ -106,8 +106,28 @@ class Transform:
         """
         return False
 
+    @property
+    def _is_permutation(self) -> bool:
+        """Indicate a transform corresponding to a permutation of dimensions.
+
+        Can be overriden in subclasses to enable performance optimizations
+        that are specific to this case.
+        """
+        return False
+
+    @property
+    def _permutation(self) -> Optional[Tuple[int]]:
+        """Indicate when a transform does not mix or permute dimensions.
+
+        When ``self._is_permutation == True`` this is a tuple of integers
+        indicating the order that the input coordinate axes appear in the
+        output. Returns `None` when ``self._is_permutation == False``.
+        """
+        return None
+
     def _clean_cache(self):
-        cached_properties = ('_is_diagonal',)
+        # clear any properties that may be cached by subclasses
+        cached_properties = ('_is_diagonal', '_is_permutation', '_permutation')
         [self.__dict__.pop(p, None) for p in cached_properties]
 
 
@@ -137,14 +157,14 @@ class TransformChain(EventedList, Transform):
         return TransformChain([tf.inverse for tf in self[::-1]])
 
     @property
-    def _is_diagonal(self):
+    def _is_diagonal(self) -> bool:
         if all(getattr(tf, '_is_diagonal', False) for tf in self):
             return True
         return getattr(self.simplified, '_is_diagonal', False)
 
     @property
-    def is_permutation(self):
-        return getattr(self.simplified, 'is_permutation', False)
+    def _is_permutation(self) -> bool:
+        return getattr(self.simplified, '_is_permutation', False)
 
     @property
     def simplified(self) -> 'Transform':
@@ -222,7 +242,6 @@ class ScaleTranslate(Transform):
 
         self.scale = np.array(scale)
         self.translate = np.array(translate)
-        self.is_permutation = True
 
     def __call__(self, coords):
         coords = np.asarray(coords)
@@ -304,6 +323,17 @@ class ScaleTranslate(Transform):
     def _is_diagonal(self):
         """Indicate that this transform does not mix or permute dimensions."""
         return True
+
+    @property
+    def _is_permutation(self) -> bool:
+        """Indicate that this transform permutes the order of dimensions."""
+        return True
+
+    @property
+    def _permutation(self) -> Optional[Tuple[int]]:
+        """Order of the input coordinate axes after the permutation."""
+        ndim = len(self.scale)
+        return tuple(range(ndim))
 
 
 class Affine(Transform):
@@ -440,9 +470,9 @@ class Affine(Transform):
         """Return the scale of the transform."""
         if self._is_diagonal:
             return np.diag(self._linear_matrix)
-        elif self.is_permutation:
+        elif self._is_permutation:
             m = self._linear_matrix
-            permutation = self.permutation
+            permutation = self._permutation
             return np.asarray([m[i, permutation[i]] for i in range(self.ndim)])
         else:
             return decompose_linear_matrix(
@@ -456,9 +486,9 @@ class Affine(Transform):
             scale = scale_to_vector(scale, ndim=self.ndim)
             for i in range(len(scale)):
                 self._linear_matrix[i, i] = scale[i]
-        elif self.is_permutation:
+        elif self._is_permutation:
             # assumes scale[i] is the scaling on axis i AFTER the transform
-            permutation = self.permutation
+            permutation = self._permutation
             scale = scale_to_vector(scale, ndim=self.ndim)
             for i in range(len(scale)):
                 self._linear_matrix[i, permutation[i]] = scale[i]
@@ -488,11 +518,6 @@ class Affine(Transform):
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotation of the transform."""
-        # if self.is_permutation and not self.is_diagonal:
-        #     raise ValueError(
-        #         "Rotation setter not supported on affines that permute "
-        #         "dimensions."
-        #     )
         _, scale, shear = decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
@@ -502,7 +527,7 @@ class Affine(Transform):
     @property
     def shear(self) -> np.array:
         """Return the shear of the transform."""
-        if self._is_diagonal or self.is_permutation:
+        if self._is_diagonal or self._is_permutation:
             return np.zeros((self.ndim,))
         return decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
@@ -589,7 +614,7 @@ class Affine(Transform):
             Resulting transform.
         """
         axes = list(axes)
-        if self._is_diagonal or self.is_permutation:
+        if self._is_diagonal or self._is_permutation:
             linear_matrix = np.diag(self.scale[axes])
         else:
             linear_matrix = self.linear_matrix[np.ix_(axes, axes)]
@@ -675,22 +700,21 @@ class Affine(Transform):
         return is_diagonal(self.linear_matrix, tol=1e-8)
 
     @cached_property
-    def is_permutation(self):
-        return is_permutation(
-            self.linear_matrix, tol=1e-8, exclude_diagonal=False
-        )
+    def _is_permutation(self) -> bool:
+        if self._is_diagonal:
+            return True
+        else:
+            return is_permutation(
+                self.linear_matrix, tol=1e-8, exclude_diagonal=False
+            )
 
     @cached_property
-    def permutation(self):
-        return get_permutation(self.linear_matrix, tol=1e-8)
-
-    def _clean_cache(self):
-        cached_properties = (
-            '_is_diagonal',
-            'is_permutation',
-            'permutation',
-        )
-        [self.__dict__.pop(p, None) for p in cached_properties]
+    def _permutation(self) -> Optional[Tuple[int]]:
+        if self._is_diagonal:
+            ndim = len(self._translate)
+            return tuple(range(ndim))
+        else:
+            return get_permutation(self.linear_matrix, tol=1e-8)
 
 
 class CompositeAffine(Affine):
@@ -843,13 +867,3 @@ class CompositeAffine(Affine):
 
     def _make_linear_matrix(self):
         return self._rotate @ self._shear @ np.diag(self._scale)
-
-    @cached_property
-    def is_permutation(self):
-        return self.is_diagonal
-
-    @cached_property
-    def permutation(self):
-        if self.is_diagonal:
-            return (0, 1, 2)
-        return None

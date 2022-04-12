@@ -19,8 +19,8 @@ def test_transform_chain(Transform):
     transform_c = transform_b.compose(transform_a)
 
     transform_chain = TransformChain([transform_a, transform_b])
-    assert transform_chain.is_diagonal
-    assert transform_chain.is_permutation
+    assert transform_chain._is_diagonal
+    assert transform_chain._is_permutation
 
     new_coord_1 = transform_c(coord)
     new_coord_2 = transform_chain(coord)
@@ -28,8 +28,8 @@ def test_transform_chain(Transform):
 
     if hasattr(transform_chain[1], 'rotate'):
         transform_chain[1].rotate = 15.0
-        assert not transform_chain.is_diagonal
-        assert not transform_chain.is_permutation
+        assert not transform_chain._is_diagonal
+        assert not transform_chain._is_permutation
 
 
 def test_transform_chain_diagonal_from_nondiagonal():
@@ -37,9 +37,9 @@ def test_transform_chain_diagonal_from_nondiagonal():
     transform_a = Affine(scale=[2, 3], rotate=15.0)
     transform_b = Affine(scale=[1.0, 1.0], rotate=-15.0)
     transform_chain = TransformChain([transform_a, transform_b])
-    assert not transform_a.is_diagonal
-    assert not transform_b.is_diagonal
-    assert transform_chain.is_diagonal
+    assert not transform_a._is_diagonal
+    assert not transform_b._is_diagonal
+    assert transform_chain._is_diagonal
 
 
 @pytest.mark.parametrize('Transform', transform_types)
