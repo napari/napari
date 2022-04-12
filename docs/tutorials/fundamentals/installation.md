@@ -29,6 +29,13 @@ If you want to contribute code back into napari, you should follow the [developm
 
 Prerequisites differ depending on how you want to install napari.
 
+### Prerequisites for installing napari as a bundled app
+This is the easiest way to install napari if you only wish to use it as a standalone GUI app.
+This installation method does not have any prerequisites. 
+
+[Click here](#install-as-a-bundled-app) to see instructions
+for installing the bundled app.
+
 ### Prerequisites for installing napari as a Python package 
 This installation method allows you to use napari from Python to programmatically 
 interact with the app. It is the best way to install napari and make full use of
@@ -42,20 +49,10 @@ You may also want:
 - an environment manager like [conda](https://docs.conda.io/en/latest/miniconda.html) or
 [venv](https://docs.python.org/3/library/venv.html) **(Highly recommended)**
 
-### Prerequisites for installing napari as a bundled app
-This is the easiest way to install napari if you only wish to use it as a standalone GUI app.
-This installation method does not have any prerequisites. 
+[Click here](#install-as-a-python-package) to see instructions
+for installing the napari as a python package.
 
-```{important}
-Note that the bundled app is still
-in active development, and may not be very stable. We strongly recommend 
-[installing as a Python package instead](#choose-which-distribution-to-install).
-```
-
-[Click here](#install-as-a-bundled-app) to see instructions
-for installing the bundled app.
-
-## Install as Python package (recommended)
+## Install as a Python package (recommended)
 
 Python package distributions of napari can be installed via `pip`, `conda-forge`, or from source.
 
@@ -169,119 +166,142 @@ you're not using.
 
 ## Install as a bundled app
 
-napari can also be installed as a bundled app on each of the major platforms,
-MacOS, Windows, and Linux with a simple one click download and installation
-process. You might want to install napari as a bundled app if you are unfamiliar
-with installing Python packages or if you were unable to get the installation
-process described above working. The bundled app version of napari is the same
-version that you can get through the above described processes, and can still be
-extended with napari plugins installed directly via the app.
+napari can be installed as a bundled app on MacOS, Windows, and Linux with a simple one click download and guided installation process. This installation method is best if you mainly want to use napari as a standalone GUI app. However, certain plugins may not be supported.
 
-To access the cross platform bundles you can visit our [release
-page](https://github.com/napari/napari/releases) and scroll to the release you
-are interested in and expand the `assets` tab to get a view that looks like
-this:
+```{note}
+If you want to use napari from Python to programmatically interact with the app, please follow the [Python package installation guide](installation_python.md). This installation method is recommended to take full advantage of napari’s features and to access additional plugins. 
+```
 
-![image: release bundle
-assets](../assets/tutorials/installation/bundle_assets.png)
+```{note} 
+If you want to contribute code back into napari, please follow the [development installation instructions in the contributing guide](https://napari.org/developers/contributing.html).
+```
 
-You can then download the appropriate zip file for your platform.
+To start, visit the [napari release page](https://github.com/napari/napari/releases) and find the release tagged with “latest.” Within the release details, expand the ‘assets’ tab and download the file that corresponds to your operating system, and for MacOS users, download the file that corresponds to your processor (This can be checked by going to Apple menu > About This Mac. For Intel processors, download the x86 file, and for ARM processors, download the arm64 file.). Below are the installation guides for each operating system.
+
+![image: expanded assets tab on the napari release page](.../docs/images/bundle_02.png)
+
+```{note} 
+If you are interested in an earlier version of napari, you may access those files by scrolling below the latest release on the [napari release page](https://github.com/napari/napari/releases). The instructions below will work for napari versions 0.4.15 and above.
+```
+
+## Prerequisites
+
+This installation method does not have any prerequisites. 
 
 ### Installing the MacOS bundle
 
-Once you have downloaded the MacOS bundle zip you will have a zip file with a
-name like `napari-0.3.7-macOS.zip`. After unzipping you will have a file with a
-name like `napari-0.3.7.dmg`. Double clicking the `dmg` will open a new finder
-window giving you the option to install napari into your `Applications` folder
-by dragging the `napari` icon onto the `Applications` icon.
+Once you have downloaded the appropriate MacOS package file, you will have a file with a name like ‘napari-0.4.15-macOS-x86_64.pkg’. Double click this file to open the installer.
 
-![image: MacOS install to
-Applications](../assets/tutorials/installation/bundle_install.png)
+![image: expanded assets tab on the napari release page](.../docs/images/bundle_04.png)
 
-After you drag the `napari` icon onto the `Applications` icon napari will be
-installed in your Applications folder and available for opening by double
-clicking on it.
+Click ‘Continue’ to open the Software License Agreement.
 
-![image: MacOS Applications folder with
-napari](../assets/tutorials/installation/bundle_applications_folder.png)
+![image: napari Software License Agreement verbage](.../docs/images/bundle_06.png)
 
-The first time you try and open napari you will get the "unverified developer
-warning" that appears below:
+After reading this agreement, click ‘Continue’ to be prompted to agree to the Software License Agreement in order to proceed with installation.
 
-![image: MacOS developer
-warning](../assets/tutorials/installation/bundle_dev_warning.png)
+![image: Prompt to agree to napari Software License Agreement](.../docs/images/bundle_07.png)
 
-Don't be alarmed, this is because the napari team has not yet obtained a
-developer certificate from Apple, but we will be doing this promptly. It is safe
-to click "Cancel". To get napari to open you must enter "Systems Preferences"
-and click the "Security & Privacy" icon, circled in red below:
+On the following page, you will be shown how much space the installation will use and can begin the standard installation by clicking ‘Install.’
 
-![image: MacOS Security & Privacy
-settings](../assets/tutorials/installation/bundle_security_privacy.png)
+![image: napari installer space requirement](.../docs/images/bundle_09.png)
 
-Once inside the "Security & Privacy" tab, you should see a message about napari
-being blocked and an "Open Anyway" button, circled in red below:
+However, if you would like to change the install location, you may specify a different location by clicking ‘Change Install Location…’ and following the subsequent prompts before starting the installation.
 
-![image: MacOS "Open Anyway"
-settings](../assets/tutorials/installation/bundle_open_anyway.png)
+The installation progress can be monitored on the following window.
 
-After clicking this button you'll get one final warning about napari not being
-verified, but now you'll have an "Open" button, as seen below:
+![image: napari installer progress monitoring page](.../docs/images/bundle_10.png)
 
-![image: MacOS open bundle dialog
-box](../assets/tutorials/installation/bundle_open.png)
+If installation is successful, you will see the window shown below and you may now close the installation wizard and move it to trash.
 
-After clicking "Open", the viewer should appear. Don't worry, you only have to
-go through this process once when you install a new bundle.
+![image: napari installer success page](.../docs/images/bundle_11.png)
+
+You can now get started using napari! Use Launchpad to open the application. 
+
+![image: napari icon in MacOS laundpad](.../docs/images/bundle_13.png)
+
+```{note} 
+The first time you open napari you must use the Launchpad, but subsequently, the napari application will show up in Spotlight search.
+```
+
+napari comes installed with sample images from scikit-image. Use the dropdown menu File > Open Sample > napari to open a sample image, or open one of your own images using File > Open or dragging and dropping your image onto the canvas. 
+
+Next check out our [tutorial on the viewer](https://napari.org/tutorials/fundamentals/viewer.html) or explore any of the pages under the [Usage tab](https://napari.org/usage.html).
 
 ### Installing the Windows bundle
 
-Once you have downloaded the Windows bundle zip you will have a zip file with a
-name like `napari-0.3.7-Windows.zip`. Unzip the bundle (you may like to use a
-tool like [7-zip](https://www.7-zip.org/) for this) and double click on msi
-file, eg: `napari-0.3.7.msi`
+Once you have downloaded the Windows executable file, you will have a file with a name like `napari-0.4.15-Windows-x86_64.exe`. Double click this file to open the napari Setup Wizard. Click "Next" to continue.
 
-The napari setup wizard will then open. Click "Next" to begin the installation.
+![image: napari Setup Wizard start page](.../docs/images/bundle_17.png)
 
-![image: Windows napari setup
-wizard](../assets/tutorials/installation/windows_bundle_installer_start.png)
+To continue, read and agree to the License Agreement by clicking ‘I Agree’.
+ 
+![image: napari License Agreement](.../docs/images/bundle_18.png)
 
-![image: Windows napari setup wizard in
-progress](../assets/tutorials/installation/windows_bundle_installer_progress.png)
+The recommended installation method is to install napari just for the current user. However, you may install for all users using administrator privileges.
 
-After the setup wizard has installed napari, click "Finish" to exit.
+![image: napari Setup Wizard user installation options](.../docs/images/bundle_19.png)
 
-![image: Windows napari setup wizard
-finished](../assets/tutorials/installation/windows_bundle_installer_finish.png)
+Next you will be shown how much space will be used by the installation and the default destination folder, which can be updated using the ‘Browse’ button. Click ‘Next’ to continue.
 
-When you launch the bundled napari app on Windows, first you'll see an empty
-command terminal appear (do not close this window - you can ignore it). The
-command terminal will be followed by a napari splash screen, and then the main
-napari user interface window will appear a few seconds later. Note that errors
-which might occur during your napari session will appear on the command terminal - 
-so if something is not working, it might pay to take a look at the terminal!
+![image: napari Setup Wizard installation location](.../docs/images/bundle_20.png)
 
-![image: Windows command terminal on napari
-launch](../assets/tutorials/installation/windows_bundle_command_terminal.png)
+On the next page, we recommend you check ‘Clear the package cache upon completion’ since this frees up memory in your machine’s cache without compromising napari functionality following installation. Click ‘Install’ to start the installation process.
 
-You can launch napari from the Windows start menu.
+![image: napari Setup Wizard clear package cache prompt](.../docs/images/bundle_21.png)
 
-![image: Windows launch napari from start
-menu](../assets/tutorials/installation/windows_launch_napari.png)
+Installation progress can be monitored on the following page.
 
-The very first time you launch napari the startup time will be fairly slow, but
-after that you will find that napari launches more quickly.
+![image: napari Setup Wizard installation progress bar](.../docs/images/bundle_22.png)
+
+Once installation is complete, you will see the page below. Click ‘Finish’ to close the installation wizard.
+
+![image: napari Setup Wizard installation completed](.../docs/images/bundle_24.png)
+
+You can now get started using napari! A shortcut to launch napari can be found in the Windows Start menu. 
+
+napari comes installed with sample images from scikit-image. Use the dropdown menu File>Open Sample>napari to open a sample image, or open one of your own images using File > Open or dragging and dropping your image onto the canvas. 
+
+Next check out our [tutorial on the viewer](https://napari.org/tutorials/fundamentals/viewer.html) or explore any of the pages under the [Usage tab](https://napari.org/usage.html).
 
 ### Installing the Linux bundle
 
-(Guide coming soon... In the meantime, if you try it and encounter issues, see
-below for how to contact us.)
+Once you have downloaded the Linux SH file, you will have a file with a name like `napari-0.4.15-Linux-x86_64.sh`. Double click this file to open the command in terminal or open terminal and run the command ‘bash [file name]’.
+
+![image: linux file command in terminal](.../docs/images/bundle_28.png)
+
+Press Enter to open the License Agreement.
+
+![image: napari License Agreement](.../docs/images/bundle_29.png)
+
+Read through the agreement shown below. You must agree to the terms by entering ‘yes’ to continue.
+
+![image: napari License Agreement verbage](.../docs/images/bundle_30.png)
+
+![image: napari License Agreement verbage continued](.../docs/images/bundle_31.png)
+
+Next you will be shown the default location for the installation. You may confirm this location by hitting ENTER or specify a different location by writing out the filetree, which will begin the installation process. 
+
+![image: napari License Agreement agreement prompt](.../docs/images/bundle_32.png)
+
+If installation is successful, you will see ‘installation finished.’ in terminal.
+
+![image: napari installation success notification](.../docs/images/bundle_33.png)
+
+You can now get started using napari! A shortcut to launch napari should appear on your desktop or you can search for napari with the desktop searchbar.
+
+![image: napari icon on desktop](.../docs/images/bundle_34.png)
+
+![image: napari shortcut in searchbar](.../docs/images/bundle_35.png)
+
+napari comes installed with sample images from scikit-image. Use the dropdown menu File>Open Sample>napari to open a sample image, or open one of your own images using File > Open or dragging and dropping your image onto the canvas. 
+
+Next check out our [tutorial on the viewer](https://napari.org/tutorials/fundamentals/viewer.html) or explore any of the pages under the [Usage tab](https://napari.org/usage.html).
+
 <!-- #endregion -->
 
 ## Next steps
 
-- to start learning how to use napari, checkout our [getting
-started](./getting_started) tutorial
 - if you are interested in
 contributing to napari please check our [contributing
 guidelines](../../developers/contributing.md)
