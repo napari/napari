@@ -19,7 +19,7 @@ from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 from .qt_tabs import QtTabsWidget
 
-icons_path = '/Users/pwadhwa/Documents/repos/napari/napari/resources/icons/'
+icons_path = "../../resources/icons/"
 
 
 class QtBasePointsControls(QtLayerControls):
