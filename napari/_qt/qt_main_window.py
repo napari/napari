@@ -42,9 +42,11 @@ from ..utils.misc import in_ipython, in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
+from ..utils.updates import check_updates
 from . import menus
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
+from .dialogs.qt_updates import UpdateDialog, UpdateStatusDialog
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet, register_napari_themes
 from .qt_viewer import QtViewer
@@ -80,6 +82,7 @@ class _QtMainWindow(QMainWindow):
         self._ev = None
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
+        self._update_on_quit = False
 
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -343,6 +346,10 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        if self._update_on_quit:
+            dlg = UpdateDialog(self, update=True)
+            dlg.exec()
+
         if self._ev and self._ev.isRunning():
             self._ev.quit()
 
@@ -383,6 +390,19 @@ class _QtMainWindow(QMainWindow):
     def show_notification(notification: Notification):
         """Show notification coming from a thread."""
         NapariQtNotification.show_notification(notification)
+
+    def check_updates(self):
+        """Check for napari available updates."""
+        update_info = check_updates()
+        self._update_version = "0.5.0"
+        if True:
+            dlg = UpdateDialog(self, version=self._update_version)
+        else:
+            dlg = UpdateStatusDialog(self, version=self._update_version)
+
+        dlg.exec_()
+        self._update_on_quit = dlg._update_on_quit
+        print(get_settings().updates.update_skip)
 
 
 class Window:

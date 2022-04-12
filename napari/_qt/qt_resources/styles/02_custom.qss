@@ -785,3 +785,12 @@ QtLayerList::indicator:unchecked {
 QtLayerList::indicator:checked {
   image: url(":/themes/{{ name }}/visibility.svg");
 }
+
+/* ------------ Update Dialog ------------ */
+QPushButton#primary {
+  background-color: {{ current }}
+}
+
+QPushButton:diabled {
+  background-color: {{ lighten(current, 20) }}
+}

@@ -1,4 +1,5 @@
 from enum import Enum
+
 from pydantic import Field
 
 from ..utils.events.evented_model import EventedModel
@@ -29,9 +30,18 @@ class UpdateSettings(EventedModel):
     update_napari_on: UpdateOn = Field(
         UpdateOn.closing,
         title=trans._("Update napari upon"),
-        description=trans._("Update napari upon.",),
+        description=trans._(
+            "Update napari upon.",
+        ),
+    )
+    update_skip = Field(
+        [],
+        title=trans._("Skip napari versions"),
+        description=trans._(
+            "Skip napari versions.",
+        ),
     )
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version']
+        preferences_exclude = ['schema_version', 'update_napari_skip']

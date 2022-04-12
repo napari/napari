@@ -100,6 +100,7 @@ class FileMenu(NapariMenu):
                 'text': trans._('Check for updates...'),
                 'slot': lambda: print(""),
                 'menuRole': QAction.ApplicationSpecificRole,
+                'slot': window._qt_window.check_updates,
             },
             {},
             {
