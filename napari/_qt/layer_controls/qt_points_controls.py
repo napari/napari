@@ -336,17 +336,17 @@ class QtBasePointsControls(QtLayerControls):
 class QtPointsControls(QtTabsWidget):
     def __init__(self, layer):
         super().__init__(layer)
-        baseWidget1 = QtBasePointsControls(layer)
+        widget1 = QtBasePointsControls(layer)
         # from .tabs_example2 import tabdemo
         from ..layer_controls.qt_transform_controls import QtTransformControls
 
-        wdg = QtTransformControls(layer)
+        widget2 = QtTransformControls(layer)
         self.tabdict = {
             'Points': {
-                'widget': baseWidget1,
+                'widget': widget1,
                 'icon': icons_path + 'new_points.svg',
             },
-            'Translate': {'widget': wdg, 'icon': icons_path + 'path.svg'},
+            'Translate': {'widget': widget2, 'icon': icons_path + 'path.svg'},
         }
 
         self.addTabs(self.tabdict)

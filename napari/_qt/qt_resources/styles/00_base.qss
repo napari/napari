@@ -613,6 +613,15 @@ QTabBar::tab {
   background: vgradient({{ lighten(foreground, 15) }} - {{ foreground }});
 }
 
+QtTransformControls {
+  background: {{ foreground }};
+}
+
+QtBasePointsControls {
+  background: {{ foreground }};
+}
+
+
 QTabWidget::tab-bar {
   left: 0px;
 }
