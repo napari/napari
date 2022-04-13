@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QComboBox, QFormLayout, QLabel, QWidget
+from qtpy.QtWidgets import QComboBox, QFormLayout, QFrame, QLabel
 
 from ...utils.translations import trans
 from ..widgets.qt_spinbox import QtSpinBox
@@ -31,7 +31,7 @@ class QtScaleControl(QtSpinBox):
         self.name = name
 
 
-class QtTransformControls(QWidget):
+class QtTransformControls(QFrame):
     def __init__(self, layer):
         super().__init__()
 

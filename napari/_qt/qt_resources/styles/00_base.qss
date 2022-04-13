@@ -595,17 +595,14 @@ QGroupBox::title {
 
 /* The tab widget frame */
 QTabWidget::pane {
-  border: 1px solid {{ darken(foreground, 10) }};
-  border-radius: 2px;
-}
-
-QWidget[emphasized="true"] QTabWidget::pane {
-  border: 1px solid {{ darken(primary, 10) }};
+  border: 0px solid transparent;
+  border-radius: 0px;
+  padding: 0px;
 }
 
 QTabBar::tab {
   background-color: {{ foreground }};
-  border: 1px solid {{ background }};
+  border: 0px solid {{ background }};
   border-bottom: 0px;
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
@@ -617,28 +614,23 @@ QtTransformControls {
   background: {{ foreground }};
 }
 
+
 QtBasePointsControls {
   background: {{ foreground }};
 }
-
 
 QTabWidget::tab-bar {
   left: 0px;
 }
 
-QWidget[emphasized="true"] QTabBar::tab {
-  background-color: {{ primary }};
-  border: 1px solid {{ foreground }};
-  background: vgradient({{ lighten(primary, 15) }} - {{ primary }});
-}
-
 QTabBar::tab:selected {
-  background: vgradient({{ lighten(highlight, 15) }} - {{ highlight }});
-}
+  background: {{ foreground }};
+        }
 
-QWidget[emphasized="true"] QTabBar::tab:selected {
-    background: vgradient({{ lighten(secondary, 15) }} - {{ secondary }});
-}
+QTabBar::tab:!selected {
+  background: {{ background }};
+ }
+
 
 /* ----------------- QLabel ------------------ */
 
