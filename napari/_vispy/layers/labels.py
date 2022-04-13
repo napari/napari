@@ -59,7 +59,7 @@ def _glsl_label_step(controls=None, colors=None, texture_map_data=None):
     return low_disc_plus_cmap
 
 
-class LabelColormap(VispyColormap):
+class LabelVispyColormap(VispyColormap):
     def __init__(self, colors, controls=None, seed=0.5):
         super().__init__(colors, controls, interpolation='zero')
         self.seed = seed
@@ -89,7 +89,7 @@ class VispyLabelsLayer(VispyImageLayer):
         # from napari.utils.colormaps.Colormap (or similar). If we use it
         # in our constructor, we have access to the texture data we need
         colormap = self.layer.colormap
-        self.node.cmap = LabelColormap(
+        self.node.cmap = LabelVispyColormap(
             colors=colormap.colors,
             controls=colormap.controls,
             seed=colormap.seed,

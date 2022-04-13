@@ -252,7 +252,7 @@ class Labels(_ImageBase):
         self._seed = seed
         self._background_label = 0
         self._num_colors = num_colors
-        self._random_colormap = label_colormap(self.num_colors)
+        self._random_colormap = label_colormap(self.num_colors, seed)
         self._all_vals = np.array([], dtype=float)
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False

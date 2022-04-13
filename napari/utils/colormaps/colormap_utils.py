@@ -344,7 +344,7 @@ def label_colormap(num_colors=256, seed=0.5):
     ----------
     num_colors : int, optional
         Number of unique colors to use. Default used if not given.
-    seed : float or array of float, length 3
+    seed : float, optional
         The seed for the random color generator.
 
     Returns
@@ -663,36 +663,3 @@ def display_name_to_name(display_name):
     return display_name_map.get(
         display_name, list(AVAILABLE_COLORMAPS.keys())[0]
     )
-
-
-# class LabelColormap(vispy.color.colormap.BaseColormap):
-#     def __init__(self, seed=0.5):
-#         self.seed = seed
-#         self.update_shader()
-
-#     def update_shader(self):
-#         self.glsl_map = self.glsl_map_base.replace('$seed', "%.3f" % self.seed)
-
-#     glsl_map_base = """
-#     vec4 low_discrepancy_color(float t) {
-
-#         float phi_mod = 0.6180339887498948482;  // phi - 1
-#         float value = 0.0;
-
-
-#         float r = 0.1 + 0.9 * fract(sin(13*t + t/$seed));
-#         float g = 0.1 + 0.9 * fract(tan(37*t + t/$seed));
-#         float b = 0.1 + 0.9 * fract(cos(17*t + t/$seed));
-#         return vec4(r, g, b, 1.0);
-#     }
-#     """
-
-#     def map(self, t):
-#         tp = low_discrepancy_image(t, seed=self.seed)
-#         # TODO: One should just call the shader directly using vispy.gloo()
-#         def bad_random(t):
-#             r = 0.1 + 0.9 * math.modf(math.sin(13*t + t/self.seed))
-#             g = 0.1 + 0.9 * math.modf(math.tan(37*t + t/self.seed))
-#             b = 0.1 + 0.9 * math.modf(math.cos(17*t + t/self.seed))
-#             return np.array([r, g, b, 1.0])
-#         return bad_random(t)
