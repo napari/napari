@@ -651,7 +651,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return image
 
     def _get_slice(self, data_point: np.ndarray) -> LayerSlice:
-        # print(f'{data_point}')
+        print(f'Image._get_slice({data_point})')
         indices = list(np.rint(data_point).astype(int))
         # Hack for 2D presentation
         indices[-1] = slice(None)

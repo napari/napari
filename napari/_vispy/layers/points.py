@@ -1,5 +1,7 @@
 import numpy as np
 
+from napari.layers.base.base import LayerSlice
+
 from ...settings import get_settings
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import disconnect_events
@@ -37,6 +39,10 @@ class VispyPointsLayer(VispyBaseLayer):
         )
 
         self._on_data_change()
+
+    def _set_slice(self, slice: LayerSlice) -> None:
+        print('VispyPointsLayer._set_slice')
+        self.node._subvisuals[0].set_data(slice.data[:, ::-1])
 
     def _on_data_change(self):
         if len(self.layer._indices_view) > 0:

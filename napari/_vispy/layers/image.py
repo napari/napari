@@ -85,7 +85,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _set_slice(self, slice: LayerSlice) -> None:
-        print('_set_slice')
+        print('VispyImageLayer._set_slice')
         self._set_node_data(self.node, slice.data)
 
     def _on_display_change(self, data=None):

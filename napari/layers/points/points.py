@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
+from napari.layers.base.base import LayerSlice
+
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import (
     get_color_namelist,
@@ -1653,6 +1655,20 @@ class Points(Layer):
             bounding_box=bounding_box,
         )
         return start_point, end_point
+
+    def _get_slice(self, data_point=None) -> LayerSlice:
+        print(f'Points._get_slice({data_point})')
+        # Hack for presenting last 2 dims of 3D points.
+        distances = np.abs(self.data[:, 0] - data_point[0])
+        # print(f'distances={distances}')
+        matches = distances <= 0.5
+        # print(f'matches={matches}')
+        slice_indices = np.where(matches)[0].astype(int)
+        # print(f'slice_indices={slice_indices}')
+        slice_data = self.data[slice_indices, :]
+        data = np.asarray(slice_data[:, 1:])
+        # print(f'data.shape={data.shape}')
+        return LayerSlice(data=data)
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
