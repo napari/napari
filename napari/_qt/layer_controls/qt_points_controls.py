@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import numpy as np
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import (
@@ -18,8 +21,6 @@ from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 from .qt_tabs import QtTabsWidget
-
-icons_path = "../../resources/icons/"
 
 
 class QtBasePointsControls(QtLayerControls):
@@ -331,6 +332,11 @@ class QtBasePointsControls(QtLayerControls):
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.text.events, self)
         super().close()
+
+
+icons_path = os.path.join(
+    Path(__file__).resolve().parent.parent.parent, "resources/icons/"
+)
 
 
 class QtPointsControls(QtTabsWidget):

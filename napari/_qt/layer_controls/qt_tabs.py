@@ -12,7 +12,6 @@ class QtTabsWidget(QTabWidget):
         for tab, value in tabdict.items():
             self.addTab(value['widget'], "")
             # get the right icon.
-            print(value['icon'])
             pm = QPixmap(value['icon'])
             pm = pm.scaled(20, 20)
             trans = QTransform()
