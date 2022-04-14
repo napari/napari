@@ -8,7 +8,7 @@ try:
     from lxml.html.clean import Cleaner
 
     lxml_unavailable = False
-except ImportError:
+except ModuleNotFoundError:
     lxml_unavailable = True
 
 __all__ = ['nbscreenshot']

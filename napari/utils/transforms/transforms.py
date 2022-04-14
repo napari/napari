@@ -326,7 +326,6 @@ class ScaleTranslate(Transform):
 
     @property
     def _is_permutation(self) -> bool:
-        """Indicate that this transform permutes the order of dimensions."""
         return True
 
     @property
