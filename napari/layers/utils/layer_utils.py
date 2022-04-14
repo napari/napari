@@ -649,8 +649,8 @@ def get_extent_world(data_extent, data_to_world, centered=False):
     extent_world : array, shape (2, D)
     """
     ndim = data_extent.shape[1]
-    if data_to_world.is_permutation and not data_to_world.is_diagonal:
-        permutation = data_to_world.permutation
+    if data_to_world._is_permutation and not data_to_world._is_diagonal:
+        permutation = data_to_world._permutation
         original_order = tuple(permutation.index(d) for d in range(ndim))
         data_extent = data_extent[:, original_order]
 

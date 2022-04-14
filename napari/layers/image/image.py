@@ -467,8 +467,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         shape = self.level_shapes[0]
         ndim = len(shape)
         data_to_world = self._data_to_world
-        if data_to_world.is_permutation and not data_to_world.is_diagonal:
-            permutation = data_to_world.permutation
+        if data_to_world._is_permutation and not data_to_world._is_diagonal:
+            permutation = data_to_world._permutation
             shape = tuple(shape[permutation[d]] for d in range(ndim))
         extent = np.zeros((2, ndim))
         extent[1, :] = shape
@@ -680,11 +680,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         the indices are returned unmodified.
         """
         data_to_world = self._data_to_world
-        if data_to_world.is_permutation:
+        if data_to_world._is_permutation:
             _dims = range(self.ndim)
-            permutation = data_to_world.permutation
+            permutation = data_to_world._permutation
             # faster equivalent of
-            # ``permutation = data_to_world.inverse.permutation``
+            # ``permutation = data_to_world.inverse._permutation``
             permutation = tuple(permutation.index(ax) for ax in _dims)
             return tuple(indices[permutation[ax]] for ax in _dims)
         return tuple(indices)

@@ -642,8 +642,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         For affines without permutation, it will be the same as _dims_order.
         """
-        if self._data_to_world.is_permutation:
-            permutation = self._data_to_world.permutation
+        if self._data_to_world._is_permutation:
+            permutation = self._data_to_world._permutation
             return [permutation[d] for d in self._dims_order]
         else:
             return self._dims_order
@@ -676,7 +676,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         displayed = self._data_dims_displayed
         # equivalent to: order = np.argsort(displayed)
         order = sorted(range(len(displayed)), key=lambda x: displayed[x])
-        if self._data_to_world.is_permutation:
+        if self._data_to_world._is_permutation:
             # keep permuted order in displayed, but relabel sequentially
             temp = list(displayed)
             for val, idx in zip(range(len(temp)), order):
@@ -777,7 +777,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         inv_transform = self._data_to_world.inverse
 
-        if (self.ndim > self._ndisplay) and not inv_transform.is_permutation:
+        if (self.ndim > self._ndisplay) and not inv_transform._is_permutation:
 
             # Subspace spanned by non displayed dimensions
             non_displayed_subspace = np.zeros(self.ndim)
@@ -1105,14 +1105,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                         ndim_layer=self.ndim,
                     )
                 position = self.world_to_data(position)
-                if self._data_to_world.is_permutation:
+                if self._data_to_world._is_permutation:
                     # At this point `position` is in data coordinate units.
                     # We now change the axis order back to the world space
                     # because both `dims_displayed` (and
                     # `self._slice.image.raw` as used in
                     # `get_ray_intersections`) correspond to axes ordered as in
                     # the world space, not the original data space.
-                    permutation = self._data_to_world.permutation
+                    permutation = self._data_to_world._permutation
                     position = tuple(position[idx] for idx in permutation)
 
             if (dims_displayed is not None) and (view_direction is not None):
