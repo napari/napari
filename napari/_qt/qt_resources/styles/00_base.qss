@@ -36,7 +36,7 @@ QWidget {
 }
 
 QWidget[emphasized="true"] {
-    background-color: {{ foreground }};
+    background-color: {{ background }};
 }
 
 QWidget[emphasized="true"] > QFrame {
