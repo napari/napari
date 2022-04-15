@@ -63,7 +63,7 @@ vectors_layer = viewer.add_vectors(vectors, edge_width=3)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python

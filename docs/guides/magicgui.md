@@ -48,6 +48,7 @@ def widget_demo(
 
 widget_demo.show()
 ```
+*Add caption here*
 
 For more information on the features and usage of `magicgui`, see the [magicgui
 documentation](https://napari.org/magicgui).  `magicgui` does not require
@@ -119,7 +120,6 @@ def my_widget(image: Image):
 viewer = napari.view_image(np.random.rand(64, 64), name="My Image")
 viewer.window.add_dock_widget(my_widget)
 ```
-
 *Note the widget at the bottom with "My Image" as the currently selected option*
 
 ```{code-cell} python
@@ -127,7 +127,7 @@ viewer.window.add_dock_widget(my_widget)
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ### Annotating as `Layer`
@@ -242,7 +242,7 @@ my_widget()  # "call the widget" to call the function.
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{note}
@@ -286,7 +286,7 @@ threshold()  # "call the widget" to call the function.
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ### Returning `napari.types.LayerDataTuple`
@@ -350,7 +350,7 @@ make_points()  # "call the widget" to call the function.
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ### Returning `List[napari.types.LayerDataTuple]`
@@ -405,7 +405,7 @@ make_points()
 from napari.utils import nbscreenshot
 
 viewer.window._qt_window.resize(750, 550)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ## Avoid imports with forward references
