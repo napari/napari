@@ -1,5 +1,7 @@
-from qtpy.QtGui import QPixmap, QTransform
+from qtpy.QtGui import QTransform
 from qtpy.QtWidgets import QLabel, QTabBar, QTabWidget
+
+from ..qt_resources import QColoredSVGIcon
 
 
 class QtTabsWidget(QTabWidget):
@@ -12,12 +14,12 @@ class QtTabsWidget(QTabWidget):
         for tab, value in tabdict.items():
             self.addTab(value['widget'], "")
             # get the right icon.
-            pm = QPixmap(value['icon'])
-            pm = pm.scaled(20, 20)
+            icon = QColoredSVGIcon.from_resources(value['icon'])
+            icon = icon.colored(color='#FFFFFF').pixmap(20, 20)
             trans = QTransform()
-            pm.transformed(trans.rotate(90))
+            icon.transformed(trans.rotate(90))
             label = QLabel()
-            label.setPixmap(pm)
+            label.setPixmap(icon)
 
             self.tabBar().setTabButton(cnt, QTabBar.LeftSide, label)
             cnt += 1

@@ -1,6 +1,3 @@
-import os
-from pathlib import Path
-
 import numpy as np
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import (
@@ -334,11 +331,6 @@ class QtBasePointsControls(QtLayerControls):
         super().close()
 
 
-icons_path = os.path.join(
-    Path(__file__).resolve().parent.parent.parent, "resources/icons/"
-)
-
-
 class QtPointsControls(QtTabsWidget):
     def __init__(self, layer):
         super().__init__(layer)
@@ -350,9 +342,9 @@ class QtPointsControls(QtTabsWidget):
         self.tabdict = {
             'Points': {
                 'widget': widget1,
-                'icon': icons_path + 'new_points.svg',
+                'icon': 'new_points',
             },
-            'Translate': {'widget': widget2, 'icon': icons_path + 'path.svg'},
+            'Translate': {'widget': widget2, 'icon': 'path'},
         }
 
         self.addTabs(self.tabdict)
