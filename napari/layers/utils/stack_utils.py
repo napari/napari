@@ -80,7 +80,7 @@ def split_channels(
         kwargs['multiscale'] = multiscale
 
     n_channels = (data[0] if multiscale else data).shape[channel_axis]
-
+    # Use original blending mode or for multichannel use translucent for first channel then additive
     kwargs['blending'] = kwargs.get('blending') or ['translucent'] + [
         'additive'
     ] * (n_channels - 1)
