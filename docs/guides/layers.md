@@ -69,7 +69,7 @@ colors.
 
 For example:
 
-![image: blending](./images/blending.png)
+![napari viewer with an image of a cell. Layer controls are open in the left sidebar with the blending set to additive.](./images/blending.png)
 
 ## 3D rendering of images
 
@@ -79,7 +79,7 @@ or 3 less than the total number of dimensions of the layer, allowing you to
 browse volumetric timeseries data and other high dimensional data. See for
 example these cells undergoing mitosis in this volumetric timeseries:
 
-![image: mitosis](./images/mitosis.gif)
+![napari viewer with an image of a cell undergoing mitosis. The scroll bar below the canvas controls the timeseries, allowing different stages of mitosis to be visible.](./images/mitosis.gif)
 
 ```{note}
 Switching to 3D mode for a very large data set could trigger computation that
@@ -105,7 +105,7 @@ distances from the camera according to a maximum intensity projection to create
 the 2D image that is then displayed on the screen. This mode works well for many
 biological images such as these cells growing in culture:
 
-![image: rendering](./images/rendering.png)
+![napari viewer with an image of cells in a culture. Layer controls are open in the left sidebar and rendering set to mip.](./images/rendering.png)
 
 When viewing 2D slices the rendering mode has no effect.
 
@@ -134,7 +134,7 @@ napari.view_image(retina, name='retina', scale=[1,10,1,1])
 viewer.layers['retina'].scale = [1,10,1,1]
 ```
 
-![image](images/scaling.gif)
+![napari viewer with an image where all layers are scaled equally; when rotated, the image appears flat. By using console below the canvas and applying a scale factor to one of the dimensions, the image's volume becomes apparent.](images/scaling.gif)
 
 
 ## Translating layers
