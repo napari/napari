@@ -69,7 +69,7 @@ colors.
 
 For example:
 
-![napari viewer with an image of a cell. Layer controls are open in left sidebar and blending set to additive.](./images/blending.png)
+![napari viewer with an image of a cell. Layer controls are open in the left sidebar with the blending set to additive.](./images/blending.png)
 
 ## 3D rendering of images
 
@@ -105,7 +105,7 @@ distances from the camera according to a maximum intensity projection to create
 the 2D image that is then displayed on the screen. This mode works well for many
 biological images such as these cells growing in culture:
 
-![napari viewer with an image of cells in a culture. Layer controls are open in left sidebar and rendering set to mip.](./images/rendering.png)
+![napari viewer with an image of cells in a culture. Layer controls are open in the left sidebar and rendering set to mip.](./images/rendering.png)
 
 When viewing 2D slices the rendering mode has no effect.
 
