@@ -92,7 +92,7 @@ class QtPointsControls(QtLayerControls):
         sld = QSlider(Qt.Horizontal)
         sld.setToolTip(
             trans._(
-                "Change the size of currently selected points and the future ones."
+                "Change the size of the currently selected points and the future ones."
             )
         )
         sld.setFocusPolicy(Qt.NoFocus)
