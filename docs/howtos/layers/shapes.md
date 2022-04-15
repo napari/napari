@@ -67,7 +67,7 @@ shapes_layer = viewer.add_shapes(polygons, shape_type='polygon', edge_width=5,
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -201,7 +201,7 @@ shapes_layer.add(
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -247,7 +247,7 @@ shapes_layer.add_ellipses(
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -282,7 +282,7 @@ or 3 less than the total number of dimensions of the layer. See for example the
 [`examples/nD_shapes.py`](https://github.com/napari/napari/blob/main/examples/nD_shapes.py)
 to see shapes in both 2D and 3D:
 
-![image: nD shapes](../../images/nD_shapes.gif)
+![image: nD shapes] (../../images/nD_shapes.gif)
 
 Note though that when entering 3D rendering mode the shape editing tools are all
 disabled. Those options are only supported when viewing a layer using 2D
