@@ -833,3 +833,47 @@ def test_rendering_init():
     layer = Image(data, rendering='iso')
 
     assert layer.rendering == ImageRendering.ISO.value
+
+
+@pytest.mark.parametrize('rgb', [False, True])
+def test_image_extent_with_permutation(rgb):
+
+    # permutation matrix with non-uniform scale and translation
+    affine_matrix = np.asarray(
+        [[0, 1, 0, 5.5], [0, 0, 2, -10], [3, 0, 0, 13.5], [0, 0, 0, 1]]
+    )
+
+    # create Image layer containing data with non-isotropic shape
+    shape = (14, 24, 32)
+    image_shape = shape + (3,) if rgb else shape
+    image = np.ones(image_shape, dtype=np.uint8)
+    layer = Image(image, affine=affine_matrix)
+
+    # data object has the original shape
+    assert layer.data.shape == image_shape
+
+    # layer._data_to_world has expected properties
+    permutation = layer._data_to_world._permutation
+    scale = layer._data_to_world.scale
+    translate = layer._data_to_world.translate
+    assert permutation == (1, 2, 0)
+    np.testing.assert_array_equal(translate, (5.5, -10, 13.5))
+    np.testing.assert_array_equal(scale, (1, 2, 3))
+    np.testing.assert_array_equal(layer.extent.step, scale)
+
+    # layer.extent.data is in the axis order of display space
+    # (i.e. after the permutation)
+    permuted_shape = [shape[i] for i in layer._data_to_world._permutation]
+    np.testing.assert_array_equal(layer.extent.data[1], permuted_shape)
+
+    # verify expected layer.extent.world
+    expected_start = np.asarray(
+        [t - spacing / 2.0 for t, spacing in zip(translate, scale)]
+    )
+    expected_size = np.asarray(
+        [size * spacing for size, spacing in zip(permuted_shape, scale)]
+    )
+    np.testing.assert_array_equal(layer.extent.world[0], expected_start)
+    np.testing.assert_array_equal(
+        layer.extent.world[1], expected_start + expected_size
+    )
