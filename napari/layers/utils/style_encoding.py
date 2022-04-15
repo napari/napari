@@ -247,7 +247,7 @@ class _DerivedStyleEncoding(
 def _get_style_values(
     encoding: StyleEncoding[StyleValue, StyleArray], indices: IndicesType
 ):
-    """Indexes cached style values or broadcasts them length of the given indices."""
+    """Returns a scalar style value or indexes non-scalar style values."""
     values = encoding._values
     return values if values.ndim == 0 else values[indices]
 

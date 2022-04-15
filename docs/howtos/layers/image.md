@@ -40,7 +40,7 @@ viewer = napari.view_image(cells, colormap='magma')
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -159,7 +159,7 @@ viewer = napari.view_image(data.astronaut(), rgb=True)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="napari viewer with the left sidebar layer controls and an image of astronaut Eileen Collins. In the layer controls, the colormap is fixed to RGB")
 ```
 
 ```{code-cell} python
@@ -223,7 +223,7 @@ viewer = napari.view_image(image, colormap=('diverging', cmap))
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 Note in this example how we passed the colormap keyword argument as a tuple
@@ -266,7 +266,7 @@ viewer.layers['moon'].contrast_limits=(100, 175)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
