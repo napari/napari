@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from napari.components import ViewerModel
+from napari.utils.transforms.transform_utils import get_permutation
 
 
 def test_translated_images():
@@ -73,6 +74,28 @@ def test_both_scaled_and_translated_images():
     assert viewer.dims.range[1] == (0, 10, 1)
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == (20, 10, 10)
+    for i in range(viewer.dims.nsteps[0]):
+        viewer.dims.set_current_step(0, i)
+        assert viewer.dims.current_step[0] == i
+
+
+def test_scaled_translated_and_permuted_images():
+    """Test both scaled and translated images."""
+    viewer = ViewerModel()
+
+    # permutation matrix with non-uniform scale and translation
+    affine_matrix = np.asarray(
+        [[0, 1, 0, 5.5], [0, 0, 2, -10], [3, 0, 0, 13.5], [0, 0, 0, 1]]
+    )
+    shape = (14, 24, 32)
+    data = np.ones(shape, dtype=np.uint8)
+    viewer.add_image(data, affine=affine_matrix)
+    assert viewer.dims.range[0] == (5.5, 29.5, 1.0)
+    assert viewer.dims.range[1] == (-10.0, 54.0, 2.0)
+    assert viewer.dims.range[2] == (13.5, 55.5, 3.0)
+    permutation = get_permutation(affine_matrix[:-1, :-1])
+    permuted_shape = tuple(shape[i] for i in permutation)
+    assert viewer.dims.nsteps == permuted_shape
     for i in range(viewer.dims.nsteps[0]):
         viewer.dims.set_current_step(0, i)
         assert viewer.dims.current_step[0] == i
