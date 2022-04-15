@@ -1,8 +1,6 @@
 # How to install napari as a bundled app
 
-```{note}
-napari can be installed as a bundled app on MacOS, Windows, and Linux with a simple one click download and guided installation process. This installation method is best if you mainly want to use napari as a standalone GUI app. However, certain plugins may not be supported.
-```
+napari can be installed as a bundled app on [MacOS](#how-to-install-the-macos-bundle), [Windows](#how-to-install-the-windows-bundle), and [Linux](#how-to-install-the-linux-bundle) with a simple one click download and guided installation process. This installation method is best if you mainly want to use napari as a standalone GUI app. However, certain plugins may not be supported.
 
 ```{note}
 If you want to use napari from Python to programmatically interact with the app, please follow the [Python package installation guide](installation_python.md). This installation method is recommended to take full advantage of napari’s features and to access additional plugins. 
@@ -24,7 +22,7 @@ If you are interested in an earlier version of napari, you may access those file
 
 This installation method does not have any prerequisites. 
 
-### Installing the MacOS bundle
+### How to Install the MacOS bundle
 
 Once you have downloaded the appropriate MacOS package file, you will have a file with a name like ‘napari-0.4.15-macOS-x86_64.pkg’. Double click this file to open the installer.
 
@@ -57,14 +55,14 @@ You can now get started using napari! Use Launchpad to open the application.
 ![image: napari icon in MacOS laundpad](.../docs/images/bundle_13.png)
 
 ```{note} 
-The first time you open napari you must use the Launchpad, but subsequently, the napari application will show up in Spotlight search.
+The first time you open napari you must use the Launchpad, but subsequently, the napari application should show up in Spotlight search.
 ```
 
 napari comes installed with sample images from scikit-image. Use the dropdown menu File > Open Sample > napari to open a sample image, or open one of your own images using File > Open or dragging and dropping your image onto the canvas. 
 
 Next check out our [tutorial on the viewer](https://napari.org/tutorials/fundamentals/viewer.html) or explore any of the pages under the [Usage tab](https://napari.org/usage.html).
 
-### Installing the Windows bundle
+### How to Install the Windows bundle
 
 Once you have downloaded the Windows executable file, you will have a file with a name like `napari-0.4.15-Windows-x86_64.exe`. Double click this file to open the napari Setup Wizard. Click "Next" to continue.
 
@@ -74,7 +72,7 @@ To continue, read and agree to the License Agreement by clicking ‘I Agree’.
  
 ![image: napari License Agreement](.../docs/images/bundle_18.png)
 
-The recommended installation method is to install napari just for the current user. However, you may install for all users using administrator privileges.
+The recommended installation method is to install napari just for the current user. 
 
 ![image: napari Setup Wizard user installation options](.../docs/images/bundle_19.png)
 
@@ -82,11 +80,7 @@ Next you will be shown how much space will be used by the installation and the d
 
 ![image: napari Setup Wizard installation location](.../docs/images/bundle_20.png)
 
-On the next page, we recommend you check ‘Clear the package cache upon completion’ since this frees up memory in your machine’s cache without compromising napari functionality following installation. Click ‘Install’ to start the installation process.
-
-![image: napari Setup Wizard clear package cache prompt](.../docs/images/bundle_21.png)
-
-Installation progress can be monitored on the following page.
+On the next page, click ‘Install’ to start the installation process. Installation progress can be monitored on the following page.
 
 ![image: napari Setup Wizard installation progress bar](.../docs/images/bundle_22.png)
 
@@ -100,7 +94,7 @@ napari comes installed with sample images from scikit-image. Use the dropdown me
 
 Next check out our [tutorial on the viewer](https://napari.org/tutorials/fundamentals/viewer.html) or explore any of the pages under the [Usage tab](https://napari.org/usage.html).
 
-### Installing the Linux bundle
+### How to Install the Linux bundle
 
 Once you have downloaded the Linux SH file, you will have a file with a name like `napari-0.4.15-Linux-x86_64.sh`. Double click this file to open the command in terminal or open terminal and run the command ‘bash [file name]’.
 
