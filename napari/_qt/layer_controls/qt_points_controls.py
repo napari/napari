@@ -90,6 +90,11 @@ class QtPointsControls(QtLayerControls):
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Horizontal)
+        sld.setToolTip(
+            trans._(
+                "Change the size of currently selected points and the future ones."
+            )
+        )
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(1)
         sld.setMaximum(100)
