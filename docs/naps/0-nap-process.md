@@ -172,8 +172,8 @@ into the main source code repository, the status will be changed to
 `Final`.
 
 To allow gathering of additional design and interface feedback before
-committing to long term stability for a language feature or standard
-library API, a NAP may also be marked as "Provisional". This is short for
+committing to long term stability for a feature or
+API, a NAP may also be marked as "Provisional". This is short for
 "Provisionally Accepted", and indicates that the proposal has been accepted
 for inclusion in the reference implementation, but additional user feedback
 is needed before the full design can be considered "Final". Unlike regular
