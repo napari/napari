@@ -195,10 +195,11 @@ fact. The `Withdrawn` status is similar---it means that the NAP author
 themselves has decided that the NAP is actually a bad idea, or has
 accepted that a competing proposal is a better alternative.
 
-When a NAP is `Accepted`, `Rejected`, or `Withdrawn`, the NAP should be
-updated accordingly. In addition to updating the status field, at the very
-least the `Resolution` header should be added with a link to the relevant
-post on the discussion forum.
+When a NAP is `Accepted`, `Deferred`, `Rejected`, or `Withdrawn`, the NAP
+should be updated accordingly. In all cases except `Deferred`, the `Resolution`
+header should also be added with a link to the relevant post on the discussion
+forum. Additional links and information may be added to the Discussion section
+of the NAP.
 
 NAPs can also be `Superseded` by a different NAP, rendering the
 original obsolete. The `Replaced-By` and `Replaces` headers
