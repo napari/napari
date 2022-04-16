@@ -42,7 +42,7 @@ examples of prior and relevant art.
 This section lists the major steps required to implement the NAP. Where
 possible, it should be noted where one step is dependent on another, and which
 steps may be optionally omitted. Where it makes sense, each step should
-include a link related pull requests as the implementation progresses.
+include a link to related pull requests as the implementation progresses.
 
 Any pull requests or development branches containing work on this NAP
 should be linked to from here. (A NAP does not need to be implemented in a
@@ -50,8 +50,9 @@ single pull request if it makes sense to implement it in discrete phases).
 
 ## Backward Compatibility
 
-This section describes the ways in which the NAP breaks backward
-compatibility.
+This section describes the ways in which the NAP affects backward
+compatibility, including both breakages and decisions that better support
+backward compatibility.
 
 ## Future Work
 
