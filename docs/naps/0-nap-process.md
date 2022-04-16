@@ -258,7 +258,8 @@ proposed for acceptance again later once the objections are resolved.
 
 In unusual cases, when no consensus can be reached between core developers,
 the [napari Steering Council] may be asked to decide whether a
-controversial NAP is `Accepted`.
+controversial NAP is accepted, according to our
+{doc}`governance <napari-governance>`.
 
 ### Maintenance
 
