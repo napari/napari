@@ -4,7 +4,7 @@ Created: \<date created on, in yyyy-mm-dd format>
 Resolution: \<url> (required for Accepted | Rejected | Withdrawn)
 Resolved: \<date resolved, in yyyy-mm-dd format>
 Status: |-
-  \<Draft | Active | Accepted | Deferred | Rejected | Withdrawn |
+  \<Draft | Provisional | Active | Accepted | Deferred | Rejected | Withdrawn |
   Final | Superseded>
 Type: \<Standards Track | Process>
 Version effective: \<version-number> (for accepted NAPs)
