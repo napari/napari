@@ -323,6 +323,11 @@ on a separate line.
 [^id4]: The URL for viewing NAPs on the web is
     <https://napari.org/naps/>
 
+## Acknowledgements
+
+This process was based on existing process from the scikit-image (SKIPs), NumPy
+(NEPs), and Python (PEPs) projects.
+
 ## Copyright
 
 This document has been placed in the public domain.
