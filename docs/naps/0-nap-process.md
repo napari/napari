@@ -72,8 +72,8 @@ into a decision. Core developers may at their discretion then call for a NAP to
 summarize the discussion to date.
 
 In addition to the above situation, napari is the product of many
-historical decisions that were *not* explained by a NAP. In situations
-where community members might be confused about parts of napari's design,
+historical decisions that were *not* explained by a NAP. In some situations,
+community members might be confused about parts of napari's design,
 and whether alternate designs were considered and rejected, or simply not
 considered. It might then be useful to write a retrospective informational
 NAP to explain that aspect of the project.
