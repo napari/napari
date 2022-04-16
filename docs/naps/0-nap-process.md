@@ -105,7 +105,7 @@ There are three kinds of NAPs:
    library itself. They may propose an implementation, but not to
    napari's codebase; they require community consensus. Examples include
    procedures, guidelines, changes to the decision-making process, and
-   changes to the tools or environment used in scikit-image development.
+   changes to the tools or environment used in napari development.
    Any meta-NAP is also considered a Process NAP.
 
 ## NAP Workflow
