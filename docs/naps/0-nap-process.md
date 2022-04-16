@@ -85,7 +85,7 @@ There are three kinds of NAPs:
 1. A **Standards Track** NAP describes a new feature or implementation
    for napari.
 2. An **Informational** NAP describes a napari design issue, or provides
-   general guidelines or information to the Python community, but does not
+   general guidelines or information to the napari community, but does not
    propose a new feature. Informational NAPs do not necessarily represent a
    napari community consensus or recommendation, so users and
    implementers are free to ignore Informational NAPs.
