@@ -210,10 +210,10 @@ meant to be completed, e.g. NAP 0 (this NAP).
 
 ### How a NAP becomes Accepted
 
-A NAP is `Accepted` by consensus of all interested contributors. We need a
-concrete way to tell whether consensus has been reached. When you think a
-NAP is ready to accept, start a topic on the Zulip naps channel with a
-subject like:
+Generally, a NAP is `Accepted` by consensus of all interested contributors. We
+therefore need a concrete way to tell whether consensus has been reached. When
+you think a NAP is ready to be accepted, start a topic on the Zulip naps
+channel with a subject like:
 
 > Proposal to accept NAP #\<number>: \<title>
 
