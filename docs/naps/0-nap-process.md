@@ -247,10 +247,10 @@ opportunities to compromise.
 
 If the final comment period passes without any substantive objections,
 then the NAP can officially be marked `Accepted`. You should send a
-followup post notifying the thread (celebratory emoji optional but
+follow-up post notifying the thread (celebratory emoji optional but
 encouraged 🎉✨), and then update the NAP by setting its `:Status:`
 to `Accepted`, and its `:Resolution:` header to a link to your
-followup post.
+follow-up post.
 
 If there *are* substantive objections, then the NAP remains in
 `Draft` state, discussion continues as normal, and it can be
