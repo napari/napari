@@ -52,7 +52,9 @@ In some cases, the authors of external software or APIs may plan to make a
 change that affects the napari community, and may want the feedback of the
 napari developers and broader community. They may then choose to create a NAP
 as a way to document the plan, solicit feedback, and record the feedback and
-any final decisions.
+any final decisions. In general, the napari developers encourage and appreciate
+such engagement with the community as a way to build consensus and drive the
+ecosystem forward, together.
 
 ### When is a NAP warranted?
 
