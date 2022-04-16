@@ -287,10 +287,10 @@ optional.  All other headers are required.
 
 ```
   :Author: <list of authors' real names and optionally, email addresses>
-  :Status: <Draft | Active | Accepted | Deferred | Rejected |
+  :Status: <Draft | Provisional | Active | Accepted | Deferred | Rejected |
            Withdrawn | Final | Superseded>
   :Type: <Standards Track | Process>
-  :Created: <date created on, in dd-mmm-yyyy format>
+  :Created: <date created on, in yyyy-mm-dd format>
 * :Requires: <nap numbers>
 * :napari-Version: <version number>
 * :Replaces: <nap number>
