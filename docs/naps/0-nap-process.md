@@ -15,9 +15,9 @@ Type: Process
 
 NAP stands for Napari Advancement Proposal. A NAP is a design document
 providing information to the community, or describing a new feature for
-napari or its processes or environment. The NAP should provide a rationale
-for the proposed change as well as a concise technical specification, if
-applicable.
+napari, its processes, or its environment. (See "Scope of NAPs", below.) The
+NAP should provide a rationale for the proposed change as well as a concise
+technical specification, if applicable.
 
 We intend NAPs to be the primary mechanisms for proposing major new
 features, for collecting community input on an issue, and for documenting
@@ -28,6 +28,31 @@ dissenting opinions.
 Because the NAPs are maintained as text files in a versioned repository,
 their revision history is the historical record of the feature proposal
 [^id3].
+
+### Scope of NAPs
+
+The napari project has grown in scope beyond just the software living in the
+github.com/napari/napari repository. It includes several other software
+packages such as npe2 (napari plugin engine 2), superqt, and magicgui, tools
+for the community such as the cookiecutter napari plugin, a webpage, and a chat
+forum, among others.
+
+Additionally, napari sits at the center of a much broader community of users,
+plugin developers, educators, and downstream or helper libraries.
+
+The scope of NAPs is not strictly defined. Certainly, any controversial
+decisions about code changes to the main napari software should be documented
+in a NAP. (See "When is a NAP warranted?", below.) Changes to related libraries
+in the napari organization may or may not need a NAP, depending on how much the
+change would impact the main napari software. Changes to upstream dependencies
+outside of the napari organization, such as the napari-hub, fall under the
+governance of their respective organizations.
+
+In some cases, the authors of external software or APIs may plan to make a
+change that affects the napari community, and may want the feedback of the
+napari developers and broader community. They may then choose to create a NAP
+as a way to document the plan, solicit feedback, and record the feedback and
+any final decisions.
 
 ### When is a NAP warranted?
 
