@@ -88,7 +88,15 @@ There are three kinds of NAPs:
    general guidelines or information to the napari community, but does not
    propose a new feature. Informational NAPs do not necessarily represent a
    napari community consensus or recommendation, so users and
-   implementers are free to ignore Informational NAPs.
+   implementers are free to ignore Informational NAPs. They may however be used
+   to build consensus around conventions or practices. As an example,
+   [PEP-257](https://peps.python.org/pep-0257) is an informational PEP
+   describing formatting and grammar conventions for docstrings. It specifies
+   that the first line of docstrings should be a complete one-line summary of
+   the functionality of the function or class. Because the Python standard
+   library and many other packages follow this PEP, Jupyter built the
+   functionality of pressing Shift-TAB to display just one line of the
+   docstring of the item under the cursor.
 3. A **Process** NAP describes a process surrounding napari, or
    proposes a change to (or an event in) a process. Process NAPs are
    like Standards Track NAPs but apply to areas other than the napari
