@@ -127,8 +127,9 @@ way to do this.
 The proposal should be submitted as a draft NAP via a [GitHub pull
 request][github pull request] to the `docs/source/naps` directory with the
 name `nap-<n>-<short-title>.md` where `<n>` is an appropriately assigned
-number and `<short-title>` is a one or two word title for the idea (e.g.,
-`nap-35-lazy-slicing.md`). The draft must use the {ref}`nap_template` file.
+number (typically sequential) and `<short-title>` is a one or two word title
+for the idea (e.g., `nap-35-lazy-slicing.md`). The draft must use the
+{ref}`nap_template` file.
 
 Once the PR is in place, the NAP should be announced on various channels
 for discussion, including the [#naps channel on Zulip]() and, if the NAP
