@@ -146,7 +146,7 @@ Standards Track NAPs consist of two parts, a design document and a
 reference implementation. It is generally recommended that at least a
 prototype implementation be co-developed with the NAP, as ideas that sound
 good in principle sometimes turn out to be impractical. Often it makes
-sense for the prototype implementation to be made available as PR to the
+sense for the prototype implementation to be made available as a PR to the
 napari repo, as long as it is properly marked as WIP (work in progress).
 
 ### Review and Resolution
