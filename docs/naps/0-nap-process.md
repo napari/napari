@@ -104,7 +104,8 @@ There are three kinds of NAPs:
    like Standards Track NAPs but apply to areas other than the napari
    library itself. They may propose an implementation, but not to
    napari's codebase; they require community consensus. Examples include
-   procedures, guidelines, changes to the decision-making process, and
+   procedures, guidelines, changes to the
+   {doc}`decision-making process <napari-governance>`, and
    changes to the tools or environment used in napari development.
    Any meta-NAP is also considered a Process NAP.
 
