@@ -179,7 +179,7 @@ def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
 
 def _get_feature_row(features: Any, index: int) -> dict[str, Any]:
     """Returns one row of the features table as a dictionary."""
-    return {name: values[index] for name, values in features.items()}
+    return {name: values.iloc[index] for name, values in features.items()}
 
 
 def _is_format_string(string: str) -> bool:
