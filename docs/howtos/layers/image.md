@@ -84,7 +84,7 @@ napari to seamlessly browse enormous datasets that are loaded in the right way.
 For example, here we are browsing over 100GB of lattice lightsheet data stored
 in a zarr file:
 
-![image: lattice light sheet microscopy](../../images/LLSM.gif)
+![image: lattice light sheet microscopy](../../images/LLSM.webm)
 
 ## Multiscale images
 
@@ -101,7 +101,7 @@ viewed in 2D or incredibly large 3D images when viewed in 3D. For example this
 easily browsed as at each moment in time we only load the level of the
 multiscale image and the part of the image that needs to be displayed:
 
-![image: pathology](../../images/pathology.gif)
+![image: pathology](../../images/pathology.webm)
 
 This example had precomputed multiscale images stored in a zarr file, which is
 best for performance. If, however you don't have a precomputed multiscale image
