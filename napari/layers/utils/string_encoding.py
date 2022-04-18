@@ -1,5 +1,5 @@
 from string import Formatter
-from typing import Any, Sequence, Union
+from typing import Any, Dict, Sequence, Union
 
 import numpy as np
 from pydantic import parse_obj_as
@@ -177,7 +177,7 @@ def validate_string_encoding(value: StringEncodingArgument) -> StringEncoding:
     )
 
 
-def _get_feature_row(features: Any, index: int) -> dict[str, Any]:
+def _get_feature_row(features: Any, index: int) -> Dict[str, Any]:
     """Returns one row of the features table as a dictionary."""
     return {name: values.iloc[index] for name, values in features.items()}
 
