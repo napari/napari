@@ -4,12 +4,11 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Literal, List, Tuple, Union, Dict
+from typing import Dict, List, Literal, Tuple, Union
 from urllib import request
 
 from napari.plugins.pypi import get_package_versions
 from napari.utils.misc import parse_version, running_as_constructor_app
-
 
 InstallerTypes = Literal['pip', 'conda']
 LETTERS_PATTERN = re.compile(r'[a-zA-Z]')
@@ -23,7 +22,9 @@ def _get_napari_pypi_versions() -> List[str]:
 def _get_napari_conda_versions():
     """Get the versions of the napari conda package."""
     data = {}
-    with request.urlopen('https://api.anaconda.org/package/conda-forge/napari') as response:
+    with request.urlopen(
+        'https://api.anaconda.org/package/conda-forge/napari'
+    ) as response:
         try:
             data = json.loads(response.read().decode())
         except Exception:
@@ -38,7 +39,11 @@ def _get_installed_versions() -> List[str]:
     envs_folder = path.parent
     if envs_folder.parts[-1] == "envs":
         # Check environment name is starts with napari
-        env_paths = [p for p in envs_folder.iterdir() if p.stem.rsplit('-')[0] == 'napari']
+        env_paths = [
+            p
+            for p in envs_folder.iterdir()
+            if p.stem.rsplit('-')[0] == 'napari'
+        ]
         for env_path in env_paths:
             for p in (envs_folder / env_path / 'conda-meta').iterdir():
                 if p.suffix == '.json':
@@ -66,13 +71,15 @@ def is_dev() -> bool:
     """Check if napari is running from development version."""
     dev_check = False
     try:
-        from napari._version import __version__
+        from napari._version import __version__  # noqa: F401
     except ImportError:
         dev_check = True
     return dev_check
 
 
-def check_updates(stable: bool = True, installer: InstallerTypes = None) -> Dict:
+def check_updates(
+    stable: bool = True, installer: InstallerTypes = None
+) -> Dict:
     """Check for updates.
 
     Parameters
@@ -112,10 +119,10 @@ def check_updates(stable: bool = True, installer: InstallerTypes = None) -> Dict
         versions = list(filter(_is_stable_version, versions))
 
     update = False
+    latest_version = versions[-1]
     if __version__ != 'dev':
         update = parse_version(latest_version) > parse_version(__version__)
 
-    latest_version = versions[-1]
     data = {
         "current": __version__,
         "latest": latest_version,
@@ -124,5 +131,6 @@ def check_updates(stable: bool = True, installer: InstallerTypes = None) -> Dict
         "update": update,
     }
     return data
+
 
 print(check_updates(installer='conda'))

@@ -1,17 +1,6 @@
 from re import L
-from qtpy import QtGui
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QDialog,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QTextEdit,
-    QVBoxLayout,
-    QCheckBox,
-    QProgressBar,
-)
 
+from qtpy import QtGui
 from qtpy.QtCore import (
     QEvent,
     QObject,
@@ -23,10 +12,21 @@ from qtpy.QtCore import (
     Signal,
     Slot,
 )
-from ..qt_resources import QColoredSVGIcon
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+)
+
+from ...settings import get_settings
 from ...utils import citation_text, sys_info
 from ...utils.translations import trans
-from ...settings import get_settings
+from ..qt_resources import QColoredSVGIcon
 
 
 class UpdateDialog(QDialog):
@@ -48,7 +48,7 @@ class UpdateDialog(QDialog):
 
         # Widgets
         self._icon = QLabel()
-        self._text =  QLabel()
+        self._text = QLabel()
         self._progress = QProgressBar()
         self._button_dismiss = QPushButton(trans._("Dismiss"))
         self._button_skip = QPushButton(trans._("Skip this version"))
@@ -64,9 +64,7 @@ class UpdateDialog(QDialog):
             )
         )
         icon = QColoredSVGIcon.from_resources("warning")
-        self._icon.setPixmap(
-            icon.colored(color="#E3B617").pixmap(60, 60)
-        )
+        self._icon.setPixmap(icon.colored(color="#E3B617").pixmap(60, 60))
         self.setWindowTitle(trans._("Update napari"))
         self._text.setTextInteractionFlags(Qt.TextBrowserInteraction)
         self._text.setOpenExternalLinks(True)
@@ -120,12 +118,23 @@ class UpdateDialog(QDialog):
 
     def update(self, on_quit=False):
         """"""
-        args = ["create", "-p", "/Users/gpenacastellanos/opt/miniconda3/envs/boom", "napari", "--channel", "conda-forge", "--json", "--yes"]
+        args = [
+            "create",
+            "-p",
+            "/Users/gpenacastellanos/opt/miniconda3/envs/boom",
+            "napari",
+            "--channel",
+            "conda-forge",
+            "--json",
+            "--yes",
+        ]
         process = QProcess()
         process.setProgram("conda")
         process.setArguments(args)
         process.setProcessChannelMode(QProcess.MergedChannels)
-        process.readyReadStandardOutput.connect(lambda process=process: self._on_stdout_ready(process))
+        process.readyReadStandardOutput.connect(
+            lambda process=process: self._on_stdout_ready(process)
+        )
         process.finished.connect(self._finished)
         process.start()
         self._button_update_on_quit.setDisabled(True)
@@ -184,7 +193,7 @@ class UpdateStatusDialog(QDialog):
 
         # Widgets
         self._icon = QLabel()
-        self._text =  QLabel(
+        self._text = QLabel(
             trans._(
                 'You are using the latest napari, <a href="https://napari.org">v{version}</a>!',
                 version=version,

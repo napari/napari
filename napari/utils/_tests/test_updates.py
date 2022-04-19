@@ -32,7 +32,7 @@ def test_get_installed_versions():
         (('0', '4', '15'), True),
         (('0', '4', '15', 'rc1'), False),
         (('0', '4', '15', 'beta'), False),
-    ]
+    ],
 )
 def test_is_stable_version(test_input, expected):
     assert updates._is_stable_version(test_input) == expected
