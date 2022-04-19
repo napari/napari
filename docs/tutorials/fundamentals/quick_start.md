@@ -160,7 +160,7 @@ The labels layer allows you to record the segmentation result by assigning backg
 1. Circle the cell
 1. Use "fill" bucket to fill it.
 
-![manual_label](../../images/manual_label.gif)
+![manual_label](../../images/manual_label.webm)
 
 Several plugins can perform automatic segmentation that takes image layers as input and generates labels layers as output.
 

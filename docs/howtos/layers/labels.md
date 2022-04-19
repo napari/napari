@@ -258,7 +258,7 @@ checked).
 
 **Drawing a connected component**:
 
-![image: draw component](../../images/draw_component.gif)
+![image: draw component](../../images/draw_component.webm)
 
 Press `M` to select a new label color. Select the `paintbrush` tool and draw a
 closed contour around the object. Select the `fill bucket` tool and click inside
@@ -266,7 +266,7 @@ the contour to assign the label to all pixels of the object.
 
 **Selecting a connected component**:
 
-![image: delete label](../../images/delete_label.gif)
+![image: delete label](../../images/delete_label.webm)
 
 Select the background label with the `color picker` (alternative: press keyboard
 shortcut `E`), then use the `fill bucket` to set all pixels of the connected
@@ -274,14 +274,14 @@ component to background.
 
 **Merging connected components**:
 
-![image: merge labels](../../images/merge_labels.gif)
+![image: merge labels](../../images/merge_labels.webm)
 
 Select the label of one of the components with the `color picker` tool and then
 filling the components to be merged with the fill bucket.
 
 **Splitting a connected component**:
 
-![image: split label](../../images/split_label.gif)
+![image: split label](../../images/split_label.webm)
 
 Splitting a connected component will introduce an additional object, therefore
 press `M` to select a label number that is not already in use. Use the
