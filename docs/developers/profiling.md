@@ -5,7 +5,7 @@ about the timing of events, but instead provides combined information about the
 total time of execution of each function. It also produces a call graph that
 simplifies understanding the call relationship between functions.
 
-![Example part of execution graph](images/execution_graph.png)
+![A section of an example call graph showing the functions called in napari's layerlist and some of their profile statistics such as call count and cumulative percentage time spent.](images/execution_graph.png)
 
 The basic tool for profile in Python is the built-in module `cProfile`.
 To profile an entire script, use the call:

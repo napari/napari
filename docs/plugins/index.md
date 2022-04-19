@@ -5,8 +5,8 @@
 ```{note}
 These pages describe the process of **building** a plugin.
 
-If you are looking to **use** published plugins, see the [guide on installing
-plugins](find-and-install-plugins), or head to the [napari hub][napari_hub] to
+If you are looking to **use** published plugins, see the
+[guide on installing plugins](find-and-install-plugins), or head to the [napari hub][napari_hub] to
 search for plugins.
 ```
 

@@ -4,10 +4,11 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
-from napari.layers.utils._text_constants import Anchor, TextMode
+from napari.layers.utils._text_constants import Anchor
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -33,6 +34,13 @@ def _make_cycled_properties(values, length):
 def test_empty_shapes():
     shp = Shapes()
     assert shp.ndim == 2
+
+
+def test_update_thumbnail_empty_shapes():
+    """Test updating the thumbnail with an empty shapes layer."""
+    layer = Shapes()
+    layer._allow_thumbnail_update = True
+    layer._update_thumbnail()
 
 
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -122,6 +130,25 @@ def test_adding_properties(attribute):
         layer.properties = properties_2
 
 
+def test_colormap_scale_change():
+    data = 20 * np.random.random((10, 4, 2))
+    properties = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
+    layer = Shapes(data, properties=properties, edge_color='b')
+
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
+
+    layer.edge_color = 'a'
+
+    # note that VisPy colormaps linearly interpolate by default, so
+    # non-rescaled colors are not identical, but they are closer than 24-bit
+    # color precision can distinguish!
+    assert not np.allclose(
+        layer.edge_color[0], layer.edge_color[1], atol=0.001
+    )
+
+
 def test_data_setter_with_properties():
     """Test layer data on a layer with properties via the data setter"""
     shape = (10, 4, 2)
@@ -196,12 +223,11 @@ def test_setting_current_properties():
 def test_empty_layer_with_text_property_choices():
     """Test initializing an empty layer with text defined"""
     default_properties = {'shape_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'text': 'shape_type', 'color': 'red'}
+    text_kwargs = {'string': 'shape_type', 'color': 'red'}
     layer = Shapes(
         property_choices=default_properties,
         text=text_kwargs,
     )
-    assert layer.text._mode == TextMode.PROPERTY
     assert layer.text.values.size == 0
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
@@ -218,7 +244,6 @@ def test_empty_layer_with_text_formatted():
         property_choices=default_properties,
         text='shape_type: {shape_type:.2f}',
     )
-    assert layer.text._mode == TextMode.FORMATTED
     assert layer.text.values.size == 0
 
     # add a shape and check that the appropriate text value was added
@@ -273,7 +298,7 @@ def test_text_from_property_fstring(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
-        'text': 'type: {shape_type}',
+        'string': 'type: {shape_type}',
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
@@ -290,7 +315,7 @@ def test_set_text_with_kwarg_dict(properties):
     np.testing.assert_equal(layer.text.values, expected_text)
 
     for property, value in text_kwargs.items():
-        if property == 'text':
+        if property == 'string':
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
@@ -303,7 +328,7 @@ def test_text_error(properties):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         Shapes(data, properties=copy(properties), text=123)
 
 
@@ -337,7 +362,7 @@ def test_nd_text():
         [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
     ]
     properties = {'shape_type': ['A', 'B']}
-    text_kwargs = {'text': 'shape_type', 'anchor': 'center'}
+    text_kwargs = {'string': 'shape_type', 'anchor': 'center'}
     layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
     assert layer.ndim == 4
 
@@ -1323,7 +1348,6 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""

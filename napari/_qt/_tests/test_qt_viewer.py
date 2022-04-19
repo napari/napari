@@ -27,13 +27,8 @@ from napari.utils.interactions import mouse_press_callbacks
 from napari.utils.io import imread
 from napari.utils.theme import available_themes
 
-try:
-    import npe2  # noqa: F401
-
-    BUILTINS_DISP = 'napari'
-    BUILTINS_NAME = 'builtins'
-except ImportError:
-    BUILTINS_DISP = BUILTINS_NAME = 'builtins'
+BUILTINS_DISP = 'napari'
+BUILTINS_NAME = 'builtins'
 
 
 def test_qt_viewer(make_napari_viewer):
@@ -302,7 +297,7 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
 def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     """Test that the viewer doesn't change the underlying array."""
     image = np.random.rand(10, 32, 32)
-    image *= 200 if dtype.endswith('8') else 2 ** 14
+    image *= 200 if dtype.endswith('8') else 2**14
     image = image.astype(dtype)
     imean = image.mean()
 

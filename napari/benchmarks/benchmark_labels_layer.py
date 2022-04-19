@@ -10,7 +10,7 @@ from napari.layers import Labels
 class Labels2DSuite:
     """Benchmarks for the Labels layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 13)]
+    params = [2**i for i in range(4, 13)]
 
     def setup(self, n):
         np.random.seed(0)
@@ -65,7 +65,7 @@ class Labels2DSuite:
 class Labels3DSuite:
     """Benchmarks for the Labels layer with 3D data."""
 
-    params = [2 ** i for i in range(4, 11)]
+    params = [2**i for i in range(4, 11)]
 
     def setup(self, n):
         np.random.seed(0)

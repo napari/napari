@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
     # note: TypedDict still doesn't have the concept of "optional keys"
     # so we add in generic `dict` for type checking.
-    # see PEP655: https://www.python.org/dev/peps/pep-0655/
+    # see PEP655: https://peps.python.org/pep-0655/
     MenuItem = Union[MenuDict, ActionDict, dict]
 
 

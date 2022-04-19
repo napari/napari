@@ -4,6 +4,7 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 from vispy.color import get_colormap
 
 from napari._tests.utils import (
@@ -161,7 +162,7 @@ def test_set_current_properties_on_empty_layer_with_color_cycle(feature_name):
 def test_empty_layer_with_text_properties():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}
-    text_kwargs = {'text': 'point_type', 'color': 'red'}
+    text_kwargs = {'string': 'point_type', 'color': 'red'}
     layer = Points(
         property_choices=default_properties,
         text=text_kwargs,
@@ -440,6 +441,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer = Points(
         data,
         size=size,
+        edge_width=size,
         features={'feature': feature},
         face_color=color,
         edge_color=color,
@@ -450,6 +452,7 @@ def test_remove_selected_removes_corresponding_attributes():
     layer_expected = Points(
         data[1:],
         size=size[1:],
+        edge_width=size[1:],
         features={'feature': feature[1:]},
         face_color=color[1:],
         edge_color=color[1:],
@@ -805,7 +808,7 @@ def test_text_from_property_fstring(properties):
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
-        'text': 'type: {point_type}',
+        'string': 'type: {point_type}',
         'color': [0, 0, 0, 1],
         'rotation': 10,
         'translation': [5, 5],
@@ -822,7 +825,7 @@ def test_set_text_with_kwarg_dict(properties):
     np.testing.assert_equal(layer.text.values, expected_text)
 
     for property, value in text_kwargs.items():
-        if property == 'text':
+        if property == 'string':
             continue
         layer_value = getattr(layer._text, property)
         np.testing.assert_equal(layer_value, value)
@@ -835,7 +838,7 @@ def test_text_error(properties):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     # try adding text as the wrong type
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         Points(data, properties=copy(properties), text=123)
 
 
@@ -879,13 +882,27 @@ def test_edge_width():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.edge_width == 1
+    np.testing.assert_array_equal(layer.edge_width, 0.1)
 
+    layer.edge_width = 0.5
+    np.testing.assert_array_equal(layer.edge_width, 0.5)
+
+    # fail outside of range 0, 1 if relative is enabled (default)
+    with pytest.raises(ValueError):
+        layer.edge_width = 2
+
+    layer.edge_width_is_relative = False
     layer.edge_width = 2
-    assert layer.edge_width == 2
+    np.testing.assert_array_equal(layer.edge_width, 2)
 
-    layer = Points(data, edge_width=3)
-    assert layer.edge_width == 3
+    # fail if we try to come back again
+    with pytest.raises(ValueError):
+        layer.edge_width_is_relative = True
+
+    # all should work on instantiation too
+    layer = Points(data, edge_width=3, edge_width_is_relative=False)
+    np.testing.assert_array_equal(layer.edge_width, 3)
+    assert layer.edge_width_is_relative is False
 
 
 def test_out_of_slice_display():
@@ -914,7 +931,6 @@ def test_out_of_slice_display():
     assert layer.out_of_slice_display is True
 
 
-@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -2219,7 +2235,7 @@ def test_set_properties_with_invalid_shape_errors_safely():
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
 
-def test_set_properties_with_missing_text_property_text_becomes_constant():
+def test_set_properties_with_missing_text_property_text_becomes_constant_empty_and_warns():
     properties = {
         'class': np.array(['A', 'B', 'C']),
     }
@@ -2227,11 +2243,11 @@ def test_set_properties_with_missing_text_property_text_becomes_constant():
     np.testing.assert_equal(points.properties, properties)
     np.testing.assert_array_equal(points.text.values, ['A', 'B', 'C'])
 
-    points.properties = {'not_class': np.array(['D', 'E', 'F'])}
+    with pytest.warns(RuntimeWarning):
+        points.properties = {'not_class': np.array(['D', 'E', 'F'])}
 
-    np.testing.assert_array_equal(
-        points.text.values, ['class', 'class', 'class']
-    )
+    values = points.text.values
+    np.testing.assert_array_equal(values, ['', '', ''])
 
 
 def test_text_param_and_setter_are_consistent():
@@ -2240,7 +2256,7 @@ def test_text_param_and_setter_are_consistent():
     properties = {
         'accepted': np.random.choice([True, False], (5,)),
     }
-    text = {'text': 'accepted', 'color': 'black'}
+    text = {'string': 'accepted', 'color': 'black'}
 
     points_init = Points(data, properties=properties, text=text)
 
@@ -2254,6 +2270,40 @@ def test_text_param_and_setter_are_consistent():
     np.testing.assert_array_equal(
         points_init.text.color, points_set.text.color
     )
+
+
+def test_editable_2d_layer_ndisplay_3():
+    """Interactivity doesn't work for 2D points layers
+    being rendered in 3D. Verify that layer.editable is set
+    to False upon switching to 3D rendering mode.
+
+    See: https://github.com/napari/napari/pull/4184
+    """
+    data = np.random.random((10, 2))
+    layer = Points(data, size=5)
+    assert layer.editable is True
+
+    # simulate switching to 3D rendering
+    # layer should no longer b editable
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    assert layer.editable is False
+
+
+def test_editable_3d_layer_ndisplay_3():
+    """Interactivity works for 3D points layers
+    being rendered in 3D. Verify that layer.editable remains
+    True upon switching to 3D rendering mode.
+
+    See: https://github.com/napari/napari/pull/4184
+    """
+    data = np.random.random((10, 3))
+    layer = Points(data, size=5)
+    assert layer.editable is True
+
+    # simulate switching to 3D rendering
+    # layer should no longer b editable
+    layer._slice_dims([0, 0, 0], ndisplay=3)
+    assert layer.editable is True
 
 
 def test_shown():

@@ -116,30 +116,7 @@ class VispyShapesLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        ndisplay = self.layer._ndisplay
-        if (len(self.layer._indices_view) == 0) or (
-            self.layer._text.visible is False
-        ):
-            text_coords = np.zeros((1, ndisplay))
-            text = []
-            anchor_x = 'center'
-            anchor_y = 'center'
-        else:
-            text_coords, anchor_x, anchor_y = self.layer._view_text_coords
-            if len(text_coords) == 0:
-                text_coords = np.zeros((1, ndisplay))
-            text = self.layer._view_text
-        text_node = self._get_text_node()
-        update_text(
-            text_values=text,
-            coords=text_coords,
-            anchor=(anchor_x, anchor_y),
-            rotation=self.layer._text.rotation,
-            color=self.layer._text.color,
-            size=self.layer._text.size,
-            ndisplay=ndisplay,
-            text_node=text_node,
-        )
+        update_text(node=self._get_text_node(), layer=self.layer)
         if update_node:
             self.node.update()
 
@@ -149,10 +126,13 @@ class VispyShapesLayer(VispyBaseLayer):
         return text_node
 
     def _on_text_change(self, event=None):
-        if event is not None and event.type == 'blending':
-            self._on_blending_change(event)
-        else:
-            self._update_text()
+        if event is not None:
+            if event.type == 'blending':
+                self._on_blending_change(event)
+                return
+            if event.type == 'values':
+                return
+        self._update_text()
 
     def _on_blending_change(self):
         """Function to set the blending mode"""
