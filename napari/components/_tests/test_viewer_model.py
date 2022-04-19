@@ -8,6 +8,7 @@ from napari._tests.utils import (
 )
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
+from napari.errors.reader_errors import NoAvailableReaderError
 from napari.layers import Image
 from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
@@ -806,7 +807,9 @@ def test_open_or_get_error_no_plugin(mock_npe2_pm):
     """Assert error is raised when no plugin is available."""
     viewer = ViewerModel()
 
-    with pytest.raises(ValueError, match='No plugin found capable of reading'):
+    with pytest.raises(
+        NoAvailableReaderError, match='No plugin found capable of reading'
+    ):
         viewer._open_or_raise_error(['my_file.fake'])
 
 

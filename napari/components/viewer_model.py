@@ -22,7 +22,11 @@ import numpy as np
 from pydantic import Extra, Field, validator
 
 from .. import layers
-from ..errors import MultipleReaderError, ReaderPluginError
+from ..errors import (
+    MultipleReaderError,
+    NoAvailableReaderError,
+    ReaderPluginError,
+)
 from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
@@ -970,17 +974,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Raises
         ------
-        ValueError
-            when paths is *not* a list or tuple, prefered plugin is missing,
-            or no plugins are available
-        RuntimeError
-            when multiple plugins are available or the prefered plugin failed
+        TypeError
+            when paths is *not* a list or tuple
+        NoAvailableReaderError
+            when no plugins are available to read path
+        ReaderPluginError
+            when reading with only available or prefered plugin fails
+        MultipleReaderError
+            when multiple readers are available to read the path
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
-            raise ValueError(
+            raise TypeError(
                 trans._(
-                    "'path' argument must be a string, list, or tuple",
+                    "'paths' argument must be a list, or tuple",
                     deferred=True,
                 )
             )
@@ -991,12 +998,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         readers = get_potential_readers(_path)
         if not readers:
-            raise ValueError(
+            raise NoAvailableReaderError(
+                _path,
                 trans._(
-                    'No plugin found capable of reading {paths}.',
+                    'No plugin found capable of reading {_path}.',
                     deferred=True,
-                    paths=paths,
-                )
+                    _path=_path,
+                ),
             )
 
         plugin = get_preferred_reader(_path)
@@ -1015,7 +1023,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             # plugin failed
             except Exception as e:
                 raise ReaderPluginError(
-                    plugin, _path, f'Tried opening with {plugin}, but failed.'
+                    plugin,
+                    _path,
+                    trans._(
+                        'Tried opening with {plugin}, but failed.',
+                        deferred=True,
+                        plugin=plugin,
+                    ),
                 ) from e
 
         # preferred plugin doesn't exist
@@ -1023,7 +1037,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             raise ReaderPluginError(
                 plugin,
                 _path,
-                f"Can't find {plugin} plugin associated with {os.path.splitext(_path)[1]} files.",
+                trans._(
+                    "Can't find {plugin} plugin associated with {extension} files.",
+                    deferred=True,
+                    plugin=plugin,
+                    extension=os.path.splitext(_path)[1],
+                ),
             )
         # multiple plugins
         else:

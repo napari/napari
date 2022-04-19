@@ -59,3 +59,22 @@ class ReaderPluginError(ValueError):
         super().__init__(*args)
         self.reader_plugin = reader_plugin
         self.pth = pth
+
+
+class NoAvailableReaderError(ValueError):
+    """No reader plugins are available to open the chosen file
+
+    Parameters
+    ----------
+    pth: str
+        file path for reading
+
+    Attributes
+    ----------
+    pth: str
+        file path for reading
+    """
+
+    def __init__(self, pth: str, *args: object) -> None:
+        super().__init__(*args)
+        self.pth = pth
