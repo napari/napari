@@ -27,14 +27,14 @@ class UpdateSettings(EventedModel):
         title=trans._("Notify me before updating"),
         description=trans._("Notify me before updating."),
     )
-    update_napari_on: UpdateOn = Field(
-        UpdateOn.closing,
-        title=trans._("Update napari upon"),
+    check_previews = Field(
+        False,
+        title=trans._("Check for preview candidates "),
         description=trans._(
-            "Update napari upon.",
+            "Check for napari non-stable release.",
         ),
     )
-    update_skip = Field(
+    update_version_skip = Field(
         [],
         title=trans._("Skip napari versions"),
         description=trans._(
@@ -44,4 +44,4 @@ class UpdateSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'update_napari_skip']
+        preferences_exclude = ['schema_version', 'update_version_skip']

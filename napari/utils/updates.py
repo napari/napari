@@ -45,12 +45,14 @@ def _get_installed_versions() -> List[str]:
             if p.stem.rsplit('-')[0] == 'napari'
         ]
         for env_path in env_paths:
-            for p in (envs_folder / env_path / 'conda-meta').iterdir():
-                if p.suffix == '.json':
-                    # Check environment contains a napari package
-                    parts = p.stem.rsplit('-')
-                    if len(parts) == 3 and parts[-3] == 'napari':
-                        versions.append(tuple(parts[1:]))
+            conda_meta_folder = envs_folder / env_path / 'conda-meta'
+            if conda_meta_folder.exists():
+                for p in (envs_folder / env_path / 'conda-meta').iterdir():
+                    if p.suffix == '.json':
+                        # Check environment contains a napari package
+                        parts = p.stem.rsplit('-')
+                        if len(parts) == 3 and parts[-3] == 'napari':
+                            versions.append(tuple(parts[1:]))
     return versions
 
 
@@ -100,6 +102,7 @@ def check_updates(
     except ImportError:
         __version__ = 'dev'
 
+    versions = []
     if installer is None:
         if is_dev():
             versions = [__version__]
@@ -115,11 +118,11 @@ def check_updates(
     elif installer == 'conda':
         versions = _get_napari_conda_versions()
 
-    if stable:
+    if stable and not is_dev():
         versions = list(filter(_is_stable_version, versions))
 
     update = False
-    latest_version = versions[-1]
+    latest_version = versions[-1] if versions else None
     if __version__ != 'dev':
         update = parse_version(latest_version) > parse_version(__version__)
 
@@ -130,7 +133,4 @@ def check_updates(
         "installer": installer,
         "update": update,
     }
-    return data
-
-
-print(check_updates(installer='conda'))
+    yield data

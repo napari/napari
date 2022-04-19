@@ -27,6 +27,7 @@ from qtpy.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
     QMainWindow,
+    QMessageBox,
     QShortcut,
     QToolTip,
     QWidget,
@@ -46,10 +47,15 @@ from ..utils.updates import check_updates
 from . import menus
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
-from .dialogs.qt_updates import UpdateDialog, UpdateStatusDialog
+from .dialogs.qt_updates import (
+    UpdateDialog,
+    UpdateOptionsDialog,
+    UpdateStatusDialog,
+)
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet, register_napari_themes
 from .qt_viewer import QtViewer
+from .qthreading import create_worker
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
@@ -83,6 +89,9 @@ class _QtMainWindow(QMainWindow):
         self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._quit_app = False
         self._update_on_quit = False
+        self._update_info = None
+        self._update_dialog = None
+        self._update_worker = None
 
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -111,6 +120,8 @@ class _QtMainWindow(QMainWindow):
         self.setStatusBar(ViewerStatusBar(self))
 
         settings = get_settings()
+        if settings.updates.check_for_updates:
+            self.check_updates(startup=True)
 
         # TODO:
         # settings.plugins.defaults.call_order = plugin_manager.call_order()
@@ -128,6 +139,8 @@ class _QtMainWindow(QMainWindow):
             handle.screenChanged.connect(
                 self._qt_viewer.canvas._backend.screen_changed
             )
+
+        self.statusBar()._update_status.clicked.connect(self.check_updates)
 
     def statusBar(self) -> 'ViewerStatusBar':
         return super().statusBar()
@@ -346,9 +359,26 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
-        if self._update_on_quit:
-            dlg = UpdateDialog(self, update=True)
-            dlg.exec()
+        if self._update_dialog:
+            # Update in progress, ask if quiting!?
+            reply = QMessageBox.question(
+                self,
+                "Quit and cancel update?",
+                "There is an update in progress. Do you want to quit napari and cancel it?",
+            )
+            if reply == QMessageBox.Yes:
+                self._update_dialog.stop()
+                self._update_dialog = None
+                self._update_on_quit = False
+            elif reply == QMessageBox.No:
+                event.ignore()
+                return
+
+        if self._update_on_quit and self._update_dialog is None:
+            # Update on Quit
+            self._update_napari(True)
+            event.ignore()
+            return
 
         if self._ev and self._ev.isRunning():
             self._ev.quit()
@@ -391,18 +421,63 @@ class _QtMainWindow(QMainWindow):
         """Show notification coming from a thread."""
         NapariQtNotification.show_notification(notification)
 
-    def check_updates(self):
+    def check_updates(self, startup=False):
         """Check for napari available updates."""
-        update_info = check_updates()
-        self._update_version = "0.5.0"
+        if self._update_dialog:
+            self._update_dialog.raise_()
+            self._update_dialog.show()
+        else:
+            settings = get_settings()
+            stable = not settings.updates.check_previews
+            self._update_worker = create_worker(check_updates, stable, 'conda')
+            self._update_worker._startup = startup
+            self._update_worker.yielded.connect(self._check_updates)
+            self._update_worker.start()
+
+    def _check_updates(self, update_info):
+        """"""
+        print(update_info)
+        settings = get_settings()
+        self._update_info = update_info
+        self._update_version = "0.5.0"  # Simulate failure
+        self._update_version = "0.4.15"  # Simulate new update
+
+        # TODO: Handle the pypi case and point to the napari website
         if True:
-            dlg = UpdateDialog(self, version=self._update_version)
+            dlg = UpdateOptionsDialog(self, version=self._update_version)
+            dlg.exec_()
+
+            if dlg._action == "update":
+                self._update_napari()
+            elif dlg._action == "update_on_quit":
+                self._update_dialog = None
+                self._update_on_quit = dlg._action == "update_on_quit"
+                print(settings.updates.update_version_skip)
         else:
             dlg = UpdateStatusDialog(self, version=self._update_version)
 
-        dlg.exec_()
-        self._update_on_quit = dlg._update_on_quit
-        print(get_settings().updates.update_skip)
+    def _update_napari(self, modal=False):
+        """"""
+        self.statusBar().setUpdateStatus("Updating...")
+        self._update_dialog = UpdateDialog(self, version=self._update_version)
+        self._update_dialog.quit_requested.connect(lambda: self.close(True))
+        self._update_dialog.finished.connect(self._update_finished)
+
+        if modal:
+            # Disable quitting the dialog
+            self._update_dialog.exec_()
+        else:
+            self._update_dialog.show()
+
+    def _update_finished(self, ouput, error):
+        """"""
+        self.statusBar().setUpdateStatus("")
+        if self._update_dialog:
+            self._update_dialog.show()
+            self._update_dialog.raise_()
+
+        self._update_dialog = None
+        self._update_on_quit = False
 
 
 class Window:

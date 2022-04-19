@@ -129,7 +129,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     status: str = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = Field(default_factory=_current_theme)
-    title: str = 'napari'
+    title: str = 'napari (dev)'
 
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
