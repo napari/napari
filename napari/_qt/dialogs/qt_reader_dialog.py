@@ -140,7 +140,6 @@ def handle_gui_reading(
     """
     _path = paths[0]
     readers = prepare_remaining_readers(_path, plugin_name, error)
-    # TODO: fix tests
     error_message = str(error) if error else ''
 
     _, extension = os.path.splitext(_path)
