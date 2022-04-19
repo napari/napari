@@ -139,7 +139,7 @@ def handle_gui_reading(
         previous error raised in the process of opening
     """
     _path = paths[0]
-    readers = prepare_remaining_readers(_path, plugin_name, error)
+    readers = prepare_remaining_readers(paths, plugin_name, error)
     error_message = str(error) if error else ''
 
     _, extension = os.path.splitext(_path)
@@ -158,7 +158,7 @@ def handle_gui_reading(
 
 
 def prepare_remaining_readers(
-    _path: str,
+    paths: List[str],
     plugin_name: Optional[str] = None,
     error: Optional[ReaderPluginError] = None,
 ):
@@ -166,8 +166,8 @@ def prepare_remaining_readers(
 
     Parameters
     ----------
-    _path : str
-        path to open
+    paths : List[str]
+        paths to open
     plugin_name : str | None
         name of plugin previously tried, if any
     error : ReaderPluginError | None
@@ -183,13 +183,23 @@ def prepare_remaining_readers(
     ReaderPluginError
         raises previous error if no readers are left to try
     """
-    readers = get_potential_readers(_path)
+    readers = get_potential_readers(paths[0])
     # remove plugin we already tried e.g. prefered plugin
     if plugin_name in readers:
         del readers[plugin_name]
     # if there's no other readers left, raise the exception
     if not readers and error:
-        raise error
+        raise ReaderPluginError(
+            plugin_name,
+            paths,
+            trans._(
+                "Tried to read {path_message} with plugin {plugin}, because it was associated with that file extension/because it is the only plugin capable of reading that path, but it gave an error. Try associating a different plugin or installing a different plugin for this kind of file.",
+                path_message=f"[{paths[0]}, ...]"
+                if len(paths) > 1
+                else paths[0],
+                plugin=plugin_name,
+            ),
+        ) from error
 
     return readers
 
