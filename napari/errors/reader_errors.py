@@ -1,7 +1,4 @@
-import os
 from typing import List
-
-from ..utils.translations import trans
 
 
 class MultipleReaderError(RuntimeError):
@@ -14,6 +11,8 @@ class MultipleReaderError(RuntimeError):
 
     Parameters
     ----------
+    message: str
+        error description
     available_readers : List[str]
         list of available reader plugins for path
     paths: List[str]
@@ -21,6 +20,8 @@ class MultipleReaderError(RuntimeError):
 
     Attributes
     ----------
+    message: str
+        error description
     available_readers : List[str]
         list of available reader plugins for path
     paths: List[str]
@@ -28,20 +29,15 @@ class MultipleReaderError(RuntimeError):
     """
 
     def __init__(
-        self, available_readers: List[str], paths: List[str], *args: object
+        self,
+        message: str,
+        available_readers: List[str],
+        paths: List[str],
+        *args: object,
     ):
-        super().__init__(*args)
+        super().__init__(message, *args)
         self.available_plugins = available_readers
         self.paths = paths
-
-    def __str__(self):
-        return trans._(
-            "Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.",
-            path_message=f"[{self.paths[0]}, ...]"
-            if len(self.paths) > 1
-            else self.paths[0],
-            plugins=self.available_plugins,
-        )
 
 
 class ReaderPluginError(ValueError):
@@ -62,6 +58,8 @@ class ReaderPluginError(ValueError):
 
     Attributes
     ----------
+    message: str
+        error description
     reader_plugin : str
         plugin that was tried
     paths: List[str]
@@ -81,6 +79,8 @@ class MissingAssociatedReaderError(RuntimeError):
 
     Parameters
     ----------
+    message: str
+        error description
     reader_plugin : str
         plugin that was tried
     paths: List[str]
@@ -88,6 +88,8 @@ class MissingAssociatedReaderError(RuntimeError):
 
     Attributes
     ----------
+    message: str
+        error description
     reader_plugin : str
         plugin that was tried
     paths: List[str]
@@ -95,18 +97,11 @@ class MissingAssociatedReaderError(RuntimeError):
     """
 
     def __init__(
-        self, reader_plugin: str, paths: List[str], *args: object
+        self, message: str, reader_plugin: str, paths: List[str], *args: object
     ) -> None:
-        super().__init__(*args)
+        super().__init__(message, *args)
         self.reader_plugin = reader_plugin
         self.paths = paths
-
-    def __str__(self) -> str:
-        return trans._(
-            "Can't find {plugin} plugin associated with {extension} files.",
-            plugin=self.reader_plugin,
-            extension=os.path.splitext(self.paths[0])[1],
-        )
 
 
 class NoAvailableReaderError(ValueError):
@@ -114,23 +109,19 @@ class NoAvailableReaderError(ValueError):
 
     Parameters
     ----------
+    message: str
+        error description
     paths: List[str]
         file paths for reading
 
     Attributes
     ----------
+    message: str
+        error description
     paths: List[str]
         file paths for reading
     """
 
-    def __init__(self, paths: List[str], *args: object) -> None:
-        super().__init__(*args)
+    def __init__(self, message: str, paths: List[str], *args: object) -> None:
+        super().__init__(message, *args)
         self.paths = paths
-
-    def __str__(self) -> str:
-        return trans._(
-            'No plugin found capable of reading {path_message}.',
-            path_message=f"[{self.paths[0]}, ...]"
-            if len(self.paths) > 1
-            else self.paths[0],
-        )

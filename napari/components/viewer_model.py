@@ -992,7 +992,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         readers = get_potential_readers(_path)
         if not readers:
-            raise NoAvailableReaderError(paths)
+            raise NoAvailableReaderError(
+                trans._(
+                    'No plugin found capable of reading {path_message}.',
+                    path_message=f"[{self.paths[0]}, ...]"
+                    if len(self.paths) > 1
+                    else self.paths[0],
+                    deferred=True,
+                ),
+                paths,
+            )
 
         plugin = get_preferred_reader(_path)
 
@@ -1021,10 +1030,30 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # preferred plugin doesn't exist
         elif plugin:
-            raise MissingAssociatedReaderError(plugin, paths)
+            raise MissingAssociatedReaderError(
+                trans._(
+                    "Can't find {plugin} plugin associated with {extension} files.",
+                    plugin=self.reader_plugin,
+                    extension=os.path.splitext(self.paths[0])[1],
+                    deferred=True,
+                ),
+                plugin,
+                paths,
+            )
         # multiple plugins
         else:
-            raise MultipleReaderError(list(readers.keys()), paths)
+            raise MultipleReaderError(
+                trans._(
+                    "Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.",
+                    path_message=f"[{self.paths[0]}, ...]"
+                    if len(self.paths) > 1
+                    else self.paths[0],
+                    plugins=self.available_plugins,
+                    deferred=True,
+                ),
+                list(readers.keys()),
+                paths,
+            )
 
         return added
 
