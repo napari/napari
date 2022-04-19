@@ -989,15 +989,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         added = []
         plugin = None
         _path = paths[0]
+        # we want to display the paths nicely so make a help string here
+        path_message = f"[{_path}], ...]" if len(paths) > 1 else _path
 
         readers = get_potential_readers(_path)
         if not readers:
             raise NoAvailableReaderError(
                 trans._(
                     'No plugin found capable of reading {path_message}.',
-                    path_message=f"[{self.paths[0]}, ...]"
-                    if len(self.paths) > 1
-                    else self.paths[0],
+                    path_message=path_message,
                     deferred=True,
                 ),
                 paths,
@@ -1033,8 +1033,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             raise MissingAssociatedReaderError(
                 trans._(
                     "Can't find {plugin} plugin associated with {extension} files.",
-                    plugin=self.reader_plugin,
-                    extension=os.path.splitext(self.paths[0])[1],
+                    plugin=plugin,
+                    extension=os.path.splitext(paths[0])[1],
                     deferred=True,
                 ),
                 plugin,
@@ -1045,10 +1045,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             raise MultipleReaderError(
                 trans._(
                     "Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.",
-                    path_message=f"[{self.paths[0]}, ...]"
-                    if len(self.paths) > 1
-                    else self.paths[0],
-                    plugins=self.available_plugins,
+                    path_message=path_message,
+                    plugins=readers,
                     deferred=True,
                 ),
                 list(readers.keys()),
