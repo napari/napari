@@ -8,6 +8,7 @@ from napari._qt.dialogs.qt_reader_dialog import (
     prepare_remaining_readers,
 )
 from napari._tests.utils import restore_settings_on_exit
+from napari.errors.reader_errors import ReaderPluginError
 from napari.settings import get_settings
 
 
@@ -75,18 +76,18 @@ def test_get_persist_choice(tmpdir, reader_dialog):
 def test_prepare_dialog_options_no_readers(mock_npe2_pm):
     pth = 'my-file.fake'
 
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(ReaderPluginError) as e:
         prepare_remaining_readers(
-            pth, 'fake-reader', RuntimeError('Reading failed')
+            [pth], 'fake-reader', RuntimeError('Reading failed')
         )
-    assert 'Reading failed' in str(e.value)
+    assert 'Tried to read my-file.fake with plugin fake-reader' in str(e.value)
 
 
 def test_prepare_dialog_options_multiple_plugins(mock_npe2_pm):
     pth = 'my-file.tif'
 
     readers = prepare_remaining_readers(
-        pth,
+        [pth],
         None,
         RuntimeError(f'Multiple plugins found capable of reading {pth}'),
     )
@@ -99,7 +100,7 @@ def test_prepare_dialog_options_removes_plugin(mock_npe2_pm, tmp_reader):
     tmp_reader(mock_npe2_pm, 'fake-reader')
     tmp_reader(mock_npe2_pm, 'other-fake-reader')
     readers = prepare_remaining_readers(
-        pth, 'fake-reader', RuntimeError('Reader failed')
+        [pth], 'fake-reader', RuntimeError('Reader failed')
     )
     assert 'other-fake-reader' in readers
     assert 'fake-reader' not in readers
