@@ -8,7 +8,10 @@ from napari._tests.utils import (
 )
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
-from napari.errors.reader_errors import NoAvailableReaderError
+from napari.errors.reader_errors import (
+    MissingAssociatedReaderError,
+    NoAvailableReaderError,
+)
 from napari.layers import Image
 from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
@@ -799,7 +802,9 @@ def test_open_or_get_error_multiple_readers(mock_npe2_pm, tmp_reader):
     tmp_reader(mock_npe2_pm, 'p1')
     tmp_reader(mock_npe2_pm, 'p2')
 
-    with pytest.raises(MultipleReaderError):
+    with pytest.raises(
+        MultipleReaderError, match='Multiple plugins found capable'
+    ):
         viewer._open_or_raise_error(['my_file.fake'])
 
 
@@ -858,7 +863,7 @@ def test_open_or_get_error_cant_find_plugin(mock_npe2_pm, tmp_reader):
         tmp_reader(mock_npe2_pm, 'other-fake-reader')
 
         with pytest.raises(
-            ReaderPluginError, match="Can't find fake-reader plugin"
+            MissingAssociatedReaderError, match="Can't find fake-reader plugin"
         ):
             viewer._open_or_raise_error(['my_file.fake'])
 

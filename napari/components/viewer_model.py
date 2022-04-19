@@ -23,6 +23,7 @@ from pydantic import Extra, Field, validator
 
 from .. import layers
 from ..errors import (
+    MissingAssociatedReaderError,
     MultipleReaderError,
     NoAvailableReaderError,
     ReaderPluginError,
@@ -984,13 +985,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             when multiple readers are available to read the path
         """
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
-        if not isinstance(paths, (tuple, list)):
-            raise TypeError(
-                trans._(
-                    "'paths' argument must be a list, or tuple",
-                    deferred=True,
-                )
-            )
 
         added = []
         plugin = None
@@ -1034,16 +1028,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # preferred plugin doesn't exist
         elif plugin:
-            raise ReaderPluginError(
-                plugin,
-                _path,
-                trans._(
-                    "Can't find {plugin} plugin associated with {extension} files.",
-                    deferred=True,
-                    plugin=plugin,
-                    extension=os.path.splitext(_path)[1],
-                ),
-            )
+            raise MissingAssociatedReaderError(plugin, _path)
         # multiple plugins
         else:
             raise MultipleReaderError(list(readers.keys()), _path)

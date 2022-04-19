@@ -180,7 +180,7 @@ def prepare_remaining_readers(
 
     Raises
     ------
-    error
+    ReaderPluginError
         raises previous error if no readers are left to try
     """
     readers = get_potential_readers(_path)

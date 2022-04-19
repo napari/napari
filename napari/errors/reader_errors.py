@@ -1,4 +1,7 @@
+import os
 from typing import List
+
+from ..utils.translations import trans
 
 
 class MultipleReaderError(RuntimeError):
@@ -30,10 +33,14 @@ class MultipleReaderError(RuntimeError):
         self.pth = pth
 
     def __str__(self):
-        return f"Multiple plugins found capable of reading {self.pth}. Select plugin from {self.available_plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`."
+        return trans._(
+            "Multiple plugins found capable of reading {pth}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.",
+            pth=self.pth,
+            plugins=self.available_plugins,
+        )
 
 
-class ReaderPluginError(ValueError):
+class ReaderPluginError(RuntimeError):
     """A reader plugin failed while trying to open a path.
 
     This error is thrown either when the only available plugin
@@ -59,6 +66,37 @@ class ReaderPluginError(ValueError):
         super().__init__(*args)
         self.reader_plugin = reader_plugin
         self.pth = pth
+
+
+class MissingAssociatedReaderError(RuntimeError):
+    """The reader plugin associated with this file is not available.
+
+    Parameters
+    ----------
+    reader_plugin : str
+        plugin that was tried
+    pth: str
+        path the plugin tried to read
+
+    Attributes
+    ----------
+    reader_plugin : str
+        plugin that was tried
+    pth: str
+        path the plugin tried to read
+    """
+
+    def __init__(self, reader_plugin: str, pth: str, *args: object) -> None:
+        super().__init__(*args)
+        self.reader_plugin = reader_plugin
+        self.pth = pth
+
+    def __str__(self) -> str:
+        return trans._(
+            "Can't find {plugin} plugin associated with {extension} files.",
+            plugin=self.reader_plugin,
+            extension=os.path.splitext(self.pth)[1],
+        )
 
 
 class NoAvailableReaderError(ValueError):
