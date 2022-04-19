@@ -162,10 +162,11 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
 
     def __call__(self, features: Any) -> ColorArray:
         values = features[self.feature]
-        if self.contrast_limits is None:
-            self.contrast_limits = _calculate_contrast_limits(values)
-        if self.contrast_limits is not None:
-            values = np.interp(values, self.contrast_limits, (0, 1))
+        contrast_limits = self.contrast_limits or _calculate_contrast_limits(
+            values
+        )
+        if contrast_limits is not None:
+            values = np.interp(values, contrast_limits, (0, 1))
         return self.colormap.map(values)
 
     @validator('colormap', pre=True, always=True)

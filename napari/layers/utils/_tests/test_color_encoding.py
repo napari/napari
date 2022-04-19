@@ -141,7 +141,6 @@ def test_quantitative_with_colormap_name(features):
 
     values = encoding(features)
 
-    assert encoding.contrast_limits == (0, 1)
     assert_colors_equal(values, [[c] * 3 for c in features['confidence']])
 
 
@@ -151,7 +150,6 @@ def test_quantitative_with_colormap_values(features):
         feature='confidence', colormap=colormap
     )
     values = encoding(features)
-    assert encoding.contrast_limits == (0, 1)
     assert_colors_equal(values, [[c, 0, 0] for c in features['confidence']])
 
 
