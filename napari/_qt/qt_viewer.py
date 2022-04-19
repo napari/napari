@@ -11,12 +11,12 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-from .._errors.reader_errors import MultiplePluginError, ReaderPluginError
 from ..components._interaction_box_mouse_bindings import (
     InteractionBoxMouseBindings,
 )
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..errors import MultipleReaderError, ReaderPluginError
 from ..layers.base.base import Layer
 from ..plugins import _npe2
 from ..utils import config, perf
@@ -761,8 +761,8 @@ class QtViewer(QSplitter):
         try:
             self.viewer._open_or_raise_error(filenames, stack=stack)
         except ReaderPluginError as e:
-            handle_gui_reading(filenames, self, stack, e._reader_plugin, e)
-        except MultiplePluginError:
+            handle_gui_reading(filenames, self, stack, e.reader_plugin, e)
+        except MultipleReaderError:
             handle_gui_reading(filenames, self, stack)
 
     def _toggle_chunk_outlines(self):

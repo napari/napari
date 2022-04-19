@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
-from napari._errors.reader_errors import MultiplePluginError, ReaderPluginError
 from napari._tests.utils import (
     good_layer_data,
     layer_test_data,
     restore_settings_on_exit,
 )
 from napari.components import ViewerModel
+from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers import Image
 from napari.settings import get_settings
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
@@ -798,7 +798,7 @@ def test_open_or_get_error_multiple_readers(mock_npe2_pm, tmp_reader):
     tmp_reader(mock_npe2_pm, 'p1')
     tmp_reader(mock_npe2_pm, 'p2')
 
-    with pytest.raises(MultiplePluginError):
+    with pytest.raises(MultipleReaderError):
         viewer._open_or_raise_error(['my_file.fake'])
 
 

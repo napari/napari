@@ -22,7 +22,7 @@ import numpy as np
 from pydantic import Extra, Field, validator
 
 from .. import layers
-from .._errors.reader_errors import MultiplePluginError, ReaderPluginError
+from ..errors import MultipleReaderError, ReaderPluginError
 from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
@@ -1015,20 +1015,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             # plugin failed
             except Exception as e:
                 raise ReaderPluginError(
-                    plugin, f'Tried opening with {plugin}, but failed.'
+                    plugin, _path, f'Tried opening with {plugin}, but failed.'
                 ) from e
 
         # preferred plugin doesn't exist
         elif plugin:
             raise ReaderPluginError(
                 plugin,
+                _path,
                 f"Can't find {plugin} plugin associated with {os.path.splitext(_path)[1]} files.",
             )
         # multiple plugins
         else:
-            raise MultiplePluginError(
-                f"Multiple plugins found capable of reading {paths}. Select plugin from {list(readers.keys())} and pass to reading function e.g. `viewer.open(..., plugin=...)`."
-            )
+            raise MultipleReaderError(list(readers.keys()), _path)
 
         return added
 
