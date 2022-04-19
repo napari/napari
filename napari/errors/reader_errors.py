@@ -53,6 +53,8 @@ class ReaderPluginError(ValueError):
 
     Parameters
     ----------
+    message: str
+        error description
     reader_plugin : str
         plugin that was tried
     paths: List[str]
@@ -67,9 +69,9 @@ class ReaderPluginError(ValueError):
     """
 
     def __init__(
-        self, reader_plugin: str, paths: List[str], *args: object
+        self, message: str, reader_plugin: str, paths: List[str], *args: object
     ) -> None:
-        super().__init__(*args)
+        super().__init__(message, *args)
         self.reader_plugin = reader_plugin
         self.paths = paths
 
@@ -124,3 +126,11 @@ class NoAvailableReaderError(ValueError):
     def __init__(self, paths: List[str], *args: object) -> None:
         super().__init__(*args)
         self.paths = paths
+
+    def __str__(self) -> str:
+        return trans._(
+            'No plugin found capable of reading {path_message}.',
+            path_message=f"[{self.paths[0]}, ...]"
+            if len(self.paths) > 1
+            else self.paths[0],
+        )

@@ -190,8 +190,6 @@ def prepare_remaining_readers(
     # if there's no other readers left, raise the exception
     if not readers and error:
         raise ReaderPluginError(
-            plugin_name,
-            paths,
             trans._(
                 "Tried to read {path_message} with plugin {plugin}, because it was associated with that file extension/because it is the only plugin capable of reading that path, but it gave an error. Try associating a different plugin or installing a different plugin for this kind of file.",
                 path_message=f"[{paths[0]}, ...]"
@@ -199,6 +197,8 @@ def prepare_remaining_readers(
                 else paths[0],
                 plugin=plugin_name,
             ),
+            plugin_name,
+            paths,
         ) from error
 
     return readers
