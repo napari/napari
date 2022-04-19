@@ -102,7 +102,11 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
 
 class _StyleEncodingModel(EventedModel):
     class Config:
-        # Match fields exactly so that dicts can be sensibly parsed.
+        # Forbid extra initialization parameters instead of ignoring
+        # them by default. This is useful when parsing style encodings
+        # from dicts, as different types of encodings may have the same
+        # field names.
+        # https://pydantic-docs.helpmanual.io/usage/model_config/#options
         extra = 'forbid'
 
 
