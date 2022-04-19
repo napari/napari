@@ -123,7 +123,7 @@ def handle_gui_reading(
     the File -> Open dialogs. It prepares remaining readers and error message
     for display, opens the reader dialog and based on user entry opens
     paths using the chosen plugin. Any errors raised in the process of reading
-    with vhosen plugin are reraised.
+    with the chosen plugin are reraised.
 
     Parameters
     ----------
