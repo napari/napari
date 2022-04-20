@@ -32,15 +32,6 @@ python -m pip install "napari[all]"
 
 If you prefer conda over pip, you can replace the last line with: `conda install -c conda-forge napari`
 
-### containers:
-Docker
-```sh
-docker pull ghcr.io/napari/napari:main
-```
-Singularity
-```sh
-singularity exec -B /run oras://ghcr.io/napari/napari:latest napari -h
-```
 See here for the full [installation guide](https://napari.org/tutorials/fundamentals/installation.html), including how to [install napari as a bundled app](https://napari.org/tutorials/fundamentals/installation.html#install-as-a-bundled-app).
 
 ## simple example
