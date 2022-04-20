@@ -330,7 +330,8 @@ def show_info(message: str):
     Show an info message in the notification manager.
     """
     notification_manager.dispatch(
-        Notification(message, severity=NotificationSeverity.INFO))
+        Notification(message, severity=NotificationSeverity.INFO)
+    )
 
 
 def show_warning(message: str):
@@ -338,7 +339,8 @@ def show_warning(message: str):
     Show a warning in the notification manager.
     """
     notification_manager.dispatch(
-        Notification(message, severity=NotificationSeverity.WARNING))
+        Notification(message, severity=NotificationSeverity.WARNING)
+    )
 
 
 def show_error(message: str):
@@ -346,7 +348,8 @@ def show_error(message: str):
     Show an error in the notification manager.
     """
     notification_manager.dispatch(
-        Notification(message, severity=NotificationSeverity.ERROR))
+        Notification(message, severity=NotificationSeverity.ERROR)
+    )
 
 
 def show_console_notification(notification: Notification):
