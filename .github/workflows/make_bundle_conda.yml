@@ -42,18 +42,19 @@ jobs:
       - name: Create environment.yml
         shell: bash
         run: |
+          set -x
+          dependencies=$(bash tools/setup_cfg_to_yaml.sh build_packages)
+          channels=$(bash tools/setup_cfg_to_yaml.sh build_packages_channels)
           cat <<EOF > environment.yml
           name: test
           channels:
-            - conda-forge
+          $channels
           dependencies:
-            - conda-smithy
-            - python 3.8
-            - pip
-            - tomlkit
-            - ruamel.yaml
-            - anaconda-client
+          $dependencies
           EOF
+
+          # debug contents of the freshly written environment file
+          cat environment.yml
 
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2
@@ -67,8 +68,8 @@ jobs:
         run: |
           set -x
           pip install -e . --no-deps -vvv
-          version=$(python bundle.py --version)
-          arch=$(python bundle.py --arch)
+          version=$(python bundle_conda.py --version)
+          arch=$(python bundle_conda.py --arch)
           echo NAPARI_VERSION=${version} >> $GITHUB_ENV
           echo NAPARI_ARCH=${arch} >> $GITHUB_ENV
 
@@ -76,17 +77,7 @@ jobs:
         shell: bash -l {0}
         working-directory: napari-feedstock
         run: |
-          set -euxo pipefail
-          # This is the source path once mounted _inside_ the Docker image!
-          source_path="/home/conda/feedstock_root/napari-source"
-
-          sed -i -e "s|{% set version = \".*\" %}|{% set version = \"${NAPARI_VERSION}\" %}|" \
-                 -e "s|  - url: https://pypi.*|  path: ${source_path}|" \
-                 -e "s|  - url: https://raw\.github.*||" \
-                 -e "s|    folder:.*||" \
-                 -e "s|    sha256:.*||g"  \
-                 recipe/meta.yaml
-
+          python bundle_conda.py --patch-recipe recipe/meta.yaml
           conda-smithy rerender
           git diff
           mv ${GITHUB_WORKSPACE}/napari-source .
@@ -169,6 +160,7 @@ jobs:
       DISPLAY: ":99.0"
       CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
       CONSTRUCTOR_TARGET_PLATFORM: ${{ matrix.target-platform }}
+      CONSTRUCTOR_PYTHON_VERSION: ${{ matrix.python-version }}
     outputs:
       licenses-artifact: ${{ steps.licenses.outputs.licenses_artifact }}
 
@@ -180,26 +172,23 @@ jobs:
       - name: Create environment.yml
         shell: bash
         run: |
+          set -x
+          dependencies=$(bash tools/setup_cfg_to_yaml.sh build_installer)
+          channels=$(bash tools/setup_cfg_to_yaml.sh build_packages_channels)
           cat <<EOF > environment.yml
           name: build-bundle
           channels:
-            - napari/label/bundle_tools
-            - conda-forge
+          $channels
           dependencies:
-            - python ${{ matrix.python-version }}
-            - pip
-            - constructor
-            - conda-build
-            - ruamel.yaml
-            - conda-standalone
+          $dependencies
           EOF
       - name: install micromamba
         uses: mamba-org/provision-with-micromamba@main
 
-      - name: set up build dependencies
+      - name: install napari
         shell: bash -l {0}
         run: |
-          python -m pip install -e '.[bundle_build]'
+          python -m pip install -e . --no-deps
 
       - name: get tag / arch-suffix / extension / artifact-name / conda-standalone
         shell: bash -l {0}

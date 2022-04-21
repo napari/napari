@@ -135,6 +135,61 @@ def _generate_background_images(installer_type, outpath="resources"):
         background.save(output, format="png")
         clean_these_files.append(output)
 
+def _patch_napari_recipe(recipe_path: str):
+    from souschef.recipe import Recipe
+    from souschef.jinja_expression import set_global_jinja_var
+
+    recipe = Recipe(load_file=recipe_path)
+
+    # 1. patch version
+    set_global_jinja_var(recipe, "version", _get_version())
+
+    # 2. patch sources
+    del recipe["source"][-1]
+    del recipe["source"][0]["url"]
+    del recipe["source"][0]["sha256"]
+    recipe["source"][0].update(
+        # this path is crafted to match the source path inside the docker
+        # image that builds the conda package
+        {"path": "/home/conda/feedstock_root/napari-source"}
+    )
+    if False:
+        # 3. add new napari-pinnings output
+        new_output = {
+            "name": "napari-pinnings",
+            "version": _get_version(),
+            "build": {
+                "noarch": "generic",
+                "skip": True,
+            },
+            "number": 0,
+            "requirements": {
+                "run_constrained": []
+            },
+            "about": {
+                "home": "http://napari.org",
+                "license": "BSD-3-Clause",
+                "license_family": "BSD",
+                "license_file": "LICENSE",
+                "summary": "provides pinnings used by the bundle installer",
+                "doc_url": "http://napari.org",
+                "dev_url": "https://github.com/napari/napari",
+            }
+        }
+        recipe["outputs"].append(new_output)
+
+        for spec, comment in _get_dependencies()["run_constrained"]:
+            run_constrained = recipe["outputs"][-1]["requirements"]["run_constrained"]
+            run_constrained.append(spec)
+            if comment:
+                run_constrained.inline_comment = comment
+
+        recipe["outputs"][-1]["build"]["skip"].inline_comment = "[qt_bindings == 'pyside2']"
+
+    recipe.save(recipe_path)
+
+    return recipe
+
 
 def _get_channels():
     channels = []
@@ -150,6 +205,22 @@ def _get_channels():
     return channels
 
 
+def _lines_from_cfg_block(block: str, comments=False):
+    lines = []
+    for line in block.splitlines:
+        fields = line.strip().split("#", 1)
+        # conda specs can have a "selector" comment:  # [linux]
+        # we need to keep that around for the yaml syntax!
+        # no comment? add a blank field so every line has two fields
+        if comments:
+            if len(fields) == 1:
+                fields.append("")
+            lines.append(fields)
+        else:
+            lines.append(fields[0])
+    return lines
+
+
 def _get_dependencies():
     # TODO: Temporary while pyside2 is not yet published for arm64
     napari_build_str = "*pyqt*" if ARCH == "arm64" else "*pyside*"
@@ -158,26 +229,29 @@ def _get_dependencies():
     cfg = configparser.ConfigParser()
     cfg.read("setup.cfg")
 
-    def non_empty_lines(block: str):
-        return [line.strip() for line in block.splitlines() if line.strip()]
-
-    base_specs = non_empty_lines(cfg["conda_installer"]["base_run"])
+    base_specs = _lines_from_cfg_block(cfg["conda_installer"]["base_run"])
     base_specs[base_specs.index("python")] += python_version_str
 
-    napari_specs = non_empty_lines(cfg["conda_installer"]["napari_run"])
+    napari_specs = _lines_from_cfg_block(cfg["conda_installer"]["napari_run"])
     napari_idx = napari_specs.index("napari")
     napari_specs[napari_idx] += f"={napari_version_str}={napari_build_str}"
     napari_menu_idx = napari_specs.index("napari-menu")
     napari_specs[napari_menu_idx] += f"={napari_version_str}"
 
-    menu_specs = non_empty_lines(
+    menu_specs = _lines_from_cfg_block(
         cfg["conda_installer"]["napari_run_shortcuts"]
+    )
+
+    napari_pinnings = _lines_from_cfg_block(
+        cfg["conda_installer"]["napari_run_constrained"],
+        comments=False,  # selectors not supported yet
     )
 
     return {
         "base": base_specs,
         "napari": napari_specs,
         "menu_packages": menu_specs,
+        "run_constrained": napari_pinnings,
     }
 
 
@@ -400,6 +474,11 @@ def cli(argv=None):
         action="store_true",
         help="Generate background images from the logo (test only)",
     )
+    p.add_argument(
+        "--patch-recipe",
+        type=str,
+        help="Patch conda-forge recipe for our internal CI usage",
+    )
     return p.parse_args()
 
 
@@ -422,6 +501,9 @@ if __name__ == "__main__":
         sys.exit()
     if args.images:
         _generate_background_images()
+        sys.exit()
+    if args.patch_recipe:
+        _patch_napari_recipe(args.patch_recipe)
         sys.exit()
 
     print('created', main())
