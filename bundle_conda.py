@@ -151,26 +151,24 @@ def _get_channels():
 
 
 def _get_dependencies():
-    if ARCH == "arm64":
-        # TODO: Temporary while pyside2 is not yet published for arm64
-        napari_variant = f"={_get_version()}=*pyqt*"
-    else:
-        napari_variant = f"={_get_version()}=*pyside*"
-    python_variant = f"={PYTHON_VERSION}.*"
+    # TODO: Temporary while pyside2 is not yet published for arm64
+    napari_build_str = "*pyqt*" if ARCH == "arm64" else "*pyside*"
+    napari_version_str = _get_version()
+    python_version_str = f"={PYTHON_VERSION}.*"
     cfg = configparser.ConfigParser()
     cfg.read("setup.cfg")
 
-    def non_empty_splitlines(string_block):
+    def non_empty_lines(string_block):
         return [line.strip() for line in string_block.splitlines() if line.strip()]
 
-    base_specs = non_empty_splitlines(cfg["conda_installer"]["base_run"])
-    base_specs[base_specs.index("python")] += python_variant
+    base_specs = non_empty_lines(cfg["conda_installer"]["base_run"])
+    base_specs[base_specs.index("python")] += python_version_str
 
-    napari_specs = non_empty_splitlines(cfg["conda_installer"]["napari_run"])
-    napari_specs[napari_specs.index("napari")] += napari_variant
-    napari_specs[napari_specs.index("napari-menu")] += napari_variant
+    napari_specs = non_empty_lines(cfg["conda_installer"]["napari_run"])
+    napari_specs[napari_specs.index("napari")] += f"={napari_version_str}={napari_build_str}"
+    napari_specs[napari_specs.index("napari-menu")] += f"={napari_version_str}"
 
-    menu_specs = non_empty_splitlines(cfg["conda_installer"]["napari_run_shortcuts"])
+    menu_specs = non_empty_lines(cfg["conda_installer"]["napari_run_shortcuts"])
 
     return {
         "base": base_specs,
