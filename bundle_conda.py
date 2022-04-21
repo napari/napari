@@ -135,9 +135,10 @@ def _generate_background_images(installer_type, outpath="resources"):
         background.save(output, format="png")
         clean_these_files.append(output)
 
+
 def _patch_napari_recipe(recipe_path: str):
-    from souschef.recipe import Recipe
     from souschef.jinja_expression import set_global_jinja_var
+    from souschef.recipe import Recipe
 
     recipe = Recipe(load_file=recipe_path)
 
@@ -163,9 +164,7 @@ def _patch_napari_recipe(recipe_path: str):
                 "skip": True,
             },
             "number": 0,
-            "requirements": {
-                "run_constrained": []
-            },
+            "requirements": {"run_constrained": []},
             "about": {
                 "home": "http://napari.org",
                 "license": "BSD-3-Clause",
@@ -174,17 +173,21 @@ def _patch_napari_recipe(recipe_path: str):
                 "summary": "provides pinnings used by the bundle installer",
                 "doc_url": "http://napari.org",
                 "dev_url": "https://github.com/napari/napari",
-            }
+            },
         }
         recipe["outputs"].append(new_output)
 
         for spec, comment in _get_dependencies()["run_constrained"]:
-            run_constrained = recipe["outputs"][-1]["requirements"]["run_constrained"]
+            run_constrained = recipe["outputs"][-1]["requirements"][
+                "run_constrained"
+            ]
             run_constrained.append(spec)
             if comment:
                 run_constrained.inline_comment = comment
 
-        recipe["outputs"][-1]["build"]["skip"].inline_comment = "[qt_bindings == 'pyside2']"
+        recipe["outputs"][-1]["build"][
+            "skip"
+        ].inline_comment = "[qt_bindings == 'pyside2']"
 
     recipe.save(recipe_path)
 
