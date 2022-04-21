@@ -14,7 +14,6 @@ def make_screenshot(viewer):
     plt.show()
 
 
-#get_settings().application.window_size = (600, 600) # I will delete this line before merge
 get_settings().application.window_position = (900, 300) # hopefully better option to do this
 viewer = napari.Viewer()
 viewer.window.resize(600, 600) 
@@ -69,3 +68,6 @@ def update_layer(image_text_tuple):
 worker = loop_run()
 worker.yielded.connect(update_layer)
 worker.start()
+
+if __name__ == '__main__':
+    napari.run()
