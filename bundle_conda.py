@@ -159,7 +159,7 @@ def _get_dependencies():
     cfg.read("setup.cfg")
 
     def non_empty_lines(block: str):
-        return [l.strip() for l in block.splitlines() if l.strip()]
+        return [line.strip() for line in block.splitlines() if line.strip()]
 
     base_specs = non_empty_lines(cfg["conda_installer"]["base_run"])
     base_specs[base_specs.index("python")] += python_version_str
