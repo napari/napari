@@ -1,3 +1,4 @@
+import warnings
 from numbers import Integral
 from typing import Sequence, Tuple, Union
 
@@ -5,7 +6,7 @@ import numpy as np
 from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
-from ..utils.events import Event, EventedModel
+from ..utils.events import EventedModel
 from ..utils.translations import trans
 
 
@@ -72,7 +73,7 @@ class Dims(EventedModel):
     ndisplay: Literal[2, 3] = 2
     last_used: int = 0
     range: Tuple[Tuple[float, float, float], ...] = ()
-    span: Tuple[Tuple[int, int], ...] = ()
+    span: Tuple[Tuple[float, float], ...] = ()
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
 
@@ -99,7 +100,7 @@ class Dims(EventedModel):
 
         # Check the range tuple has same number of elements as ndim
         if len(values['range']) < ndim:
-            values['range'] = ((0, 2, 1),) * (
+            values['range'] = ((0.0, 2.0, 1.0),) * (
                 ndim - len(values['range'])
             ) + values['range']
         elif len(values['range']) > ndim:
@@ -107,9 +108,9 @@ class Dims(EventedModel):
 
         # Check the span tuple has same number of elements as ndim
         if len(values['span']) < ndim:
-            values['span'] = ((0, 0),) * (ndim - len(values['span'])) + values[
-                'span'
-            ]
+            values['span'] = ((0.0, 0.0),) * (
+                ndim - len(values['span'])
+            ) + values['span']
         elif len(values['span']) > ndim:
             values['span'] = values['span'][-ndim:]
 
@@ -153,7 +154,7 @@ class Dims(EventedModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.events.add(current_step=Event)
+        # to be removed if/when deprecating current_step
         self.events.span.connect(self.events.current_step)
 
     @property
@@ -178,6 +179,17 @@ class Dims(EventedModel):
             round((point - min_val) / step)
             for point, (min_val, _, step) in zip(self.point, self.range)
         )
+
+    @current_step.setter
+    def current_step(self, value: Tuple[int, ...]):
+        warnings.warn(
+            trans._(
+                'Dims.current_step is deprecated. Use Dims.set_point_step instead.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.set_point_step(range(self.ndim), value)
 
     @property
     def displayed(self) -> Tuple[int, ...]:
@@ -311,7 +323,7 @@ class Dims(EventedModel):
         label : str or sequence of str
             Given labels for the specified axes.
         """
-        axis, value = self._sanitize_input(
+        axis, label = self._sanitize_input(
             axis, label, value_is_sequence=False
         )
         full_axis_labels = list(self.axis_labels)
