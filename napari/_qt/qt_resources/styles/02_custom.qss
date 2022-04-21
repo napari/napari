@@ -25,20 +25,30 @@ QtLayerButtons, QtViewerButtons, QtLayerList {
 as long as they are docked (though they use the
 style of QDockWidget when undocked) */
 
-
-QMainWindow::separator {
-    background: {{ foreground }};
-    width: 2px; /* when vertical */
-    height: 2px; /* when horizontal */
-}
-
-QMainWindow::separator:hover {
-    background: {{ highlight }};
-}
-
 QStatusBar { 
   background: {{ background }};
   color: {{ text }};
+}
+
+/* ------------- Window separator --------- */
+
+QMainWindow::separator {
+  width: 4px;
+  height: 4px;
+  border: none;
+  background: transparent;
+}
+
+QMainWindow::separator:hover {
+  background: {{ foreground }};
+}
+
+QMainWindow::separator:horizontal {
+  image: url(":/themes/{{ name }}/horizontal_separator.svg");
+}
+
+QMainWindow::separator:vertical {
+  image: url(":/themes/{{ name }}/vertical_separator.svg");
 }
 
 /* ------------- DockWidgets --------- */
