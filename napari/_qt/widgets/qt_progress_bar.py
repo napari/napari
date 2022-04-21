@@ -1,6 +1,7 @@
 from typing import Optional
 
 from qtpy import QtCore
+from qtpy.QtGui import QFontDatabase
 from qtpy.QtWidgets import (
     QApplication,
     QFrame,
@@ -28,6 +29,12 @@ class QtLabeledProgressBar(QWidget):
         self.qt_progress_bar = QProgressBar()
         self.description_label = QLabel()
         self.eta_label = QLabel()
+        self.eta_label.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+        )
+        fixed_font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
+        self.eta_label.setFont(fixed_font)
+        self._eta_label_width = 0
         base_layout = QVBoxLayout()
 
         pbar_layout = QHBoxLayout()

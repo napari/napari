@@ -19,16 +19,20 @@ def _get_napari_pypi_versions() -> List[str]:
     return get_package_versions('napari')
 
 
-def _get_napari_conda_versions():
+def _get_napari_conda_versions(nightly: bool = False) -> List[str]:
     """Get the versions of the napari conda package."""
     data = {}
-    with request.urlopen(
-        'https://api.anaconda.org/package/conda-forge/napari'
-    ) as response:
+    if nightly:
+        url = 'https://api.anaconda.org/package/napari/napari'
+    else:
+        url = 'https://api.anaconda.org/package/conda-forge/napari'
+
+    with request.urlopen(url) as response:
         try:
             data = json.loads(response.read().decode())
         except Exception:
             pass
+
     return data.get('versions', [])
 
 
@@ -80,7 +84,9 @@ def is_dev() -> bool:
 
 
 def check_updates(
-    stable: bool = True, installer: InstallerTypes = None
+    stable: bool = True,
+    nightly: bool = False,
+    installer: InstallerTypes = None,
 ) -> Dict:
     """Check for updates.
 
@@ -88,6 +94,9 @@ def check_updates(
     ----------
     stable : bool, optional
         If ``True``, check for stable versions. Default is ``True``.
+    nightly : bool, optional
+        If ``True``, check for nightly versions. Only applicable to conda
+        installer. Default is ``False``.
     installer : str, optional
         Installer type. Default is ``None``.
 
@@ -109,14 +118,14 @@ def check_updates(
             installer = 'dev'
         elif running_as_constructor_app():
             installer = 'conda'
-            versions = _get_napari_conda_versions()
+            versions = _get_napari_conda_versions(nightly=nightly)
         else:
             installer = 'pip'
             versions = _get_napari_pypi_versions()
     elif installer == 'pip':
         versions = _get_napari_pypi_versions()
     elif installer == 'conda':
-        versions = _get_napari_conda_versions()
+        versions = _get_napari_conda_versions(nightly=nightly)
 
     if stable and not is_dev():
         versions = list(filter(_is_stable_version, versions))
@@ -127,10 +136,14 @@ def check_updates(
         update = parse_version(latest_version) > parse_version(__version__)
 
     data = {
+        "release": versions,
         "current": __version__,
         "latest": latest_version,
         "found": _get_installed_versions(),
         "installer": installer,
         "update": update,
     }
-    yield data
+    return data
+
+
+# print(check_updates(stable=False, nightly=True, installer='conda'))
