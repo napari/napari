@@ -51,4 +51,3 @@ if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
 
 
 from .qt_event_loop import get_app, gui_qt, quit_app, run
-from .qt_main_window import Window

@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Dict,
     Mapping,
+    Optional,
     Sequence,
     Union,
     cast,
@@ -19,9 +20,9 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
+from .._qt.widgets.qt_axis_popup import QAxisPopup
 from ..utils.context._layerlist_context import LayerListContextKeys as LLCK
 from ..utils.translations import trans
-from ..viewer import current_viewer
 from .base.base import Layer
 from .utils import stack_utils
 from .utils._link_layers import get_linked_layers
@@ -48,13 +49,28 @@ def _split_stack(ll: LayerList, axis: int = 0):
     if layer.rgb:
         images = stack_utils.split_rgb(layer)
     else:
-        order = current_viewer().dims.order
-        # dims.order dimensions might be greater than layer.dnim
-        order = [index for index in order if index < layer.ndim]
-        images = stack_utils.stack_to_images(layer, order[axis])
+        images = stack_utils.stack_to_images(layer, axis)
     ll.remove(layer)
     ll.extend(images)
     ll.selection = set(images)  # type: ignore
+
+
+def _split_stack_axis_popup(ll: LayerList, axis: Optional[int] = None) -> None:
+    layer = ll.selection.active
+    if not layer:
+        return
+
+    popup = QAxisPopup(layer.ndim)
+    popup.exec()
+    if axis is not None:
+        # condition to aid testing
+        popup.value = axis
+
+    if popup.value is None:
+        # no axis selected
+        return
+
+    _split_stack(ll, popup.value)
 
 
 def _project(ll: LayerList, axis: int = 0, mode='max'):
@@ -302,9 +318,22 @@ _LAYER_ACTIONS: Sequence[MenuItem] = [
     {
         'napari:split_stack': {
             'description': trans._('Split Stack'),
-            'action': _split_stack,
             'enable_when': LLCK.active_layer_type == "image",
             'show_when': ~LLCK.active_layer_is_rgb,
+            'action_group': {
+                'napari:split_first_axis': {
+                    'description': trans._('split along first axis'),
+                    'action': _split_stack,
+                    'enable_when': True,
+                    'show_when': True,
+                },
+                'napari:split_arbitrary_axis': {
+                    'description': trans._('split arbitrary axis'),
+                    'action': _split_stack_axis_popup,
+                    'enable_when': True,
+                    'show_when': True,
+                },
+            },
         },
         'napari:split_rgb': {
             'description': trans._('Split RGB'),

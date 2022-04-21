@@ -11,7 +11,7 @@ __all__ = ['Window']
 from .utils.translations import trans
 
 try:
-    from ._qt import Window
+    from ._qt.qt_main_window import Window
 
 except ImportError as e:
 

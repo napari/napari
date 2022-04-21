@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 
-from napari._qt import Window
+from napari._qt.qt_main_window import Window
 from napari.utils.theme import Theme, get_theme
 
 

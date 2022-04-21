@@ -12,6 +12,7 @@ from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _project,
+    _split_stack_axis_popup,
 )
 from napari.utils.context._expressions import Expr
 from napari.utils.context._layerlist_context import LayerListContextKeys
@@ -108,26 +109,16 @@ def test_convert_layer(input, type_):
     assert np.array_equal(ll[0].scale, original_scale)
 
 
-@pytest.mark.parametrize('order', [(0, 1, 2, 3), (3, 1, 2, 0), (2, 1, 0, 3)])
-def test_split_stack(make_napari_viewer, order) -> None:
-    axis = 0
-    larger_data = np.zeros((2, 3, 4, 5), dtype=np.uint8)
+@pytest.mark.parametrize('axis', [(0,), (1,), (2,)])
+def test_split_stack_axis_popup(axis) -> None:
     data = np.zeros((4, 6, 8), dtype=np.uint8)
+    ll = LayerList()
+    ll.append(Image(data))
 
-    viewer = make_napari_viewer()
+    _split_stack_axis_popup(ll, axis)
 
-    viewer.add_image(larger_data)
-    viewer.add_image(data)
-    viewer.dims.order = order
+    slice_shape = list(data.shape)
+    slice_shape.remove(axis)
 
-    for actions in _LAYER_ACTIONS:
-        action = actions.get("napari:split_stack")
-        if action is not None:
-            break
-
-    split_action = action["action"]
-    split_action(viewer.layers, axis=axis)
-
-    # removing extra dimension from `larger_data`
-    order = [index for index in order if index < data.ndim]
-    assert len(viewer.layers) == data.shape[order[axis]] + 1
+    assert len(ll) == data.shape[axis]
+    assert ll[0].data.shape == slice_shape
