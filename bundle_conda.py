@@ -62,7 +62,7 @@ MACOS = sys.platform == 'darwin'
 LINUX = sys.platform.startswith("linux")
 PYTHON_VERSION = os.environ.get(
     "CONSTRUCTOR_PYTHON_VERSION",
-    f"{sys.version_info.major}.{sys.version_info.minor}"
+    f"{sys.version_info.major}.{sys.version_info.minor}",
 )
 TARGET_PLATFORM = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
 if TARGET_PLATFORM == "osx-arm64":
@@ -158,15 +158,17 @@ def _get_dependencies():
     cfg = configparser.ConfigParser()
     cfg.read("setup.cfg")
 
-    def non_empty_lines(string_block):
-        return [line.strip() for line in string_block.splitlines() if line.strip()]
+    def non_empty_lines(block: str):
+        return [l.strip() for l in block.splitlines() if l.strip()]
 
     base_specs = non_empty_lines(cfg["conda_installer"]["base_run"])
     base_specs[base_specs.index("python")] += python_version_str
 
     napari_specs = non_empty_lines(cfg["conda_installer"]["napari_run"])
-    napari_specs[napari_specs.index("napari")] += f"={napari_version_str}={napari_build_str}"
-    napari_specs[napari_specs.index("napari-menu")] += f"={napari_version_str}"
+    napari_idx = napari_specs.index("napari")
+    napari_specs[napari_idx] += f"={napari_version_str}={napari_build_str}"
+    napari_menu_idx = napari_specs.index("napari-menu")
+    napari_specs[napari_menu_idx] += f"={napari_version_str}"
 
     menu_specs = non_empty_lines(cfg["conda_installer"]["napari_run_shortcuts"])
 
