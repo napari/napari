@@ -62,7 +62,7 @@ MACOS = sys.platform == 'darwin'
 LINUX = sys.platform.startswith("linux")
 PYTHON_VERSION = os.environ.get(
     "CONSTRUCTOR_PYTHON_VERSION",
-    f"{sys.version_info.major}.{sys.version_info.minor}"
+    f"{sys.version_info.major}.{sys.version_info.minor}",
 )
 TARGET_PLATFORM = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
 if TARGET_PLATFORM == "osx-arm64":
@@ -161,7 +161,9 @@ def _get_dependencies():
     cfg.read("setup.cfg")
 
     def non_empty_splitlines(string_block):
-        return [line.strip() for line in string_block.splitlines() if line.strip()]
+        return [
+            line.strip() for line in string_block.splitlines() if line.strip()
+        ]
 
     base_specs = non_empty_splitlines(cfg["conda_installer"]["base_run"])
     base_specs[base_specs.index("python")] += python_variant
@@ -170,7 +172,9 @@ def _get_dependencies():
     napari_specs[napari_specs.index("napari")] += napari_variant
     napari_specs[napari_specs.index("napari-menu")] += napari_variant
 
-    menu_specs = non_empty_splitlines(cfg["conda_installer"]["napari_run_shortcuts"])
+    menu_specs = non_empty_splitlines(
+        cfg["conda_installer"]["napari_run_shortcuts"]
+    )
 
     return {
         "base": base_specs,
