@@ -22,9 +22,8 @@ class Dims(EventedModel):
     last_used : int
         Dimension which was last used.
     range : tuple of 3-tuple of float
-        List of tuples (min, max, step), one for each dimension. In a world
-        coordinates space. As with Python's `range` and `slice`, max is not
-        included.
+        List of tuples (min, max, step), one for each dimension in world
+        coordinates space.
     span : tuple of 3-tuple of float
         Tuple of (low, high) bounds of the currently selected slice in world space.
     order : tuple of int
@@ -41,15 +40,16 @@ class Dims(EventedModel):
     last_used : int
         Dimension which was last used.
     range : tuple of 3-tuple of float
-        List of tuples (min, max, step), one for each dimension. In a world
-        coordinates space. As with Python's `range` and `slice`, max is not
-        included.
-    current_step : tuple of int
-        Tuple the slider position for each dims slider, in world coordinates.
+        List of tuples (min, max, step), one for each dimension in world
+        coordinates space.
+    span : tuple of 3-tuple of float
+        Tuple of (low, high) bounds of the currently selected slice in world space.
     order : tuple of int
         Tuple of ordering the dimensions, where the last dimensions are rendered.
     axis_labels : tuple of str
         Tuple of labels for each dimension.
+    current_step : tuple of int
+        Tuple the slider position for each dims slider, in world coordinates.
     nsteps : tuple of int
         Number of steps available to each slider. These are calculated from
         the ``range``.
@@ -165,13 +165,31 @@ class Dims(EventedModel):
             for min_val, max_val, step_size in self.range
         )
 
+    @nsteps.setter
+    def nsteps(self, value):
+        self.set_range(
+            range(self.ndim),
+            tuple(
+                (mn, mx, (mx - mn) / val)
+                for (mn, mx), val in zip(self.range, value)
+            ),
+        )
+
     @property
-    def thickness(self) -> Tuple[int]:
+    def thickness(self) -> Tuple[float]:
         return tuple(high - low for low, high in self.span)
+
+    @thickness.setter
+    def thickness(self, value):
+        self.set_thickness(range(self.ndim), value)
 
     @property
     def point(self) -> Tuple[float, ...]:
         return tuple((low + high) / 2 for low, high in self.span)
+
+    @point.setter
+    def point(self, value):
+        self.set_point(range(self.ndim), value)
 
     @property
     def current_step(self) -> Tuple[int, ...]:
@@ -297,7 +315,7 @@ class Dims(EventedModel):
     def set_point_step(
         self,
         axis: Union[int, Sequence[int]],
-        value: Union[Union[int, float], Sequence[Union[int, float]]],
+        value: Union[int, Sequence[int]],
     ):
         axis, value = self._sanitize_input(
             axis, value, value_is_sequence=False
