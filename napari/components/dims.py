@@ -289,7 +289,8 @@ class Dims(EventedModel):
         """Sets point to slice dimension in world coordinates.
 
         The current thickness is preserved, and the point is set as
-        the center of the slice.
+        the center of the slice. If too close to (or beyond) the edge to fit
+        the whole thickness, the position is clipped as appropriate.
 
         Parameters
         ----------
@@ -304,7 +305,12 @@ class Dims(EventedModel):
         full_span = list(self.span)
         point = list(self.point)
         range = list(self.range)
+        point_clips = [
+            (mn + th / 2, mx - th / 2)
+            for (mn, mx, _), th in zip(range, self.thickness)
+        ]
         for ax, val in zip(axis, value):
+            val = np.clip(val, *point_clips[ax])
             shift = val - point[ax]
             min_val, max_val, _ = range[ax]
             low, high = tuple(v + shift for v in full_span[ax])
@@ -354,7 +360,8 @@ class Dims(EventedModel):
         axis: Union[int, Sequence[int]],
         value: Union[Union[int, float], Sequence[Union[int, float]]],
     ):
-        """Set the slider slice thickness for this dimension.
+        """Set the slider slice thickness for this dimension. If the new thickness
+        would extend beyond the range limits, it is instead clipped to prevent it.
 
         Parameters
         ----------
@@ -371,7 +378,8 @@ class Dims(EventedModel):
         for ax, val in zip(axis, value):
             min_val, max_val, _ = range[ax]
             low, high = full_span[ax]
-            thickness_change = (val - (high - low)) / 2
+            max_change = min(abs(low - min_val), abs(max_val - high))
+            thickness_change = min((val - (high - low)) / 2, max_change)
             new_low = max(min_val, low - thickness_change)
             new_high = min(max_val, high + thickness_change)
             full_span[ax] = new_low, new_high
