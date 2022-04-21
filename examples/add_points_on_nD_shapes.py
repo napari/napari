@@ -1,4 +1,11 @@
-"""Add points on nD shapes in 3D using a mouse callback"""
+"""
+Add points on nD shapes
+=======================
+
+Add points on nD shapes in 3D using a mouse callback
+
+"""
+
 import napari
 import numpy as np
 
@@ -31,13 +38,13 @@ viewer = napari.view_points(ndim=4, size=3)
 points_layer = viewer.layers[0]
 
 # add the shapes layer to the viewer
-properties = {'index': [0, 1, 2]}
+features = {'index': [0, 1, 2]}
 shapes_layer = viewer.add_shapes(
     shapes_data,
     face_color=['magenta', 'green', 'blue'],
     edge_color='white',
     blending='additive',
-    properties=properties,
+    features=features,
     text='index'
 )
 
@@ -55,6 +62,11 @@ def on_click(layer, event):
         points_layer.add(intersection_point)
 
 
-# set the viewer to 3D rendering mode
+# set the viewer to 3D rendering mode with the first two rectangles in view
 viewer.dims.ndisplay = 3
-napari.run()
+viewer.dims.set_point(axis=0, value=0)
+viewer.camera.angles = (70, 30, 150)
+viewer.camera.zoom = 2.5
+
+if __name__ == '__main__':
+    napari.run()

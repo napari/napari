@@ -38,7 +38,7 @@ from ..settings import get_settings
 from ..utils import perf
 from ..utils._proxies import PublicOnlyProxy
 from ..utils.io import imsave
-from ..utils.misc import in_jupyter, running_as_bundled_app
+from ..utils.misc import in_ipython, in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.theme import _themes, get_system_theme
 from ..utils.translations import trans
@@ -233,6 +233,11 @@ class _QtMainWindow(QMainWindow):
 
         if window_state:
             self.restoreState(str_to_qbytearray(window_state))
+
+        # Toggling the console visibility is disabled when it is not
+        # available, so ensure that it is hidden.
+        if in_ipython():
+            self._qt_viewer.dockConsole.setVisible(False)
 
         if window_fullscreen:
             self.setWindowState(Qt.WindowFullScreen)
@@ -913,7 +918,7 @@ class Window:
             menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
-        del self._dock_widgets[_dw.name]
+        self._dock_widgets.pop(_dw.name, None)
 
         # Deleting the dock widget means any references to it will no longer
         # work but it's not really useful anyway, since the inner widget has
@@ -1129,7 +1134,9 @@ class Window:
         """Restart the napari application."""
         self._qt_window.restart()
 
-    def _screenshot(self, flash=True, canvas_only=False) -> 'QImage':
+    def _screenshot(
+        self, size=None, scale=None, flash=True, canvas_only=False
+    ) -> 'QImage':
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1137,34 +1144,68 @@ class Window:
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
+        size : tuple (int, int)
+            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Only used if `canvas_only` is True.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Only used if `canvas_only` is True.
         canvas_only : bool
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
 
         Returns
-        ----------
+        -------
         img : QImage
         """
         from .utils import add_flash_animation
 
         if canvas_only:
-            img = self._qt_viewer.canvas.native.grabFramebuffer()
-            if flash:
-                add_flash_animation(self._qt_viewer._canvas_overlay)
+            canvas = self._qt_viewer.canvas
+            prev_size = canvas.size
+            if size is not None:
+                if len(size) != 2:
+                    raise ValueError(
+                        f'screenshot size must be 2 values, got {len(size)}'
+                    )
+                # Scale the requested size to account for HiDPI
+                size = tuple(
+                    dim / self._qt_window.devicePixelRatio() for dim in size
+                )
+                canvas.size = size[::-1]  # invert x ad y for vispy
+            if scale is not None:
+                # multiply canvas dimensions by the scale factor to get new size
+                canvas.size = tuple(dim * scale for dim in canvas.size)
+            try:
+                img = self._qt_viewer.canvas.native.grabFramebuffer()
+                if flash:
+                    add_flash_animation(self._qt_viewer._canvas_overlay)
+            finally:
+                # make sure we always go back to the right canvas size
+                if size is not None or scale is not None:
+                    canvas.size = prev_size
         else:
             img = self._qt_window.grab().toImage()
             if flash:
                 add_flash_animation(self._qt_window)
         return img
 
-    def screenshot(self, path=None, flash=True, canvas_only=False):
+    def screenshot(
+        self, path=None, size=None, scale=None, flash=True, canvas_only=False
+    ):
         """Take currently displayed viewer and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
+        size : tuple (int, int)
+            Size (resolution) of the screenshot. By default, the currently displayed size.
+            Only used if `canvas_only` is True.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot. By default, the currently displayed resolution.
+            Only used if `canvas_only` is True.
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
@@ -1179,7 +1220,7 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = QImg2array(self._screenshot(flash, canvas_only))
+        img = QImg2array(self._screenshot(size, scale, flash, canvas_only))
         if path is not None:
             imsave(path, img)  # scikit-image imsave method
         return img

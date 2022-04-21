@@ -118,6 +118,7 @@ ISO_CATEGORICAL_SNIPPETS = dict(
         vec4 color3 = vec4(0.0);  // final color
         vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
+        bool discard_fragment = true;
         """,
     in_loop="""
         // check if value is different from the background value
@@ -134,8 +135,8 @@ ISO_CATEGORICAL_SNIPPETS = dict(
                     gl_FragColor = color;
 
                     // set the variables for the depth buffer
-                    surface_point = iloc * u_shape;
-                    surface_found = true;
+                    frag_depth_point = iloc * u_shape;
+                    discard_fragment = false;
 
                     iter = nsteps;
                     break;
@@ -145,9 +146,8 @@ ISO_CATEGORICAL_SNIPPETS = dict(
         }
         """,
     after_loop="""
-        if (surface_found == false) {
+        if (discard_fragment)
             discard;
-        }
         """,
 )
 

@@ -90,7 +90,7 @@ def test_zarr_multiscale():
     with TemporaryDirectory(suffix='.zarr') as fout:
         root = zarr.open_group(fout, 'a')
         for i in range(len(multiscale)):
-            shape = 20 // 2 ** i
+            shape = 20 // 2**i
             z = root.create_dataset(str(i), shape=(shape,) * 2)
             z[:] = multiscale[i]
         viewer.open(fout, multiscale=True, plugin='builtins')
