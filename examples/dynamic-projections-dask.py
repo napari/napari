@@ -1,4 +1,7 @@
 """
+Dynamic projections dask
+========================
+
 Using dask array operations, one can dynamically take arbitrary slices
 and computations of a source dask array and display the results in napari.
 When the computation takes one or more parameters, one can tie a UI to
@@ -26,7 +29,8 @@ blobs_dask_windows = np.squeeze(
 blobs_sum = np.sum(blobs_dask_windows, axis=1)
 viewer = napari.view_image(blobs_sum)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
 
 ##############################################################################
 # Part 2: using magicgui to vary the slice thickness.
@@ -59,4 +63,5 @@ viewer = napari.view_image(blobs_dask, colormap='green')
 viewer.window.add_dock_widget(magicgui(sliding_window_mean, auto_call=True))
 viewer.dims.current_step = (32, 0, 0)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

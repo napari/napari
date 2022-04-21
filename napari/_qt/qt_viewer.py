@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import traceback
 import warnings
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 from weakref import WeakSet
@@ -438,11 +439,19 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
-            except ImportError:
+            except ModuleNotFoundError:
                 warnings.warn(
                     trans._(
                         'napari-console not found. It can be installed with'
                         ' "pip install napari_console"'
+                    )
+                )
+                self._console = None
+            except ImportError:
+                traceback.print_exc()
+                warnings.warn(
+                    trans._(
+                        'error importing napari-console. See console for full error.'
                     )
                 )
                 self._console = None
@@ -825,6 +834,11 @@ class QtViewer(QSplitter):
         transform = self.view.scene.transform
         mapped_position = transform.imap(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
+
+        # handle position for 3D views of 2D data
+        nd_point = len(self.viewer.dims.point)
+        if nd_point < nd:
+            position_world_slice = position_world_slice[-nd_point:]
 
         position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):

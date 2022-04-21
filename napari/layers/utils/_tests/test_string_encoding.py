@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from napari.layers.utils._string_encoding import (
+from napari.layers.utils.string_encoding import (
     ConstantStringEncoding,
     DirectStringEncoding,
     FormatStringEncoding,
@@ -20,6 +20,16 @@ def features() -> pd.DataFrame:
     return pd.DataFrame(
         {
             'class': ['a', 'b', 'c'],
+            'confidence': [0.5, 1, 0.25],
+        }
+    )
+
+
+@pytest.fixture
+def numeric_features() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            'label': [1, 2, 3],
             'confidence': [0.5, 1, 0.25],
         }
     )
@@ -117,6 +127,12 @@ def test_format_with_missing_field(features):
         encoding(features)
 
 
+def test_format_with_mixed_feature_numeric_types(numeric_features):
+    encoding = FormatStringEncoding(format='{label:d}: {confidence:.2f}')
+    values = encoding(numeric_features)
+    np.testing.assert_array_equal(values, ['1: 0.50', '2: 1.00', '3: 0.25'])
+
+
 def test_validate_from_format_string():
     argument = '{class}: {score:.2f}'
     expected = FormatStringEncoding(format=argument)
@@ -128,7 +144,7 @@ def test_validate_from_format_string():
 
 def test_validate_from_non_format_string():
     argument = 'abc'
-    expected = ConstantStringEncoding(constant=argument)
+    expected = DirectStringEncoding(feature=argument)
 
     actual = validate_string_encoding(argument)
 

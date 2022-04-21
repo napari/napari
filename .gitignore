@@ -158,3 +158,4 @@ napari/settings/napari.schema.json
 
 docs/jupyter_execute/
 docs/.jupyter_cache/
+docs/gallery/

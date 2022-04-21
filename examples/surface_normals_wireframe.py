@@ -1,4 +1,7 @@
 """
+Surface normals wireframe
+=========================
+
 Display a 3D mesh with normals and wireframe
 """
 
@@ -20,4 +23,5 @@ surface.normals.face.visible = True
 surface.normals.vertex.visible = True
 surface.wireframe.visible = True
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -1,4 +1,7 @@
 """
+Annotate segmentation with text
+===============================
+
 Perform a segmentation and annotate the results with
 bounding boxes and text
 """
@@ -104,7 +107,7 @@ bbox_rects = make_bbox([features[f'bbox-{i}'] for i in range(4)])
 
 # specify the display parameters for the text
 text_parameters = {
-    'text': 'label: {label}\ncirc: {circularity:.2f}',
+    'string': 'label: {label}\ncirc: {circularity:.2f}',
     'size': 12,
     'color': 'green',
     'anchor': 'upper_left',
@@ -126,4 +129,5 @@ shapes_layer = viewer.add_shapes(
     name='bounding box',
 )
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

@@ -126,10 +126,13 @@ class VispyShapesLayer(VispyBaseLayer):
         return text_node
 
     def _on_text_change(self, event=None):
-        if event is not None and event.type == 'blending':
-            self._on_blending_change(event)
-        else:
-            self._update_text()
+        if event is not None:
+            if event.type == 'blending':
+                self._on_blending_change(event)
+                return
+            if event.type == 'values':
+                return
+        self._update_text()
 
     def _on_blending_change(self):
         """Function to set the blending mode"""

@@ -328,7 +328,10 @@ def main(extra_specs=None):
         _constructor(extra_specs=extra_specs)
     finally:
         for path in clean_these_files:
-            os.unlink(path)
+            try:
+                os.unlink(path)
+            except OSError:
+                print("! Could not remove", path)
     assert Path(OUTPUT_FILENAME).exists()
     return OUTPUT_FILENAME
 

@@ -1,4 +1,7 @@
 """
+Custom key bindings
+===================
+
 Display one 4-D image layer using the add_image API
 """
 
@@ -50,4 +53,5 @@ def hello(viewer):
 # change viewer title
 viewer.title = 'quality control images'
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

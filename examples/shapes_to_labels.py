@@ -1,6 +1,9 @@
 """
-Display one shapes layer ontop of one image layer using the add_shapes and
-add_image APIs. When the window is closed it will print the coordinates of
+Shapes to labels
+================
+
+Display one shapes layer ontop of one image layer using the ``add_shapes`` and
+``add_image`` APIs. When the window is closed it will print the coordinates of
 your shapes.
 """
 
@@ -94,4 +97,5 @@ labels = layer.to_labels([512, 512])
 labels_layer = viewer.add_labels(labels, name='labels')
 labels_layer.visible = False
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()
