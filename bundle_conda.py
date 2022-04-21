@@ -154,42 +154,57 @@ def _patch_napari_recipe(recipe_path: str):
         # image that builds the conda package
         {"path": "/home/conda/feedstock_root/napari-source"}
     )
-    if False:
-        # 3. add new napari-pinnings output
-        new_output = {
-            "name": "napari-pinnings",
-            "version": _get_version(),
-            "build": {
-                "noarch": "generic",
-                "skip": True,
-            },
-            "number": 0,
-            "requirements": {"run_constrained": []},
-            "about": {
-                "home": "http://napari.org",
-                "license": "BSD-3-Clause",
-                "license_family": "BSD",
-                "license_file": "LICENSE",
-                "summary": "provides pinnings used by the bundle installer",
-                "doc_url": "http://napari.org",
-                "dev_url": "https://github.com/napari/napari",
-            },
-        }
-        recipe["outputs"].append(new_output)
 
-        for spec, comment in _get_dependencies()["run_constrained"]:
-            run_constrained = recipe["outputs"][-1]["requirements"][
-                "run_constrained"
-            ]
-            run_constrained.append(spec)
-            if comment:
-                run_constrained.inline_comment = comment
+    # 3. patch run requirements for napari pkg
+    napari_host_reqs = recipe["outputs"][0]["requirements"]["host"]
+    napari_run_reqs = recipe["outputs"][0]["requirements"]["run"]
+    napari_run_reqs.clear()
+    for spec, comment in _get_dependencies()["napari_recipe"]:
+        napari_run_reqs.append(spec)
+        if "python" in spec.split():
+            for idx, req in enumerate(napari_host_reqs):
+                if "python" in req.value.split():
+                    break
+            else:
+                raise ValueError("python not found in host?")
+            napari_host_reqs[idx].value = spec
+        if comment:
+            napari_run_reqs[-1].inline_comment = comment
 
-        recipe["outputs"][-1]["build"][
-            "skip"
-        ].inline_comment = "[qt_bindings == 'pyside2']"
+    # 4. add new napari-pinnings output
+    new_output = {
+        "name": "napari-pinnings",
+        "version": _get_version(),
+        "build": {
+            "noarch": "generic",
+            "skip": True,
+        },
+        "number": "<{ build }}",
+        "requirements": {"run_constrained": []},
+        "about": {
+            "home": "http://napari.org",
+            "license": "BSD-3-Clause",
+            "license_family": "BSD",
+            "license_file": "LICENSE",
+            "summary": "provides pinnings used by the bundle installer",
+            "doc_url": "http://napari.org",
+            "dev_url": "https://github.com/napari/napari",
+        },
+    }
 
-    recipe.save(recipe_path)
+    recipe["outputs"].append("")  # work around .append() limitation
+    recipe["outputs"][2] = new_output
+
+    for spec, comment in _get_dependencies()["run_constrained"]:
+        constrains = recipe["outputs"][2]["requirements"]["run_constrained"]
+        constrains.append(spec)
+        if comment:
+            constrains.inline_comment = comment
+
+    skip = recipe["outputs"][2]["build"]["skip"]
+    skip.inline_comment = "[qt_bindings == 'pyside2']"
+
+    recipe.save(recipe_path + ".edit")
 
     return recipe
 
@@ -210,8 +225,12 @@ def _get_channels():
 
 def _lines_from_cfg_block(block: str, comments=False):
     lines = []
-    for line in block.splitlines:
-        fields = line.strip().split("#", 1)
+    for line in block.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        fields = [field.strip() for field in line.split("#", 1)]
+
         # conda specs can have a "selector" comment:  # [linux]
         # we need to keep that around for the yaml syntax!
         # no comment? add a blank field so every line has two fields
@@ -247,7 +266,11 @@ def _get_dependencies():
 
     napari_pinnings = _lines_from_cfg_block(
         cfg["conda_installer"]["napari_run_constrained"],
-        comments=False,  # selectors not supported yet
+        comments=True,
+    )
+    napari_recipe_run = _lines_from_cfg_block(
+        cfg["conda_installer"]["napari_recipe_run"],
+        comments=True,
     )
 
     return {
@@ -255,6 +278,7 @@ def _get_dependencies():
         "napari": napari_specs,
         "menu_packages": menu_specs,
         "run_constrained": napari_pinnings,
+        "napari_recipe": napari_recipe_run,
     }
 
 
