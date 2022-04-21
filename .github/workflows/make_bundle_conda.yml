@@ -43,8 +43,8 @@ jobs:
         shell: bash
         run: |
           set -x
-          dependencies=$(cd napari-source && bash tools/setup_cfg_to_yaml.sh build_packages)
-          channels=$(cd napari-source && bash tools/setup_cfg_to_yaml.sh build_packages_channels)
+          dependencies=$(cd napari-source && bash tools/setup_cfg_to_yaml.sh 'build_packages =')
+          channels=$(cd napari-source && bash tools/setup_cfg_to_yaml.sh 'build_packages_channels =')
           cat <<EOF > environment.yml
           name: test
           channels:
@@ -173,8 +173,8 @@ jobs:
         shell: bash
         run: |
           set -x
-          dependencies=$(bash tools/setup_cfg_to_yaml.sh build_installer)
-          channels=$(bash tools/setup_cfg_to_yaml.sh build_packages_channels)
+          dependencies=$(bash tools/setup_cfg_to_yaml.sh 'build_installer =')
+          channels=$(bash tools/setup_cfg_to_yaml.sh 'build_installer_channels =')
           cat <<EOF > environment.yml
           name: build-bundle
           channels:
