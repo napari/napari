@@ -77,7 +77,7 @@ jobs:
         shell: bash -l {0}
         working-directory: napari-feedstock
         run: |
-          python bundle_conda.py --patch-recipe recipe/meta.yaml
+          python .${GITHUB_WORKSPACE}/napari-source/bundle_conda.py --patch-recipe recipe/meta.yaml
           conda-smithy rerender
           git diff
           mv ${GITHUB_WORKSPACE}/napari-source .
