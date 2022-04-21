@@ -170,7 +170,9 @@ def _get_dependencies():
     napari_menu_idx = napari_specs.index("napari-menu")
     napari_specs[napari_menu_idx] += f"={napari_version_str}"
 
-    menu_specs = non_empty_lines(cfg["conda_installer"]["napari_run_shortcuts"])
+    menu_specs = non_empty_lines(
+        cfg["conda_installer"]["napari_run_shortcuts"]
+    )
 
     return {
         "base": base_specs,
