@@ -145,7 +145,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
     contrast_limits : Optional[Tuple[float, float]]
         The (min, max) feature values that should respectively map to the first and last
         colors in the colormap. If None, then this will attempt to calculate these values
-        from the feature values the first time this generate color values. If that attempt
+        from the feature values each time this generates color values. If that attempt
         fails, these are effectively (0, 1).
     fallback : ColorValue
         The safe constant fallback color to use if mapping the feature values to
