@@ -160,15 +160,15 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addRow(trans._('colormap:'), colormap_layout)
         self.grid_layout.addRow(trans._('blending:'), self.blendComboBox)
         self.grid_layout.addRow(self.interpLabel, self.interpComboBox)
-        self.grid_layout.addRow(self.renderLabel, self.renderComboBox)
-        self.grid_layout.addRow(self.attenuationLabel, self.attenuationSlider)
         self.grid_layout.addRow(self.depictionLabel, self.depictionComboBox)
+        self.grid_layout.addRow(self.renderLabel, self.renderComboBox)
+        self.grid_layout.addRow(
+            self.isoThresholdLabel, self.isoThresholdSlider
+        )
+        self.grid_layout.addRow(self.attenuationLabel, self.attenuationSlider)
         self.grid_layout.addRow(self.planeNormalLabel, self.planeNormalButtons)
         self.grid_layout.addRow(
             self.planeThicknessLabel, self.planeThicknessSlider
-        )
-        self.grid_layout.addRow(
-            self.isoThresholdLabel, self.isoThresholdSlider
         )
 
     def changeInterpolation(self, text):
