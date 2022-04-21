@@ -63,7 +63,7 @@ vectors_layer = viewer.add_vectors(vectors, edge_width=3)
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python
@@ -117,7 +117,7 @@ or 3 less than the total number of dimensions of the layer. See for example the
 [`examples/nD_vectors.py`](https://github.com/napari/napari/blob/main/examples/nD_vectors.py)
 to see shapes in both 2D and 3D:
 
-![image: nD vectors](../../images/nD_vectors.gif)
+![image: nD vectors](../../images/nD_vectors.webm)
 
 ## Changing vector length, width, and color
 

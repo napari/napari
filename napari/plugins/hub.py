@@ -8,7 +8,7 @@ from functools import lru_cache
 from typing import Generator, Optional, Tuple
 from urllib import error, request
 
-from npe2.manifest.package_metadata import PackageMetadata
+from npe2 import PackageMetadata
 
 from .utils import normalized_name
 

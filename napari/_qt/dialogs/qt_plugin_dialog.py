@@ -5,8 +5,7 @@ from importlib.metadata import PackageNotFoundError, metadata
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
-from npe2 import PluginManager
-from npe2.manifest.package_metadata import PackageMetadata
+from npe2 import PackageMetadata, PluginManager
 from qtpy.QtCore import (
     QEvent,
     QObject,
