@@ -71,6 +71,9 @@ class QtLabeledProgressBar(QWidget):
     def _set_eta(self, event):
         self.eta_label.setText(event.value)
 
+    def _set_total(self, event):
+        self.setRange(0, event.value)
+
     def _close(self, event):
         super().close()
 

@@ -72,7 +72,7 @@ class Extension2ReaderTable(QWidget):
                 remove_btn.setFixedWidth(30)
                 remove_btn.setStyleSheet('margin: 4px;')
                 remove_btn.setToolTip(
-                    'Remove this extension to reader association'
+                    trans._('Remove this extension to reader association')
                 )
                 remove_btn.clicked.connect(self._remove_extension_assignment)
 
@@ -108,3 +108,13 @@ class Extension2ReaderTable(QWidget):
             if row_widg_name == extension_to_remove:
                 self._table.removeRow(i)
                 return
+
+    def value(self):
+        """Return extension:reader mapping from settings.
+
+        Returns
+        -------
+        Dict[str, str]
+            mapping of extension to reader plugin display name
+        """
+        return get_settings().plugins.extension2reader

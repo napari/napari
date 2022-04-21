@@ -12,6 +12,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ...utils.translations import trans
+
 
 class QtReaderDialog(QDialog):
     """Dialog for user to select a reader plugin for a given file extension or folder"""
@@ -26,7 +28,7 @@ class QtReaderDialog(QDialog):
     ):
         super().__init__(parent)
         self.setObjectName('Choose reader')
-        self.setWindowTitle('Choose reader')
+        self.setWindowTitle(trans._('Choose reader'))
         self._current_file = pth
         self._extension = extension
         self._reader_buttons = []
@@ -115,9 +117,9 @@ def get_reader_choice_for_file(
     ----------
     readerDialog : QtReaderDialog or MockQtReaderDialog
         reader dialog to use for choices from the user
-    readers: str
+    readers : str
         Dictionary of display-name:plugin-name of potential readers for file
-    has_errored: bool
+    has_errored : bool
         True when we've tried to read this file and failed, otherwise False
 
     Returns

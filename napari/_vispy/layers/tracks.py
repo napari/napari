@@ -95,10 +95,6 @@ class VispyTracksLayer(VispyBaseLayer):
     def _on_graph_change(self):
         """Update the shader when the graph data changes."""
 
-        self.node.graph_filter.use_fade = self.layer.use_fade
-        self.node.graph_filter.tail_length = self.layer.tail_length
-        self.node.graph_filter.vertex_time = self.layer.graph_times
-
         # if the user clears a graph after it has been created, vispy offers
         # no method to clear the data, therefore, we need to set private
         # attributes to None to prevent errors
@@ -107,6 +103,11 @@ class VispyTracksLayer(VispyBaseLayer):
             self.node._subvisuals[2]._connect = None
             self.node.update()
             return
+
+        # vertex time buffer must change only if data is updated, otherwise vispy buffers might be of different lengths
+        self.node.graph_filter.use_fade = self.layer.use_fade
+        self.node.graph_filter.tail_length = self.layer.tail_length
+        self.node.graph_filter.vertex_time = self.layer.graph_times
 
         self.node._subvisuals[2].set_data(
             pos=self.layer._view_graph,

@@ -1,4 +1,7 @@
 """
+nD multiscale image
+===================
+
 Displays an nD multiscale image
 """
 
@@ -19,4 +22,5 @@ print('multiscale level shapes: ', [p.shape for p in multiscale])
 # add image multiscale
 viewer = napari.view_image(multiscale, contrast_limits=[0, 1], multiscale=True)
 
-napari.run()
+if __name__ == '__main__':
+    napari.run()

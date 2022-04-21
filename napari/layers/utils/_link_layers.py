@@ -9,6 +9,7 @@ from weakref import ReferenceType, ref
 if TYPE_CHECKING:
     from napari.layers import Layer
 
+from ...utils.events.event import WarningEmitter
 from ...utils.translations import trans
 
 #: Record of already linked layers... to avoid duplicating callbacks
@@ -223,7 +224,15 @@ def _get_common_evented_attributes(
             )
         )
 
-    common_events = set.intersection(*(set(lay.events) for lay in layers))
+    layer_events = [
+        {
+            e
+            for e in lay.events
+            if not isinstance(lay.events[e], WarningEmitter)
+        }
+        for lay in layers
+    ]
+    common_events = set.intersection(*layer_events)
     common_attrs = set.intersection(*(set(dir(lay)) for lay in layers))
     if not with_private:
         common_attrs = {x for x in common_attrs if not x.startswith("_")}

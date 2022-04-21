@@ -4,11 +4,12 @@ import numpy as np
 import pytest
 
 from napari.components.layerlist import LayerList
-from napari.layers import Image, Labels
+from napari.layers import Image, Labels, Shapes
 from napari.layers._layer_actions import (
     _LAYER_ACTIONS,
     ContextAction,
     SubMenu,
+    _convert,
     _convert_dtype,
     _project,
 )
@@ -59,8 +60,8 @@ def test_projections(mode):
     assert ll[-1].data.ndim == 3
     _project(ll, mode=mode)
     assert len(ll) == 2
-    # because we use keepdims = True
-    assert ll[-1].data.shape == (1, 8, 8)
+    # because keepdims = False
+    assert ll[-1].data.shape == (8, 8)
 
 
 @pytest.mark.parametrize(
@@ -86,6 +87,25 @@ def test_convert_dtype(mode):
 
     assert ll[-1].data[5, 5] == 1000
     assert ll[-1].data.flatten().sum() == 1000
+
+
+@pytest.mark.parametrize(
+    'input, type_',
+    [
+        (Image(np.random.rand(10, 10)), 'labels'),
+        (Labels(np.ones((10, 10), dtype=int)), 'image'),
+        (Shapes([np.array([[0, 0], [0, 10], [10, 0], [10, 10]])]), 'labels'),
+    ],
+)
+def test_convert_layer(input, type_):
+    ll = LayerList()
+    input.scale *= 1.5
+    original_scale = input.scale.copy()
+    ll.append(input)
+    assert ll[0]._type_string != type_
+    _convert(ll, type_)
+    assert ll[0]._type_string == type_
+    assert np.array_equal(ll[0].scale, original_scale)
 
 
 @pytest.mark.parametrize('order', [(0, 1, 2, 3), (3, 1, 2, 0), (2, 1, 0, 3)])

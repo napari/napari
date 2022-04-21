@@ -1,4 +1,7 @@
 """
+Interaction box image
+=====================
+
 Demonstrate interaction box on image layer
 """
 
@@ -10,5 +13,5 @@ from napari.utils.transforms import Affine
 viewer = napari.view_image(data.astronaut(), rgb=True)
 viewer.layers.selection.active.mode = 'transform'
 
-
-napari.run()
+if __name__ == '__main__':
+    napari.run()
