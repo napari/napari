@@ -75,9 +75,10 @@ jobs:
 
       - name: Patch and rerender feedstock
         shell: bash -l {0}
-        working-directory: napari-feedstock
+        working-directory: napari-source
         run: |
-          python ${GITHUB_WORKSPACE}/napari-source/bundle_conda.py --patch-recipe recipe/meta.yaml
+          python bundle_conda.py --patch-recipe ${GITHUB_WORKSPACE}/napari-feedstock/recipe/meta.yaml
+          cd ${GITHUB_WORKSPACE}/napari-feedstock
           conda-smithy rerender
           git diff
           mv ${GITHUB_WORKSPACE}/napari-source .
