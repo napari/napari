@@ -11,8 +11,16 @@ Some environment variables we use:
 CONSTRUCTOR_APP_NAME:
     in case you want to build a non-default distribution that is not
     named `napari`
+CONSTRUCTOR_NAPARI_VERSION:
+    version of napari you want to build the installer for. If not provided,
+    it expects the repository to be installed in development mode so
+    `$REPO_ROOT/napari/_version.py` is populated.
 CONSTRUCTOR_TARGET_PLATFORM:
     conda-style platform (as in `platform` in `conda info -a` output)
+CONSTRUCTOR_PYTHON_VERSION:
+    Version of Python to ship in the installer, with `major.minor` syntax
+    (e.g. 3.8). If not provided, will default to the version of the
+    interpreter running this script.
 CONSTRUCTOR_USE_LOCAL:
     whether to use the local channel (populated by `conda-build` actions)
 CONSTRUCTOR_CONDA_EXE:
@@ -32,6 +40,7 @@ CONSTRUCTOR_PFX_CERTIFICATE_PASSWORD:
     it might be needed by constructor.
 """
 
+import configparser
 import json
 import os
 import platform
@@ -51,7 +60,12 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
 LINUX = sys.platform.startswith("linux")
-if os.environ.get("CONSTRUCTOR_TARGET_PLATFORM") == "osx-arm64":
+PYTHON_VERSION = os.environ.get(
+    "CONSTRUCTOR_PYTHON_VERSION",
+    f"{sys.version_info.major}.{sys.version_info.minor}"
+)
+TARGET_PLATFORM = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
+if TARGET_PLATFORM == "osx-arm64":
     ARCH = "arm64"
 else:
     ARCH = (platform.machine() or "generic").lower().replace("amd64", "x86_64")
@@ -65,14 +79,17 @@ else:
     raise RuntimeError(f"Unrecognized OS: {sys.platform}")
 
 
-def _version():
+def _get_version():
+    if "CONSTRUCTOR_NAPARI_VERSION" in os.environ:
+        return os.environ["CONSTRUCTOR_NAPARI_VERSION"]
+
     with open(os.path.join(HERE, "napari", "_version.py")) as f:
         match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
         if match:
             return match.groups()[0].split('+')[0]
 
 
-OUTPUT_FILENAME = f"{APP}-{_version()}-{OS}-{ARCH}.{EXT}"
+OUTPUT_FILENAME = f"{APP}-{_get_version()}-{OS}-{ARCH}.{EXT}"
 clean_these_files = []
 
 
@@ -119,7 +136,50 @@ def _generate_background_images(installer_type, outpath="resources"):
         clean_these_files.append(output)
 
 
-def _constructor(version=_version(), extra_specs=None):
+def _get_channels():
+    channels = []
+    if _use_local():
+        channels.append("local")
+    channels.append("napari/label/nightly")
+    # temporary: needed for pyqt/qt on this platform
+    if ARCH == "arm64":
+        channels.append("andfoy")
+    # /temporary
+    channels.append("napari/label/bundle_tools")
+    channels.append("conda-forge")
+    return channels
+
+
+def _get_dependencies():
+    if ARCH == "arm64":
+        # TODO: Temporary while pyside2 is not yet published for arm64
+        napari_variant = f"={_get_version()}=*pyqt*"
+    else:
+        napari_variant = f"={_get_version()}=*pyside*"
+    python_variant = f"={PYTHON_VERSION}.*"
+    cfg = configparser.ConfigParser()
+    cfg.read("setup.cfg")
+
+    def non_empty_splitlines(string_block):
+        return [line.strip() for line in string_block.splitlines() if line.strip()]
+
+    base_specs = non_empty_splitlines(cfg["conda_installer"]["base_run"])
+    base_specs[base_specs.index("python")] += python_variant
+
+    napari_specs = non_empty_splitlines(cfg["conda_installer"]["napari_run"])
+    napari_specs[napari_specs.index("napari")] += napari_variant
+    napari_specs[napari_specs.index("napari-menu")] += napari_variant
+
+    menu_specs = non_empty_splitlines(cfg["conda_installer"]["napari_run_shortcuts"])
+
+    return {
+        "base": base_specs,
+        "napari": napari_specs,
+        "menu_packages": menu_specs,
+    }
+
+
+def _constructor():
     """
     Create a temporary `construct.yaml` input file and
     run `constructor`.
@@ -131,68 +191,37 @@ def _constructor(version=_version(), extra_specs=None):
         one detected by `setuptools-scm` and written to
         `napari/_version.py`. Run `pip install -e .` to
         generate that file if it can't be found.
-    extra_specs: list of str
-        Additional packages to be included in the installer.
-        A list of conda spec strings (`python`, `python=3`, etc)
-        is expected.
     """
     constructor = find_executable("constructor")
     if not constructor:
         raise RuntimeError("Constructor must be installed.")
 
-    if extra_specs is None:
-        extra_specs = []
+    version = _get_version()
+    dependencies = _get_dependencies()
 
-    # TODO: Temporary while pyside2 is not yet published for arm64
-    target_platform = os.environ.get("CONSTRUCTOR_TARGET_PLATFORM")
-    ARM64 = target_platform == "osx-arm64"
-    if ARM64:
-        napari = f"napari={version}=*pyqt*"
-    else:
-        napari = f"napari={version}=*pyside*"
-    base_specs = [
-        f"python={sys.version_info.major}.{sys.version_info.minor}.*",
-        "conda",
-        "mamba",
-        "pip",
-    ]
-    napari_specs = [
-        napari,
-        f"napari-menu={version}",
-        f"python={sys.version_info.major}.{sys.version_info.minor}.*",
-        "conda",
-        "mamba",
-        "pip",
-    ] + extra_specs
-
-    channels = (
-        ["napari/label/nightly"]
-        + (["andfoy"] if ARM64 else [])  # TODO: temporary
-        + ["napari/label/bundle_tools", "conda-forge"]
-    )
     empty_file = NamedTemporaryFile(delete=False)
     definitions = {
         "name": APP,
         "company": "Napari",
         "reverse_domain_identifier": "org.napari",
         "version": version,
-        "channels": channels,
+        "channels": _get_channels(),
         "conda_default_channels": ["conda-forge"],
         "installer_filename": OUTPUT_FILENAME,
         "initialize_by_default": False,
         "license_file": os.path.join(HERE, "resources", "bundle_license.rtf"),
-        "specs": base_specs,
-        "extra_envs": {f"napari-{version}": {"specs": napari_specs}},
-        "menu_packages": [
-            "napari-menu",
-        ],
+        "specs": dependencies["base"],
+        "extra_envs": {
+            f"napari-{version}": {
+                "specs": dependencies["napari"],
+            },
+        },
+        "menu_packages": dependencies["menu_packages"],
         "extra_files": {
             "resources/bundle_readme.md": "README.txt",
             empty_file.name: ".napari_is_bundled_constructor",
         },
     }
-    if _use_local():
-        definitions["channels"].insert(0, "local")
     if LINUX:
         definitions["default_prefix"] = os.path.join(
             "$HOME", ".local", f"{APP}-{version}"
@@ -283,8 +312,8 @@ def _constructor(version=_version(), extra_specs=None):
 
     args = [constructor, "-v", "--debug", "."]
     conda_exe = os.environ.get("CONSTRUCTOR_CONDA_EXE")
-    if target_platform and conda_exe:
-        args += ["--platform", target_platform, "--conda-exe", conda_exe]
+    if TARGET_PLATFORM and conda_exe:
+        args += ["--platform", TARGET_PLATFORM, "--conda-exe", conda_exe]
     env = os.environ.copy()
     env["CONDA_CHANNEL_PRIORITY"] = "strict"
 
@@ -323,9 +352,9 @@ def licenses():
     return zipname
 
 
-def main(extra_specs=None):
+def main():
     try:
-        _constructor(extra_specs=extra_specs)
+        _constructor()
     finally:
         for path in clean_these_files:
             try:
@@ -359,11 +388,6 @@ def cli(argv=None):
         help="Print computed artifact name and exit.",
     )
     p.add_argument(
-        "--extra-specs",
-        nargs="+",
-        help="One or more extra conda specs to add to the installer",
-    )
-    p.add_argument(
         "--licenses",
         action="store_true",
         help="Post-process licenses AFTER having built the installer. "
@@ -380,7 +404,7 @@ def cli(argv=None):
 if __name__ == "__main__":
     args = cli()
     if args.version:
-        print(_version())
+        print(_get_version())
         sys.exit()
     if args.arch:
         print(ARCH)
@@ -398,4 +422,4 @@ if __name__ == "__main__":
         _generate_background_images()
         sys.exit()
 
-    print('created', main(extra_specs=args.extra_specs))
+    print('created', main())
