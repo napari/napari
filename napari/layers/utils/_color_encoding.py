@@ -191,7 +191,7 @@ ColorEncodingArgument = Union[ColorEncoding, dict, str, ColorType, None]
 
 
 def validate_color_encoding(value: ColorEncodingArgument) -> ColorEncoding:
-    """Validates and coerces a value to a StringEncoding.
+    """Validates and coerces a value to a ColorEncoding.
 
     Parameters
     ----------
