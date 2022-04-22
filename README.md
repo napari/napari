@@ -90,7 +90,7 @@ Contributions are encouraged! Please read our [contributing guide](https://napar
 
 ## governance
 
-You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/community/governance.html), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
+You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/community/governance.html), which includes information about, and ways to contact, the [@napari/steering-council and @napari/core-devs](https://napari.org/community/team.html#current-core-developers).
 
 ## citing napari
 
