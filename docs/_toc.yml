@@ -99,6 +99,9 @@ subtrees:
         - entries:
           - file: developers/contributing
           - file: naps/index
+            subtrees:
+            - entries:
+              - file: naps/0-nap-process
           - file: developers/documentation/index
             subtrees:
             - entries:
