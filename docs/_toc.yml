@@ -98,6 +98,7 @@ subtrees:
         subtrees:
         - entries:
           - file: developers/contributing
+          - file: naps/index
           - file: developers/documentation/index
             subtrees:
             - entries:
