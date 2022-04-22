@@ -204,7 +204,7 @@ def _patch_napari_recipe(recipe_path: str):
     skip = recipe["outputs"][2]["build"]["skip"]
     skip.inline_comment = "[qt_bindings == 'pyside2']"
 
-    recipe.save(recipe_path + ".edit")
+    recipe.save(recipe_path)
 
     return recipe
 
