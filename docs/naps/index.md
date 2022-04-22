@@ -3,7 +3,7 @@
 
 NAPs document any major changes or proposals to the napari project.
 
-## Sections
+## List of NAPs
 
 ```{toctree}
 ---
