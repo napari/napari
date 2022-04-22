@@ -526,3 +526,19 @@ def test_serialization():
     deserialized = TextManager(**serialized)
 
     assert original == deserialized
+
+
+def test_view_text_with_constant_text():
+    features = pd.DataFrame(index=range(3))
+    text_manager = TextManager(string={'constant': 'A'}, features=features)
+
+    copied = text_manager._copy([0, 2])
+    text_manager._paste(**copied)
+
+    actual = text_manager.view_text([0, 1])
+
+    # view_text promises to return an Nx1 array, not just something
+    # broadcastable to an Nx1, so explicitly check the length
+    # because assert_array_equal broadcasts scalars automatically
+    assert len(actual) == 2
+    np.testing.assert_array_equal(actual, ['A', 'A'])

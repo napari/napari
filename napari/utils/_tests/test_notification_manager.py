@@ -9,7 +9,9 @@ import pytest
 from napari.utils.notifications import (
     Notification,
     notification_manager,
+    show_error,
     show_info,
+    show_warning,
 )
 
 PY38_OR_HIGHER = bool(getattr(threading, 'excepthook', None))
@@ -82,6 +84,14 @@ def test_notification_manager_no_gui(monkeypatch):
         assert warnings.showwarning == notification_manager.receive_warning
         warnings.showwarning('this is a warning', UserWarning, '', 0)
         assert len(notification_manager.records) == 4
+        assert store[-1].type == 'warning'
+
+        show_error('This is an error')
+        assert len(notification_manager.records) == 5
+        assert store[-1].type == 'error'
+
+        show_warning('This is a warning')
+        assert len(notification_manager.records) == 6
         assert store[-1].type == 'warning'
 
     # make sure we've restored the except hook
