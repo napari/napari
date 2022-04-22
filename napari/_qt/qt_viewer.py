@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-import os
+import traceback
 import warnings
 from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 from weakref import WeakSet
@@ -16,9 +16,9 @@ from ..components._interaction_box_mouse_bindings import (
 )
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
+from ..errors import MultipleReaderError, ReaderPluginError
 from ..layers.base.base import Layer
 from ..plugins import _npe2
-from ..plugins.utils import get_potential_readers
 from ..utils import config, perf
 from ..utils._proxies import ReadOnlyWrapper
 from ..utils.action_manager import action_manager
@@ -42,10 +42,7 @@ from ..utils.misc import in_ipython
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
-from .dialogs.qt_reader_dialog import (
-    QtReaderDialog,
-    get_reader_choice_for_file,
-)
+from .dialogs.qt_reader_dialog import handle_gui_reading
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, crosshair_pixmap, square_pixmap
@@ -435,11 +432,19 @@ class QtViewer(QSplitter):
                     self.console.push(
                         {'napari': napari, 'action_manager': action_manager}
                     )
-            except ImportError:
+            except ModuleNotFoundError:
                 warnings.warn(
                     trans._(
                         'napari-console not found. It can be installed with'
                         ' "pip install napari_console"'
+                    )
+                )
+                self._console = None
+            except ImportError:
+                traceback.print_exc()
+                warnings.warn(
+                    trans._(
+                        'error importing napari-console. See console for full error.'
                     )
                 )
                 self._console = None
@@ -678,7 +683,8 @@ class QtViewer(QSplitter):
         )
 
         if (filenames != []) and (filenames is not None):
-            self.viewer.open(filenames)
+            for filename in filenames:
+                self._qt_open([filename], stack=False)
             update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self):
@@ -699,7 +705,7 @@ class QtViewer(QSplitter):
         )
 
         if (filenames != []) and (filenames is not None):
-            self.viewer.open(filenames, stack=True)
+            self._qt_open(filenames, stack=True)
             update_open_history(filenames[0])
 
     def _open_folder_dialog(self):
@@ -720,8 +726,28 @@ class QtViewer(QSplitter):
         )
 
         if folder not in {'', None}:
-            self.viewer.open([folder])
+            self._qt_open([folder], stack=False)
             update_open_history(folder)
+
+    def _qt_open(self, filenames: List[str], stack: bool):
+        """Open files, potentially popping reader dialog for plugin selection.
+
+        Call ViewerModel._open_or_raise_error and catch errors that could
+        be fixed by user making a plugin choice.
+
+        Parameters
+        ----------
+        filenames : List[str]
+            paths to open
+        stack : bool
+            whether to stack files or not
+        """
+        try:
+            self.viewer._open_or_raise_error(filenames, stack=stack)
+        except ReaderPluginError as e:
+            handle_gui_reading(filenames, self, stack, e.reader_plugin, e)
+        except MultipleReaderError:
+            handle_gui_reading(filenames, self, stack)
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""
@@ -1050,117 +1076,11 @@ class QtViewer(QSplitter):
 
         # if trying to open as a stack, open with any available reader
         if shift_down:
-            self.viewer.open(filenames, stack=bool(shift_down))
+            self._qt_open(filenames, stack=bool(shift_down))
             return
 
         for filename in filenames:
-            # get available readers for this file from all registered plugins
-            readers = get_potential_readers(filename)
-            if not readers:
-                warnings.warn(
-                    trans._(
-                        'No readers found to try reading {filename}.',
-                        deferred=True,
-                        filename=filename,
-                    )
-                )
-                continue
-
-            # see whether an existing setting can be used
-            _, extension = os.path.splitext(filename)
-            error_message = self._try_reader_from_settings(
-                readers, extension, filename
-            )
-            # we've successfully opened file, move to the next one
-            if error_message is None:
-                continue
-
-            # there is no existing setting, or it failed, get choice from user
-            readerDialog = QtReaderDialog(
-                parent=self,
-                pth=filename,
-                extension=extension,
-                error_message=error_message,
-                readers=readers,
-            )
-            self._get_and_try_preferred_reader(
-                readerDialog, readers, error_message
-            )
-
-    def _try_reader_from_settings(self, readers, extension, filename):
-        """Read settings and try to open file with preferred reader
-
-        Returns None when file was successfully opened with preferred reader,
-        otherwise returns appropriate error message.
-
-        Parameters
-        ----------
-        readers : Dict[str, str]
-            dictionary of display_name:plugin_name for potential readers
-        extension : str
-            file extension of the given filename
-        filename : str
-            path to file trying to open
-
-        Returns
-        -------
-        Optional[str]
-            return None when file was successfully opened, otherwise error message
-        """
-        reader_associations = get_settings().plugins.extension2reader
-        error_message = ''
-        # if we have an existing setting for this extension
-        if extension and extension in reader_associations:
-            display_name = reader_associations[extension]
-            # if this plugin is currently registered
-            if display_name in readers:
-                try:
-                    # try to open using the associated plugin
-                    self.viewer.open(
-                        filename,
-                        plugin=readers[display_name],
-                    )
-                    # we've opened file successfully, return
-                    return None
-                except Exception as e:
-                    error_message = f"Tried to open file with {display_name}, but reading failed ({e}).\n"
-            else:
-                error_message = f"Can't find {display_name} plugin associated with {extension} files.\n"
-        return error_message
-
-    def _get_and_try_preferred_reader(
-        self, readerDialog, readers, error_message
-    ):
-        """Get preferred reader from user through dialog and try to open file
-
-        Parameters
-        ----------
-        readerDialog : QtReaderDialog
-            dialog for user to select their preferences
-        readers : Dict[str, str]
-            dictionary of display_name:plugin_name of available readers
-        error_message : str
-            error message to show to user about failed reading attempts
-        """
-        # get plugin choice from user
-        # choice is None if file was opened or user chose cancel
-        choice = get_reader_choice_for_file(
-            readerDialog, readers, error_message
-        )
-        if choice:
-            display_name, persist_choice = choice
-            plugin_name = readers[display_name]
-            self.viewer.open(
-                readerDialog._current_file,
-                plugin=plugin_name,
-            )
-            # do we have settings to save?
-            if persist_choice:
-                # need explicit reassignment of object for persistence
-                get_settings().plugins.extension2reader = {
-                    **get_settings().plugins.extension2reader,
-                    readerDialog._extension: display_name,
-                }
+            self._qt_open([filename], stack=bool(shift_down))
 
     def closeEvent(self, event):
         """Cleanup and close.

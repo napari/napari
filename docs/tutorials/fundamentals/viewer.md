@@ -80,7 +80,7 @@ photograph of the astronaut in the **napari** viewer as shown below
 :tags: [hide-input]
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="photograph of an astronaut in napari viewer")
 ```
 
 ```{code-cell} python
@@ -150,7 +150,7 @@ viewer.add_image(data.camera(), name='camera')
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="3 image layers shown in napari viewer with the canvas displaying a photograph of a man looking through a camcorder")
 ```
 
 Note that we've also also named each of the layers using the `name` keyword
@@ -212,7 +212,7 @@ viewer.add_points(points, size=30)
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text="points layer showing 3 white points layered on top of astronaut image in napari viewer")
 ```
 
 +++
@@ -311,7 +311,7 @@ viewer.add_image(blobs, name='blobs', opacity=0.5, colormap='red')
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ### Viewer buttons
@@ -358,7 +358,7 @@ view:
 viewer.dims.ndisplay = 3
 viewer.camera.zoom = 2
 viewer.camera.angles = (3, 38, 53)
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 
@@ -404,7 +404,7 @@ viewer.theme = 'light'
 
 ```{code-cell} python
 :tags: [hide-input]
-nbscreenshot(viewer)
+nbscreenshot(viewer, alt_text=" ")
 ```
 
 ```{code-cell} python

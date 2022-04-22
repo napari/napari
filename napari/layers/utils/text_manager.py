@@ -253,7 +253,12 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        return _get_style_values(self.string, indices_view)
+        values = _get_style_values(self.string, indices_view)
+        return (
+            np.broadcast_to(values, len(indices_view))
+            if values.ndim == 0
+            else values
+        )
 
     @classmethod
     def _from_layer(

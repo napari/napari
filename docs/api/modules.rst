@@ -12,6 +12,7 @@ For the average user's workflows.
    napari.view_layers
    napari.types
    napari.utils
+   napari.window
 
 .. rubric:: Advanced
 

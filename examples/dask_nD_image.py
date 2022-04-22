@@ -7,9 +7,11 @@ Display a dask array
 
 try:
     from dask import array as da
-except ImportError:
-    raise ImportError("""This example uses a dask array but dask is not
-    installed. To install try 'pip install dask'.""")
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        """This example uses a dask array but dask is not
+    installed. To install try 'pip install dask'."""
+    )
 
 import numpy as np
 from skimage import data
