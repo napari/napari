@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Dict
+from typing import Dict, Tuple
 
 from napari.settings import get_settings
 
@@ -48,6 +48,21 @@ def get_potential_readers(filename: str) -> Dict[str, str]:
         del readers['builtins']
 
     return readers
+
+
+def get_all_readers() -> Tuple[Dict[str, str]]:
+    """Return a dict of all npe2 readers and one of all npe1 readers"""
+
+    npe2_readers = _npe2.get_readers()
+
+    npe1_readers = {}
+    for spec, hook_caller in plugin_manager.hooks.items():
+        if spec == 'napari_get_reader':
+            potential_readers = hook_caller.get_hookimpls()
+            for get_reader in potential_readers:
+                npe1_readers[get_reader.plugin_name] = get_reader.plugin_name
+
+    return npe2_readers, npe1_readers
 
 
 def normalized_name(name: str) -> str:

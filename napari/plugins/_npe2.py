@@ -186,11 +186,12 @@ def file_extensions_string_for_layers(
     )
 
 
-def get_readers(path: str) -> Dict[str, str]:
+def get_readers(path: Optional[str] = None) -> Dict[str, str]:
     """Get valid reader plugin_name:display_name mapping given path.
 
     Iterate through compatible readers for the given path and return
-    dictionary of plugin_name to display_name for each reader
+    dictionary of plugin_name to display_name for each reader. If
+    path is not given, return all readers.
 
     Parameters
     ----------
@@ -203,9 +204,14 @@ def get_readers(path: str) -> Dict[str, str]:
         Dictionary of plugin_name to display name
     """
     pm = npe2.PluginManager.instance()
+    if not path:
+        all_readers = [reader[1] for reader in pm._contrib._readers]
+    else:
+        all_readers = pm.iter_compatible_readers([path])
+
     return {
         reader.plugin_name: pm.get_manifest(reader.command).display_name
-        for reader in pm.iter_compatible_readers([path])
+        for reader in all_readers
     }
 
 
