@@ -27,11 +27,18 @@ class Blending(StringEnum):
                 different colors and opacity. Useful for creating overlays. It
                 corresponds to depth_test=False, cull_face=False, blend=True,
                 blend_func=('src_alpha', 'one').
+            Blending.MINIMUM
+                Allows for multiple layers to be blended together such that
+                the minimum of each color and alpha are selected.
+                Useful for creating overlays with inverted colormaps. It
+                corresponds to depth_test=False, cull_face=False, blend=True,
+                blend_equation='min'.
     """
 
     TRANSLUCENT = auto()
     TRANSLUCENT_NO_DEPTH = auto()
     ADDITIVE = auto()
+    MINIMUM = auto()
     OPAQUE = auto()
 
 
@@ -40,6 +47,7 @@ BLENDING_TRANSLATIONS = OrderedDict(
         (Blending.TRANSLUCENT, trans._("translucent")),
         (Blending.TRANSLUCENT_NO_DEPTH, trans._("translucent_no_depth")),
         (Blending.ADDITIVE, trans._("additive")),
+        (Blending.MINIMUM, trans._("minimum")),
         (Blending.OPAQUE, trans._("opaque")),
     ]
 )
