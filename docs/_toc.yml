@@ -100,7 +100,8 @@ subtrees:
           - file: developers/contributing
           - file: naps/index
             subtrees:
-            - entries:
+            - maxdepth: 1
+              entries:
               - file: naps/0-nap-process
           - file: developers/documentation/index
             subtrees:
