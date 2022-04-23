@@ -130,6 +130,7 @@ exclude_patterns = [
     '.DS_Store',
     '.jupyter_cache',
     'jupyter_execute',
+    'naps/template.md',
 ]
 
 
