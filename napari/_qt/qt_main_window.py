@@ -47,15 +47,12 @@ from ..utils.updates import check_updates
 from . import menus
 from .dialogs.qt_activity_dialog import QtActivityDialog
 from .dialogs.qt_notification import NapariQtNotification
-from .dialogs.qt_updates import (
-    UpdateManager,
-    UpdateOptionsDialog,
-    UpdateStatusDialog,
-)
+from .dialogs.qt_updates import UpdateOptionsDialog, UpdateStatusDialog
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet, register_napari_themes
 from .qt_viewer import QtViewer
 from .qthreading import create_worker
+from .updates import UpdateManager
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
