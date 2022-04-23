@@ -60,7 +60,7 @@ extensions = [
 ]
 
 external_toc_path = "_toc.yml"
-external_toc_exclude_missing = True
+external_toc_exclude_missing = False
 
 # -- Options for HTML output -------------------------------------------------
 
