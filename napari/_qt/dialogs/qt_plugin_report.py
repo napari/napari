@@ -1,5 +1,6 @@
 """Provides a QtPluginErrReporter that allows the user report plugin errors.
 """
+import warnings
 from typing import Optional
 
 from napari_plugin_engine import standard_metadata
@@ -17,7 +18,10 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins.exceptions import format_exceptions
+from ...settings import get_settings
+from ...utils.theme import get_theme
 from ...utils.translations import trans
+from ..pyhon_syntax_highlight import Pylighter
 
 
 class QtPluginErrReporter(QDialog):
@@ -70,6 +74,12 @@ class QtPluginErrReporter(QDialog):
         self.setLayout(self.layout)
 
         self.text_area = QTextEdit()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            theme = get_theme(get_settings().appearance.theme)
+        self._highlight = Pylighter(
+            self.text_area.document(), "python", theme["syntax_style"]
+        )
         self.text_area.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.text_area.setMinimumWidth(360)
 
@@ -147,7 +157,7 @@ class QtPluginErrReporter(QDialog):
 
         if not plugin or (plugin == self.NULL_OPTION):
             self.plugin_meta.setText('')
-            self.text_area.setHtml('')
+            self.text_area.setText('')
             return
 
         if not self.plugin_manager.get_errors(plugin):
@@ -159,8 +169,8 @@ class QtPluginErrReporter(QDialog):
 
         self.plugin_combo.setCurrentText(plugin)
 
-        err_string = format_exceptions(plugin, as_html=True)
-        self.text_area.setHtml(err_string)
+        err_string = format_exceptions(plugin, as_html=False, color="NoColor")
+        self.text_area.setText(err_string)
         self.clipboard_button.show()
 
         # set metadata and outbound links/buttons
