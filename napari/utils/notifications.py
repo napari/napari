@@ -31,6 +31,17 @@ name2num = {
     'none': 0,
 }
 
+__all__ = [
+    'NotificationSeverity',
+    'Notification',
+    'ErrorNotification',
+    'WarningNotification',
+    'NotificationManager',
+    'show_info',
+    'show_error',
+    'show_console_notification',
+]
+
 
 class NotificationSeverity(StringEnum):
     """Severity levels for the notification dialog.  Along with icons for each."""
@@ -127,6 +138,10 @@ class Notification(Event):
 
 
 class ErrorNotification(Notification):
+    """
+    Notification at an Error severity level.
+    """
+
     exception: BaseException
 
     def __init__(self, exception: BaseException, *args, **kwargs):
@@ -159,6 +174,10 @@ class ErrorNotification(Notification):
 
 
 class WarningNotification(Notification):
+    """
+    Notification at a Warning severity level.
+    """
+
     warning: Warning
 
     def __init__(
@@ -307,10 +326,36 @@ notification_manager = NotificationManager()
 
 
 def show_info(message: str):
-    notification_manager.receive_info(message)
+    """
+    Show an info message in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.INFO)
+    )
+
+
+def show_warning(message: str):
+    """
+    Show a warning in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.WARNING)
+    )
+
+
+def show_error(message: str):
+    """
+    Show an error in the notification manager.
+    """
+    notification_manager.dispatch(
+        Notification(message, severity=NotificationSeverity.ERROR)
+    )
 
 
 def show_console_notification(notification: Notification):
+    """
+    Show a notification in the console.
+    """
     try:
         from ..settings import get_settings
 

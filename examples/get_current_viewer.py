@@ -1,4 +1,7 @@
 """
+Get current viewer
+==================
+
 Get a reference to the current napari viewer.
 
 Whilst this example is contrived, it can be useful to get a reference to the
