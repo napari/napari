@@ -40,7 +40,7 @@ viewer = napari.view_image(cells, colormap='magma')
 
 from napari.utils import nbscreenshot
 
-nbscreenshot(viewer, alt_text=" ")
+nbscreenshot(viewer, alt_text="Cells")
 ```
 
 ```{code-cell} python
