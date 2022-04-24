@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 from qtpy.QtCore import (
@@ -30,7 +29,7 @@ from ...settings import get_settings
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.theme import get_theme
 from ...utils.translations import trans
-from ..pyhon_syntax_highlight import Pylighter
+from ..code_syntax_highlight import Pylighter
 from ..qt_resources import QColoredSVGIcon
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
@@ -348,11 +347,11 @@ class NapariQtNotification(QDialog):
                 tbdialog.setLayout(QVBoxLayout())
 
                 text = QTextEdit()
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", FutureWarning)
-                    theme = get_theme(get_settings().appearance.theme)
+                theme = get_theme(
+                    get_settings().appearance.theme, as_dict=False
+                )
                 _highlight = Pylighter(  # noqa: F841
-                    text.document(), "python", theme["syntax_style"]
+                    text.document(), "python", theme.syntax_style
                 )
                 text.setText(notification.as_text())
                 text.setReadOnly(True)
