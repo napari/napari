@@ -65,7 +65,7 @@ if __name__ == "__main__":
     if args.concat:
         coords = coords.reshape((1, -1, 2))
 
-    print(f'number of polygons: {args.n_polys}')
+    print(f'number of polygons: {len(coords)}')
     print(f'layer type: {args.type}')
 
     layer = time_me(

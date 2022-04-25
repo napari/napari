@@ -682,21 +682,24 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
 
     full_path = np.concatenate(([_ext_point1], path, [_ext_point2]), axis=0)
 
+    # full_normals[:-1], full_normals[1:] are normals left and right of each path vertex
     full_normals = segment_normal(full_path[:-1], full_path[1:])
 
-    # miters per vertex are the average normals of left and right edge
+    # miters per vertex are the average of left and right normals
     miters = 0.5 * (full_normals[:-1] + full_normals[1:])
 
     # scale miters such that their dot product with normals is 1
     _mf_dot = np.expand_dims(
         np.einsum('ij,ij->i', miters, full_normals[:-1]), -1
     )
+
     miters = np.divide(
         miters,
         _mf_dot,
         out=np.zeros_like(miters),
         where=np.abs(_mf_dot) > 1e-10,
     )
+
     miter_lengths = np.linalg.norm(miters, axis=1)
 
     # miter_signs -> +1 if edges turn clockwise, -1 if anticlockwise
@@ -714,12 +717,12 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         np.arange(len(path) - 1)[:, np.newaxis], 2, 0
     )
 
-    # treat bevels
+    # get vertex indices that are to be beveled
     idx_bevel = np.where(np.bitwise_or(bevel, miter_lengths > limit))[0]
 
     if len(idx_bevel) > 0:
         # only the 'outwards sticking' offsets should be changed
-        # TODO: This is not entirely true as in extreme cases both can go to infty
+        # TODO: This is not entirely true as in extreme cases both can go to infinity
         idx_offset = (miter_signs[idx_bevel] < 0).astype(int)
         idx_bevel_full = 2 * idx_bevel + idx_offset
         sign_bevel = np.expand_dims(miter_signs[idx_bevel], -1)
@@ -728,43 +731,27 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         offsets[idx_bevel_full] = (
             -0.5 * full_normals[:-1][idx_bevel] * sign_bevel
         )
-        # limit offset of inner vertex to <limit>
-        offsets[2 * idx_bevel + (1 - idx_offset)] *= limit / np.linalg.norm(
-            offsets[2 * idx_bevel + (1 - idx_offset)], axis=-1, keepdims=True
-        )
 
-        # special cases for the first and last vertices
-        _first = np.where(idx_bevel == 0)[0]
-        _last = np.where(idx_bevel == len(path) - 1)[0]
-
-        offsets[idx_bevel_full[_first]] = (
-            -0.5 * full_normals[1:][idx_bevel[_first]] * sign_bevel[_first]
-        )
-        offsets[idx_bevel_full[_last]] = (
-            0.5 * full_normals[1:][idx_bevel[_last]] * sign_bevel[_last]
-        )
-
-        _nonspecial = np.bitwise_and(
-            idx_bevel != 0, idx_bevel != len(path) - 1
-        )
+        # special cases for the last vertex
+        _nonspecial = idx_bevel != len(path) - 1
 
         idx_bevel = idx_bevel[_nonspecial]
         idx_bevel_full = idx_bevel_full[_nonspecial]
         sign_bevel = sign_bevel[_nonspecial]
-        idx_last_offset = idx_offset[_last]
         idx_offset = idx_offset[_nonspecial]
 
-        # add new "right" bevel vertices
+        # create new "right" bevel vertices to be added later
         centers_bevel = path[idx_bevel]
         offsets_bevel = -0.5 * full_normals[1:][idx_bevel] * sign_bevel
 
+        n_centers = len(centers)
         # change vertices of triangles to the newly added right vertices
         triangles[2 * idx_bevel, idx_offset] = len(centers) + np.arange(
             len(idx_bevel)
         )
-        triangles[2 * idx_bevel + (1 - idx_offset), idx_offset] = len(
-            centers
-        ) + np.arange(len(idx_bevel))
+        triangles[
+            2 * idx_bevel + (1 - idx_offset), idx_offset
+        ] = n_centers + np.arange(len(idx_bevel))
 
         # add center triangle
         triangles0 = np.tile(np.array([[0, 1, 2]]), (len(idx_bevel), 1))
@@ -773,18 +760,9 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
             [
                 2 * idx_bevel + idx_offset,
                 2 * idx_bevel + (1 - idx_offset),
-                len(centers) + np.arange(len(idx_bevel)),
+                n_centers + np.arange(len(idx_bevel)),
             ]
         ).T
-
-        # add last bevel triangle (if closed)
-        if len(_last) > 0:
-            triangles_bevel = np.vstack(
-                (
-                    triangles_bevel,
-                    np.array([[0, 1, len(centers) - 2 + idx_last_offset[0]]]),
-                )
-            )
 
         # add all new centers, offsets, and triangles
         centers = np.concatenate([centers, centers_bevel])
