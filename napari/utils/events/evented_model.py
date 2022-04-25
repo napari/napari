@@ -237,6 +237,34 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             for dep in self.__field_dependents__.get(name, {}):
                 getattr(self.events, dep)(value=getattr(self, dep))
 
+    def __getattribute__(self, name: str) -> None:
+        attr = super().__getattribute__(name)
+        # avoid recursion
+        if (
+            name == '__property_setters__'
+            or name not in self.__property_setters__
+        ):
+            return attr
+
+        # wrap objects returned by properties in evented objects
+        prop = self.__property_setters__[name]
+        ret_class = prop.fget.__annotations__.get('return', lambda x: x)
+        evented_attr = ret_class(attr)
+        if not hasattr(evented_attr, 'events'):
+            return attr
+
+        # hook up events to dependencies
+        def update(event):
+            prop.fset(self, event.source)
+
+        evented_attr.events.connect(update)
+        # block depending events when update is fired, to prevent infinite loops
+        for field, deps in self.__field_dependents__.items():
+            if name in deps:
+                getattr(self.events, field).block(callback=update)
+
+        return evented_attr
+
     # expose the private EmitterGroup publically
     @property
     def events(self) -> EmitterGroup:
