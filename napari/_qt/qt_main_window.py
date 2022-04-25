@@ -460,6 +460,15 @@ class Window:
 
         if show:
             self.show()
+            # Ensure the controls dock uses the minimum height
+            self._qt_window.resizeDocks(
+                [
+                    self._qt_viewer.dockLayerControls,
+                    self._qt_viewer.dockLayerList,
+                ],
+                [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
+                Qt.Vertical,
+            )
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
