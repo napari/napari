@@ -65,13 +65,22 @@ if __name__ == "__main__":
     if args.concat:
         coords = coords.reshape((1, -1, 2))
 
-    print(f'number of polygons: {args.n_polys}')
+    print(f'number of polygons: {len(coords)}')
     print(f'layer type: {args.type}')
 
+    properties = {
+        'class': ['A', 'B', 'C', 'D'] * (args.n_polys // 4),
+    }
+    face_color_cycle = ['blue', 'magenta', 'green']
     layer = time_me(
         "time to create layer",
         lambda: napari.layers.Shapes(
-            coords, shape_type=args.type, edge_color=[1, 0.5, 0.2, 1]
+            coords,
+            shape_type=args.type,
+            edge_color=[1, 0.5, 0.2, 1],
+            properties=properties,
+            face_color='class',
+            face_color_cycle=face_color_cycle,
         ),
     )
 
