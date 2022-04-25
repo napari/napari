@@ -614,6 +614,26 @@ def triangulate_edge(path, closed=False):
     return centers, offsets, triangles
 
 
+def _mirror_point(x, y):
+    return 2 * y - x
+
+
+def _sign_nonzero(x):
+    y = np.sign(x).astype(int)
+    y[y == 0] = 1
+    return y
+
+
+def _sign_cross(x, y):
+    """sign of cross product (faster for 2d)"""
+    if x.shape[1] == y.shape[1] == 2:
+        return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
+    elif x.shape[1] == y.shape[1] == 3:
+        return _sign_nonzero(np.cross(x, y))
+    else:
+        raise ValueError(x.shape[1], y.shape[1])
+
+
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     """Determines the triangulation of a path in 2D. The resulting `offsets`
     can be multiplied by a `width` scalar and be added to the resulting
@@ -648,23 +668,6 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
         triangles of the triangulation
     """
 
-    def _mirror_point(x, y):
-        return 2 * y - x
-
-    def _sign_nonzero(x):
-        y = np.sign(x).astype(int)
-        y[y == 0] = 1
-        return y
-
-    def _sign_cross(x, y):
-        """sign of cross product (faster for 2d)"""
-        if x.shape[1] == y.shape[1] == 2:
-            return _sign_nonzero(x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0])
-        elif x.shape[1] == y.shape[1] == 3:
-            return _sign_nonzero(np.cross(x, y))
-        else:
-            raise ValueError(x.shape[1], y.shape[1])
-
     path = np.asarray(path, dtype=float)
 
     # add first vertex to the end if closed
@@ -694,10 +697,9 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     miters = np.divide(
         miters,
         _mf_dot,
-        out=np.zeros_like(miters),
         where=np.abs(_mf_dot) > 1e-10,
     )
-    miter_lengths = np.linalg.norm(miters, axis=1)
+    miter_lengths_2 = (miters ** 2).sum(axis=1)
 
     # miter_signs -> +1 if edges turn clockwise, -1 if anticlockwise
     # used later to discern bevel positions
@@ -715,7 +717,9 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     )
 
     # treat bevels
-    idx_bevel = np.where(np.bitwise_or(bevel, miter_lengths > limit))[0]
+    idx_bevel = np.where(np.bitwise_or(bevel, miter_lengths_2 > (limit ** 2)))[
+        0
+    ]
 
     if len(idx_bevel) > 0:
         # only the 'outwards sticking' offsets should be changed
